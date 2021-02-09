@@ -13,6 +13,9 @@ jobs:
   build:
     name: Build and upload release assets
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
@@ -104,7 +107,28 @@ jobs:
           asset_name: peggy
           asset_content_type: application/bin
 
-      # next we start arm builds and uploads, we do this because the release
+      # next we upload the contract artifact, in a production situation a previous version will
+      # already be deployed on Ethereum and this won't be very useful, but as any chain leads up
+      # to launch it's nice to have a version history for the contract itself and see what if any
+      # changes are made that may go unnoticed due to tooling
+      - name: Build Solidity artifacts
+        run: cd solidity && npm ci && npm run typechain
+
+      - name: Tar artifacts folder
+        run: cd solidity && tar -czvf solidity-artifacts.tar.gz artifacts/
+
+      - name: Upload Gravity Ethereum artifacts
+        id: upload-solidity-artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: solidity/solidity-artifacts.tar.gz
+          asset_name: solidity-artifacts.tar.gz
+          asset_content_type: application/bin
+
+      # finally we start arm builds and uploads, we do this because the release
       # entry is already made and rust builds take nearly 10 minutes, so instead
       # of having a workable release in 20 minutes we can have one in 10 with the ARM
       # binaries coming 10 minutes later.
