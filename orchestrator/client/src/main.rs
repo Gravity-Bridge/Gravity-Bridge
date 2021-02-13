@@ -27,6 +27,14 @@ use web30::client::Web3;
 
 const TIMEOUT: Duration = Duration::from_secs(60);
 
+pub fn one_eth() -> f32 {
+    1000000000000000000f32
+}
+
+pub fn fraction_eth_to_wei(num: f32) -> Uint256 {
+    ((num * one_eth()) as u128).into()
+}
+
 #[derive(Debug, Deserialize)]
 struct Args {
     flag_cosmos_phrase: String,
@@ -35,7 +43,7 @@ struct Args {
     flag_ethereum_rpc: String,
     flag_contract_address: String,
     flag_fees: String,
-    flag_amount: String,
+    flag_amount: f32,
     flag_cosmos_destination: String,
     flag_erc20_address: String,
     flag_eth_destination: String,
@@ -57,11 +65,11 @@ lazy_static! {
             --fees=<denom>              The Cosmos Denom in which to pay Cosmos chain fees
             --contract-address=<addr>   The Ethereum contract address for Peggy, this is temporary
             --erc20-address=<addr>      An erc20 address to send funds
-            --amount=<amount>           The amount of tokens to send
+            --amount=<amount>           The amount of tokens to send, for example 1.5DAI
             --cosmos-destination=<dest> A cosmos address to send tokens to
             --eth-destination=<dest> A cosmos address to send tokens to
         About:
-            Althea Peggy client software, moves tokens from Ethereum to Cosmos and back
+            Althea Gravity client software, moves tokens from Ethereum to Cosmos and back
             Written By: {}
             Version {}",
             env!("CARGO_PKG_NAME"),
@@ -81,7 +89,7 @@ async fn main() {
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
-    let amount: Uint256 = args.flag_amount.parse().unwrap();
+    let amount = fraction_eth_to_wei(args.flag_amount);
     let erc20_address: EthAddress = args
         .flag_erc20_address
         .parse()
@@ -109,7 +117,10 @@ async fn main() {
         };
         let eth_dest: EthAddress = args.flag_eth_destination.parse().unwrap();
 
-        println!("Locking funds into the batch pool");
+        println!(
+            "Locking {} / {} into the batch pool",
+            args.flag_amount, erc20_address
+        );
         send_to_eth(cosmos_key, eth_dest, amount, bridge_fee, &contact)
             .await
             .expect("Failed to Send to ETH");
@@ -136,8 +147,8 @@ async fn main() {
         let ethereum_public_key = ethereum_key.to_public_key().unwrap();
 
         println!(
-            "Sending to Cosmos from {} to {} with amount {}",
-            ethereum_public_key, cosmos_dest, amount
+            "Sending {} / {} to Cosmos from {} to {} with amount",
+            args.flag_amount, contract_address, ethereum_public_key, cosmos_dest
         );
         // we send some erc20 tokens to the peggy contract to register a deposit
         let tx_id = send_to_cosmos(
