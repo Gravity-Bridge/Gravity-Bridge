@@ -14,10 +14,31 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
       - name: Build Orchestrator
-        run: cd orchestrator && cargo build --all --verbose
+        run: cd orchestrator && cargo check --all --verbose
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
       - name: Run Orchestrator tests
         run: cd orchestrator && cargo test --all --verbose
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check code formatting
+        run: rustup component add rustfmt && cd orchestrator && cargo fmt --all -- --check
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check for Clippy lints
+        run: rustup component add clippy && cd orchestrator && cargo clippy --all --all-targets --all-features -- -D warnings
+  cross-compile-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check for Clippy lints
+        run: cargo install cross && cd orchestrator && cross test --target aarch64-unknown-linux-gnu
