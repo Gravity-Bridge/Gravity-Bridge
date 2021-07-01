@@ -207,6 +207,19 @@ pub async fn main() {
             info!("Starting orchestrator key update tests!");
             orch_keys(grpc_client, &contact, keys).await;
             return;
+        } else if test_type == "LONDON" {
+            info!("Starting London hardfork tests");
+            happy_path_test(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                gravity_address,
+                erc20_addresses[0],
+                true,
+            )
+            .await;
+            return;
         }
     }
     info!("Starting Happy path test");

@@ -57,3 +57,9 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run the validator set update rewards test
         run: tests/all-up-test.sh VALSET_REWARDS
+  london_hardfork:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run the London hardfork test
+        run: tests/all-up-test.sh LONDON

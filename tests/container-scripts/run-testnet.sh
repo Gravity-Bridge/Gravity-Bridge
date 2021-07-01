@@ -44,6 +44,8 @@ done
 sleep 10
 if [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* ]]; then
 bash /gravity/tests/container-scripts/run-eth-fork.sh $ALCHEMY_ID &
+elif [[ $TEST_TYPE == *"LONDON"* ]]; then
+bash /gravity/tests/container-scripts/run-eth-london.sh &
 else
 bash /gravity/tests/container-scripts/run-eth.sh &
 fi
