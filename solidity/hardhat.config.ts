@@ -37,10 +37,6 @@ module.exports = {
   networks: {
     hardhat: {
       timeout: 2000000,
-      // forking:{
-      //   url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID}`,
-      //   blockNumber: 11780000, //Pin random block
-      // },
       accounts: [
         {
           privateKey:
