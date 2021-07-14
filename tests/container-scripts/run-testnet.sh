@@ -42,7 +42,7 @@ done
 # let the cosmos chain settle before starting eth as it
 # consumes a lot of processing power
 sleep 10
-if [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* ]]; then
+if [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* || $TEST_TYPE == *"RELAY_MARKET"* ]]; then
 bash /gravity/tests/container-scripts/run-eth-fork.sh $ALCHEMY_ID &
 elif [[ $TEST_TYPE == *"LONDON"* ]]; then
 bash /gravity/tests/container-scripts/run-eth-london.sh &

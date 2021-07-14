@@ -21,6 +21,7 @@ use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
 use lazy_static::lazy_static;
 use orch_keys::orch_keys;
+use relay_market::relay_market_test;
 use std::{env, time::Duration};
 use transaction_stress_test::transaction_stress_test;
 use valset_stress::validator_set_stress_test;
@@ -30,6 +31,7 @@ mod bootstrapping;
 mod happy_path;
 mod happy_path_v2;
 mod orch_keys;
+mod relay_market;
 mod transaction_stress_test;
 mod utils;
 mod valset_rewards;
@@ -109,7 +111,7 @@ pub fn should_deploy_contracts() -> bool {
 #[actix_rt::main]
 pub async fn main() {
     env_logger::init();
-    info!("Staring Gravity test-runner");
+    info!("Starting Gravity test-runner");
     let contact = Contact::new(
         COSMOS_NODE_GRPC.as_str(),
         OPERATION_TIMEOUT,
@@ -202,6 +204,10 @@ pub async fn main() {
         } else if test_type == "ARBITRARY_LOGIC" {
             info!("Starting arbitrary logic tests!");
             arbitrary_logic_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            return;
+        } else if test_type == "RELAY_MARKET" {
+            info!("Starting relay market tests!");
+            relay_market_test(&web30, grpc_client, &contact, keys, gravity_address).await;
             return;
         } else if test_type == "ORCHESTRATOR_KEYS" {
             info!("Starting orchestrator key update tests!");
