@@ -7,8 +7,7 @@ use ethereum_gravity::message_signatures::encode_tx_batch_confirm_hashed;
 use ethereum_gravity::utils::{downcast_to_u128, get_tx_batch_nonce};
 use ethereum_gravity::{one_eth, submit_batch::send_eth_transaction_batch};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::types::Valset;
-use gravity_utils::types::{BatchConfirmResponse, TransactionBatch};
+use gravity_utils::types::{BatchConfirmResponse, RelayerConfig, TransactionBatch, Valset};
 use std::collections::HashMap;
 use std::time::Duration;
 use tonic::transport::Channel;
@@ -36,6 +35,7 @@ pub async fn relay_batches(
     gravity_contract_address: EthAddress,
     gravity_id: String,
     timeout: Duration,
+    _config: &RelayerConfig,
 ) {
     let possible_batches =
         get_batches_and_signatures(current_valset.clone(), grpc_client, gravity_id.clone()).await;

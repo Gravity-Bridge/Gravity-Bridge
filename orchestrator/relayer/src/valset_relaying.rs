@@ -15,10 +15,11 @@ use ethereum_gravity::{
     valset_update::{encode_valset_update_payload, send_eth_valset_update},
 };
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::types::Valset;
+use gravity_utils::types::{RelayerConfig, Valset};
 use tonic::transport::Channel;
 use web30::client::Web3;
 
+#[allow(clippy::too_many_arguments)]
 /// Check the last validator set on Ethereum, if it's lower than our latest validator
 /// set then we should package and submit the update as an Ethereum transaction
 pub async fn relay_valsets(
@@ -30,6 +31,7 @@ pub async fn relay_valsets(
     gravity_contract_address: EthAddress,
     gravity_id: String,
     timeout: Duration,
+    _config: &RelayerConfig,
 ) {
     // we have to start with the current valset, we need to know what's currently
     // in the contract in order to determine if a new validator set is valid.

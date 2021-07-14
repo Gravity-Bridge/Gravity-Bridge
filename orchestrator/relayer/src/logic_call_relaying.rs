@@ -8,7 +8,7 @@ use ethereum_gravity::{
     utils::{downcast_to_u128, get_logic_call_nonce},
 };
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::types::LogicCall;
+use gravity_utils::types::{LogicCall, RelayerConfig};
 use gravity_utils::types::{LogicCallConfirmResponse, Valset};
 use std::time::Duration;
 use tonic::transport::Channel;
@@ -23,6 +23,7 @@ pub async fn relay_logic_calls(
     gravity_contract_address: EthAddress,
     gravity_id: String,
     timeout: Duration,
+    _config: &RelayerConfig,
 ) {
     let our_ethereum_address = ethereum_key.to_public_key().unwrap();
 
