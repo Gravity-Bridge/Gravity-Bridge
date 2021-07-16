@@ -11,7 +11,7 @@ bash all-up-test.sh HAPPY_PATH_V2
 bash all-up-test.sh VALIDATOR_OUT
 bash all-up-test.sh LONDON
 # An alchemy api key is necessary for this arbitrary logic test, so we are disabling it
-#bash all-up-test.sh ARBITRARY_LOGIC
+bash all-up-test.sh ARBITRARY_LOGIC $ALCHEMY_KEY
 # An alchemy api key is necessary for this relay market test, so we are disabling it
-#bash all-up-test.sh RELAY_MARKET
+bash all-up-test.sh RELAY_MARKET $ALCHEMY_KEY
 echo "All tests succeeded!"

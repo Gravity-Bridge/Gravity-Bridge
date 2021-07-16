@@ -38,7 +38,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: cd solidity && npm ci
       - run: cd solidity && npm run typechain
-      - run: cd solidity && npm run evm_fork &
+      - run: cd solidity && npm run solidity_test_fork &
         env:
           ALCHEMY_ID: ${{ secrets.ALCHEMY_ID }}
       - run: cd solidity && npm run test_fork
