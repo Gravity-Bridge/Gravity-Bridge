@@ -5,7 +5,6 @@ use deep_space::coin::Coin;
 use deep_space::Contact;
 use ethereum_gravity::{send_to_cosmos::send_to_cosmos, utils::get_tx_batch_nonce};
 use futures::future::join_all;
-use gravity_utils::types::GravityBridgeToolsConfig;
 use std::{
     collections::HashSet,
     time::{Duration, Instant},

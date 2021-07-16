@@ -6,7 +6,6 @@ use crate::TOTAL_TIMEOUT;
 use clarity::Address as EthAddress;
 use deep_space::Contact;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::types::GravityBridgeToolsConfig;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;

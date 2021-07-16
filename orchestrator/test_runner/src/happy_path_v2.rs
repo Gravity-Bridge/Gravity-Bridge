@@ -15,7 +15,6 @@ use ethereum_gravity::{deploy_erc20::deploy_erc20, utils::get_event_nonce};
 use gravity_proto::gravity::{
     query_client::QueryClient as GravityQueryClient, QueryDenomToErc20Request,
 };
-use gravity_utils::types::GravityBridgeToolsConfig;
 use std::time::{Duration, Instant};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;

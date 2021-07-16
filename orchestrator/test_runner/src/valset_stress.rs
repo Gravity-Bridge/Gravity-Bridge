@@ -4,7 +4,6 @@ use crate::utils::start_orchestrators;
 use crate::utils::ValidatorKeys;
 use clarity::Address as EthAddress;
 use deep_space::Contact;
-use gravity_utils::types::GravityBridgeToolsConfig;
 use web30::client::Web3;
 
 pub async fn validator_set_stress_test(
