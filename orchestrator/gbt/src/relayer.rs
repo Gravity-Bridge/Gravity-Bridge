@@ -11,7 +11,12 @@ use relayer::main_loop::LOOP_SPEED;
 use std::path::Path;
 use std::process::exit;
 
-pub async fn relayer(args: RelayerOpts, address_prefix: String, home_dir: &Path, config: &RelayerConfig) {
+pub async fn relayer(
+    args: RelayerOpts,
+    address_prefix: String,
+    home_dir: &Path,
+    config: &RelayerConfig,
+) {
     let cosmos_grpc = args.cosmos_grpc;
     let ethereum_rpc = args.ethereum_rpc;
     let ethereum_key = args.ethereum_key;
