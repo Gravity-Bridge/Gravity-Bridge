@@ -7,11 +7,11 @@ use ethereum_gravity::message_signatures::encode_tx_batch_confirm_hashed;
 use ethereum_gravity::utils::{downcast_to_u128, get_tx_batch_nonce};
 use ethereum_gravity::{one_eth, submit_batch::send_eth_transaction_batch};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::types::Valset;
-use gravity_utils::types::{BatchConfirmResponse, TransactionBatch};
+use gravity_utils::types::{BatchConfirmResponse, RelayerConfig, TransactionBatch, Valset};
 use std::collections::HashMap;
 use std::time::Duration;
 use tonic::transport::Channel;
+use web30::amm::WETH_CONTRACT_ADDRESS;
 use web30::client::Web3;
 
 #[derive(Debug, Clone)]
@@ -20,6 +20,7 @@ struct SubmittableBatch {
     sigs: Vec<BatchConfirmResponse>,
 }
 
+#[allow(clippy::too_many_arguments)]
 /// This function relays batches from Cosmos to Ethereum. First we request
 /// the latest transaction batches, which is a list of the latest 100 batches
 /// of all types. From there we determine which batches are valid to submit as
@@ -36,6 +37,7 @@ pub async fn relay_batches(
     gravity_contract_address: EthAddress,
     gravity_id: String,
     timeout: Duration,
+    config: &RelayerConfig,
 ) {
     let possible_batches =
         get_batches_and_signatures(current_valset.clone(), grpc_client, gravity_id.clone()).await;
@@ -50,6 +52,7 @@ pub async fn relay_batches(
         gravity_id,
         timeout,
         possible_batches,
+        config,
     )
     .await;
 }
@@ -111,6 +114,52 @@ async fn get_batches_and_signatures(
     possible_batches
 }
 
+// Determines whether or not submitting `batch` will be profitable given the estimated `cost`
+// and the current exchange rate available on uniswap
+async fn should_relay_batch(
+    web3: &Web3,
+    batch: &TransactionBatch,
+    cost: Uint256,
+    pubkey: EthAddress,
+) -> bool {
+    let batch_reward_amount = batch.total_fee.amount.clone();
+    let batch_reward_token = batch.total_fee.token_contract_address;
+    // If we're given WETH, we just want to know if the reward covers gas
+    if batch_reward_token == *WETH_CONTRACT_ADDRESS {
+        // TODO: Allow users to specify what sort of margin they want on rewards, to account for
+        return batch_reward_amount > cost;
+    }
+
+    // Otherwise we need to see how much WETH we can get for the reward token amount,
+    // and compare that value to the gas cost
+    // TODO: Allow users to specify what sort of margin they want on rewards, to account for
+    // cost of electricity, etc.
+    let price = web3
+        .get_uniswap_price(
+            pubkey,
+            batch_reward_token,
+            *WETH_CONTRACT_ADDRESS,
+            None,
+            batch_reward_amount.clone(),
+            None,
+            None,
+        )
+        .await;
+    if price.is_err() {
+        info!(
+            "Unable to determine swap price of token {} for WETH due to \
+             communication error {:?} - Will not be relaying batch {:?}",
+            batch_reward_token,
+            price.err(),
+            batch
+        );
+        return false;
+    };
+    let price = price.unwrap();
+    price > cost
+}
+
+#[allow(clippy::too_many_arguments)]
 /// Attempts to submit batches with valid signatures, checking the state
 /// of the Ethereum chain to ensure that it is valid to submit a given batch
 /// more specifically that the correctly signed batch has not timed out or already
@@ -131,6 +180,7 @@ async fn submit_batches(
     gravity_id: String,
     timeout: Duration,
     possible_batches: HashMap<EthAddress, Vec<SubmittableBatch>>,
+    config: &RelayerConfig,
 ) {
     let our_ethereum_address = ethereum_key.to_public_key().unwrap();
     let ethereum_block_height = if let Ok(bn) = web3.eth_block_number().await {
@@ -193,27 +243,47 @@ async fn submit_batches(
                 }
                 let cost = cost.unwrap();
                 info!(
-                "We have detected latest batch {} but latest on Ethereum is {} This batch is estimated to cost {} Gas / {:.4} ETH to submit",
-                latest_cosmos_batch_nonce,
-                latest_ethereum_batch,
-                cost.gas_price.clone(),
-                downcast_to_u128(cost.get_total()).unwrap() as f32
-                    / downcast_to_u128(one_eth()).unwrap() as f32
-            );
+                    "We have detected latest batch {} but latest on Ethereum is {} This batch is estimated to cost {} Gas / {:.4} ETH to submit",
+                    latest_cosmos_batch_nonce,
+                    latest_ethereum_batch,
+                    cost.gas_price.clone(),
+                    downcast_to_u128(cost.get_total()).unwrap() as f32
+                        / downcast_to_u128(one_eth()).unwrap() as f32
+                );
 
-                let res = send_eth_transaction_batch(
-                    current_valset.clone(),
-                    oldest_signed_batch,
-                    &oldest_signatures,
-                    web3,
-                    timeout,
-                    gravity_contract_address,
-                    gravity_id.clone(),
-                    ethereum_key,
-                )
-                .await;
-                if res.is_err() {
-                    info!("Batch submission failed with {:?}", res);
+                // TODO: Convert the other methods to this style
+                let should_relay = if config.batch_market_enabled {
+                    should_relay_batch(
+                        web3,
+                        &oldest_signed_batch,
+                        cost.get_total(),
+                        our_ethereum_address,
+                    )
+                    .await
+                } else {
+                    true
+                };
+
+                if should_relay {
+                    let res = send_eth_transaction_batch(
+                        current_valset.clone(),
+                        oldest_signed_batch,
+                        &oldest_signatures,
+                        web3,
+                        timeout,
+                        gravity_contract_address,
+                        gravity_id.clone(),
+                        ethereum_key,
+                    )
+                    .await;
+                    if res.is_err() {
+                        info!("Batch submission failed with {:?}", res);
+                    }
+                } else {
+                    info!(
+                        "Not relaying batch due to it not being profitable: {:?}",
+                        oldest_signed_batch
+                    );
                 }
             }
         }

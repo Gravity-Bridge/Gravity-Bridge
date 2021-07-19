@@ -36,7 +36,14 @@ pub async fn happy_path_test(
 ) {
     let mut grpc_client = grpc_client;
 
-    start_orchestrators(keys.clone(), gravity_address, validator_out).await;
+    let no_relay_market_config = create_default_test_config();
+    start_orchestrators(
+        keys.clone(),
+        gravity_address,
+        validator_out,
+        no_relay_market_config,
+    )
+    .await;
 
     // bootstrapping tests finish here and we move into operational tests
 
@@ -199,7 +206,7 @@ pub async fn test_valset_update(
 }
 
 /// this function tests Ethereum -> Cosmos
-async fn test_erc20_deposit(
+pub async fn test_erc20_deposit(
     web30: &Web3,
     contact: &Contact,
     dest: CosmosAddress,

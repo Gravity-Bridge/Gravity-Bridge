@@ -8,7 +8,8 @@
     "test": "npx hardhat test --network localhost",
     "typechain": "npx hardhat typechain",
     "compile-deployer": "npx tsc -p . ; pkg dist/contract-deployer.js --targets node10-linux-x64",
-    "evm_fork": "npx hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID} --fork-block-number 11780000",
+    "evm_fork": "npx hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID} --fork-block-number 12782071",
+    "solidity_test_fork": "npx hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID} --fork-block-number 11780000",
     "test_fork": "npx hardhat test --network localhost ./tests_mainnet_fork/*.ts"
   },
   "author": "Jehan Tremback",

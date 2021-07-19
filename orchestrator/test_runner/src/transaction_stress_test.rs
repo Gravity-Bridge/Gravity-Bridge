@@ -35,7 +35,8 @@ pub async fn transaction_stress_test(
     gravity_address: EthAddress,
     erc20_addresses: Vec<EthAddress>,
 ) {
-    start_orchestrators(keys.clone(), gravity_address, false).await;
+    let no_relay_market_config = create_default_test_config();
+    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
     // Generate 100 user keys to send ETH and multiple types of tokens
     let mut user_keys = Vec::new();

@@ -24,6 +24,14 @@ use std::thread;
 use web30::jsonrpc::error::Web3Error;
 use web30::{client::Web3, types::SendTxOption};
 
+pub fn create_default_test_config() -> GravityBridgeToolsConfig {
+    let mut no_relay_market_config = GravityBridgeToolsConfig::default();
+    no_relay_market_config.relayer.batch_market_enabled = false;
+    no_relay_market_config.relayer.valset_market_enabled = false;
+    no_relay_market_config.relayer.logic_call_market_enabled = false;
+    no_relay_market_config
+}
+
 pub async fn send_eth_to_orchestrators(keys: &[ValidatorKeys], web30: &Web3) {
     let balance = web30.eth_get_balance(*MINER_ADDRESS).await.unwrap();
     info!(
@@ -204,6 +212,7 @@ pub async fn start_orchestrators(
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
     validator_out: bool,
+    orchestrator_config: GravityBridgeToolsConfig,
 ) {
     // used to break out of the loop early to simulate one validator
     // not running an Orchestrator
@@ -212,6 +221,7 @@ pub async fn start_orchestrators(
 
     #[allow(clippy::explicit_counter_loop)]
     for k in keys {
+        let config = orchestrator_config.clone();
         info!(
             "Spawning Orchestrator with delegate keys {} {} and validator key {}",
             k.eth_key.to_public_key().unwrap(),
@@ -241,7 +251,7 @@ pub async fn start_orchestrators(
                 grpc_client,
                 gravity_address,
                 get_fee(),
-                GravityBridgeToolsConfig::default(),
+                config,
             );
             let system = System::new();
             system.block_on(fut);

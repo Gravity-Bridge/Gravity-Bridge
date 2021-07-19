@@ -1,5 +1,6 @@
 //! This is the happy path test for Cosmos to Ethereum asset transfers, meaning assets originated on Cosmos
 
+use crate::utils::create_default_test_config;
 use crate::utils::get_user_key;
 use crate::utils::send_one_eth;
 use crate::utils::start_orchestrators;
@@ -189,7 +190,14 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
         ending_event_nonce
     );
 
-    start_orchestrators(keys.clone(), gravity_address, validator_out).await;
+    let no_relay_market_config = create_default_test_config();
+    start_orchestrators(
+        keys.clone(),
+        gravity_address,
+        validator_out,
+        no_relay_market_config,
+    )
+    .await;
 
     let start = Instant::now();
     // the erc20 representing the cosmos asset on Ethereum
