@@ -140,6 +140,14 @@ pub async fn test_valset_update(
     keys: &[ValidatorKeys],
     gravity_address: EthAddress,
 ) {
+    get_valset_nonce(
+        gravity_address,
+        keys[0].eth_key.to_public_key().unwrap(),
+        web30,
+    )
+    .await
+    .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+
     // if we don't do this the orchestrators may run ahead of us and we'll be stuck here after
     // getting credit for two loops when we did one
     let starting_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
@@ -214,6 +222,10 @@ pub async fn test_erc20_deposit(
     erc20_address: EthAddress,
     amount: Uint256,
 ) {
+    get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
+        .await
+        .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+
     let start_coin = check_cosmos_balance("gravity", dest, contact).await;
     info!(
         "Sending to Cosmos from {} to {} with amount {}",
@@ -281,6 +293,10 @@ async fn test_batch(
     dest_cosmos_private_key: CosmosPrivateKey,
     erc20_contract: EthAddress,
 ) {
+    get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
+        .await
+        .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+
     let dest_cosmos_address = dest_cosmos_private_key
         .to_address(&contact.get_prefix())
         .unwrap();

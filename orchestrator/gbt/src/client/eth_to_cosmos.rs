@@ -4,6 +4,7 @@ use crate::args::EthToCosmosOpts;
 use crate::utils::fraction_to_exponent;
 use crate::utils::TIMEOUT;
 use ethereum_gravity::send_to_cosmos::send_to_cosmos;
+use ethereum_gravity::utils::get_valset_nonce;
 use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
 
 pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
@@ -18,6 +19,11 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     let connections = create_rpc_connections(prefix, None, Some(ethereum_rpc), TIMEOUT).await;
 
     let web3 = connections.web3.unwrap();
+
+    get_valset_nonce(gravity_address, ethereum_public_key, &web3)
+        .await
+        .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+
     check_for_eth(ethereum_public_key, &web3).await;
 
     let res = web3

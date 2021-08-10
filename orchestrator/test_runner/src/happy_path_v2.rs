@@ -11,6 +11,7 @@ use clarity::Uint256;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
 use deep_space::coin::Coin;
 use deep_space::Contact;
+use ethereum_gravity::utils::get_valset_nonce;
 use ethereum_gravity::{deploy_erc20::deploy_erc20, utils::get_event_nonce};
 use gravity_proto::gravity::{
     query_client::QueryClient as GravityQueryClient, QueryDenomToErc20Request,
@@ -155,6 +156,14 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
     token_to_send_to_eth: String,
     token_to_send_to_eth_display_name: String,
 ) -> EthAddress {
+    get_valset_nonce(
+        gravity_address,
+        keys[0].eth_key.to_public_key().unwrap(),
+        web30,
+    )
+    .await
+    .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+
     let starting_event_nonce = get_event_nonce(
         gravity_address,
         keys[0].eth_key.to_public_key().unwrap(),
