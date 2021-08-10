@@ -57,10 +57,10 @@ pub async fn happy_path_test(
     // with the first block) is successfully updated
     if !validator_out {
         for _ in 0u32..2 {
-            test_valset_update(&web30, contact, &keys, gravity_address).await;
+            test_valset_update(web30, contact, &keys, gravity_address).await;
         }
     } else {
-        wait_for_nonzero_valset(&web30, gravity_address).await;
+        wait_for_nonzero_valset(web30, gravity_address).await;
     }
 
     // generate an address for coin sending tests, this ensures test imdepotency
@@ -78,8 +78,8 @@ pub async fn happy_path_test(
     // Send a token 3 times
     for _ in 0u32..3 {
         test_erc20_deposit(
-            &web30,
-            &contact,
+            web30,
+            contact,
             dest_cosmos_address,
             gravity_address,
             erc20_address,
@@ -94,7 +94,7 @@ pub async fn happy_path_test(
     // long enough. TODO check for an error on the cosmos send response
     submit_duplicate_erc20_send(
         1u64,
-        &contact,
+        contact,
         erc20_address,
         1u64.into(),
         dest_cosmos_address,
@@ -104,9 +104,9 @@ pub async fn happy_path_test(
 
     // we test a batch by sending a transaction
     test_batch(
-        &contact,
+        contact,
         &mut grpc_client,
-        &web30,
+        web30,
         dest_eth_address,
         gravity_address,
         keys[0].validator_key,
@@ -118,13 +118,13 @@ pub async fn happy_path_test(
 
 pub async fn wait_for_nonzero_valset(web30: &Web3, gravity_address: EthAddress) {
     let start = Instant::now();
-    let mut current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, &web30)
+    let mut current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
         .await
         .expect("Failed to get current eth valset");
 
     while 0 == current_eth_valset_nonce {
         info!("Validator set is not yet updated to 0>, waiting",);
-        current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, &web30)
+        current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
         delay_for(Duration::from_secs(4)).await;
@@ -142,7 +142,7 @@ pub async fn test_valset_update(
 ) {
     // if we don't do this the orchestrators may run ahead of us and we'll be stuck here after
     // getting credit for two loops when we did one
-    let starting_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, &web30)
+    let starting_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
         .await
         .expect("Failed to get starting eth valset");
     let start = Instant::now();
@@ -184,7 +184,7 @@ pub async fn test_valset_update(
         .await
         .unwrap();
 
-    let mut current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, &web30)
+    let mut current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
         .await
         .expect("Failed to get current eth valset");
 
@@ -193,7 +193,7 @@ pub async fn test_valset_update(
             "Validator set is not yet updated to {}>, waiting",
             starting_eth_valset_nonce
         );
-        current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, &web30)
+        current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
         delay_for(Duration::from_secs(4)).await;
@@ -214,7 +214,7 @@ pub async fn test_erc20_deposit(
     erc20_address: EthAddress,
     amount: Uint256,
 ) {
-    let start_coin = check_cosmos_balance("gravity", dest, &contact).await;
+    let start_coin = check_cosmos_balance("gravity", dest, contact).await;
     info!(
         "Sending to Cosmos from {} to {} with amount {}",
         *MINER_ADDRESS, dest, amount
@@ -227,7 +227,7 @@ pub async fn test_erc20_deposit(
         dest,
         *MINER_PRIVATE_KEY,
         Some(TOTAL_TIMEOUT),
-        &web30,
+        web30,
         vec![],
     )
     .await
@@ -238,7 +238,7 @@ pub async fn test_erc20_deposit(
     while Instant::now() - start < TOTAL_TIMEOUT {
         match (
             start_coin.clone(),
-            check_cosmos_balance("gravity", dest, &contact).await,
+            check_cosmos_balance("gravity", dest, contact).await,
         ) {
             (Some(start_coin), Some(end_coin)) => {
                 if start_coin.amount + amount.clone() == end_coin.amount
@@ -284,7 +284,7 @@ async fn test_batch(
     let dest_cosmos_address = dest_cosmos_private_key
         .to_address(&contact.get_prefix())
         .unwrap();
-    let coin = check_cosmos_balance("gravity", dest_cosmos_address, &contact)
+    let coin = check_cosmos_balance("gravity", dest_cosmos_address, contact)
         .await
         .unwrap();
     let token_name = coin.denom;
@@ -308,7 +308,7 @@ async fn test_batch(
         },
         bridge_denom_fee.clone(),
         bridge_denom_fee.clone(),
-        &contact,
+        contact,
     )
     .await
     .unwrap();
@@ -319,7 +319,7 @@ async fn test_batch(
         requester_cosmos_private_key,
         token_name.clone(),
         get_fee(),
-        &contact,
+        contact,
     )
     .await
     .unwrap();
@@ -333,7 +333,7 @@ async fn test_batch(
         .expect("Failed to get batch to sign");
 
     let mut current_eth_batch_nonce =
-        get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, &web30)
+        get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
     let starting_batch_nonce = current_eth_batch_nonce;
@@ -345,7 +345,7 @@ async fn test_batch(
             starting_batch_nonce
         );
         current_eth_batch_nonce =
-            get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, &web30)
+            get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
                 .await
                 .expect("Failed to get current eth tx batch nonce");
         delay_for(Duration::from_secs(4)).await;
@@ -396,7 +396,7 @@ async fn submit_duplicate_erc20_send(
     receiver: CosmosAddress,
     keys: &[ValidatorKeys],
 ) {
-    let start_coin = check_cosmos_balance("gravity", receiver, &contact)
+    let start_coin = check_cosmos_balance("gravity", receiver, contact)
         .await
         .expect("Did not find coins!");
 
@@ -431,7 +431,7 @@ async fn submit_duplicate_erc20_send(
         trace!("Submitted duplicate sendToCosmos event: {:?}", res);
     }
 
-    if let Some(end_coin) = check_cosmos_balance("gravity", receiver, &contact).await {
+    if let Some(end_coin) = check_cosmos_balance("gravity", receiver, contact).await {
         if start_coin.amount == end_coin.amount && start_coin.denom == end_coin.denom {
             info!("Successfully failed to duplicate ERC20!");
         } else {

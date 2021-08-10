@@ -35,7 +35,7 @@ pub async fn send_eth_transaction_batch(
         gravity_contract_address,
         batch.token_contract,
         eth_address,
-        &web3,
+        web3,
     )
     .await?;
     let current_block_height = web3.eth_block_number().await?;
@@ -73,7 +73,7 @@ pub async fn send_eth_transaction_batch(
         gravity_contract_address,
         batch.token_contract,
         eth_address,
-        &web3,
+        web3,
     )
     .await?;
     if last_nonce != new_batch_nonce {

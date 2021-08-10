@@ -33,7 +33,7 @@ pub async fn send_eth_logic_call(
         gravity_contract_address,
         call.invalidation_id.clone(),
         eth_address,
-        &web3,
+        web3,
     )
     .await?;
     let current_block_height = web3.eth_block_number().await?;
@@ -71,7 +71,7 @@ pub async fn send_eth_logic_call(
         gravity_contract_address,
         call.invalidation_id,
         eth_address,
-        &web3,
+        web3,
     )
     .await?;
     if last_nonce != new_call_nonce {

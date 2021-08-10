@@ -117,7 +117,7 @@ pub async fn create_rpc_connections(
             .unwrap_or_else(|_| panic!("Invalid Ethereum RPC url {}", eth_rpc_url));
         check_scheme(&url, &eth_rpc_url);
         let eth_url = eth_rpc_url.trim_end_matches('/');
-        let base_web30 = Web3::new(&eth_url, timeout);
+        let base_web30 = Web3::new(eth_url, timeout);
         let try_base = base_web30.eth_block_number().await;
         match try_base {
             // it worked, lets go!

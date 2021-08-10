@@ -107,8 +107,8 @@ async fn test_good_batch(
     // Send the generated address 300 dai from ethereum to cosmos
     for _ in 0u32..3 {
         test_erc20_deposit(
-            &web30,
-            &contact,
+            web30,
+            contact,
             dest_cosmos_address,
             gravity_address,
             erc20_contract,
@@ -123,15 +123,15 @@ async fn test_good_batch(
         .to_address(&contact.get_prefix())
         .unwrap();
     test_erc20_deposit(
-        &web30,
-        &contact,
+        web30,
+        contact,
         requester_address,
         gravity_address,
         erc20_contract,
         one_eth() * 100u64.into(),
     )
     .await;
-    let cdai_held = check_cosmos_balance("gravity", dest_cosmos_address, &contact)
+    let cdai_held = check_cosmos_balance("gravity", dest_cosmos_address, contact)
         .await
         .unwrap();
     let cdai_name = cdai_held.denom;
@@ -160,7 +160,7 @@ async fn test_good_batch(
         },
         bridge_denom_fee.clone(),
         bridge_denom_fee.clone(),
-        &contact,
+        contact,
     )
     .await
     .unwrap();
@@ -175,7 +175,7 @@ async fn test_good_batch(
         requester_cosmos_private_key,
         request_batch_fee.denom.clone(),
         request_batch_fee,
-        &contact,
+        contact,
     )
     .await
     .unwrap();
@@ -187,7 +187,7 @@ async fn test_good_batch(
         .expect("Failed to get batch to sign");
 
     let mut current_eth_batch_nonce =
-        get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, &web30)
+        get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
     let starting_batch_nonce = current_eth_batch_nonce;
@@ -199,7 +199,7 @@ async fn test_good_batch(
             starting_batch_nonce
         );
         current_eth_batch_nonce =
-            get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, &web30)
+            get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
                 .await
                 .expect("Failed to get current eth tx batch nonce");
         delay_for(Duration::from_secs(4)).await;

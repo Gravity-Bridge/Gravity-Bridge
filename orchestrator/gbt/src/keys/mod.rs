@@ -8,7 +8,7 @@ use deep_space::PrivateKey;
 use std::{path::Path, process::exit};
 
 pub fn show_keys(home_dir: &Path, prefix: &str) {
-    if !config_exists(&home_dir) {
+    if !config_exists(home_dir) {
         error!("Please run `gbt init` before running this command!");
         exit(1);
     }
@@ -32,7 +32,7 @@ pub fn show_keys(home_dir: &Path, prefix: &str) {
 }
 
 pub fn set_eth_key(home_dir: &Path, opts: SetEthereumKeyOpts) {
-    if !config_exists(&home_dir) {
+    if !config_exists(home_dir) {
         error!("Please run `gbt init` before running this command!");
         exit(1);
     }
@@ -43,7 +43,7 @@ pub fn set_eth_key(home_dir: &Path, opts: SetEthereumKeyOpts) {
 }
 
 pub fn set_orchestrator_key(home_dir: &Path, opts: SetOrchestratorKeyOpts) {
-    if !config_exists(&home_dir) {
+    if !config_exists(home_dir) {
         error!("Please run `gbt init` before running this command!");
         exit(1);
     }
