@@ -191,7 +191,7 @@ pub async fn main() {
             return;
         } else if test_type == "VALSET_STRESS" {
             info!("Starting Valset update stress test");
-            validator_set_stress_test(&web30, &contact, keys, gravity_address).await;
+            validator_set_stress_test(&web30, grpc_client, &contact, keys, gravity_address).await;
             return;
         } else if test_type == "VALSET_REWARDS" {
             info!("Starting Valset rewards test");

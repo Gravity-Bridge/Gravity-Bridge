@@ -11,7 +11,7 @@ use crate::{one_eth, MINER_ADDRESS};
 use crate::{ADDRESS_PREFIX, OPERATION_TIMEOUT};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
-use cosmos_gravity::send::send_to_eth;
+use cosmos_gravity::send::{send_to_eth, TIMEOUT};
 use cosmos_gravity::{query::get_oldest_unsigned_transaction_batch, send::send_request_batch};
 use deep_space::coin::Coin;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
@@ -73,7 +73,9 @@ async fn setup_batch_test(
     gravity_address: EthAddress,
     erc20_contract: EthAddress,
     bridge_fee_amount: Uint256,
+    grpc_client: &mut GravityQueryClient<Channel>,
 ) -> (Coin, Uint256, CosmosPrivateKey, Address, EthAddress) {
+    let mut grpc_client = grpc_client.clone();
     // Acquire 10,000 WETH
     let weth_acquired = web30
         .wrap_eth(one_eth() * 10000u16.into(), *MINER_PRIVATE_KEY, None)
@@ -118,6 +120,7 @@ async fn setup_batch_test(
         test_erc20_deposit(
             web30,
             contact,
+            &mut grpc_client,
             dest_cosmos_address,
             gravity_address,
             erc20_contract,
@@ -134,6 +137,7 @@ async fn setup_batch_test(
     test_erc20_deposit(
         web30,
         contact,
+        &mut grpc_client,
         requester_address,
         gravity_address,
         erc20_contract,
@@ -187,7 +191,7 @@ async fn wait_for_batch(
     expect_batch: bool,
     web30: &Web3,
     contact: &Contact,
-    grpc_client: &mut GravityQueryClient<Channel>,
+    mut grpc_client: &mut GravityQueryClient<Channel>,
     requester_address: Address,
     erc20_contract: EthAddress,
     gravity_address: EthAddress,
@@ -197,9 +201,13 @@ async fn wait_for_batch(
         .await
         .unwrap();
 
-    get_oldest_unsigned_transaction_batch(grpc_client, requester_address, contact.get_prefix())
-        .await
-        .expect("Failed to get batch to sign");
+    get_oldest_unsigned_transaction_batch(
+        &mut grpc_client,
+        requester_address,
+        contact.get_prefix(),
+    )
+    .await
+    .expect("Failed to get batch to sign");
 
     let mut current_eth_batch_nonce =
         get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
@@ -253,6 +261,7 @@ async fn test_good_batch(
             gravity_address,
             erc20_contract,
             bridge_fee_amount,
+            grpc_client,
         )
         .await;
 
@@ -267,6 +276,7 @@ async fn test_good_batch(
         request_batch_fee.denom.clone(),
         request_batch_fee,
         contact,
+        Some(TIMEOUT),
     )
     .await
     .unwrap();
@@ -334,6 +344,7 @@ async fn test_bad_batch(
             gravity_address,
             erc20_contract,
             bridge_fee_amount,
+            grpc_client,
         )
         .await;
 
@@ -348,6 +359,7 @@ async fn test_bad_batch(
         request_batch_fee.denom.clone(),
         request_batch_fee,
         contact,
+        Some(TIMEOUT),
     )
     .await
     .unwrap();

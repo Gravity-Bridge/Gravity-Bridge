@@ -20,6 +20,8 @@ var _ types.QueryServer = Keeper{
 	AttestationHandler: nil,
 }
 
+const QUERY_ATTESTATIONS_LIMIT uint64 = 1000
+
 // Params queries the params of the gravity module
 func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	var params types.Params
@@ -268,6 +270,20 @@ func (k Keeper) ERC20ToDenom(
 	ret.CosmosOriginated = cosmosOriginated
 
 	return &ret, nil
+}
+
+// GetAttestations queries the attestation map
+func (k Keeper) GetAttestations(
+	c context.Context,
+	req *types.QueryAttestationsRequest) (*types.QueryAttestationsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	limit := req.Limit
+	if limit > QUERY_ATTESTATIONS_LIMIT {
+		limit = QUERY_ATTESTATIONS_LIMIT
+	}
+	attestations := k.GetMostRecentAttestations(ctx, limit)
+
+	return &types.QueryAttestationsResponse{Attestations: attestations}, nil
 }
 
 func (k Keeper) GetDelegateKeyByValidator(

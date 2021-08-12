@@ -430,6 +430,7 @@ pub async fn send_request_batch(
     denom: String,
     fee: Coin,
     contact: &Contact,
+    timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
 
@@ -456,5 +457,8 @@ pub async fn send_request_batch(
         .send_transaction(msg_bytes, BroadcastMode::Sync)
         .await?;
 
-    contact.wait_for_tx(response, TIMEOUT).await
+    match timeout {
+        Some(duration) => contact.wait_for_tx(response, duration).await,
+        None => Ok(response),
+    }
 }
