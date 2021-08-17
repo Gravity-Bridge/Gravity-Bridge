@@ -5,17 +5,17 @@ use std::time::{Duration, Instant};
 
 use crate::happy_path::test_erc20_deposit;
 use crate::utils::{check_cosmos_balance, send_one_eth, start_orchestrators, ValidatorKeys};
-use crate::ADDRESS_PREFIX;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_ADDRESS};
-use clarity::Address as EthAddress;
+use crate::{ADDRESS_PREFIX, OPERATION_TIMEOUT};
 use clarity::PrivateKey as EthPrivateKey;
+use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::send::send_to_eth;
 use cosmos_gravity::{query::get_oldest_unsigned_transaction_batch, send::send_request_batch};
 use deep_space::coin::Coin;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
-use deep_space::Contact;
+use deep_space::{Address, Contact};
 use ethereum_gravity::utils::get_tx_batch_nonce;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
@@ -50,21 +50,30 @@ async fn test_batches(
         web30,
         grpc_client,
         contact,
-        keys,
+        keys.clone(),
         gravity_address,
         *DAI_CONTRACT_ADDRESS,
     )
-    .await
+    .await;
+    test_bad_batch(
+        web30,
+        grpc_client,
+        contact,
+        keys.clone(),
+        gravity_address,
+        *DAI_CONTRACT_ADDRESS,
+    )
+    .await;
 }
 
-async fn test_good_batch(
+async fn setup_batch_test(
     web30: &Web3,
-    grpc_client: &mut GravityQueryClient<Channel>,
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
     erc20_contract: EthAddress,
-) {
+    bridge_fee_amount: Uint256,
+) -> (Coin, Uint256, CosmosPrivateKey, Address, EthAddress) {
     // Acquire 10,000 WETH
     let weth_acquired = web30
         .wrap_eth(one_eth() * 10000u16.into(), *MINER_PRIVATE_KEY, None)
@@ -134,16 +143,16 @@ async fn test_good_batch(
     let cdai_held = check_cosmos_balance("gravity", dest_cosmos_address, contact)
         .await
         .unwrap();
-    let cdai_name = cdai_held.denom;
-    let cdai_amount = cdai_held.amount;
+    let cdai_name = cdai_held.denom.clone();
+    let cdai_amount = cdai_held.amount.clone();
     info!(
         "generated address' cosmos balance of {} is {}",
         cdai_name, cdai_amount
     );
 
     let bridge_denom_fee = Coin {
+        amount: bridge_fee_amount,
         denom: cdai_name.clone(),
-        amount: one_eth() * 10u8.into(),
     };
     info!("bridge_denom_fee {:?}", bridge_denom_fee);
     let send_amount = one_eth() * 200u8.into();
@@ -165,22 +174,28 @@ async fn test_good_batch(
     .await
     .unwrap();
     info!("Sent tokens to Ethereum with {:?}", res);
-    info!("Requesting transaction batch");
-    let request_batch_fee = Coin {
-        denom: cdai_name.clone(),
-        amount: one_eth() * 20u64.into(),
-    };
-
-    send_request_batch(
+    (
+        cdai_held.clone(),
+        send_amount,
         requester_cosmos_private_key,
-        request_batch_fee.denom.clone(),
-        request_batch_fee,
-        contact,
+        requester_address,
+        dest_eth_address,
     )
-    .await
-    .unwrap();
+}
 
-    contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
+async fn wait_for_batch(
+    expect_batch: bool,
+    web30: &Web3,
+    contact: &Contact,
+    grpc_client: &mut GravityQueryClient<Channel>,
+    requester_address: Address,
+    erc20_contract: EthAddress,
+    gravity_address: EthAddress,
+) -> u64 {
+    contact
+        .wait_for_next_block(OPERATION_TIMEOUT)
+        .await
+        .unwrap();
 
     get_oldest_unsigned_transaction_batch(grpc_client, requester_address, contact.get_prefix())
         .await
@@ -203,10 +218,69 @@ async fn test_good_batch(
                 .await
                 .expect("Failed to get current eth tx batch nonce");
         delay_for(Duration::from_secs(4)).await;
-        if Instant::now() - start > TOTAL_TIMEOUT {
-            panic!("Failed to submit transaction batch set");
+        if Instant::now() - start > OPERATION_TIMEOUT {
+            if expect_batch {
+                panic!("Failed to submit transaction batch set");
+            } else {
+                break;
+            }
         }
     }
+    if !expect_batch && starting_batch_nonce != current_eth_batch_nonce {
+        panic!(
+            "Expected to not have a batch update, but observed nonce {} change to {}",
+            starting_batch_nonce, current_eth_batch_nonce
+        );
+    }
+
+    current_eth_batch_nonce
+}
+
+async fn test_good_batch(
+    web30: &Web3,
+    grpc_client: &mut GravityQueryClient<Channel>,
+    contact: &Contact,
+    keys: Vec<ValidatorKeys>,
+    gravity_address: EthAddress,
+    erc20_contract: EthAddress,
+) {
+    let bridge_fee_amount = one_eth() * 10u8.into();
+    let (cdai_held, send_amount, requester_cosmos_private_key, requester_address, dest_eth_address) =
+        setup_batch_test(
+            web30,
+            contact,
+            keys,
+            gravity_address,
+            erc20_contract,
+            bridge_fee_amount,
+        )
+        .await;
+
+    info!("Requesting transaction batch for 20 CosmosDai");
+    let request_batch_fee = Coin {
+        denom: cdai_held.denom.clone(),
+        amount: one_eth() * 20u64.into(),
+    };
+
+    send_request_batch(
+        requester_cosmos_private_key,
+        request_batch_fee.denom.clone(),
+        request_batch_fee,
+        contact,
+    )
+    .await
+    .unwrap();
+
+    let current_eth_batch_nonce = wait_for_batch(
+        true,
+        web30,
+        contact,
+        grpc_client,
+        requester_address,
+        erc20_contract,
+        gravity_address,
+    )
+    .await;
 
     let txid = web30
         .send_transaction(
@@ -236,8 +310,73 @@ async fn test_good_batch(
         "destination eth balance {} != {}",
         dest_eth_bal, send_amount,
     );
+
     info!(
         "Successfully updated txbatch nonce to {} and sent {}{} tokens to Ethereum!",
-        current_eth_batch_nonce, cdai_amount, cdai_name
+        current_eth_batch_nonce, cdai_held.amount, cdai_held.denom
+    );
+}
+
+async fn test_bad_batch(
+    web30: &Web3,
+    grpc_client: &mut GravityQueryClient<Channel>,
+    contact: &Contact,
+    keys: Vec<ValidatorKeys>,
+    gravity_address: EthAddress,
+    erc20_contract: EthAddress,
+) {
+    let bridge_fee_amount: Uint256 = 2500u32.into();
+    let (cdai_held, send_amount, requester_cosmos_private_key, requester_address, dest_eth_address) =
+        setup_batch_test(
+            web30,
+            contact,
+            keys,
+            gravity_address,
+            erc20_contract,
+            bridge_fee_amount,
+        )
+        .await;
+
+    info!("Requesting transaction batch for very little CosmosDAI");
+    let request_batch_fee = Coin {
+        denom: cdai_held.denom.clone(),
+        amount: 2_500u64.into(), // approximately 1 ETH wei in DAI
+    };
+
+    send_request_batch(
+        requester_cosmos_private_key,
+        request_batch_fee.denom.clone(),
+        request_batch_fee,
+        contact,
+    )
+    .await
+    .unwrap();
+
+    let current_eth_batch_nonce = wait_for_batch(
+        false,
+        web30,
+        contact,
+        grpc_client,
+        requester_address,
+        erc20_contract,
+        gravity_address,
+    )
+    .await;
+
+    // we have to send this address one eth so that it can perform contract calls
+    send_one_eth(dest_eth_address, web30).await;
+    let dest_eth_bal = web30
+        .get_erc20_balance(erc20_contract, dest_eth_address)
+        .await
+        .unwrap();
+
+    assert_ne!(
+        dest_eth_bal, send_amount,
+        "destination eth balance {} == {}",
+        dest_eth_bal, send_amount,
+    );
+    info!(
+        "Successfully updated txbatch nonce to {} and sent {}{} tokens to Ethereum!",
+        current_eth_batch_nonce, cdai_held.amount, cdai_held.denom
     );
 }
