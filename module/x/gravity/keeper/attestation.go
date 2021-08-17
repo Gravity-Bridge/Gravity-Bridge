@@ -39,6 +39,7 @@ func (k Keeper) Attest(
 	if att == nil {
 		att = &types.Attestation{
 			Observed: false,
+			Votes:    []string{},
 			Height:   uint64(ctx.BlockHeight()),
 			Claim:    anyClaim,
 		}
@@ -198,7 +199,18 @@ func (k Keeper) IterateAttestaions(ctx sdk.Context, cb func([]byte, types.Attest
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		att := types.Attestation{}
+		att := types.Attestation{
+			Observed: false,
+			Votes:    []string{},
+			Height:   0,
+			Claim: &codectypes.Any{
+				TypeUrl:              "",
+				Value:                []byte{},
+				XXX_NoUnkeyedLiteral: struct{}{},
+				XXX_unrecognized:     []byte{},
+				XXX_sizecache:        0,
+			},
+		}
 		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &att)
 		// cb returns true to stop early
 		if cb(iter.Key(), att) {
@@ -230,7 +242,10 @@ func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastOb
 			EthereumBlockHeight: 0,
 		}
 	}
-	height := types.LastObservedEthereumBlockHeight{}
+	height := types.LastObservedEthereumBlockHeight{
+		CosmosBlockHeight:   0,
+		EthereumBlockHeight: 0,
+	}
 	k.cdc.MustUnmarshalBinaryBare(bytes, &height)
 	return height
 }
@@ -256,7 +271,13 @@ func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 	if len(bytes) == 0 {
 		return nil
 	}
-	valset := types.Valset{}
+	valset := types.Valset{
+		Nonce:        0,
+		Members:      []*types.BridgeValidator{},
+		Height:       0,
+		RewardAmount: sdk.Int{},
+		RewardToken:  "",
+	}
 	k.cdc.MustUnmarshalBinaryBare(bytes, &valset)
 	return &valset
 }

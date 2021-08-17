@@ -283,7 +283,12 @@ func (k Keeper) GetValsetConfirm(ctx sdk.Context, nonce uint64, validator sdk.Ac
 	if entity == nil {
 		return nil
 	}
-	confirm := types.MsgValsetConfirm{}
+	confirm := types.MsgValsetConfirm{
+		Nonce:        nonce,
+		Orchestrator: "",
+		EthAddress:   "",
+		Signature:    "",
+	}
 	k.cdc.MustUnmarshalBinaryBare(entity, &confirm)
 	return &confirm
 }
@@ -309,7 +314,12 @@ func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []*ty
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		confirm := types.MsgValsetConfirm{}
+		confirm := types.MsgValsetConfirm{
+			Nonce:        nonce,
+			Orchestrator: "",
+			EthAddress:   "",
+			Signature:    "",
+		}
 		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &confirm)
 		confirms = append(confirms, &confirm)
 	}
@@ -324,7 +334,12 @@ func (k Keeper) IterateValsetConfirmByNonce(ctx sdk.Context, nonce uint64, cb fu
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		confirm := types.MsgValsetConfirm{}
+		confirm := types.MsgValsetConfirm{
+			Nonce:        nonce,
+			Orchestrator: "",
+			EthAddress:   "",
+			Signature:    "",
+		}
 		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &confirm)
 		// cb returns true to stop early
 		if cb(iter.Key(), confirm) {

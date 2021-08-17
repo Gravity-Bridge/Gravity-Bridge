@@ -67,7 +67,27 @@ var (
 	ParamStoreValsetRewardAmount = []byte("ValsetReward")
 
 	// Ensure that params implements the proper interface
-	_ paramtypes.ParamSet = &Params{}
+	_ paramtypes.ParamSet = &Params{
+		GravityId:                    "",
+		ContractSourceHash:           "",
+		BridgeEthereumAddress:        "",
+		BridgeChainId:                0,
+		SignedValsetsWindow:          0,
+		SignedBatchesWindow:          0,
+		SignedLogicCallsWindow:       0,
+		TargetBatchTimeout:           0,
+		AverageBlockTime:             0,
+		AverageEthereumBlockTime:     0,
+		SlashFractionValset:          sdk.Dec{},
+		SlashFractionBatch:           sdk.Dec{},
+		SlashFractionLogicCall:       sdk.Dec{},
+		UnbondSlashingValsetsWindow:  0,
+		SlashFractionBadEthSignature: sdk.Dec{},
+		ValsetReward: sdk.Coin{
+			Denom:  "",
+			Amount: sdk.Int{},
+		},
+	}
 )
 
 // ValidateBasic validates genesis state by looping through the params and
@@ -83,7 +103,18 @@ func (s GenesisState) ValidateBasic() error {
 // TODO: set some better defaults here
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		Params: DefaultParams(),
+		Params:             DefaultParams(),
+		LastObservedNonce:  0,
+		Valsets:            []*Valset{},
+		ValsetConfirms:     []*MsgValsetConfirm{},
+		Batches:            []*OutgoingTxBatch{},
+		BatchConfirms:      []MsgConfirmBatch{},
+		LogicCalls:         []*OutgoingLogicCall{},
+		LogicCallConfirms:  []MsgConfirmLogicCall{},
+		Attestations:       []Attestation{},
+		DelegateKeys:       []*MsgSetOrchestratorAddress{},
+		Erc20ToDenoms:      []*ERC20ToDenom{},
+		UnbatchedTransfers: []*OutgoingTransferTx{},
 	}
 }
 
@@ -91,6 +122,9 @@ func DefaultGenesisState() *GenesisState {
 func DefaultParams() *Params {
 	return &Params{
 		GravityId:                    "defaultgravityid",
+		ContractSourceHash:           "",
+		BridgeEthereumAddress:        "",
+		BridgeChainId:                0,
 		SignedValsetsWindow:          10000,
 		SignedBatchesWindow:          10000,
 		SignedLogicCallsWindow:       10000,
@@ -100,13 +134,9 @@ func DefaultParams() *Params {
 		SlashFractionValset:          sdk.NewDec(1).Quo(sdk.NewDec(1000)),
 		SlashFractionBatch:           sdk.NewDec(1).Quo(sdk.NewDec(1000)),
 		SlashFractionLogicCall:       sdk.NewDec(1).Quo(sdk.NewDec(1000)),
-		SlashFractionBadEthSignature: sdk.NewDec(1).Quo(sdk.NewDec(1000)),
 		UnbondSlashingValsetsWindow:  10000,
-		// this coin is invalid, we use that as the 'no reward' state
-		ValsetReward: sdk.Coin{
-			Denom:  "",
-			Amount: sdk.ZeroInt(),
-		},
+		SlashFractionBadEthSignature: sdk.NewDec(1).Quo(sdk.NewDec(1000)),
+		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 	}
 }
 
@@ -166,7 +196,27 @@ func (p Params) ValidateBasic() error {
 
 // ParamKeyTable for auth module
 func ParamKeyTable() paramtypes.KeyTable {
-	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{
+		GravityId:                    "",
+		ContractSourceHash:           "",
+		BridgeEthereumAddress:        "",
+		BridgeChainId:                0,
+		SignedValsetsWindow:          0,
+		SignedBatchesWindow:          0,
+		SignedLogicCallsWindow:       0,
+		TargetBatchTimeout:           0,
+		AverageBlockTime:             0,
+		AverageEthereumBlockTime:     0,
+		SlashFractionValset:          sdk.Dec{},
+		SlashFractionBatch:           sdk.Dec{},
+		SlashFractionLogicCall:       sdk.Dec{},
+		UnbondSlashingValsetsWindow:  0,
+		SlashFractionBadEthSignature: sdk.Dec{},
+		ValsetReward: sdk.Coin{
+			Denom:  "",
+			Amount: sdk.Int{},
+		},
+	})
 }
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs

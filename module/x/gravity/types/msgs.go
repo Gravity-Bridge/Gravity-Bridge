@@ -9,6 +9,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
+//nolint: exhaustivestruct
 var (
 	_ sdk.Msg = &MsgSetOrchestratorAddress{}
 	_ sdk.Msg = &MsgValsetConfirm{}
@@ -176,6 +177,7 @@ func (msg MsgSendToEth) GetSigners() []sdk.AccAddress {
 func NewMsgRequestBatch(orchestrator sdk.AccAddress) *MsgRequestBatch {
 	return &MsgRequestBatch{
 		Sender: orchestrator.String(),
+		Denom:  "",
 	}
 }
 
@@ -310,6 +312,7 @@ type EthereumClaim interface {
 	ClaimHash() []byte
 }
 
+//nolint: exhaustivestruct
 var (
 	_ EthereumClaim = &MsgSendToCosmosClaim{}
 	_ EthereumClaim = &MsgBatchSendToEthClaim{}

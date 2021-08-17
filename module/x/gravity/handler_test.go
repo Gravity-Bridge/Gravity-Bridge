@@ -13,6 +13,7 @@ import (
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
 
+//nolint: exhaustivestruct
 func TestHandleMsgSendToEth(t *testing.T) {
 	var (
 		userCosmosAddr, _               = sdk.AccAddressFromBech32("cosmos1990z7dqsvh8gthw9pa5sn4wuy2xrsd80mg5z6y")
@@ -75,6 +76,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	assert.Equal(t, sdk.Coins{sdk.NewCoin(denom, finalAmount3)}, balance4)
 }
 
+//nolint: exhaustivestruct
 func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
 	var (
 		myOrchestratorAddr sdk.AccAddress = make([]byte, sdk.AddrLen)
@@ -170,6 +172,7 @@ func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
 	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountB)}, balance)
 }
 
+//nolint: exhaustivestruct
 func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 	var (
 		orchestratorAddr1, _ = sdk.AccAddressFromBech32("cosmos1dg55rtevlfxh46w88yjpdd08sqhh5cc3xhkcej")
@@ -261,6 +264,7 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 	assert.Equal(t, sdk.Coins{sdk.NewInt64Coin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", 12)}, balance3)
 }
 
+//nolint: exhaustivestruct
 func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	var (
 		ethAddress                    = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"

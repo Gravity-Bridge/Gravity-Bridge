@@ -14,6 +14,7 @@ func init() {
 	RegisterCodec(ModuleCdc)
 }
 
+//nolint: exhaustivestruct
 // RegisterInterfaces registers the interfaces for the proto stuff
 func RegisterInterfaces(registry types.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
@@ -45,6 +46,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
 
+//nolint: exhaustivestruct
 // RegisterCodec registers concrete types on the Amino codec
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterInterface((*EthereumClaim)(nil), nil)

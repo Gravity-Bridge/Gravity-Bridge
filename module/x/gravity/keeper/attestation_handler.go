@@ -120,6 +120,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		a.keeper.SetLastObservedValset(ctx, types.Valset{
 			Nonce:        claim.ValsetNonce,
 			Members:      claim.Members,
+			Height:       0,
 			RewardAmount: claim.RewardAmount,
 			RewardToken:  claim.RewardToken,
 		})

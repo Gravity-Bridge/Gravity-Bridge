@@ -9,12 +9,14 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/spf13/cobra"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
@@ -44,6 +46,7 @@ var (
 
 // get cmd to initialize all files for tendermint testnet and application
 func testnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "testnet",
 		Short: "Initialize files for a simapp testnet",
@@ -295,9 +298,30 @@ func initGenFiles(
 	}
 
 	genDoc := types.GenesisDoc{
-		ChainID:    chainID,
-		AppState:   appGenStateJSON,
+		GenesisTime:   time.Time{},
+		ChainID:       chainID,
+		InitialHeight: 0,
+		ConsensusParams: &tmproto.ConsensusParams{
+			Block: tmproto.BlockParams{
+				MaxBytes:   0,
+				MaxGas:     0,
+				TimeIotaMs: 0,
+			},
+			Evidence: tmproto.EvidenceParams{
+				MaxAgeNumBlocks: 0,
+				MaxAgeDuration:  0,
+				MaxBytes:        0,
+			},
+			Validator: tmproto.ValidatorParams{
+				PubKeyTypes: []string{},
+			},
+			Version: tmproto.VersionParams{
+				AppVersion: 0,
+			},
+		},
 		Validators: nil,
+		AppHash:    []byte{},
+		AppState:   appGenStateJSON,
 	}
 
 	// generate empty genesis files for each validator and save

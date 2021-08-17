@@ -12,6 +12,7 @@ import (
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
 
+//nolint: exhaustivestruct
 func TestBatches(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -194,6 +195,7 @@ func TestBatches(t *testing.T) {
 
 // tests that batches work with large token amounts, mostly a duplicate of the above
 // tests but using much bigger numbers
+//nolint: exhaustivestruct
 func TestBatchesFullCoins(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -379,6 +381,7 @@ func TestBatchesFullCoins(t *testing.T) {
 
 // TestManyBatches handles test cases around batch execution, specifically executing multiple batches
 // out of sequential order, which is exactly what happens on the
+//nolint: exhaustivestruct
 func TestManyBatches(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -455,6 +458,7 @@ func TestManyBatches(t *testing.T) {
 	}
 }
 
+//nolint: exhaustivestruct
 func TestPoolTxRefund(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context

@@ -177,6 +177,7 @@ func TestBatchSlashing(t *testing.T) {
 	// First store a batch
 	batch := &types.OutgoingTxBatch{
 		BatchNonce:    1,
+		BatchTimeout:  0,
 		Transactions:  []*types.OutgoingTransferTx{},
 		TokenContract: keeper.TokenContractAddrs[0],
 		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
@@ -192,7 +193,14 @@ func TestBatchSlashing(t *testing.T) {
 			// don't sign with 2nd validator. set val bond height > batch block height
 			validator := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[i])
 			valConsAddr, _ := validator.GetConsAddr()
-			valSigningInfo := slashingtypes.ValidatorSigningInfo{StartHeight: int64(batch.Block + 1)}
+			valSigningInfo := slashingtypes.ValidatorSigningInfo{
+				Address:             "",
+				StartHeight:         int64(batch.Block + 1),
+				IndexOffset:         0,
+				JailedUntil:         time.Time{},
+				Tombstoned:          false,
+				MissedBlocksCounter: 0,
+			}
 			input.SlashingKeeper.SetValidatorSigningInfo(ctx, valConsAddr, valSigningInfo)
 			continue
 		}
@@ -201,6 +209,7 @@ func TestBatchSlashing(t *testing.T) {
 			TokenContract: keeper.TokenContractAddrs[0],
 			EthSigner:     keeper.EthAddrs[i].String(),
 			Orchestrator:  val.String(),
+			Signature:     "",
 		})
 	}
 

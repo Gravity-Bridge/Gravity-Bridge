@@ -37,12 +37,13 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace para
 	}
 
 	k := Keeper{
-		cdc:            cdc,
-		paramSpace:     paramSpace,
-		storeKey:       storeKey,
-		StakingKeeper:  stakingKeeper,
-		bankKeeper:     bankKeeper,
-		SlashingKeeper: slashingKeeper,
+		StakingKeeper:      stakingKeeper,
+		storeKey:           storeKey,
+		paramSpace:         paramSpace,
+		cdc:                cdc,
+		bankKeeper:         bankKeeper,
+		SlashingKeeper:     slashingKeeper,
+		AttestationHandler: nil,
 	}
 	k.AttestationHandler = AttestationHandler{
 		keeper:     k,
@@ -274,7 +275,9 @@ func prefixRange(prefix []byte) ([]byte, []byte) {
 // DeserializeValidatorIterator returns validators from the validator iterator.
 // Adding here in gravity keeper as cdc is not available inside endblocker.
 func (k Keeper) DeserializeValidatorIterator(vals []byte) stakingtypes.ValAddresses {
-	validators := stakingtypes.ValAddresses{}
+	validators := stakingtypes.ValAddresses{
+		Addresses: []string{},
+	}
 	k.cdc.MustUnmarshalBinaryBare(vals, &validators)
 	return validators
 }

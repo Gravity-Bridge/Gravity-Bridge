@@ -521,7 +521,10 @@ func queryPendingSendToEth(ctx sdk.Context, senderAddr string, k Keeper) ([]byte
 	batches := k.GetOutgoingTxBatches(ctx)
 	unbatched_tx := k.GetPoolTransactions(ctx)
 	sender_address := senderAddr
-	res := types.QueryPendingSendToEthResponse{}
+	res := types.QueryPendingSendToEthResponse{
+		TransfersInBatches: []*types.OutgoingTransferTx{},
+		UnbatchedTransfers: []*types.OutgoingTransferTx{},
+	}
 	for _, batch := range batches {
 		for _, tx := range batch.Transactions {
 			if tx.Sender == sender_address {

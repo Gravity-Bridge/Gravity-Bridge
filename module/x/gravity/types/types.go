@@ -220,7 +220,13 @@ func (v *Valset) WithoutEmptyMembers() *Valset {
 	if v == nil {
 		return nil
 	}
-	r := Valset{Nonce: v.Nonce, Members: make([]*BridgeValidator, 0, len(v.Members))}
+	r := Valset{
+		Nonce:        v.Nonce,
+		Members:      make([]*BridgeValidator, 0, len(v.Members)),
+		Height:       0,
+		RewardAmount: sdk.Int{},
+		RewardToken:  "",
+	}
 	for i := range v.Members {
 		if err := v.Members[i].ValidateBasic(); err == nil {
 			r.Members = append(r.Members, v.Members[i])

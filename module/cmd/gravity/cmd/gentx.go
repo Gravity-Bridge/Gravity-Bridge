@@ -42,6 +42,7 @@ func GenTxCmd(mbm module.BasicManager, txEncCfg client.TxEncodingConfig, genBalI
 	ipDefault, _ := server.ExternalIP()
 	fsCreateValidator, defaultsDesc := cli.CreateValidatorMsgFlagSet(ipDefault)
 
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "gentx [key_name] [amount] [eth-address] [orchestrator-address]",
 		Short: "Generate a genesis tx carrying a self delegation, oracle key delegation and orchestrator key delegation",
@@ -281,6 +282,7 @@ const flagGenTxDir = "gentx-dir"
 
 // CollectGenTxsCmd - return the cobra command to collect genesis transactions
 func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeHome string) *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "collect-gentxs",
 		Short: "Collect genesis txs and output a genesis.json file",

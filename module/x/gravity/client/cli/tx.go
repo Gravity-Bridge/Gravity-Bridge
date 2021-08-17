@@ -18,6 +18,7 @@ import (
 )
 
 func GetTxCmd(storeKey string) *cobra.Command {
+	//nolint: exhaustivestruct
 	gravityTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Gravity transaction subcommands",
@@ -37,6 +38,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 }
 
 func GetUnsafeTestingCmd() *cobra.Command {
+	//nolint: exhaustivestruct
 	testingTxCmd := &cobra.Command{
 		Use:                        "unsafe_testing",
 		Short:                      "helpers for testing. not going into production",
@@ -53,6 +55,7 @@ func GetUnsafeTestingCmd() *cobra.Command {
 }
 
 func CmdUnsafeETHPrivKey() *cobra.Command {
+	//nolint: exhaustivestruct
 	return &cobra.Command{
 		Use:   "gen-eth-key",
 		Short: "Generate and print a new ecdsa key",
@@ -69,6 +72,7 @@ func CmdUnsafeETHPrivKey() *cobra.Command {
 }
 
 func CmdUnsafeETHAddr() *cobra.Command {
+	//nolint: exhaustivestruct
 	return &cobra.Command{
 		Use:   "eth-address",
 		Short: "Print address for an ECDSA eth key",
@@ -93,6 +97,7 @@ func CmdUnsafeETHAddr() *cobra.Command {
 }
 
 func CmdSendToEth() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "send-to-eth [eth-dest] [amount] [bridge-fee]",
 		Short: "Adds a new entry to the transaction pool to withdraw an amount from the Ethereum bridge contract",
@@ -136,6 +141,7 @@ func CmdSendToEth() *cobra.Command {
 }
 
 func CmdRequestBatch() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "build-batch [token_contract_address]",
 		Short: "Build a new batch on the cosmos side for pooled withdrawal transactions",
@@ -164,6 +170,7 @@ func CmdRequestBatch() *cobra.Command {
 }
 
 func CmdSetOrchestratorAddress() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "set-orchestrator-address [validator-address] [orchestrator-address] [ethereum-address]",
 		Short: "Allows validators to delegate their voting responsibilities to a given key.",

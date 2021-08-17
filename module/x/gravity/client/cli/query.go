@@ -11,6 +11,7 @@ import (
 )
 
 func GetQueryCmd() *cobra.Command {
+	//nolint: exhaustivestruct
 	gravityQueryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Querying commands for the gravity module",
@@ -36,6 +37,7 @@ func GetQueryCmd() *cobra.Command {
 }
 
 func QueryObserved() *cobra.Command {
+	//nolint: exhaustivestruct
 	testingTxCmd := &cobra.Command{
 		Use:                        "observed",
 		Short:                      "observed ETH events",
@@ -53,6 +55,7 @@ func QueryObserved() *cobra.Command {
 	return testingTxCmd
 }
 func QueryApproved() *cobra.Command {
+	//nolint: exhaustivestruct
 	testingTxCmd := &cobra.Command{
 		Use:                        "approved",
 		Short:                      "approved cosmos operation",
@@ -70,6 +73,7 @@ func QueryApproved() *cobra.Command {
 }
 
 func CmdGetCurrentValset() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "current-valset",
 		Short: "Query current valset",
@@ -93,6 +97,7 @@ func CmdGetCurrentValset() *cobra.Command {
 }
 
 func CmdGetValsetRequest() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "valset-request [nonce]",
 		Short: "Get requested valset with a particular nonce",
@@ -123,6 +128,7 @@ func CmdGetValsetRequest() *cobra.Command {
 }
 
 func CmdGetValsetConfirm() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "valset-confirm [nonce] [bech32 validator address]",
 		Short: "Get valset confirmation with a particular nonce from a particular validator",
@@ -154,6 +160,7 @@ func CmdGetValsetConfirm() *cobra.Command {
 }
 
 func CmdGetPendingValsetRequest() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "pending-valset-request [bech32 validator address]",
 		Short: "Get the latest valset request which has not been signed by a particular validator",
@@ -179,6 +186,7 @@ func CmdGetPendingValsetRequest() *cobra.Command {
 }
 
 func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "pending-batch-request [bech32 validator address]",
 		Short: "Get the latest outgoing TX batch request which has not been signed by a particular validator",

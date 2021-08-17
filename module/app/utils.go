@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
+	"time"
 
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
@@ -21,7 +23,23 @@ import (
 // Returns error on an invalid db intantiation or temp dir creation.
 func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string, log.Logger, bool, error) {
 	if !FlagEnabledValue {
-		return simtypes.Config{}, nil, "", nil, true, nil
+		return simtypes.Config{
+			GenesisFile:        "",
+			ParamsFile:         "",
+			ExportParamsPath:   "",
+			ExportParamsHeight: 0,
+			ExportStatePath:    "",
+			ExportStatsPath:    "",
+			Seed:               0,
+			InitialBlockHeight: 0,
+			NumBlocks:          0,
+			BlockSize:          0,
+			ChainID:            "",
+			Lean:               false,
+			Commit:             false,
+			OnOperation:        false,
+			AllInvariants:      false,
+		}, nil, "", nil, true, nil
 	}
 
 	config := NewConfigFromFlags()
@@ -51,8 +69,17 @@ func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string,
 // and returns all the modules weighted operations
 func SimulationOperations(app Gravity, cdc codec.JSONMarshaler, config simtypes.Config) []simtypes.WeightedOperation {
 	simState := module.SimulationState{
-		AppParams: make(simtypes.AppParams),
-		Cdc:       cdc,
+		AppParams:    make(simtypes.AppParams),
+		Cdc:          cdc,
+		Rand:         &rand.Rand{},
+		GenState:     map[string]json.RawMessage{},
+		Accounts:     []simtypes.Account{},
+		InitialStake: 0,
+		NumBonded:    0,
+		GenTimestamp: time.Time{},
+		UnbondTime:   0,
+		ParamChanges: []simtypes.ParamChange{},
+		Contents:     []simtypes.WeightedProposalContent{},
 	}
 
 	if config.ParamsFile != "" {

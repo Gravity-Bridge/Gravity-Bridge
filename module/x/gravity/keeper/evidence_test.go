@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -59,6 +60,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
+//nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -76,6 +78,7 @@ func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
+//nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -97,6 +100,7 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
+//nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceSlash(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 

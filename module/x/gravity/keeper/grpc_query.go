@@ -5,11 +5,20 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
 
-var _ types.QueryServer = Keeper{}
+var _ types.QueryServer = Keeper{
+	StakingKeeper:      nil,
+	storeKey:           nil,
+	paramSpace:         paramstypes.Subspace{},
+	cdc:                nil,
+	bankKeeper:         nil,
+	SlashingKeeper:     nil,
+	AttestationHandler: nil,
+}
 
 // Params queries the params of the gravity module
 func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {

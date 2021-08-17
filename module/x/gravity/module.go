@@ -27,7 +27,15 @@ import (
 
 // type check to ensure the interface is properly implemented
 var (
-	_ module.AppModule      = AppModule{}
+	_ module.AppModule = AppModule{
+		AppModuleBasic: AppModuleBasic{},
+		keeper: keeper.Keeper{
+			StakingKeeper:      nil,
+			SlashingKeeper:     nil,
+			AttestationHandler: nil,
+		},
+		bankKeeper: nil,
+	}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 

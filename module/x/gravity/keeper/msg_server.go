@@ -8,6 +8,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
@@ -23,7 +24,17 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 	return &msgServer{Keeper: keeper}
 }
 
-var _ types.MsgServer = msgServer{}
+var _ types.MsgServer = msgServer{
+	Keeper: Keeper{
+		StakingKeeper:      nil,
+		storeKey:           nil,
+		paramSpace:         paramstypes.Subspace{},
+		cdc:                nil,
+		bankKeeper:         nil,
+		SlashingKeeper:     nil,
+		AttestationHandler: nil,
+	},
+}
 
 func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOrchestratorAddress) (*types.MsgSetOrchestratorAddressResponse, error) {
 	// ensure that this passes validation, checks the key validity

@@ -16,6 +16,7 @@ import (
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
 
+//nolint: exhaustivestruct
 func TestQueryValsetConfirm(t *testing.T) {
 	var (
 		nonce                                       = uint64(1)
@@ -74,6 +75,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 	}
 }
 
+//nolint: exhaustivestruct
 func TestAllValsetConfirmsBynonce(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -134,6 +136,7 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 }
 
 // TODO: Check failure modes
+//nolint: exhaustivestruct
 func TestLastValsetRequests(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -288,6 +291,7 @@ func TestLastValsetRequests(t *testing.T) {
 	}
 }
 
+//nolint: exhaustivestruct
 // TODO: check that it doesn't accidently return a valset that HAS been signed
 // Right now it is basically just testing that any valset comes back
 func TestPendingValsetRequests(t *testing.T) {
@@ -458,6 +462,7 @@ func TestPendingValsetRequests(t *testing.T) {
 	}
 }
 
+//nolint: exhaustivestruct
 // TODO: check that it actually returns a batch that has NOT been signed, not just any batch
 func TestLastPendingBatchRequest(t *testing.T) {
 	input := CreateTestEnv(t)
@@ -533,6 +538,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 	}
 }
 
+//nolint: exhaustivestruct
 func createTestBatch(t *testing.T, input TestInput) {
 	var (
 		mySender            = bytes.Repeat([]byte{1}, sdk.AddrLen)
@@ -565,6 +571,7 @@ func createTestBatch(t *testing.T, input TestInput) {
 	require.NoError(t, err)
 }
 
+//nolint: exhaustivestruct
 func TestQueryAllBatchConfirms(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -590,6 +597,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	assert.JSONEq(t, string(expectedJSON), string(batchConfirms), "json is equal")
 }
 
+//nolint: exhaustivestruct
 func TestQueryLogicCalls(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -646,6 +654,7 @@ func TestQueryLogicCalls(t *testing.T) {
 	require.NoError(t, err)
 }
 
+//nolint: exhaustivestruct
 func TestQueryLogicCallsConfirms(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -704,6 +713,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 	assert.Equal(t, len(res), 1)
 }
 
+//nolint: exhaustivestruct
 // TODO: test that it gets the correct batch, not just any batch.
 // Check with multiple nonces and tokenContracts
 func TestQueryBatch(t *testing.T) {
@@ -761,6 +771,7 @@ func TestQueryBatch(t *testing.T) {
 	assert.JSONEq(t, string(expectedJSON), string(batch), string(batch))
 }
 
+//nolint: exhaustivestruct
 func TestLastBatchesRequest(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -844,6 +855,7 @@ func TestLastBatchesRequest(t *testing.T) {
 	assert.JSONEq(t, string(expectedJSON), string(lastBatches), "json is equal")
 }
 
+//nolint: exhaustivestruct
 // tests setting and querying eth address and orchestrator addresses
 func TestQueryCurrentValset(t *testing.T) {
 	var (
@@ -862,6 +874,7 @@ func TestQueryCurrentValset(t *testing.T) {
 	assert.Equal(t, expectedValset, currentValset)
 }
 
+//nolint: exhaustivestruct
 func TestQueryERC20ToDenom(t *testing.T) {
 	var (
 		erc20 = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
@@ -883,6 +896,7 @@ func TestQueryERC20ToDenom(t *testing.T) {
 	assert.Equal(t, correctBytes, queriedDenom)
 }
 
+//nolint: exhaustivestruct
 func TestQueryDenomToERC20(t *testing.T) {
 	var (
 		erc20 = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
@@ -905,6 +919,7 @@ func TestQueryDenomToERC20(t *testing.T) {
 	assert.Equal(t, correctBytes, queriedERC20)
 }
 
+//nolint: exhaustivestruct
 func TestQueryPendingSendToEth(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context

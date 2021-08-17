@@ -22,6 +22,7 @@ import (
 
 var testMbm = module.NewBasicManager(genutil.AppModuleBasic{})
 
+//nolint: exhaustivestruct
 func TestAddGenesisAccountCmd(t *testing.T) {
 	_, _, addr1 := testdata.KeyTestPubAddr()
 	tests := []struct {

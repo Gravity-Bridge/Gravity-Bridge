@@ -117,6 +117,9 @@ func AppStateRandomizedFn(
 		InitialStake: initialStake,
 		NumBonded:    numInitiallyBonded,
 		GenTimestamp: genesisTimestamp,
+		UnbondTime:   0,
+		ParamChanges: []simtypes.ParamChange{},
+		Contents:     []simtypes.WeightedProposalContent{},
 	}
 
 	simManager.GenerateGenesisStates(simState)
@@ -173,7 +176,12 @@ func StateFromGenesisFileFn(r io.Reader, cdc codec.JSONMarshaler, genesisFile st
 		}
 
 		// create simulator accounts
-		simAcc := simtypes.Account{PrivKey: privKey, PubKey: privKey.PubKey(), Address: a.GetAddress()}
+		simAcc := simtypes.Account{
+			PrivKey: privKey,
+			PubKey:  privKey.PubKey(),
+			Address: a.GetAddress(),
+			ConsKey: nil,
+		}
 		newAccs[i] = simAcc
 	}
 

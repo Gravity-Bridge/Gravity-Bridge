@@ -2,6 +2,7 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -10,7 +11,17 @@ type Hooks struct {
 	k Keeper
 }
 
-var _ stakingtypes.StakingHooks = Hooks{}
+var _ stakingtypes.StakingHooks = Hooks{
+	k: Keeper{
+		StakingKeeper:      nil,
+		storeKey:           nil,
+		paramSpace:         paramstypes.Subspace{},
+		cdc:                nil,
+		bankKeeper:         nil,
+		SlashingKeeper:     nil,
+		AttestationHandler: nil,
+	},
+}
 
 // Create new gravity hooks
 func (k Keeper) Hooks() Hooks { return Hooks{k} }

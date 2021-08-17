@@ -12,6 +12,7 @@ import (
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
 
+//nolint: exhaustivestruct
 func TestPrefixRange(t *testing.T) {
 	cases := map[string]struct {
 		src      []byte
@@ -45,6 +46,7 @@ func TestPrefixRange(t *testing.T) {
 	}
 }
 
+//nolint: exhaustivestruct
 func TestCurrentValsetNormalization(t *testing.T) {
 	specs := map[string]struct {
 		srcPowers []uint64
@@ -81,6 +83,7 @@ func TestCurrentValsetNormalization(t *testing.T) {
 	}
 }
 
+//nolint: exhaustivestruct
 func TestAttestationIterator(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -122,6 +125,7 @@ func TestAttestationIterator(t *testing.T) {
 	require.Len(t, atts, 2)
 }
 
+//nolint: exhaustivestruct
 func TestDelegateKeys(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
@@ -161,6 +165,7 @@ func TestDelegateKeys(t *testing.T) {
 
 }
 
+//nolint: exhaustivestruct
 func TestLastSlashedValsetNonce(t *testing.T) {
 	input := CreateTestEnv(t)
 	k := input.GravityKeeper

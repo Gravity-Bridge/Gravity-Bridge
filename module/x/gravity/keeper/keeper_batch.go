@@ -18,7 +18,13 @@ func (k Keeper) GetBatchConfirm(ctx sdk.Context, nonce uint64, tokenContract str
 	if entity == nil {
 		return nil
 	}
-	confirm := types.MsgConfirmBatch{}
+	confirm := types.MsgConfirmBatch{
+		Nonce:         nonce,
+		TokenContract: tokenContract,
+		EthSigner:     "",
+		Orchestrator:  "",
+		Signature:     "",
+	}
 	k.cdc.MustUnmarshalBinaryBare(entity, &confirm)
 	return &confirm
 }
@@ -45,7 +51,13 @@ func (k Keeper) IterateBatchConfirmByNonceAndTokenContract(ctx sdk.Context, nonc
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		confirm := types.MsgConfirmBatch{}
+		confirm := types.MsgConfirmBatch{
+			Nonce:         nonce,
+			TokenContract: tokenContract,
+			EthSigner:     "",
+			Orchestrator:  "",
+			Signature:     "",
+		}
 		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &confirm)
 		// cb returns true to stop early
 		if cb(iter.Key(), confirm) {

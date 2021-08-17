@@ -73,12 +73,13 @@ func addDenomToERC20Relation(tv *testingVars) {
 	)
 
 	ethClaim := types.MsgERC20DeployedClaim{
+		EventNonce:    myNonce,
+		BlockHeight:   0,
 		CosmosDenom:   tv.denom,
 		TokenContract: tv.erc20,
 		Name:          "atom",
 		Symbol:        "atom",
 		Decimals:      6,
-		EventNonce:    myNonce,
 		Orchestrator:  tv.myOrchestratorAddr.String(),
 	}
 
@@ -160,6 +161,7 @@ func acceptDepositEvent(tv *testingVars) {
 
 	ethClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce,
+		BlockHeight:    0,
 		TokenContract:  myErc20.Contract,
 		Amount:         myErc20.Amount,
 		EthereumSender: anyETHAddr,

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/gorilla/mux"
@@ -85,6 +86,8 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
@@ -239,6 +242,7 @@ func NewGravityApp(
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
+	//nolint: exhaustivestruct
 	var app = &Gravity{
 		BaseApp:           bApp,
 		legacyAmino:       legacyAmino,
@@ -542,7 +546,31 @@ func NewGravityApp(
 		// that in-memory capabilities get regenerated on app restart.
 		// Note that since this reads from the store, we can only perform it when
 		// `loadLatest` is set to true.
-		ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
+		ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{
+			Version: tmversion.Consensus{
+				Block: 0,
+				App:   0,
+			},
+			ChainID: "",
+			Height:  0,
+			Time:    time.Time{},
+			LastBlockId: tmproto.BlockID{
+				Hash: []byte{},
+				PartSetHeader: tmproto.PartSetHeader{
+					Total: 0,
+					Hash:  []byte{},
+				},
+			},
+			LastCommitHash:     []byte{},
+			DataHash:           []byte{},
+			ValidatorsHash:     []byte{},
+			NextValidatorsHash: []byte{},
+			ConsensusHash:      []byte{},
+			AppHash:            []byte{},
+			LastResultsHash:    []byte{},
+			EvidenceHash:       []byte{},
+			ProposerAddress:    []byte{},
+		})
 		app.capabilityKeeper.InitializeAndSeal(ctx)
 	}
 
