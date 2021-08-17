@@ -169,7 +169,7 @@ func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 		panic("Bad Attestation in DeleteAttestation")
 	}
 	store := ctx.KVStore(k.storeKey)
-	store.Delete(types.GetAttestationKeyWithHash(claim.GetEventNonce(), claim.ClaimHash()))
+	store.Delete(types.GetAttestationKey(claim.GetEventNonce(), claim.ClaimHash()))
 }
 
 // GetAttestationMapping returns a mapping of eventnonce -> attestations at that nonce
