@@ -2,17 +2,38 @@
 
 Gravity bridge is Cosmos <-> Ethereum bridge designed to run on the [Cosmos SDK blockchains](https://github.com/cosmos/cosmos-sdk) like the [Cosmos Hub](https://github.com/cosmos/gaia) focused on maximum design simplicity and efficiency.
 
-Gravity is currently can transfer ERC20 assets originating on Cosmos or Ethereum to and from Ethereum. As well as move Cosmos assets to Ethereum as ERC20 representations.
+Gravity is currently can transfer ERC20 assets originating on Cosmos or Ethereum to and from Ethereum, as well as move Cosmos assets to Ethereum as ERC20 representations.
 
 ## Documentation
 
-### Developer Guide
+### High level documentation
 
-[Development environment setup](/docs/developer/environment-setup.md)
+To understand Gravity at a high level, read [this blog post](https://blog.althea.net/how-gravity-works/). It is accessible and more concise than the rest of these docs, but does not cover every detail.
 
-[Adding integration tests](/docs/developer/modifying-integration-tests.md)
+
+### Code documentation
+
+This documentation lives with the code it references and helps to understand the functions and data structures involved. This is useful if you are reviewing or working on the code.
+
+[Solidity Ethereum contract documentation](https://github.com/althea-net/cosmos-gravity-bridge/blob/main/solidity/contracts/contract-explanation.md)
+
+[Go Cosmos module documentation](https://github.com/althea-net/cosmos-gravity-bridge/tree/main/module/x/gravity/spec)
+
+
+### Specs
+
+These specs cover specific areas of the bridge that a lot of thought went into. They explore the tradeoffs involved and decisions made.
+
+[slashing-spec](/spec/slashing-spec.md)
+
+[batch-creation-spec](/spec/batch-creation-spec.md)
+
+[valset-creation-spec](/spec/valset-creation-spec.md)
+
 
 ### Design docs
+
+These are mid-level docs which go into the most detail on various topics relating to the bridge.
 
 [design overview](/docs/design/overview.md)
 
@@ -34,15 +55,15 @@ Gravity is currently can transfer ERC20 assets originating on Cosmos or Ethereum
 
 [relaying semantics](/docs/design/relaying-semantics.md)
 
-### Specs
 
-[slashing-spec](/spec/slashing-spec.md)
+### Developer Guide
 
-[batch-creation-spec](/spec/batch-creation-spec.md)
+To contribute to Gravity, refer to these guides.
 
-[valset-creation-spec](/spec/valset-creation-spec.md)
+[Development environment setup](/docs/developer/environment-setup.md)
 
-[gravity module specs](/module/x/gravity/spec/)
+[Adding integration tests](/docs/developer/modifying-integration-tests.md)
+
 
 ## Status
 
