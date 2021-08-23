@@ -10,7 +10,6 @@ Gravity is currently can transfer ERC20 assets originating on Cosmos or Ethereum
 
 To understand Gravity at a high level, read [this blog post](https://blog.althea.net/how-gravity-works/). It is accessible and more concise than the rest of these docs, but does not cover every detail.
 
-
 ### Code documentation
 
 This documentation lives with the code it references and helps to understand the functions and data structures involved. This is useful if you are reviewing or working on the code.
@@ -18,7 +17,6 @@ This documentation lives with the code it references and helps to understand the
 [Solidity Ethereum contract documentation](https://github.com/althea-net/cosmos-gravity-bridge/blob/main/solidity/contracts/contract-explanation.md)
 
 [Go Cosmos module documentation](https://github.com/althea-net/cosmos-gravity-bridge/tree/main/module/x/gravity/spec)
-
 
 ### Specs
 
@@ -30,6 +28,11 @@ These specs cover specific areas of the bridge that a lot of thought went into. 
 
 [valset-creation-spec](/spec/valset-creation-spec.md)
 
+[Code structure](/docs/developer/code-structure.md)
+
+[Adding integration tests](/docs/developer/modifying-integration-tests.md)
+
+[Security hotspots](/docs/developer/hotspots.md)
 
 ### Design docs
 
@@ -55,7 +58,6 @@ These are mid-level docs which go into the most detail on various topics relatin
 
 [relaying semantics](/docs/design/relaying-semantics.md)
 
-
 ### Developer Guide
 
 To contribute to Gravity, refer to these guides.
@@ -63,7 +65,6 @@ To contribute to Gravity, refer to these guides.
 [Development environment setup](/docs/developer/environment-setup.md)
 
 [Adding integration tests](/docs/developer/modifying-integration-tests.md)
-
 
 ## Status
 
