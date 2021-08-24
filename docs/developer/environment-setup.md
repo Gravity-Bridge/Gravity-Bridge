@@ -18,6 +18,12 @@ Gravity bridge has three major components
 
 Follow the official guide [here](https://golang.org/doc/install)
 
+Make sure that the go/bin directory is in your path by adding this to your shell profile (~/.bashrc or ~/.zprofile)
+
+```
+export PATH=$PATH:$(go env GOPATH)/bin
+```
+
 ### Installing NodeJS
 
 Follow the official guide [here](https://nodejs.org/en/)
@@ -80,6 +86,10 @@ make proto-update-deps
 
 # Installing the protobuf tooling
 sudo make proto-tools
+
+# Install protobufs plugins
+go get github.com/regen-network/cosmos-proto/protoc-gen-gocosmos
+go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
 ```
 
 ```
