@@ -28,12 +28,6 @@ These specs cover specific areas of the bridge that a lot of thought went into. 
 
 [valset-creation-spec](/spec/valset-creation-spec.md)
 
-[Code structure](/docs/developer/code-structure.md)
-
-[Adding integration tests](/docs/developer/modifying-integration-tests.md)
-
-[Security hotspots](/docs/developer/hotspots.md)
-
 ### Design docs
 
 These are mid-level docs which go into the most detail on various topics relating to the bridge.
@@ -64,7 +58,11 @@ To contribute to Gravity, refer to these guides.
 
 [Development environment setup](/docs/developer/environment-setup.md)
 
+[Code structure](/docs/developer/code-structure.md)
+
 [Adding integration tests](/docs/developer/modifying-integration-tests.md)
+
+[Security hotspots](/docs/developer/hotspots.md)
 
 ## Status
 
