@@ -127,7 +127,7 @@ This message will fail if:
 
 ### MsgConfirmBatch
 
-When a `MsgRequestBatch` is observed, validators need to sign batch request to signify this is not a maliciously created batch and to avoid getting slashed.
+When a `MsgRequestBatch` is observed, validators need to sign batch request and to avoid getting slashed.
 
 ```proto
 // When validators observe a MsgRequestBatch they form a batch by ordering
