@@ -56,9 +56,6 @@ var (
 	// DenomiatorPrefix indexes token contract addresses from ETH on gravity
 	DenomiatorPrefix = []byte{0x8}
 
-	// SecondIndexOutgoingTXFeeKey indexes fee amounts by token contract address
-	SecondIndexOutgoingTXFeeKey = []byte{0x9}
-
 	// OutgoingTXBatchKey indexes outgoing tx batches under a nonce and token address
 	OutgoingTXBatchKey = []byte{0xa}
 
@@ -204,11 +201,27 @@ func GetAttestationKey(eventNonce uint64, claimHash []byte) []byte {
 	return key
 }
 
+// GetOutgoingTxPoolContractPrefix returns the following key format
+// prefix	feeContract
+// [0x6][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+// This prefix is used for iterating over unbatched transactions for a given contract
+func GetOutgoingTxPoolContractPrefix(contractAddress string) []byte {
+	return append(OutgoingTXPoolKey, []byte(contractAddress)...)
+}
+
 // GetOutgoingTxPoolKey returns the following key format
-// prefix     id
-// [0x6][0 0 0 0 0 0 0 1]
-func GetOutgoingTxPoolKey(id uint64) []byte {
-	return append(OutgoingTXPoolKey, sdk.Uint64ToBigEndian(id)...)
+// prefix	feeContract		feeAmount     id
+// [0x6][0xc783df8a850f42e7F7e57013759C285caa701eB6][1000000000][0 0 0 0 0 0 0 1]
+func GetOutgoingTxPoolKey(fee ERC20Token, id uint64) []byte {
+	// sdkInts have a size limit of 255 bits or 32 bytes
+	// therefore this will never panic and is always safe
+	amount := make([]byte, 32)
+	amount = fee.Amount.BigInt().FillBytes(amount)
+
+	a := append(amount, UInt64Bytes(id)...)
+	b := append([]byte(fee.Contract), a...)
+	r := append(OutgoingTXPoolKey, b...)
+	return r
 }
 
 // GetOutgoingTxBatchKey returns the following key format
@@ -234,22 +247,6 @@ func GetBatchConfirmKey(tokenContract string, batchNonce uint64, validator sdk.A
 	b := append([]byte(tokenContract), a...)
 	c := append(BatchConfirmKey, b...)
 	return c
-}
-
-// GetFeeSecondIndexKey returns the following key format
-// prefix            eth-contract-address            fee_amount
-// [0x9][0xc783df8a850f42e7F7e57013759C285caa701eB6][1000000000]
-func GetFeeSecondIndexKey(fee ERC20Token) []byte {
-	r := make([]byte, 1+ETHContractAddressLen+32)
-	// sdkInts have a size limit of 255 bits or 32 bytes
-	// therefore this will never panic and is always safe
-	amount := make([]byte, 32)
-	amount = fee.Amount.BigInt().FillBytes(amount)
-	// TODO this won't ever work fix it
-	copy(r[0:], SecondIndexOutgoingTXFeeKey)
-	copy(r[len(SecondIndexOutgoingTXFeeKey):], []byte(fee.Contract))
-	copy(r[len(SecondIndexOutgoingTXFeeKey)+len(fee.Contract):], amount)
-	return r
 }
 
 // GetLastEventNonceByValidatorKey indexes lateset event nonce by validator
