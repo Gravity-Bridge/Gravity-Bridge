@@ -45,7 +45,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 
 	// reset pool transactions in state
 	for _, tx := range data.UnbatchedTransfers {
-		if err := k.setPoolEntry(ctx, tx); err != nil {
+		if err := k.addUnbatchedTX(ctx, tx); err != nil {
 			panic(err)
 		}
 	}
@@ -148,7 +148,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		delegates          = k.GetDelegateKeys(ctx)
 		lastobserved       = k.GetLastObservedEventNonce(ctx)
 		erc20ToDenoms      = []*types.ERC20ToDenom{}
-		unbatchedTransfers = k.GetPoolTransactions(ctx)
+		unbatchedTransfers = k.GetUnbatchedTransactions(ctx)
 	)
 
 	// export valset confirmations from state

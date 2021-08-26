@@ -3,11 +3,9 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
-	"math/big"
 	"sort"
 	"strconv"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -66,13 +64,8 @@ func (k Keeper) AddToOutgoingPool(ctx sdk.Context, sender sdk.AccAddress, counte
 		Erc20Fee:    erc20Fee,
 	}
 
-	// set the outgoing tx in the pool index
-	if err := k.setPoolEntry(ctx, outgoing); err != nil {
-		return 0, err
-	}
-
 	// add a second index with the fee
-	k.appendToUnbatchedTXIndex(ctx, tokenContract, *erc20Fee, nextID)
+	k.addUnbatchedTX(ctx, outgoing)
 
 	// todo: add second index for sender so that we can easily query: give pending Tx by sender
 	// todo: what about a second index for receiver?
@@ -96,7 +89,7 @@ func (k Keeper) AddToOutgoingPool(ctx sdk.Context, sender sdk.AccAddress, counte
 // - issues the tokens back to the sender
 func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, sender sdk.AccAddress) error {
 	// check that we actually have a tx with that id and what it's details are
-	tx, err := k.getPoolEntry(ctx, txId)
+	tx, err := k.GetUnbatchedTxById(ctx, txId)
 	if err != nil {
 		return err
 	}
@@ -117,26 +110,13 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 		return sdkerrors.Wrapf(types.ErrInvalid, "Inconsistent tokens to cancel!: %s %s", tx.Erc20Fee.Contract, tx.Erc20Token.Contract)
 	}
 
-	found := false
-	poolTx := k.GetPoolTransactions(ctx)
-	for _, pTx := range poolTx {
-		if pTx.Id == txId {
-			found = true
-		}
-	}
-	if !found {
-		return sdkerrors.Wrapf(types.ErrInvalid, "txId %d is not in unbatched pool! Must be in batch!", txId)
-	}
-
-	// delete this tx from both indexes
-	err = k.removeFromUnbatchedTXIndex(ctx, *tx.Erc20Fee, txId)
+	// delete this tx from the pool
+	err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, txId)
 	if err != nil {
 		return sdkerrors.Wrapf(types.ErrInvalid, "txId %d not in unbatched index! Must be in a batch!", txId)
 	}
-	k.removePoolEntry(ctx, txId)
 
 	// reissue the amount and the fee
-
 	totalToRefund := tx.Erc20Token.GravityCoin()
 	totalToRefund.Amount = totalToRefund.Amount.Add(tx.Erc20Fee.Amount)
 	totalToRefundCoins := sdk.NewCoins(totalToRefund)
@@ -170,140 +150,124 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 	return nil
 }
 
-// appendToUnbatchedTXIndex add at the end when tx with same fee exists
-func (k Keeper) appendToUnbatchedTXIndex(ctx sdk.Context, tokenContract string, fee types.ERC20Token, txID uint64) {
+// addUnbatchedTx creates a new transaction in the pool
+func (k Keeper) addUnbatchedTX(ctx sdk.Context, val *types.OutgoingTransferTx) error {
 	store := ctx.KVStore(k.storeKey)
-	idxKey := types.GetFeeSecondIndexKey(fee)
-	var idSet types.IDSet
+	idxKey := types.GetOutgoingTxPoolKey(*val.Erc20Fee, val.Id)
 	if store.Has(idxKey) {
-		bz := store.Get(idxKey)
-		k.cdc.MustUnmarshalBinaryBare(bz, &idSet)
+		return sdkerrors.Wrap(types.ErrDuplicate, "transaction already in pool")
 	}
-	idSet.Ids = append(idSet.Ids, txID)
-	store.Set(idxKey, k.cdc.MustMarshalBinaryBare(&idSet))
-}
 
-// appendToUnbatchedTXIndex add at the top when tx with same fee exists
-func (k Keeper) prependToUnbatchedTXIndex(ctx sdk.Context, tokenContract string, fee types.ERC20Token, txID uint64) {
-	store := ctx.KVStore(k.storeKey)
-	idxKey := types.GetFeeSecondIndexKey(fee)
-	var idSet types.IDSet
-	if store.Has(idxKey) {
-		bz := store.Get(idxKey)
-		k.cdc.MustUnmarshalBinaryBare(bz, &idSet)
-	}
-	idSet.Ids = append([]uint64{txID}, idSet.Ids...)
-	store.Set(idxKey, k.cdc.MustMarshalBinaryBare(&idSet))
-}
-
-// removeFromUnbatchedTXIndex removes the tx from the index and also removes it from the iterator
-// GetPoolTransactions, making this tx implicitly invisible without a direct request. We remove a tx
-// from the pool for good in OutgoingTxBatchExecuted, but if a batch is canceled or timed out we 'reactivate'
-// an entry by adding it back to the second index.
-func (k Keeper) removeFromUnbatchedTXIndex(ctx sdk.Context, fee types.ERC20Token, txID uint64) error {
-	store := ctx.KVStore(k.storeKey)
-	idxKey := types.GetFeeSecondIndexKey(fee)
-	var idSet types.IDSet
-	bz := store.Get(idxKey)
-	if bz == nil {
-		return sdkerrors.Wrap(types.ErrUnknown, "fee")
-	}
-	k.cdc.MustUnmarshalBinaryBare(bz, &idSet)
-	for i := range idSet.Ids {
-		if idSet.Ids[i] == txID {
-			idSet.Ids = append(idSet.Ids[0:i], idSet.Ids[i+1:]...)
-			if len(idSet.Ids) != 0 {
-				store.Set(idxKey, k.cdc.MustMarshalBinaryBare(&idSet))
-			} else {
-				store.Delete(idxKey)
-			}
-			return nil
-		}
-	}
-	return sdkerrors.Wrap(types.ErrUnknown, "tx id")
-}
-
-func (k Keeper) setPoolEntry(ctx sdk.Context, val *types.OutgoingTransferTx) error {
 	bz, err := k.cdc.MarshalBinaryBare(val)
 	if err != nil {
 		return err
 	}
+
+	store.Set(idxKey, bz)
+	return err
+}
+
+// removeUnbatchedTXIndex removes the tx from the pool
+func (k Keeper) removeUnbatchedTX(ctx sdk.Context, fee types.ERC20Token, txID uint64) error {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetOutgoingTxPoolKey(val.Id), bz)
+	idxKey := types.GetOutgoingTxPoolKey(fee, txID)
+	if !store.Has(idxKey) {
+		return sdkerrors.Wrap(types.ErrUnknown, "pool transaction")
+	}
+	store.Delete(idxKey)
 	return nil
 }
 
-// getPoolEntry grabs an entry from the tx pool, this *does* include transactions in batches
-// so check the UnbatchedTxIndex or call GetPoolTransactions for that purpose
-func (k Keeper) getPoolEntry(ctx sdk.Context, id uint64) (*types.OutgoingTransferTx, error) {
+// getUnbatchedTx grabs a tx from the pool given its fee and txID
+func (k Keeper) GetUnbatchedTxByFeeAndId(ctx sdk.Context, fee types.ERC20Token, txID uint64) (*types.OutgoingTransferTx, error) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetOutgoingTxPoolKey(id))
+	bz := store.Get(types.GetOutgoingTxPoolKey(fee, txID))
 	if bz == nil {
-		return nil, types.ErrUnknown
+		return nil, sdkerrors.Wrap(types.ErrUnknown, "pool transaction")
 	}
 	var r types.OutgoingTransferTx
 	k.cdc.UnmarshalBinaryBare(bz, &r)
 	return &r, nil
 }
 
-// removePoolEntry removes an entry from the tx pool, this *does* include transactions in batches
-// so you will need to run it when cleaning up after a executed batch
-func (k Keeper) removePoolEntry(ctx sdk.Context, id uint64) {
-	store := ctx.KVStore(k.storeKey)
-	store.Delete(types.GetOutgoingTxPoolKey(id))
+// getUnbatchedTxById grabs a tx from the pool given only the txID
+// note that due to the way unbatched txs are indexed, the GetUnbatchedTxByFeeAndId method is much faster
+func (k Keeper) GetUnbatchedTxById(ctx sdk.Context, txID uint64) (*types.OutgoingTransferTx, error) {
+	var r *types.OutgoingTransferTx = nil
+	k.IterateUnbatchedTransactions(ctx, types.OutgoingTXPoolKey, func(_ []byte, tx *types.OutgoingTransferTx) bool {
+		if tx.Id == txID {
+			r = tx
+			return true
+		}
+		return false // iterating DESC, exit early
+	})
+
+	if r == nil {
+		// We have no return tx, it was either batched or never existed
+		return nil, sdkerrors.Wrap(types.ErrUnknown, "pool transaction")
+	}
+	return r, nil
+}
+
+// GetUnbatchedTransactionsByContract, grabs all unbatched transactions from the tx pool for the given contract
+// unbatched transactions are sorted by fee amount in DESC order
+func (k Keeper) GetUnbatchedTransactionsByContract(ctx sdk.Context, contractAddress string) []*types.OutgoingTransferTx {
+	return k.collectUnbatchedTransactions(ctx, types.GetOutgoingTxPoolContractPrefix(contractAddress))
 }
 
 // GetPoolTransactions, grabs all transactions from the tx pool, useful for queries or genesis save/load
-// this does not include all transactions in batches, because it iterates using the second index key
-func (k Keeper) GetPoolTransactions(ctx sdk.Context) []*types.OutgoingTransferTx {
+func (k Keeper) GetUnbatchedTransactions(ctx sdk.Context) []*types.OutgoingTransferTx {
+	return k.collectUnbatchedTransactions(ctx, types.OutgoingTXPoolKey)
+}
+
+// Aggregates all unbatched transactions in the store with a given prefix
+func (k Keeper) collectUnbatchedTransactions(ctx sdk.Context, prefixKey []byte) (out []*types.OutgoingTransferTx) {
+	k.IterateUnbatchedTransactions(ctx, prefixKey, func(_ []byte, tx *types.OutgoingTransferTx) bool {
+		out = append(out, tx)
+		return false
+	})
+	return
+}
+
+// IterateUnbatchedTransactionsByContract, iterates through unbatched transactions from the tx pool for the given contract
+// unbatched transactions are sorted by fee amount in DESC order
+func (k Keeper) IterateUnbatchedTransactionsByContract(ctx sdk.Context, contractAddress string, cb func(key []byte, tx *types.OutgoingTransferTx) bool) {
+	k.IterateUnbatchedTransactions(ctx, types.GetOutgoingTxPoolContractPrefix(contractAddress), cb)
+}
+
+// IterateUnbatchedTransactions iterates through all unbatched transactions whose keys begin with prefixKey in DESC order
+func (k Keeper) IterateUnbatchedTransactions(ctx sdk.Context, prefixKey []byte, cb func(key []byte, tx *types.OutgoingTransferTx) bool) {
 	prefixStore := ctx.KVStore(k.storeKey)
-	// we must use the second index key here because transactions are left in the store, but removed
-	// from the tx sorting key, while in batches
-	iter := prefixStore.ReverseIterator(prefixRange([]byte(types.SecondIndexOutgoingTXFeeKey)))
-	var ret []*types.OutgoingTransferTx
+	iter := prefixStore.ReverseIterator(prefixRange(prefixKey))
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		var ids types.IDSet
-		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &ids)
-		for _, id := range ids.Ids {
-			tx, err := k.getPoolEntry(ctx, id)
-			if err != nil {
-				panic("Invalid id in tx index!")
-			}
-			ret = append(ret, tx)
-		}
-	}
-	return ret
-}
-
-// IterateOutgoingPoolByFee iterates over the outgoing pool which is sorted by fee
-func (k Keeper) IterateOutgoingPoolByFee(ctx sdk.Context, contract string, cb func(uint64, *types.OutgoingTransferTx) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.SecondIndexOutgoingTXFeeKey)
-	iter := prefixStore.ReverseIterator(prefixRange([]byte(contract)))
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		var ids types.IDSet
-		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &ids)
+		var transact types.OutgoingTransferTx
+		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &transact)
 		// cb returns true to stop early
-		for _, id := range ids.Ids {
-			tx, err := k.getPoolEntry(ctx, id)
-			if err != nil {
-				panic("Invalid id in tx index!")
-			}
-			if cb(id, tx) {
-				return
-			}
+		if cb(iter.Key(), &transact) {
+			break
 		}
 	}
 }
 
-// GetBatchFeesByTokenType gets the fees the next batch of a given token type would
-// have if created. This info is both presented to relayers for the purpose of determining
+// GetBatchFeeByTokenType gets the fee the next batch of a given token type would
+// have if created right now. This info is both presented to relayers for the purpose of determining
 // when to request batches and also used by the batch creation process to decide not to create
-// a new batch
-func (k Keeper) GetBatchFeesByTokenType(ctx sdk.Context, tokenContractAddr string, maxElements uint) *types.BatchFees {
-	batchFeesMap := k.createBatchFees(ctx, maxElements)
-	return batchFeesMap[tokenContractAddr]
+// a new batch (fees must be increasing)
+func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, tokenContractAddr string, maxElements uint) *types.BatchFees {
+	batchFee := types.BatchFees{Token: tokenContractAddr, TotalFees: sdk.NewInt(0)}
+	txCount := 0
+
+	k.IterateUnbatchedTransactions(ctx, types.GetOutgoingTxPoolContractPrefix(tokenContractAddr), func(_ []byte, tx *types.OutgoingTransferTx) bool {
+		fee := tx.Erc20Fee
+		if fee.Contract != tokenContractAddr {
+			panic(fmt.Errorf("unexpected fee contract %s when getting batch fees for contract %s", fee.Contract, tokenContractAddr))
+		}
+		batchFee.TotalFees = batchFee.TotalFees.Add(fee.Amount)
+		txCount += 1
+		return txCount < int(maxElements)
+	})
+	return &batchFee
 }
 
 // GetAllBatchFees creates a fee entry for every batch type currently in the store
@@ -324,49 +288,35 @@ func (k Keeper) GetAllBatchFees(ctx sdk.Context, maxElements uint) (batchFees []
 	return batchFees
 }
 
-// CreateBatchFees iterates over the outgoing pool and creates batch token fee map
+// CreateBatchFees iterates over the unbatched transaction pool and creates batch token fee map
+// Implicitly creates batches with the highest potential fee because the transaction keys enforce an order which goes
+// fee contract address -> fee amount -> transaction nonce
 func (k Keeper) createBatchFees(ctx sdk.Context, maxElements uint) map[string]*types.BatchFees {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.SecondIndexOutgoingTXFeeKey)
-	iter := prefixStore.Iterator(nil, nil)
-	defer iter.Close()
-
 	batchFeesMap := make(map[string]*types.BatchFees)
 	txCountMap := make(map[string]int)
 
-	for ; iter.Valid(); iter.Next() {
-		var ids types.IDSet
-		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &ids)
-
-		// create a map to store the token contract address and its total fee
-		// Parse the iterator key to get contract address & fee
-		// If len(ids.Ids) > 1, multiply fee amount with len(ids.Ids) and add it to total fee amount
-
-		key := iter.Key()
-		tokenContractBytes := key[:types.ETHContractAddressLen]
-		tokenContractAddr := string(tokenContractBytes)
-
-		feeAmountBytes := key[len(tokenContractBytes):]
-		feeAmount := big.NewInt(0).SetBytes(feeAmountBytes)
-
-		for i := 0; i < len(ids.Ids); i++ {
-			if txCountMap[tokenContractAddr] >= OutgoingTxBatchSize {
-				break
-			} else {
-				// add fee amount
-				if _, ok := batchFeesMap[tokenContractAddr]; ok {
-					batchFeesMap[tokenContractAddr].TotalFees = batchFeesMap[tokenContractAddr].TotalFees.Add(sdk.NewIntFromBigInt(feeAmount))
-				} else {
-					batchFeesMap[tokenContractAddr] = &types.BatchFees{
-						Token:     tokenContractAddr,
-						TotalFees: sdk.NewIntFromBigInt(feeAmount)}
-				}
-
-				txCountMap[tokenContractAddr] = txCountMap[tokenContractAddr] + 1
-			}
+	k.IterateUnbatchedTransactions(ctx, types.OutgoingTXPoolKey, func(_ []byte, tx *types.OutgoingTransferTx) bool {
+		fee := tx.Erc20Fee
+		if txCountMap[fee.Contract] < int(maxElements) {
+			addFeeToMap(fee, batchFeesMap, txCountMap)
 		}
-	}
+		return false
+	})
 
 	return batchFeesMap
+}
+
+func addFeeToMap(fee *types.ERC20Token, batchFeesMap map[string]*types.BatchFees, txCountMap map[string]int) {
+	txCountMap[fee.Contract] = txCountMap[fee.Contract] + 1
+
+	// add fee amount
+	if _, ok := batchFeesMap[fee.Contract]; ok {
+		batchFeesMap[fee.Contract].TotalFees = batchFeesMap[fee.Contract].TotalFees.Add(fee.Amount)
+	} else {
+		batchFeesMap[fee.Contract] = &types.BatchFees{
+			Token:     fee.Contract,
+			TotalFees: fee.Amount}
+	}
 }
 
 func (k Keeper) autoIncrementID(ctx sdk.Context, idKey []byte) uint64 {

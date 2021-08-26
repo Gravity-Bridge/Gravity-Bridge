@@ -341,7 +341,7 @@ func (k Keeper) GetPendingSendToEth(
 	req *types.QueryPendingSendToEth) (*types.QueryPendingSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	batches := k.GetOutgoingTxBatches(ctx)
-	unbatchedTx := k.GetPoolTransactions(ctx)
+	unbatchedTx := k.GetUnbatchedTransactions(ctx)
 	senderAddress := req.SenderAddress
 	var res *types.QueryPendingSendToEthResponse
 

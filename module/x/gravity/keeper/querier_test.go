@@ -509,11 +509,11 @@ func TestLastPendingBatchRequest(t *testing.T) {
 		}
 		},
 		{
-		"id": "1",
+		"id": "3",
 		"sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
 		"dest_address": "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 		"erc20_token": {
-			"amount": "100",
+			"amount": "102",
 			"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 		},
 		"erc20_fee": {
@@ -562,6 +562,11 @@ func createTestBatch(t *testing.T, input TestInput) {
 		fee := types.NewERC20Token(v, myTokenContractAddr).GravityCoin()
 		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
+		// Should create:
+		// 1: amount 100, fee 2
+		// 2: amount 101, fee 3
+		// 3: amount 102, fee 2
+		// 4: amount 103, fee 1
 	}
 	// when
 	input.Context = input.Context.WithBlockTime(now)
@@ -569,6 +574,8 @@ func createTestBatch(t *testing.T, input TestInput) {
 	// tx batch size is 2, so that some of them stay behind
 	_, err = input.GravityKeeper.BuildOutgoingTXBatch(input.Context, myTokenContractAddr, 2)
 	require.NoError(t, err)
+	// Should have 2 and 3 from above
+	// 1 and 4 should be unbatched
 }
 
 //nolint: exhaustivestruct
@@ -753,11 +760,11 @@ func TestQueryBatch(t *testing.T) {
 			  },
 			  "dest_address": "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 			  "erc20_token": {
-				"amount": "100",
+				"amount": "102",
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
 			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
-			  "id": "1"
+			  "id": "3"
 			}
 		  ],
 		  "batch_nonce": "1",
@@ -809,7 +816,7 @@ func TestLastBatchesRequest(t *testing.T) {
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
 			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
-			  "id": "3"
+			  "id": "7"
 			}
 		  ],
 		  "batch_nonce": "2",
@@ -838,11 +845,11 @@ func TestLastBatchesRequest(t *testing.T) {
 			  },
 			  "dest_address": "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 			  "erc20_token": {
-				"amount": "100",
+				"amount": "102",
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
 			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
-			  "id": "1"
+			  "id": "3"
 			}
 		  ],
 		  "batch_nonce": "1",
@@ -948,15 +955,22 @@ func TestQueryPendingSendToEth(t *testing.T) {
 		fee := types.NewERC20Token(v, myTokenContractAddr).GravityCoin()
 		_, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
+		// Should create:
+		// 1: amount 100, fee 2
+		// 2: amount 101, fee 3
+		// 3: amount 102, fee 2
+		// 4: amount 104, fee 1
 	}
 
 	// when
 	ctx = ctx.WithBlockTime(now)
 
 	// tx batch size is 2, so that some of them stay behind
+	// Should contain 2 and 3 from above
 	_, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
 	require.NoError(t, err)
 
+	// Should receive 1 and 4 unbatched, 2 and 3 batched in response
 	response, err := queryPendingSendToEth(ctx, mySender.String(), input.GravityKeeper)
 	require.NoError(t, err)
 	expectedJSON := []byte(`{
@@ -975,12 +989,12 @@ func TestQueryPendingSendToEth(t *testing.T) {
       }
     },
     {
-      "id": "1",
+      "id": "3",
       "sender": "cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn",
       "dest_address": "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
       "erc20_token": {
         "contract": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-        "amount": "100"
+        "amount": "102"
       },
       "erc20_fee": {
         "contract": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
@@ -990,12 +1004,12 @@ func TestQueryPendingSendToEth(t *testing.T) {
   ],
   "unbatched_transfers": [
     {
-      "id": "3",
+      "id": "1",
       "sender": "cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn",
       "dest_address": "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
       "erc20_token": {
         "contract": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-        "amount": "102"
+        "amount": "100"
       },
       "erc20_fee": {
         "contract": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",

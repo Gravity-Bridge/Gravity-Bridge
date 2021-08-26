@@ -36,13 +36,16 @@ func TestAddToOutgoingPool(t *testing.T) {
 		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
 		t.Logf("___ response: %#v", r)
+		// Should create:
+		// 1: amount 100, fee 2
+		// 2: amount 101, fee 3
+		// 3: amount 102, fee 2
+		// 4: amount 103, fee 1
+
 	}
 	// then
-	var got []*types.OutgoingTransferTx
-	input.GravityKeeper.IterateOutgoingPoolByFee(ctx, myTokenContractAddr, func(_ uint64, tx *types.OutgoingTransferTx) bool {
-		got = append(got, tx)
-		return false
-	})
+	got := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, myTokenContractAddr)
+
 	exp := []*types.OutgoingTransferTx{
 		{
 			Id:          2,
@@ -52,18 +55,18 @@ func TestAddToOutgoingPool(t *testing.T) {
 			Erc20Token:  types.NewERC20Token(101, myTokenContractAddr),
 		},
 		{
-			Id:          1,
-			Erc20Fee:    types.NewERC20Token(2, myTokenContractAddr),
-			Sender:      mySender.String(),
-			DestAddress: myReceiver,
-			Erc20Token:  types.NewERC20Token(100, myTokenContractAddr),
-		},
-		{
 			Id:          3,
 			Erc20Fee:    types.NewERC20Token(2, myTokenContractAddr),
 			Sender:      mySender.String(),
 			DestAddress: myReceiver,
 			Erc20Token:  types.NewERC20Token(102, myTokenContractAddr),
+		},
+		{
+			Id:          1,
+			Erc20Fee:    types.NewERC20Token(2, myTokenContractAddr),
+			Sender:      mySender.String(),
+			DestAddress: myReceiver,
+			Erc20Token:  types.NewERC20Token(100, myTokenContractAddr),
 		},
 		{
 			Id:          4,
