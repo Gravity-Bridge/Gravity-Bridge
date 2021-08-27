@@ -202,7 +202,6 @@ pub async fn eth_signer_main_loop(
         return;
     }
     let gravity_id = gravity_id.unwrap();
-    let gravity_id = String::from_utf8(gravity_id.clone()).expect("Invalid GravityID");
 
     loop {
         let loop_start = Instant::now();

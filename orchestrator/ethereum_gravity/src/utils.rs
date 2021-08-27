@@ -173,7 +173,7 @@ pub async fn get_gravity_id(
     contract_address: EthAddress,
     caller_address: EthAddress,
     web3: &Web3,
-) -> Result<Vec<u8>, Web3Error> {
+) -> Result<String, Web3Error> {
     let val = web3
         .contract_call(
             contract_address,
@@ -183,7 +183,11 @@ pub async fn get_gravity_id(
             None,
         )
         .await?;
-    Ok(val)
+    let gravity_id = String::from_utf8(val);
+    match gravity_id {
+        Ok(val) => Ok(val),
+        Err(e) => Err(Web3Error::BadResponse(e.to_string())),
+    }
 }
 
 /// Just a helper struct to represent the cost of actions on Ethereum
