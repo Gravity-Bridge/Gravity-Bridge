@@ -7,7 +7,15 @@ on:
     branches: [master, main]
 
 jobs:
-  happy-path:
+  happy-path-hardhat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run all up happy-path test
+        run: tests/all-up-test.sh
+        env:
+          HARDHAT: True
+  happy-path-geth:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

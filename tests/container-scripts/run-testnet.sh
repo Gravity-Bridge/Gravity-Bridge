@@ -42,10 +42,36 @@ done
 # let the cosmos chain settle before starting eth as it
 # consumes a lot of processing power
 sleep 10
+
+# GETH and TEST_TYPE may be unbound
+set +u
+
+# Starts a hardhat RPC backend that is based off of a fork of Ethereum mainnet. This is useful in that we take
+# over the account of a major Uniswap liquidity provider and from there we can test many things that are infeasible
+# to do with a Geth backend, simply becuase reproducting that state on our testnet would be far too complex to consider
+# The tradeoff here is that hardhat is an ETH dev environment and not an actual ETH implementation, as such the outputs
+# may be different. These two tests have different fork block heights they rely on
 if [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* ]]; then
-    bash /gravity/tests/container-scripts/run-solidity-test-fork.sh $ALCHEMY_ID &
+    export ALCHEMY_ID=$ALCHEMY_ID
+    pushd /gravity/solidity
+    npm run solidity_test_fork &
+    popd
 elif [[ $TEST_TYPE == *"RELAY_MARKET"* ]]; then
-    bash /gravity/tests/container-scripts/run-eth-fork.sh $ALCHEMY_ID &
+    export ALCHEMY_ID=$ALCHEMY_ID
+    pushd /gravity/solidity
+    npm run evm_fork &
+    popd
+# This starts a hardhat test environment with no pre-seeded state, faster to run, not accurate
+elif [[ ! -z "$HARDHAT" ]]; then
+    pushd /gravity/solidity
+    npm run evm &
+    popd
+# This starts the Geth backed testnet with no pre-seeded in state.
+# Geth is what we run in CI and in general, but developers frequently
+# perfer a faster experience provided by HardHat, also Mac's do not
+# work correctly with the Geth backend, there is some issue where the Docker VM on Mac platforms can't get
+# the right number of cpu cores and Geth goes crazy consuming all the processing power, on the other hand
+# hardhat doesn't work for some tests that depend on transactions waiting for blocks, so Geth is the default
 else
     bash /gravity/tests/container-scripts/run-eth.sh &
 fi

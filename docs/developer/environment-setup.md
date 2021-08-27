@@ -158,6 +158,16 @@ switch to a new terminal and run one of these two commands. A list of all predef
 docker exec -it gravity_test_instance /bin/bash
 ```
 
+### Notes for Mac users
+
+Due to a bug in Geth's mining feature it will typically eat up all CPU cores when running in a Mac VM, please set the environmental variable `HARDHAT` in order to use the lower CPU power Hardhat backend
+hardhat can not execute tests that depend on transaction queues so keep in mind this isn't a perfect solution.
+
+```
+export HARDHAT=true
+./tests/start-chains.sh
+```
+
 **Debugging**
 
 To use a stepping debugger in VS Code, follow the "Working inside the container" instructions above, but set up a one node testnet using
