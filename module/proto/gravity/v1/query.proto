@@ -6,6 +6,7 @@ import "gravity/v1/types.proto";
 import "gravity/v1/msgs.proto";
 import "gravity/v1/pool.proto";
 import "gravity/v1/batch.proto";
+import "gravity/v1/attestation.proto";
 import "google/api/annotations.proto";
 import "gogoproto/gogo.proto";
 
@@ -70,6 +71,9 @@ service Query {
     option (google.api.http).get = "/gravity/v1beta/cosmos_originated/denom_to_erc20";
   }
 
+  rpc GetAttestations(QueryAttestationsRequest) returns (QueryAttestationsResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_attestations";
+  }
   rpc GetDelegateKeyByValidator(QueryDelegateKeysByValidatorAddress) returns (QueryDelegateKeysByValidatorAddressResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_delegate_keys_by_validator";
   }
@@ -203,6 +207,13 @@ message QueryDenomToERC20Request {
 message QueryDenomToERC20Response {
   string erc20             = 1;
   bool   cosmos_originated = 2;
+}
+
+message QueryAttestationsRequest {
+  uint64 limit = 1;
+}
+message QueryAttestationsResponse {
+  repeated Attestation attestations = 1;
 }
 
 message QueryDelegateKeysByValidatorAddress {

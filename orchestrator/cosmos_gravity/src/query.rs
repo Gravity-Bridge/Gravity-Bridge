@@ -1,7 +1,9 @@
 use clarity::Address as EthAddress;
 use deep_space::address::Address;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::Attestation;
 use gravity_proto::gravity::Params;
+use gravity_proto::gravity::QueryAttestationsRequest;
 use gravity_proto::gravity::QueryBatchConfirmsRequest;
 use gravity_proto::gravity::QueryCurrentValsetRequest;
 use gravity_proto::gravity::QueryLastEventNonceByAddrRequest;
@@ -223,4 +225,17 @@ pub async fn get_oldest_unsigned_logic_call(
         Some(call) => Ok(Some(LogicCall::from_proto(call)?)),
         None => Ok(None),
     }
+}
+
+pub async fn get_attestations(
+    client: &mut GravityQueryClient<Channel>,
+    limit: Option<u64>,
+) -> Result<Vec<Attestation>, GravityError> {
+    let request = client
+        .get_attestations(QueryAttestationsRequest {
+            limit: limit.or(Some(1000u64)).unwrap(),
+        })
+        .await?;
+    let attestations = request.into_inner().attestations;
+    Ok(attestations)
 }

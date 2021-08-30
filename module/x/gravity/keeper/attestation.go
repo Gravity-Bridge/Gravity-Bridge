@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -162,7 +163,7 @@ func (k Keeper) GetAttestation(ctx sdk.Context, eventNonce uint64, claimHash []b
 	return &att
 }
 
-// DeleteAttestation deletes an attestation given an event nonce and claim
+// DeleteAttestation deletes the given attestation
 func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 	claim, err := k.UnpackAttestationClaim(&att)
 	if err != nil {
@@ -217,6 +218,37 @@ func (k Keeper) IterateAttestaions(ctx sdk.Context, cb func([]byte, types.Attest
 			return
 		}
 	}
+}
+
+// GetMostRecentAttestations returns sorted (by nonce) attestations up to a provided limit number of attestations
+// Note: calls GetAttestationMapping in the hopes that there are potentially many attestations
+// which are distributed between few nonces to minimize sorting time
+func (k Keeper) GetMostRecentAttestations(ctx sdk.Context, limit uint64) []*types.Attestation {
+	attestationMapping := k.GetAttestationMapping(ctx)
+	attestations := make([]*types.Attestation, 0, limit)
+
+	keys := make([]uint64, 0, len(attestationMapping))
+	for k := range attestationMapping {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+
+	// Iterate the nonces and collect the attestations
+	count := 0
+	for _, nonce := range keys {
+		if count >= int(limit) {
+			break
+		}
+		for _, att := range attestationMapping[nonce] {
+			if count >= int(limit) {
+				break
+			}
+			attestations = append(attestations, &att)
+			count++
+		}
+	}
+
+	return attestations
 }
 
 // GetLastObservedEventNonce returns the latest observed event nonce

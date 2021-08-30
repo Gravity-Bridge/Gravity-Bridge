@@ -3,22 +3,31 @@ use crate::utils::*;
 use crate::ADDRESS_PREFIX;
 use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
+use crate::OPERATION_TIMEOUT;
 use crate::STAKING_TOKEN;
 use crate::STARTING_STAKE_PER_VALIDATOR;
 use crate::TOTAL_TIMEOUT;
+use bytes::BytesMut;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
+use cosmos_gravity::query::get_attestations;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
 use cosmos_gravity::{query::get_oldest_unsigned_transaction_batch, send::send_ethereum_claims};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::Contact;
+use ethereum_gravity::utils::get_event_nonce;
 use ethereum_gravity::utils::get_valset_nonce;
 use ethereum_gravity::{send_to_cosmos::send_to_cosmos, utils::get_tx_batch_nonce};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::MsgSendToCosmosClaim;
+use gravity_proto::gravity::MsgValsetUpdatedClaim;
 use gravity_utils::types::SendToCosmosEvent;
+use prost::Message;
 use rand::Rng;
+use std::any::type_name;
+use std::thread::sleep;
 use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep as delay_for;
@@ -57,7 +66,7 @@ pub async fn happy_path_test(
     // with the first block) is successfully updated
     if !validator_out {
         for _ in 0u32..2 {
-            test_valset_update(web30, contact, &keys, gravity_address).await;
+            test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
         }
     } else {
         wait_for_nonzero_valset(web30, gravity_address).await;
@@ -80,6 +89,7 @@ pub async fn happy_path_test(
         test_erc20_deposit(
             web30,
             contact,
+            &mut grpc_client,
             dest_cosmos_address,
             gravity_address,
             erc20_address,
@@ -88,12 +98,16 @@ pub async fn happy_path_test(
         .await;
     }
 
+    let event_nonce = get_event_nonce(gravity_address, *MINER_ADDRESS, web30)
+        .await
+        .unwrap();
+
     // We are going to submit a duplicate tx with nonce 1
     // This had better not increase the balance again
     // this test may have false positives if the timeout is not
     // long enough. TODO check for an error on the cosmos send response
     submit_duplicate_erc20_send(
-        1u64,
+        event_nonce, // Duplicate the current nonce
         contact,
         erc20_address,
         1u64.into(),
@@ -114,6 +128,51 @@ pub async fn happy_path_test(
         erc20_address,
     )
     .await;
+}
+
+// Iterates each attestation known by the grpc endpoint by calling `get_attestations()`
+// Executes the input closure `f` against each attestation's decoded claim
+// This is useful for testing that certain attestations exist in the oracle,
+// see the consumers of this function (check_valset_update_attestation(),
+// check_send_to_cosmos_attestation(), etc.) for examples of usage
+//
+// `F` is the type of the closure, a state mutating function which may be called multiple times
+// `F` functions take a single parameter of type `T`, which is some sort of `Message`
+// The type `T` is very important as it dictates how we decode the message
+pub async fn iterate_attestations<F: FnMut(T), T: Message + Default>(
+    grpc_client: &mut GravityQueryClient<Channel>,
+    f: &mut F,
+) {
+    let attestations = get_attestations(grpc_client, None)
+        .await
+        .expect("Something happened while getting attestations after delegating to validator");
+    for (i, att) in attestations.into_iter().enumerate() {
+        let claim = att.clone().claim;
+        trace!("Processing attestation {}", i);
+        if claim.is_none() {
+            trace!("Attestation returned with no claim: {:?}", att);
+            continue;
+        }
+        let claim = claim.unwrap();
+        let mut buf = BytesMut::with_capacity(claim.value.len());
+        buf.extend_from_slice(&claim.value);
+
+        // Here we use the `T` type to decode whatever type of message this attestation holds
+        // for use in the `f` function
+        let decoded = T::decode(buf);
+
+        // Decoding errors indicate there is some other attestation we don't care about
+        if decoded.is_err() {
+            debug!(
+                "Found an attestation which is not a {}: {:?}",
+                type_name::<T>(),
+                att,
+            );
+            continue;
+        }
+        let decoded = decoded.unwrap();
+        f(decoded);
+    }
 }
 
 pub async fn wait_for_nonzero_valset(web30: &Web3, gravity_address: EthAddress) {
@@ -137,6 +196,7 @@ pub async fn wait_for_nonzero_valset(web30: &Web3, gravity_address: EthAddress) 
 pub async fn test_valset_update(
     web30: &Web3,
     contact: &Contact,
+    grpc_client: &mut GravityQueryClient<Channel>,
     keys: &[ValidatorKeys],
     gravity_address: EthAddress,
 ) {
@@ -148,6 +208,7 @@ pub async fn test_valset_update(
     .await
     .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
+    let mut grpc_client = grpc_client.clone();
     // if we don't do this the orchestrators may run ahead of us and we'll be stuck here after
     // getting credit for two loops when we did one
     let starting_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
@@ -192,6 +253,8 @@ pub async fn test_valset_update(
         .await
         .unwrap();
 
+    check_valset_update_attestation(&mut grpc_client, keys).await;
+
     let mut current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
         .await
         .expect("Failed to get current eth valset");
@@ -213,10 +276,41 @@ pub async fn test_valset_update(
     info!("Validator set successfully updated!");
 }
 
+// Checks for a MsgValsetUpdatedClaim attestation where every validator is represented
+async fn check_valset_update_attestation(
+    grpc_client: &mut GravityQueryClient<Channel>,
+    keys: &[ValidatorKeys],
+) {
+    let mut found = true;
+    iterate_attestations(grpc_client, &mut |decoded: MsgValsetUpdatedClaim| {
+        // Check that each bridge validator is one of the addresses in our keys
+        for bridge_val in decoded.members {
+            let found_val = keys.iter().any(|key: &ValidatorKeys| {
+                let eth_pub_key = key.eth_key.to_public_key().unwrap().to_string();
+                bridge_val.ethereum_address == eth_pub_key
+            });
+            if !found_val {
+                warn!(
+                    "Could not find BridgeValidator eth pub key {} in keys",
+                    bridge_val.ethereum_address
+                );
+            }
+            found &= found_val;
+        }
+    })
+    .await;
+    assert!(
+        found,
+        "Could not find the valset updated attestation we were looking for!"
+    );
+    info!("Found the expected MsgValsetUpdatedClaim attestation");
+}
+
 /// this function tests Ethereum -> Cosmos
 pub async fn test_erc20_deposit(
     web30: &Web3,
     contact: &Contact,
+    grpc_client: &mut GravityQueryClient<Channel>,
     dest: CosmosAddress,
     gravity_address: EthAddress,
     erc20_address: EthAddress,
@@ -226,6 +320,7 @@ pub async fn test_erc20_deposit(
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
+    let mut grpc_client = grpc_client.clone();
     let start_coin = check_cosmos_balance("gravity", dest, contact).await;
     info!(
         "Sending to Cosmos from {} to {} with amount {}",
@@ -238,13 +333,20 @@ pub async fn test_erc20_deposit(
         amount.clone(),
         dest,
         *MINER_PRIVATE_KEY,
-        Some(TOTAL_TIMEOUT),
+        None,
         web30,
         vec![],
     )
     .await
     .expect("Failed to send tokens to Cosmos");
     info!("Send to Cosmos txid: {:#066x}", tx_id);
+
+    check_send_to_cosmos_attestation(&mut grpc_client, erc20_address, dest, *MINER_ADDRESS).await;
+
+    let _tx_res = web30
+        .wait_for_transaction(tx_id, OPERATION_TIMEOUT, None)
+        .await
+        .expect("Send to cosmos transaction failed to be included into ethereum side");
 
     let start = Instant::now();
     while Instant::now() - start < TOTAL_TIMEOUT {
@@ -282,6 +384,34 @@ pub async fn test_erc20_deposit(
     panic!("Failed to bridge ERC20!")
 }
 
+// Tries up to TOTAL_TIMEOUT time to find a MsgSendToCosmosClaim attestation created in the
+// test_erc20_deposit test
+async fn check_send_to_cosmos_attestation(
+    grpc_client: &mut GravityQueryClient<Channel>,
+    erc20_address: EthAddress,
+    receiver: CosmosAddress,
+    sender: EthAddress,
+) {
+    let start = Instant::now();
+    let mut found = false;
+    loop {
+        iterate_attestations(grpc_client, &mut |decoded: MsgSendToCosmosClaim| {
+            let right_contract = decoded.token_contract == erc20_address.to_string();
+            let right_destination = decoded.cosmos_receiver == receiver.to_string();
+            let right_sender = decoded.ethereum_sender == sender.to_string();
+            found = right_contract && right_destination && right_sender;
+        })
+        .await;
+        if found {
+            break;
+        } else if Instant::now() - start > TOTAL_TIMEOUT {
+            panic!("Could not find the send_to_cosmos attestation we were looking for!");
+        }
+        sleep(Duration::from_secs(5))
+    }
+    info!("Found the expected MsgSendToCosmosClaim attestation");
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn test_batch(
     contact: &Contact,
@@ -297,6 +427,7 @@ async fn test_batch(
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
+    let mut grpc_client = grpc_client.clone();
     let dest_cosmos_address = dest_cosmos_private_key
         .to_address(&contact.get_prefix())
         .unwrap();
@@ -315,6 +446,7 @@ async fn test_batch(
         "Sending {}{} from {} on Cosmos back to Ethereum",
         amount, token_name, dest_cosmos_address
     );
+
     let res = send_to_eth(
         dest_cosmos_private_key,
         dest_eth_address,
@@ -336,6 +468,7 @@ async fn test_batch(
         token_name.clone(),
         get_fee(),
         contact,
+        None,
     )
     .await
     .unwrap();
@@ -344,9 +477,13 @@ async fn test_batch(
     let requester_address = requester_cosmos_private_key
         .to_address(&contact.get_prefix())
         .unwrap();
-    get_oldest_unsigned_transaction_batch(grpc_client, requester_address, contact.get_prefix())
-        .await
-        .expect("Failed to get batch to sign");
+    get_oldest_unsigned_transaction_batch(
+        &mut grpc_client,
+        requester_address,
+        contact.get_prefix(),
+    )
+    .await
+    .expect("Failed to get batch to sign");
 
     let mut current_eth_batch_nonce =
         get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
@@ -431,7 +568,7 @@ async fn submit_duplicate_erc20_send(
 
     // iterate through all validators and try to send an event with duplicate nonce
     for k in keys.iter() {
-        let c_key = k.validator_key;
+        let c_key = k.orch_key;
         let res = send_ethereum_claims(
             contact,
             c_key,
@@ -444,8 +581,10 @@ async fn submit_duplicate_erc20_send(
         )
         .await
         .unwrap();
-        trace!("Submitted duplicate sendToCosmos event: {:?}", res);
+        info!("Submitted duplicate sendToCosmos event: {:?}", res);
     }
+
+    contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
     if let Some(end_coin) = check_cosmos_balance("gravity", receiver, contact).await {
         if start_coin.amount == end_coin.amount && start_coin.denom == end_coin.denom {
