@@ -82,7 +82,7 @@ func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (string, sdk
 }
 
 // ERC20ToDenom returns (bool isCosmosOriginated, string denom, err)
-// Using this information, you can see if an ERC20 address represents an asset is native to Cosmos or Ethereum,
+// Using this information, you can see if an ERC20 address representing an asset is native to Cosmos or Ethereum,
 // and get its corresponding denom
 func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, tokenContract string) (bool, string) {
 	// First try looking up tokenContract in index

@@ -499,10 +499,7 @@ func TestPoolTxRefund(t *testing.T) {
 
 	// tx batch size is 2, so that some of them stay behind
 	// Should have 2: and 3: from above
-	batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
-	batch = batch
-	unbatched := input.GravityKeeper.GetUnbatchedTransactions(ctx)
-	unbatched = unbatched
+	_, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
 	require.NoError(t, err)
 
 	// try to refund a tx that's in a batch
@@ -513,8 +510,6 @@ func TestPoolTxRefund(t *testing.T) {
 	err2 := input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, 4, notMySender)
 	require.Error(t, err2)
 
-	prebalances := input.BankKeeper.GetAllBalances(ctx, mySender)
-	prebalances = prebalances
 	// try to refund a tx that's in the pool
 	err3 := input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, 4, mySender)
 	require.NoError(t, err3)

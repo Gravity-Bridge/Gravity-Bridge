@@ -162,6 +162,10 @@ func (k Keeper) pickUnbatchedTX(
 		if tx != nil && tx.Erc20Fee != nil {
 			selectedTx = append(selectedTx, tx)
 			err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, tx.Id)
+			oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
+			if oldTx != nil || oldTxErr == nil {
+				panic("picked a duplicate transaction from the pool, duplicates should never exist!")
+			}
 			return err != nil || uint(len(selectedTx)) == maxElements
 		} else {
 			panic("tx and fee should never be nil!")
