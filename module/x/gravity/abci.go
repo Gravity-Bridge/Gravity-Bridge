@@ -361,6 +361,18 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 	// Then we sort it
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 
+	// we delete all attestations earlier than the current event nonce
+	// minus some buffer value. This buffer value is purely to allow
+	// frontends and other UI components to view recent oracle history
+	const eventsToKeep = 1000
+	lastNonce := uint64(k.GetLastObservedEventNonce(ctx))
+	var cutoff uint64
+	if lastNonce <= eventsToKeep {
+		return
+	} else {
+		cutoff = lastNonce - eventsToKeep
+	}
+
 	// This iterates over all keys (event nonces) in the attestation mapping. Each value contains
 	// a slice with one or more attestations at that event nonce. There can be multiple attestations
 	// at one event nonce when validators disagree about what event happened at that nonce.
@@ -369,8 +381,8 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 		// They are ordered by when the first attestation at the event nonce was received.
 		// This order is not important.
 		for _, att := range attmap[nonce] {
-			// we delete all attestations earlier than the current event nonce
-			if nonce < uint64(k.GetLastObservedEventNonce(ctx)) {
+			// delete all before the cutoff
+			if nonce < cutoff {
 				k.DeleteAttestation(ctx, att)
 			}
 		}
