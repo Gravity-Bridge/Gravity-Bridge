@@ -265,3 +265,9 @@ func (b OutgoingTxBatch) GetFees() sdk.Int {
 type EthereumSigned interface {
 	GetCheckpoint(gravityIDstring string) []byte
 }
+
+var (
+	_ EthereumSigned = &Valset{}
+	_ EthereumSigned = &OutgoingTxBatch{}
+	_ EthereumSigned = &OutgoingLogicCall{}
+)

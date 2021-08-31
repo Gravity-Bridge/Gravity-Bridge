@@ -312,3 +312,11 @@ pub async fn create_parameter_change_proposal(
     let res = contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
     trace!("Gov proposal executed with {:?}", res);
 }
+
+/// Gets the operator address for a given validator private key
+pub fn get_operator_address(key: CosmosPrivateKey) -> CosmosAddress {
+    // this is not guaranteed to be correct, the chain may set the valoper prefix in a
+    // different way, but I haven't yet seen one that does not match this pattern
+    key.to_address(&format!("{}valoper", *ADDRESS_PREFIX))
+        .unwrap()
+}

@@ -16,6 +16,7 @@ use cosmos_gravity::utils::wait_for_cosmos_online;
 use deep_space::coin::Coin;
 use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
+use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
@@ -28,6 +29,7 @@ use valset_stress::validator_set_stress_test;
 
 mod arbitrary_logic;
 mod bootstrapping;
+mod evidence_based_slashing;
 mod happy_path;
 mod happy_path_v2;
 mod orch_keys;
@@ -212,6 +214,10 @@ pub async fn main() {
         } else if test_type == "ORCHESTRATOR_KEYS" {
             info!("Starting orchestrator key update tests!");
             orch_keys(grpc_client, &contact, keys).await;
+            return;
+        } else if test_type == "EVIDENCE" {
+            info!("Starting evidence based slashing tests!");
+            evidence_based_slashing(&web30, &contact, keys, gravity_address).await;
             return;
         }
     }
