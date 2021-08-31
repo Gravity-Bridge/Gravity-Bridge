@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use clarity::Address as EthAddress;
 use deep_space::address::Address;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -103,7 +105,8 @@ pub async fn get_all_valset_confirms(
     let confirms = request.into_inner().confirms;
     let mut parsed_confirms = Vec::new();
     for item in confirms {
-        parsed_confirms.push(ValsetConfirmResponse::from_proto(item)?)
+        let v: ValsetConfirmResponse = ValsetConfirmResponse::try_from(&item)?;
+        parsed_confirms.push(v)
     }
     Ok(parsed_confirms)
 }
@@ -120,7 +123,7 @@ pub async fn get_oldest_unsigned_transaction_batch(
         .await?;
     let batch = request.into_inner().batch;
     match batch {
-        Some(batch) => Ok(Some(TransactionBatch::from_proto(batch)?)),
+        Some(batch) => Ok(Some(TransactionBatch::try_from(batch)?)),
         None => Ok(None),
     }
 }
@@ -136,7 +139,7 @@ pub async fn get_latest_transaction_batches(
     let batches = request.into_inner().batches;
     let mut out = Vec::new();
     for batch in batches {
-        out.push(TransactionBatch::from_proto(batch)?)
+        out.push(TransactionBatch::try_from(batch)?)
     }
     Ok(out)
 }
@@ -156,7 +159,7 @@ pub async fn get_transaction_batch_signatures(
     let batch_confirms = request.into_inner().confirms;
     let mut out = Vec::new();
     for confirm in batch_confirms {
-        out.push(BatchConfirmResponse::from_proto(confirm)?)
+        out.push(BatchConfirmResponse::try_from(confirm)?)
     }
     Ok(out)
 }
@@ -186,7 +189,7 @@ pub async fn get_latest_logic_calls(
     let calls = request.into_inner().calls;
     let mut out = Vec::new();
     for call in calls {
-        out.push(LogicCall::from_proto(call)?);
+        out.push(LogicCall::try_from(call)?);
     }
     Ok(out)
 }
@@ -205,7 +208,7 @@ pub async fn get_logic_call_signatures(
     let call_confirms = request.into_inner().confirms;
     let mut out = Vec::new();
     for confirm in call_confirms {
-        out.push(LogicCallConfirmResponse::from_proto(confirm)?)
+        out.push(LogicCallConfirmResponse::try_from(confirm)?)
     }
     Ok(out)
 }
@@ -222,7 +225,7 @@ pub async fn get_oldest_unsigned_logic_call(
         .await?;
     let call = request.into_inner().call;
     match call {
-        Some(call) => Ok(Some(LogicCall::from_proto(call)?)),
+        Some(call) => Ok(Some(LogicCall::try_from(call)?)),
         None => Ok(None),
     }
 }

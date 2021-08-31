@@ -5,6 +5,7 @@ use clarity::Address as EthAddress;
 use clarity::Signature as EthSignature;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Address as CosmosAddress;
+use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::{
     cmp::Ordering,
@@ -58,19 +59,6 @@ pub struct ValsetConfirmResponse {
     pub eth_signature: EthSignature,
 }
 
-impl ValsetConfirmResponse {
-    pub fn from_proto(
-        input: gravity_proto::gravity::MsgValsetConfirm,
-    ) -> Result<Self, GravityError> {
-        Ok(ValsetConfirmResponse {
-            orchestrator: input.orchestrator.parse()?,
-            eth_address: input.eth_address.parse()?,
-            nonce: input.nonce,
-            eth_signature: input.signature.parse()?,
-        })
-    }
-}
-
 impl Confirm for ValsetConfirmResponse {
     fn get_eth_address(&self) -> EthAddress {
         self.eth_address
@@ -83,9 +71,17 @@ impl Confirm for ValsetConfirmResponse {
 /// a list of validators, powers, and eth addresses at a given block height
 #[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq)]
 pub struct Valset {
+    /// The monotonically increasing nonce value used to prevent
+    /// validator set update replay
     pub nonce: u64,
+    /// Members of the validator set, these are the Ethereum keys of
+    /// the Cosmos validator set at the time of creation along with
+    /// normalized powers for them
     pub members: Vec<ValsetMember>,
+    /// An optional reward to be issued to the Relayer on Ethereum
+    /// TODO make Option<Uint256>
     pub reward_amount: Uint256,
+    /// An optional reward to be issued to the Relayer on Ethereum
     pub reward_token: Option<EthAddress>,
 }
 
@@ -424,5 +420,24 @@ impl From<&ValsetMember> for gravity_proto::gravity::BridgeValidator {
             power: input.power,
             ethereum_address,
         }
+    }
+}
+
+impl TryFrom<gravity_proto::gravity::MsgValsetConfirm> for ValsetConfirmResponse {
+    type Error = GravityError;
+    fn try_from(input: gravity_proto::gravity::MsgValsetConfirm) -> Result<Self, GravityError> {
+        ValsetConfirmResponse::try_from(&input)
+    }
+}
+
+impl TryFrom<&gravity_proto::gravity::MsgValsetConfirm> for ValsetConfirmResponse {
+    type Error = GravityError;
+    fn try_from(input: &gravity_proto::gravity::MsgValsetConfirm) -> Result<Self, GravityError> {
+        Ok(ValsetConfirmResponse {
+            orchestrator: input.orchestrator.parse()?,
+            eth_address: input.eth_address.parse()?,
+            nonce: input.nonce,
+            eth_signature: input.signature.parse()?,
+        })
     }
 }

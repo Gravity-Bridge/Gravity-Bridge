@@ -1,5 +1,6 @@
 use clarity::Address as EthAddress;
 use num256::Uint256;
+use std::convert::TryFrom;
 mod batches;
 mod config;
 mod ethereum_events;
@@ -23,8 +24,9 @@ pub struct Erc20Token {
     pub token_contract_address: EthAddress,
 }
 
-impl Erc20Token {
-    pub fn from_proto(input: gravity_proto::gravity::Erc20Token) -> Result<Self, GravityError> {
+impl TryFrom<gravity_proto::gravity::Erc20Token> for Erc20Token {
+    type Error = GravityError;
+    fn try_from(input: gravity_proto::gravity::Erc20Token) -> Result<Erc20Token, GravityError> {
         Ok(Erc20Token {
             amount: input.amount.parse()?,
             token_contract_address: input.contract.parse()?,
