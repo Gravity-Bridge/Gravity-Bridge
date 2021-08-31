@@ -33,3 +33,22 @@ impl TryFrom<gravity_proto::gravity::Erc20Token> for Erc20Token {
         })
     }
 }
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::Erc20Token> for &Erc20Token {
+    fn into(self) -> gravity_proto::gravity::Erc20Token {
+        gravity_proto::gravity::Erc20Token {
+            amount: self.amount.to_string(),
+            contract: self.token_contract_address.to_string(),
+        }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::Erc20Token> for Erc20Token {
+    fn into(self) -> gravity_proto::gravity::Erc20Token {
+        gravity_proto::gravity::Erc20Token {
+            amount: self.amount.to_string(),
+            contract: self.token_contract_address.to_string(),
+        }
+    }
+}

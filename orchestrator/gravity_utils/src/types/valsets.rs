@@ -441,3 +441,37 @@ impl TryFrom<&gravity_proto::gravity::MsgValsetConfirm> for ValsetConfirmRespons
         })
     }
 }
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::Valset> for &Valset {
+    fn into(self) -> gravity_proto::gravity::Valset {
+        gravity_proto::gravity::Valset {
+            nonce: self.nonce,
+            // note our use of a dummy value here, this value is not used for signatures
+            // so it has no effect on evidence based slashing
+            height: 0,
+            members: self.members.iter().map(|v| v.into()).collect(),
+            reward_amount: self.reward_amount.to_string(),
+            reward_token: self
+                .reward_token
+                .unwrap_or(*clarity::constants::NULL_ADDRESS)
+                .to_string(),
+        }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::Valset> for Valset {
+    fn into(self) -> gravity_proto::gravity::Valset {
+        let r = &self;
+        r.into()
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::BridgeValidator> for ValsetMember {
+    fn into(self) -> gravity_proto::gravity::BridgeValidator {
+        let r = &self;
+        r.into()
+    }
+}

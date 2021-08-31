@@ -83,3 +83,29 @@ impl TryFrom<gravity_proto::gravity::OutgoingLogicCall> for LogicCall {
         })
     }
 }
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::OutgoingLogicCall> for &LogicCall {
+    fn into(self) -> gravity_proto::gravity::OutgoingLogicCall {
+        gravity_proto::gravity::OutgoingLogicCall {
+            transfers: self.transfers.iter().map(|t| t.into()).collect(),
+            fees: self.fees.iter().map(|t| t.into()).collect(),
+            logic_contract_address: self.logic_contract_address.to_string(),
+            payload: self.payload.clone(),
+            timeout: self.timeout,
+            invalidation_id: self.invalidation_id.clone(),
+            invalidation_nonce: self.invalidation_nonce,
+            // note the dummy value, this is not used in signatures
+            // so it's not required for our evidence based slashing implementation
+            block: 0,
+        }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::OutgoingLogicCall> for LogicCall {
+    fn into(self) -> gravity_proto::gravity::OutgoingLogicCall {
+        let r = &self;
+        r.into()
+    }
+}

@@ -151,3 +151,45 @@ impl TryFrom<gravity_proto::gravity::OutgoingTransferTx> for BatchTransaction {
         })
     }
 }
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::OutgoingTransferTx> for &BatchTransaction {
+    fn into(self) -> gravity_proto::gravity::OutgoingTransferTx {
+        gravity_proto::gravity::OutgoingTransferTx {
+            id: self.id,
+            sender: self.sender.to_string(),
+            dest_address: self.destination.to_string(),
+            erc20_token: Some(self.erc20_token.clone().into()),
+            erc20_fee: Some(self.erc20_fee.clone().into()),
+        }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::OutgoingTransferTx> for BatchTransaction {
+    fn into(self) -> gravity_proto::gravity::OutgoingTransferTx {
+        let r = &self;
+        r.into()
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::OutgoingTxBatch> for &TransactionBatch {
+    fn into(self) -> gravity_proto::gravity::OutgoingTxBatch {
+        gravity_proto::gravity::OutgoingTxBatch {
+            batch_nonce: self.nonce,
+            batch_timeout: self.batch_timeout,
+            transactions: self.transactions.iter().map(|v| v.into()).collect(),
+            token_contract: self.token_contract.to_string(),
+            block: 0,
+        }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<gravity_proto::gravity::OutgoingTxBatch> for TransactionBatch {
+    fn into(self) -> gravity_proto::gravity::OutgoingTxBatch {
+        let r = &self;
+        r.into()
+    }
+}
