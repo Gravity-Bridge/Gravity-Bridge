@@ -17,6 +17,8 @@ use gravity_proto::gravity::QueryLogicConfirmsRequest;
 use gravity_proto::gravity::QueryOutgoingLogicCallsRequest;
 use gravity_proto::gravity::QueryOutgoingTxBatchesRequest;
 use gravity_proto::gravity::QueryParamsRequest;
+use gravity_proto::gravity::QueryPendingSendToEth;
+use gravity_proto::gravity::QueryPendingSendToEthResponse;
 use gravity_proto::gravity::QueryValsetConfirmsByNonceRequest;
 use gravity_proto::gravity::QueryValsetRequestRequest;
 use gravity_utils::error::GravityError;
@@ -241,4 +243,17 @@ pub async fn get_attestations(
         .await?;
     let attestations = request.into_inner().attestations;
     Ok(attestations)
+}
+
+/// Get a list of transactions going to the EVM blockchain that are pending for a given user.
+pub async fn get_pending_send_to_eth(
+    client: &mut GravityQueryClient<Channel>,
+    sender_address: Address,
+) -> Result<QueryPendingSendToEthResponse, GravityError> {
+    let request = client
+        .get_pending_send_to_eth(QueryPendingSendToEth {
+            sender_address: sender_address.to_string(),
+        })
+        .await?;
+    Ok(request.into_inner())
 }

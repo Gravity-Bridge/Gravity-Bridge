@@ -357,23 +357,24 @@ func (k Keeper) GetPendingSendToEth(
 	req *types.QueryPendingSendToEth) (*types.QueryPendingSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	batches := k.GetOutgoingTxBatches(ctx)
-	unbatchedTx := k.GetUnbatchedTransactions(ctx)
-	senderAddress := req.SenderAddress
-	var res *types.QueryPendingSendToEthResponse
-
+	unbatched_tx := k.GetUnbatchedTransactions(ctx)
+	sender_address := req.GetSenderAddress()
+	res := types.QueryPendingSendToEthResponse{
+		TransfersInBatches: []*types.OutgoingTransferTx{},
+		UnbatchedTransfers: []*types.OutgoingTransferTx{},
+	}
 	for _, batch := range batches {
 		for _, tx := range batch.Transactions {
-			if tx.Sender == senderAddress {
+			if tx.Sender == sender_address {
 				res.TransfersInBatches = append(res.TransfersInBatches, tx)
 			}
 		}
 	}
-
-	for _, tx := range unbatchedTx {
-		if tx.Sender == senderAddress {
+	for _, tx := range unbatched_tx {
+		if tx.Sender == sender_address {
 			res.UnbatchedTransfers = append(res.UnbatchedTransfers, tx)
 		}
 	}
 
-	return res, nil
+	return &res, nil
 }

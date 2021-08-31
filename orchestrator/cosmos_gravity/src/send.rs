@@ -13,7 +13,6 @@ use ethereum_gravity::message_signatures::{
 use ethereum_gravity::utils::downcast_uint256;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-use gravity_proto::gravity::MsgConfirmBatch;
 use gravity_proto::gravity::MsgConfirmLogicCall;
 use gravity_proto::gravity::MsgErc20DeployedClaim;
 use gravity_proto::gravity::MsgLogicCallExecutedClaim;
@@ -24,6 +23,7 @@ use gravity_proto::gravity::MsgSetOrchestratorAddress;
 use gravity_proto::gravity::MsgValsetConfirm;
 use gravity_proto::gravity::MsgValsetUpdatedClaim;
 use gravity_proto::gravity::{MsgBatchSendToEthClaim, MsgSubmitBadSignatureEvidence};
+use gravity_proto::gravity::{MsgCancelSendToEth, MsgConfirmBatch};
 use gravity_utils::types::*;
 use std::{collections::HashMap, time::Duration};
 
@@ -495,6 +495,42 @@ pub async fn submit_bad_signature_evidence(
         "/gravity.v1.MsgSubmitBadSignatureEvidence",
         msg_submit_bad_signature_evidence,
     );
+
+    let args = contact.get_message_args(our_address, fee).await?;
+    trace!("got optional tx info");
+
+    let msg_bytes = private_key.sign_std_msg(&[msg], args, MEMO)?;
+
+    let response = contact
+        .send_transaction(msg_bytes, BroadcastMode::Sync)
+        .await?;
+
+    contact.wait_for_tx(response, TIMEOUT).await
+}
+
+/// Cancels a user provided SendToEth transaction, provided it's not already in a batch
+/// you should check with `QueryPendingSendToEth`
+pub async fn cancel_send_to_eth(
+    private_key: PrivateKey,
+    fee: Coin,
+    contact: &Contact,
+    transaction_id: u64,
+) -> Result<TxResponse, CosmosGrpcError> {
+    let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
+
+    let msg_cancel_send_to_eth = MsgCancelSendToEth {
+        transaction_id,
+        sender: our_address.to_string(),
+    };
+
+    let fee = Fee {
+        amount: vec![fee],
+        gas_limit: 500_000u64,
+        granter: None,
+        payer: None,
+    };
+
+    let msg = Msg::new("/gravity.v1.MsgCancelSendToEth", msg_cancel_send_to_eth);
 
     let args = contact.get_message_args(our_address, fee).await?;
     trace!("got optional tx info");

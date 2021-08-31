@@ -7,6 +7,7 @@
 extern crate log;
 
 use crate::bootstrapping::*;
+use crate::tx_cancel::send_to_eth_and_cancel;
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
 use arbitrary_logic::arbitrary_logic_test;
@@ -35,6 +36,7 @@ mod happy_path_v2;
 mod orch_keys;
 mod relay_market;
 mod transaction_stress_test;
+mod tx_cancel;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
@@ -218,6 +220,18 @@ pub async fn main() {
         } else if test_type == "EVIDENCE" {
             info!("Starting evidence based slashing tests!");
             evidence_based_slashing(&web30, &contact, keys, gravity_address).await;
+            return;
+        } else if test_type == "TXCANCEL" {
+            info!("SendToEth cancellation test!");
+            send_to_eth_and_cancel(
+                &contact,
+                grpc_client,
+                &web30,
+                keys,
+                gravity_address,
+                erc20_addresses[0],
+            )
+            .await;
             return;
         }
     }
