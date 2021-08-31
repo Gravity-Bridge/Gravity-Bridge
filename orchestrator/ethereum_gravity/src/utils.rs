@@ -1,3 +1,4 @@
+use clarity::abi::encode_call;
 use clarity::Address as EthAddress;
 use clarity::Uint256;
 use clarity::{abi::Token, constants::ZERO_ADDRESS};
@@ -76,14 +77,9 @@ pub async fn get_valset_nonce(
     caller_address: EthAddress,
     web3: &Web3,
 ) -> Result<u64, Web3Error> {
+    let payload = encode_call("state_lastValsetNonce()", &[]).unwrap();
     let val = web3
-        .contract_call(
-            contract_address,
-            "state_lastValsetNonce()",
-            &[],
-            caller_address,
-            None,
-        )
+        .simulate_transaction(contract_address, 0u8.into(), payload, caller_address, None)
         .await?;
     // the go represents all nonces as u64, there's no
     // reason they should ever overflow without a user
@@ -101,11 +97,12 @@ pub async fn get_tx_batch_nonce(
     caller_address: EthAddress,
     web3: &Web3,
 ) -> Result<u64, Web3Error> {
+    let payload = encode_call("lastBatchNonce(address)", &[erc20_contract_address.into()]).unwrap();
     let val = web3
-        .contract_call(
+        .simulate_transaction(
             gravity_contract_address,
-            "lastBatchNonce(address)",
-            &[erc20_contract_address.into()],
+            0u8.into(),
+            payload,
             caller_address,
             None,
         )
@@ -126,11 +123,16 @@ pub async fn get_logic_call_nonce(
     caller_address: EthAddress,
     web3: &Web3,
 ) -> Result<u64, Web3Error> {
+    let payload = encode_call(
+        "lastLogicCallNonce(bytes32)",
+        &[Token::Bytes(invalidation_id)],
+    )
+    .unwrap();
     let val = web3
-        .contract_call(
+        .simulate_transaction(
             gravity_contract_address,
-            "lastLogicCallNonce(bytes32)",
-            &[Token::Bytes(invalidation_id)],
+            0u8.into(),
+            payload,
             caller_address,
             None,
         )
@@ -150,11 +152,12 @@ pub async fn get_event_nonce(
     caller_address: EthAddress,
     web3: &Web3,
 ) -> Result<u64, Web3Error> {
+    let payload = encode_call("state_lastEventNonce()", &[]).unwrap();
     let val = web3
-        .contract_call(
+        .simulate_transaction(
             gravity_contract_address,
-            "state_lastEventNonce()",
-            &[],
+            0u8.into(),
+            payload,
             caller_address,
             None,
         )
@@ -174,14 +177,9 @@ pub async fn get_gravity_id(
     caller_address: EthAddress,
     web3: &Web3,
 ) -> Result<String, Web3Error> {
+    let payload = encode_call("state_gravityId()", &[]).unwrap();
     let val = web3
-        .contract_call(
-            contract_address,
-            "state_gravityId()",
-            &[],
-            caller_address,
-            None,
-        )
+        .simulate_transaction(contract_address, 0u8.into(), payload, caller_address, None)
         .await?;
     let gravity_id = String::from_utf8(val);
     match gravity_id {

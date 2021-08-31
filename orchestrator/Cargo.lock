@@ -27,6 +27,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3720d0064a0ce5c0de7bd93bdb0a6caebab2a9b5668746145d7b3b0c5da02914"
+dependencies = [
+ "actix-rt 2.2.0",
+ "actix_derive",
+ "bitflags",
+ "bytes 1.0.1",
+ "crossbeam-channel",
+ "futures-core",
+ "futures-sink",
+ "futures-task",
+ "futures-util",
+ "log",
+ "once_cell",
+ "parking_lot",
+ "pin-project-lite 0.2.7",
+ "smallvec",
+ "tokio 1.8.1",
+ "tokio-util 0.6.7",
+]
+
+[[package]]
 name = "actix-codec"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -825,7 +849,7 @@ dependencies = [
 name = "cosmos_gravity"
 version = "0.1.0"
 dependencies = [
- "actix",
+ "actix 0.12.0",
  "clarity",
  "deep_space",
  "env_logger",
@@ -834,6 +858,7 @@ dependencies = [
  "gravity_utils",
  "log",
  "num256",
+ "prost-types",
  "rand 0.8.4",
  "serde",
  "sha3",
@@ -1010,9 +1035,9 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.8.4"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a19187fea3ac7e84da7dacf48de0c45d63c6a76f9490dae389aead16c243fce3"
+checksum = "0b2cf0344971ee6c64c31be0d530793fba457d322dfec2810c453d0ef228f9c3"
 dependencies = [
  "atty",
  "humantime",
@@ -1035,7 +1060,7 @@ dependencies = [
 name = "ethereum_gravity"
 version = "0.1.0"
 dependencies = [
- "actix",
+ "actix 0.12.0",
  "clarity",
  "deep_space",
  "gravity_utils",
@@ -1300,7 +1325,7 @@ dependencies = [
 name = "gravity_utils"
 version = "0.1.0"
 dependencies = [
- "actix",
+ "actix 0.12.0",
  "clarity",
  "deep_space",
  "gravity_proto",
@@ -2436,7 +2461,7 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 name = "relayer"
 version = "0.4.3"
 dependencies = [
- "actix",
+ "actix 0.11.1",
  "actix-rt 2.2.0",
  "clarity",
  "cosmos_gravity",
@@ -2863,7 +2888,7 @@ dependencies = [
 name = "test_runner"
 version = "0.1.0"
 dependencies = [
- "actix",
+ "actix 0.12.0",
  "actix-rt 2.2.0",
  "actix-web",
  "bytes 1.0.1",
@@ -3447,9 +3472,9 @@ checksum = "d7cff876b8f18eed75a66cf49b65e7f967cb354a7aa16003fb55dbfd25b44b4f"
 
 [[package]]
 name = "web30"
-version = "0.14.7"
+version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e89586d38d1983eb22e6d0b48448dfdb0448ef4c313f40e747699bddc0454f13"
+checksum = "c6650f5f21e5e7a5960f1aedf75c9795af99b41a5a90daa258a7c710b5604d55"
 dependencies = [
  "awc 3.0.0-beta.7",
  "clarity",
