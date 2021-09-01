@@ -692,3 +692,58 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 		require.True(t, anotherFoundMap[uint64(i)])
 	}
 }
+
+// Ensures that any unbatched tx will make its way into the exported data from ExportGenesis
+func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+	k := input.GravityKeeper
+	var (
+		mySender, _         = sdk.AccAddressFromBech32("cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn")
+		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+	)
+	// mint some voucher first
+	allVouchers := sdk.Coins{types.NewERC20Token(99999, myTokenContractAddr).GravityCoin()}
+	err := input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers)
+	require.NoError(t, err)
+
+	// set senders balance
+	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
+	err = input.BankKeeper.SetBalances(ctx, mySender, allVouchers)
+	require.NoError(t, err)
+
+	unbatchedTxMap := make(map[uint64]types.OutgoingTransferTx)
+	foundTxsMap := make(map[uint64]bool)
+	// when
+	for i, v := range []uint64{2, 3, 2, 1} {
+		amount := types.NewERC20Token(uint64(i+100), myTokenContractAddr)
+		fee := types.NewERC20Token(v, myTokenContractAddr)
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount.GravityCoin(), fee.GravityCoin())
+		require.NoError(t, err)
+
+		unbatchedTxMap[r] = types.OutgoingTransferTx{
+			Id:          r,
+			Sender:      mySender.String(),
+			DestAddress: myReceiver,
+			Erc20Token:  amount,
+			Erc20Fee:    fee,
+		}
+		foundTxsMap[r] = false
+
+	}
+	// then
+	got := ExportGenesis(ctx, k)
+	require.NotNil(t, got)
+
+	for _, tx := range got.UnbatchedTransfers {
+		cached := unbatchedTxMap[tx.Id]
+		require.NotNil(t, cached)
+		require.Equal(t, cached, *tx, "cached: %+v\nactual: %+v\n", cached, *tx)
+		foundTxsMap[tx.Id] = true
+	}
+
+	for _, v := range foundTxsMap {
+		require.True(t, v)
+	}
+}
