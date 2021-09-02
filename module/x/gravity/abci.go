@@ -190,6 +190,9 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(), params.SlashFractionValset)
 					if !val.IsJailed() {
 						k.StakingKeeper.Jail(ctx, cons)
+						// Our unbonding hook SHOULD be triggered after the above jail
+						// but is not when triggered by the endblocker TODO investigate why
+						k.SetLastUnBondingBlockHeight(ctx, uint64(ctx.BlockHeight()))
 					}
 
 				}
@@ -234,6 +237,9 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 						k.StakingKeeper.Slash(ctx, valConsAddr, ctx.BlockHeight(), validator.ConsensusPower(), params.SlashFractionValset)
 						if !validator.IsJailed() {
 							k.StakingKeeper.Jail(ctx, valConsAddr)
+							// Our unbonding hook SHOULD be triggered after the above jail
+							// but is not when triggered by the endblocker TODO investigate why
+							k.SetLastUnBondingBlockHeight(ctx, uint64(ctx.BlockHeight()))
 						}
 					}
 				}
@@ -287,6 +293,9 @@ func BatchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(), params.SlashFractionBatch)
 				if !val.IsJailed() {
 					k.StakingKeeper.Jail(ctx, cons)
+					// Our unbonding hook SHOULD be triggered after the above jail
+					// but is not when triggered by the endblocker TODO investigate why
+					k.SetLastUnBondingBlockHeight(ctx, uint64(ctx.BlockHeight()))
 				}
 			}
 		}
@@ -338,6 +347,9 @@ func LogicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(), params.SlashFractionLogicCall)
 				if !val.IsJailed() {
 					k.StakingKeeper.Jail(ctx, cons)
+					// Our unbonding hook SHOULD be triggered after the above jail
+					// but is not when triggered by the endblocker TODO investigate why
+					k.SetLastUnBondingBlockHeight(ctx, uint64(ctx.BlockHeight()))
 				}
 			}
 		}
