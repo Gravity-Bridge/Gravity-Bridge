@@ -421,7 +421,8 @@ pub struct MsgCancelSendToEthResponse {
 }
 /// This call allows anyone to submit evidence that a
 /// validator has signed a valset, batch, or logic call that never
-/// existed. Subject contains the batch, valset, or logic call.
+/// existed on the Cosmos chain. 
+/// Subject contains the batch, valset, or logic call.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgSubmitBadSignatureEvidence {
     #[prost(message, optional, tag="1")]

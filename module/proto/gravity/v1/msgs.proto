@@ -5,6 +5,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "gravity/v1/types.proto";
 import "google/protobuf/any.proto";
+import "cosmos_proto/cosmos.proto";
 option go_package = "github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types";
 
 // Msg defines the state transitions possible within gravity
@@ -263,9 +264,11 @@ message MsgCancelSendToEthResponse {}
 
 // This call allows anyone to submit evidence that a
 // validator has signed a valset, batch, or logic call that never
-// existed. Subject contains the batch, valset, or logic call.
+// existed on the Cosmos chain. 
+// Subject contains the batch, valset, or logic call.
 message MsgSubmitBadSignatureEvidence {
-  google.protobuf.Any subject   = 1;
+  google.protobuf.Any subject = 1
+      [ (cosmos_proto.accepts_interface) = "EthereumSigned" ];
   string              signature = 2;
   string              sender    = 3;
 }

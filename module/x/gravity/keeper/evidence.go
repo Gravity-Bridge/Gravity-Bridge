@@ -16,7 +16,11 @@ func (k Keeper) CheckBadSignatureEvidence(
 	msg *types.MsgSubmitBadSignatureEvidence) error {
 	var subject types.EthereumSigned
 
-	k.cdc.UnpackAny(msg.Subject, &subject)
+	err := k.cdc.UnpackAny(msg.Subject, &subject)
+
+	if err != nil {
+		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Invalid Any encoded evidence %s", err))
+	}
 
 	switch subject := subject.(type) {
 	case *types.OutgoingTxBatch:
@@ -27,7 +31,7 @@ func (k Keeper) CheckBadSignatureEvidence(
 		return k.checkBadSignatureEvidenceInternal(ctx, subject, msg.Signature)
 
 	default:
-		return sdkerrors.Wrap(types.ErrInvalid, "Bad signature must be over a batch, valset, or logic call")
+		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Bad signature must be over a batch, valset, or logic call got %s", subject))
 	}
 }
 
@@ -43,9 +47,14 @@ func (k Keeper) checkBadSignatureEvidenceInternal(ctx sdk.Context, subject types
 	}
 
 	// Decode Eth signature to bytes
+
+	// strip 0x prefix if needed
+	if signature[:2] == "0x" {
+		signature = signature[2:]
+	}
 	sigBytes, err := hex.DecodeString(signature)
 	if err != nil {
-		return sdkerrors.Wrap(types.ErrInvalid, "signature decoding")
+		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("signature decoding %s", signature))
 	}
 
 	// Get eth address of the offending validator using the checkpoint and the signature
@@ -57,7 +66,7 @@ func (k Keeper) checkBadSignatureEvidenceInternal(ctx sdk.Context, subject types
 	// Find the offending validator by eth address
 	val, found := k.GetValidatorByEthAddress(ctx, ethAddress)
 	if !found {
-		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Did not find validator for eth address %s", ethAddress))
+		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Did not find validator for eth address %s from signature %s with checkpoint %s and GravityID %s", ethAddress, signature, hex.EncodeToString(checkpoint), gravityID))
 	}
 
 	// Slash the offending validator

@@ -19,7 +19,13 @@ use walkdir::WalkDir;
 
 /// Protos belonging to these Protobuf packages will be excluded
 /// (i.e. because they are sourced from `tendermint-proto` or `cosmos-sdk-proto`)
-const EXCLUDED_PROTO_PACKAGES: &[&str] = &["gogoproto", "google", "tendermint", "cosmos.base"];
+const EXCLUDED_PROTO_PACKAGES: &[&str] = &[
+    "gogoproto",
+    "google",
+    "tendermint",
+    "cosmos.base",
+    "cosmos_proto",
+];
 /// Attribute preceeding a Tonic client definition
 const TONIC_CLIENT_ATTRIBUTE: &str = "#[doc = r\" Generated client implementations.\"]";
 /// Attributes to add to gRPC clients

@@ -4,30 +4,6 @@ version = 3
 
 [[package]]
 name = "actix"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "543c47e7827f8fcc9d1445bd98ba402137bfce80ee2187429de49c52b5131bd3"
-dependencies = [
- "actix-rt 2.2.0",
- "actix_derive",
- "bitflags",
- "bytes 1.0.1",
- "crossbeam-channel",
- "futures-core",
- "futures-sink",
- "futures-task",
- "futures-util",
- "log",
- "once_cell",
- "parking_lot",
- "pin-project-lite 0.2.7",
- "smallvec",
- "tokio 1.8.1",
- "tokio-util 0.6.7",
-]
-
-[[package]]
-name = "actix"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3720d0064a0ce5c0de7bd93bdb0a6caebab2a9b5668746145d7b3b0c5da02914"
@@ -835,9 +811,9 @@ checksum = "a2df960f5d869b2dd8532793fde43eb5427cceb126c929747a26823ab0eeb536"
 
 [[package]]
 name = "cosmos-sdk-proto"
-version = "0.5.0"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78f4841c74e806ccb9198968db8312355830751a3e9849789c328692a65e4c6a"
+checksum = "7115eae4b8518967b8e737a3ef76025f2d007de7906d88c18f00b8bbfc70f51e"
 dependencies = [
  "prost",
  "prost-types",
@@ -849,7 +825,7 @@ dependencies = [
 name = "cosmos_gravity"
 version = "0.1.0"
 dependencies = [
- "actix 0.12.0",
+ "actix",
  "clarity",
  "deep_space",
  "env_logger",
@@ -918,8 +894,7 @@ dependencies = [
 [[package]]
 name = "deep_space"
 version = "2.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea6a81d9084ce357c7f6b07c2819f257846839fa76b209a3c89e9022c65be19b"
+source = "git+https://github.com/althea-net/deep_space?rev=b69bc51644f987901613567a8a88d3677e5bcc13#b69bc51644f987901613567a8a88d3677e5bcc13"
 dependencies = [
  "base64",
  "bech32",
@@ -1060,7 +1035,7 @@ dependencies = [
 name = "ethereum_gravity"
 version = "0.1.0"
 dependencies = [
- "actix 0.12.0",
+ "actix",
  "clarity",
  "deep_space",
  "gravity_utils",
@@ -1325,7 +1300,7 @@ dependencies = [
 name = "gravity_utils"
 version = "0.1.0"
 dependencies = [
- "actix 0.12.0",
+ "actix",
  "clarity",
  "deep_space",
  "gravity_proto",
@@ -2065,9 +2040,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1a5d4e9c205d2c1ae73b84aab6240e98218c0e72e63b50422cfb2d1ca952282"
+checksum = "7ad7268ef9bc463fddde8361d358fbfae1aeeb1fb62eca111cd8c763bf1c5891"
 dependencies = [
  "base64ct",
  "rand_core 0.6.3",
@@ -2082,11 +2057,10 @@ checksum = "acbf547ad0c65e31259204bd90935776d1c693cec2f4ff7abb7a1bbbd40dfe58"
 
 [[package]]
 name = "pbkdf2"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d95f5254224e617595d2cc3cc73ff0a5eaf2637519e25f03388154e9378b6ffa"
+checksum = "f05894bce6a1ba4be299d0c5f29563e08af2bc18bb7d48313113bed71e904739"
 dependencies = [
- "base64ct",
  "crypto-mac",
  "hmac",
  "password-hash",
@@ -2461,7 +2435,7 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 name = "relayer"
 version = "0.4.3"
 dependencies = [
- "actix 0.11.1",
+ "actix",
  "actix-rt 2.2.0",
  "clarity",
  "cosmos_gravity",
@@ -2858,9 +2832,9 @@ dependencies = [
 
 [[package]]
 name = "tendermint-proto"
-version = "0.19.0"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32bbc1bc55f09de4d00b5d69aa6b60392ba37c5e4761d869f76065d352bd3360"
+checksum = "bfd0371c6b0c7fc4f6b053b8a1bc868a2a47c49a1408c4cd6f595d9f3bd3c238"
 dependencies = [
  "anomaly",
  "bytes 1.0.1",
@@ -2888,7 +2862,7 @@ dependencies = [
 name = "test_runner"
 version = "0.1.0"
 dependencies = [
- "actix 0.12.0",
+ "actix",
  "actix-rt 2.2.0",
  "actix-web",
  "bytes 1.0.1",

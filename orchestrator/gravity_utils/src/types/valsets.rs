@@ -454,7 +454,7 @@ impl Into<gravity_proto::gravity::Valset> for &Valset {
             reward_amount: self.reward_amount.to_string(),
             reward_token: self
                 .reward_token
-                .unwrap_or(*clarity::constants::NULL_ADDRESS)
+                .unwrap_or(*clarity::constants::ZERO_ADDRESS)
                 .to_string(),
         }
     }

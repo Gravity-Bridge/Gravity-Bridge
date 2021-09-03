@@ -228,12 +228,7 @@ pub async fn test_valset_update(
     // percentage is too small.
     let mut rng = rand::thread_rng();
     let validator_to_change = rng.gen_range(0..keys.len());
-    let delegate_address = &keys[validator_to_change]
-        .validator_key
-        // this is not guaranteed to be correct, the chain may set the valoper prefix in a
-        // different way, but I haven't yet seen one that does not match this pattern
-        .to_address(&format!("{}valoper", *ADDRESS_PREFIX))
-        .unwrap();
+    let delegate_address = get_operator_address(keys[validator_to_change].validator_key);
     let amount = Coin {
         denom: STAKING_TOKEN.to_string(),
         amount: (STARTING_STAKE_PER_VALIDATOR / 4).into(),
@@ -244,7 +239,7 @@ pub async fn test_valset_update(
     );
     contact
         .delegate_to_validator(
-            *delegate_address,
+            delegate_address,
             amount,
             get_fee(),
             keys[1].validator_key,
