@@ -191,7 +191,15 @@ pub async fn main() {
                 ADDRESS_PREFIX.as_str(),
             )
             .unwrap();
-            transaction_stress_test(&web30, &contact, keys, gravity_address, erc20_addresses).await;
+            transaction_stress_test(
+                &web30,
+                &contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
             return;
         } else if test_type == "VALSET_STRESS" {
             info!("Starting Valset update stress test");

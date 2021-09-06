@@ -525,7 +525,7 @@ pub async fn cancel_send_to_eth(
 
     let fee = Fee {
         amount: vec![fee],
-        gas_limit: 500_000u64,
+        gas_limit: 600_000u64,
         granter: None,
         payer: None,
     };

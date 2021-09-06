@@ -1,12 +1,11 @@
 //! Helper functions for sending tokens to Cosmos
 
-use std::time::Duration;
-
 use clarity::abi::{encode_call, Token};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address, Uint256};
 use deep_space::address::Address as CosmosAddress;
 use gravity_utils::error::GravityError;
+use std::time::{Duration, Instant};
 use web30::client::Web3;
 use web30::types::SendTxOption;
 
@@ -34,9 +33,21 @@ pub async fn send_to_cosmos(
         }
     }
 
-    let approved = web3
+    // rapidly changing gas prices can cause this to fail, a quick retry loop here
+    // retries in a way that assists our transaction stress test
+    let mut approved = web3
         .check_erc20_approved(erc20, sender_address, gravity_contract)
-        .await?;
+        .await;
+    if let Some(w) = wait_timeout {
+        let start = Instant::now();
+        // keep trying while there's still time
+        while approved.is_err() && Instant::now() - start < w {
+            approved = web3
+                .check_erc20_approved(erc20, sender_address, gravity_contract)
+                .await;
+        }
+    }
+    let approved = approved.unwrap();
     if !approved {
         let mut options = options.clone();
         let nonce = web3.eth_get_transaction_count(sender_address).await?;
@@ -51,7 +62,6 @@ pub async fn send_to_cosmos(
         );
         if let Some(timeout) = wait_timeout {
             web3.wait_for_transaction(txid, timeout, None).await?;
-            trace!("Approval finished!")
         }
     }
 
@@ -73,8 +83,6 @@ pub async fn send_to_cosmos(
     if let Some(nonce) = approve_nonce {
         options.push(SendTxOption::Nonce(nonce + 1u8.into()));
     }
-
-    options.push(SendTxOption::GasPriceMultiplier(1.10f32));
 
     // This code deals with some specifics of Ethereum byte encoding, Ethereum is BigEndian
     // so small values like addresses that don't take up the full length of the byte vector

@@ -1,16 +1,22 @@
 use crate::{get_fee, one_eth, one_hundred_eth, utils::*, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
-use cosmos_gravity::send::{send_request_batch, send_to_eth};
+use cosmos_gravity::{
+    query::get_pending_send_to_eth,
+    send::{cancel_send_to_eth, send_request_batch, send_to_eth},
+};
 use deep_space::coin::Coin;
 use deep_space::Contact;
 use ethereum_gravity::{send_to_cosmos::send_to_cosmos, utils::get_tx_batch_nonce};
 use futures::future::join_all;
+use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use rand::seq::SliceRandom;
 use std::{
     collections::HashSet,
     time::{Duration, Instant},
 };
 use tokio::time::sleep as delay_for;
-use web30::client::Web3;
+use tonic::transport::Channel;
+use web30::{client::Web3, types::SendTxOption};
 
 const TIMEOUT: Duration = Duration::from_secs(120);
 
@@ -31,10 +37,13 @@ const NUM_USERS: usize = 100;
 pub async fn transaction_stress_test(
     web30: &Web3,
     contact: &Contact,
+    grpc_client: GravityQueryClient<Channel>,
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
     erc20_addresses: Vec<EthAddress>,
 ) {
+    let mut grpc_client = grpc_client;
+
     let no_relay_market_config = create_default_test_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
@@ -70,7 +79,7 @@ pub async fn transaction_stress_test(
                 keys.eth_key,
                 Some(TIMEOUT),
                 web30,
-                Vec::new(),
+                vec![SendTxOption::GasPriceMultiplier(5.0)],
             );
             sends.push(fut);
         }
@@ -174,6 +183,68 @@ pub async fn transaction_stress_test(
         );
     }
 
+    // randomly select a user to cancel their transaction, as part of this test
+    // we make sure that this user withdraws absolutely zero tokens
+    let mut rng = rand::thread_rng();
+    let user_who_cancels = user_keys.choose(&mut rng).unwrap();
+    let pending = get_pending_send_to_eth(&mut grpc_client, user_who_cancels.cosmos_address)
+        .await
+        .unwrap();
+    // if batch creation is made automatic this becomes a race condition we'll have to consider
+    assert!(pending.transfers_in_batches.is_empty());
+    assert!(!pending.unbatched_transfers.is_empty());
+
+    let denom = denoms.iter().next().unwrap().clone();
+    let bridge_fee = Coin {
+        denom,
+        amount: 1u8.into(),
+    };
+    // cancel all outgoing transactions for this user
+    for tx in pending.unbatched_transfers {
+        let res = cancel_send_to_eth(
+            user_who_cancels.cosmos_key,
+            bridge_fee.clone(),
+            contact,
+            tx.id,
+        )
+        .await
+        .unwrap();
+        info!("{:?}", res);
+    }
+
+    contact.wait_for_next_block(TIMEOUT).await.unwrap();
+
+    // check that the cancelation worked
+    let pending = get_pending_send_to_eth(&mut grpc_client, user_who_cancels.cosmos_address)
+        .await
+        .unwrap();
+    info!("{:?}", pending);
+    assert!(pending.transfers_in_batches.is_empty());
+    assert!(pending.unbatched_transfers.is_empty());
+
+    // this user will have someone else attempt to cancel their transaction
+    let mut victim = None;
+    for key in user_keys.iter() {
+        if key != user_who_cancels {
+            victim = Some(key);
+            break;
+        }
+    }
+    let pending = get_pending_send_to_eth(&mut grpc_client, victim.unwrap().cosmos_address)
+        .await
+        .unwrap();
+    // try to cancel the victims transactions and ensure failure
+    for tx in pending.unbatched_transfers {
+        let res = cancel_send_to_eth(
+            user_who_cancels.cosmos_key,
+            bridge_fee.clone(),
+            contact,
+            tx.id,
+        )
+        .await;
+        info!("{:?}", res);
+    }
+
     for denom in denoms {
         info!("Requesting batch for {}", denom);
         let res = send_request_batch(
@@ -190,18 +261,25 @@ pub async fn transaction_stress_test(
 
     let start = Instant::now();
     let mut good = true;
+    let mut found_canceled = false;
     while Instant::now() - start < TOTAL_TIMEOUT {
         good = true;
+        found_canceled = false;
         for keys in user_keys.iter() {
             let e_dest_addr = keys.eth_dest_address;
             for token in erc20_addresses.iter() {
                 let bal = web30.get_erc20_balance(*token, e_dest_addr).await.unwrap();
                 if bal != send_amount.clone() {
-                    good = false;
+                    if e_dest_addr == user_who_cancels.eth_address && bal == 0u8.into() {
+                        info!("We successfully found the user who canceled their sends!");
+                        found_canceled = true;
+                    } else {
+                        good = false;
+                    }
                 }
             }
         }
-        if good {
+        if good && found_canceled {
             info!(
                 "All {} withdraws to Ethereum bridged successfully!",
                 NUM_USERS * erc20_addresses.len()
@@ -210,7 +288,7 @@ pub async fn transaction_stress_test(
         }
         delay_for(Duration::from_secs(5)).await;
     }
-    if !good {
+    if !(good && found_canceled) {
         panic!(
             "Failed to perform all {} withdraws to Ethereum!",
             NUM_USERS * erc20_addresses.len()
