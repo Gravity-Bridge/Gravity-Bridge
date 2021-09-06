@@ -1,6 +1,5 @@
 use crate::get_fee;
 use crate::utils::*;
-use crate::ADDRESS_PREFIX;
 use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::OPERATION_TIMEOUT;
@@ -8,7 +7,6 @@ use crate::STAKING_TOKEN;
 use crate::STARTING_STAKE_PER_VALIDATOR;
 use crate::TOTAL_TIMEOUT;
 use bytes::BytesMut;
-use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::query::get_attestations;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
@@ -73,14 +71,7 @@ pub async fn happy_path_test(
     }
 
     // generate an address for coin sending tests, this ensures test imdepotency
-    let mut rng = rand::thread_rng();
-    let secret: [u8; 32] = rng.gen();
-    let dest_cosmos_private_key = CosmosPrivateKey::from_secret(&secret);
-    let dest_cosmos_address = dest_cosmos_private_key
-        .to_address(ADDRESS_PREFIX.as_str())
-        .unwrap();
-    let dest_eth_private_key = EthPrivateKey::from_slice(&secret).unwrap();
-    let dest_eth_address = dest_eth_private_key.to_public_key().unwrap();
+    let user_keys = get_user_key();
 
     // the denom and amount of the token bridged from Ethereum -> Cosmos
     // so the denom is the gravity<hash> token name
@@ -90,7 +81,7 @@ pub async fn happy_path_test(
             web30,
             contact,
             &mut grpc_client,
-            dest_cosmos_address,
+            user_keys.cosmos_address,
             gravity_address,
             erc20_address,
             100u64.into(),
@@ -111,7 +102,7 @@ pub async fn happy_path_test(
         contact,
         erc20_address,
         1u64.into(),
-        dest_cosmos_address,
+        user_keys.cosmos_address,
         &keys,
     )
     .await;
@@ -121,10 +112,10 @@ pub async fn happy_path_test(
         contact,
         &mut grpc_client,
         web30,
-        dest_eth_address,
+        user_keys.eth_address,
         gravity_address,
         keys[0].validator_key,
-        dest_cosmos_private_key,
+        user_keys.cosmos_key,
         erc20_address,
     )
     .await;
