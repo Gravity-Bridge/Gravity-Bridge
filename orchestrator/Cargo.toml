@@ -4,4 +4,3 @@ default-members = ["gbt"]
 
 
 [patch.crates-io]
-deep_space = { git = "https://github.com/althea-net/deep_space", rev = "b69bc51644f987901613567a8a88d3677e5bcc13" }
