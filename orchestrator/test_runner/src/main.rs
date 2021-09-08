@@ -209,7 +209,7 @@ pub async fn main() {
             info!("Starting Valset rewards test");
             valset_rewards_test(&web30, grpc_client, &contact, keys, gravity_address, false).await;
             return;
-        } else if test_type == "V2_HAPPY_PATH" {
+        } else if test_type == "V2_HAPPY_PATH" || test_type == "HAPPY_PATH_V2" {
             info!("Starting happy path for Gravity v2");
             happy_path_test_v2(&web30, grpc_client, &contact, keys, gravity_address, false).await;
             return;

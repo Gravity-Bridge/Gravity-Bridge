@@ -8,6 +8,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # also builds Gravity once in order to cache Go deps, this container
 # must be rebuilt every time you run this test if you want a faster
 # solution use start chains and then run tests
+# note, this container does not need to be rebuilt to test the same code
+# twice, docker will automatically detect and cache this case, no need
+# for that logic here
 bash $DIR/build-container.sh
 
 # Remove existing container instance
