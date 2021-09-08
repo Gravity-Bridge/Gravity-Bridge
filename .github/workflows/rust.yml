@@ -40,5 +40,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Check for Clippy lints
+      - name: Cross compile tests
         run: cargo install cross && cd orchestrator && cross test --target aarch64-unknown-linux-gnu
