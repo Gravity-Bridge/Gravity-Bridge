@@ -103,10 +103,7 @@ contract Gravity is ReentrancyGuard {
 
 	// TEST FIXTURES
 	// These are here to make it easier to measure gas usage. They should be removed before production
-	function testMakeCheckpoint(
-		ValsetArgs memory _valsetArgs,
-		bytes32 _gravityId
-	) public pure {
+	function testMakeCheckpoint(ValsetArgs memory _valsetArgs, bytes32 _gravityId) public pure {
 		makeCheckpoint(_valsetArgs, _gravityId);
 	}
 
@@ -148,8 +145,9 @@ contract Gravity is ReentrancyGuard {
 		bytes32 _r,
 		bytes32 _s
 	) private pure returns (bool) {
-		bytes32 messageDigest =
-			keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _theHash));
+		bytes32 messageDigest = keccak256(
+			abi.encodePacked("\x19Ethereum Signed Message:\n32", _theHash)
+		);
 		return _signer == ecrecover(messageDigest, _v, _r, _s);
 	}
 
@@ -161,15 +159,25 @@ contract Gravity is ReentrancyGuard {
 	// Where h is the keccak256 hash function.
 	// The validator powers must be decreasing or equal. This is important for checking the signatures on the
 	// next valset, since it allows the caller to stop verifying signatures once a quorum of signatures have been verified.
-	function makeCheckpoint(
-		ValsetArgs memory _valsetArgs,
-		bytes32 _gravityId
-	) private pure returns (bytes32) {
+	function makeCheckpoint(ValsetArgs memory _valsetArgs, bytes32 _gravityId)
+		private
+		pure
+		returns (bytes32)
+	{
 		// bytes32 encoding of the string "checkpoint"
 		bytes32 methodName = 0x636865636b706f696e7400000000000000000000000000000000000000000000;
 
-		bytes32 checkpoint =
-			keccak256(abi.encode(_gravityId, methodName, _valsetArgs.valsetNonce, _valsetArgs.validators, _valsetArgs.powers, _valsetArgs.rewardAmount, _valsetArgs.rewardToken));
+		bytes32 checkpoint = keccak256(
+			abi.encode(
+				_gravityId,
+				methodName,
+				_valsetArgs.valsetNonce,
+				_valsetArgs.validators,
+				_valsetArgs.powers,
+				_valsetArgs.rewardAmount,
+				_valsetArgs.rewardToken
+			)
+		);
 
 		return checkpoint;
 	}
@@ -240,7 +248,10 @@ contract Gravity is ReentrancyGuard {
 		);
 
 		// Check that new validators and powers set is well-formed
-		require(_newValset.validators.length == _newValset.powers.length, "Malformed new validator set");
+		require(
+			_newValset.validators.length == _newValset.powers.length,
+			"Malformed new validator set"
+		);
 
 		// Check that current validators, powers, and signatures (v,r,s) set is well-formed
 		require(
@@ -253,16 +264,12 @@ contract Gravity is ReentrancyGuard {
 
 		// Check that the supplied current validator set matches the saved checkpoint
 		require(
-			makeCheckpoint(
-				_currentValset,
-				state_gravityId
-			) == state_lastValsetCheckpoint,
+			makeCheckpoint(_currentValset, state_gravityId) == state_lastValsetCheckpoint,
 			"Supplied current validators and powers do not match checkpoint."
 		);
 
 		// Check that enough current validators have signed off on the new validator set
-		bytes32 newCheckpoint =
-			makeCheckpoint(_newValset, state_gravityId);
+		bytes32 newCheckpoint = makeCheckpoint(_newValset, state_gravityId);
 
 		checkValidatorSignatures(
 			_currentValset.validators,
@@ -291,7 +298,14 @@ contract Gravity is ReentrancyGuard {
 		// LOGS
 
 		state_lastEventNonce = state_lastEventNonce.add(1);
-		emit ValsetUpdatedEvent(_newValset.valsetNonce, state_lastEventNonce, _newValset.rewardAmount, _newValset.rewardToken, _newValset.validators, _newValset.powers);
+		emit ValsetUpdatedEvent(
+			_newValset.valsetNonce,
+			state_lastEventNonce,
+			_newValset.rewardAmount,
+			_newValset.rewardToken,
+			_newValset.validators,
+			_newValset.powers
+		);
 	}
 
 	// submitBatch processes a batch of Cosmos -> Ethereum transactions by sending the tokens in the transactions
@@ -340,10 +354,7 @@ contract Gravity is ReentrancyGuard {
 
 			// Check that the supplied current validator set matches the saved checkpoint
 			require(
-				makeCheckpoint(
-					_currentValset,
-					state_gravityId
-				) == state_lastValsetCheckpoint,
+				makeCheckpoint(_currentValset, state_gravityId) == state_lastValsetCheckpoint,
 				"Supplied current validators and powers do not match checkpoint."
 			);
 
@@ -433,7 +444,7 @@ contract Gravity is ReentrancyGuard {
 
 			// Check that current validators, powers, and signatures (v,r,s) set is well-formed
 			require(
-			    _currentValset.validators.length == _currentValset.powers.length &&
+				_currentValset.validators.length == _currentValset.powers.length &&
 					_currentValset.validators.length == _v.length &&
 					_currentValset.validators.length == _r.length &&
 					_currentValset.validators.length == _s.length,
@@ -442,10 +453,7 @@ contract Gravity is ReentrancyGuard {
 
 			// Check that the supplied current validator set matches the saved checkpoint
 			require(
-				makeCheckpoint(
-					_currentValset,
-					state_gravityId
-				) == state_lastValsetCheckpoint,
+				makeCheckpoint(_currentValset, state_gravityId) == state_lastValsetCheckpoint,
 				"Supplied current validators and powers do not match checkpoint."
 			);
 
@@ -462,23 +470,22 @@ contract Gravity is ReentrancyGuard {
 			);
 		}
 
-		bytes32 argsHash =
-			keccak256(
-				abi.encode(
-					state_gravityId,
-					// bytes32 encoding of "logicCall"
-					0x6c6f67696343616c6c0000000000000000000000000000000000000000000000,
-					_args.transferAmounts,
-					_args.transferTokenContracts,
-					_args.feeAmounts,
-					_args.feeTokenContracts,
-					_args.logicContractAddress,
-					_args.payload,
-					_args.timeOut,
-					_args.invalidationId,
-					_args.invalidationNonce
-				)
-			);
+		bytes32 argsHash = keccak256(
+			abi.encode(
+				state_gravityId,
+				// bytes32 encoding of "logicCall"
+				0x6c6f67696343616c6c0000000000000000000000000000000000000000000000,
+				_args.transferAmounts,
+				_args.transferTokenContracts,
+				_args.feeAmounts,
+				_args.feeTokenContracts,
+				_args.logicContractAddress,
+				_args.payload,
+				_args.timeOut,
+				_args.invalidationId,
+				_args.invalidationNonce
+			)
+		);
 
 		{
 			// Check that enough current validators have signed off on the transaction batch and valset
@@ -572,7 +579,7 @@ contract Gravity is ReentrancyGuard {
 		// The validator set, not in valset args format since many of it's
 		// arguments would never be used in this case
 		address[] memory _validators,
-        uint256[] memory _powers
+		uint256[] memory _powers
 	) public {
 		// CHECKS
 
@@ -595,7 +602,7 @@ contract Gravity is ReentrancyGuard {
 
 		ValsetArgs memory _valset;
 		_valset = ValsetArgs(_validators, _powers, 0, 0, address(0));
-		
+
 		bytes32 newCheckpoint = makeCheckpoint(_valset, _gravityId);
 
 		// ACTIONS
@@ -606,6 +613,13 @@ contract Gravity is ReentrancyGuard {
 
 		// LOGS
 
-		emit ValsetUpdatedEvent(state_lastValsetNonce, state_lastEventNonce, 0, address(0), _validators, _powers);
+		emit ValsetUpdatedEvent(
+			state_lastValsetNonce,
+			state_lastEventNonce,
+			0,
+			address(0),
+			_validators,
+			_powers
+		);
 	}
 }
