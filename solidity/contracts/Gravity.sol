@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./CosmosToken.sol";
 
 // This is being used purely to avoid stack too deep errors
@@ -148,7 +149,7 @@ contract Gravity is ReentrancyGuard {
 		bytes32 messageDigest = keccak256(
 			abi.encodePacked("\x19Ethereum Signed Message:\n32", _theHash)
 		);
-		return _signer == ecrecover(messageDigest, _v, _r, _s);
+		return _signer == ECDSA.recover(messageDigest, _v, _r, _s);
 	}
 
 	// Make a new checkpoint from the supplied validator set
