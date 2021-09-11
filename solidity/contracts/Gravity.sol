@@ -262,6 +262,20 @@ contract Gravity is ReentrancyGuard {
 			"Malformed current validator set"
 		);
 
+		// Check cumulative power to ensure the contract has sufficient power to actually
+		// pass a vote
+		uint256 cumulativePower = 0;
+		for (uint256 i = 0; i < _newValset.powers.length; i++) {
+			cumulativePower = cumulativePower + _newValset.powers[i];
+			if (cumulativePower > constant_powerThreshold) {
+				break;
+			}
+		}
+		require(
+			cumulativePower > constant_powerThreshold,
+			"Submitted validator set signatures do not have enough power."
+		);
+
 		// Check that the supplied current validator set matches the saved checkpoint
 		require(
 			makeCheckpoint(_currentValset, state_gravityId) == state_lastValsetCheckpoint,
