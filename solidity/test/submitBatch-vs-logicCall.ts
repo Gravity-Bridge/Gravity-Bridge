@@ -63,11 +63,9 @@ async function prep() {
   let powers = examplePowers();
   let validators = signers.slice(0, powers.length);
 
-  const powerThreshold = 6666;
 
   const { gravity, testERC20 } = await deployContracts(
     gravityId,
-    powerThreshold,
     validators,
     powers
   );

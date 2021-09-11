@@ -40,12 +40,11 @@ async function runTest(opts: {
   // This is the power distribution on the Cosmos hub as of 7/14/2020
   let powers = examplePowers();
   let validators = signers.slice(0, powers.length);
-  const powerThreshold = 6666;
   const {
     gravity,
     testERC20,
     checkpoint: deployCheckpoint
-  } = await deployContracts(gravityId,  powerThreshold, validators, powers);
+  } = await deployContracts(gravityId, validators, powers);
 
   // First we deploy the logic batch middleware contract. This makes it easy to call a logic 
   // contract a bunch of times in a batch.
@@ -153,7 +152,7 @@ async function runTest(opts: {
   ));
 
   const sigs = await signHash(validators, digest);
-  
+
   let currentValsetNonce = 0;
   if (opts.nonMatchingCurrentValset) {
     // Wrong nonce
@@ -219,15 +218,15 @@ async function runTest(opts: {
   );
 
 
-    // check that the relayer was paid
-    expect(
-      await (
-        await testERC20.functions.balanceOf(await logicCallSubmitResult.from)
-      )[0].toNumber()
-    ).to.equal(9010);
+  // check that the relayer was paid
+  expect(
+    await (
+      await testERC20.functions.balanceOf(await logicCallSubmitResult.from)
+    )[0].toNumber()
+  ).to.equal(9010);
 
   expect(
-      (await testERC20.functions.balanceOf(await signers[20].getAddress()))[0].toNumber()
+    (await testERC20.functions.balanceOf(await signers[20].getAddress()))[0].toNumber()
   ).to.equal(40);
 
   expect(
@@ -235,9 +234,9 @@ async function runTest(opts: {
   ).to.equal(940);
 
   expect(
-      (await testERC20.functions.balanceOf(logicContract.address))[0].toNumber()
+    (await testERC20.functions.balanceOf(logicContract.address))[0].toNumber()
   ).to.equal(10);
-  
+
   expect(
     (await testERC20.functions.balanceOf(await signers[0].getAddress()))[0].toNumber()
   ).to.equal(9010);
@@ -303,14 +302,13 @@ describe("logicCall Go test hash", function () {
     // ========================
     const signers = await ethers.getSigners();
     const gravityId = ethers.utils.formatBytes32String("foo");
-    const powers = [6667];
+    const powers = [2934678416];
     const validators = signers.slice(0, powers.length);
-    const powerThreshold = 6666;
     const {
       gravity,
       testERC20,
       checkpoint: deployCheckpoint
-    } = await deployContracts(gravityId, powerThreshold, validators, powers);
+    } = await deployContracts(gravityId, validators, powers);
 
 
 
@@ -327,56 +325,56 @@ describe("logicCall Go test hash", function () {
 
     // Call method
     // ===========
-  const methodName = ethers.utils.formatBytes32String(
-    "logicCall"
-  );
-  const numTxs = 10;
+    const methodName = ethers.utils.formatBytes32String(
+      "logicCall"
+    );
+    const numTxs = 10;
 
-  let invalidationNonce = 1
+    let invalidationNonce = 1
 
-  let timeOut = 4766922941000
+    let timeOut = 4766922941000
 
-  let logicCallArgs = {
-    transferAmounts: [1], // transferAmounts
-    transferTokenContracts: [testERC20.address], // transferTokenContracts
-    feeAmounts: [1], // feeAmounts
-    feeTokenContracts: [testERC20.address], // feeTokenContracts
-    logicContractAddress: "0x17c1736CcF692F653c433d7aa2aB45148C016F68", // logicContractAddress
-    payload: ethers.utils.formatBytes32String("testingPayload"), // payloads
-    timeOut,
-    invalidationId: ethers.utils.formatBytes32String("invalidationId"), // invalidationId
-    invalidationNonce: invalidationNonce // invalidationNonce
-  }
+    let logicCallArgs = {
+      transferAmounts: [1], // transferAmounts
+      transferTokenContracts: [testERC20.address], // transferTokenContracts
+      feeAmounts: [1], // feeAmounts
+      feeTokenContracts: [testERC20.address], // feeTokenContracts
+      logicContractAddress: "0x17c1736CcF692F653c433d7aa2aB45148C016F68", // logicContractAddress
+      payload: ethers.utils.formatBytes32String("testingPayload"), // payloads
+      timeOut,
+      invalidationId: ethers.utils.formatBytes32String("invalidationId"), // invalidationId
+      invalidationNonce: invalidationNonce // invalidationNonce
+    }
 
 
-  const abiEncodedLogicCall = ethers.utils.defaultAbiCoder.encode(
-    [
-      "bytes32", // gravityId
-      "bytes32", // methodName
-      "uint256[]", // transferAmounts
-      "address[]", // transferTokenContracts
-      "uint256[]", // feeAmounts
-      "address[]", // feeTokenContracts
-      "address", // logicContractAddress
-      "bytes", // payload
-      "uint256", // timeOut
-      "bytes32", // invalidationId
-      "uint256" // invalidationNonce
-    ],
-    [
-      gravityId,
-      methodName,
-      logicCallArgs.transferAmounts,
-      logicCallArgs.transferTokenContracts,
-      logicCallArgs.feeAmounts,
-      logicCallArgs.feeTokenContracts,
-      logicCallArgs.logicContractAddress,
-      logicCallArgs.payload,
-      logicCallArgs.timeOut,
-      logicCallArgs.invalidationId,
-      logicCallArgs.invalidationNonce
-    ]
-  );
+    const abiEncodedLogicCall = ethers.utils.defaultAbiCoder.encode(
+      [
+        "bytes32", // gravityId
+        "bytes32", // methodName
+        "uint256[]", // transferAmounts
+        "address[]", // transferTokenContracts
+        "uint256[]", // feeAmounts
+        "address[]", // feeTokenContracts
+        "address", // logicContractAddress
+        "bytes", // payload
+        "uint256", // timeOut
+        "bytes32", // invalidationId
+        "uint256" // invalidationNonce
+      ],
+      [
+        gravityId,
+        methodName,
+        logicCallArgs.transferAmounts,
+        logicCallArgs.transferTokenContracts,
+        logicCallArgs.feeAmounts,
+        logicCallArgs.feeTokenContracts,
+        logicCallArgs.logicContractAddress,
+        logicCallArgs.payload,
+        logicCallArgs.timeOut,
+        logicCallArgs.invalidationId,
+        logicCallArgs.invalidationNonce
+      ]
+    );
     const logicCallDigest = ethers.utils.keccak256(abiEncodedLogicCall);
 
 
@@ -429,4 +427,5 @@ describe("logicCall Go test hash", function () {
     })
     console.log("Function call bytes:", res.data)
 
-})});
+  })
+});

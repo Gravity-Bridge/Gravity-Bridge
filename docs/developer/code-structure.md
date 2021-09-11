@@ -106,3 +106,21 @@ TODO
 ## ERC20 representation deployment
 
 TODO
+
+## Changing the voting power
+
+The minimum resolution with which to represent weighted voting in [gravity.sol](/solidity/contracts/Gravity.sol) is a mostly academic discussion. Remember that the Ethereum contract voting weights are intended to represent Cosmos voting power, but Cosmos voting power does not have a fixed amount, it's really a percentage of the total amount staked at any given time. For the sake of the Gravity contract and it's voting we normalize the Cosmos-sdk chain voting power using a constant. Currently `2^32` or one greater than the maximum value that can be stored in a unsigned 32 bit integer.
+
+This value is chosen arbitrarily based on a key constraint. First cosmos SDK uses signed 64 bit integers to handle voting power. So attempting to compute normalized powers as the maximum value of a signed 64 bit integer risks overflow. Using big integers was considered and rejected as not worth the trouble. `2^32` is a nice round number and provides sufficient resolution for validator sets with thousands of validators.
+
+By default `2/3` of `2^32` or `2863311530` (truncated) is the voting power threshold for passing a measure. This mirrors the underlying Tendermint consensus.
+
+In order to change the percentage of votes required or change the total resolution of the voting you will need to modify constants in the following locations.
+
+[gravity.sol](/solidity/contracts/Gravity.sol) contains a threshold, this number is implicitly based on the normalization performed in the `GetCurrentValset` function in [keeper_valset.go](/module/x/gravity/keeper/keeper_valset.go)
+
+This controls the required voting power to execute events on Ethereum. But events on Cosmos are governed by the `TryAttestation` function in [attestation.go](/module/x/gravity/keeper/attestation.go) the constant `AttestationVotesPowerThreshold` in [genesis.go](/module/x/gravity/types/genesis.go) notes this value as `66` note the integer rounding error that comes from multiplying by the total power and dividing by 100. This should normally be less than 1% but does exist.
+
+Finally the Orchestrator takes the passing power as a percentage in [valsets.rs](/orchestrator/gravity_utils/src/types/valsets.rs) which it uses to simulate voting locally and dramatically reduce api calls when trying to find a valid batch or valset.
+
+Changing the values at these locations will let you either modify the resolution of the vote, or change the percentage to pass.

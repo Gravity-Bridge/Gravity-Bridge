@@ -46,6 +46,10 @@ contract Gravity is ReentrancyGuard {
 	using SafeMath for uint256;
 	using SafeERC20 for IERC20;
 
+	// The number of 'votes' required to execute a valset
+	// update or batch execution, set to 66% of 2^32
+	uint256 constant constant_powerThreshold = 2863311530;
+
 	// These are updated often
 	bytes32 public state_lastValsetCheckpoint;
 	mapping(address => uint256) public state_lastBatchNonces;
@@ -55,9 +59,8 @@ contract Gravity is ReentrancyGuard {
 	// value indicating that no events have yet been submitted
 	uint256 public state_lastEventNonce = 1;
 
-	// These are set once at initialization
+	// This is set once at initialization
 	bytes32 public state_gravityId;
-	uint256 public state_powerThreshold;
 
 	// TransactionBatchExecutedEvent and SendToCosmosEvent both include the field _eventNonce.
 	// This is incremented every time one of these events is emitted. It is checked by the
@@ -227,7 +230,7 @@ contract Gravity is ReentrancyGuard {
 	// This updates the valset by checking that the validators in the current valset have signed off on the
 	// new valset. The signatures supplied are the signatures of the current valset over the checkpoint hash
 	// generated from the new valset.
-	// Anyone can call this function, but they must supply valid signatures of state_powerThreshold of the current valset over
+	// Anyone can call this function, but they must supply valid signatures of constant_powerThreshold of the current valset over
 	// the new valset.
 	function updateValset(
 		// The new version of the validator set
@@ -278,7 +281,7 @@ contract Gravity is ReentrancyGuard {
 			_r,
 			_s,
 			newCheckpoint,
-			state_powerThreshold
+			constant_powerThreshold
 		);
 
 		// ACTIONS
@@ -310,7 +313,7 @@ contract Gravity is ReentrancyGuard {
 
 	// submitBatch processes a batch of Cosmos -> Ethereum transactions by sending the tokens in the transactions
 	// to the destination addresses. It is approved by the current Cosmos validator set.
-	// Anyone can call this function, but they must supply valid signatures of state_powerThreshold of the current valset over
+	// Anyone can call this function, but they must supply valid signatures of constant_powerThreshold of the current valset over
 	// the batch.
 	function submitBatch(
 		// The validators that approve the batch
@@ -385,7 +388,7 @@ contract Gravity is ReentrancyGuard {
 						_batchTimeout
 					)
 				),
-				state_powerThreshold
+				constant_powerThreshold
 			);
 
 			// ACTIONS
@@ -497,7 +500,7 @@ contract Gravity is ReentrancyGuard {
 				_s,
 				// Get hash of the transaction batch and checkpoint
 				argsHash,
-				state_powerThreshold
+				constant_powerThreshold
 			);
 		}
 
@@ -574,8 +577,6 @@ contract Gravity is ReentrancyGuard {
 	constructor(
 		// A unique identifier for this gravity instance to use in signatures
 		bytes32 _gravityId,
-		// How much voting power is needed to approve operations
-		uint256 _powerThreshold,
 		// The validator set, not in valset args format since many of it's
 		// arguments would never be used in this case
 		address[] memory _validators,
@@ -591,12 +592,12 @@ contract Gravity is ReentrancyGuard {
 		uint256 cumulativePower = 0;
 		for (uint256 i = 0; i < _powers.length; i++) {
 			cumulativePower = cumulativePower + _powers[i];
-			if (cumulativePower > _powerThreshold) {
+			if (cumulativePower > constant_powerThreshold) {
 				break;
 			}
 		}
 		require(
-			cumulativePower > _powerThreshold,
+			cumulativePower > constant_powerThreshold,
 			"Submitted validator set signatures do not have enough power."
 		);
 
@@ -608,7 +609,6 @@ contract Gravity is ReentrancyGuard {
 		// ACTIONS
 
 		state_gravityId = _gravityId;
-		state_powerThreshold = _powerThreshold;
 		state_lastValsetCheckpoint = newCheckpoint;
 
 		// LOGS

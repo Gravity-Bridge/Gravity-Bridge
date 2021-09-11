@@ -220,7 +220,6 @@ async function deploy() {
     // todo generate this randomly at deployment time that way we can avoid
     // anything but intentional conflicts
     gravityId,
-    vote_power,
     eth_addresses,
     powers,
     overrides

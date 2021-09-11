@@ -14,8 +14,8 @@ import {
 chai.use(solidity);
 const { expect } = chai;
 
-describe("constructor tests", function() {
-  it("throws on malformed valset", async function() {
+describe("constructor tests", function () {
+  it("throws on malformed valset", async function () {
     const signers = await ethers.getSigners();
     const gravityId = ethers.utils.formatBytes32String("foo");
 
@@ -23,25 +23,23 @@ describe("constructor tests", function() {
     let powers = examplePowers();
     let validators = signers.slice(0, powers.length - 1);
 
-    const powerThreshold = 6666;
 
     await expect(
-      deployContracts(gravityId, powerThreshold, validators, powers,)
+      deployContracts(gravityId, validators, powers,)
     ).to.be.revertedWith("Malformed current validator set");
   });
 
-  it("throws on insufficient power", async function() {
+  it("throws on insufficient power", async function () {
     const signers = await ethers.getSigners();
     const gravityId = ethers.utils.formatBytes32String("foo");
 
     // This is the power distribution on the Cosmos hub as of 7/14/2020
-    let powers = examplePowers();
-    let validators = signers.slice(0, powers.length);
+    let powers = examplePowers().slice(0, 2);
+    let validators = signers.slice(0, 2);
 
-    const powerThreshold = 666666666;
 
     await expect(
-      deployContracts(gravityId, powerThreshold, validators, powers)
+      deployContracts(gravityId, validators, powers)
     ).to.be.revertedWith(
       "Submitted validator set signatures do not have enough power"
     );

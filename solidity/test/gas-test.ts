@@ -22,13 +22,11 @@ describe("Gas tests", function () {
         let powers = examplePowers();
         let validators = signers.slice(0, powers.length);
 
-        const powerThreshold = 6666;
-
         const {
             gravity,
             testERC20,
             checkpoint: deployCheckpoint
-        } = await deployContracts(gravityId, powerThreshold, validators, powers);
+        } = await deployContracts(gravityId, validators, powers);
 
         let valset = {
             validators: await getSignerAddresses(validators),
@@ -52,13 +50,11 @@ describe("Gas tests", function () {
         let powers = examplePowers();
         let validators = signers.slice(0, powers.length);
 
-        const powerThreshold = 6666;
-
         const {
             gravity,
             testERC20,
             checkpoint: deployCheckpoint
-        } = await deployContracts(gravityId, powerThreshold, validators, powers);
+        } = await deployContracts(gravityId, validators, powers);
 
         let sigs = await signHash(
             validators,

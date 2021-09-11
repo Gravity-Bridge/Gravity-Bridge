@@ -1,5 +1,5 @@
 import chai from "chai";
-import { ethers} from "hardhat";
+import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
 
 import { deployContracts } from "../test-utils";
@@ -36,13 +36,11 @@ async function runTest(opts: {
   let powers = examplePowers();
   let validators = signers.slice(0, powers.length);
 
-  const powerThreshold = 6666;
-
   const {
     gravity,
     testERC20,
     checkpoint: deployCheckpoint
-  } = await deployContracts(gravityId, powerThreshold, validators, powers);
+  } = await deployContracts(gravityId, validators, powers);
 
   let newPowers = examplePowers();
   newPowers[0] -= 3;
@@ -162,18 +160,18 @@ async function runTest(opts: {
     sigs.r,
     sigs.s
   );
-  
+
   // check that the relayer was paid
   if (opts.withReward) {
     // panic if we failed to deploy the contract earlier
     expect(ERC20contract)
     if (ERC20contract) {
-        expect(
-          await (
-            await ERC20contract.functions.balanceOf(await valsetUpdateTx.from)
-          )[0].toNumber()
-        ).to.equal(5000000);
-      }
+      expect(
+        await (
+          await ERC20contract.functions.balanceOf(await valsetUpdateTx.from)
+        )[0].toNumber()
+      ).to.equal(5000000);
+    }
   }
 
   return { gravity, checkpoint };
@@ -235,7 +233,7 @@ describe("updateValset tests", function () {
   });
 
   it("pays reward correctly", async function () {
-    let {gravity, checkpoint} = await runTest({ withReward: true });
+    let { gravity, checkpoint } = await runTest({ withReward: true });
     expect((await gravity.functions.state_lastValsetCheckpoint())[0]).to.equal(checkpoint);
   });
 
@@ -258,10 +256,10 @@ describe("updateValset Go test hash", function () {
     // note these are manually sorted, functions in Go and Rust auto-sort
     // but this does not so be aware of the order!
     const validators = ["0xE5904695748fe4A84b40b3fc79De2277660BD1D3",
-                        "0xc783df8a850f42e7F7e57013759C285caa701eB6", 
-                        "0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4", 
-                        ];
-    const powers = [3333,3333,3333];
+      "0xc783df8a850f42e7F7e57013759C285caa701eB6",
+      "0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4",
+    ];
+    const powers = [1431655765, 1431655765, 1431655765];
 
 
 
@@ -319,4 +317,5 @@ describe("updateValset Go test hash", function () {
     })
     console.log("abiEncodedValset:", abiEncodedValset)
     console.log("valsetDigest:", valsetDigest)
-})});
+  })
+});

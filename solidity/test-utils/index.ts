@@ -10,7 +10,6 @@ type DeployContractsOptions = {
 
 export async function deployContracts(
   gravityId: string = "foo",
-  powerThreshold: number,
   validators: Signer[],
   powers: number[],
   opts?: DeployContractsOptions
@@ -26,7 +25,6 @@ export async function deployContracts(
 
   const gravity = (await Gravity.deploy(
     gravityId,
-    powerThreshold,
     await getSignerAddresses(validators),
     powers,
   )) as Gravity;

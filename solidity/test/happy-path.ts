@@ -34,13 +34,12 @@ describe("Gravity happy path valset update + batch submit", function () {
     }
 
 
-    const powerThreshold = 6666;
 
     const {
       gravity,
       testERC20,
       checkpoint: deployCheckpoint
-    } = await deployContracts(gravityId, powerThreshold, valset0.validators, valset0.powers);
+    } = await deployContracts(gravityId, valset0.validators, valset0.powers);
 
 
 
