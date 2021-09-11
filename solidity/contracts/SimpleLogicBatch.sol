@@ -1,13 +1,12 @@
-pragma solidity ^0.6.6;
-pragma experimental ABIEncoderV2;
+//SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import "hardhat/console.sol";
-
 
 // This middleware allows arbitrary logic batches, executed by a single
 // logic contract taking a single token.
@@ -33,10 +32,10 @@ contract SimpleLogicBatchMiddleware is Ownable {
 		// Send transaction amounts to destinations
 		console.log("number of _amounts:%s", _amounts.length);
 		for (uint256 i = 0; i < _amounts.length; i++) {
-			console.log("Transfering %s",_amounts[i]);
+			console.log("Transfering %s", _amounts[i]);
 
 			IERC20(_tokenContract).safeTransfer(_logicContract, _amounts[i]);
-            bytes memory returnData= Address.functionCall(_logicContract,_payloads[i]);
+			bytes memory returnData = Address.functionCall(_logicContract, _payloads[i]);
 			emit LogicCallEvent(_tokenContract, _logicContract, true, returnData);
 		}
 	}

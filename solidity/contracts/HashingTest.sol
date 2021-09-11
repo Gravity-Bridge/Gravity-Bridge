@@ -1,11 +1,9 @@
-pragma solidity ^0.6.6;
+//SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.7;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract HashingTest {
-	using SafeMath for uint256;
-
 	bytes32 public lastCheckpoint;
 	address[] public state_validators;
 	uint256[] public state_powers;
@@ -24,7 +22,7 @@ contract HashingTest {
 
 		// Iterative hashing of valset
 		{
-			for (uint256 i = 0; i < _validators.length; i = i.add(1)) {
+			for (uint256 i = 0; i < _validators.length; i = i + 1) {
 				// Check that validator powers are decreasing or equal (this allows the next
 				// caller to break out of signature evaluation ASAP to save more gas)
 				if (i != 0) {

@@ -1,13 +1,11 @@
-pragma solidity ^0.6.6;
+//SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.7;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./CosmosToken.sol";
-
-pragma experimental ABIEncoderV2;
 
 // This is being used purely to avoid stack too deep errors
 struct LogicCallArgs {
@@ -43,7 +41,6 @@ struct ValsetArgs {
 }
 
 contract Gravity is ReentrancyGuard {
-	using SafeMath for uint256;
 	using SafeERC20 for IERC20;
 
 	// The number of 'votes' required to execute a valset
@@ -241,7 +238,7 @@ contract Gravity is ReentrancyGuard {
 		uint8[] memory _v,
 		bytes32[] memory _r,
 		bytes32[] memory _s
-	) public nonReentrant {
+	) public {
 		// CHECKS
 
 		// Check that the valset nonce is greater than the old one
@@ -300,7 +297,7 @@ contract Gravity is ReentrancyGuard {
 
 		// LOGS
 
-		state_lastEventNonce = state_lastEventNonce.add(1);
+		state_lastEventNonce = state_lastEventNonce + 1;
 		emit ValsetUpdatedEvent(
 			_newValset.valsetNonce,
 			state_lastEventNonce,
@@ -401,7 +398,7 @@ contract Gravity is ReentrancyGuard {
 				uint256 totalFee;
 				for (uint256 i = 0; i < _amounts.length; i++) {
 					IERC20(_tokenContract).safeTransfer(_destinations[i], _amounts[i]);
-					totalFee = totalFee.add(_fees[i]);
+					totalFee = totalFee + _fees[i];
 				}
 
 				// Send transaction fees to msg.sender
@@ -411,7 +408,7 @@ contract Gravity is ReentrancyGuard {
 
 		// LOGS scoped to reduce stack depth
 		{
-			state_lastEventNonce = state_lastEventNonce.add(1);
+			state_lastEventNonce = state_lastEventNonce + 1;
 			emit TransactionBatchExecutedEvent(_batchNonce, _tokenContract, state_lastEventNonce);
 		}
 	}
@@ -527,7 +524,7 @@ contract Gravity is ReentrancyGuard {
 
 		// LOGS scoped to reduce stack depth
 		{
-			state_lastEventNonce = state_lastEventNonce.add(1);
+			state_lastEventNonce = state_lastEventNonce + 1;
 			emit LogicCallEvent(
 				_args.invalidationId,
 				_args.invalidationNonce,
@@ -543,7 +540,7 @@ contract Gravity is ReentrancyGuard {
 		uint256 _amount
 	) public nonReentrant {
 		IERC20(_tokenContract).safeTransferFrom(msg.sender, address(this), _amount);
-		state_lastEventNonce = state_lastEventNonce.add(1);
+		state_lastEventNonce = state_lastEventNonce + 1;
 		emit SendToCosmosEvent(
 			_tokenContract,
 			msg.sender,
@@ -563,7 +560,7 @@ contract Gravity is ReentrancyGuard {
 		CosmosERC20 erc20 = new CosmosERC20(address(this), _name, _symbol, _decimals);
 
 		// Fire an event to let the Cosmos module know
-		state_lastEventNonce = state_lastEventNonce.add(1);
+		state_lastEventNonce = state_lastEventNonce + 1;
 		emit ERC20DeployedEvent(
 			_cosmosDenom,
 			address(erc20),
@@ -581,7 +578,7 @@ contract Gravity is ReentrancyGuard {
 		// arguments would never be used in this case
 		address[] memory _validators,
 		uint256[] memory _powers
-	) public {
+	) {
 		// CHECKS
 
 		// Check that validators, powers, and signatures (v,r,s) set is well-formed

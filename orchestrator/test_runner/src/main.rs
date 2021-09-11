@@ -10,7 +10,6 @@ use crate::bootstrapping::*;
 use crate::tx_cancel::send_to_eth_and_cancel;
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
-use arbitrary_logic::arbitrary_logic_test;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::utils::wait_for_cosmos_online;
@@ -28,7 +27,6 @@ use std::{env, time::Duration};
 use transaction_stress_test::transaction_stress_test;
 use valset_stress::validator_set_stress_test;
 
-mod arbitrary_logic;
 mod bootstrapping;
 mod evidence_based_slashing;
 mod happy_path;
@@ -212,10 +210,6 @@ pub async fn main() {
         } else if test_type == "V2_HAPPY_PATH" || test_type == "HAPPY_PATH_V2" {
             info!("Starting happy path for Gravity v2");
             happy_path_test_v2(&web30, grpc_client, &contact, keys, gravity_address, false).await;
-            return;
-        } else if test_type == "ARBITRARY_LOGIC" {
-            info!("Starting arbitrary logic tests!");
-            arbitrary_logic_test(&web30, grpc_client, &contact, keys, gravity_address).await;
             return;
         } else if test_type == "RELAY_MARKET" {
             info!("Starting relay market tests!");

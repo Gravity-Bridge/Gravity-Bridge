@@ -1,15 +1,14 @@
-pragma solidity ^0.6.6;
+//SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.7;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract TestLogicContract is Ownable {
 	address state_tokenContract;
 
-	constructor(address _tokenContract) public {
+	constructor(address _tokenContract) {
 		state_tokenContract = _tokenContract;
 	}
 

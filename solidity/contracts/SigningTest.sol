@@ -1,4 +1,5 @@
-pragma solidity ^0.6.6;
+//SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.7;
 
 import "hardhat/console.sol";
 

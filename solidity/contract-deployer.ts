@@ -2,7 +2,6 @@ import { Gravity } from "./typechain/Gravity";
 import { TestERC20A } from "./typechain/TestERC20A";
 import { TestERC20B } from "./typechain/TestERC20B";
 import { TestERC20C } from "./typechain/TestERC20C";
-import { TestUniswapLiquidity } from "./typechain/TestUniswapLiquidity";
 import { ethers } from "ethers";
 import fs from "fs";
 import commandLineArgs from "command-line-args";
@@ -102,7 +101,7 @@ async function deploy() {
 
   if (args["test-mode"] == "True" || args["test-mode"] == "true") {
     var success = false;
-    while(!success) {
+    while (!success) {
       var present = new Date();
       var timeDiff: number = present.getTime() - startTime.getTime();
       timeDiff = timeDiff / 1000
@@ -168,17 +167,6 @@ async function deploy() {
     await testERC202.deployed();
     const erc20TestAddress2 = testERC202.address;
     console.log("ERC20 deployed at Address - ", erc20TestAddress2);
-
-
-    const arbitrary_logic_path = "/gravity/solidity/artifacts/contracts/TestUniswapLiquidity.sol/TestUniswapLiquidity.json"
-    if (fs.existsSync(arbitrary_logic_path)) { 
-      const { abi, bytecode } = getContractArtifacts(arbitrary_logic_path);
-      const liquidityFactory = new ethers.ContractFactory(abi, bytecode, wallet);
-      const testUniswapLiquidity = (await liquidityFactory.deploy(erc20TestAddress)) as TestUniswapLiquidity;
-      await testUniswapLiquidity.deployed();
-      const testAddress = testUniswapLiquidity.address;
-      console.log("Uniswap Liquidity test deployed at Address - ", testAddress);
-    }
   }
   const gravityIdString = await getGravityId();
   const gravityId = ethers.utils.formatBytes32String(gravityIdString);
@@ -234,7 +222,7 @@ function getContractArtifacts(path: string): { bytecode: string; abi: string } {
   var { bytecode, abi } = JSON.parse(fs.readFileSync(path, "utf8").toString());
   return { bytecode, abi };
 }
-const decode = (str: string):string => Buffer.from(str, 'base64').toString('binary');
+const decode = (str: string): string => Buffer.from(str, 'base64').toString('binary');
 
 async function getLatestValset(): Promise<Valset> {
   let block_height_request_string = args["cosmos-node"] + '/status';
@@ -246,11 +234,13 @@ async function getLatestValset(): Promise<Valset> {
     exit(1);
   }
   let request_string = args["cosmos-node"] + "/abci_query"
-  let response = await axios.get(request_string, {params: {
-    path: "\"/custom/gravity/currentValset/\"",
-    height: block_height,
-    prove: "false",
-  }});
+  let response = await axios.get(request_string, {
+    params: {
+      path: "\"/custom/gravity/currentValset/\"",
+      height: block_height,
+      prove: "false",
+    }
+  });
   let valsets: ABCIWrapper = await response.data;
   console.log(decode(valsets.result.response.value));
   let valset: ValsetTypeWrapper = JSON.parse(decode(valsets.result.response.value))
@@ -266,18 +256,20 @@ async function getGravityId(): Promise<string> {
     exit(1);
   }
   let request_string = args["cosmos-node"] + "/abci_query"
-  let response = await axios.get(request_string, {params: {
-    path: "\"/custom/gravity/gravityID/\"",
-    height: block_height,
-    prove: "false",
-  }});
+  let response = await axios.get(request_string, {
+    params: {
+      path: "\"/custom/gravity/gravityID/\"",
+      height: block_height,
+      prove: "false",
+    }
+  });
   let gravityIDABCIResponse: ABCIWrapper = await response.data;
   let gravityID: string = JSON.parse(decode(gravityIDABCIResponse.result.response.value))
   return gravityID;
 
 }
 
-async function submitGravityAddress(address: string) {}
+async function submitGravityAddress(address: string) { }
 
 async function main() {
   await deploy();

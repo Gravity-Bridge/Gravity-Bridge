@@ -1,9 +1,10 @@
-pragma solidity ^0.6.6;
+//SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.7;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // One of three testing coins
 contract TestERC20A is ERC20 {
-	constructor() public ERC20("Bitcoin MAX", "MAX") {
+	constructor() ERC20("Bitcoin MAX", "MAX") {
 		_mint(0xc783df8a850f42e7F7e57013759C285caa701eB6, 10000);
 		_mint(0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4, 10000);
 		_mint(0xE5904695748fe4A84b40b3fc79De2277660BD1D3, 10000);
