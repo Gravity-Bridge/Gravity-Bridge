@@ -248,6 +248,14 @@ contract Gravity is ReentrancyGuard {
 			"New valset nonce must be greater than the current nonce"
 		);
 
+		// Check that the valset nonce is less than a million nonces forward from the old one
+		// this makes it difficult for an attacker to lock out the contract by getting a single
+		// bad validator set through with uint256 max nonce
+		require(
+			_newValset.valsetNonce < _currentValset.valsetNonce + 1000000,
+			"New valset nonce must be less than one million greater than the current nonce"
+		);
+
 		// Check that new validators and powers set is well-formed
 		require(
 			_newValset.validators.length == _newValset.powers.length,
@@ -350,6 +358,14 @@ contract Gravity is ReentrancyGuard {
 			require(
 				state_lastBatchNonces[_tokenContract] < _batchNonce,
 				"New batch nonce must be greater than the current nonce"
+			);
+
+			// Check that the batch nonce is less than one million nonces forward from the old one
+			// this makes it difficult for an attacker to lock out the contract by getting a single
+			// bad batch through with uint256 max nonce
+			require(
+				_batchNonce < state_lastBatchNonces[_tokenContract] + 1000000,
+				"New batch nonce must be less than one million greater than the current nonce"
 			);
 
 			// Check that the block height is less than the timeout height
@@ -456,6 +472,10 @@ contract Gravity is ReentrancyGuard {
 				state_invalidationMapping[_args.invalidationId] < _args.invalidationNonce,
 				"New invalidation nonce must be greater than the current nonce"
 			);
+
+			// note the lack of nonce skipping check, it's not needed here since an attacker
+			// will never be able to fill the invalidationId space, therefore a nonce lockout
+			// is simply not possible
 
 			// Check that current validators, powers, and signatures (v,r,s) set is well-formed
 			require(
