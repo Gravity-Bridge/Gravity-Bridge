@@ -104,7 +104,7 @@ contract Gravity is ReentrancyGuard {
 
 	// TEST FIXTURES
 	// These are here to make it easier to measure gas usage. They should be removed before production
-	function testMakeCheckpoint(ValsetArgs memory _valsetArgs, bytes32 _gravityId) public pure {
+	function testMakeCheckpoint(ValsetArgs memory _valsetArgs, bytes32 _gravityId) external pure {
 		makeCheckpoint(_valsetArgs, _gravityId);
 	}
 
@@ -116,7 +116,7 @@ contract Gravity is ReentrancyGuard {
 		bytes32[] memory _s,
 		bytes32 _theHash,
 		uint256 _powerThreshold
-	) public pure {
+	) external pure {
 		checkValidatorSignatures(
 			_currentValidators,
 			_currentPowers,
@@ -130,11 +130,11 @@ contract Gravity is ReentrancyGuard {
 
 	// END TEST FIXTURES
 
-	function lastBatchNonce(address _erc20Address) public view returns (uint256) {
+	function lastBatchNonce(address _erc20Address) external view returns (uint256) {
 		return state_lastBatchNonces[_erc20Address];
 	}
 
-	function lastLogicCallNonce(bytes32 _invalidation_id) public view returns (uint256) {
+	function lastLogicCallNonce(bytes32 _invalidation_id) external view returns (uint256) {
 		return state_invalidationMapping[_invalidation_id];
 	}
 
@@ -239,7 +239,7 @@ contract Gravity is ReentrancyGuard {
 		uint8[] memory _v,
 		bytes32[] memory _r,
 		bytes32[] memory _s
-	) public {
+	) external {
 		// CHECKS
 
 		// Check that the valset nonce is greater than the old one
@@ -351,7 +351,7 @@ contract Gravity is ReentrancyGuard {
 		// a block height beyond which this batch is not valid
 		// used to provide a fee-free timeout
 		uint256 _batchTimeout
-	) public nonReentrant {
+	) external nonReentrant {
 		// CHECKS scoped to reduce stack depth
 		{
 			// Check that the batch nonce is higher than the last nonce for this token
@@ -461,7 +461,7 @@ contract Gravity is ReentrancyGuard {
 		bytes32[] memory _r,
 		bytes32[] memory _s,
 		LogicCallArgs memory _args
-	) public nonReentrant {
+	) external nonReentrant {
 		// CHECKS scoped to reduce stack depth
 		{
 			// Check that the call has not timed out
@@ -504,7 +504,6 @@ contract Gravity is ReentrancyGuard {
 				"Malformed list of fees"
 			);
 		}
-
 		bytes32 argsHash = keccak256(
 			abi.encode(
 				state_gravityId,
@@ -573,7 +572,7 @@ contract Gravity is ReentrancyGuard {
 		address _tokenContract,
 		bytes32 _destination,
 		uint256 _amount
-	) public nonReentrant {
+	) external nonReentrant {
 		// we snapshot our current balance of this token
 		uint256 ourStartingBalance = IERC20(_tokenContract).balanceOf(address(this));
 
@@ -603,11 +602,11 @@ contract Gravity is ReentrancyGuard {
 	}
 
 	function deployERC20(
-		string memory _cosmosDenom,
-		string memory _name,
-		string memory _symbol,
+		string calldata _cosmosDenom,
+		string calldata _name,
+		string calldata _symbol,
 		uint8 _decimals
-	) public {
+	) external {
 		// Deploy an ERC20 with entire supply granted to Gravity.sol
 		CosmosERC20 erc20 = new CosmosERC20(address(this), _name, _symbol, _decimals);
 
