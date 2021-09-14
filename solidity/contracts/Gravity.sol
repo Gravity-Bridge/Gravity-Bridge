@@ -574,13 +574,30 @@ contract Gravity is ReentrancyGuard {
 		bytes32 _destination,
 		uint256 _amount
 	) public nonReentrant {
+		// we snapshot our current balance of this token
+		uint256 ourStartingBalance = IERC20(_tokenContract).balanceOf(address(this));
+
+		// attempt to transfer the user specified amount
 		IERC20(_tokenContract).safeTransferFrom(msg.sender, address(this), _amount);
+
+		// check what this particular ERC20 implementation actually gave us, since it doesn't
+		// have to be at all related to the _amount
+		uint256 ourEndingBalance = IERC20(_tokenContract).balanceOf(address(this));
+
+		// a very strange ERC20 may trigger this condition, if we didn't have this we would
+		// underflow, so it's mostly just an error message printer
+		require(ourEndingBalance > ourStartingBalance, "Wonky ERC20 reduced our balance!");
+
 		state_lastEventNonce = state_lastEventNonce + 1;
+
+		// emit to Cosmos the actual amount our balance has changed, rather than the user
+		// provided amount. This protects against a small set of wonky ERC20 behavior, like
+		// burning on send but not tokens that for example change every users balance every day.
 		emit SendToCosmosEvent(
 			_tokenContract,
 			msg.sender,
 			_destination,
-			_amount,
+			ourEndingBalance - ourStartingBalance,
 			state_lastEventNonce
 		);
 	}
