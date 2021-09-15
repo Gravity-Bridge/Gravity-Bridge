@@ -274,7 +274,10 @@ contract Gravity is ReentrancyGuard {
 		}
 
 		// Check that new validators and powers set is well-formed
-		if (_newValset.validators.length != _newValset.powers.length) {
+		if (
+			_newValset.validators.length != _newValset.powers.length ||
+			_newValset.validators.length == 0
+		) {
 			revert MalformedNewValidatorSet();
 		}
 
@@ -656,7 +659,7 @@ contract Gravity is ReentrancyGuard {
 		// CHECKS
 
 		// Check that validators, powers, and signatures (v,r,s) set is well-formed
-		if (_validators.length != _powers.length) {
+		if (_validators.length != _powers.length || _validators.length == 0) {
 			revert MalformedCurrentValidatorSet();
 		}
 
