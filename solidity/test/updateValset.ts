@@ -11,8 +11,6 @@ import {
   ZeroAddress,
   parseEvent
 } from "../test-utils/pure";
-import { openStdin } from "node:process";
-import { format } from "prettier";
 
 chai.use(solidity);
 const { expect } = chai;

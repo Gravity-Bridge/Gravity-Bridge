@@ -7,8 +7,6 @@ import fs from "fs";
 import commandLineArgs from "command-line-args";
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { exit } from "process";
-import { start } from "node:repl";
-import { SSL_OP_EPHEMERAL_RSA } from "node:constants";
 
 const args = commandLineArgs([
   // the ethernum node used to deploy the contract
