@@ -26,6 +26,8 @@ async function runTest(opts: {
   badReward?: boolean;
   notEnoughReward?: boolean;
   withReward?: boolean;
+  notEnoughPowerNewSet?: boolean;
+  zeroLengthValset?: boolean;
 }) {
   const signers = await ethers.getSigners();
   const gravityId = ethers.utils.formatBytes32String("foo");
@@ -48,6 +50,13 @@ async function runTest(opts: {
   if (opts.malformedNewValset) {
     // Validators and powers array don't match
     newValidators = signers.slice(0, newPowers.length - 1);
+  } else if (opts.zeroLengthValset) {
+    newValidators = [];
+    newPowers = [];
+  } else if (opts.notEnoughPowerNewSet) {
+    for (let i in newPowers) {
+      newPowers[i] = 5;
+    }
   }
 
   let currentValsetNonce = 0;
@@ -178,13 +187,19 @@ async function runTest(opts: {
 describe("updateValset tests", function () {
   it("throws on malformed new valset", async function () {
     await expect(runTest({ malformedNewValset: true })).to.be.revertedWith(
-      "Malformed new validator set"
+      "MalformedNewValidatorSet()"
+    );
+  });
+
+  it("throws on empty new valset", async function () {
+    await expect(runTest({ zeroLengthValset: true })).to.be.revertedWith(
+      "MalformedNewValidatorSet()"
     );
   });
 
   it("throws on malformed current valset", async function () {
     await expect(runTest({ malformedCurrentValset: true })).to.be.revertedWith(
-      "Malformed current validator set"
+      "MalformedCurrentValidatorSet()"
     );
   });
 
@@ -192,19 +207,19 @@ describe("updateValset tests", function () {
     await expect(
       runTest({ nonMatchingCurrentValset: true })
     ).to.be.revertedWith(
-      "Supplied current validators and powers do not match checkpoint"
+      "IncorrectCheckpoint()"
     );
   });
 
   it("throws on new valset nonce not incremented", async function () {
     await expect(runTest({ nonceNotIncremented: true })).to.be.revertedWith(
-      "New valset nonce must be greater than the current nonce"
+      "InvalidValsetNonce(0, 0)"
     );
   });
 
   it("throws on bad validator sig", async function () {
     await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
-      "Validator signature does not match"
+      "InvalidSignature()"
     );
   });
 
@@ -214,7 +229,13 @@ describe("updateValset tests", function () {
 
   it("throws on not enough signatures", async function () {
     await expect(runTest({ notEnoughPower: true })).to.be.revertedWith(
-      "Submitted validator set signatures do not have enough power"
+      "InsufficientPower(2807621889, 2863311530)"
+    );
+  });
+
+  it("throws on not enough power in new set", async function () {
+    await expect(runTest({ notEnoughPowerNewSet: true })).to.be.revertedWith(
+      "InsufficientPower(625, 2863311530)"
     );
   });
 

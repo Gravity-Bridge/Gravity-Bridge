@@ -179,25 +179,25 @@ async function runTest(opts: {
 describe("submitBatch tests", function () {
   it("throws on malformed current valset", async function () {
     await expect(runTest({ malformedCurrentValset: true })).to.be.revertedWith(
-      "Malformed current validator set"
+      "MalformedCurrentValidatorSet()"
     );
   });
 
   it("throws on malformed txbatch", async function () {
     await expect(runTest({ malformedTxBatch: true })).to.be.revertedWith(
-      "Malformed batch of transactions"
+      "MalformedBatch()"
     );
   });
 
   it("throws on batch nonce not incremented", async function () {
     await expect(runTest({ batchNonceNotHigher: true })).to.be.revertedWith(
-      "New batch nonce must be greater than the current nonce"
+      "InvalidBatchNonce(0, 0)"
     );
   });
 
   it("throws on timeout batch", async function () {
     await expect(runTest({ batchTimeout: true })).to.be.revertedWith(
-      "Batch timeout must be greater than the current block height"
+      "BatchTimedOut()"
     );
   });
 
@@ -205,13 +205,13 @@ describe("submitBatch tests", function () {
     await expect(
       runTest({ nonMatchingCurrentValset: true })
     ).to.be.revertedWith(
-      "Supplied current validators and powers do not match checkpoint"
+      "IncorrectCheckpoint()"
     );
   });
 
   it("throws on bad validator sig", async function () {
     await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
-      "Validator signature does not match"
+      "InvalidSignature()"
     );
   });
 
@@ -221,7 +221,7 @@ describe("submitBatch tests", function () {
 
   it("throws on not enough signatures", async function () {
     await expect(runTest({ notEnoughPower: true })).to.be.revertedWith(
-      "Submitted validator set signatures do not have enough power"
+      "InsufficientPower(2807621889, 2863311530)"
     );
   });
 
