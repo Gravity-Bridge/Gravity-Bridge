@@ -62,8 +62,9 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
-	input := CreateTestEnv(t)
-	ctx := input.Context
+	//input := CreateTestEnv(t)
+	input, ctx := SetupFiveValChain(t)
+	//ctx := input.Context
 
 	valset := input.GravityKeeper.SetValsetRequest(ctx)
 

@@ -35,25 +35,74 @@ func UInt64FromString(s string) (uint64, error) {
 //      BRIDGE VALIDATOR(S)         //
 //////////////////////////////////////
 
-// ValidateBasic performs stateless checks on validity
-func (b *BridgeValidator) ValidateBasic() error {
-	if b.Power == 0 {
-		return sdkerrors.Wrap(ErrEmpty, "power")
-	}
-	if err := ValidateEthAddress(b.EthereumAddress); err != nil {
-		return sdkerrors.Wrap(err, "ethereum address")
-	}
-	if b.EthereumAddress == "" {
-		return sdkerrors.Wrap(ErrEmpty, "address")
-	}
-	return nil
+// ToInternal transforms a BridgeValidator into its fully validated internal type
+func (b BridgeValidator) ToInternal() (*InternalBridgeValidator, error) {
+	return NewInternalBridgeValidator(b)
 }
 
 // BridgeValidators is the sorted set of validator data for Ethereum bridge MultiSig set
 type BridgeValidators []*BridgeValidator
 
+func (b BridgeValidators) ToInternal() (*InternalBridgeValidators, error) {
+	ret := make(InternalBridgeValidators, len(b))
+	for i := range b {
+		ibv, err := NewInternalBridgeValidator(*b[i])
+		if err != nil {
+			return nil, sdkerrors.Wrapf(err, "member %d", i)
+		}
+		ret[i] = ibv
+	}
+	return &ret, nil
+}
+
+// Bridge Validator but with validated EthereumAddress
+type InternalBridgeValidator struct {
+	Power           uint64
+	EthereumAddress EthAddress
+}
+
+func NewInternalBridgeValidator(bridgeValidator BridgeValidator) (*InternalBridgeValidator, error) {
+	i := &InternalBridgeValidator{
+		Power:           bridgeValidator.Power,
+		EthereumAddress: EthAddress{bridgeValidator.EthereumAddress},
+	}
+	if err := i.ValidateBasic(); err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid bridge validator")
+	}
+	return i, nil
+}
+
+func (i InternalBridgeValidator) ValidateBasic() error {
+	if i.Power == 0 {
+		return sdkerrors.Wrap(ErrEmpty, "power")
+	}
+	if err := i.EthereumAddress.ValidateBasic(); err != nil {
+		return sdkerrors.Wrap(err, "ethereum address")
+	}
+	return nil
+}
+
+func (i InternalBridgeValidator) ToExternal() *BridgeValidator {
+	return &BridgeValidator{
+		Power:           i.Power,
+		EthereumAddress: i.EthereumAddress.GetAddress(),
+	}
+}
+
+// InternalBridgeValidators is the sorted set of validator data for Ethereum bridge MultiSig set
+type InternalBridgeValidators []*InternalBridgeValidator
+
+func (i InternalBridgeValidators) ToExternal() BridgeValidators {
+	bridgeValidators := make([]*BridgeValidator, len(i))
+	for b := range bridgeValidators {
+		bridgeValidators[b] = i[b].ToExternal()
+	}
+
+	return BridgeValidators(bridgeValidators)
+}
+
 // Sort sorts the validators by power
-func (b BridgeValidators) Sort() {
+func (b InternalBridgeValidators) Sort() {
 	sort.Slice(b, func(i, j int) bool {
 		if b[i].Power == b[j].Power {
 			// Secondary sort on eth address in case powers are equal
@@ -77,20 +126,20 @@ func (b BridgeValidators) Sort() {
 // if the total on chain voting power increases by 1% due to inflation, we shouldn't have to generate a new validator
 // set, after all the validators retained their relative percentages during inflation and normalized Gravity bridge power
 // shows no difference.
-func (b BridgeValidators) PowerDiff(c BridgeValidators) float64 {
+func (b InternalBridgeValidators) PowerDiff(c InternalBridgeValidators) float64 {
 	powers := map[string]int64{}
 	// loop over b and initialize the map with their powers
 	for _, bv := range b {
-		powers[bv.EthereumAddress] = int64(bv.Power)
+		powers[bv.EthereumAddress.GetAddress()] = int64(bv.Power)
 	}
 
 	// subtract c powers from powers in the map, initializing
 	// uninitialized keys with negative numbers
 	for _, bv := range c {
-		if val, ok := powers[bv.EthereumAddress]; ok {
-			powers[bv.EthereumAddress] = val - int64(bv.Power)
+		if val, ok := powers[bv.EthereumAddress.GetAddress()]; ok {
+			powers[bv.EthereumAddress.GetAddress()] = val - int64(bv.Power)
 		} else {
-			powers[bv.EthereumAddress] = -int64(bv.Power)
+			powers[bv.EthereumAddress.GetAddress()] = -int64(bv.Power)
 		}
 	}
 
@@ -104,7 +153,7 @@ func (b BridgeValidators) PowerDiff(c BridgeValidators) float64 {
 }
 
 // TotalPower returns the total power in the bridge validator set
-func (b BridgeValidators) TotalPower() (out uint64) {
+func (b InternalBridgeValidators) TotalPower() (out uint64) {
 	for _, v := range b {
 		out += v.Power
 	}
@@ -112,16 +161,16 @@ func (b BridgeValidators) TotalPower() (out uint64) {
 }
 
 // HasDuplicates returns true if there are duplicates in the set
-func (b BridgeValidators) HasDuplicates() bool {
+func (b InternalBridgeValidators) HasDuplicates() bool {
 	m := make(map[string]struct{}, len(b))
 	for i := range b {
-		m[b[i].EthereumAddress] = struct{}{}
+		m[b[i].EthereumAddress.GetAddress()] = struct{}{}
 	}
 	return len(m) != len(b)
 }
 
 // GetPowers returns only the power values for all members
-func (b BridgeValidators) GetPowers() []uint64 {
+func (b InternalBridgeValidators) GetPowers() []uint64 {
 	r := make([]uint64, len(b))
 	for i := range b {
 		r[i] = b[i].Power
@@ -130,7 +179,7 @@ func (b BridgeValidators) GetPowers() []uint64 {
 }
 
 // ValidateBasic performs stateless checks
-func (b BridgeValidators) ValidateBasic() error {
+func (b InternalBridgeValidators) ValidateBasic() error {
 	// TODO: check if the set is sorted here?
 	if len(b) == 0 {
 		return ErrEmpty
@@ -147,13 +196,17 @@ func (b BridgeValidators) ValidateBasic() error {
 }
 
 // NewValset returns a new valset
-func NewValset(nonce, height uint64, members BridgeValidators, rewardAmount sdk.Int, rewardToken string) *Valset {
+func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmount sdk.Int, rewardToken string) (*Valset, error) {
+	if err := members.ValidateBasic(); err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid members")
+	}
 	members.Sort()
 	var mem []*BridgeValidator
 	for _, val := range members {
-		mem = append(mem, val)
+		mem = append(mem, val.ToExternal())
 	}
-	return &Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken}
+	return &Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken},
+		nil
 }
 
 // GetCheckpoint returns the checkpoint
@@ -228,7 +281,7 @@ func (v *Valset) WithoutEmptyMembers() *Valset {
 		RewardToken:  "",
 	}
 	for i := range v.Members {
-		if err := v.Members[i].ValidateBasic(); err == nil {
+		if _, err := v.Members[i].ToInternal(); err == nil {
 			r.Members = append(r.Members, v.Members[i])
 		}
 	}

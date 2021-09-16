@@ -257,6 +257,10 @@ func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, m
 	if err != nil {
 		return sdkerrors.Wrap(err, "create attestation")
 	}
+	hash, err := msg.ClaimHash()
+	if err != nil {
+		return sdkerrors.Wrap(err, "unable to compute claim hash")
+	}
 
 	// Emit the handle message event
 	ctx.EventManager().EmitEvent(
@@ -264,7 +268,7 @@ func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, m
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, string(msg.GetType())),
 			// TODO: maybe return something better here? is this the right string representation?
-			sdk.NewAttribute(types.AttributeKeyAttestationID, string(types.GetAttestationKey(msg.GetEventNonce(), msg.ClaimHash()))),
+			sdk.NewAttribute(types.AttributeKeyAttestationID, string(types.GetAttestationKey(msg.GetEventNonce(), hash))),
 		),
 	)
 

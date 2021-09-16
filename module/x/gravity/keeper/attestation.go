@@ -7,6 +7,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
@@ -34,7 +35,11 @@ func (k Keeper) Attest(
 	}
 
 	// Tries to get an attestation with the same eventNonce and claim as the claim that was submitted.
-	att := k.GetAttestation(ctx, claim.GetEventNonce(), claim.ClaimHash())
+	hash, err := claim.ClaimHash()
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "unable to compute claim hash")
+	}
+	att := k.GetAttestation(ctx, claim.GetEventNonce(), hash)
 
 	// If it does not exist, create a new one.
 	if att == nil {
@@ -49,7 +54,7 @@ func (k Keeper) Attest(
 	// Add the validator's vote to this attestation
 	att.Votes = append(att.Votes, valAddr.String())
 
-	k.SetAttestation(ctx, claim.GetEventNonce(), claim.ClaimHash(), att)
+	k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
 	k.setLastEventNonceByValidator(ctx, valAddr, claim.GetEventNonce())
 
 	return att, nil
@@ -62,6 +67,10 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 	claim, err := k.UnpackAttestationClaim(att)
 	if err != nil {
 		panic("could not cast to claim")
+	}
+	hash, err := claim.ClaimHash()
+	if err != nil {
+		panic("unable to compute claim hash")
 	}
 	// If the attestation has not yet been Observed, sum up the votes and see if it is ready to apply to the state.
 	// This conditional stops the attestation from accidentally being applied twice.
@@ -92,7 +101,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 				k.SetLastObservedEthereumBlockHeight(ctx, claim.GetBlockHeight())
 
 				att.Observed = true
-				k.SetAttestation(ctx, claim.GetEventNonce(), claim.ClaimHash(), att)
+				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
 
 				k.processAttestation(ctx, att, claim)
 				k.emitObservedEvent(ctx, att, claim)
@@ -108,6 +117,10 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 
 // processAttestation actually applies the attestation to the consensus state
 func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
+	hash, err := claim.ClaimHash()
+	if err != nil {
+		panic("unable to compute claim hash")
+	}
 	// then execute in a new Tx so that we can store state on failure
 	xCtx, commit := ctx.CacheContext()
 	if err := k.AttestationHandler.Handle(xCtx, *att, claim); err != nil { // execute with a transient storage
@@ -117,7 +130,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 		k.logger(ctx).Error("attestation failed",
 			"cause", err.Error(),
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(claim.GetEventNonce(), claim.ClaimHash()),
+			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 	} else {
@@ -128,6 +141,10 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 // emitObservedEvent emits an event with information about an attestation that has been applied to
 // consensus state.
 func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
+	hash, err := claim.ClaimHash()
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
+	}
 	observationEvent := sdk.NewEvent(
 		types.EventTypeObservation,
 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
@@ -136,7 +153,7 @@ func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim
 		sdk.NewAttribute(types.AttributeKeyBridgeChainID, strconv.Itoa(int(k.GetBridgeChainID(ctx)))),
 		// todo: serialize with hex/ base64 ?
 		sdk.NewAttribute(types.AttributeKeyAttestationID,
-			string(types.GetAttestationKey(claim.GetEventNonce(), claim.ClaimHash()))),
+			string(types.GetAttestationKey(claim.GetEventNonce(), hash))),
 		sdk.NewAttribute(types.AttributeKeyNonce, fmt.Sprint(claim.GetEventNonce())),
 		// TODO: do we want to emit more information?
 	)
@@ -169,8 +186,13 @@ func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 	if err != nil {
 		panic("Bad Attestation in DeleteAttestation")
 	}
+	hash, err := claim.ClaimHash()
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
+	}
 	store := ctx.KVStore(k.storeKey)
-	store.Delete(types.GetAttestationKey(claim.GetEventNonce(), claim.ClaimHash()))
+
+	store.Delete(types.GetAttestationKey(claim.GetEventNonce(), hash))
 }
 
 // GetAttestationMapping returns a mapping of eventnonce -> attestations at that nonce

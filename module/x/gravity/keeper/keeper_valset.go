@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
@@ -231,7 +232,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 	// allocate enough space for all validators, but len zero, we then append
 	// so that we have an array with extra capacity but the correct length depending
 	// on how many validators have keys set.
-	bridgeValidators := make([]*types.BridgeValidator, 0, len(validators))
+	bridgeValidators := make([]*types.InternalBridgeValidator, 0, len(validators))
 	var totalPower uint64
 	// TODO someone with in depth info on Cosmos staking should determine
 	// if this is doing what I think it's doing
@@ -241,8 +242,12 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 		p := uint64(k.StakingKeeper.GetLastValidatorPower(ctx, val))
 
 		if ethAddr, found := k.GetEthAddressByValidator(ctx, val); found {
-			bv := &types.BridgeValidator{Power: p, EthereumAddress: ethAddr}
-			bridgeValidators = append(bridgeValidators, bv)
+			bv := types.BridgeValidator{Power: p, EthereumAddress: ethAddr}
+			ibv, err := types.NewInternalBridgeValidator(bv)
+			if err != nil {
+				panic(sdkerrors.Wrapf(err, "discovered invalid eth address stored for validator %v", val))
+			}
+			bridgeValidators = append(bridgeValidators, ibv)
 			totalPower += p
 		}
 	}
@@ -269,7 +274,11 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 	// increment the nonce, since this potential future valset should be after the current valset
 	valsetNonce := k.GetLatestValsetNonce(ctx) + 1
 
-	return types.NewValset(valsetNonce, uint64(ctx.BlockHeight()), bridgeValidators, rewardAmount, rewardToken)
+	valset, err := types.NewValset(valsetNonce, uint64(ctx.BlockHeight()), bridgeValidators, rewardAmount, rewardToken)
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "generated invalid valset"))
+	}
+	return valset
 }
 
 /////////////////////////////
