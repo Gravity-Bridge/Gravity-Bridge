@@ -258,13 +258,13 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 
 	// get the reward from the params store
 	reward := k.GetParams(ctx).ValsetReward
-	var rewardToken string
+	var rewardToken *types.EthAddress
 	var rewardAmount sdk.Int
 	if !reward.IsValid() || reward.IsZero() {
 		// the case where a validator has 'no reward'. The 'no reward' value is interpreted as having a zero
 		// address for the ERC20 token and a zero value for the reward amount. Since we store a coin with the
 		// params, a coin with a blank denom and/or zero amount is interpreted in this way.
-		rewardToken = "0x0000000000000000000000000000000000000000"
+		rewardToken = types.ZeroAddress()
 		rewardAmount = sdk.NewIntFromUint64(0)
 
 	} else {
@@ -274,7 +274,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 	// increment the nonce, since this potential future valset should be after the current valset
 	valsetNonce := k.GetLatestValsetNonce(ctx) + 1
 
-	valset, err := types.NewValset(valsetNonce, uint64(ctx.BlockHeight()), bridgeValidators, rewardAmount, rewardToken)
+	valset, err := types.NewValset(valsetNonce, uint64(ctx.BlockHeight()), bridgeValidators, rewardAmount, rewardToken.GetAddress())
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "generated invalid valset"))
 	}

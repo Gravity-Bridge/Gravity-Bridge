@@ -10,9 +10,9 @@ import (
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
 
-func (k Keeper) GetCosmosOriginatedDenom(ctx sdk.Context, tokenContract string) (string, bool) {
+func (k Keeper) GetCosmosOriginatedDenom(ctx sdk.Context, tokenContract types.EthAddress) (string, bool) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetERC20ToDenomKey(tokenContract))
+	bz := store.Get(types.GetERC20ToDenomKey(tokenContract.GetAddress()))
 
 	if bz != nil {
 		return string(bz), true
@@ -20,20 +20,24 @@ func (k Keeper) GetCosmosOriginatedDenom(ctx sdk.Context, tokenContract string) 
 	return "", false
 }
 
-func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (string, bool) {
+func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (*types.EthAddress, bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetDenomToERC20Key(denom))
-
 	if bz != nil {
-		return string(bz), true
+		ethAddr, err := types.NewEthAddress(string(bz))
+		if err != nil {
+			panic(fmt.Errorf("discovered invalid ERC20 address under key %v", string(bz)))
+		}
+
+		return ethAddr, true
 	}
-	return "", false
+	return nil, false
 }
 
-func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, tokenContract string) {
+func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, tokenContract types.EthAddress) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetDenomToERC20Key(denom), []byte(tokenContract))
-	store.Set(types.GetERC20ToDenomKey(tokenContract), []byte(denom))
+	store.Set(types.GetDenomToERC20Key(denom), []byte(tokenContract.GetAddress()))
+	store.Set(types.GetERC20ToDenomKey(tokenContract.GetAddress()), []byte(denom))
 }
 
 // DenomToERC20 returns (bool isCosmosOriginated, string ERC20, err)
@@ -41,7 +45,7 @@ func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, t
 // and get its corresponding ERC20 address.
 // This will return an error if it cant parse the denom as a gravity denom, and then also can't find the denom
 // in an index of ERC20 contracts deployed on Ethereum to serve as synthetic Cosmos assets.
-func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, string, error) {
+func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, *types.EthAddress, error) {
 	// First try parsing the ERC20 out of the denom
 	tc1, err := types.GravityDenomToERC20(denom)
 
@@ -49,7 +53,7 @@ func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, string,
 		// Look up ERC20 contract in index and error if it's not in there.
 		tc2, exists := k.GetCosmosOriginatedERC20(ctx, denom)
 		if !exists {
-			return false, "",
+			return false, nil,
 				sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("denom not a gravity voucher coin: %s, and also not in cosmos-originated ERC20 index", err))
 		}
 		// This is a cosmos-originated asset
@@ -62,30 +66,29 @@ func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, string,
 
 // RewardToERC20Lookup is a specialized function wrapping DenomToERC20Lookup designed to validate
 // the validator set reward any time we generate a validator set
-func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (string, sdk.Int) {
+func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (*types.EthAddress, sdk.Int) {
 	if !coin.IsValid() || coin.IsZero() {
 		panic("Bad validator set relaying reward!")
 	} else {
 		// reward case, pass to DenomToERC20Lookup
-		_, addressStr, err := k.DenomToERC20Lookup(ctx, coin.Denom)
+		_, address, err := k.DenomToERC20Lookup(ctx, coin.Denom)
 		if err != nil {
 			// This can only ever happen if governance sets a value for the reward
 			// which is not a valid ERC20 that as been bridged before (either from or to Cosmos)
 			// We'll classify that as operator error and just panic
 			panic("Invalid Valset reward! Correct or remove the paramater value")
 		}
-		err = types.ValidateEthAddress(addressStr)
 		if err != nil {
 			panic("Invalid Valset reward! Correct or remove the paramater value")
 		}
-		return addressStr, coin.Amount
+		return address, coin.Amount
 	}
 }
 
 // ERC20ToDenom returns (bool isCosmosOriginated, string denom, err)
 // Using this information, you can see if an ERC20 address representing an asset is native to Cosmos or Ethereum,
 // and get its corresponding denom
-func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, tokenContract string) (bool, string) {
+func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, tokenContract types.EthAddress) (bool, string) {
 	// First try looking up tokenContract in index
 	dn1, exists := k.GetCosmosOriginatedDenom(ctx, tokenContract)
 	if exists {

@@ -160,9 +160,13 @@ func (k Keeper) pickUnbatchedTX(
 	var err error
 	k.IterateUnbatchedTransactionsByContract(ctx, contractAddress, func(_ []byte, tx *types.OutgoingTransferTx) bool {
 		if tx != nil && tx.Erc20Fee != nil {
+			feeInt, err := tx.Erc20Fee.ToInternal()
+			if err != nil {
+				panic(fmt.Errorf("invalid fee in unbatched tx: %v", err))
+			}
 			selectedTx = append(selectedTx, tx)
-			err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, tx.Id)
-			oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
+			err = k.removeUnbatchedTX(ctx, *feeInt, tx.Id)
+			oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *feeInt, tx.Id)
 			if oldTx != nil || oldTxErr == nil {
 				panic("picked a duplicate transaction from the pool, duplicates should never exist!")
 			}

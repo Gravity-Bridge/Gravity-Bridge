@@ -547,8 +547,10 @@ func createTestBatch(t *testing.T, input TestInput) {
 		now                 = time.Now().UTC()
 	)
 	// mint some voucher first
-	allVouchers := sdk.Coins{types.NewERC20Token(99999, myTokenContractAddr).GravityCoin()}
-	err := input.BankKeeper.MintCoins(input.Context, types.ModuleName, allVouchers)
+	token, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+	require.NoError(t, err)
+	allVouchers := sdk.Coins{token.GravityCoin()}
+	err = input.BankKeeper.MintCoins(input.Context, types.ModuleName, allVouchers)
 	require.NoError(t, err)
 
 	// set senders balance
@@ -558,8 +560,12 @@ func createTestBatch(t *testing.T, input TestInput) {
 
 	// add some TX to the pool
 	for i, v := range []uint64{2, 3, 2, 1} {
-		amount := types.NewERC20Token(uint64(i+100), myTokenContractAddr).GravityCoin()
-		fee := types.NewERC20Token(v, myTokenContractAddr).GravityCoin()
+		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
 		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:
@@ -888,18 +894,19 @@ func TestQueryCurrentValset(t *testing.T) {
 //nolint: exhaustivestruct
 func TestQueryERC20ToDenom(t *testing.T) {
 	var (
-		erc20 = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
-		denom = "uatom"
+		erc20, err = types.NewEthAddress("0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255")
+		denom      = "uatom"
 	)
+	require.NoError(t, err)
 	response := types.QueryERC20ToDenomResponse{
 		Denom:            denom,
 		CosmosOriginated: true,
 	}
 	input := CreateTestEnv(t)
 	ctx := input.Context
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, denom, erc20)
+	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, denom, *erc20)
 
-	queriedDenom, err := queryERC20ToDenom(ctx, erc20, input.GravityKeeper)
+	queriedDenom, err := queryERC20ToDenom(ctx, erc20.GetAddress(), input.GravityKeeper)
 	require.NoError(t, err)
 	correctBytes, err := codec.MarshalJSONIndent(types.ModuleCdc, response)
 	require.NoError(t, err)
@@ -910,16 +917,17 @@ func TestQueryERC20ToDenom(t *testing.T) {
 //nolint: exhaustivestruct
 func TestQueryDenomToERC20(t *testing.T) {
 	var (
-		erc20 = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
-		denom = "uatom"
+		erc20, err = types.NewEthAddress("0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255")
+		denom      = "uatom"
 	)
+	require.NoError(t, err)
 	response := types.QueryDenomToERC20Response{
-		Erc20:            erc20,
+		Erc20:            erc20.GetAddress(),
 		CosmosOriginated: true,
 	}
 	input := CreateTestEnv(t)
 	ctx := input.Context
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, denom, erc20)
+	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, denom, *erc20)
 
 	queriedERC20, err := queryDenomToERC20(ctx, denom, input.GravityKeeper)
 	require.NoError(t, err)
@@ -939,10 +947,10 @@ func TestQueryPendingSendToEth(t *testing.T) {
 		mySender, _         = sdk.AccAddressFromBech32("cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
-		allVouchers         = sdk.NewCoins(
-			types.NewERC20Token(99999, myTokenContractAddr).GravityCoin(),
-		)
+		token, err          = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
+	require.NoError(t, err)
 
 	// mint some voucher first
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
@@ -955,9 +963,13 @@ func TestQueryPendingSendToEth(t *testing.T) {
 
 	// add some TX to the pool
 	for i, v := range []uint64{2, 3, 2, 1} {
-		amount := types.NewERC20Token(uint64(i+100), myTokenContractAddr).GravityCoin()
-		fee := types.NewERC20Token(v, myTokenContractAddr).GravityCoin()
-		_, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:
 		// 1: amount 100, fee 2
@@ -971,7 +983,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 
 	// tx batch size is 2, so that some of them stay behind
 	// Should contain 2 and 3 from above
-	_, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
 	require.NoError(t, err)
 
 	// Should receive 1 and 4 unbatched, 2 and 3 batched in response

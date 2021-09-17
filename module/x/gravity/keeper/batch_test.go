@@ -22,10 +22,10 @@ func TestBatches(t *testing.T) {
 		mySender, _         = sdk.AccAddressFromBech32("cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
-		allVouchers         = sdk.NewCoins(
-			types.NewERC20Token(99999, myTokenContractAddr).GravityCoin(),
-		)
+		token, err          = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
+	require.NoError(t, err)
 
 	// mint some voucher first
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
@@ -38,9 +38,14 @@ func TestBatches(t *testing.T) {
 
 	// add some TX to the pool
 	for i, v := range []uint64{2, 3, 2, 1} {
-		amount := types.NewERC20Token(uint64(i+100), myTokenContractAddr).GravityCoin()
-		fee := types.NewERC20Token(v, myTokenContractAddr).GravityCoin()
-		_, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
+
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
 		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v", i, amount, fee))
 		// Should create:
@@ -112,9 +117,13 @@ func TestBatches(t *testing.T) {
 
 	// add some more TX to the pool to create a more profitable batch
 	for i, v := range []uint64{4, 5} {
+		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
 
-		amount := types.NewERC20Token(uint64(i+100), myTokenContractAddr).GravityCoin()
-		fee := types.NewERC20Token(v, myTokenContractAddr).GravityCoin()
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
 		// Creates the following:
@@ -212,10 +221,10 @@ func TestBatchesFullCoins(t *testing.T) {
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"   // Pickle
 		totalCoins, _       = sdk.NewIntFromString("1500000000000000000000") // 1,500 ETH worth
 		oneEth, _           = sdk.NewIntFromString("1000000000000000000")
-		allVouchers         = sdk.NewCoins(
-			types.NewSDKIntERC20Token(totalCoins, myTokenContractAddr).GravityCoin(),
-		)
+		token, err          = types.NewInternalERC20Token(totalCoins, myTokenContractAddr)
+		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
+	require.NoError(t, err)
 
 	// mint some voucher first
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
@@ -229,9 +238,14 @@ func TestBatchesFullCoins(t *testing.T) {
 	// add some TX to the pool
 	for _, v := range []uint64{20, 300, 25, 10} {
 		vAsSDKInt := sdk.NewIntFromUint64(v)
-		amount := types.NewSDKIntERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr).GravityCoin()
-		fee := types.NewSDKIntERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr).GravityCoin()
-		_, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		amountToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
+
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
 	}
 
@@ -295,8 +309,13 @@ func TestBatchesFullCoins(t *testing.T) {
 	// add some more TX to the pool to create a more profitable batch
 	for _, v := range []uint64{4, 5} {
 		vAsSDKInt := sdk.NewIntFromUint64(v)
-		amount := types.NewSDKIntERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr).GravityCoin()
-		fee := types.NewSDKIntERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr).GravityCoin()
+		amountToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
+
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
 	}
@@ -393,13 +412,21 @@ func TestManyBatches(t *testing.T) {
 		tokenContractAddr4 = "0x384981B9d133701c4bD445F77bF61C3d80e79D46"
 		totalCoins, _      = sdk.NewIntFromString("1500000000000000000000000")
 		oneEth, _          = sdk.NewIntFromString("1000000000000000000")
+		token1, err1       = types.NewInternalERC20Token(totalCoins, tokenContractAddr1)
+		token2, err2       = types.NewInternalERC20Token(totalCoins, tokenContractAddr2)
+		token3, err3       = types.NewInternalERC20Token(totalCoins, tokenContractAddr3)
+		token4, err4       = types.NewInternalERC20Token(totalCoins, tokenContractAddr4)
 		allVouchers        = sdk.NewCoins(
-			types.NewSDKIntERC20Token(totalCoins, tokenContractAddr1).GravityCoin(),
-			types.NewSDKIntERC20Token(totalCoins, tokenContractAddr2).GravityCoin(),
-			types.NewSDKIntERC20Token(totalCoins, tokenContractAddr3).GravityCoin(),
-			types.NewSDKIntERC20Token(totalCoins, tokenContractAddr4).GravityCoin(),
+			token1.GravityCoin(),
+			token2.GravityCoin(),
+			token3.GravityCoin(),
+			token4.GravityCoin(),
 		)
 	)
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	require.NoError(t, err3)
+	require.NoError(t, err4)
 
 	// mint vouchers first
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
@@ -415,9 +442,14 @@ func TestManyBatches(t *testing.T) {
 	for _, contract := range tokens {
 		for v := 1; v < 500; v++ {
 			vAsSDKInt := sdk.NewIntFromUint64(uint64(v))
-			amount := types.NewSDKIntERC20Token(oneEth.Mul(vAsSDKInt), contract).GravityCoin()
-			fee := types.NewSDKIntERC20Token(oneEth.Mul(vAsSDKInt), contract).GravityCoin()
-			_, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+			amountToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), contract)
+			require.NoError(t, err)
+			amount := amountToken.GravityCoin()
+			feeToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), contract)
+			require.NoError(t, err)
+			fee := feeToken.GravityCoin()
+
+			_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 			require.NoError(t, err)
 		}
 	}
@@ -466,11 +498,13 @@ func TestPoolTxRefund(t *testing.T) {
 		notMySender, _      = sdk.AccAddressFromBech32("cosmos1ahx7f8wyertuus9r20284ej0asrs085case3km")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
-		allVouchers         = sdk.NewCoins(
-			types.NewERC20Token(414, myTokenContractAddr).GravityCoin(),
-		)
-		myDenom = types.NewERC20Token(1, myTokenContractAddr).GravityCoin().Denom
+		token, err          = types.NewInternalERC20Token(sdk.NewInt(414), myTokenContractAddr)
+		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		denomToken, dErr    = types.NewInternalERC20Token(sdk.NewInt(1), myTokenContractAddr)
+		myDenom             = denomToken.GravityCoin().Denom
 	)
+	require.NoError(t, err)
+	require.NoError(t, dErr)
 
 	// mint some voucher first
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
@@ -483,9 +517,14 @@ func TestPoolTxRefund(t *testing.T) {
 
 	// add some TX to the pool
 	for i, v := range []uint64{2, 3, 2, 1} {
-		amount := types.NewERC20Token(uint64(i+100), myTokenContractAddr).GravityCoin()
-		fee := types.NewERC20Token(v, myTokenContractAddr).GravityCoin()
-		_, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
+
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
 		require.NoError(t, err)
 		// Should have created:
 		// 1: amount 100, fee 2
@@ -499,7 +538,7 @@ func TestPoolTxRefund(t *testing.T) {
 
 	// tx batch size is 2, so that some of them stay behind
 	// Should have 2: and 3: from above
-	_, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
 	require.NoError(t, err)
 
 	// try to refund a tx that's in a batch

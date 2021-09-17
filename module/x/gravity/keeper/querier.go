@@ -495,7 +495,7 @@ func queryDenomToERC20(ctx sdk.Context, denom string, keeper Keeper) ([]byte, er
 	}
 	var response types.QueryDenomToERC20Response
 	response.CosmosOriginated = cosmos_originated
-	response.Erc20 = erc20
+	response.Erc20 = erc20.GetAddress()
 	bytes, err := codec.MarshalJSONIndent(types.ModuleCdc, response)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
@@ -505,7 +505,11 @@ func queryDenomToERC20(ctx sdk.Context, denom string, keeper Keeper) ([]byte, er
 }
 
 func queryERC20ToDenom(ctx sdk.Context, ERC20 string, keeper Keeper) ([]byte, error) {
-	cosmos_originated, denom := keeper.ERC20ToDenomLookup(ctx, ERC20)
+	ethAddr, err := types.NewEthAddress(ERC20)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "invalid ERC20 in query: %s", ERC20)
+	}
+	cosmos_originated, denom := keeper.ERC20ToDenomLookup(ctx, *ethAddr)
 	var response types.QueryERC20ToDenomResponse
 	response.CosmosOriginated = cosmos_originated
 	response.Denom = denom

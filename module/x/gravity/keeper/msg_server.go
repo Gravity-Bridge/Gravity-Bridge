@@ -141,7 +141,7 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 		return nil, err
 	}
 
-	batch, err := k.BuildOutgoingTXBatch(ctx, tokenContract, OutgoingTxBatchSize)
+	batch, err := k.BuildOutgoingTXBatch(ctx, tokenContract.GetAddress(), OutgoingTxBatchSize)
 	if err != nil {
 		return nil, err
 	}

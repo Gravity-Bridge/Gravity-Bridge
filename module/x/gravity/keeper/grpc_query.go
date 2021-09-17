@@ -253,7 +253,7 @@ func (k Keeper) DenomToERC20(
 	ctx := sdk.UnwrapSDKContext(c)
 	cosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, req.Denom)
 	var ret types.QueryDenomToERC20Response
-	ret.Erc20 = erc20
+	ret.Erc20 = erc20.GetAddress()
 	ret.CosmosOriginated = cosmosOriginated
 
 	return &ret, err
@@ -264,7 +264,11 @@ func (k Keeper) ERC20ToDenom(
 	c context.Context,
 	req *types.QueryERC20ToDenomRequest) (*types.QueryERC20ToDenomResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	cosmosOriginated, name := k.ERC20ToDenomLookup(ctx, req.Erc20)
+	ethAddr, err := types.NewEthAddress(req.Erc20)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "invalid Erc20 in request: %s", req.Erc20)
+	}
+	cosmosOriginated, name := k.ERC20ToDenomLookup(ctx, *ethAddr)
 	var ret types.QueryERC20ToDenomResponse
 	ret.Denom = name
 	ret.CosmosOriginated = cosmosOriginated

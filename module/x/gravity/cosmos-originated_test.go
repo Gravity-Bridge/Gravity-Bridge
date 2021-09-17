@@ -100,11 +100,13 @@ func addDenomToERC20Relation(tv *testingVars) {
 	require.NoError(tv.t, err)
 	assert.True(tv.t, isCosmosOriginated)
 
-	isCosmosOriginated, gotDenom := tv.input.GravityKeeper.ERC20ToDenomLookup(tv.ctx, tv.erc20)
+	ethAddr, err := types.NewEthAddress(tv.erc20)
+	require.NoError(tv.t, err)
+	isCosmosOriginated, gotDenom := tv.input.GravityKeeper.ERC20ToDenomLookup(tv.ctx, *ethAddr)
 	assert.True(tv.t, isCosmosOriginated)
 
 	assert.Equal(tv.t, tv.denom, gotDenom)
-	assert.Equal(tv.t, tv.erc20, gotERC20)
+	assert.Equal(tv.t, tv.erc20, gotERC20.GetAddress())
 }
 
 func lockCoinsInModule(tv *testingVars) {

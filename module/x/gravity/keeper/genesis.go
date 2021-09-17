@@ -121,8 +121,12 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	}
 
 	// populate state with cosmos originated denom-erc20 mapping
-	for _, item := range data.Erc20ToDenoms {
-		k.setCosmosOriginatedDenomToERC20(ctx, item.Denom, item.Erc20)
+	for i, item := range data.Erc20ToDenoms {
+		ethAddr, err := types.NewEthAddress(item.Erc20)
+		if err != nil {
+			panic(fmt.Errorf("invalid erc20 address in Erc20ToDenoms for item %d: %s", i, item.Erc20))
+		}
+		k.setCosmosOriginatedDenomToERC20(ctx, item.Denom, *ethAddr)
 	}
 
 	// now that we have the denom-erc20 mapping we need to validate

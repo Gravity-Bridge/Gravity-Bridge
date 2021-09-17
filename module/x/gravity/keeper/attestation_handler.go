@@ -20,8 +20,12 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 	switch claim := claim.(type) {
 	// deposit in this context means a deposit into the Ethereum side of the bridge
 	case *types.MsgSendToCosmosClaim:
+		tokenAddress, err := types.NewEthAddress(claim.TokenContract)
+		if err != nil {
+			return sdkerrors.Wrap(err, "invalid token contract on claim")
+		}
 		// Check if coin is Cosmos-originated asset and get denom
-		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, claim.TokenContract)
+		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *tokenAddress)
 
 		if isCosmosOriginated {
 			// If it is cosmos originated, unlock the coins
@@ -57,6 +61,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		a.keeper.OutgoingTxBatchExecuted(ctx, claim.TokenContract, claim.BatchNonce)
 		return nil
 	case *types.MsgERC20DeployedClaim:
+		tokenAddress, err := types.NewEthAddress(claim.TokenContract)
+		if err != nil {
+			return sdkerrors.Wrap(err, "invalid token contract on claim")
+		}
 		// Check if it already exists
 		existingERC20, exists := a.keeper.GetCosmosOriginatedERC20(ctx, claim.CosmosDenom)
 		if exists {
@@ -112,8 +120,12 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		}
 
 		// Add to denom-erc20 mapping
-		a.keeper.setCosmosOriginatedDenomToERC20(ctx, claim.CosmosDenom, claim.TokenContract)
+		a.keeper.setCosmosOriginatedDenomToERC20(ctx, claim.CosmosDenom, *tokenAddress)
 	case *types.MsgValsetUpdatedClaim:
+		rewardAddress, err := types.NewEthAddress(claim.RewardToken)
+		if err != nil {
+			return sdkerrors.Wrap(err, "invalid reward token on claim")
+		}
 		// TODO here we should check the contents of the validator set against
 		// the store, if they differ we should take some action to indicate to the
 		// user that bridge highjacking has occurred
@@ -128,9 +140,9 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		// is valid then some reward was issued by this validator set
 		// and we need to either add to the total tokens for a Cosmos native
 		// token, or burn non cosmos native tokens
-		if claim.RewardAmount.GT(sdk.ZeroInt()) && claim.RewardToken != "0x0000000000000000000000000000000000000000" {
+		if claim.RewardAmount.GT(sdk.ZeroInt()) && claim.RewardToken != types.ZeroAddressString {
 			// Check if coin is Cosmos-originated asset and get denom
-			isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, claim.RewardToken)
+			isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *rewardAddress)
 			if isCosmosOriginated {
 				// If it is cosmos originated, mint some coins to account
 				// for coins that now exist on Ethereum and may eventually come

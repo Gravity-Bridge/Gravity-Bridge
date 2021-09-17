@@ -217,14 +217,14 @@ func GetOutgoingTxPoolContractPrefix(contractAddress string) []byte {
 // GetOutgoingTxPoolKey returns the following key format
 // prefix	feeContract		feeAmount     id
 // [0x6][0xc783df8a850f42e7F7e57013759C285caa701eB6][1000000000][0 0 0 0 0 0 0 1]
-func GetOutgoingTxPoolKey(fee ERC20Token, id uint64) []byte {
+func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) []byte {
 	// sdkInts have a size limit of 255 bits or 32 bytes
 	// therefore this will never panic and is always safe
 	amount := make([]byte, 32)
 	amount = fee.Amount.BigInt().FillBytes(amount)
 
 	a := append(amount, UInt64Bytes(id)...)
-	b := append([]byte(fee.Contract), a...)
+	b := append([]byte(fee.Contract.GetAddress()), a...)
 	r := append(OutgoingTXPoolKey, b...)
 	return r
 }

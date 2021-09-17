@@ -95,17 +95,67 @@ func NewERC20Token(amount uint64, contract string) *ERC20Token {
 	return &ERC20Token{Amount: sdk.NewIntFromUint64(amount), Contract: contract}
 }
 
+// NewSDKIntERC20Token returns a new instance of an ERC20, accepting a sdk.Int
 func NewSDKIntERC20Token(amount sdk.Int, contract string) *ERC20Token {
 	return &ERC20Token{Amount: amount, Contract: contract}
 }
 
-// GravityCoin returns the gravity representation of the ERC20
-func (e *ERC20Token) GravityCoin() sdk.Coin {
-	return sdk.NewCoin(GravityDenom(e.Contract), e.Amount)
+// ToInternal converts an ERC20Token to the internal type InternalERC20Token
+func (e ERC20Token) ToInternal() (*InternalERC20Token, error) {
+	return NewInternalERC20Token(e.Amount, e.Contract)
 }
 
-func GravityDenom(tokenContract string) string {
-	return fmt.Sprintf("%s%s%s", GravityDenomPrefix, GravityDenomSeparator, tokenContract)
+// InternalERC20Token contains validated fields, used for all internal computation
+type InternalERC20Token struct {
+	Amount   sdk.Int
+	Contract EthAddress
+}
+
+// NewInternalERC20Token creates an InternalERC20Token, performing validation and returning any errors
+func NewInternalERC20Token(amount sdk.Int, contract string) (*InternalERC20Token, error) {
+	ethAddress, err := NewEthAddress(contract)
+	if err != nil { // ethAddress could be nil, must return here
+		return nil, sdkerrors.Wrap(err, "invalid contract")
+	}
+	ret := &InternalERC20Token{
+		Amount:   amount,
+		Contract: *ethAddress,
+	}
+	if err := ret.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+// ValidateBasic performs validation on all fields of an InternalERC20Token
+func (i *InternalERC20Token) ValidateBasic() error {
+	if i.Amount.IsNegative() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "coins must not be negative")
+	}
+	err := i.Contract.ValidateBasic()
+	if err != nil {
+		return sdkerrors.Wrap(err, "invalid contract")
+	}
+	return nil
+}
+
+// ToExternal converts an InternalERC20Token to the external type ERC20Token
+func (i *InternalERC20Token) ToExternal() *ERC20Token {
+	return &ERC20Token{
+		Amount:   i.Amount,
+		Contract: i.Contract.GetAddress(),
+	}
+}
+
+// GravityCoin returns the gravity representation of the ERC20
+func (i *InternalERC20Token) GravityCoin() sdk.Coin {
+	return sdk.NewCoin(GravityDenom(i.Contract), i.Amount)
+}
+
+// GravityDenom converts an EthAddress to a gravity cosmos denom
+func GravityDenom(tokenContract EthAddress) string {
+	return fmt.Sprintf("%s%s%s", GravityDenomPrefix, GravityDenomSeparator, tokenContract.GetAddress())
 }
 
 // ValidateBasic permforms stateless validation
@@ -119,30 +169,28 @@ func (e *ERC20Token) ValidateBasic() error {
 
 // Add adds one ERC20 to another
 // TODO: make this return errors instead
-func (e *ERC20Token) Add(o *ERC20Token) *ERC20Token {
-	if string(e.Contract) != string(o.Contract) {
-		panic("invalid contract address")
+func (i *InternalERC20Token) Add(o *InternalERC20Token) (*InternalERC20Token, error) {
+	if i.Contract.GetAddress() != o.Contract.GetAddress() {
+		return nil, sdkerrors.Wrap(ErrMismatched, "cannot add two different tokens")
 	}
-	sum := e.Amount.Add(o.Amount)
-	if !sum.IsUint64() {
-		panic("invalid amount")
-	}
-	return NewERC20Token(sum.Uint64(), e.Contract)
+	sum := i.Amount.Add(o.Amount) // validation happens in NewInternalERC20Token()
+	return NewInternalERC20Token(sum, i.Contract.GetAddress())
 }
 
-func GravityDenomToERC20(denom string) (string, error) {
+// GravityDenomToERC20 converts a gravity cosmos denom to an EthAddress
+func GravityDenomToERC20(denom string) (*EthAddress, error) {
 	fullPrefix := GravityDenomPrefix + GravityDenomSeparator
 	if !strings.HasPrefix(denom, fullPrefix) {
-		return "", fmt.Errorf("denom prefix(%s) not equal to expected(%s)", denom, fullPrefix)
+		return nil, fmt.Errorf("denom prefix(%s) not equal to expected(%s)", denom, fullPrefix)
 	}
 	contract := strings.TrimPrefix(denom, fullPrefix)
-	err := ValidateEthAddress(contract)
+	ethAddr, err := NewEthAddress(contract)
 	switch {
 	case err != nil:
-		return "", fmt.Errorf("error(%s) validating ethereum contract address", err)
+		return nil, fmt.Errorf("error(%s) validating ethereum contract address", err)
 	case len(denom) != GravityDenomLen:
-		return "", fmt.Errorf("len(denom)(%d) not equal to GravityDenomLen(%d)", len(denom), GravityDenomLen)
+		return nil, fmt.Errorf("len(denom)(%d) not equal to GravityDenomLen(%d)", len(denom), GravityDenomLen)
 	default:
-		return contract, nil
+		return ethAddr, nil
 	}
 }
