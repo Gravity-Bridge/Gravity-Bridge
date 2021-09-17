@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
@@ -59,7 +61,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		}
 
 		// TODO: block height?
-		k.SetAttestation(ctx, claim.GetEventNonce(), claim.ClaimHash(), &att)
+		hash, err := claim.ClaimHash()
+		if err != nil {
+			panic(fmt.Errorf("error when computing ClaimHash for %v", hash))
+		}
+		k.SetAttestation(ctx, claim.GetEventNonce(), hash, &att)
 	}
 	k.setLastObservedEventNonce(ctx, data.LastObservedNonce)
 

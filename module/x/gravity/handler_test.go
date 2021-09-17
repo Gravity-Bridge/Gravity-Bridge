@@ -92,6 +92,7 @@ func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	ctx := input.Context
 	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(myValAddr)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, myValAddr, types.ZeroAddressString)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, myValAddr, myOrchestratorAddr)
 	h := NewHandler(input.GravityKeeper)
 
@@ -116,7 +117,9 @@ func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
 	require.NoError(t, err)
 
 	// and attestation persisted
-	a := input.GravityKeeper.GetAttestation(ctx, myNonce, ethClaim.ClaimHash())
+	hash, err := ethClaim.ClaimHash()
+	require.NoError(t, err)
+	a := input.GravityKeeper.GetAttestation(ctx, myNonce, hash)
 	require.NotNil(t, a)
 	// and vouchers added to the account
 	balance := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
@@ -178,6 +181,9 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 		orchestratorAddr1, _ = sdk.AccAddressFromBech32("cosmos1dg55rtevlfxh46w88yjpdd08sqhh5cc3xhkcej")
 		orchestratorAddr2, _ = sdk.AccAddressFromBech32("cosmos164knshrzuuurf05qxf3q5ewpfnwzl4gj4m4dfy")
 		orchestratorAddr3, _ = sdk.AccAddressFromBech32("cosmos193fw83ynn76328pty4yl7473vg9x86alq2cft7")
+		validatorEthAddr1    = "0x0000000000000000000000000000000000000001"
+		validatorEthAddr2    = "0x0000000000000000000000000000000000000002"
+		validatorEthAddr3    = "0x0000000000000000000000000000000000000003"
 		myCosmosAddr, _      = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
 		valAddr1             = sdk.ValAddress(orchestratorAddr1) // revisit when proper mapping is impl in keeper
 		valAddr2             = sdk.ValAddress(orchestratorAddr2) // revisit when proper mapping is impl in keeper
@@ -190,6 +196,9 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	ctx := input.Context
 	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(valAddr1, valAddr2, valAddr3)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr1, validatorEthAddr1)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr2, validatorEthAddr2)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr3, validatorEthAddr3)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr1, orchestratorAddr1)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr2, orchestratorAddr2)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr3, orchestratorAddr3)
@@ -231,7 +240,9 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 	EndBlocker(ctx, input.GravityKeeper)
 	require.NoError(t, err)
 	// and attestation persisted
-	a1 := input.GravityKeeper.GetAttestation(ctx, myNonce, ethClaim1.ClaimHash())
+	hash1, err := ethClaim1.ClaimHash()
+	require.NoError(t, err)
+	a1 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash1)
 	require.NotNil(t, a1)
 	// and vouchers not yet added to the account
 	balance1 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
@@ -244,7 +255,7 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 	require.NoError(t, err)
 
 	// and attestation persisted
-	a2 := input.GravityKeeper.GetAttestation(ctx, myNonce, ethClaim1.ClaimHash())
+	a2 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash1)
 	require.NotNil(t, a2)
 	// and vouchers now added to the account
 	balance2 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
@@ -257,7 +268,7 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 	require.NoError(t, err)
 
 	// and attestation persisted
-	a3 := input.GravityKeeper.GetAttestation(ctx, myNonce, ethClaim1.ClaimHash())
+	a3 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash1)
 	require.NotNil(t, a3)
 	// and no additional added to the account
 	balance3 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)

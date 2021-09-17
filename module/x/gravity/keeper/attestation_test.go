@@ -38,7 +38,9 @@ func TestGetMostRecentAttestations(t *testing.T) {
 			Height:   uint64(ctx.BlockHeight()),
 			Claim:    any,
 		}
-		k.SetAttestation(ctx, nonce, msg.ClaimHash(), att)
+		hash, err := msg.ClaimHash()
+		require.NoError(t, err)
+		k.SetAttestation(ctx, nonce, hash, att)
 	}
 
 	recentAttestations := k.GetMostRecentAttestations(ctx, uint64(10))

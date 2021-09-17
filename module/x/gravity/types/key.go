@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -170,7 +171,11 @@ func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) []byte {
 func GetClaimKey(details EthereumClaim) []byte {
 	var detailsHash []byte
 	if details != nil {
-		detailsHash = details.ClaimHash()
+		var err error
+		detailsHash, err = details.ClaimHash()
+		if err != nil {
+			panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
+		}
 	} else {
 		panic("No claim without details!")
 	}

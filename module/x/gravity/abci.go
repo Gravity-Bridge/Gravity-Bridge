@@ -6,6 +6,7 @@ import (
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/keeper"
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // EndBlocker is called at the end of every block
@@ -33,7 +34,21 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 	latestValset := k.GetLatestValset(ctx)
 	lastUnbondingHeight := k.GetLastUnBondingBlockHeight(ctx)
 
-	if (latestValset == nil) || (lastUnbondingHeight == uint64(ctx.BlockHeight())) || (types.BridgeValidators(k.GetCurrentValset(ctx).Members).PowerDiff(latestValset.Members) > 0.05) {
+	significantPowerDiff := false
+	if latestValset != nil {
+		intCurrMembers, err := types.BridgeValidators(k.GetCurrentValset(ctx).Members).ToInternal()
+		if err != nil {
+			panic(sdkerrors.Wrap(err, "invalid current valset members"))
+		}
+		intLatestMembers, err := types.BridgeValidators(latestValset.Members).ToInternal()
+		if err != nil {
+			panic(sdkerrors.Wrap(err, "invalid latest valset members"))
+		}
+
+		significantPowerDiff = intCurrMembers.PowerDiff(*intLatestMembers) > 0.05
+	}
+
+	if (latestValset == nil) || (lastUnbondingHeight == uint64(ctx.BlockHeight())) || significantPowerDiff {
 		// if the conditions are true, put in a new validator set request to be signed and submitted to Ethereum
 		k.SetValsetRequest(ctx)
 	}

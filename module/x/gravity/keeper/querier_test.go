@@ -877,7 +877,11 @@ func TestQueryCurrentValset(t *testing.T) {
 	currentValset := input.GravityKeeper.GetCurrentValset(ctx)
 
 	bridgeVal := types.BridgeValidator{EthereumAddress: ethAddress, Power: 4294967295}
-	expectedValset := types.NewValset(1, 1234567, []*types.BridgeValidator{&bridgeVal}, sdk.NewIntFromUint64(0), "0x0000000000000000000000000000000000000000")
+	internalBridgeVal, err := bridgeVal.ToInternal()
+	require.NoError(t, err)
+	internalBridgeVals := types.InternalBridgeValidators([]*types.InternalBridgeValidator{internalBridgeVal})
+	expectedValset, err := types.NewValset(1, 1234567, internalBridgeVals, sdk.NewIntFromUint64(0), types.ZeroAddressString)
+	require.NoError(t, err)
 	assert.Equal(t, expectedValset, currentValset)
 }
 

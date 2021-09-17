@@ -50,6 +50,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 	tv.input = keeper.CreateTestEnv(t)
 	tv.ctx = tv.input.Context
 	tv.input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(tv.myValAddr)
+	tv.input.GravityKeeper.SetEthAddressForValidator(tv.ctx, tv.myValAddr, types.ZeroAddressString)
 	tv.input.GravityKeeper.SetOrchestratorValidator(tv.ctx, tv.myValAddr, tv.myOrchestratorAddr)
 	tv.h = NewHandler(tv.input.GravityKeeper)
 
@@ -89,7 +90,9 @@ func addDenomToERC20Relation(tv *testingVars) {
 	EndBlocker(tv.ctx, tv.input.GravityKeeper)
 
 	// check if attestation persisted
-	a := tv.input.GravityKeeper.GetAttestation(tv.ctx, myNonce, ethClaim.ClaimHash())
+	hash, err := ethClaim.ClaimHash()
+	require.NoError(tv.t, err)
+	a := tv.input.GravityKeeper.GetAttestation(tv.ctx, myNonce, hash)
 	require.NotNil(tv.t, a)
 
 	// check if erc20<>denom relation added to db
@@ -174,7 +177,9 @@ func acceptDepositEvent(tv *testingVars) {
 	EndBlocker(tv.ctx, tv.input.GravityKeeper)
 
 	// check that attestation persisted
-	a := tv.input.GravityKeeper.GetAttestation(tv.ctx, myNonce, ethClaim.ClaimHash())
+	hash, err := ethClaim.ClaimHash()
+	require.NoError(tv.t, err)
+	a := tv.input.GravityKeeper.GetAttestation(tv.ctx, myNonce, hash)
 	require.NotNil(tv.t, a)
 
 	// Check that user balance has gone up
