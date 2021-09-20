@@ -4,6 +4,9 @@
 //! mirror Serde and perhaps even become a serde crate for Ethereum ABI decoding
 //! For now reference the ABI encoding document here https://docs.soliditylang.org/en/v0.8.3/abi-spec.html
 
+// TODO this file needs static assertions that prevent it from compiling on 16 bit systems.
+// we assume a system bit width of at least 32
+
 use super::ValsetMember;
 use crate::error::GravityError;
 use clarity::constants::ZERO_ADDRESS;
@@ -13,6 +16,10 @@ use deep_space::Address as CosmosAddress;
 use num256::Uint256;
 use std::unimplemented;
 use web30::types::Log;
+
+/// Used to limit the length of variable length user provided inputs like
+/// ERC20 names and deposit destination strings
+const ONE_MEGABYTE: usize = 1000usize.pow(3);
 
 /// A parsed struct representing the Ethereum event fired by the Gravity contract
 /// when the validator set is updated.
@@ -294,8 +301,15 @@ pub struct SendToCosmosEvent {
     pub erc20: EthAddress,
     /// The Ethereum Sender
     pub sender: EthAddress,
-    /// The Cosmos destination
-    pub destination: CosmosAddress,
+    /// The Cosmos destination, this is a raw value from the Ethereum contract
+    /// and therefore could be provided by an attacker. If the string is valid
+    /// utf-8 it will be included here, if it is invalid utf8 we will provide
+    /// an empty string. Values over 1mb of text are not permitted and will also
+    /// be presented as empty
+    pub destination: String,
+    /// the validated destination is the destination string parsed and interpreted
+    /// as a valid Bech32 Cosmos address, if this is not possible the value is none
+    pub validated_destination: Option<CosmosAddress>,
     /// The amount of the erc20 token that is being sent
     pub amount: Uint256,
     /// The transaction's nonce, used to make sure there can be no accidental duplication
@@ -304,24 +318,24 @@ pub struct SendToCosmosEvent {
     pub block_height: Uint256,
 }
 
+/// struct for holding the data encoded fields
+/// of a send to Cosmos event for unit testing
+#[derive(Eq, PartialEq, Debug)]
+struct SendToCosmosEventData {
+    /// The Cosmos destination, None for an invalid deposit address
+    pub destination: String,
+    /// The amount of the erc20 token that is being sent
+    pub amount: Uint256,
+    /// The transaction's nonce, used to make sure there can be no accidental duplication
+    pub event_nonce: Uint256,
+}
+
 impl SendToCosmosEvent {
     pub fn from_log(input: &Log) -> Result<SendToCosmosEvent, GravityError> {
-        let topics = (
-            input.topics.get(1),
-            input.topics.get(2),
-            input.topics.get(3),
-        );
-        if let (Some(erc20_data), Some(sender_data), Some(destination_data)) = topics {
+        let topics = (input.topics.get(1), input.topics.get(2));
+        if let (Some(erc20_data), Some(sender_data)) = topics {
             let erc20 = EthAddress::from_slice(&erc20_data[12..32])?;
             let sender = EthAddress::from_slice(&sender_data[12..32])?;
-            // this is required because deep_space requires a fixed length slice to
-            // create an address from bytes.
-            let mut c_address_bytes: [u8; 20] = [0; 20];
-            c_address_bytes.copy_from_slice(&destination_data[12..32]);
-            let destination =
-                CosmosAddress::from_bytes(c_address_bytes, CosmosAddress::DEFAULT_PREFIX).unwrap();
-            let amount = Uint256::from_bytes_be(&input.data[..32]);
-            let event_nonce = Uint256::from_bytes_be(&input.data[32..]);
             let block_height = if let Some(bn) = input.block_number.clone() {
                 bn
             } else {
@@ -330,17 +344,31 @@ impl SendToCosmosEvent {
                         .to_string(),
                 ));
             };
-            if event_nonce > u64::MAX.into() || block_height > u64::MAX.into() {
+
+            let data = SendToCosmosEvent::decode_data_bytes(&input.data)?;
+            if data.event_nonce > u64::MAX.into() || block_height > u64::MAX.into() {
                 Err(GravityError::InvalidEventLogError(
                     "Event nonce overflow, probably incorrect parsing".to_string(),
                 ))
             } else {
-                let event_nonce: u64 = event_nonce.to_string().parse().unwrap();
+                let event_nonce: u64 = data.event_nonce.to_string().parse().unwrap();
+                let validated_destination = match data.destination.parse() {
+                    Ok(v) => Some(v),
+                    Err(_) => {
+                        if data.destination.len() < 1000 {
+                            warn!("Event nonce {} sends tokens to {} which is invalid bech32, these funds will be allocated to the community pool", event_nonce, data.destination);
+                        } else {
+                            warn!("Event nonce {} sends tokens to a destination which is invalid bech32, these funds will be allocated to the community pool", event_nonce);
+                        }
+                        None
+                    }
+                };
                 Ok(SendToCosmosEvent {
                     erc20,
                     sender,
-                    destination,
-                    amount,
+                    destination: data.destination,
+                    validated_destination,
+                    amount: data.amount,
                     event_nonce,
                     block_height,
                 })
@@ -349,6 +377,59 @@ impl SendToCosmosEvent {
             Err(GravityError::InvalidEventLogError(
                 "Too few topics".to_string(),
             ))
+        }
+    }
+    fn decode_data_bytes(data: &[u8]) -> Result<SendToCosmosEventData, GravityError> {
+        let amount = Uint256::from_bytes_be(&data[32..64]);
+        let event_nonce = Uint256::from_bytes_be(&data[64..96]);
+
+        // discard words three and four which contain the data type and length
+        let destination_str_len_start = 3 * 32;
+        let destination_str_len_end = 4 * 32;
+        let destination_str_len =
+            Uint256::from_bytes_be(&data[destination_str_len_start..destination_str_len_end]);
+
+        if destination_str_len > u32::MAX.into() {
+            return Err(GravityError::InvalidEventLogError(
+                "denom length overflow, probably incorrect parsing".to_string(),
+            ));
+        }
+        let destination_str_len: usize = destination_str_len.to_string().parse().unwrap();
+
+        let destination_str_start = 4 * 32;
+        let destination_str_end = destination_str_start + destination_str_len;
+
+        let destination = &data[destination_str_start..destination_str_end];
+
+        let dest = String::from_utf8(destination.to_vec());
+        if dest.is_err() {
+            if destination.len() < 1000 {
+                warn!("Event nonce {} sends tokens to {} which is invalid utf-8, these funds will be allocated to the community pool", event_nonce, bytes_to_hex_str(destination));
+            } else {
+                warn!("Event nonce {} sends tokens to a destination that is invalid utf-8, these funds will be allocated to the community pool", event_nonce);
+            }
+            return Ok(SendToCosmosEventData {
+                destination: String::new(),
+                event_nonce,
+                amount,
+            });
+        }
+        // whitespace can not be a valid part of a bech32 address, so we can safely trim it
+        let dest = dest.unwrap().trim().to_string();
+
+        if dest.as_bytes().len() > ONE_MEGABYTE {
+            warn!("Event nonce {} sends tokens to a destination that exceeds the length limit, these funds will be allocated to the community pool", event_nonce);
+            Ok(SendToCosmosEventData {
+                destination: String::new(),
+                event_nonce,
+                amount,
+            })
+        } else {
+            Ok(SendToCosmosEventData {
+                destination: dest,
+                event_nonce,
+                amount,
+            })
         }
     }
     pub fn from_logs(input: &[Log]) -> Result<Vec<SendToCosmosEvent>, GravityError> {
@@ -632,6 +713,25 @@ mod tests {
             ],
         };
         let res = ValsetUpdatedEvent::decode_data_bytes(&event_bytes).unwrap();
+        assert_eq!(correct, res);
+    }
+
+    #[test]
+    fn test_send_to_cosmos_decode() {
+        let event = "0x0000000000000000000000000000000000000000000000000000000000000060\
+        0000000000000000000000000000000000000000000000000000000000000064\
+        0000000000000000000000000000000000000000000000000000000000000002\
+        000000000000000000000000000000000000000000000000000000000000002d\
+        636f736d6f733139347a613679766737646a7a33633676716c63787a7877636a\
+        6b617a3972647173326567397000000000000000000000000000000000000000";
+        let event_bytes = hex_str_to_bytes(event).unwrap();
+
+        let correct = SendToCosmosEventData {
+            destination: "cosmos194za6yvg7djz3c6vqlcxzxwcjkaz9rdqs2eg9p".to_string(),
+            amount: 100u8.into(),
+            event_nonce: 2u8.into(),
+        };
+        let res = SendToCosmosEvent::decode_data_bytes(&event_bytes).unwrap();
         assert_eq!(correct, res);
     }
 }

@@ -73,6 +73,7 @@ pub async fn happy_path_test(
     // generate an address for coin sending tests, this ensures test imdepotency
     let user_keys = get_user_key();
 
+    info!("testing erc20 deposit");
     // the denom and amount of the token bridged from Ethereum -> Cosmos
     // so the denom is the gravity<hash> token name
     // Send a token 3 times
@@ -548,7 +549,8 @@ async fn submit_duplicate_erc20_send(
         block_height: 500u16.into(),
         erc20: erc20_address,
         sender: ethereum_sender,
-        destination: receiver,
+        destination: receiver.to_string(),
+        validated_destination: Some(receiver),
         amount,
     };
 

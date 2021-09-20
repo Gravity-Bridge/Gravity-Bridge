@@ -7,12 +7,27 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
+	distypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
 // AttestationHandler processes `observed` Attestations
 type AttestationHandler struct {
 	keeper     Keeper
 	bankKeeper types.BankKeeper
+	distKeeper types.DistributionKeeper
+}
+
+// SendToCommunityPool handles sending incorrect deposits to the community pool, since the deposits
+// have already been made on Ethereum there's nothing we can do to revserse them and we should at least
+// make use of the tokens which would otherwise be lost
+func (a AttestationHandler) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
+	if err := a.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distypes.ModuleName, coins); err != nil {
+		return sdkerrors.Wrap(err, "transfer to community pool failed")
+	}
+	feePool := a.distKeeper.GetFeePool(ctx)
+	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
+	a.distKeeper.SetFeePool(ctx, feePool)
+	return nil
 }
 
 // Handle is the entry point for Attestation processing.
@@ -22,6 +37,9 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 	case *types.MsgSendToCosmosClaim:
 		tokenAddress, err := types.NewEthAddress(claim.TokenContract)
 		if err != nil {
+			// this is not possible unless the validators get together and submit
+			// a bogus event, this would cause the lost tokens stuck in the bridge
+			// but not accessible to anyone
 			return sdkerrors.Wrap(err, "invalid token contract on claim")
 		}
 		// Check if coin is Cosmos-originated asset and get denom
@@ -33,27 +51,63 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 
 			addr, err := sdk.AccAddressFromBech32(claim.CosmosReceiver)
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid receiver address")
-			}
+				// invalid deposit address, send coins to community pool, we don't care to block this on the Ethereum side because
+				// validation is expensive, and only users of improper frontends should ever encounter it. If we did not transfer
+				// the coins somewhere they would be 'lost' an inaccessible to the chain so this is strictly superior
+				if err = a.SendToCommunityPool(ctx, coins); err != nil {
+					return sdkerrors.Wrap(err, "failed to send to Community pool")
+				}
 
-			if err = a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, coins); err != nil {
-				return sdkerrors.Wrap(err, "transfer vouchers")
+			} else {
+				if err = a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, coins); err != nil {
+					// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
+					// for similar reasons
+					hash, _ := claim.ClaimHash()
+					a.keeper.logger(ctx).Error("Blacklisted deposit",
+						"cause", err.Error(),
+						"claim type", claim.GetType(),
+						"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+						"nonce", fmt.Sprint(claim.GetEventNonce()),
+					)
+					if err = a.SendToCommunityPool(ctx, coins); err != nil {
+						return sdkerrors.Wrap(err, "failed to send to Community pool")
+					}
+				}
 			}
 		} else {
 			// If it is not cosmos originated, mint the coins (aka vouchers)
 			coins := sdk.Coins{sdk.NewCoin(denom, claim.Amount)}
 
 			if err := a.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
+				// in this case we have lost tokens! They are in the bridge, but not
+				// in the community pool our out in some users balance, every instance of this
+				// error needs to be detected and resolved
 				return sdkerrors.Wrapf(err, "mint vouchers coins: %s", coins)
 			}
 
 			addr, err := sdk.AccAddressFromBech32(claim.CosmosReceiver)
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid receiver address")
-			}
-
-			if err = a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, coins); err != nil {
-				return sdkerrors.Wrap(err, "transfer vouchers")
+				// invalid deposit address, send coins from our module where they where minted to community pool, we don't care to block this on the Ethereum side because
+				// validation is expensive, and only users of improper frontends should ever encounter it. If we did not transfer
+				// the coins somewhere they would be 'lost' an inaccessible to the chain so this is strictly superior
+				if err = a.SendToCommunityPool(ctx, coins); err != nil {
+					return sdkerrors.Wrap(err, "failed to send to Community pool")
+				}
+			} else {
+				if err = a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, coins); err != nil {
+					// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
+					// for similar reasons
+					hash, _ := claim.ClaimHash()
+					a.keeper.logger(ctx).Error("Blacklisted deposit",
+						"cause", err.Error(),
+						"claim type", claim.GetType(),
+						"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+						"nonce", fmt.Sprint(claim.GetEventNonce()),
+					)
+					if err = a.SendToCommunityPool(ctx, coins); err != nil {
+						return sdkerrors.Wrap(err, "failed to send to Community pool")
+					}
+				}
 			}
 		}
 	// withdraw in this context means a withdraw from the Ethereum side of the bridge

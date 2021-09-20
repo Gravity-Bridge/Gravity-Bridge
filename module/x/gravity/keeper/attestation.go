@@ -125,8 +125,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 	xCtx, commit := ctx.CacheContext()
 	if err := k.AttestationHandler.Handle(xCtx, *att, claim); err != nil { // execute with a transient storage
 		// If the attestation fails, something has gone wrong and we can't recover it. Log and move on
-		// The attestation will still be marked "Observed", and validators can still be slashed for not
-		// having voted for it.
+		// The attestation will still be marked "Observed", allowing the oracle to progress properly
 		k.logger(ctx).Error("attestation failed",
 			"cause", err.Error(),
 			"claim type", claim.GetType(),

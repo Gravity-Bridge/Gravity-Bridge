@@ -89,7 +89,7 @@ contract Gravity is ReentrancyGuard {
 	event SendToCosmosEvent(
 		address indexed _tokenContract,
 		address indexed _sender,
-		bytes32 indexed _destination,
+		string _destination,
 		uint256 _amount,
 		uint256 _eventNonce
 	);
@@ -594,7 +594,7 @@ contract Gravity is ReentrancyGuard {
 
 	function sendToCosmos(
 		address _tokenContract,
-		bytes32 _destination,
+		string calldata _destination,
 		uint256 _amount
 	) external nonReentrant {
 		// we snapshot our current balance of this token

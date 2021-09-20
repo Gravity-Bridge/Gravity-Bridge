@@ -1,0 +1,216 @@
+//! This is a test for invalid string based deposits, the goal is to torture test the implementation
+//! with every possible variant of invalid data and ensure that in all cases the community pool deposit
+//! works correctly.
+
+use crate::happy_path::test_erc20_deposit;
+use crate::one_eth;
+use crate::utils::create_default_test_config;
+use crate::utils::get_user_key;
+use crate::utils::start_orchestrators;
+use crate::utils::ValidatorKeys;
+use crate::MINER_ADDRESS;
+use crate::MINER_PRIVATE_KEY;
+use crate::TOTAL_TIMEOUT;
+use clarity::abi::encode_call;
+use clarity::abi::Token;
+use clarity::Address as EthAddress;
+use clarity::Address;
+use deep_space::Contact;
+use ethereum_gravity::send_to_cosmos::SEND_TO_COSMOS_GAS_LIMIT;
+use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use rand::distributions::Alphanumeric;
+use rand::thread_rng;
+use rand::Rng;
+use std::time::Instant;
+use tonic::transport::Channel;
+use web30::client::Web3;
+use web30::types::SendTxOption;
+
+pub async fn invalid_deposit(
+    web30: &Web3,
+    contact: &Contact,
+    keys: Vec<ValidatorKeys>,
+    gravity_address: EthAddress,
+    erc20_address: EthAddress,
+    grpc_client: GravityQueryClient<Channel>,
+) {
+    let mut grpc_client = grpc_client;
+    let erc20_denom = format!("gravity{}", erc20_address);
+    let test_strings = get_test_strings();
+
+    // figure out how many of a given erc20 we already have on startup so that we can
+    // keep track of incrementation. This makes it possible to run this test again without
+    // having to restart your test chain
+    let community_pool_contents = contact.get_community_pool_coins().await.unwrap();
+    let mut starting_pool_amount = None;
+    for coin in community_pool_contents {
+        if coin.denom == erc20_denom {
+            starting_pool_amount = Some(coin.amount);
+            break;
+        }
+    }
+    if starting_pool_amount.is_none() {
+        starting_pool_amount = Some(0u8.into())
+    }
+    let mut starting_pool_amount = starting_pool_amount.unwrap();
+
+    let no_relay_market_config = create_default_test_config();
+    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
+
+    for test_value in test_strings {
+        // next we send an invalid string deposit, we use byte encoding here so that we can attempt a totally invalid send
+        send_to_cosmos_invalid(erc20_address, gravity_address, test_value, web30).await;
+
+        // send some coins across the correct way, make sure they arrive
+        // note send_to_cosmos_invalid does not wait for the actual oracle
+        // to complete like this function does, since this deposit will have
+        // a latter event nonce it will effectively wait for the invalid deposit
+        // to complete as well
+        let user_keys = get_user_key();
+        test_erc20_deposit(
+            web30,
+            contact,
+            &mut grpc_client,
+            user_keys.cosmos_address,
+            gravity_address,
+            erc20_address,
+            one_eth(),
+        )
+        .await;
+
+        // finally we check that the deposit has been added to the community pool
+        let community_pool_contents = contact.get_community_pool_coins().await.unwrap();
+        for coin in community_pool_contents {
+            if coin.denom == erc20_denom {
+                let expected = starting_pool_amount + one_eth();
+                if coin.amount != expected {
+                    error!(
+                        "Expected {} in the community pool found {}.",
+                        expected, coin.amount
+                    );
+                    error!("This means an invalid deposit has been 'lost' in the bridge, instead of allowing it's funds to be used by the Community pool");
+                    panic!("Lost an invalid deposit!");
+                } else {
+                    starting_pool_amount = expected;
+                }
+            }
+        }
+    }
+    info!("Successfully completed the invalid deposits test")
+}
+
+fn get_test_strings() -> Vec<Vec<u8>> {
+    // A series of test strings designed to torture our implementation.
+    let mut test_strings = Vec::new();
+
+    // the maximum size of a message I could get Geth 1.10.8 to accept
+    // may be larger in the future.
+    const MAX_SIZE: usize = 100_000;
+
+    // normal utf-8
+    let bad = "bad destination".to_string();
+    test_strings.push(bad.as_bytes().to_vec());
+
+    // a very long, but valid utf8 string
+    let rand_string: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(MAX_SIZE)
+        .map(char::from)
+        .collect();
+    test_strings.push(rand_string.as_bytes().to_vec());
+
+    // generate a random but invalid utf-8 string
+    let mut rand_invalid: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
+    while String::from_utf8(rand_invalid.clone()).is_ok() {
+        rand_invalid = (0..32).map(|_| rand::random::<u8>()).collect();
+    }
+    test_strings.push(rand_invalid);
+
+    // generate a random but invalid utf-8 string, but this time longer
+    let mut rand_invalid_long: Vec<u8> = (0..MAX_SIZE).map(|_| rand::random::<u8>()).collect();
+    while String::from_utf8(rand_invalid_long.clone()).is_ok() {
+        rand_invalid_long = (0..MAX_SIZE).map(|_| rand::random::<u8>()).collect();
+    }
+    test_strings.push(rand_invalid_long);
+
+    test_strings
+}
+
+/// produces an invalid send to cosmos, accepts bytes so that we can test
+/// all sorts of invalid utf-8
+pub async fn send_to_cosmos_invalid(
+    erc20: Address,
+    gravity_contract: Address,
+    cosmos_destination: Vec<u8>,
+    web3: &Web3,
+) {
+    let mut approve_nonce = None;
+
+    // rapidly changing gas prices can cause this to fail, a quick retry loop here
+    // retries in a way that assists our transaction stress test
+    let mut approved = web3
+        .check_erc20_approved(erc20, *MINER_ADDRESS, gravity_contract)
+        .await;
+    let start = Instant::now();
+    // keep trying while there's still time
+    while approved.is_err() && Instant::now() - start < TOTAL_TIMEOUT {
+        approved = web3
+            .check_erc20_approved(erc20, *MINER_ADDRESS, gravity_contract)
+            .await;
+    }
+
+    let approved = approved.unwrap();
+    if !approved {
+        let nonce = web3
+            .eth_get_transaction_count(*MINER_ADDRESS)
+            .await
+            .unwrap();
+        let options = vec![SendTxOption::Nonce(nonce.clone())];
+        approve_nonce = Some(nonce);
+        let txid = web3
+            .approve_erc20_transfers(erc20, *MINER_PRIVATE_KEY, gravity_contract, None, options)
+            .await
+            .unwrap();
+        trace!(
+            "We are not approved for ERC20 transfers, approving txid: {:#066x}",
+            txid
+        );
+        web3.wait_for_transaction(txid, TOTAL_TIMEOUT, None)
+            .await
+            .unwrap();
+    }
+
+    let mut options = vec![SendTxOption::GasLimit(SEND_TO_COSMOS_GAS_LIMIT.into())];
+    // if we have run an approval we should increment our nonce by one so that
+    // we can be sure our actual tx can go in immediately behind
+    if let Some(nonce) = approve_nonce {
+        options.push(SendTxOption::Nonce(nonce + 1u8.into()));
+    }
+
+    // unbounded bytes shares the same actual encoding as strings
+    let encoded_destination_address = Token::UnboundedBytes(cosmos_destination);
+
+    let tx_hash = web3
+        .send_transaction(
+            gravity_contract,
+            encode_call(
+                "sendToCosmos(address,string,uint256)",
+                &[
+                    erc20.into(),
+                    encoded_destination_address,
+                    one_eth().clone().into(),
+                ],
+            )
+            .unwrap(),
+            0u32.into(),
+            *MINER_ADDRESS,
+            *MINER_PRIVATE_KEY,
+            vec![SendTxOption::GasLimitMultiplier(3.0)],
+        )
+        .await
+        .unwrap();
+
+    web3.wait_for_transaction(tx_hash.clone(), TOTAL_TIMEOUT, None)
+        .await
+        .unwrap();
+}

@@ -327,9 +327,6 @@ func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
 
 // ValidateBasic performs stateless checks
 func (msg *MsgSendToCosmosClaim) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.CosmosReceiver); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.CosmosReceiver)
-	}
 	if err := ValidateEthAddress(msg.EthereumSender); err != nil {
 		return sdkerrors.Wrap(err, "eth sender")
 	}

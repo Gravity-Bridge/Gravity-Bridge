@@ -2,7 +2,7 @@ pub const TRANSACTION_BATCH_EXECUTED_EVENT_SIG: &str =
     "TransactionBatchExecutedEvent(uint256,address,uint256)";
 
 pub const SENT_TO_COSMOS_EVENT_SIG: &str =
-    "SendToCosmosEvent(address,address,bytes32,uint256,uint256)";
+    "SendToCosmosEvent(address,address,string,uint256,uint256)";
 
 pub const ERC20_DEPLOYED_EVENT_SIG: &str =
     "ERC20DeployedEvent(string,address,string,string,uint8,uint256)";

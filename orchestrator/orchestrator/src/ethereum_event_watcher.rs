@@ -129,8 +129,8 @@ pub async fn check_for_events(
         }
         if !deposits.is_empty() {
             info!(
-                "Oracle observed deposit with sender {}, destination {}, amount {}, and event nonce {}",
-                deposits[0].sender, deposits[0].destination.to_bech32(contact.get_prefix()).unwrap(), deposits[0].amount, deposits[0].event_nonce
+                "Oracle observed deposit with sender {}, destination {:?}, amount {}, and event nonce {}",
+                deposits[0].sender, deposits[0].validated_destination, deposits[0].amount, deposits[0].event_nonce
             )
         }
         if !withdraws.is_empty() {
