@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
@@ -47,7 +48,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 
 	// reset pool transactions in state
 	for _, tx := range data.UnbatchedTransfers {
-		if err := k.addUnbatchedTX(ctx, tx); err != nil {
+		intTx, err := tx.ToInternal()
+		if err != nil {
+			panic(sdkerrors.Wrapf(err, "invalid unbatched tx: %v", tx))
+		}
+		if err := k.addUnbatchedTX(ctx, intTx); err != nil {
 			panic(err)
 		}
 	}
@@ -193,6 +198,11 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		return false
 	})
 
+	unbatchedTxs := make([]*types.OutgoingTransferTx, len(unbatchedTransfers))
+	for i, v := range unbatchedTransfers {
+		unbatchedTxs[i] = v.ToExternal()
+	}
+
 	return types.GenesisState{
 		Params:             &p,
 		LastObservedNonce:  lastobserved,
@@ -205,6 +215,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		Attestations:       attestations,
 		DelegateKeys:       delegates,
 		Erc20ToDenoms:      erc20ToDenoms,
-		UnbatchedTransfers: unbatchedTransfers,
+		UnbatchedTransfers: unbatchedTxs,
 	}
 }

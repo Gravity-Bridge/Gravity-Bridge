@@ -5,10 +5,80 @@ import (
 	"math/big"
 	"strings"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
+
+func (o OutgoingTransferTx) ToInternal() (*InternalOutgoingTransferTx, error) {
+	return NewInternalOutgoingTransferTx(o.Id, o.Sender, o.DestAddress, *o.Erc20Token, *o.Erc20Fee)
+}
+
+type InternalOutgoingTransferTx struct {
+	Id          uint64
+	Sender      string
+	DestAddress *EthAddress
+	Erc20Token  *InternalERC20Token
+	Erc20Fee    *InternalERC20Token
+}
+
+func NewInternalOutgoingTransferTx(
+	id uint64,
+	sender string,
+	destAddress string,
+	erc20Token ERC20Token,
+	erc20Fee ERC20Token,
+) (*InternalOutgoingTransferTx, error) {
+	dest, err := NewEthAddress(destAddress)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid eth destination")
+	}
+	token, err := erc20Token.ToInternal()
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid Erc20Token")
+	}
+	fee, err := erc20Fee.ToInternal()
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid Erc20Fee")
+	}
+
+	return &InternalOutgoingTransferTx{
+		Id:          id,
+		Sender:      sender,
+		DestAddress: dest,
+		Erc20Token:  token,
+		Erc20Fee:    fee,
+	}, nil
+}
+
+func (i InternalOutgoingTransferTx) ToExternal() *OutgoingTransferTx {
+	return &OutgoingTransferTx{
+		Id:          i.Id,
+		Sender:      i.Sender,
+		DestAddress: i.DestAddress.GetAddress(),
+		Erc20Token:  i.Erc20Token.ToExternal(),
+		Erc20Fee:    i.Erc20Fee.ToExternal(),
+	}
+}
+
+func (i InternalOutgoingTransferTx) ValidateBasic() error {
+	//TODO: Validate id?
+	//TODO: Validate cosmos sender?
+	err := i.DestAddress.ValidateBasic()
+	if err != nil {
+		return sdkerrors.Wrap(err, "invalid DestAddress")
+	}
+	err = i.Erc20Token.ValidateBasic()
+	if err != nil {
+		return sdkerrors.Wrap(err, "invalid Erc20Token")
+	}
+	err = i.Erc20Fee.ValidateBasic()
+	if err != nil {
+		return sdkerrors.Wrap(err, "invalid Erc20Fee")
+	}
+	return nil
+}
 
 // GetCheckpoint gets the checkpoint signature from the given outgoing tx batch
 func (b OutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {

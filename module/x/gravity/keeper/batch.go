@@ -50,11 +50,15 @@ func (k Keeper) BuildOutgoingTXBatch(
 	if len(selectedTx) == 0 || err != nil {
 		return nil, err
 	}
+	selectedExtTx := make([]*types.OutgoingTransferTx, len(selectedTx))
+	for i, tx := range selectedTx {
+		selectedExtTx[i] = tx.ToExternal()
+	}
 	nextID := k.autoIncrementID(ctx, types.KeyLastOutgoingBatchID)
 	batch := &types.OutgoingTxBatch{
 		BatchNonce:    nextID,
 		BatchTimeout:  k.getBatchTimeoutHeight(ctx),
-		Transactions:  selectedTx,
+		Transactions:  selectedExtTx,
 		TokenContract: contractAddress,
 		Block:         0,
 	}
@@ -155,18 +159,14 @@ func (k Keeper) DeleteBatch(ctx sdk.Context, batch types.OutgoingTxBatch) {
 func (k Keeper) pickUnbatchedTX(
 	ctx sdk.Context,
 	contractAddress string,
-	maxElements uint) ([]*types.OutgoingTransferTx, error) {
-	var selectedTx []*types.OutgoingTransferTx
+	maxElements uint) ([]*types.InternalOutgoingTransferTx, error) {
+	var selectedTx []*types.InternalOutgoingTransferTx
 	var err error
-	k.IterateUnbatchedTransactionsByContract(ctx, contractAddress, func(_ []byte, tx *types.OutgoingTransferTx) bool {
+	k.IterateUnbatchedTransactionsByContract(ctx, contractAddress, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		if tx != nil && tx.Erc20Fee != nil {
-			feeInt, err := tx.Erc20Fee.ToInternal()
-			if err != nil {
-				panic(fmt.Errorf("invalid fee in unbatched tx: %v", err))
-			}
 			selectedTx = append(selectedTx, tx)
-			err = k.removeUnbatchedTX(ctx, *feeInt, tx.Id)
-			oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *feeInt, tx.Id)
+			err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, tx.Id)
+			oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
 			if oldTx != nil || oldTxErr == nil {
 				panic("picked a duplicate transaction from the pool, duplicates should never exist!")
 			}
@@ -202,7 +202,11 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract string, non
 		return types.ErrUnknown
 	}
 	for _, tx := range batch.Transactions {
-		err := k.addUnbatchedTX(ctx, tx)
+		intTx, err := tx.ToInternal()
+		if err != nil {
+			panic(sdkerrors.Wrapf(err, "invalid transaction in outgoing tx batch: %v", tx))
+		}
+		err = k.addUnbatchedTX(ctx, intTx)
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "unable to add batched transaction back into pool %v", tx))
 		}
