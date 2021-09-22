@@ -22,45 +22,42 @@ const OutgoingTxBatchSize = 100
 // - emit an event
 func (k Keeper) BuildOutgoingTXBatch(
 	ctx sdk.Context,
-	contractAddress string,
-	maxElements uint) (*types.OutgoingTxBatch, error) {
+	contract string,
+	maxElements uint) (*types.InternalOutgoingTxBatch, error) {
 	if maxElements == 0 {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "max elements value")
 	}
+	contractAddress, err := types.NewEthAddress(contract)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid contract")
+	}
 
-	lastBatch := k.GetLastOutgoingBatchByTokenType(ctx, contractAddress)
+	lastBatch := k.GetLastOutgoingBatchByTokenType(ctx, contract)
 
 	// lastBatch may be nil if there are no existing batches, we only need
 	// to perform this check if a previous batch exists
 	if lastBatch != nil {
 		// this traverses the current tx pool for this token type and determines what
 		// fees a hypothetical batch would have if created
-		currentFees := k.GetBatchFeeByTokenType(ctx, contractAddress, maxElements)
+		currentFees := k.GetBatchFeeByTokenType(ctx, contract, maxElements)
 		if currentFees == nil {
 			return nil, sdkerrors.Wrap(types.ErrInvalid, "error getting fees from tx pool")
 		}
 
-		lastFees := lastBatch.GetFees()
+		lastFees := lastBatch.ToExternal().GetFees()
 		if lastFees.GT(currentFees.TotalFees) {
 			return nil, sdkerrors.Wrap(types.ErrInvalid, "new batch would not be more profitable")
 		}
 	}
 
-	selectedTx, err := k.pickUnbatchedTX(ctx, contractAddress, maxElements)
+	selectedTx, err := k.pickUnbatchedTX(ctx, contract, maxElements)
 	if len(selectedTx) == 0 || err != nil {
 		return nil, err
 	}
-	selectedExtTx := make([]*types.OutgoingTransferTx, len(selectedTx))
-	for i, tx := range selectedTx {
-		selectedExtTx[i] = tx.ToExternal()
-	}
 	nextID := k.autoIncrementID(ctx, types.KeyLastOutgoingBatchID)
-	batch := &types.OutgoingTxBatch{
-		BatchNonce:    nextID,
-		BatchTimeout:  k.getBatchTimeoutHeight(ctx),
-		Transactions:  selectedExtTx,
-		TokenContract: contractAddress,
-		Block:         0,
+	batch, err := types.NewInternalOutgingTxBatch(nextID, k.getBatchTimeoutHeight(ctx), selectedTx, *contractAddress, 0)
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "unable to create batch"))
 	}
 	k.StoreBatch(ctx, batch)
 
@@ -110,9 +107,9 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract string, n
 	}
 
 	// Iterate through remaining batches
-	k.IterateOutgoingTXBatches(ctx, func(key []byte, iter_batch *types.OutgoingTxBatch) bool {
+	k.IterateOutgoingTXBatches(ctx, func(key []byte, iter_batch *types.InternalOutgoingTxBatch) bool {
 		// If the iterated batches nonce is lower than the one that was just executed, cancel it
-		if iter_batch.BatchNonce < b.BatchNonce && iter_batch.TokenContract == tokenContract {
+		if iter_batch.BatchNonce < b.BatchNonce && iter_batch.TokenContract.GetAddress() == tokenContract {
 			err := k.CancelOutgoingTXBatch(ctx, tokenContract, iter_batch.BatchNonce)
 			if err != nil {
 				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s", tokenContract, iter_batch.BatchNonce, tokenContract, nonce, err))
@@ -127,32 +124,43 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract string, n
 }
 
 // StoreBatch stores a transaction batch
-func (k Keeper) StoreBatch(ctx sdk.Context, batch *types.OutgoingTxBatch) {
+func (k Keeper) StoreBatch(ctx sdk.Context, batch *types.InternalOutgoingTxBatch) {
+	if err := batch.ValidateBasic(); err != nil {
+		panic(sdkerrors.Wrap(err, "attempted to store invalid batch"))
+	}
 	store := ctx.KVStore(k.storeKey)
 	// set the current block height when storing the batch
 	batch.Block = uint64(ctx.BlockHeight())
-	key := types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce)
-	store.Set(key, k.cdc.MustMarshalBinaryBare(batch))
+	key := types.GetOutgoingTxBatchKey(batch.TokenContract.GetAddress(), batch.BatchNonce)
+	store.Set(key, k.cdc.MustMarshalBinaryBare(batch.ToExternal()))
 
 	blockKey := types.GetOutgoingTxBatchBlockKey(batch.Block)
-	store.Set(blockKey, k.cdc.MustMarshalBinaryBare(batch))
+	store.Set(blockKey, k.cdc.MustMarshalBinaryBare(batch.ToExternal()))
 }
 
 // StoreBatchUnsafe stores a transaction batch w/o setting the height
-func (k Keeper) StoreBatchUnsafe(ctx sdk.Context, batch *types.OutgoingTxBatch) {
+func (k Keeper) StoreBatchUnsafe(ctx sdk.Context, batch *types.InternalOutgoingTxBatch) {
+	if err := batch.ValidateBasic(); err != nil {
+		panic(sdkerrors.Wrap(err, "attempted to store invalid batch"))
+	}
+	batchExt := batch.ToExternal()
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce)
-	store.Set(key, k.cdc.MustMarshalBinaryBare(batch))
+	key := types.GetOutgoingTxBatchKey(batchExt.TokenContract, batchExt.BatchNonce)
+	store.Set(key, k.cdc.MustMarshalBinaryBare(batchExt))
 
-	blockKey := types.GetOutgoingTxBatchBlockKey(batch.Block)
-	store.Set(blockKey, k.cdc.MustMarshalBinaryBare(batch))
+	blockKey := types.GetOutgoingTxBatchBlockKey(batchExt.Block)
+	store.Set(blockKey, k.cdc.MustMarshalBinaryBare(batchExt))
 }
 
 // DeleteBatch deletes an outgoing transaction batch
-func (k Keeper) DeleteBatch(ctx sdk.Context, batch types.OutgoingTxBatch) {
+func (k Keeper) DeleteBatch(ctx sdk.Context, batch types.InternalOutgoingTxBatch) {
+	if err := batch.ValidateBasic(); err != nil {
+		panic(sdkerrors.Wrap(err, "attempted to delete invalid batch"))
+	}
+	batchExt := batch.ToExternal()
 	store := ctx.KVStore(k.storeKey)
-	store.Delete(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce))
-	store.Delete(types.GetOutgoingTxBatchBlockKey(batch.Block))
+	store.Delete(types.GetOutgoingTxBatchKey(batchExt.TokenContract, batchExt.BatchNonce))
+	store.Delete(types.GetOutgoingTxBatchBlockKey(batchExt.Block))
 }
 
 // pickUnbatchedTX find TX in pool and remove from "available" second index
@@ -179,7 +187,7 @@ func (k Keeper) pickUnbatchedTX(
 }
 
 // GetOutgoingTXBatch loads a batch object. Returns nil when not exists.
-func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, tokenContract string, nonce uint64) *types.OutgoingTxBatch {
+func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, tokenContract string, nonce uint64) *types.InternalOutgoingTxBatch {
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetOutgoingTxBatchKey(tokenContract, nonce)
 	bz := store.Get(key)
@@ -192,7 +200,11 @@ func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, tokenContract string, nonce 
 		tx.Erc20Token.Contract = tokenContract
 		tx.Erc20Fee.Contract = tokenContract
 	}
-	return &b
+	ret, err := b.ToInternal()
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "found invalid batch in store"))
+	}
+	return ret
 }
 
 // CancelOutgoingTXBatch releases all TX in the batch and deletes the batch
@@ -202,11 +214,7 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract string, non
 		return types.ErrUnknown
 	}
 	for _, tx := range batch.Transactions {
-		intTx, err := tx.ToInternal()
-		if err != nil {
-			panic(sdkerrors.Wrapf(err, "invalid transaction in outgoing tx batch: %v", tx))
-		}
-		err = k.addUnbatchedTX(ctx, intTx)
+		err := k.addUnbatchedTX(ctx, tx)
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "unable to add batched transaction back into pool %v", tx))
 		}
@@ -228,23 +236,27 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract string, non
 }
 
 // IterateOutgoingTXBatches iterates through all outgoing batches in DESC order.
-func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, batch *types.OutgoingTxBatch) bool) {
+func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, batch *types.InternalOutgoingTxBatch) bool) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.OutgoingTXBatchKey)
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var batch types.OutgoingTxBatch
 		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &batch)
+		intBatch, err := batch.ToInternal()
+		if err != nil {
+			panic(sdkerrors.Wrap(err, "found invalid batch in store"))
+		}
 		// cb returns true to stop early
-		if cb(iter.Key(), &batch) {
+		if cb(iter.Key(), intBatch) {
 			break
 		}
 	}
 }
 
 // GetOutgoingTxBatches returns the outgoing tx batches
-func (k Keeper) GetOutgoingTxBatches(ctx sdk.Context) (out []*types.OutgoingTxBatch) {
-	k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.OutgoingTxBatch) bool {
+func (k Keeper) GetOutgoingTxBatches(ctx sdk.Context) (out []*types.InternalOutgoingTxBatch) {
+	k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
 		out = append(out, batch)
 		return false
 	})
@@ -252,12 +264,12 @@ func (k Keeper) GetOutgoingTxBatches(ctx sdk.Context) (out []*types.OutgoingTxBa
 }
 
 // GetLastOutgoingBatchByTokenType gets the latest outgoing tx batch by token type
-func (k Keeper) GetLastOutgoingBatchByTokenType(ctx sdk.Context, token string) *types.OutgoingTxBatch {
+func (k Keeper) GetLastOutgoingBatchByTokenType(ctx sdk.Context, token string) *types.InternalOutgoingTxBatch {
 	batches := k.GetOutgoingTxBatches(ctx)
-	var lastBatch *types.OutgoingTxBatch = nil
+	var lastBatch *types.InternalOutgoingTxBatch = nil
 	lastNonce := uint64(0)
 	for _, batch := range batches {
-		if batch.TokenContract == token && batch.BatchNonce > lastNonce {
+		if batch.TokenContract.GetAddress() == token && batch.BatchNonce > lastNonce {
 			lastBatch = batch
 			lastNonce = batch.BatchNonce
 		}
@@ -283,12 +295,12 @@ func (k Keeper) GetLastSlashedBatchBlock(ctx sdk.Context) uint64 {
 }
 
 // GetUnSlashedBatches returns all the unslashed batches in state
-func (k Keeper) GetUnSlashedBatches(ctx sdk.Context, maxHeight uint64) (out []*types.OutgoingTxBatch) {
+func (k Keeper) GetUnSlashedBatches(ctx sdk.Context, maxHeight uint64) (out []*types.InternalOutgoingTxBatch) {
 	lastSlashedBatchBlock := k.GetLastSlashedBatchBlock(ctx)
 	k.IterateBatchBySlashedBatchBlock(ctx,
 		lastSlashedBatchBlock,
 		maxHeight,
-		func(_ []byte, batch *types.OutgoingTxBatch) bool {
+		func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
 			if batch.Block > lastSlashedBatchBlock {
 				out = append(out, batch)
 			}
@@ -302,16 +314,21 @@ func (k Keeper) IterateBatchBySlashedBatchBlock(
 	ctx sdk.Context,
 	lastSlashedBatchBlock uint64,
 	maxHeight uint64,
-	cb func([]byte, *types.OutgoingTxBatch) bool) {
+	cb func([]byte, *types.InternalOutgoingTxBatch) bool) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.OutgoingTXBatchBlockKey)
 	iter := prefixStore.Iterator(types.UInt64Bytes(lastSlashedBatchBlock), types.UInt64Bytes(maxHeight))
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		var Batch types.OutgoingTxBatch
-		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &Batch)
+		var batch types.OutgoingTxBatch
+		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &batch)
+		intBatch, err := batch.ToInternal()
+		if err != nil {
+			panic(sdkerrors.Wrap(err, "found invalid batch in store"))
+		}
+
 		// cb returns true to stop early
-		if cb(iter.Key(), &Batch) {
+		if cb(iter.Key(), intBatch) {
 			break
 		}
 	}

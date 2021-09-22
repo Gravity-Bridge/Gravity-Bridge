@@ -127,9 +127,9 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
 	}
 
-	var pendingBatchReq *types.OutgoingTxBatch
-	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch *types.OutgoingTxBatch) bool {
-		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), batch.BatchNonce, batch.TokenContract, addr) != nil
+	var pendingBatchReq *types.InternalOutgoingTxBatch
+	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), batch.BatchNonce, batch.TokenContract.GetAddress(), addr) != nil
 		if !foundConfirm {
 			pendingBatchReq = batch
 			return true
@@ -137,7 +137,7 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 		return false
 	})
 
-	return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: pendingBatchReq}, nil
+	return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: pendingBatchReq.ToExternal()}, nil
 }
 
 func (k Keeper) LastPendingLogicCallByAddr(
@@ -166,8 +166,8 @@ func (k Keeper) OutgoingTxBatches(
 	c context.Context,
 	req *types.QueryOutgoingTxBatchesRequest) (*types.QueryOutgoingTxBatchesResponse, error) {
 	var batches []*types.OutgoingTxBatch
-	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch *types.OutgoingTxBatch) bool {
-		batches = append(batches, batch)
+	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+		batches = append(batches, batch.ToExternal())
 		return len(batches) == MaxResults
 	})
 	return &types.QueryOutgoingTxBatchesResponse{Batches: batches}, nil
@@ -196,7 +196,7 @@ func (k Keeper) BatchRequestByNonce(
 	if foundBatch == nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Can not find tx batch")
 	}
-	return &types.QueryBatchRequestByNonceResponse{Batch: foundBatch}, nil
+	return &types.QueryBatchRequestByNonceResponse{Batch: foundBatch.ToExternal()}, nil
 }
 
 // BatchConfirms returns the batch confirmations by nonce and token contract
@@ -370,7 +370,7 @@ func (k Keeper) GetPendingSendToEth(
 	for _, batch := range batches {
 		for _, tx := range batch.Transactions {
 			if tx.Sender == sender_address {
-				res.TransfersInBatches = append(res.TransfersInBatches, tx)
+				res.TransfersInBatches = append(res.TransfersInBatches, tx.ToExternal())
 			}
 		}
 	}

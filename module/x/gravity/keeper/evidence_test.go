@@ -54,7 +54,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
 	require.NoError(t, err)
 
-	any, _ := codectypes.NewAnyWithValue(goodBatch)
+	any, _ := codectypes.NewAnyWithValue(goodBatch.ToExternal())
 
 	msg := types.MsgSubmitBadSignatureEvidence{
 		Subject:   any,
@@ -111,6 +111,7 @@ func TestSubmitBadSignatureEvidenceSlash(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 
 	batch := types.OutgoingTxBatch{
+		TokenContract: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
 		BatchTimeout: 420,
 	}
 

@@ -323,10 +323,10 @@ func lastPendingBatchRequest(ctx sdk.Context, operatorAddr string, keeper Keeper
 	}
 
 	var pendingBatchReq *types.OutgoingTxBatch
-	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.OutgoingTxBatch) bool {
-		foundConfirm := keeper.GetBatchConfirm(ctx, batch.BatchNonce, batch.TokenContract, addr) != nil
+	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+		foundConfirm := keeper.GetBatchConfirm(ctx, batch.BatchNonce, batch.TokenContract.GetAddress(), addr) != nil
 		if !foundConfirm {
-			pendingBatchReq = batch
+			pendingBatchReq = batch.ToExternal()
 			return true
 		}
 		return false
@@ -346,8 +346,8 @@ const MaxResults = 100 // todo: impl pagination
 // Gets MaxResults batches from store. Does not select by token type or anything
 func lastBatchesRequest(ctx sdk.Context, keeper Keeper) ([]byte, error) {
 	var batches []*types.OutgoingTxBatch
-	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.OutgoingTxBatch) bool {
-		batches = append(batches, batch)
+	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+		batches = append(batches, batch.ToExternal())
 		return len(batches) == MaxResults
 	})
 	if len(batches) == 0 {
@@ -399,7 +399,7 @@ func queryBatch(ctx sdk.Context, nonce string, tokenContract string, keeper Keep
 	if foundBatch == nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Can not find tx batch")
 	}
-	res, err := codec.MarshalJSONIndent(types.ModuleCdc, foundBatch)
+	res, err := codec.MarshalJSONIndent(types.ModuleCdc, foundBatch.ToExternal())
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, err.Error())
 	}
@@ -532,7 +532,7 @@ func queryPendingSendToEth(ctx sdk.Context, senderAddr string, k Keeper) ([]byte
 	for _, batch := range batches {
 		for _, tx := range batch.Transactions {
 			if tx.Sender == sender_address {
-				res.TransfersInBatches = append(res.TransfersInBatches, tx)
+				res.TransfersInBatches = append(res.TransfersInBatches, tx.ToExternal())
 			}
 		}
 	}

@@ -175,13 +175,15 @@ func TestBatchSlashing(t *testing.T) {
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
 
 	// First store a batch
-	batch := &types.OutgoingTxBatch{
+
+	batch, err := types.NewInternalOutgingTxBatchFromExternalBatch(types.OutgoingTxBatch{
 		BatchNonce:    1,
 		BatchTimeout:  0,
 		Transactions:  []*types.OutgoingTransferTx{},
 		TokenContract: keeper.TokenContractAddrs[0],
 		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
-	}
+	})
+	require.NoError(t, err)
 	pk.StoreBatchUnsafe(ctx, batch)
 
 	for i, val := range keeper.AccAddrs {
@@ -312,9 +314,9 @@ func TestBatchTimeout(t *testing.T) {
 	require.Equal(t, b2.BatchTimeout, uint64(504))
 
 	// make sure the batches got stored in the first place
-	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract.GetAddress(), b1.BatchNonce)
 	require.NotNil(t, gotFirstBatch)
-	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract.GetAddress(), b2.BatchNonce)
 	require.NotNil(t, gotSecondBatch)
 
 	// when, way into the future
@@ -327,23 +329,23 @@ func TestBatchTimeout(t *testing.T) {
 	EndBlocker(ctx, pk)
 
 	// this had a timeout of zero should be deleted.
-	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract.GetAddress(), b1.BatchNonce)
 	require.Nil(t, gotFirstBatch)
 	// make sure the end blocker does not delete these, as the block height has not officially
 	// been updated by a relay event
-	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract.GetAddress(), b2.BatchNonce)
 	require.NotNil(t, gotSecondBatch)
-	gotThirdBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b3.TokenContract, b3.BatchNonce)
+	gotThirdBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b3.TokenContract.GetAddress(), b3.BatchNonce)
 	require.NotNil(t, gotThirdBatch)
 
 	pk.SetLastObservedEthereumBlockHeight(ctx, 5000)
 	EndBlocker(ctx, pk)
 
 	// make sure the end blocker does delete these, as we've got a new Ethereum block height
-	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract.GetAddress(), b1.BatchNonce)
 	require.Nil(t, gotFirstBatch)
-	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract.GetAddress(), b2.BatchNonce)
 	require.Nil(t, gotSecondBatch)
-	gotThirdBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b3.TokenContract, b3.BatchNonce)
+	gotThirdBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b3.TokenContract.GetAddress(), b3.BatchNonce)
 	require.NotNil(t, gotThirdBatch)
 }

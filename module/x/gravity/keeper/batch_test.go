@@ -63,7 +63,7 @@ func TestBatches(t *testing.T) {
 	require.NoError(t, err)
 
 	// then batch is persisted
-	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, firstBatch.TokenContract, firstBatch.BatchNonce)
+	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, firstBatch.TokenContract.GetAddress(), firstBatch.BatchNonce)
 	require.NotNil(t, gotFirstBatch)
 	// Should have txs 2: and 3: from above, as ties in fees are broken by transaction index
 	ctx.Logger().Info(fmt.Sprintf("found batch %+v", gotFirstBatch))
@@ -89,7 +89,14 @@ func TestBatches(t *testing.T) {
 		TokenContract: myTokenContractAddr.GetAddress(),
 		Block:         1234567,
 	}
-	assert.Equal(t, expFirstBatch, gotFirstBatch)
+	assert.Equal(t, expFirstBatch.BatchTimeout, gotFirstBatch.BatchTimeout)
+	assert.Equal(t, expFirstBatch.BatchNonce, gotFirstBatch.BatchNonce)
+	assert.Equal(t, expFirstBatch.Block, gotFirstBatch.Block)
+	assert.Equal(t, expFirstBatch.TokenContract, gotFirstBatch.TokenContract.GetAddress())
+	assert.Equal(t, len(expFirstBatch.Transactions), len(gotFirstBatch.Transactions))
+	for i := 0; i < len(expFirstBatch.Transactions); i++ {
+		assert.Equal(t, expFirstBatch.Transactions[i], gotFirstBatch.Transactions[i].ToExternal())
+	}
 
 	// and verify remaining available Tx in the pool
 	// Should still have 1: and 4: above
@@ -165,16 +172,23 @@ func TestBatches(t *testing.T) {
 		Block:         1234567,
 	}
 
-	assert.Equal(t, expSecondBatch, secondBatch)
+	assert.Equal(t, expSecondBatch.BatchTimeout, secondBatch.BatchTimeout)
+	assert.Equal(t, expSecondBatch.BatchNonce, secondBatch.BatchNonce)
+	assert.Equal(t, expSecondBatch.Block, secondBatch.Block)
+	assert.Equal(t, expSecondBatch.TokenContract, secondBatch.TokenContract.GetAddress())
+	assert.Equal(t, len(expSecondBatch.Transactions), len(secondBatch.Transactions))
+	for i := 0; i < len(expSecondBatch.Transactions); i++ {
+		assert.Equal(t, expSecondBatch.Transactions[i], secondBatch.Transactions[i].ToExternal())
+	}
 
 	// EXECUTE THE MORE PROFITABLE BATCH
 	// =================================
 
 	// Execute the batch
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract.GetAddress(), secondBatch.BatchNonce)
 
 	// check batch has been deleted
-	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
+	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract.GetAddress(), secondBatch.BatchNonce)
 	require.Nil(t, gotSecondBatch)
 
 	// check that txs from first batch have been freed
@@ -265,7 +279,7 @@ func TestBatchesFullCoins(t *testing.T) {
 	require.NoError(t, err)
 
 	// then batch is persisted
-	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, firstBatch.TokenContract, firstBatch.BatchNonce)
+	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, firstBatch.TokenContract.GetAddress(), firstBatch.BatchNonce)
 	require.NotNil(t, gotFirstBatch)
 
 	expFirstBatch := &types.OutgoingTxBatch{
@@ -289,7 +303,14 @@ func TestBatchesFullCoins(t *testing.T) {
 		TokenContract: myTokenContractAddr,
 		Block:         1234567,
 	}
-	assert.Equal(t, expFirstBatch, gotFirstBatch)
+	assert.Equal(t, expFirstBatch.BatchTimeout, gotFirstBatch.BatchTimeout)
+	assert.Equal(t, expFirstBatch.BatchNonce, gotFirstBatch.BatchNonce)
+	assert.Equal(t, expFirstBatch.Block, gotFirstBatch.Block)
+	assert.Equal(t, expFirstBatch.TokenContract, gotFirstBatch.TokenContract.GetAddress())
+	assert.Equal(t, len(expFirstBatch.Transactions), len(gotFirstBatch.Transactions))
+	for i := 0; i < len(expFirstBatch.Transactions); i++ {
+		assert.Equal(t, expFirstBatch.Transactions[i], gotFirstBatch.Transactions[i].ToExternal())
+	}
 
 	// and verify remaining available Tx in the pool
 	gotUnbatchedTx := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, myTokenContractAddr)
@@ -359,16 +380,23 @@ func TestBatchesFullCoins(t *testing.T) {
 		Block:         1234567,
 	}
 
-	assert.Equal(t, expSecondBatch, secondBatch)
+	assert.Equal(t, expSecondBatch.BatchTimeout, secondBatch.BatchTimeout)
+	assert.Equal(t, expSecondBatch.BatchNonce, secondBatch.BatchNonce)
+	assert.Equal(t, expSecondBatch.Block, secondBatch.Block)
+	assert.Equal(t, expSecondBatch.TokenContract, secondBatch.TokenContract.GetAddress())
+	assert.Equal(t, len(expSecondBatch.Transactions), len(secondBatch.Transactions))
+	for i := 0; i < len(expSecondBatch.Transactions); i++ {
+		assert.Equal(t, expSecondBatch.Transactions[i], secondBatch.Transactions[i].ToExternal())
+	}
 
 	// EXECUTE THE MORE PROFITABLE BATCH
 	// =================================
 
 	// Execute the batch
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract.GetAddress(), secondBatch.BatchNonce)
 
 	// check batch has been deleted
-	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
+	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract.GetAddress(), secondBatch.BatchNonce)
 	require.Nil(t, gotSecondBatch)
 
 	// check that txs from first batch have been freed
@@ -475,7 +503,7 @@ func TestManyBatches(t *testing.T) {
 	for _, contract := range tokens {
 		for v := 1; v < 5; v++ {
 			batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, contract, 100)
-			batches = append(batches, *batch)
+			batches = append(batches, *batch.ToExternal())
 			require.NoError(t, err)
 		}
 	}

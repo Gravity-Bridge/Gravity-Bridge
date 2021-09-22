@@ -16,7 +16,10 @@ func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 	var (
 		erc20Addr = "0x835973768750b3ED2D5c3EF5AdcD5eDb44d12aD4"
 	)
-
+	erc20Address, err := NewEthAddress(erc20Addr)
+	require.NoError(t, err)
+	destAddress, err := NewEthAddress("0x9FC9C2DfBA3b6cF204C37a5F690619772b926e39")
+	require.NoError(t, err)
 	src := OutgoingTxBatch{
 		BatchNonce: 1,
 		//
@@ -25,18 +28,18 @@ func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 			{
 				Id:          0x1,
 				Sender:      senderAddr.String(),
-				DestAddress: "0x9FC9C2DfBA3b6cF204C37a5F690619772b926e39",
+				DestAddress: destAddress.GetAddress(),
 				Erc20Token: &ERC20Token{
 					Amount:   sdk.NewInt(0x1),
-					Contract: erc20Addr,
+					Contract: erc20Address.GetAddress(),
 				},
 				Erc20Fee: &ERC20Token{
 					Amount:   sdk.NewInt(0x1),
-					Contract: erc20Addr,
+					Contract: erc20Address.GetAddress(),
 				},
 			},
 		},
-		TokenContract: erc20Addr,
+		TokenContract: erc20Address.GetAddress(),
 	}
 
 	// TODO: get from params

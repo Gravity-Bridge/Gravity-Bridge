@@ -26,7 +26,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	// reset batches in state
 	for _, batch := range data.Batches {
 		// TODO: block height?
-		k.StoreBatchUnsafe(ctx, batch)
+		intBatch, err := batch.ToInternal()
+		if err != nil {
+			panic(sdkerrors.Wrapf(err, "unable to make batch internal: %v", batch))
+		}
+		k.StoreBatchUnsafe(ctx, intBatch)
 	}
 
 	// reset batch confirmations in state
@@ -173,10 +177,12 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	}
 
 	// export batch confirmations from state
-	for _, batch := range batches {
+	extBatches := make([]*types.OutgoingTxBatch, len(batches))
+	for i, batch := range batches {
 		// TODO: set height = 0?
 		batchconfs = append(batchconfs,
-			k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract)...)
+			k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract.GetAddress())...)
+		extBatches[i] = batch.ToExternal()
 	}
 
 	// export logic call confirmations from state
@@ -208,7 +214,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		LastObservedNonce:  lastobserved,
 		Valsets:            valsets,
 		ValsetConfirms:     vsconfs,
-		Batches:            batches,
+		Batches:            extBatches,
 		BatchConfirms:      batchconfs,
 		LogicCalls:         calls,
 		LogicCallConfirms:  callconfs,
