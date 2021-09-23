@@ -21,6 +21,10 @@ func TestAddToOutgoingPool(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
+	tokenContract, err := types.NewEthAddress(myTokenContractAddr)
+	require.NoError(t, err)
 	// mint some voucher first
 	allVouchersToken, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 	require.NoError(t, err)
@@ -42,7 +46,7 @@ func TestAddToOutgoingPool(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		t.Logf("___ response: %#v", r)
 		// Should create:
@@ -53,7 +57,7 @@ func TestAddToOutgoingPool(t *testing.T) {
 
 	}
 	// then
-	got := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, myTokenContractAddr)
+	got := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract)
 
 	receiverAddr, _ := types.NewEthAddress(myReceiver)
 	threeTok, _ := types.NewInternalERC20Token(sdk.NewInt(3), myTokenContractAddr)
@@ -67,28 +71,28 @@ func TestAddToOutgoingPool(t *testing.T) {
 		{
 			Id:          2,
 			Erc20Fee:    threeTok,
-			Sender:      mySender.String(),
+			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredOneTok,
 		},
 		{
 			Id:          3,
 			Erc20Fee:    twoTok,
-			Sender:      mySender.String(),
+			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredTwoTok,
 		},
 		{
 			Id:          1,
 			Erc20Fee:    twoTok,
-			Sender:      mySender.String(),
+			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredTok,
 		},
 		{
 			Id:          4,
 			Erc20Fee:    oneTok,
-			Sender:      mySender.String(),
+			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredThreeTok,
 		},
@@ -105,6 +109,8 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
 	amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(100)), myTokenContractAddr)
 	require.NoError(t, err)
 	amount := amountToken.GravityCoin()
@@ -113,7 +119,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	fee := feeToken.GravityCoin()
 
 	//////// Nonexistant Token ////////
-	r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+	r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 	require.Error(t, err)
 	require.Zero(t, r)
 
@@ -133,7 +139,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	badAmountToken, err := types.NewInternalERC20Token(sdk.NewInt(999999), myTokenContractAddr)
 	require.NoError(t, err)
 	badAmount := badAmountToken.GravityCoin()
-	r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, badAmount, fee)
+	r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, badAmount, fee)
 	require.Error(t, err)
 	require.Zero(t, r)
 
@@ -141,7 +147,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	badFeeToken, err := types.NewInternalERC20Token(sdk.NewInt(999999), myTokenContractAddr)
 	require.NoError(t, err)
 	badFee := badFeeToken.GravityCoin()
-	r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, badFee)
+	r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, badFee)
 	require.Error(t, err)
 	require.Zero(t, r)
 
@@ -150,14 +156,14 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	badFeeToken, err = types.NewInternalERC20Token(sdk.NewInt(99999-99), myTokenContractAddr)
 	require.NoError(t, err)
 	badFee = badFeeToken.GravityCoin()
-	r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, badFee)
+	r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, badFee)
 	require.Error(t, err)
 	require.Zero(t, r)
 
 	//////// Zero inputs ////////
 	mtCtx := new(sdk.Context)
 	mtSend := new(sdk.AccAddress)
-	mtRecieve := new(string)
+	var mtRecieve = types.ZeroAddress() // This address should not actually cause an issue
 	mtCoin := new(sdk.Coin)
 	r, err = input.GravityKeeper.AddToOutgoingPool(*mtCtx, *mtSend, *mtRecieve, *mtCoin, *mtCoin)
 	require.Error(t, err)
@@ -168,7 +174,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	badFeeToken, err = types.NewInternalERC20Token(sdk.NewInt(100), badFeeContractAddr)
 	require.NoError(t, err)
 	badFee = badFeeToken.GravityCoin()
-	r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, badFee)
+	r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, badFee)
 	require.Error(t, err)
 	require.Zero(t, r)
 }
@@ -183,6 +189,8 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
 	// mint some voucher first
 	allVouchersToken, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 	require.NoError(t, err)
@@ -204,7 +212,7 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		r, err2 := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		r, err2 := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err2)
 		t.Logf("___ response: %#v", r)
 	}
@@ -236,7 +244,7 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		t.Logf("___ response: %#v", r)
 	}
@@ -265,6 +273,14 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 		myTokenContractAddr2                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
 		myTokenContractAddr3                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca7"
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
+	tokenContract1, err := types.NewEthAddress(myTokenContractAddr1)
+	require.NoError(t, err)
+	tokenContract2, err := types.NewEthAddress(myTokenContractAddr2)
+	require.NoError(t, err)
+	tokenContract3, err := types.NewEthAddress(myTokenContractAddr3)
+	require.NoError(t, err)
 	// mint some vouchers first
 	allVouchersToken1, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr1)
 	require.NoError(t, err)
@@ -324,32 +340,32 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 		if i >= 10 {
 			totalFee1 += feeAmt1
 		}
-		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender1, myReceiver, amount1, fee1)
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender1, *receiver, amount1, fee1)
 		require.NoError(t, err)
 		t.Logf("___ response: %d", r)
 
 		if i >= 10 {
 			totalFee2 += feeAmt2
 		}
-		r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender2, myReceiver, amount2, fee2)
+		r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender2, *receiver, amount2, fee2)
 		require.NoError(t, err)
 		t.Logf("___ response: %d", r)
 
 		if i >= 10 {
 			totalFee3 += feeAmt3
 		}
-		r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender3, myReceiver, amount3, fee3)
+		r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender3, *receiver, amount3, fee3)
 		require.NoError(t, err)
 		t.Logf("___ response: %d", r)
 	}
 
-	batchFee1 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, myTokenContractAddr1, 100)
+	batchFee1 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, *tokenContract1, 100)
 	require.Equal(t, batchFee1.Token, myTokenContractAddr1)
 	require.Equal(t, batchFee1.TotalFees.Uint64(), uint64(totalFee1), fmt.Errorf("expected total fees %d but got %d", batchFee1.TotalFees.Uint64(), uint64(totalFee1)))
-	batchFee2 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, myTokenContractAddr2, 100)
+	batchFee2 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, *tokenContract2, 100)
 	require.Equal(t, batchFee2.Token, myTokenContractAddr2)
 	require.Equal(t, batchFee2.TotalFees.Uint64(), uint64(totalFee2), fmt.Errorf("expected total fees %d but got %d", batchFee2.TotalFees.Uint64(), uint64(totalFee2)))
-	batchFee3 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, myTokenContractAddr3, 100)
+	batchFee3 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, *tokenContract3, 100)
 	require.Equal(t, batchFee3.Token, myTokenContractAddr3)
 	require.Equal(t, batchFee3.TotalFees.Uint64(), uint64(totalFee3), fmt.Errorf("expected total fees %d but got %d", batchFee3.TotalFees.Uint64(), uint64(totalFee3)))
 
@@ -364,6 +380,8 @@ func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 		myTokenDenom        = "gravity" + myTokenContractAddr
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
 	// mint some voucher first
 	originalBal := uint64(99999)
 
@@ -393,7 +411,7 @@ func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 		fee := feeToken.GravityCoin()
 
 		feesAndAmounts += v + amounts[i]
-		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		t.Logf("___ response: %#v", r)
 		ids[i] = r
@@ -459,13 +477,13 @@ func TestRefundInconsistentTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// This way should fail
-	r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver.GetAddress(), amountToken.GravityCoin(), badFeeToken.GravityCoin())
+	r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amountToken.GravityCoin(), badFeeToken.GravityCoin())
 	require.Zero(t, r)
 	require.Error(t, err)
 	// But this unsafe override won't fail
 	err = input.GravityKeeper.addUnbatchedTX(ctx, &types.InternalOutgoingTransferTx{
 		Id:          uint64(5),
-		Sender:      mySender.String(),
+		Sender:      mySender,
 		DestAddress: myReceiver,
 		Erc20Token:  amountToken,
 		Erc20Fee:    badFeeToken,
@@ -501,6 +519,8 @@ func TestRefundTwice(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
 
 	//////// Refund a tx twice ////////
 
@@ -523,7 +543,7 @@ func TestRefundTwice(t *testing.T) {
 	require.NoError(t, err)
 	origBalances := input.BankKeeper.GetAllBalances(ctx, mySender)
 
-	txId, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amountToken.GravityCoin(), feeToken.GravityCoin())
+	txId, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amountToken.GravityCoin(), feeToken.GravityCoin())
 	require.NoError(t, err)
 	afterAddBalances := input.BankKeeper.GetAllBalances(ctx, mySender)
 
@@ -555,6 +575,12 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 		myTokenContractAddr1                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 		myTokenContractAddr2                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
+	tokenContract1, err := types.NewEthAddress(myTokenContractAddr1)
+	require.NoError(t, err)
+	tokenContract2, err := types.NewEthAddress(myTokenContractAddr2)
+	require.NoError(t, err)
 	// mint some vouchers first
 	allVouchersToken1, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr1)
 	require.NoError(t, err)
@@ -589,7 +615,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 		require.NoError(t, err)
 		fee1 := feeToken1.GravityCoin()
 
-		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender1, myReceiver, amount1, fee1)
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender1, *receiver, amount1, fee1)
 		require.NoError(t, err)
 		ids1[i] = r
 		idToTxMap[r] = &types.OutgoingTransferTx{
@@ -606,7 +632,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 		require.NoError(t, err)
 		fee2 := feeToken2.GravityCoin()
 
-		r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender2, myReceiver, amount2, fee2)
+		r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender2, *receiver, amount2, fee2)
 		require.NoError(t, err)
 		ids2[i] = r
 		idToTxMap[r] = &types.OutgoingTransferTx{
@@ -652,23 +678,23 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	require.Equal(t, *expTx2, *tx2)
 
 	// GetUnbatchedTransactionsByContract
-	token1Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, myTokenContractAddr1)
+	token1Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract1)
 	for _, v := range token1Txs {
 		expTx := idToTxMap[v.Id]
 		require.NotNil(t, expTx)
 		require.Equal(t, myTokenContractAddr1, v.Erc20Fee.Contract.GetAddress())
 		require.Equal(t, myTokenContractAddr1, v.Erc20Token.Contract.GetAddress())
 		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress())
-		require.Equal(t, expTx.Sender, v.Sender)
+		require.Equal(t, expTx.Sender, v.Sender.String())
 	}
-	token2Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, myTokenContractAddr2)
+	token2Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract2)
 	for _, v := range token2Txs {
 		expTx := idToTxMap[v.Id]
 		require.NotNil(t, expTx)
 		require.Equal(t, myTokenContractAddr2, v.Erc20Fee.Contract.GetAddress())
 		require.Equal(t, myTokenContractAddr2, v.Erc20Token.Contract.GetAddress())
 		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress())
-		require.Equal(t, expTx.Sender, v.Sender)
+		require.Equal(t, expTx.Sender, v.Sender.String())
 	}
 	// GetUnbatchedTransactions
 	allTxs := input.GravityKeeper.GetUnbatchedTransactions(ctx)
@@ -676,7 +702,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 		expTx := idToTxMap[v.Id]
 		require.NotNil(t, expTx)
 		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress())
-		require.Equal(t, expTx.Sender, v.Sender)
+		require.Equal(t, expTx.Sender, v.Sender.String())
 		require.Equal(t, expTx.Erc20Fee.Contract, v.Erc20Fee.Contract.GetAddress())
 		require.Equal(t, expTx.Erc20Token.Contract, v.Erc20Token.Contract.GetAddress())
 	}
@@ -695,6 +721,12 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 		myTokenContractAddr1                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 		myTokenContractAddr2                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
+	tokenContract1, err := types.NewEthAddress(myTokenContractAddr1)
+	require.NoError(t, err)
+	tokenContract2, err := types.NewEthAddress(myTokenContractAddr2)
+	require.NoError(t, err)
 	// mint some vouchers first
 	token1, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr1)
 	require.NoError(t, err)
@@ -726,7 +758,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 		require.NoError(t, err)
 		fee1, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr1)
 		require.NoError(t, err)
-		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender1, myReceiver, amount1.GravityCoin(), fee1.GravityCoin())
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender1, *receiver, amount1.GravityCoin(), fee1.GravityCoin())
 		require.NoError(t, err)
 		ids1[i] = r
 		idToTxMap[r] = &types.OutgoingTransferTx{
@@ -740,7 +772,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 		require.NoError(t, err)
 		fee2, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr2)
 		require.NoError(t, err)
-		r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender2, myReceiver, amount2.GravityCoin(), fee2.GravityCoin())
+		r, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender2, *receiver, amount2.GravityCoin(), fee2.GravityCoin())
 		require.NoError(t, err)
 
 		ids2[i] = r
@@ -754,7 +786,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	}
 	// IterateUnbatchedTransactionsByContract
 	foundMap := make(map[uint64]bool)
-	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, myTokenContractAddr1, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
+	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, *tokenContract1, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
 		fTx := idToTxMap[tx.Id]
 		require.NotNil(t, fTx)
@@ -765,7 +797,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 		foundMap[fTx.Id] = true
 		return false
 	})
-	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, myTokenContractAddr2, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
+	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, *tokenContract2, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
 		fTx := idToTxMap[tx.Id]
 		require.NotNil(t, fTx)
@@ -807,6 +839,8 @@ func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
 	// mint some voucher first
 	allVouchersToken, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 	require.NoError(t, err)
@@ -831,7 +865,7 @@ func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 
 		unbatchedTxMap[r] = types.OutgoingTransferTx{

@@ -102,25 +102,29 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 /////////////////////////////
 
 // SetEthAddress sets the ethereum address for a given validator
-func (k Keeper) SetEthAddressForValidator(ctx sdk.Context, validator sdk.ValAddress, ethAddr string) {
+func (k Keeper) SetEthAddressForValidator(ctx sdk.Context, validator sdk.ValAddress, ethAddr types.EthAddress) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetEthAddressByValidatorKey(validator), []byte(ethAddr))
+	store.Set(types.GetEthAddressByValidatorKey(validator), []byte(ethAddr.GetAddress()))
 	store.Set(types.GetValidatorByEthAddressKey(ethAddr), []byte(validator))
 }
 
 // GetEthAddressByValidator returns the eth address for a given gravity validator
-func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddress) (ethAddress string, found bool) {
+func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddress) (ethAddress *types.EthAddress, found bool) {
 	store := ctx.KVStore(k.storeKey)
 	ethAddr := store.Get(types.GetEthAddressByValidatorKey(validator))
 	if ethAddr == nil {
-		return "", false
-	} else {
-		return string(ethAddr), true
+		return nil, false
 	}
+
+	addr, err := types.NewEthAddress(string(ethAddr))
+	if err != nil {
+		return nil, false
+	}
+	return addr, true
 }
 
 // GetValidatorByEthAddress returns the validator for a given eth address
-func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr string) (validator stakingtypes.Validator, found bool) {
+func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddress) (validator stakingtypes.Validator, found bool) {
 	store := ctx.KVStore(k.storeKey)
 	valAddr := store.Get(types.GetValidatorByEthAddressKey(ethAddr))
 	if valAddr == nil {

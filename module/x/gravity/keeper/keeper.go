@@ -6,6 +6,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -69,10 +70,14 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 }
 
 // GetBridgeContractAddress returns the bridge contract address on ETH
-func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) string {
+func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) *types.EthAddress {
 	var a string
 	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeContractAddress, &a)
-	return a
+	addr, err := types.NewEthAddress(a)
+	if err != nil {
+		panic(sdkerrors.Wrapf(err, "found invalid bridge contract address in store: %v", a))
+	}
+	return addr
 }
 
 // GetBridgeChainID returns the chain id of the ETH chain we are running against
@@ -152,9 +157,12 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []*types.MsgSetOrchestratorAddr
 		// of the actual key
 		key := iter.Key()[len(types.EthAddressByValidatorKey):]
 		value := iter.Value()
-		ethAddress := string(value)
+		ethAddress, err := types.NewEthAddress(string(value))
+		if err != nil {
+			panic(sdkerrors.Wrapf(err, "found invalid ethAddress %v under key %v", string(value), key))
+		}
 		valAddress := sdk.ValAddress(key)
-		ethAddresses[valAddress.String()] = ethAddress
+		ethAddresses[valAddress.String()] = ethAddress.GetAddress()
 	}
 
 	store = ctx.KVStore(k.storeKey)

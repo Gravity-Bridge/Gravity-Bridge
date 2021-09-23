@@ -196,7 +196,7 @@ func (b InternalBridgeValidators) ValidateBasic() error {
 }
 
 // NewValset returns a new valset
-func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmount sdk.Int, rewardToken string) (*Valset, error) {
+func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmount sdk.Int, rewardToken EthAddress) (*Valset, error) {
 	if err := members.ValidateBasic(); err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid members")
 	}
@@ -205,7 +205,7 @@ func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmo
 	for _, val := range members {
 		mem = append(mem, val.ToExternal())
 	}
-	return &Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken},
+	return &Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress()},
 		nil
 }
 

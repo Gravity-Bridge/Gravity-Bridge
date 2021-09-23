@@ -118,6 +118,11 @@ func CmdSendToEth() *cobra.Command {
 				return sdkerrors.Wrap(err, "bridge fee")
 			}
 
+			ethAddr, err := types.NewEthAddress(args[0])
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid eth address")
+			}
+
 			if len(amount) > 1 || len(bridgeFee) > 1 {
 				return fmt.Errorf("coin amounts too long, expecting just 1 coin amount for both amount and bridgeFee")
 			}
@@ -125,7 +130,7 @@ func CmdSendToEth() *cobra.Command {
 			// Make the message
 			msg := types.MsgSendToEth{
 				Sender:    cosmosAddr.String(),
-				EthDest:   args[0],
+				EthDest:   ethAddr.GetAddress(),
 				Amount:    amount[0],
 				BridgeFee: bridgeFee[0],
 			}

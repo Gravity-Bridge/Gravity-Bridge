@@ -61,11 +61,6 @@ func TestValsetConfirmSig(t *testing.T) {
 			srcETHAddr:   ethAddress,
 			expErr:       true,
 		},
-		"empty eth address": {
-			srcHash:      hash,
-			srcSignature: correctSig,
-			expErr:       true,
-		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
@@ -79,7 +74,8 @@ func TestValsetConfirmSig(t *testing.T) {
 			require.NoError(t, err)
 
 			// when
-			err = ValidateEthereumSignature(hashBytes, sigBytes, spec.srcETHAddr)
+			ethAddr, err := NewEthAddress(spec.srcETHAddr)
+			err = ValidateEthereumSignature(hashBytes, sigBytes, *ethAddr)
 			if spec.expErr {
 				assert.Error(t, err)
 				return

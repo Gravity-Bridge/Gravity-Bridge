@@ -144,7 +144,7 @@ func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
 	batches := k.GetOutgoingTxBatches(ctx)
 	for _, batch := range batches {
 		if batch.BatchTimeout < ethereumHeight {
-			k.CancelOutgoingTXBatch(ctx, batch.TokenContract.GetAddress(), batch.BatchNonce)
+			k.CancelOutgoingTXBatch(ctx, batch.TokenContract, batch.BatchNonce)
 		}
 	}
 }
@@ -194,7 +194,7 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				for _, conf := range confirms {
 					// problem site for delegate key rotation, see issue #344
 					ethAddress, foundEthAddress := k.GetEthAddressByValidator(ctx, val.GetOperator())
-					if foundEthAddress && conf.EthAddress == ethAddress {
+					if foundEthAddress && conf.EthAddress == ethAddress.GetAddress() {
 						found = true
 						break
 					}
@@ -284,7 +284,7 @@ func BatchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 
 		// SLASH BONDED VALIDTORS who didn't attest batch requests
 		currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
-		confirms := k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract.GetAddress())
+		confirms := k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract)
 		for _, val := range currentBondedSet {
 			// Don't slash validators who joined after batch is created
 			consAddr, _ := val.GetConsAddr()

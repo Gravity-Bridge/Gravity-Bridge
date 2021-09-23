@@ -58,7 +58,11 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		}
 	// withdraw in this context means a withdraw from the Ethereum side of the bridge
 	case *types.MsgBatchSendToEthClaim:
-		a.keeper.OutgoingTxBatchExecuted(ctx, claim.TokenContract, claim.BatchNonce)
+		contract, err := types.NewEthAddress(claim.TokenContract)
+		if err != nil {
+			return sdkerrors.Wrap(err, "invalid token contract on batch")
+		}
+		a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim.BatchNonce)
 		return nil
 	case *types.MsgERC20DeployedClaim:
 		tokenAddress, err := types.NewEthAddress(claim.TokenContract)

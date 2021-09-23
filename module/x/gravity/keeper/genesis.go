@@ -117,6 +117,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err != nil {
 			panic(err)
 		}
+		ethAddr, _ := types.NewEthAddress(keys.EthAddress) // already validated in keys.ValidateBasic()
 
 		orch, err := sdk.AccAddressFromBech32(keys.Orchestrator)
 		if err != nil {
@@ -126,7 +127,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		// set the orchestrator address
 		k.SetOrchestratorValidator(ctx, val, orch)
 		// set the ethereum address
-		k.SetEthAddressForValidator(ctx, val, keys.EthAddress)
+		k.SetEthAddressForValidator(ctx, val, *ethAddr)
 	}
 
 	// populate state with cosmos originated denom-erc20 mapping
@@ -181,7 +182,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	for i, batch := range batches {
 		// TODO: set height = 0?
 		batchconfs = append(batchconfs,
-			k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract.GetAddress())...)
+			k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract)...)
 		extBatches[i] = batch.ToExternal()
 	}
 

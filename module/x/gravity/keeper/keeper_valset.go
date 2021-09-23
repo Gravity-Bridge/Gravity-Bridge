@@ -31,11 +31,12 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) *types.Valset {
 	checkpoint := valset.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
 
+	bridgeAddr := k.GetBridgeContractAddress(ctx)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			types.EventTypeMultisigUpdateRequest,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyContract, k.GetBridgeContractAddress(ctx)),
+			sdk.NewAttribute(types.AttributeKeyContract, bridgeAddr.GetAddress()),
 			sdk.NewAttribute(types.AttributeKeyBridgeChainID, strconv.Itoa(int(k.GetBridgeChainID(ctx)))),
 			sdk.NewAttribute(types.AttributeKeyMultisigID, fmt.Sprint(valset.Nonce)),
 			sdk.NewAttribute(types.AttributeKeyNonce, fmt.Sprint(valset.Nonce)),
@@ -242,7 +243,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 		p := uint64(k.StakingKeeper.GetLastValidatorPower(ctx, val))
 
 		if ethAddr, found := k.GetEthAddressByValidator(ctx, val); found {
-			bv := types.BridgeValidator{Power: p, EthereumAddress: ethAddr}
+			bv := types.BridgeValidator{Power: p, EthereumAddress: ethAddr.GetAddress()}
 			ibv, err := types.NewInternalBridgeValidator(bv)
 			if err != nil {
 				panic(sdkerrors.Wrapf(err, "discovered invalid eth address stored for validator %v", val))
@@ -274,7 +275,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 	// increment the nonce, since this potential future valset should be after the current valset
 	valsetNonce := k.GetLatestValsetNonce(ctx) + 1
 
-	valset, err := types.NewValset(valsetNonce, uint64(ctx.BlockHeight()), bridgeValidators, rewardAmount, rewardToken.GetAddress())
+	valset, err := types.NewValset(valsetNonce, uint64(ctx.BlockHeight()), bridgeValidators, rewardAmount, *rewardToken)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "generated invalid valset"))
 	}

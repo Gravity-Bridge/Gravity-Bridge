@@ -26,6 +26,10 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
 	require.NoError(t, err)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
+	tokenContract, err := types.NewEthAddress(myTokenContractAddr)
+	require.NoError(t, err)
 
 	// mint some voucher first
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
@@ -44,14 +48,14 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, myReceiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 	}
 
 	// when
 	ctx = ctx.WithBlockTime(now)
 
-	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, myTokenContractAddr, 2)
+	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
 	require.NoError(t, err)
 
 	any, _ := codectypes.NewAnyWithValue(goodBatch.ToExternal())
@@ -123,9 +127,10 @@ func TestSubmitBadSignatureEvidenceSlash(t *testing.T) {
 	privKey, err := crypto.GenerateKey()
 	require.NoError(t, err)
 
-	ethAddress := crypto.PubkeyToAddress(privKey.PublicKey)
+	ethAddress, err := types.NewEthAddress(crypto.PubkeyToAddress(privKey.PublicKey).String())
+	require.NoError(t, err)
 
-	input.GravityKeeper.SetEthAddressForValidator(ctx, ValAddrs[0], ethAddress.String())
+	input.GravityKeeper.SetEthAddressForValidator(ctx, ValAddrs[0], *ethAddress)
 
 	ethSignature, err := types.NewEthereumSignature(checkpoint, privKey)
 	require.NoError(t, err)

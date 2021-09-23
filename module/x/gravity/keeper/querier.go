@@ -202,9 +202,10 @@ func queryAllBatchConfirms(ctx sdk.Context, nonceStr string, tokenContract strin
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
+	contract, err := types.NewEthAddress(tokenContract)
 
 	var confirms []types.MsgConfirmBatch
-	keeper.IterateBatchConfirmByNonceAndTokenContract(ctx, nonce, tokenContract, func(_ []byte, c types.MsgConfirmBatch) bool {
+	keeper.IterateBatchConfirmByNonceAndTokenContract(ctx, nonce, *contract, func(_ []byte, c types.MsgConfirmBatch) bool {
 		confirms = append(confirms, c)
 		return false
 	})
@@ -324,7 +325,7 @@ func lastPendingBatchRequest(ctx sdk.Context, operatorAddr string, keeper Keeper
 
 	var pendingBatchReq *types.OutgoingTxBatch
 	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
-		foundConfirm := keeper.GetBatchConfirm(ctx, batch.BatchNonce, batch.TokenContract.GetAddress(), addr) != nil
+		foundConfirm := keeper.GetBatchConfirm(ctx, batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
 			pendingBatchReq = batch.ToExternal()
 			return true
@@ -392,10 +393,11 @@ func queryBatch(ctx sdk.Context, nonce string, tokenContract string, keeper Keep
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, err.Error())
 	}
-	if types.ValidateEthAddress(tokenContract) != nil {
+	contract, err := types.NewEthAddress(tokenContract)
+	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, err.Error())
 	}
-	foundBatch := keeper.GetOutgoingTXBatch(ctx, tokenContract, parsedNonce)
+	foundBatch := keeper.GetOutgoingTXBatch(ctx, *contract, parsedNonce)
 	if foundBatch == nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Can not find tx batch")
 	}
@@ -524,20 +526,19 @@ func queryERC20ToDenom(ctx sdk.Context, ERC20 string, keeper Keeper) ([]byte, er
 func queryPendingSendToEth(ctx sdk.Context, senderAddr string, k Keeper) ([]byte, error) {
 	batches := k.GetOutgoingTxBatches(ctx)
 	unbatched_tx := k.GetUnbatchedTransactions(ctx)
-	sender_address := senderAddr
 	res := types.QueryPendingSendToEthResponse{
 		TransfersInBatches: []*types.OutgoingTransferTx{},
 		UnbatchedTransfers: []*types.OutgoingTransferTx{},
 	}
 	for _, batch := range batches {
 		for _, tx := range batch.Transactions {
-			if tx.Sender == sender_address {
+			if tx.Sender.String() == senderAddr {
 				res.TransfersInBatches = append(res.TransfersInBatches, tx.ToExternal())
 			}
 		}
 	}
 	for _, tx := range unbatched_tx {
-		if tx.Sender == sender_address {
+		if tx.Sender.String() == senderAddr {
 			res.UnbatchedTransfers = append(res.UnbatchedTransfers, tx.ToExternal())
 		}
 	}

@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"math/big"
 	"strings"
 
@@ -18,7 +19,7 @@ func (o OutgoingTransferTx) ToInternal() (*InternalOutgoingTransferTx, error) {
 // InternalOutgoingTransferTx is an internal duplicate of OutgoingTransferTx with validation
 type InternalOutgoingTransferTx struct {
 	Id          uint64
-	Sender      string
+	Sender      sdk.AccAddress
 	DestAddress *EthAddress
 	Erc20Token  *InternalERC20Token
 	Erc20Fee    *InternalERC20Token
@@ -31,6 +32,10 @@ func NewInternalOutgoingTransferTx(
 	erc20Token ERC20Token,
 	erc20Fee ERC20Token,
 ) (*InternalOutgoingTransferTx, error) {
+	send, err := sdk.AccAddressFromBech32(sender)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid sender")
+	}
 	dest, err := NewEthAddress(destAddress)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid eth destination")
@@ -46,7 +51,7 @@ func NewInternalOutgoingTransferTx(
 
 	return &InternalOutgoingTransferTx{
 		Id:          id,
-		Sender:      sender,
+		Sender:      send,
 		DestAddress: dest,
 		Erc20Token:  token,
 		Erc20Fee:    fee,
@@ -56,7 +61,7 @@ func NewInternalOutgoingTransferTx(
 func (i InternalOutgoingTransferTx) ToExternal() *OutgoingTransferTx {
 	return &OutgoingTransferTx{
 		Id:          i.Id,
-		Sender:      i.Sender,
+		Sender:      i.Sender.String(),
 		DestAddress: i.DestAddress.GetAddress(),
 		Erc20Token:  i.Erc20Token.ToExternal(),
 		Erc20Fee:    i.Erc20Fee.ToExternal(),

@@ -47,23 +47,13 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 			srcETHAddr:    ethAddress,
 			expErr:        true,
 		},
-		"empty eth address": {
-			srcValAddr:    valAddress,
-			srcCosmosAddr: cosmosAddress,
-			expErr:        true,
-		},
-		"invalid eth address": {
-			srcValAddr:    valAddress,
-			srcCosmosAddr: cosmosAddress,
-			srcETHAddr:    "invalid",
-			expErr:        true,
-		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			msg := NewMsgSetOrchestratorAddress(spec.srcValAddr, spec.srcCosmosAddr, spec.srcETHAddr)
+			ethAddr, err := NewEthAddress(spec.srcETHAddr)
+			msg := NewMsgSetOrchestratorAddress(spec.srcValAddr, spec.srcCosmosAddr, *ethAddr)
 			// when
-			err := msg.ValidateBasic()
+			err = msg.ValidateBasic()
 			if spec.expErr {
 				assert.Error(t, err)
 				return

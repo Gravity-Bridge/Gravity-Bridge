@@ -12,7 +12,7 @@ import (
 
 func (k Keeper) GetCosmosOriginatedDenom(ctx sdk.Context, tokenContract types.EthAddress) (string, bool) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetERC20ToDenomKey(tokenContract.GetAddress()))
+	bz := store.Get(types.GetERC20ToDenomKey(tokenContract))
 
 	if bz != nil {
 		return string(bz), true
@@ -37,10 +37,10 @@ func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (*types.
 func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, tokenContract types.EthAddress) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetDenomToERC20Key(denom), []byte(tokenContract.GetAddress()))
-	store.Set(types.GetERC20ToDenomKey(tokenContract.GetAddress()), []byte(denom))
+	store.Set(types.GetERC20ToDenomKey(tokenContract), []byte(denom))
 }
 
-// DenomToERC20 returns (bool isCosmosOriginated, string ERC20, err)
+// DenomToERC20 returns (bool isCosmosOriginated, EthAddress ERC20, err)
 // Using this information, you can see if an asset is native to Cosmos or Ethereum,
 // and get its corresponding ERC20 address.
 // This will return an error if it cant parse the denom as a gravity denom, and then also can't find the denom

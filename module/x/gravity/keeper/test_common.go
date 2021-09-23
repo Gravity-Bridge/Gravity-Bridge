@@ -259,7 +259,11 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 
 	// Register eth addresses for each validator
 	for i, addr := range ValAddrs {
-		input.GravityKeeper.SetEthAddressForValidator(input.Context, addr, EthAddrs[i].String())
+		ethAddr, err := types.NewEthAddress(EthAddrs[i].String())
+		if err != nil {
+			panic("found invalid address in EthAddrs")
+		}
+		input.GravityKeeper.SetEthAddressForValidator(input.Context, addr, *ethAddr)
 	}
 
 	// Return the test input

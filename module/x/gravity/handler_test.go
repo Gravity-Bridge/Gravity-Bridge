@@ -92,7 +92,7 @@ func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	ctx := input.Context
 	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(myValAddr)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, myValAddr, types.ZeroAddressString)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, myValAddr, *types.ZeroAddress())
 	input.GravityKeeper.SetOrchestratorValidator(ctx, myValAddr, myOrchestratorAddr)
 	h := NewHandler(input.GravityKeeper)
 
@@ -181,9 +181,9 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 		orchestratorAddr1, _ = sdk.AccAddressFromBech32("cosmos1dg55rtevlfxh46w88yjpdd08sqhh5cc3xhkcej")
 		orchestratorAddr2, _ = sdk.AccAddressFromBech32("cosmos164knshrzuuurf05qxf3q5ewpfnwzl4gj4m4dfy")
 		orchestratorAddr3, _ = sdk.AccAddressFromBech32("cosmos193fw83ynn76328pty4yl7473vg9x86alq2cft7")
-		validatorEthAddr1    = "0x0000000000000000000000000000000000000001"
-		validatorEthAddr2    = "0x0000000000000000000000000000000000000002"
-		validatorEthAddr3    = "0x0000000000000000000000000000000000000003"
+		validatorEthAddr1, _ = types.NewEthAddress("0x0000000000000000000000000000000000000001")
+		validatorEthAddr2, _ = types.NewEthAddress("0x0000000000000000000000000000000000000002")
+		validatorEthAddr3, _ = types.NewEthAddress("0x0000000000000000000000000000000000000003")
 		myCosmosAddr, _      = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
 		valAddr1             = sdk.ValAddress(orchestratorAddr1) // revisit when proper mapping is impl in keeper
 		valAddr2             = sdk.ValAddress(orchestratorAddr2) // revisit when proper mapping is impl in keeper
@@ -196,9 +196,9 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	ctx := input.Context
 	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(valAddr1, valAddr2, valAddr3)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr1, validatorEthAddr1)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr2, validatorEthAddr2)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr3, validatorEthAddr3)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr1, *validatorEthAddr1)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr2, *validatorEthAddr2)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr3, *validatorEthAddr3)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr1, orchestratorAddr1)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr2, orchestratorAddr2)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr3, orchestratorAddr3)
@@ -278,9 +278,9 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 //nolint: exhaustivestruct
 func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	var (
-		ethAddress                    = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
+		ethAddress, _                 = types.NewEthAddress("0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255")
 		cosmosAddress  sdk.AccAddress = bytes.Repeat([]byte{0x1}, sdk.AddrLen)
-		ethAddress2                   = "0x26126048c706fB45a5a6De8432F428e794d0b952"
+		ethAddress2, _                = types.NewEthAddress("0x26126048c706fB45a5a6De8432F428e794d0b952")
 		cosmosAddress2 sdk.AccAddress = bytes.Repeat([]byte{0x2}, sdk.AddrLen)
 		valAddress     sdk.ValAddress = bytes.Repeat([]byte{0x2}, sdk.AddrLen)
 		blockTime                     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
@@ -297,7 +297,7 @@ func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	ctx = ctx.WithBlockTime(blockTime)
 
 	// test setting keys
-	msg := types.NewMsgSetOrchestratorAddress(valAddress, cosmosAddress, ethAddress)
+	msg := types.NewMsgSetOrchestratorAddress(valAddress, cosmosAddress, *ethAddress)
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err := h(ctx, msg)
 	require.NoError(t, err)
@@ -321,14 +321,14 @@ func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	require.NoError(t, err)
 
 	queryE := types.QueryDelegateKeysByEthAddress{
-		EthAddress: ethAddress,
+		EthAddress: ethAddress.GetAddress(),
 	}
 	_, err = k.GetDelegateKeyByEth(wctx, &queryE)
 	require.NoError(t, err)
 
 	// try to set values again. This should fail see issue #344 for why allowing this
 	// would require keeping a history of all validators delegate keys forever
-	msg = types.NewMsgSetOrchestratorAddress(valAddress, cosmosAddress2, ethAddress2)
+	msg = types.NewMsgSetOrchestratorAddress(valAddress, cosmosAddress2, *ethAddress2)
 	ctx = ctx.WithBlockTime(blockTime2).WithBlockHeight(blockHeight2)
 	_, err = h(ctx, msg)
 	require.Error(t, err)

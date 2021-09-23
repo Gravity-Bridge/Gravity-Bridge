@@ -20,9 +20,9 @@ func NewEthereumSignature(hash []byte, privateKey *ecdsa.PrivateKey) ([]byte, er
 	return crypto.Sign(protectedHash.Bytes(), privateKey)
 }
 
-func EthAddressFromSignature(hash []byte, signature []byte) (string, error) {
+func EthAddressFromSignature(hash []byte, signature []byte) (*EthAddress, error) {
 	if len(signature) < 65 {
-		return "", sdkerrors.Wrap(ErrInvalid, "signature too short")
+		return nil, sdkerrors.Wrap(ErrInvalid, "signature too short")
 	}
 	// To verify signature
 	// - use crypto.SigToPub to get the public key
@@ -46,24 +46,27 @@ func EthAddressFromSignature(hash []byte, signature []byte) (string, error) {
 
 	pubkey, err := crypto.SigToPub(protectedHash.Bytes(), signature)
 	if err != nil {
-		return "", sdkerrors.Wrap(err, "signature to public key")
+		return nil, sdkerrors.Wrap(err, "signature to public key")
 	}
 
-	addr := crypto.PubkeyToAddress(*pubkey)
+	addr, err := NewEthAddress(crypto.PubkeyToAddress(*pubkey).Hex())
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid address from public key")
+	}
 
-	return addr.Hex(), nil
+	return addr, nil
 }
 
 // ValidateEthereumSignature takes a message, an associated signature and public key and
 // returns an error if the signature isn't valid
-func ValidateEthereumSignature(hash []byte, signature []byte, ethAddress string) error {
+func ValidateEthereumSignature(hash []byte, signature []byte, ethAddress EthAddress) error {
 	addr, err := EthAddressFromSignature(hash, signature)
 
 	if err != nil {
-		return sdkerrors.Wrap(err, "")
+		return sdkerrors.Wrap(err, "unable to get address from signature")
 	}
 
-	if addr != ethAddress {
+	if addr.GetAddress() != ethAddress.GetAddress() {
 		return sdkerrors.Wrap(ErrInvalid, "signature not matching")
 	}
 

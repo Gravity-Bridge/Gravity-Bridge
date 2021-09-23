@@ -27,11 +27,11 @@ var (
 )
 
 // NewMsgSetOrchestratorAddress returns a new msgSetOrchestratorAddress
-func NewMsgSetOrchestratorAddress(val sdk.ValAddress, oper sdk.AccAddress, eth string) *MsgSetOrchestratorAddress {
+func NewMsgSetOrchestratorAddress(val sdk.ValAddress, oper sdk.AccAddress, eth EthAddress) *MsgSetOrchestratorAddress {
 	return &MsgSetOrchestratorAddress{
 		Validator:    val.String(),
 		Orchestrator: oper.String(),
-		EthAddress:   eth,
+		EthAddress:   eth.GetAddress(),
 	}
 }
 
@@ -72,14 +72,14 @@ func (msg *MsgSetOrchestratorAddress) GetSigners() []sdk.AccAddress {
 // NewMsgValsetConfirm returns a new msgValsetConfirm
 func NewMsgValsetConfirm(
 	nonce uint64,
-	ethAddress string,
+	ethAddress EthAddress,
 	validator sdk.AccAddress,
 	signature string,
 ) *MsgValsetConfirm {
 	return &MsgValsetConfirm{
 		Nonce:        nonce,
 		Orchestrator: validator.String(),
-		EthAddress:   ethAddress,
+		EthAddress:   ethAddress.GetAddress(),
 		Signature:    signature,
 	}
 }
@@ -117,10 +117,10 @@ func (msg *MsgValsetConfirm) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgSendToEth returns a new msgSendToEth
-func NewMsgSendToEth(sender sdk.AccAddress, destAddress string, send sdk.Coin, bridgeFee sdk.Coin) *MsgSendToEth {
+func NewMsgSendToEth(sender sdk.AccAddress, destAddress EthAddress, send sdk.Coin, bridgeFee sdk.Coin) *MsgSendToEth {
 	return &MsgSendToEth{
 		Sender:    sender.String(),
-		EthDest:   destAddress,
+		EthDest:   destAddress.GetAddress(),
 		Amount:    send,
 		BridgeFee: bridgeFee,
 	}
@@ -390,7 +390,7 @@ const (
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (msg *MsgSendToCosmosClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s", msg.EventNonce, msg.BlockHeight, msg.TokenContract, msg.Amount.String(), string(msg.EthereumSender), msg.CosmosReceiver)
+	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s", msg.EventNonce, msg.BlockHeight, msg.TokenContract, msg.Amount.String(), msg.EthereumSender, msg.CosmosReceiver)
 	return tmhash.Sum([]byte(path)), nil
 }
 

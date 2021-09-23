@@ -50,7 +50,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 	tv.input = keeper.CreateTestEnv(t)
 	tv.ctx = tv.input.Context
 	tv.input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(tv.myValAddr)
-	tv.input.GravityKeeper.SetEthAddressForValidator(tv.ctx, tv.myValAddr, types.ZeroAddressString)
+	tv.input.GravityKeeper.SetEthAddressForValidator(tv.ctx, tv.myValAddr, *types.ZeroAddress())
 	tv.input.GravityKeeper.SetOrchestratorValidator(tv.ctx, tv.myValAddr, tv.myOrchestratorAddr)
 	tv.h = NewHandler(tv.input.GravityKeeper)
 
