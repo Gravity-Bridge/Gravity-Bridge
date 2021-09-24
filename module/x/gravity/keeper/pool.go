@@ -12,7 +12,7 @@ import (
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 )
 
-// AddToOutgoingPool
+// AddToOutgoingPool creates a transaction and adds it to the pool, returns the id of the unbatched transaction
 // - checks a counterpart denominator exists for the given voucher type
 // - burns the voucher for transfer amount and fees
 // - persists an OutgoingTx
