@@ -45,6 +45,11 @@ struct ValsetDataBytes {
 impl ValsetUpdatedEvent {
     /// Decodes the data bytes of a valset log event, separated for easy testing
     fn decode_data_bytes(input: &[u8]) -> Result<ValsetDataBytes, GravityError> {
+        if input.len() < 6 * 32 {
+            return Err(GravityError::InvalidEventLogError(
+                "too short for ValsetUpdatedEventData".to_string(),
+            ));
+        }
         // first index is the event nonce, then the reward token, amount, following two have event data we don't
         // care about, sixth index contains the length of the eth address array
 
@@ -90,7 +95,13 @@ impl ValsetUpdatedEvent {
         // below this we are parsing the dynamic data from the 6th index on
         let index_start = 5 * 32;
         let index_end = index_start + 32;
-        let eth_addresses_offset = index_start + 32;
+        let eth_addresses_offset = index_end;
+        if input.len() < eth_addresses_offset {
+            return Err(GravityError::InvalidEventLogError(
+                "too short for dynamic data".to_string(),
+            ));
+        }
+
         let len_eth_addresses = Uint256::from_bytes_be(&input[index_start..index_end]);
         if len_eth_addresses > usize::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
@@ -100,7 +111,13 @@ impl ValsetUpdatedEvent {
         let len_eth_addresses: usize = len_eth_addresses.to_string().parse().unwrap();
         let index_start = (6 + len_eth_addresses) * 32;
         let index_end = index_start + 32;
-        let powers_offset = index_start + 32;
+        let powers_offset = index_end;
+        if input.len() < powers_offset {
+            return Err(GravityError::InvalidEventLogError(
+                "too short for dynamic data".to_string(),
+            ));
+        }
+
         let len_powers = Uint256::from_bytes_be(&input[index_start..index_end]);
         if len_powers > usize::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
@@ -120,6 +137,13 @@ impl ValsetUpdatedEvent {
             let power_end = power_start + 32;
             let address_start = (i * 32) + eth_addresses_offset;
             let address_end = address_start + 32;
+
+            if input.len() < address_end || input.len() < power_end {
+                return Err(GravityError::InvalidEventLogError(
+                    "too short for dynamic data".to_string(),
+                ));
+            }
+
             let power = Uint256::from_bytes_be(&input[power_start..power_end]);
             // an eth address at 20 bytes is 12 bytes shorter than the Uint256 it's stored in.
             let eth_address = EthAddress::from_slice(&input[address_start + 12..address_end]);
@@ -380,6 +404,12 @@ impl SendToCosmosEvent {
         }
     }
     fn decode_data_bytes(data: &[u8]) -> Result<SendToCosmosEventData, GravityError> {
+        if data.len() < 4 * 32 {
+            return Err(GravityError::InvalidEventLogError(
+                "too short for SendToCosmosEventData".to_string(),
+            ));
+        }
+
         let amount = Uint256::from_bytes_be(&data[32..64]);
         let event_nonce = Uint256::from_bytes_be(&data[64..96]);
 
@@ -398,6 +428,12 @@ impl SendToCosmosEvent {
 
         let destination_str_start = 4 * 32;
         let destination_str_end = destination_str_start + destination_str_len;
+
+        if data.len() < destination_str_end {
+            return Err(GravityError::InvalidEventLogError(
+                "Incorrect length for dynamic data".to_string(),
+            ));
+        }
 
         let destination = &data[destination_str_start..destination_str_end];
 
@@ -472,102 +508,27 @@ pub struct Erc20DeployedEvent {
     pub block_height: Uint256,
 }
 
+/// struct for holding the data encoded fields
+/// of a Erc20DeployedEvent for unit testing
+#[derive(Eq, PartialEq, Debug)]
+struct Erc20DeployedEventData {
+    /// The denom on the Cosmos chain this contract is intended to represent
+    pub cosmos_denom: String,
+    /// The name of the token in the ERC20 contract, should match the Cosmos denom
+    /// but it is up to the Cosmos module to check that
+    pub name: String,
+    /// The symbol for the token in the ERC20 contract
+    pub symbol: String,
+    /// The number of decimals required to represent the smallest unit of this token
+    pub decimals: u8,
+    pub event_nonce: u64,
+}
+
 impl Erc20DeployedEvent {
     pub fn from_log(input: &Log) -> Result<Erc20DeployedEvent, GravityError> {
         let token_contract = input.topics.get(1);
         if let Some(new_token_contract_data) = token_contract {
             let erc20 = EthAddress::from_slice(&new_token_contract_data[12..32])?;
-            let index_start = 3 * 32;
-            let index_end = index_start + 32;
-            let decimals = Uint256::from_bytes_be(&input.data[index_start..index_end]);
-            if decimals > u8::MAX.into() {
-                return Err(GravityError::InvalidEventLogError(
-                    "Decimals overflow, probably incorrect parsing".to_string(),
-                ));
-            }
-            let decimals: u8 = decimals.to_string().parse().unwrap();
-
-            let index_start = 4 * 32;
-            let index_end = index_start + 32;
-            let nonce = Uint256::from_bytes_be(&input.data[index_start..index_end]);
-            if nonce > u64::MAX.into() {
-                return Err(GravityError::InvalidEventLogError(
-                    "Nonce overflow, probably incorrect parsing".to_string(),
-                ));
-            }
-            let event_nonce: u64 = nonce.to_string().parse().unwrap();
-
-            let index_start = 5 * 32;
-            let index_end = index_start + 32;
-            let denom_len = Uint256::from_bytes_be(&input.data[index_start..index_end]);
-            // it's not probable that we have 4+ gigabytes of event data
-            if denom_len > u32::MAX.into() {
-                return Err(GravityError::InvalidEventLogError(
-                    "denom length overflow, probably incorrect parsing".to_string(),
-                ));
-            }
-            let denom_len: usize = denom_len.to_string().parse().unwrap();
-            let index_start = 6 * 32;
-            let index_end = index_start + denom_len;
-            let denom = String::from_utf8(input.data[index_start..index_end].to_vec());
-            trace!("Denom {:?}", denom);
-            if denom.is_err() {
-                return Err(GravityError::InvalidEventLogError(format!(
-                    "{:?} is not valid utf8, probably incorrect parsing",
-                    denom
-                )));
-            }
-            let denom = denom.unwrap();
-
-            // beyond this point we are parsing strings placed
-            // after a variable length string and we will need to compute offsets
-
-            // this trick computes the next 32 byte (256 bit) word index, then multiplies by
-            // 32 to get the bytes offset, this is required since we have dynamic length types but
-            // the next entry always starts on a round 32 byte word.
-            let index_start = ((index_end + 31) / 32) * 32;
-            let index_end = index_start + 32;
-            let erc20_name_len = Uint256::from_bytes_be(&input.data[index_start..index_end]);
-            // it's not probable that we have 4+ gigabytes of event data
-            if erc20_name_len > u32::MAX.into() {
-                return Err(GravityError::InvalidEventLogError(
-                    "ERC20 Name length overflow, probably incorrect parsing".to_string(),
-                ));
-            }
-            let erc20_name_len: usize = erc20_name_len.to_string().parse().unwrap();
-            let index_start = index_end;
-            let index_end = index_start + erc20_name_len;
-            let erc20_name = String::from_utf8(input.data[index_start..index_end].to_vec());
-            if erc20_name.is_err() {
-                return Err(GravityError::InvalidEventLogError(format!(
-                    "{:?} is not valid utf8, probably incorrect parsing",
-                    erc20_name
-                )));
-            }
-            trace!("ERC20 Name {:?}", erc20_name);
-            let erc20_name = erc20_name.unwrap();
-
-            let index_start = ((index_end + 31) / 32) * 32;
-            let index_end = index_start + 32;
-            let symbol_len = Uint256::from_bytes_be(&input.data[index_start..index_end]);
-            // it's not probable that we have 4+ gigabytes of event data
-            if symbol_len > u32::MAX.into() {
-                return Err(GravityError::InvalidEventLogError(
-                    "Symbol length overflow, probably incorrect parsing".to_string(),
-                ));
-            }
-            let symbol_len: usize = symbol_len.to_string().parse().unwrap();
-            let index_start = index_end;
-            let index_end = index_start + symbol_len;
-            let symbol = String::from_utf8(input.data[index_start..index_end].to_vec());
-            trace!("Symbol {:?}", symbol);
-            if symbol.is_err() {
-                return Err(GravityError::InvalidEventLogError(format!(
-                    "{:?} is not valid utf8, probably incorrect parsing",
-                    symbol
-                )));
-            }
-            let symbol = symbol.unwrap();
 
             let block_height = if let Some(bn) = input.block_number.clone() {
                 bn
@@ -578,13 +539,15 @@ impl Erc20DeployedEvent {
                 ));
             };
 
+            let data = Erc20DeployedEvent::decode_data_bytes(&input.data)?;
+
             Ok(Erc20DeployedEvent {
-                cosmos_denom: denom,
-                name: erc20_name,
-                decimals,
-                event_nonce,
+                cosmos_denom: data.cosmos_denom,
+                name: data.name,
+                decimals: data.decimals,
+                event_nonce: data.event_nonce,
                 erc20_address: erc20,
-                symbol,
+                symbol: data.symbol,
                 block_height,
             })
         } else {
@@ -592,6 +555,142 @@ impl Erc20DeployedEvent {
                 "Too few topics".to_string(),
             ))
         }
+    }
+    fn decode_data_bytes(data: &[u8]) -> Result<Erc20DeployedEventData, GravityError> {
+        if data.len() < 6 * 32 {
+            return Err(GravityError::InvalidEventLogError(
+                "too short for Erc20DeployedEventData".to_string(),
+            ));
+        }
+
+        // discard index 2 as it only contains type data
+        let index_start = 3 * 32;
+        let index_end = index_start + 32;
+
+        let decimals = Uint256::from_bytes_be(&data[index_start..index_end]);
+        if decimals > u8::MAX.into() {
+            return Err(GravityError::InvalidEventLogError(
+                "Decimals overflow, probably incorrect parsing".to_string(),
+            ));
+        }
+        let decimals: u8 = decimals.to_string().parse().unwrap();
+
+        let index_start = 4 * 32;
+        let index_end = index_start + 32;
+        let nonce = Uint256::from_bytes_be(&data[index_start..index_end]);
+        if nonce > u64::MAX.into() {
+            return Err(GravityError::InvalidEventLogError(
+                "Nonce overflow, probably incorrect parsing".to_string(),
+            ));
+        }
+        let event_nonce: u64 = nonce.to_string().parse().unwrap();
+
+        let index_start = 5 * 32;
+        let index_end = index_start + 32;
+        let denom_len = Uint256::from_bytes_be(&data[index_start..index_end]);
+        // it's not probable that we have 4+ gigabytes of event data
+        if denom_len > u32::MAX.into() {
+            return Err(GravityError::InvalidEventLogError(
+                "denom length overflow, probably incorrect parsing".to_string(),
+            ));
+        }
+        let denom_len: usize = denom_len.to_string().parse().unwrap();
+        let index_start = 6 * 32;
+        let index_end = index_start + denom_len;
+        let denom = String::from_utf8(data[index_start..index_end].to_vec());
+        trace!("Denom {:?}", denom);
+        if denom.is_err() {
+            return Err(GravityError::InvalidEventLogError(format!(
+                "{:?} is not valid utf8, probably incorrect parsing",
+                denom
+            )));
+        }
+        let denom = denom.unwrap();
+
+        // beyond this point we are parsing strings placed
+        // after a variable length string and we will need to compute offsets
+
+        // this trick computes the next 32 byte (256 bit) word index, then multiplies by
+        // 32 to get the bytes offset, this is required since we have dynamic length types but
+        // the next entry always starts on a round 32 byte word.
+        let index_start = ((index_end + 31) / 32) * 32;
+        let index_end = index_start + 32;
+
+        if data.len() < index_end {
+            return Err(GravityError::InvalidEventLogError(
+                "Erc20DeployedEvent dynamic data too short".to_string(),
+            ));
+        }
+
+        let erc20_name_len = Uint256::from_bytes_be(&data[index_start..index_end]);
+        // it's not probable that we have 4+ gigabytes of event data
+        if erc20_name_len > u32::MAX.into() {
+            return Err(GravityError::InvalidEventLogError(
+                "ERC20 Name length overflow, probably incorrect parsing".to_string(),
+            ));
+        }
+        let erc20_name_len: usize = erc20_name_len.to_string().parse().unwrap();
+        let index_start = index_end;
+        let index_end = index_start + erc20_name_len;
+
+        if data.len() < index_end {
+            return Err(GravityError::InvalidEventLogError(
+                "Erc20DeployedEvent dynamic data too short".to_string(),
+            ));
+        }
+
+        let erc20_name = String::from_utf8(data[index_start..index_end].to_vec());
+        if erc20_name.is_err() {
+            return Err(GravityError::InvalidEventLogError(format!(
+                "{:?} is not valid utf8, probably incorrect parsing",
+                erc20_name
+            )));
+        }
+        trace!("ERC20 Name {:?}", erc20_name);
+        let erc20_name = erc20_name.unwrap();
+
+        let index_start = ((index_end + 31) / 32) * 32;
+        let index_end = index_start + 32;
+
+        if data.len() < index_end {
+            return Err(GravityError::InvalidEventLogError(
+                "Erc20DeployedEvent dynamic data too short".to_string(),
+            ));
+        }
+
+        let symbol_len = Uint256::from_bytes_be(&data[index_start..index_end]);
+        // it's not probable that we have 4+ gigabytes of event data
+        if symbol_len > u32::MAX.into() {
+            return Err(GravityError::InvalidEventLogError(
+                "Symbol length overflow, probably incorrect parsing".to_string(),
+            ));
+        }
+        let symbol_len: usize = symbol_len.to_string().parse().unwrap();
+        let index_start = index_end;
+        let index_end = index_start + symbol_len;
+
+        if data.len() < index_end {
+            return Err(GravityError::InvalidEventLogError(
+                "Erc20DeployedEvent dynamic data too short".to_string(),
+            ));
+        }
+
+        let symbol = String::from_utf8(data[index_start..index_end].to_vec());
+        trace!("Symbol {:?}", symbol);
+        if symbol.is_err() {
+            return Err(GravityError::InvalidEventLogError(format!(
+                "{:?} is not valid utf8, probably incorrect parsing",
+                symbol
+            )));
+        }
+        let symbol = symbol.unwrap();
+        Ok(Erc20DeployedEventData {
+            cosmos_denom: denom,
+            name: erc20_name,
+            symbol,
+            decimals,
+            event_nonce,
+        })
     }
     pub fn from_logs(input: &[Log]) -> Result<Vec<Erc20DeployedEvent>, GravityError> {
         let mut res = Vec::new();
@@ -663,6 +762,28 @@ fn _debug_print_data(input: &[u8]) {
 mod tests {
     use super::*;
     use clarity::utils::hex_str_to_bytes;
+    use rand::distributions::Distribution;
+    use rand::distributions::Uniform;
+    use rand::prelude::ThreadRng;
+    use rand::thread_rng;
+    use rand::Rng;
+    use std::time::Duration;
+    use std::time::Instant;
+
+    /// Five minutes fuzzing by default
+    const FUZZ_TIME: Duration = Duration::from_secs(30);
+
+    fn get_fuzz_bytes(rng: &mut ThreadRng) -> Vec<u8> {
+        let range = Uniform::from(1..200_000);
+        let size: usize = range.sample(rng);
+        let event_bytes: Vec<u8> = (0..size)
+            .map(|_| {
+                let val: u8 = rng.gen();
+                val
+            })
+            .collect();
+        event_bytes
+    }
 
     #[test]
     fn test_valset_decode() {
@@ -728,5 +849,50 @@ mod tests {
         };
         let res = SendToCosmosEvent::decode_data_bytes(&event_bytes).unwrap();
         assert_eq!(correct, res);
+    }
+
+    #[test]
+    fn fuzz_send_to_cosmos_decode() {
+        let start = Instant::now();
+        let mut rng = thread_rng();
+        while Instant::now() - start < FUZZ_TIME {
+            let event_bytes = get_fuzz_bytes(&mut rng);
+
+            let res = SendToCosmosEvent::decode_data_bytes(&event_bytes);
+            match res {
+                Ok(_) => println!("Got valid output, this should happen very rarely!"),
+                Err(_e) => {}
+            }
+        }
+    }
+
+    #[test]
+    fn fuzz_valset_updated_event_decode() {
+        let start = Instant::now();
+        let mut rng = thread_rng();
+        while Instant::now() - start < FUZZ_TIME {
+            let event_bytes = get_fuzz_bytes(&mut rng);
+
+            let res = ValsetUpdatedEvent::decode_data_bytes(&event_bytes);
+            match res {
+                Ok(_) => println!("Got valid output, this should happen very rarely!"),
+                Err(_e) => {}
+            }
+        }
+    }
+
+    #[test]
+    fn fuzz_erc20_deployed_event_decode() {
+        let start = Instant::now();
+        let mut rng = thread_rng();
+        while Instant::now() - start < FUZZ_TIME {
+            let event_bytes = get_fuzz_bytes(&mut rng);
+
+            let res = Erc20DeployedEvent::decode_data_bytes(&event_bytes);
+            match res {
+                Ok(_) => println!("Got valid output, this should happen very rarely!"),
+                Err(_e) => {}
+            }
+        }
     }
 }
