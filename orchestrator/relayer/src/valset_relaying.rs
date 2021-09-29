@@ -58,10 +58,14 @@ async fn find_latest_valid_valset(
                 // we have here can be submitted to the bridge in it's current state
                 let res = current_valset.order_sigs(&hash, &confirms);
                 if res.is_ok() {
-                    latest_confirmed = Some(confirms);
-                    latest_valset = Some(valset);
-                    // once we have the latest validator set we can submit exit
-                    break;
+                    if !valset.enough_power() {
+                        warn!("Validator set {} can not be executed, power is too low to pass following measures. How was this generated?", valset.nonce);
+                    } else {
+                        latest_confirmed = Some(confirms);
+                        latest_valset = Some(valset);
+                        // once we have the latest validator set we can submit exit
+                        break;
+                    }
                 } else if let Err(e) = res {
                     last_error = Some(e);
                 }
@@ -151,7 +155,6 @@ async fn should_relay_valset(
     let sqrt_price_limit_x96_uint160 = 0u8.into();
 
     if !should_relay {
-        //
         let value = web3
             .get_uniswap_price(
                 pub_key,

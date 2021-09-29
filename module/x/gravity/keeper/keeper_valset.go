@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"math"
 	"sort"
 	"strconv"
 
@@ -252,9 +251,9 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 			totalPower += p
 		}
 	}
-	// normalize power values
+	// normalize power values to the maximum bridge power which is 2^32
 	for i := range bridgeValidators {
-		bridgeValidators[i].Power = sdk.NewUint(bridgeValidators[i].Power).MulUint64(math.MaxUint32).QuoUint64(totalPower).Uint64()
+		bridgeValidators[i].Power = sdk.NewUint(bridgeValidators[i].Power).MulUint64(4294967296).QuoUint64(totalPower).Uint64()
 	}
 
 	// get the reward from the params store

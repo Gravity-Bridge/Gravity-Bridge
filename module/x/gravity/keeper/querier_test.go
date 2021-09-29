@@ -228,19 +228,19 @@ func TestLastValsetRequests(t *testing.T) {
   "reward_token": "0x0000000000000000000000000000000000000000",
   "members": [
     {
-      "power": "1073741823",
+      "power": "1073741824",
       "ethereum_address": "0x0101010101010101010101010101010101010101"
     },
     {
-      "power": "1073741823",
+      "power": "1073741824",
       "ethereum_address": "0x0202020202020202020202020202020202020202"
     },
     {
-      "power": "1073741823",
+      "power": "1073741824",
       "ethereum_address": "0x0303030303030303030303030303030303030303"
     },
     {
-      "power": "1073741823",
+      "power": "1073741824",
       "ethereum_address": "0x0404040404040404040404040404040404040404"
     }
   ]
@@ -272,11 +272,11 @@ func TestLastValsetRequests(t *testing.T) {
   "reward_token": "0x0000000000000000000000000000000000000000",
   "members": [
     {
-      "power": "2147483647",
+      "power": "2147483648",
       "ethereum_address": "0x0101010101010101010101010101010101010101"
     },
     {
-      "power": "2147483647",
+      "power": "2147483648",
       "ethereum_address": "0x0202020202020202020202020202020202020202"
     }
   ]
@@ -385,19 +385,19 @@ func TestPendingValsetRequests(t *testing.T) {
                                     "nonce": "4",
                                     "members": [
                                       {
-                                        "power": "1073741823",
+                                        "power": "1073741824",
                                         "ethereum_address": "0x0101010101010101010101010101010101010101"
                                       },
                                       {
-                                        "power": "1073741823",
+                                        "power": "1073741824",
                                         "ethereum_address": "0x0202020202020202020202020202020202020202"
                                       },
                                       {
-                                        "power": "1073741823",
+                                        "power": "1073741824",
                                         "ethereum_address": "0x0303030303030303030303030303030303030303"
                                       },
                                       {
-                                        "power": "1073741823",
+                                        "power": "1073741824",
                                         "ethereum_address": "0x0404040404040404040404040404040404040404"
                                       }
                                     ],
@@ -429,11 +429,11 @@ func TestPendingValsetRequests(t *testing.T) {
                                     "nonce": "2",
                                     "members": [
                                       {
-                                        "power": "2147483647",
+                                        "power": "2147483648",
                                         "ethereum_address": "0x0101010101010101010101010101010101010101"
                                       },
                                       {
-                                        "power": "2147483647",
+                                        "power": "2147483648",
                                         "ethereum_address": "0x0202020202020202020202020202020202020202"
                                       }
                                     ],
@@ -445,7 +445,7 @@ func TestPendingValsetRequests(t *testing.T) {
                                     "nonce": "1",
                                     "members": [
                                       {
-                                        "power": "4294967295",
+                                        "power": "4294967296",
                                         "ethereum_address": "0x0101010101010101010101010101010101010101"
                                       }
                                     ],
@@ -898,7 +898,7 @@ func TestQueryCurrentValset(t *testing.T) {
 
 	currentValset := input.GravityKeeper.GetCurrentValset(ctx)
 
-	bridgeVal := types.BridgeValidator{EthereumAddress: ethAddress, Power: 4294967295}
+	bridgeVal := types.BridgeValidator{EthereumAddress: ethAddress, Power: 4294967296}
 	internalBridgeVal, err := bridgeVal.ToInternal()
 	require.NoError(t, err)
 	internalBridgeVals := types.InternalBridgeValidators([]*types.InternalBridgeValidator{internalBridgeVal})

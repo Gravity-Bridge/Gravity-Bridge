@@ -60,7 +60,7 @@ contract Gravity is ReentrancyGuard {
 	using SafeERC20 for IERC20;
 
 	// The number of 'votes' required to execute a valset
-	// update or batch execution, set to 66% of 2^32
+	// update or batch execution, set to 2/3 of 2^32
 	uint256 constant constant_powerThreshold = 2863311530;
 
 	// These are updated often

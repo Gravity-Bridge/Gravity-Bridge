@@ -13,12 +13,16 @@ use std::{
     fmt,
 };
 
-/// The total power in the Gravity bridge is normalized to u32 max every
-/// time a validator set is created. This value of up to u32 max is then
-/// stored in a u64 to prevent overflow during computation.
-pub const TOTAL_GRAVITY_POWER: u64 = u32::MAX as u64;
+/// The total power in the Gravity bridge is normalized to 2^32 every
+/// time a validator set is created. So this is the total power
+pub const TOTAL_GRAVITY_POWER: u64 = 2u64.pow(32) as u64;
+/// The total power in the Gravity bridge is normalized to 2^32 every
+/// time a validator set is created. This is a mirror of constant_powerThreshold
+/// in Gravity.sol
+pub const GRAVITY_POWER_TO_PASS: u64 = 2863311530;
 
 /// takes in an amount of power in the gravity bridge, returns a percentage of total
+/// use this for printing values to users only, for accurate calculations use GRAVITY_POWER_TO_PASS
 fn gravity_power_to_percent(input: u64) -> f32 {
     (input as f32 / TOTAL_GRAVITY_POWER as f32) * 100f32
 }
@@ -107,7 +111,27 @@ impl Valset {
         (addresses, powers)
     }
 
-    pub fn get_power(&self, address: EthAddress) -> Result<u64, CosmosGrpcError> {
+    /// If this is false the validator set is invalid, as it does not
+    /// have enough validators with enough voting power to ever pass
+    /// anything on the bridge
+    pub fn enough_power(&self) -> bool {
+        self.get_total_power() > GRAVITY_POWER_TO_PASS
+    }
+
+    /// Gets the total voting power in this validator set
+    /// must be greater than GRAVITY_POWER_TO_PASS to be valid
+    pub fn get_total_power(&self) -> u64 {
+        let mut total = 0;
+        for val in self.members.iter() {
+            if val.eth_address.is_some() {
+                total += val.power;
+            }
+        }
+        total
+    }
+
+    /// Gets the Gravity bridge voting power of an individual validator
+    pub fn get_bridge_validator_power(&self, address: EthAddress) -> Result<u64, CosmosGrpcError> {
         for val in self.members.iter() {
             if val.eth_address == Some(address) {
                 return Ok(val.power);
@@ -210,7 +234,7 @@ impl Valset {
         // now that we have collected the signatures we can determine if the measure has the votes to pass
         // and error early if it does not, otherwise the user will pay fees for a transaction that will
         // just throw
-        if gravity_power_to_percent(status.power_of_good_sigs) < 66f32 {
+        if status.power_of_good_sigs <= GRAVITY_POWER_TO_PASS {
             let message = format!(
                 "
                 has {}/{} or {:.2}% power voting! Can not execute on Ethereum!

@@ -54,11 +54,11 @@ func TestCurrentValsetNormalization(t *testing.T) {
 	}{
 		"one": {
 			srcPowers: []uint64{100},
-			expPowers: []uint64{4294967295},
+			expPowers: []uint64{4294967296},
 		},
 		"two": {
-			srcPowers: []uint64{100, 1},
-			expPowers: []uint64{4252442866, 42524428},
+			srcPowers: []uint64{99, 1},
+			expPowers: []uint64{4252017623, 42949672},
 		},
 	}
 	input := CreateTestEnv(t)
