@@ -43,7 +43,7 @@ pub async fn evidence_based_slashing(
         nonce: 500,
         members: vec![ValsetMember {
             power: 1337,
-            eth_address: Some(eth_addr),
+            eth_address: eth_addr,
         }],
         reward_amount: 0u8.into(),
         reward_token: None,

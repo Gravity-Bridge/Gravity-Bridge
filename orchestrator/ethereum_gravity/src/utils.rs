@@ -215,7 +215,7 @@ impl GasCost {
 ///     address rewardToken;
 // }
 pub fn encode_valset_struct(valset: &Valset) -> Token {
-    let (addresses, powers) = valset.filter_empty_addresses();
+    let (addresses, powers) = valset.to_arrays();
     let nonce = valset.nonce;
     let reward_amount = valset.reward_amount.clone();
     // the zero address represents 'no reward' in this case we have replaced it with a 'none'

@@ -128,7 +128,7 @@ impl ValsetUpdatedEvent {
                     "Ethereum Address parsing error, probably incorrect parsing".to_string(),
                 ));
             }
-            let eth_address = Some(eth_address.unwrap());
+            let eth_address = eth_address.unwrap();
             if power > u64::MAX.into() {
                 return Err(GravityError::InvalidEventLogError(
                     "Power greater than u64::MAX, probably incorrect parsing".to_string(),
@@ -687,27 +687,22 @@ mod tests {
             reward_token: None,
             members: vec![
                 ValsetMember {
-                    eth_address: Some(
-                        "0x1bb537Aa56fFc7D608793BAFFC6c9C7De3c4F270"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0x1bb537Aa56fFc7D608793BAFFC6c9C7De3c4F270"
+                        .parse()
+                        .unwrap(),
                     power: 1431655765,
                 },
                 ValsetMember {
-                    eth_address: Some(
-                        "0x906313229CFB30959b39A5946099e4526625CBD4"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0x906313229CFB30959b39A5946099e4526625CBD4"
+                        .parse()
+                        .unwrap(),
                     power: 1431655765,
                 },
                 ValsetMember {
-                    eth_address: Some(
-                        "0x9F49C7617b72b5784F482Bd728d26EbA354a0B39"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0x9F49C7617b72b5784F482Bd728d26EbA354a0B39"
+                        .parse()
+                        .unwrap(),
+
                     power: 1431655765,
                 },
             ],

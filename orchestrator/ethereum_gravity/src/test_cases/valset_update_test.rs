@@ -39,7 +39,7 @@ mod tests {
         for (key, power) in keys.iter().zip(powers.iter()) {
             members0.push(ValsetMember {
                 power: *power,
-                eth_address: Some(key.to_public_key().unwrap()),
+                eth_address: key.to_public_key().unwrap(),
             });
         }
         let valset0 = Valset {
@@ -55,7 +55,7 @@ mod tests {
         for (key, power) in keys.iter().zip(powers) {
             members1.push(ValsetMember {
                 power,
-                eth_address: Some(key.to_public_key().unwrap()),
+                eth_address: key.to_public_key().unwrap(),
             });
         }
         let valset1 = Valset {

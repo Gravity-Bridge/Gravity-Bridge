@@ -281,7 +281,7 @@ mod tests {
             reward_amount: 0u8.into(),
             nonce: 0,
             members: vec![ValsetMember {
-                eth_address: Some(ethereum_signer),
+                eth_address: ethereum_signer,
                 power: 4294967295,
             }],
         };

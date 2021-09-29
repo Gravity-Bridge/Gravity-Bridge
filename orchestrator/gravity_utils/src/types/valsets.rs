@@ -47,8 +47,6 @@ pub fn get_hashmap<T: Confirm + Clone>(input: &[T]) -> HashMap<EthAddress, T> {
 struct SignatureStatus {
     ordered_signatures: Vec<GravitySignature>,
     power_of_good_sigs: u64,
-    power_of_unset_keys: u64,
-    number_of_unset_key_validators: usize,
     power_of_nonvoters: u64,
     number_of_nonvoters: usize,
     num_validators: usize,
@@ -90,27 +88,6 @@ pub struct Valset {
 }
 
 impl Valset {
-    /// Takes an array of Option<EthAddress> and converts to EthAddress and replaces with zeros
-    /// when none is found, Zeros are interpreted by the contract as 'no signature provided' and
-    /// signature checks can pass with up to 33% of all voting power presented as zeroed addresses
-    pub fn filter_empty_addresses(&self) -> (Vec<EthAddress>, Vec<u64>) {
-        let mut addresses = Vec::new();
-        let mut powers = Vec::new();
-        for val in self.members.iter() {
-            match val.eth_address {
-                Some(a) => {
-                    addresses.push(a);
-                    powers.push(val.power);
-                }
-                None => {
-                    addresses.push(EthAddress::default());
-                    powers.push(val.power);
-                }
-            }
-        }
-        (addresses, powers)
-    }
-
     /// If this is false the validator set is invalid, as it does not
     /// have enough validators with enough voting power to ever pass
     /// anything on the bridge
@@ -123,9 +100,7 @@ impl Valset {
     pub fn get_total_power(&self) -> u64 {
         let mut total = 0;
         for val in self.members.iter() {
-            if val.eth_address.is_some() {
-                total += val.power;
-            }
+            total += val.power;
         }
         total
     }
@@ -133,13 +108,11 @@ impl Valset {
     /// Gets the Gravity bridge voting power of an individual validator
     pub fn get_bridge_validator_power(&self, address: EthAddress) -> Result<u64, CosmosGrpcError> {
         for val in self.members.iter() {
-            if val.eth_address == Some(address) {
+            if val.eth_address == address {
                 return Ok(val.power);
             }
         }
-        Err(CosmosGrpcError::BadInput(
-            "All Eth Addresses must be set".to_string(),
-        ))
+        Err(CosmosGrpcError::BadInput("Not found!".to_string()))
     }
 
     /// combines the provided signatures with the valset ensuring that ordering and signature data is correct
@@ -161,55 +134,41 @@ impl Valset {
         let mut out = Vec::new();
         let signatures_hashmap: HashMap<EthAddress, T> = get_hashmap(signatures);
         let mut power_of_good_sigs = 0;
-        let mut power_of_unset_keys = 0;
-        let mut number_of_unset_key_validators = 0;
         let mut power_of_nonvoters = 0;
         let mut number_of_nonvoters = 0;
         for member in self.members.iter() {
-            if let Some(eth_address) = member.eth_address {
-                if let Some(sig) = signatures_hashmap.get(&eth_address) {
-                    assert_eq!(sig.get_eth_address(), eth_address);
-                    assert!(sig.get_signature().is_valid());
-                    let recover_key = sig.get_signature().recover(signed_message).unwrap();
-                    if recover_key == sig.get_eth_address() {
-                        out.push(GravitySignature {
-                            power: member.power,
-                            eth_address: sig.get_eth_address(),
-                            v: sig.get_signature().v.clone(),
-                            r: sig.get_signature().r.clone(),
-                            s: sig.get_signature().s.clone(),
-                        });
-                        power_of_good_sigs += member.power;
-                    } else {
-                        // the go code verifies signatures, if we ever see this it means
-                        // that something has gone horribly wrong with our parsing or ordering
-                        // in the orchestrator, therefore we panic.
-                        panic!(
-                            "Found invalid signature for {} how did this get here?",
-                            sig.get_eth_address()
-                        )
-                    }
-                } else {
+            if let Some(sig) = signatures_hashmap.get(&member.eth_address) {
+                assert_eq!(sig.get_eth_address(), member.eth_address);
+                assert!(sig.get_signature().is_valid());
+                let recover_key = sig.get_signature().recover(signed_message).unwrap();
+                if recover_key == sig.get_eth_address() {
                     out.push(GravitySignature {
                         power: member.power,
-                        eth_address,
-                        v: 0u8.into(),
-                        r: 0u8.into(),
-                        s: 0u8.into(),
+                        eth_address: sig.get_eth_address(),
+                        v: sig.get_signature().v.clone(),
+                        r: sig.get_signature().r.clone(),
+                        s: sig.get_signature().s.clone(),
                     });
-                    power_of_nonvoters += member.power;
-                    number_of_nonvoters += 1;
+                    power_of_good_sigs += member.power;
+                } else {
+                    // the go code verifies signatures, if we ever see this it means
+                    // that something has gone horribly wrong with our parsing or ordering
+                    // in the orchestrator, therefore we panic.
+                    panic!(
+                        "Found invalid signature for {} how did this get here?",
+                        sig.get_eth_address()
+                    )
                 }
             } else {
                 out.push(GravitySignature {
                     power: member.power,
-                    eth_address: EthAddress::default(),
+                    eth_address: member.eth_address,
                     v: 0u8.into(),
                     r: 0u8.into(),
                     s: 0u8.into(),
                 });
-                power_of_unset_keys += member.power;
-                number_of_unset_key_validators += 1;
+                power_of_nonvoters += member.power;
+                number_of_nonvoters += 1;
             }
         }
 
@@ -218,10 +177,8 @@ impl Valset {
             ordered_signatures: out,
             power_of_good_sigs,
             power_of_nonvoters,
-            power_of_unset_keys,
             num_validators,
             number_of_nonvoters,
-            number_of_unset_key_validators,
         })
     }
 
@@ -239,16 +196,10 @@ impl Valset {
                 "
                 has {}/{} or {:.2}% power voting! Can not execute on Ethereum!
                 {}/{} validators have unset Ethereum keys representing {}/{} or {:.2}% of the power required
-                {}/{} validators have Ethereum keys set but have not voted representing {}/{} or {:.2}% of the power required
                 This valset probably just needs to accumulate signatures for a moment.",
                 status.power_of_good_sigs,
                 TOTAL_GRAVITY_POWER,
                 gravity_power_to_percent(status.power_of_good_sigs),
-                status.number_of_unset_key_validators,
-                status.num_validators,
-                status.power_of_unset_keys,
-                TOTAL_GRAVITY_POWER,
-                gravity_power_to_percent(status.power_of_unset_keys),
                 status.number_of_nonvoters,
                 status.num_validators,
                 status.power_of_nonvoters,
@@ -265,11 +216,7 @@ impl Valset {
     pub fn to_hashmap(&self) -> HashMap<EthAddress, u64> {
         let mut res = HashMap::new();
         for item in self.members.iter() {
-            if let Some(address) = item.eth_address {
-                res.insert(address, item.power);
-            } else {
-                error!("Validator in active set without Eth Address! This must be corrected immediately!")
-            }
+            res.insert(item.eth_address, item.power);
         }
         res
     }
@@ -278,13 +225,19 @@ impl Valset {
     pub fn to_hashset(&self) -> HashSet<EthAddress> {
         let mut res = HashSet::new();
         for item in self.members.iter() {
-            if let Some(address) = item.eth_address {
-                res.insert(address);
-            } else {
-                error!("Validator in active set without Eth Address! This must be corrected immediately!")
-            }
+            res.insert(item.eth_address);
         }
         res
+    }
+
+    pub fn to_arrays(&self) -> (Vec<EthAddress>, Vec<u64>) {
+        let mut addresses = Vec::new();
+        let mut powers = Vec::new();
+        for i in self.members.iter() {
+            addresses.push(i.eth_address);
+            powers.push(i.power)
+        }
+        (addresses, powers)
     }
 
     /// This function takes the current valset and compares it to a provided one
@@ -362,7 +315,7 @@ impl From<&gravity_proto::gravity::Valset> for Valset {
 pub struct ValsetMember {
     // ord sorts on the first member first, so this produces the correct sorting
     pub power: u64,
-    pub eth_address: Option<EthAddress>,
+    pub eth_address: EthAddress,
 }
 
 impl Ord for ValsetMember {
@@ -401,18 +354,15 @@ impl ValsetMember {
 
 impl fmt::Display for ValsetMember {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.eth_address {
-            Some(a) => write!(f, "Address: {} Power: {}", a, self.power),
-            None => write!(f, "Address: None Power: {}", self.power),
-        }
+        write!(f, "Address: {} Power: {}", self.eth_address, self.power)
     }
 }
 
 impl From<gravity_proto::gravity::BridgeValidator> for ValsetMember {
     fn from(input: gravity_proto::gravity::BridgeValidator) -> Self {
         let eth_address = match input.ethereum_address.parse() {
-            Ok(e) => Some(e),
-            Err(_) => None,
+            Ok(e) => e,
+            Err(_) => panic!("Validator set with empty address!"),
         };
         ValsetMember {
             power: input.power,
@@ -424,8 +374,8 @@ impl From<gravity_proto::gravity::BridgeValidator> for ValsetMember {
 impl From<&gravity_proto::gravity::BridgeValidator> for ValsetMember {
     fn from(input: &gravity_proto::gravity::BridgeValidator) -> Self {
         let eth_address = match input.ethereum_address.parse() {
-            Ok(e) => Some(e),
-            Err(_) => None,
+            Ok(e) => e,
+            Err(_) => panic!("Validator set with empty address!"),
         };
         ValsetMember {
             power: input.power,
@@ -436,10 +386,7 @@ impl From<&gravity_proto::gravity::BridgeValidator> for ValsetMember {
 
 impl From<&ValsetMember> for gravity_proto::gravity::BridgeValidator {
     fn from(input: &ValsetMember) -> gravity_proto::gravity::BridgeValidator {
-        let ethereum_address = match input.eth_address {
-            Some(e) => e.to_string(),
-            None => String::new(),
-        };
+        let ethereum_address = input.eth_address.to_string();
         gravity_proto::gravity::BridgeValidator {
             power: input.power,
             ethereum_address,

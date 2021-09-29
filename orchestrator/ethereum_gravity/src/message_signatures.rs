@@ -9,7 +9,7 @@ use gravity_utils::types::{LogicCall, TransactionBatch, Valset};
 /// Note: This is the message, you need to run Keccak256::digest() in order to get the 32byte
 /// digest that is normally signed or may be used as a 'hash of the message'
 pub fn encode_valset_confirm(gravity_id: String, valset: Valset) -> Vec<u8> {
-    let (eth_addresses, powers) = valset.filter_empty_addresses();
+    let (eth_addresses, powers) = valset.to_arrays();
     let reward_token = if let Some(v) = valset.reward_token {
         v
     } else {
@@ -123,27 +123,24 @@ mod test {
             reward_token: None,
             members: vec![
                 ValsetMember {
-                    eth_address: Some(
-                        "0xE5904695748fe4A84b40b3fc79De2277660BD1D3"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0xE5904695748fe4A84b40b3fc79De2277660BD1D3"
+                        .parse()
+                        .unwrap(),
+
                     power: 3333,
                 },
                 ValsetMember {
-                    eth_address: Some(
-                        "0xc783df8a850f42e7F7e57013759C285caa701eB6"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0xc783df8a850f42e7F7e57013759C285caa701eB6"
+                        .parse()
+                        .unwrap(),
+
                     power: 3333,
                 },
                 ValsetMember {
-                    eth_address: Some(
-                        "0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4"
+                        .parse()
+                        .unwrap(),
+
                     power: 3333,
                 },
             ],
@@ -162,27 +159,24 @@ mod test {
             reward_token: None,
             members: vec![
                 ValsetMember {
-                    eth_address: Some(
-                        "0xc783df8a850f42e7F7e57013759C285caa701eB6"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0xc783df8a850f42e7F7e57013759C285caa701eB6"
+                        .parse()
+                        .unwrap(),
+
                     power: 3333,
                 },
                 ValsetMember {
-                    eth_address: Some(
-                        "0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4"
+                        .parse()
+                        .unwrap(),
+
                     power: 3333,
                 },
                 ValsetMember {
-                    eth_address: Some(
-                        "0xE5904695748fe4A84b40b3fc79De2277660BD1D3"
-                            .parse()
-                            .unwrap(),
-                    ),
+                    eth_address: "0xE5904695748fe4A84b40b3fc79De2277660BD1D3"
+                        .parse()
+                        .unwrap(),
+
                     power: 3333,
                 },
             ],
