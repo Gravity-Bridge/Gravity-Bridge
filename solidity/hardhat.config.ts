@@ -37,6 +37,10 @@ module.exports = {
   },
   networks: {
     hardhat: {
+      mining: {
+        auto: false,
+        interval: [3000, 6000]
+      },
       timeout: 2000000,
       accounts: [
         {

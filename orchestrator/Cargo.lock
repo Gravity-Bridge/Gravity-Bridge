@@ -3486,9 +3486,9 @@ checksum = "0237232789cf037d5480773fe568aac745bfe2afbc11a863e97901780a6b47cc"
 
 [[package]]
 name = "web30"
-version = "0.16.2"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb1a9bfbedeaa00ed0e239ba8f2061e8b41031156b50c0363281c7b3f135141b"
+checksum = "976d9b2f052305462a5ae2452a09b95ab40b3d4bf8bbefd54fcf866070975ef6"
 dependencies = [
  "awc 3.0.0-beta.8",
  "clarity",

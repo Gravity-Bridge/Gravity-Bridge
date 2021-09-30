@@ -14,6 +14,9 @@ export async function deployContracts(
   powers: number[],
   opts?: DeployContractsOptions
 ) {
+  // enable automining for these tests
+  await ethers.provider.send("evm_setAutomine", [true]);
+
   const TestERC20 = await ethers.getContractFactory("TestERC20A");
   const testERC20 = (await TestERC20.deploy()) as TestERC20A;
 

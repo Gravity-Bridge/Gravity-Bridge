@@ -46,6 +46,7 @@ async fn test_batches(
     // Start Orchestrators
     let default_config = GravityBridgeToolsConfig::default();
     start_orchestrators(keys.clone(), gravity_address, false, default_config).await;
+
     test_good_batch(
         web30,
         grpc_client,
@@ -76,9 +77,16 @@ async fn setup_batch_test(
     grpc_client: &mut GravityQueryClient<Channel>,
 ) -> (Coin, Uint256, CosmosPrivateKey, Address, EthAddress) {
     let mut grpc_client = grpc_client.clone();
+    info!("Starting batch test!");
+
     // Acquire 10,000 WETH
     let weth_acquired = web30
-        .wrap_eth(one_eth() * 10000u16.into(), *MINER_PRIVATE_KEY, None)
+        .wrap_eth(
+            one_eth() * 10000u16.into(),
+            *MINER_PRIVATE_KEY,
+            None,
+            Some(TOTAL_TIMEOUT),
+        )
         .await;
     assert!(
         !weth_acquired.is_err(),
@@ -98,13 +106,16 @@ async fn setup_batch_test(
             None,
             None,
             None,
+            Some(TOTAL_TIMEOUT),
         )
         .await;
+    info!("Swap result is {:?}", token_acquired);
     assert!(
         !token_acquired.is_err(),
         "Unable to give the miner 1000 WETH worth of {}",
         erc20_contract
     );
+
     // Generate an address to send funds
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
