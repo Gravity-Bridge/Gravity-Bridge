@@ -18,7 +18,7 @@ set +e
 docker rm -f gravity_all_up_test_instance
 set -e
 
-NODES=3
+NODES=4
 set +u
 TEST_TYPE=$1
 ALCHEMY_ID=$2
