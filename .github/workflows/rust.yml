@@ -15,6 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: orchestrator/
       - name: Build Orchestrator
         run: cd orchestrator && cargo check --all --verbose
   test:
@@ -23,6 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: orchestrator/
       - name: Run Orchestrator tests
         run: cd orchestrator && cargo test --all --release --verbose
   rustfmt:
@@ -45,5 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: orchestrator/
       - name: Cross compile tests
         run: cargo install cross && cd orchestrator && cross test --all --release --target aarch64-unknown-linux-gnu
