@@ -140,10 +140,18 @@ pub async fn check_for_events(
             )
         }
         if !erc20_deploys.is_empty() {
-            info!(
+            let v = erc20_deploys[0].clone();
+            if v.cosmos_denom.len() < 1000 && v.name.len() < 1000 && v.symbol.len() < 1000 {
+                info!(
                 "Oracle observed ERC20 deployment with denom {} erc20 name {} and symbol {} and event nonce {}",
                 erc20_deploys[0].cosmos_denom, erc20_deploys[0].name, erc20_deploys[0].symbol, erc20_deploys[0].event_nonce,
-            )
+                );
+            } else {
+                info!(
+                    "Oracle observed ERC20 deployment with  event nonce {}",
+                    erc20_deploys[0].event_nonce,
+                );
+            }
         }
         if !logic_calls.is_empty() {
             info!(

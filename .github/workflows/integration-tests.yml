@@ -109,12 +109,12 @@ jobs:
         continue-on-error: true
       - name: Run the transaction cancel test
         run: tests/all-up-test.sh TXCANCEL
-  invalid-deposit:
+  invalid-events:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
       - uses: satackey/action-docker-layer-caching@v0.0.11
         continue-on-error: true
-      - name: Submit an invalid deposit
-        run: tests/all-up-test.sh INVALID_DEPOSIT
+      - name: Submit invalid events
+        run: tests/all-up-test.sh INVALID_EVENTS

@@ -600,12 +600,30 @@ impl Erc20DeployedEvent {
         let denom = String::from_utf8(data[index_start..index_end].to_vec());
         trace!("Denom {:?}", denom);
         if denom.is_err() {
-            return Err(GravityError::InvalidEventLogError(format!(
-                "{:?} is not valid utf8, probably incorrect parsing",
-                denom
-            )));
+            warn!("Deployed ERC20 has invalid utf8, will not be adopted");
+            // we must return a dummy event in order to finish processing
+            // otherwise we halt the oracle
+            return Ok(Erc20DeployedEventData {
+                cosmos_denom: String::new(),
+                name: String::new(),
+                symbol: String::new(),
+                decimals: 0,
+                event_nonce,
+            });
         }
         let denom = denom.unwrap();
+        if denom.len() > ONE_MEGABYTE {
+            warn!("Deployed ERC20 is too large! will not be adopted");
+            // we must return a dummy event in order to finish processing
+            // otherwise we halt the oracle
+            return Ok(Erc20DeployedEventData {
+                cosmos_denom: String::new(),
+                name: String::new(),
+                symbol: String::new(),
+                decimals: 0,
+                event_nonce,
+            });
+        }
 
         // beyond this point we are parsing strings placed
         // after a variable length string and we will need to compute offsets
@@ -641,13 +659,31 @@ impl Erc20DeployedEvent {
 
         let erc20_name = String::from_utf8(data[index_start..index_end].to_vec());
         if erc20_name.is_err() {
-            return Err(GravityError::InvalidEventLogError(format!(
-                "{:?} is not valid utf8, probably incorrect parsing",
-                erc20_name
-            )));
+            warn!("Deployed ERC20 has invalid utf8, will not be adopted");
+            // we must return a dummy event in order to finish processing
+            // otherwise we halt the oracle
+            return Ok(Erc20DeployedEventData {
+                cosmos_denom: String::new(),
+                name: String::new(),
+                symbol: String::new(),
+                decimals: 0,
+                event_nonce,
+            });
         }
         trace!("ERC20 Name {:?}", erc20_name);
         let erc20_name = erc20_name.unwrap();
+        if erc20_name.len() > ONE_MEGABYTE {
+            warn!("Deployed ERC20 is too large! will not be adopted");
+            // we must return a dummy event in order to finish processing
+            // otherwise we halt the oracle
+            return Ok(Erc20DeployedEventData {
+                cosmos_denom: String::new(),
+                name: String::new(),
+                symbol: String::new(),
+                decimals: 0,
+                event_nonce,
+            });
+        }
 
         let index_start = ((index_end + 31) / 32) * 32;
         let index_end = index_start + 32;
@@ -678,12 +714,31 @@ impl Erc20DeployedEvent {
         let symbol = String::from_utf8(data[index_start..index_end].to_vec());
         trace!("Symbol {:?}", symbol);
         if symbol.is_err() {
-            return Err(GravityError::InvalidEventLogError(format!(
-                "{:?} is not valid utf8, probably incorrect parsing",
-                symbol
-            )));
+            warn!("Deployed ERC20 has invalid utf8, will not be adopted");
+            // we must return a dummy event in order to finish processing
+            // otherwise we halt the oracle
+            return Ok(Erc20DeployedEventData {
+                cosmos_denom: String::new(),
+                name: String::new(),
+                symbol: String::new(),
+                decimals: 0,
+                event_nonce,
+            });
         }
         let symbol = symbol.unwrap();
+        if symbol.len() > ONE_MEGABYTE {
+            warn!("Deployed ERC20 is too large! will not be adopted");
+            // we must return a dummy event in order to finish processing
+            // otherwise we halt the oracle
+            return Ok(Erc20DeployedEventData {
+                cosmos_denom: String::new(),
+                name: String::new(),
+                symbol: String::new(),
+                decimals: 0,
+                event_nonce,
+            });
+        }
+
         Ok(Erc20DeployedEventData {
             cosmos_denom: denom,
             name: erc20_name,

@@ -35,7 +35,7 @@ pub async fn valset_rewards_test(
     let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,
-        keys.clone(),
+        Some(keys.clone()),
         &mut grpc_client,
         validator_out,
         token_to_send_to_eth.clone(),

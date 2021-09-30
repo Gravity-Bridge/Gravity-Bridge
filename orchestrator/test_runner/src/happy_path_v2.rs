@@ -4,6 +4,8 @@ use crate::utils::create_default_test_config;
 use crate::utils::get_user_key;
 use crate::utils::send_one_eth;
 use crate::utils::start_orchestrators;
+use crate::MINER_ADDRESS;
+use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
 use crate::{get_fee, utils::ValidatorKeys};
 use clarity::Address as EthAddress;
@@ -21,6 +23,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::types::SendTxOption;
 
 pub async fn happy_path_test_v2(
     web30: &Web3,
@@ -37,7 +40,7 @@ pub async fn happy_path_test_v2(
     let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,
-        keys.clone(),
+        Some(keys.clone()),
         &mut grpc_client,
         validator_out,
         token_to_send_to_eth.clone(),
@@ -152,27 +155,19 @@ pub async fn happy_path_test_v2(
 pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
     gravity_address: EthAddress,
     web30: &Web3,
-    keys: Vec<ValidatorKeys>,
+    keys: Option<Vec<ValidatorKeys>>,
     grpc_client: &mut GravityQueryClient<Channel>,
     validator_out: bool,
     token_to_send_to_eth: String,
     token_to_send_to_eth_display_name: String,
 ) -> EthAddress {
-    get_valset_nonce(
-        gravity_address,
-        keys[0].eth_key.to_public_key().unwrap(),
-        web30,
-    )
-    .await
-    .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+    get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
+        .await
+        .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
-    let starting_event_nonce = get_event_nonce(
-        gravity_address,
-        keys[0].eth_key.to_public_key().unwrap(),
-        web30,
-    )
-    .await
-    .unwrap();
+    let starting_event_nonce = get_event_nonce(gravity_address, *MINER_ADDRESS, web30)
+        .await
+        .unwrap();
 
     deploy_erc20(
         token_to_send_to_eth.clone(),
@@ -182,18 +177,17 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,
         Some(TOTAL_TIMEOUT),
-        keys[0].eth_key,
-        vec![],
+        *MINER_PRIVATE_KEY,
+        vec![
+            SendTxOption::GasLimitMultiplier(2.0),
+            SendTxOption::GasPriceMultiplier(2.0),
+        ],
     )
     .await
     .unwrap();
-    let ending_event_nonce = get_event_nonce(
-        gravity_address,
-        keys[0].eth_key.to_public_key().unwrap(),
-        web30,
-    )
-    .await
-    .unwrap();
+    let ending_event_nonce = get_event_nonce(gravity_address, *MINER_ADDRESS, web30)
+        .await
+        .unwrap();
 
     assert!(starting_event_nonce != ending_event_nonce);
     info!(
@@ -201,14 +195,18 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
         ending_event_nonce
     );
 
-    let no_relay_market_config = create_default_test_config();
-    start_orchestrators(
-        keys.clone(),
-        gravity_address,
-        validator_out,
-        no_relay_market_config,
-    )
-    .await;
+    // if no keys are provided we assume the caller does not want to spawn
+    // orchestrators as part of the test
+    if let Some(keys) = keys {
+        let no_relay_market_config = create_default_test_config();
+        start_orchestrators(
+            keys.clone(),
+            gravity_address,
+            validator_out,
+            no_relay_market_config,
+        )
+        .await;
+    }
 
     let start = Instant::now();
     // the erc20 representing the cosmos asset on Ethereum

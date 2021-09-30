@@ -7,7 +7,7 @@
 extern crate log;
 
 use crate::bootstrapping::*;
-use crate::invalid_deposit::invalid_deposit;
+use crate::invalid_events::invalid_events;
 use crate::tx_cancel::send_to_eth_and_cancel;
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
@@ -32,7 +32,7 @@ mod bootstrapping;
 mod evidence_based_slashing;
 mod happy_path;
 mod happy_path_v2;
-mod invalid_deposit;
+mod invalid_events;
 mod orch_keys;
 mod relay_market;
 mod transaction_stress_test;
@@ -237,9 +237,9 @@ pub async fn main() {
             )
             .await;
             return;
-        } else if test_type == "INVALID_DEPOSIT" {
-            info!("Invalid deposit test!");
-            invalid_deposit(
+        } else if test_type == "INVALID_EVENTS" {
+            info!("Invalid events test!");
+            invalid_events(
                 &web30,
                 &contact,
                 keys,
