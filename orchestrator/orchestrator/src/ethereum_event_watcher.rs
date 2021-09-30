@@ -20,6 +20,11 @@ use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
 
+pub struct CheckedNonces {
+    pub block_number: Uint256,
+    pub event_nonce: Uint256,
+}
+
 pub async fn check_for_events(
     web3: &Web3,
     contact: &Contact,
@@ -28,7 +33,7 @@ pub async fn check_for_events(
     our_private_key: CosmosPrivateKey,
     fee: Coin,
     starting_block: Uint256,
-) -> Result<Uint256, GravityError> {
+) -> Result<CheckedNonces, GravityError> {
     let our_cosmos_address = our_private_key.to_address(&contact.get_prefix()).unwrap();
     let latest_block = get_block_number_with_retry(web3).await;
     let latest_block = latest_block - get_block_delay(web3).await;
@@ -162,6 +167,7 @@ pub async fn check_for_events(
             )
         }
 
+        let mut new_event_nonce: Uint256 = last_event_nonce.into();
         if !deposits.is_empty()
             || !withdraws.is_empty()
             || !erc20_deploys.is_empty()
@@ -179,18 +185,19 @@ pub async fn check_for_events(
                 fee,
             )
             .await?;
-            let new_event_nonce = get_last_event_nonce_for_validator(
+            new_event_nonce = get_last_event_nonce_for_validator(
                 grpc_client,
                 our_cosmos_address,
                 contact.get_prefix(),
             )
-            .await?;
+            .await?
+            .into();
 
             info!("Current event nonce is {}", new_event_nonce);
 
             // since we can't actually trust that the above txresponse is correct we have to check here
             // we may be able to trust the tx response post grpc
-            if new_event_nonce == last_event_nonce {
+            if new_event_nonce == last_event_nonce.into() {
                 return Err(GravityError::InvalidBridgeStateError(
                     format!("Claims did not process, trying to update but still on {}, trying again in a moment, check txhash {} for errors", last_event_nonce, res.txhash),
                 ));
@@ -198,7 +205,10 @@ pub async fn check_for_events(
                 info!("Claims processed, new nonce {}", new_event_nonce);
             }
         }
-        Ok(latest_block)
+        Ok(CheckedNonces {
+            block_number: latest_block,
+            event_nonce: new_event_nonce,
+        })
     } else {
         error!("Failed to get events");
         Err(GravityError::EthereumRestError(Web3Error::BadResponse(

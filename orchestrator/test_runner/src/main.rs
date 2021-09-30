@@ -26,6 +26,7 @@ use orch_keys::orch_keys;
 use relay_market::relay_market_test;
 use std::{env, time::Duration};
 use transaction_stress_test::transaction_stress_test;
+use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
 
 mod bootstrapping;
@@ -37,6 +38,7 @@ mod orch_keys;
 mod relay_market;
 mod transaction_stress_test;
 mod tx_cancel;
+mod unhalt_bridge;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
@@ -246,6 +248,19 @@ pub async fn main() {
                 gravity_address,
                 erc20_addresses[0],
                 grpc_client,
+            )
+            .await;
+            return;
+        } else if test_type == "UNHALT_BRIDGE" {
+            info!("Starting unhalt bridge tests");
+            unhalt_bridge_test(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                gravity_address,
+                erc20_addresses[0],
+                false,
             )
             .await;
             return;

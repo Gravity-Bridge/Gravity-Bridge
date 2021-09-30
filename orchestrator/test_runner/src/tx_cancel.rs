@@ -1,4 +1,4 @@
-use crate::happy_path::test_erc20_deposit;
+use crate::happy_path::test_erc20_deposit_panic;
 use crate::one_eth;
 use crate::utils::*;
 use clarity::Address as EthAddress;
@@ -29,7 +29,7 @@ pub async fn send_to_eth_and_cancel(
     // a pair of cosmos and Ethereum keys + addresses to use for this test
     let user_keys = get_user_key();
 
-    test_erc20_deposit(
+    test_erc20_deposit_panic(
         web30,
         contact,
         &mut grpc_client,
@@ -37,6 +37,8 @@ pub async fn send_to_eth_and_cancel(
         gravity_address,
         erc20_address,
         one_eth(),
+        None,
+        None,
     )
     .await;
 

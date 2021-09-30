@@ -2,7 +2,7 @@
 //! with every possible variant of invalid data and ensure that in all cases the community pool deposit
 //! works correctly.
 
-use crate::happy_path::test_erc20_deposit;
+use crate::happy_path::test_erc20_deposit_panic;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::one_eth;
 use crate::utils::create_default_test_config;
@@ -68,7 +68,7 @@ pub async fn invalid_events(
         // a latter event nonce it will effectively wait for the invalid deposit
         // to complete as well
         let user_keys = get_user_key();
-        test_erc20_deposit(
+        test_erc20_deposit_panic(
             web30,
             contact,
             &mut grpc_client,
@@ -76,6 +76,8 @@ pub async fn invalid_events(
             gravity_address,
             erc20_address,
             one_eth(),
+            None,
+            None,
         )
         .await;
 

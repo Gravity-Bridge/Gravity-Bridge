@@ -3,7 +3,7 @@
 //! and determine whether relays should happen or not
 use std::time::{Duration, Instant};
 
-use crate::happy_path::test_erc20_deposit;
+use crate::happy_path::test_erc20_deposit_panic;
 use crate::utils::{check_cosmos_balance, send_one_eth, start_orchestrators, ValidatorKeys};
 use crate::ADDRESS_PREFIX;
 use crate::MINER_PRIVATE_KEY;
@@ -137,7 +137,7 @@ async fn setup_batch_test(
 
     // Send the generated address 300 dai from ethereum to cosmos
     for _ in 0u32..3 {
-        test_erc20_deposit(
+        test_erc20_deposit_panic(
             web30,
             contact,
             &mut grpc_client,
@@ -145,6 +145,8 @@ async fn setup_batch_test(
             gravity_address,
             erc20_contract,
             one_eth() * 100u64.into(),
+            None,
+            None,
         )
         .await;
     }
@@ -154,7 +156,7 @@ async fn setup_batch_test(
     let requester_address = requester_cosmos_private_key
         .to_address(&contact.get_prefix())
         .unwrap();
-    test_erc20_deposit(
+    test_erc20_deposit_panic(
         web30,
         contact,
         &mut grpc_client,
@@ -162,6 +164,8 @@ async fn setup_batch_test(
         gravity_address,
         erc20_contract,
         one_eth() * 100u64.into(),
+        None,
+        None,
     )
     .await;
     let cdai_held = check_cosmos_balance("gravity", dest_cosmos_address, contact)

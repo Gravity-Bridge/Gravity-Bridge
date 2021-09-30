@@ -55,7 +55,7 @@ func (k Keeper) Attest(
 	att.Votes = append(att.Votes, valAddr.String())
 
 	k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
-	k.setLastEventNonceByValidator(ctx, valAddr, claim.GetEventNonce())
+	k.SetLastEventNonceByValidator(ctx, valAddr, claim.GetEventNonce())
 
 	return att, nil
 }
@@ -368,7 +368,7 @@ func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValA
 }
 
 // setLastEventNonceByValidator sets the latest event nonce for a give validator
-func (k Keeper) setLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress, nonce uint64) {
+func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress, nonce uint64) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetLastEventNonceByValidatorKey(validator), types.UInt64Bytes(nonce))
 }

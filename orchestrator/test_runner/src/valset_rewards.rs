@@ -1,17 +1,13 @@
 //! This is a test for validator set relaying rewards
 
-use crate::get_fee;
 use crate::happy_path::test_valset_update;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
-use crate::utils::create_parameter_change_proposal;
-use crate::utils::ValidatorKeys;
+use crate::utils::{create_parameter_change_proposal, vote_yes_on_proposals, ValidatorKeys};
 use crate::STAKING_TOKEN;
-use crate::TOTAL_TIMEOUT;
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::coin::Coin;
 use deep_space::Contact;
-use gravity_proto::cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -65,27 +61,7 @@ pub async fn valset_rewards_test(
     )
     .await;
 
-    let proposals = contact
-        .get_governance_proposals_in_voting_period()
-        .await
-        .unwrap();
-    for proposal in proposals.proposals {
-        // vote yes on very proposal we find
-        for key in keys.iter() {
-            info!("Voting yes on governance proposal");
-            let res = contact
-                .vote_on_gov_proposal(
-                    proposal.proposal_id,
-                    VoteOption::Yes,
-                    get_fee(),
-                    key.validator_key,
-                    Some(TOTAL_TIMEOUT),
-                )
-                .await
-                .unwrap();
-            contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
-        }
-    }
+    vote_yes_on_proposals(contact, &keys, None).await;
 
     // wait for the voting period to pass
     sleep(Duration::from_secs(65)).await;

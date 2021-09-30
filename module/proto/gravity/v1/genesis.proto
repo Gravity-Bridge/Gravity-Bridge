@@ -121,6 +121,8 @@ message Params {
   cosmos.base.v1beta1.Coin valset_reward = 17 [
     (gogoproto.nullable)   = false
   ];
+  bool reset_bridge_state = 18;
+  uint64 reset_bridge_nonce = 19;
 }
 
 // GenesisState struct

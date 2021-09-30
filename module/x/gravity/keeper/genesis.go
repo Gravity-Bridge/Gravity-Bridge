@@ -102,7 +102,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 			}
 			last := k.GetLastEventNonceByValidator(ctx, val)
 			if claim.GetEventNonce() > last {
-				k.setLastEventNonceByValidator(ctx, val, claim.GetEventNonce())
+				k.SetLastEventNonceByValidator(ctx, val, claim.GetEventNonce())
 			}
 		}
 	}
@@ -150,6 +150,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		}
 	}
 
+	// reset bridge - ignore the genesis data as we do not want to reset immediately
+	resetBridgeState := false
+	k.SetResetBridgeState(ctx, resetBridgeState)
+	resetBridgeNonce := uint64(0)
+	k.SetResetBridgeNonce(ctx, resetBridgeNonce)
 }
 
 // ExportGenesis exports all the state needed to restart the chain

@@ -79,7 +79,7 @@ pub async fn happy_path_test(
     // so the denom is the gravity<hash> token name
     // Send a token 3 times
     for _ in 0u32..3 {
-        test_erc20_deposit(
+        test_erc20_deposit_panic(
             web30,
             contact,
             &mut grpc_client,
@@ -87,6 +87,8 @@ pub async fn happy_path_test(
             gravity_address,
             erc20_address,
             100u64.into(),
+            None,
+            None,
         )
         .await;
     }
@@ -294,8 +296,9 @@ async fn check_valset_update_attestation(
     info!("Found the expected MsgValsetUpdatedClaim attestation");
 }
 
-/// this function tests Ethereum -> Cosmos
-pub async fn test_erc20_deposit(
+// Tests an ERC20 deposit and panics on failure
+#[allow(clippy::too_many_arguments)]
+pub async fn test_erc20_deposit_panic(
     web30: &Web3,
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,
@@ -303,13 +306,51 @@ pub async fn test_erc20_deposit(
     gravity_address: EthAddress,
     erc20_address: EthAddress,
     amount: Uint256,
+    timeout: Option<Duration>, // how long to wait for balance on cosmos to change
+    expected_change: Option<Uint256>, // provide an expected change when multiple transactions will take place at once
 ) {
+    match test_erc20_deposit_bool(
+        web30,
+        contact,
+        grpc_client,
+        dest,
+        gravity_address,
+        erc20_address,
+        amount,
+        timeout,
+        expected_change,
+    )
+    .await
+    {
+        true => {
+            info!("Successfully bridged ERC20!")
+        }
+        false => {
+            panic!("Failed to bridge ERC20!")
+        }
+    }
+}
+
+/// this function tests Ethereum -> Cosmos
+#[allow(clippy::too_many_arguments)]
+pub async fn test_erc20_deposit_bool(
+    web30: &Web3,
+    contact: &Contact,
+    grpc_client: &mut GravityQueryClient<Channel>,
+    dest: CosmosAddress,
+    gravity_address: EthAddress,
+    erc20_address: EthAddress,
+    amount: Uint256,
+    timeout: Option<Duration>,
+    expected_change: Option<Uint256>, // provide an expected change when multiple transactions will take place at once
+) -> bool {
     get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
     let mut grpc_client = grpc_client.clone();
     let start_coin = check_cosmos_balance("gravity", dest, contact).await;
+
     info!(
         "Sending to Cosmos from {} to {} with amount {}",
         *MINER_ADDRESS, dest, amount
@@ -337,29 +378,55 @@ pub async fn test_erc20_deposit(
         .expect("Send to cosmos transaction failed to be included into ethereum side");
 
     let start = Instant::now();
-    while Instant::now() - start < TOTAL_TIMEOUT {
+    let duration = match timeout {
+        Some(w) => w,
+        None => TOTAL_TIMEOUT,
+    };
+    while Instant::now() - start < duration {
         match (
             start_coin.clone(),
             check_cosmos_balance("gravity", dest, contact).await,
         ) {
             (Some(start_coin), Some(end_coin)) => {
-                if start_coin.amount + amount.clone() == end_coin.amount
+                // When a bridge governance vote happens, the orchestrator will replay all incomplete
+                // sends to cosmos on the next send to cosmos transaction, so we need to use expected_change
+                if let Some(expected) = expected_change.clone() {
+                    if end_coin.amount.clone() - start_coin.amount.clone() == expected
+                        && start_coin.denom == end_coin.denom
+                    {
+                        info!(
+                            "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
+                            amount, start_coin.denom, end_coin.amount, end_coin.denom
+                        );
+                        return true;
+                    }
+                } else if start_coin.amount + amount.clone() == end_coin.amount
                     && start_coin.denom == end_coin.denom
                 {
                     info!(
                         "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
                         amount, start_coin.denom, end_coin.amount, end_coin.denom
                     );
-                    return;
+                    return true;
                 }
             }
             (None, Some(end_coin)) => {
-                if amount == end_coin.amount {
+                // When a bridge governance vote happens, the orchestrator will replay all incomplete
+                // sends to cosmos on the next send to cosmos transaction, so we need to use expected_change
+                if let Some(expected) = expected_change.clone() {
+                    if end_coin.amount == expected {
+                        info!(
+                            "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
+                            amount, end_coin.denom, end_coin.amount, end_coin.denom,
+                        );
+                        return true;
+                    }
+                } else if amount == end_coin.amount {
                     info!(
                         "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
                         amount, end_coin.denom, end_coin.amount, end_coin.denom
                     );
-                    return;
+                    return true;
                 } else {
                     panic!("Failed to bridge ERC20!")
                 }
@@ -369,7 +436,7 @@ pub async fn test_erc20_deposit(
         info!("Waiting for ERC20 deposit");
         contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
     }
-    panic!("Failed to bridge ERC20!")
+    false
 }
 
 // Tries up to TOTAL_TIMEOUT time to find a MsgSendToCosmosClaim attestation created in the

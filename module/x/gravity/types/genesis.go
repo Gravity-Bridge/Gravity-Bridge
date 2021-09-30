@@ -66,6 +66,13 @@ var (
 	// to a relayer when they relay a valset
 	ParamStoreValsetRewardAmount = []byte("ValsetReward")
 
+	// ResetBridgeState boolean indicates the oracle events of the bridge history should be reset
+	ParamStoreResetBridgeState = []byte("ResetBridgeState")
+
+	// ResetBridgeHeight stores the nonce after which oracle events should be discarded when resetting the bridge
+	ParamStoreResetBridgeNonce = []byte("ResetBridgeNonce")
+
+
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
 		GravityId:                    "",
@@ -87,6 +94,8 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
+		ResetBridgeState: false,
+		ResetBridgeNonce: 0,
 	}
 )
 
@@ -190,7 +199,12 @@ func (p Params) ValidateBasic() error {
 	if err := validateValsetRewardAmount(p.ValsetReward); err != nil {
 		return sdkerrors.Wrap(err, "ValsetReward amount")
 	}
-
+	if err := validateResetBridgeState(p.ResetBridgeState); err != nil {
+		return sdkerrors.Wrap(err, "Reset Bridge State")
+	}
+	if err := validateResetBridgeNonce(p.ResetBridgeNonce); err != nil {
+		return sdkerrors.Wrap(err, "Reset Bridge Nonce")
+	}
 	return nil
 }
 
@@ -238,6 +252,8 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreUnbondSlashingValsetsWindow, &p.UnbondSlashingValsetsWindow, validateUnbondSlashingValsetsWindow),
 		paramtypes.NewParamSetPair(ParamStoreSlashFractionBadEthSignature, &p.SlashFractionBadEthSignature, validateSlashFractionBadEthSignature),
 		paramtypes.NewParamSetPair(ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
+		paramtypes.NewParamSetPair(ParamStoreResetBridgeState, &p.ResetBridgeState, validateResetBridgeState),
+		paramtypes.NewParamSetPair(ParamStoreResetBridgeNonce, &p.ResetBridgeNonce, validateResetBridgeNonce),
 	}
 }
 
@@ -386,6 +402,20 @@ func validateSlashFractionBadEthSignature(i interface{}) error {
 func validateValsetRewardAmount(i interface{}) error {
 	if _, ok := i.(sdk.Coin); !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	return nil
+}
+
+func validateResetBridgeState(i interface{}) error {
+	if _, ok := i.(bool); !ok {
+		return fmt.Errorf("invalid parameter type %T", i)
+	}
+	return nil
+}
+
+func validateResetBridgeNonce(i interface{}) error {
+	if _, ok := i.(uint64); !ok {
+		return fmt.Errorf("invalid parameter type %T", i)
 	}
 	return nil
 }

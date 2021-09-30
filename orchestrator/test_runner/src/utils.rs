@@ -14,14 +14,17 @@ use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::utils::encode_any;
 use deep_space::Contact;
 use futures::future::join_all;
-use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
-use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
+use gravity_proto::cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
+use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
+    ParamChange, ParameterChangeProposal,
+};
+use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use orchestrator::main_loop::orchestrator_main_loop;
 use rand::Rng;
 use std::thread;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use web30::jsonrpc::error::Web3Error;
 use web30::{client::Web3, types::SendTxOption};
 
@@ -338,4 +341,52 @@ pub fn get_operator_address(key: CosmosPrivateKey) -> CosmosAddress {
     // different way, but I haven't yet seen one that does not match this pattern
     key.to_address(&format!("{}valoper", *ADDRESS_PREFIX))
         .unwrap()
+}
+
+// Prints out current stake to the console
+pub async fn print_validator_stake(contact: &Contact) {
+    let validators = contact
+        .get_validators_list(QueryValidatorsRequest::default())
+        .await
+        .unwrap();
+    for validator in validators.validators {
+        info!(
+            "Validator {} has {} tokens",
+            validator.operator_address, validator.tokens
+        );
+    }
+}
+
+// votes yes on every proposal available
+pub async fn vote_yes_on_proposals(
+    contact: &Contact,
+    keys: &[ValidatorKeys],
+    timeout: Option<Duration>,
+) {
+    let duration = match timeout {
+        Some(dur) => dur,
+        None => OPERATION_TIMEOUT,
+    };
+    // Vote yes on all proposals with all validators
+    let proposals = contact
+        .get_governance_proposals_in_voting_period()
+        .await
+        .unwrap();
+    info!("Found proposals: {:?}", proposals.proposals);
+    for proposal in proposals.proposals {
+        for key in keys.iter() {
+            info!("Voting yes on governance proposal");
+            let res = contact
+                .vote_on_gov_proposal(
+                    proposal.proposal_id,
+                    VoteOption::Yes,
+                    get_fee(),
+                    key.validator_key,
+                    Some(duration),
+                )
+                .await
+                .unwrap();
+            contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
+        }
+    }
 }
