@@ -9,8 +9,11 @@ on:
 jobs:
   happy-path-hardhat:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run all up happy-path test
         run: tests/all-up-test.sh
         env:
@@ -19,67 +22,99 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run all up happy-path test
         run: tests/all-up-test.sh
   validator-out:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run all up test with a validator out
         run: tests/all-up-test.sh VALIDATOR_OUT
   valset-stress:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run all up valset stress test
         run: tests/all-up-test.sh VALSET_STRESS
   batch-stress:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run all up batch stress test
         run: tests/all-up-test.sh BATCH_STRESS
   v2-happy-path:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run all up batch stress test
         run: tests/all-up-test.sh V2_HAPPY_PATH
   relay-market:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run all up relay market test
         run: tests/all-up-test.sh RELAY_MARKET $ALCHEMY_ID
         env:
           ALCHEMY_ID: ${{ secrets.ALCHEMY_ID }}
   orchestrator-keys:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run orchestrator key setting test
         run: tests/all-up-test.sh ORCHESTRATOR_KEYS
   valset_update_rewards:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run the validator set update rewards test
         run: tests/all-up-test.sh VALSET_REWARDS
   evidence_based_slashing:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run the evidence based slashing test
         run: tests/all-up-test.sh EVIDENCE
   transaction-cancel:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Run the transaction cancel test
         run: tests/all-up-test.sh TXCANCEL
   invalid-deposit:
     runs-on: ubuntu-latest
+    needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Submit an invalid deposit
         run: tests/all-up-test.sh INVALID_DEPOSIT
