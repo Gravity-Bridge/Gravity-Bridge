@@ -41,6 +41,9 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: orchestrator/
       - name: Check for Clippy lints
         run: rustup component add clippy && cd orchestrator && cargo clippy --all --all-targets --all-features -- -D warnings
   cross-compile-arm64:
