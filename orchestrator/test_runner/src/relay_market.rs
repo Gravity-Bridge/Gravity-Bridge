@@ -5,10 +5,10 @@ use std::time::{Duration, Instant};
 
 use crate::happy_path::test_erc20_deposit;
 use crate::utils::{check_cosmos_balance, send_one_eth, start_orchestrators, ValidatorKeys};
+use crate::ADDRESS_PREFIX;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_ADDRESS};
-use crate::{ADDRESS_PREFIX, OPERATION_TIMEOUT};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::send::{send_to_eth, TIMEOUT};
@@ -24,6 +24,7 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::amm::{DAI_CONTRACT_ADDRESS, WETH_CONTRACT_ADDRESS};
 use web30::client::Web3;
+use web30::jsonrpc::error::Web3Error;
 
 pub async fn relay_market_test(
     web30: &Web3,
@@ -94,21 +95,29 @@ async fn setup_batch_test(
         weth_acquired
     );
     // Acquire 1,000 WETH worth of DAI (probably ~23,000 DAI)
-    let token_acquired = web30
-        .swap_uniswap(
-            *MINER_PRIVATE_KEY,
-            *WETH_CONTRACT_ADDRESS,
-            erc20_contract,
-            None,
-            one_eth() * 1000u16.into(),
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(TOTAL_TIMEOUT),
-        )
-        .await;
+    info!("Starting swap!");
+    let start = Instant::now();
+    let mut token_acquired = Err(Web3Error::BadInput("Dummy Error".to_string()));
+    while Instant::now() - start < TOTAL_TIMEOUT {
+        token_acquired = web30
+            .swap_uniswap(
+                *MINER_PRIVATE_KEY,
+                *WETH_CONTRACT_ADDRESS,
+                erc20_contract,
+                None,
+                one_eth() * 1000u16.into(),
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(TOTAL_TIMEOUT),
+            )
+            .await;
+        if token_acquired.is_ok() {
+            break;
+        }
+    }
     info!("Swap result is {:?}", token_acquired);
     assert!(
         !token_acquired.is_err(),
@@ -207,10 +216,7 @@ async fn wait_for_batch(
     erc20_contract: EthAddress,
     gravity_address: EthAddress,
 ) -> u64 {
-    contact
-        .wait_for_next_block(OPERATION_TIMEOUT)
-        .await
-        .unwrap();
+    contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
     get_oldest_unsigned_transaction_batch(
         &mut grpc_client,
@@ -237,7 +243,7 @@ async fn wait_for_batch(
                 .await
                 .expect("Failed to get current eth tx batch nonce");
         delay_for(Duration::from_secs(4)).await;
-        if Instant::now() - start > OPERATION_TIMEOUT {
+        if Instant::now() - start > TOTAL_TIMEOUT {
             if expect_batch {
                 panic!("Failed to submit transaction batch set");
             } else {

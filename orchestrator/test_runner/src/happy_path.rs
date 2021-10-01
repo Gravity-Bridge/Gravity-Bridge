@@ -13,6 +13,7 @@ use cosmos_gravity::send::{send_request_batch, send_to_eth};
 use cosmos_gravity::{query::get_oldest_unsigned_transaction_batch, send::send_ethereum_claims};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
+use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::Contact;
 use ethereum_gravity::utils::get_event_nonce;
@@ -556,20 +557,27 @@ async fn submit_duplicate_erc20_send(
 
     // iterate through all validators and try to send an event with duplicate nonce
     for k in keys.iter() {
-        let c_key = k.orch_key;
-        let res = send_ethereum_claims(
-            contact,
-            c_key,
-            vec![event.clone()],
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-            get_fee(),
-        )
-        .await
-        .unwrap();
+        let start = Instant::now();
+        let mut res = Err(CosmosGrpcError::BadInput("Dummy Error".to_string()));
+        while Instant::now() - start < TOTAL_TIMEOUT {
+            let c_key = k.orch_key;
+            res = send_ethereum_claims(
+                contact,
+                c_key,
+                vec![event.clone()],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                get_fee(),
+            )
+            .await;
+            if res.is_ok() {
+                break;
+            }
+        }
         info!("Submitted duplicate sendToCosmos event: {:?}", res);
+        res.unwrap();
     }
 
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
