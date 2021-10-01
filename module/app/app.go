@@ -86,12 +86,6 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	"github.com/osmosis-labs/bech32-ibc/x/bech32ibc"
-	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
-	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
-	"github.com/osmosis-labs/bech32-ibc/x/bech32ics20"
-	bech32ics20keeper "github.com/osmosis-labs/bech32-ibc/x/bech32ics20/keeper"
-	bech32ics20types "github.com/osmosis-labs/bech32-ibc/x/bech32ics20/types"
 
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 
@@ -136,8 +130,6 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		gravity.AppModuleBasic{},
-		bech32ibc.AppModuleBasic{},
-		bech32ics20.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -190,23 +182,21 @@ type Gravity struct {
 	memKeys map[string]*sdk.MemoryStoreKey
 
 	// keepers
-	accountKeeper     authkeeper.AccountKeeper
-	bankKeeper        bankkeeper.Keeper
-	capabilityKeeper  *capabilitykeeper.Keeper
-	stakingKeeper     stakingkeeper.Keeper
-	slashingKeeper    slashingkeeper.Keeper
-	mintKeeper        mintkeeper.Keeper
-	distrKeeper       distrkeeper.Keeper
-	govKeeper         govkeeper.Keeper
-	crisisKeeper      crisiskeeper.Keeper
-	upgradeKeeper     upgradekeeper.Keeper
-	paramsKeeper      paramskeeper.Keeper
-	ibcKeeper         *ibckeeper.Keeper
-	evidenceKeeper    evidencekeeper.Keeper
-	transferKeeper    ibctransferkeeper.Keeper
-	bech32IBCKeeper   bech32ibckeeper.Keeper
-	bech32ICS20Keeper bech32ics20keeper.Keeper
-	gravityKeeper     keeper.Keeper
+	accountKeeper    authkeeper.AccountKeeper
+	bankKeeper       bankkeeper.Keeper
+	capabilityKeeper *capabilitykeeper.Keeper
+	stakingKeeper    stakingkeeper.Keeper
+	slashingKeeper   slashingkeeper.Keeper
+	mintKeeper       mintkeeper.Keeper
+	distrKeeper      distrkeeper.Keeper
+	govKeeper        govkeeper.Keeper
+	crisisKeeper     crisiskeeper.Keeper
+	upgradeKeeper    upgradekeeper.Keeper
+	paramsKeeper     paramskeeper.Keeper
+	ibcKeeper        *ibckeeper.Keeper
+	evidenceKeeper   evidencekeeper.Keeper
+	transferKeeper   ibctransferkeeper.Keeper
+	gravityKeeper    keeper.Keeper
 
 	// make scoped keepers public for test purposes
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
@@ -248,7 +238,6 @@ func NewGravityApp(
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		gravitytypes.StoreKey,
-		bech32ibctypes.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -374,15 +363,6 @@ func NewGravityApp(
 		app.accountKeeper, app.bankKeeper, scopedTransferKeeper,
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
-	app.bech32IBCKeeper = *bech32ibckeeper.NewKeeper(
-		app.ibcKeeper.ChannelKeeper, appCodec, keys[bech32ibctypes.StoreKey],
-		app.transferKeeper,
-	)
-
-	app.bech32ICS20Keeper = *bech32ics20keeper.NewKeeper(
-		app.bankKeeper, app.transferKeeper,
-		app.bech32IBCKeeper, appCodec,
-	)
 
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferModule)
@@ -395,11 +375,6 @@ func NewGravityApp(
 		app.slashingKeeper,
 	)
 	app.evidenceKeeper = *evidenceKeeper
-
-	app.bech32IBCKeeper = *bech32ibckeeper.NewKeeper(
-		app.ibcKeeper.ChannelKeeper, appCodec, keys[bech32ibctypes.StoreKey],
-		app.transferKeeper,
-	)
 
 	app.gravityKeeper = keeper.NewKeeper(
 		appCodec,
@@ -489,8 +464,6 @@ func NewGravityApp(
 			app.gravityKeeper,
 			app.bankKeeper,
 		),
-		bech32ibc.NewAppModule(appCodec, app.bech32IBCKeeper),
-		bech32ics20.NewAppModule(appCodec, app.bankKeeper, app.accountKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(
@@ -523,8 +496,6 @@ func NewGravityApp(
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		gravitytypes.ModuleName,
-		bech32ibctypes.ModuleName,
-		bech32ics20types.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
