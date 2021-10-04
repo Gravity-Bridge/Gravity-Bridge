@@ -15,6 +15,10 @@ import (
 // GetBatchConfirm returns a batch confirmation given its nonce, the token contract, and a validator address
 func (k Keeper) GetBatchConfirm(ctx sdk.Context, nonce uint64, tokenContract types.EthAddress, validator sdk.AccAddress) *types.MsgConfirmBatch {
 	store := ctx.KVStore(k.storeKey)
+	if err := sdk.VerifyAddressFormat(validator); err != nil {
+		ctx.Logger().Error("invalid validator address");
+		return nil
+	}
 	entity := store.Get([]byte(types.GetBatchConfirmKey(tokenContract, nonce, validator)))
 	if entity == nil {
 		return nil
@@ -26,7 +30,7 @@ func (k Keeper) GetBatchConfirm(ctx sdk.Context, nonce uint64, tokenContract typ
 		Orchestrator:  "",
 		Signature:     "",
 	}
-	k.cdc.MustUnmarshalBinaryBare(entity, &confirm)
+	k.cdc.MustUnmarshal(entity, &confirm)
 	return &confirm
 }
 
@@ -42,7 +46,7 @@ func (k Keeper) SetBatchConfirm(ctx sdk.Context, batch *types.MsgConfirmBatch) [
 		panic(sdkerrors.Wrap(err, "invalid TokenContract"))
 	}
 	key := []byte(types.GetBatchConfirmKey(*contract, batch.Nonce, acc))
-	store.Set(key, k.cdc.MustMarshalBinaryBare(batch))
+	store.Set(key, k.cdc.MustMarshal(batch))
 	return key
 }
 
@@ -63,7 +67,7 @@ func (k Keeper) IterateBatchConfirmByNonceAndTokenContract(ctx sdk.Context, nonc
 			Orchestrator:  "",
 			Signature:     "",
 		}
-		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &confirm)
+		k.cdc.MustUnmarshal(iter.Value(), &confirm)
 		// cb returns true to stop early
 		if cb(iter.Key(), confirm) {
 			break

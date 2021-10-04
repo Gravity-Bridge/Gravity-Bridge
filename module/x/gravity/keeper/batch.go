@@ -128,10 +128,10 @@ func (k Keeper) StoreBatch(ctx sdk.Context, batch *types.InternalOutgoingTxBatch
 	// set the current block height when storing the batch
 	batch.Block = uint64(ctx.BlockHeight())
 	key := []byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce))
-	store.Set(key, k.cdc.MustMarshalBinaryBare(batch.ToExternal()))
+	store.Set(key, k.cdc.MustMarshal(batch.ToExternal()))
 
 	blockKey := []byte(types.GetOutgoingTxBatchBlockKey(batch.Block))
-	store.Set(blockKey, k.cdc.MustMarshalBinaryBare(batch.ToExternal()))
+	store.Set(blockKey, k.cdc.MustMarshal(batch.ToExternal()))
 }
 
 // StoreBatchUnsafe stores a transaction batch w/o setting the height
@@ -142,10 +142,10 @@ func (k Keeper) StoreBatchUnsafe(ctx sdk.Context, batch *types.InternalOutgoingT
 	batchExt := batch.ToExternal()
 	store := ctx.KVStore(k.storeKey)
 	key := []byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batchExt.BatchNonce))
-	store.Set(key, k.cdc.MustMarshalBinaryBare(batchExt))
+	store.Set(key, k.cdc.MustMarshal(batchExt))
 
 	blockKey := []byte(types.GetOutgoingTxBatchBlockKey(batchExt.Block))
-	store.Set(blockKey, k.cdc.MustMarshalBinaryBare(batchExt))
+	store.Set(blockKey, k.cdc.MustMarshal(batchExt))
 }
 
 // DeleteBatch deletes an outgoing transaction batch
@@ -190,7 +190,7 @@ func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAddre
 		return nil
 	}
 	var b types.OutgoingTxBatch
-	k.cdc.MustUnmarshalBinaryBare(bz, &b)
+	k.cdc.MustUnmarshal(bz, &b)
 	for _, tx := range b.Transactions {
 		tx.Erc20Token.Contract = tokenContract.GetAddress()
 		tx.Erc20Fee.Contract = tokenContract.GetAddress()
@@ -237,7 +237,7 @@ func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, ba
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var batch types.OutgoingTxBatch
-		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &batch)
+		k.cdc.MustUnmarshal(iter.Value(), &batch)
 		intBatch, err := batch.ToInternal()
 		if err != nil {
 			panic(sdkerrors.Wrap(err, "found invalid batch in store"))
@@ -316,7 +316,7 @@ func (k Keeper) IterateBatchBySlashedBatchBlock(
 
 	for ; iter.Valid(); iter.Next() {
 		var batch types.OutgoingTxBatch
-		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &batch)
+		k.cdc.MustUnmarshal(iter.Value(), &batch)
 		intBatch, err := batch.ToInternal()
 		if err != nil {
 			panic(sdkerrors.Wrap(err, "found invalid batch in store"))

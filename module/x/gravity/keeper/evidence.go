@@ -76,7 +76,7 @@ func (k Keeper) checkBadSignatureEvidenceInternal(ctx sdk.Context, subject types
 	}
 
 	params := k.GetParams(ctx)
-	k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(), params.SlashFractionBadEthSignature)
+	k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBadEthSignature)
 	if !val.IsJailed() {
 		k.StakingKeeper.Jail(ctx, cons)
 	}

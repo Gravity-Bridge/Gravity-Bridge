@@ -34,7 +34,7 @@ func TestAddToOutgoingPool(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
-	err = input.BankKeeper.SetBalances(ctx, mySender, allVouchers)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers)
 	require.NoError(t, err)
 
 	// when
@@ -132,7 +132,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
-	err = input.BankKeeper.SetBalances(ctx, mySender, allVouchers)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers)
 	require.NoError(t, err)
 
 	//////// Insufficient Balance from Amount ////////
@@ -200,7 +200,7 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
-	err = input.BankKeeper.SetBalances(ctx, mySender, allVouchers)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers)
 	require.NoError(t, err)
 
 	// create outgoing pool
@@ -230,7 +230,7 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
-	err = input.BankKeeper.SetBalances(ctx, mySender, allVouchers)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers)
 	require.NoError(t, err)
 
 	// Add
@@ -301,13 +301,13 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender1)
-	err = input.BankKeeper.SetBalances(ctx, mySender1, allVouchers1)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender1, allVouchers1)
 	require.NoError(t, err)
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender2)
-	err = input.BankKeeper.SetBalances(ctx, mySender2, allVouchers2)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender2, allVouchers2)
 	require.NoError(t, err)
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender3)
-	err = input.BankKeeper.SetBalances(ctx, mySender3, allVouchers3)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender3, allVouchers3)
 	require.NoError(t, err)
 
 	totalFee1 := int64(0)
@@ -393,7 +393,7 @@ func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
-	err = input.BankKeeper.SetBalances(ctx, mySender, allVouchers)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers)
 	require.NoError(t, err)
 
 	// Create unbatched transactions
@@ -534,7 +534,7 @@ func TestRefundTwice(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
-	err = input.BankKeeper.SetBalances(ctx, mySender, allVouchers)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers)
 	require.NoError(t, err)
 
 	amountToken, err := types.NewInternalERC20Token(sdk.NewInt(100), myTokenContractAddr)
@@ -596,10 +596,10 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender1)
-	err = input.BankKeeper.SetBalances(ctx, mySender1, allVouchers1)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender1, allVouchers1)
 	require.NoError(t, err)
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender2)
-	err = input.BankKeeper.SetBalances(ctx, mySender2, allVouchers2)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender2, allVouchers2)
 	require.NoError(t, err)
 
 	ids1 := make([]uint64, 4)
@@ -742,10 +742,10 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender1)
-	err = input.BankKeeper.SetBalances(ctx, mySender1, allVouchers1)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender1, allVouchers1)
 	require.NoError(t, err)
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender2)
-	err = input.BankKeeper.SetBalances(ctx, mySender2, allVouchers2)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender2, allVouchers2)
 	require.NoError(t, err)
 
 	ids1 := make([]uint64, 4)
@@ -851,7 +851,7 @@ func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
-	err = input.BankKeeper.SetBalances(ctx, mySender, allVouchers)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers)
 	require.NoError(t, err)
 
 	unbatchedTxMap := make(map[uint64]types.OutgoingTransferTx)

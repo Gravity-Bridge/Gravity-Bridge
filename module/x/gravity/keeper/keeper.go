@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -21,8 +23,8 @@ type Keeper struct {
 	storeKey   sdk.StoreKey // Unexposed key to access store from sdk.Context
 	paramSpace paramtypes.Subspace
 
-	cdc            codec.BinaryMarshaler // The wire codec for binary encoding/decoding.
-	bankKeeper     types.BankKeeper
+	cdc            codec.BinaryCodec // The wire codec for binary encoding/decoding.
+	bankKeeper     bankkeeper.BaseKeeper
 	SlashingKeeper types.SlashingKeeper
 
 	AttestationHandler interface {
@@ -31,7 +33,7 @@ type Keeper struct {
 }
 
 // NewKeeper returns a new instance of the gravity keeper
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace, stakingKeeper types.StakingKeeper, bankKeeper types.BankKeeper, distKeeper types.DistributionKeeper, slashingKeeper types.SlashingKeeper) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace, stakingKeeper types.StakingKeeper, bankKeeper bankkeeper.BaseKeeper, distKeeper types.DistributionKeeper, slashingKeeper types.SlashingKeeper) Keeper {
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
 		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
@@ -163,6 +165,9 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []*types.MsgSetOrchestratorAddr
 			panic(sdkerrors.Wrapf(err, "found invalid ethAddress %v under key %v", string(value), key))
 		}
 		valAddress := sdk.ValAddress(key)
+		if err := sdk.VerifyAddressFormat(valAddress); err != nil {
+			panic(sdkerrors.Wrapf(err, "invalid valAddress in key %v", valAddress))
+		}
 		ethAddresses[valAddress.String()] = ethAddress.GetAddress()
 	}
 
@@ -176,9 +181,16 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []*types.MsgSetOrchestratorAddr
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()[len(types.KeyOrchestratorAddress):]
 		value := iter.Value()
-		orchAddress := sdk.AccAddress(key).String()
+		orchAddress := sdk.AccAddress(key)
+		if err := sdk.VerifyAddressFormat(orchAddress); err != nil {
+			panic(sdkerrors.Wrapf(err, "invalid orchAddress in key %v", orchAddresses))
+		}
 		valAddress := sdk.ValAddress(value)
-		orchAddresses[valAddress.String()] = orchAddress
+		if err := sdk.VerifyAddressFormat(valAddress); err != nil {
+			panic(sdkerrors.Wrapf(err, "invalid val address stored for orchestrator %s", valAddress.String()))
+		}
+
+		orchAddresses[valAddress.String()] = orchAddress.String()
 	}
 
 	var result []*types.MsgSetOrchestratorAddress
@@ -307,6 +319,6 @@ func (k Keeper) DeserializeValidatorIterator(vals []byte) stakingtypes.ValAddres
 	validators := stakingtypes.ValAddresses{
 		Addresses: []string{},
 	}
-	k.cdc.MustUnmarshalBinaryBare(vals, &validators)
+	k.cdc.MustUnmarshal(vals, &validators)
 	return validators
 }

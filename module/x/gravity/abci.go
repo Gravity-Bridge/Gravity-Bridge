@@ -221,7 +221,7 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				// slash validators for not confirming valsets
 				if !found {
 					cons, _ := val.GetConsAddr()
-					k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(), params.SlashFractionValset)
+					k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
 					if !val.IsJailed() {
 						k.StakingKeeper.Jail(ctx, cons)
 						// Our unbonding hook SHOULD be triggered after the above jail
@@ -268,7 +268,7 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 
 					// slash validators for not confirming valsets
 					if !found {
-						k.StakingKeeper.Slash(ctx, valConsAddr, ctx.BlockHeight(), validator.ConsensusPower(), params.SlashFractionValset)
+						k.StakingKeeper.Slash(ctx, valConsAddr, ctx.BlockHeight(), validator.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
 						if !validator.IsJailed() {
 							k.StakingKeeper.Jail(ctx, valConsAddr)
 							// Our unbonding hook SHOULD be triggered after the above jail
@@ -324,7 +324,7 @@ func BatchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 			if !found {
 				cons, _ := val.GetConsAddr()
-				k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(), params.SlashFractionBatch)
+				k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBatch)
 				if !val.IsJailed() {
 					k.StakingKeeper.Jail(ctx, cons)
 					// Our unbonding hook SHOULD be triggered after the above jail
@@ -378,7 +378,7 @@ func LogicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 			if !found {
 				cons, _ := val.GetConsAddr()
-				k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(), params.SlashFractionLogicCall)
+				k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionLogicCall)
 				if !val.IsJailed() {
 					k.StakingKeeper.Jail(ctx, cons)
 					// Our unbonding hook SHOULD be triggered after the above jail

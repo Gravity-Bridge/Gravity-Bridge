@@ -59,12 +59,12 @@ func TestAddGenesisAccountCmd(t *testing.T) {
 			cfg, err := genutiltest.CreateDefaultTendermintConfig(home)
 			require.NoError(t, err)
 
-			appCodec, _ := simapp.MakeCodecs()
-			err = genutiltest.ExecInitCmd(testMbm, home, appCodec)
+			appCodec := simapp.MakeTestEncodingConfig()
+			err = genutiltest.ExecInitCmd(testMbm, home, appCodec.Marshaler)
 			require.NoError(t, err)
 
 			serverCtx := server.NewContext(viper.New(), cfg, logger)
-			clientCtx := client.Context{}.WithJSONMarshaler(appCodec).WithHomeDir(home)
+			clientCtx := client.Context{}.WithCodec(appCodec.Marshaler).WithHomeDir(home)
 
 			ctx := context.Background()
 			ctx = context.WithValue(ctx, client.ClientContextKey, &clientCtx)

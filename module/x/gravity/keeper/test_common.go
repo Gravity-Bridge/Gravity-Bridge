@@ -164,13 +164,13 @@ var (
 	}
 
 	// InitTokens holds the number of tokens to initialize an account with
-	InitTokens = sdk.TokensFromConsensusPower(110)
+	InitTokens = sdk.TokensFromConsensusPower(110, sdk.DefaultPowerReduction)
 
 	// InitCoins holds the number of coins to initialize an account with
 	InitCoins = sdk.NewCoins(sdk.NewCoin(TestingStakeParams.BondDenom, InitTokens))
 
 	// StakingAmount holds the staking power to start a validator with
-	StakingAmount = sdk.TokensFromConsensusPower(10)
+	StakingAmount = sdk.TokensFromConsensusPower(10, sdk.DefaultPowerReduction)
 
 	// StakingCoins holds the staking coins to start a validator with
 	StakingCoins = sdk.NewCoins(sdk.NewCoin(TestingStakeParams.BondDenom, StakingAmount))
@@ -215,7 +215,7 @@ type TestInput struct {
 	BankKeeper     bankkeeper.BaseKeeper
 	GovKeeper      govkeeper.Keeper
 	Context        sdk.Context
-	Marshaler      codec.Marshaler
+	Marshaler      codec.Codec
 	LegacyAmino    *codec.LegacyAmino
 }
 
@@ -238,7 +238,8 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 		)
 
 		// Set the balance for the account
-		input.BankKeeper.SetBalances(input.Context, acc.GetAddress(), InitCoins)
+		require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, InitCoins))
+		input.BankKeeper.SendCoinsFromModuleToAccount(input.Context, types.ModuleName, acc.GetAddress(), InitCoins)
 
 		// Set the account in state
 		input.AccountKeeper.SetAccount(input.Context, acc)
@@ -384,17 +385,21 @@ func CreateTestEnv(t *testing.T) TestInput {
 
 	// total supply to track this
 	totalSupply := sdk.NewCoins(sdk.NewInt64Coin("stake", 100000000))
-	bankKeeper.SetSupply(ctx, banktypes.NewSupply(totalSupply))
 
 	// set up initial accounts
 	for name, perms := range maccPerms {
 		mod := authtypes.NewEmptyModuleAccount(name, perms...)
 		if name == stakingtypes.NotBondedPoolName {
-			err = bankKeeper.SetBalances(ctx, mod.GetAddress(), totalSupply)
+			err = bankKeeper.MintCoins(ctx, types.ModuleName, totalSupply)
+			require.NoError(t, err)
+			err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mod.Name, totalSupply)
 			require.NoError(t, err)
 		} else if name == distrtypes.ModuleName {
 			// some big pot to pay out
-			err = bankKeeper.SetBalances(ctx, mod.GetAddress(), sdk.NewCoins(sdk.NewInt64Coin("stake", 500000)))
+			amt := sdk.NewCoins(sdk.NewInt64Coin("stake", 500000))
+			err = bankKeeper.MintCoins(ctx, types.ModuleName, amt)
+			require.NoError(t, err)
+			err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mod.Name, amt)
 			require.NoError(t, err)
 		}
 		accountKeeper.SetModuleAccount(ctx, mod)
@@ -487,7 +492,7 @@ func MakeTestCodec() *codec.LegacyAmino {
 }
 
 // MakeTestMarshaler creates a proto codec for use in testing
-func MakeTestMarshaler() codec.Marshaler {
+func MakeTestMarshaler() codec.Codec {
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
 	ModuleBasics.RegisterInterfaces(interfaceRegistry)

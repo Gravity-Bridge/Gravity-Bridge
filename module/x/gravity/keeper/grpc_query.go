@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -15,7 +16,7 @@ var _ types.QueryServer = Keeper{
 	storeKey:           nil,
 	paramSpace:         paramstypes.Subspace{},
 	cdc:                nil,
-	bankKeeper:         nil,
+	bankKeeper:         bankkeeper.BaseKeeper{},
 	SlashingKeeper:     nil,
 	AttestationHandler: nil,
 }
@@ -245,6 +246,9 @@ func (k Keeper) LastEventNonceByAddr(
 	validator, found := k.GetOrchestratorValidator(ctx, addr)
 	if !found {
 		return nil, sdkerrors.Wrap(types.ErrUnknown, "address")
+	}
+	if err := sdk.VerifyAddressFormat(validator.GetOperator()); err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid validator address");
 	}
 	lastEventNonce := k.GetLastEventNonceByValidator(ctx, validator.GetOperator())
 	ret.EventNonce = lastEventNonce

@@ -133,6 +133,9 @@ var (
 // prefix
 // [0xe8][cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn]
 func GetOrchestratorAddressKey(orc sdk.AccAddress) string {
+	if err := sdk.VerifyAddressFormat(orc); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid orchestrator address"))
+	}
 	return KeyOrchestratorAddress + string(orc.Bytes())
 }
 
@@ -140,6 +143,9 @@ func GetOrchestratorAddressKey(orc sdk.AccAddress) string {
 // prefix              cosmos-validator
 // [0x0][cosmosvaloper1ahx7f8wyertuus9r20284ej0asrs085case3kn]
 func GetEthAddressByValidatorKey(validator sdk.ValAddress) string {
+	if err := sdk.VerifyAddressFormat(validator); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid validator address"))
+	}
 	return EthAddressByValidatorKey + string(validator.Bytes())
 }
 
@@ -162,7 +168,10 @@ func GetValsetKey(nonce uint64) string {
 // [0x0][0 0 0 0 0 0 0 1][cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn]
 // MARK finish-batches: this is where the key is created in the old (presumed working) code
 func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) string {
-	return ValsetConfirmKey + convertByteArrToString(UInt64Bytes(nonce)) + convertByteArrToString(validator.Bytes())
+	if err := sdk.VerifyAddressFormat(validator); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid validator address"))
+	}
+	return ValsetConfirmKey + convertByteArrToString(UInt64Bytes(nonce)) + string(validator.Bytes())
 }
 
 // GetClaimKey returns the following key format
@@ -183,13 +192,19 @@ func GetClaimKey(details EthereumClaim) string {
 	}
 	claimTypeLen := len([]byte{byte(details.GetType())})
 	nonceBz := UInt64Bytes(details.GetEventNonce())
-	key := make([]byte, len(OracleClaimKey)+claimTypeLen+sdk.AddrLen+len(nonceBz)+len(detailsHash))
+	if err := sdk.VerifyAddressFormat(details.GetClaimer()); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid claimer address"))
+	}
+
+	addrLen := len(details.GetClaimer())
+
+	key := make([]byte, len(OracleClaimKey)+claimTypeLen+addrLen+len(nonceBz)+len(detailsHash))
 	copy(key[0:], OracleClaimKey)
 	copy(key[len(OracleClaimKey):], []byte{byte(details.GetType())})
 	// TODO this is the delegate address, should be stored by the valaddress
 	copy(key[len(OracleClaimKey)+claimTypeLen:], details.GetClaimer())
-	copy(key[len(OracleClaimKey)+claimTypeLen+sdk.AddrLen:], nonceBz)
-	copy(key[len(OracleClaimKey)+claimTypeLen+sdk.AddrLen+len(nonceBz):], detailsHash)
+	copy(key[len(OracleClaimKey)+claimTypeLen+addrLen:], nonceBz)
+	copy(key[len(OracleClaimKey)+claimTypeLen+addrLen+len(nonceBz):], detailsHash)
 	return convertByteArrToString(key)
 }
 
@@ -250,6 +265,9 @@ func GetOutgoingTxBatchBlockKey(block uint64) string {
 // [0xe1][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1][cosmosvaloper1ahx7f8wyertuus9r20284ej0asrs085case3kn]
 // TODO this should be a sdk.ValAddress
 func GetBatchConfirmKey(tokenContract EthAddress, batchNonce uint64, validator sdk.AccAddress) string {
+	if err := sdk.VerifyAddressFormat(validator); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid validator address"))
+	}
 	a := append(UInt64Bytes(batchNonce), validator.Bytes()...)
 	b := append([]byte(tokenContract.GetAddress()), a...)
 	c := BatchConfirmKey + string(b)
@@ -261,6 +279,9 @@ func GetBatchConfirmKey(tokenContract EthAddress, batchNonce uint64, validator s
 // prefix              cosmos-validator
 // [0x0][cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn]
 func GetLastEventNonceByValidatorKey(validator sdk.ValAddress) string {
+	if err := sdk.VerifyAddressFormat(validator); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid validator address"))
+	}
 	return LastEventNonceByValidatorKey + string(validator.Bytes())
 }
 
@@ -278,9 +299,12 @@ func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) st
 }
 
 func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) string {
+	if err := sdk.VerifyAddressFormat(validator); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid validator address"))
+	}
 	interm := KeyOutgoingLogicConfirm + string(invalidationId)
 	interm = interm + string(UInt64Bytes(invalidationNonce))
-	return interm + convertByteArrToString(validator.Bytes())
+	return interm + string(validator.Bytes())
 }
 
 // GetPastEthSignatureCheckpointKey returns the following key format

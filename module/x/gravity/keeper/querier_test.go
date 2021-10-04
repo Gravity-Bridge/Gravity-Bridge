@@ -145,7 +145,7 @@ func TestLastValsetRequests(t *testing.T) {
 		var validators []sdk.ValAddress
 		for j := 0; j <= i; j++ {
 			// add an validator each block
-			valAddr := bytes.Repeat([]byte{byte(j)}, sdk.AddrLen)
+			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
 			input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr, *ethAddr)
@@ -305,7 +305,7 @@ func TestPendingValsetRequests(t *testing.T) {
 		var validators []sdk.ValAddress
 		for j := 0; j <= i; j++ {
 			// add an validator each block
-			valAddr := bytes.Repeat([]byte{byte(j)}, sdk.AddrLen)
+			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
 			input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr, *ethAddr)
@@ -458,7 +458,7 @@ func TestPendingValsetRequests(t *testing.T) {
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, sdk.AddrLen)
+			var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 			got, err := lastPendingValsetRequest(ctx, valAddr.String(), input.GravityKeeper)
 			require.NoError(t, err)
 			assert.JSONEq(t, string(spec.expResp), string(got), string(got))
@@ -479,7 +479,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 		for j := 0; j <= i; j++ {
 			// add an validator each block
 			// TODO: replace with real SDK addresses
-			valAddr := bytes.Repeat([]byte{byte(j)}, sdk.AddrLen)
+			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
 			input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr, *ethAddr)
@@ -536,7 +536,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, sdk.AddrLen)
+			var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 			got, err := lastPendingBatchRequest(ctx, valAddr.String(), input.GravityKeeper)
 			require.NoError(t, err)
 			assert.JSONEq(t, string(spec.expResp), string(got), string(got))
@@ -547,7 +547,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 //nolint: exhaustivestruct
 func createTestBatch(t *testing.T, input TestInput) {
 	var (
-		mySender            = bytes.Repeat([]byte{1}, sdk.AddrLen)
+		mySender            = bytes.Repeat([]byte{1}, 20)
 		myReceiver          = "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934"
 		myTokenContractAddr = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 		now                 = time.Now().UTC()
@@ -565,7 +565,7 @@ func createTestBatch(t *testing.T, input TestInput) {
 
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(input.Context, mySender)
-	err = input.BankKeeper.SetBalances(input.Context, mySender, allVouchers)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(input.Context, types.ModuleName, mySender, allVouchers)
 	require.NoError(t, err)
 
 	// add some TX to the pool
@@ -640,7 +640,7 @@ func TestQueryLogicCalls(t *testing.T) {
 		for j := 0; j <= i; j++ {
 			// add an validator each block
 			// TODO: replace with real SDK addresses
-			valAddr := bytes.Repeat([]byte{byte(j)}, sdk.AddrLen)
+			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
 			input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr, *ethAddr)
@@ -672,7 +672,7 @@ func TestQueryLogicCalls(t *testing.T) {
 	_, err := lastLogicCallRequests(ctx, k)
 	require.NoError(t, err)
 
-	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, sdk.AddrLen)
+	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 	_, err = lastPendingLogicCallRequest(ctx, valAddr.String(), k)
 	require.NoError(t, err)
 
@@ -699,7 +699,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 		for j := 0; j <= i; j++ {
 			// add an validator each block
 			// TODO: replace with real SDK addresses
-			valAddr := bytes.Repeat([]byte{byte(j)}, sdk.AddrLen)
+			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
 			input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr, *ethAddr)
@@ -724,7 +724,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 	}
 	k.SetOutgoingLogicCall(ctx, &call)
 
-	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, sdk.AddrLen)
+	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 
 	confirm := types.MsgConfirmLogicCall{
 		InvalidationId:    hex.EncodeToString(invalidationId),
@@ -887,7 +887,7 @@ func TestLastBatchesRequest(t *testing.T) {
 func TestQueryCurrentValset(t *testing.T) {
 	var (
 		ethAddress                = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
-		valAddress sdk.ValAddress = bytes.Repeat([]byte{0x2}, sdk.AddrLen)
+		valAddress sdk.ValAddress = bytes.Repeat([]byte{0x2}, 20)
 	)
 	addr, err := types.NewEthAddress(ethAddress)
 	require.NoError(t, err)
@@ -976,7 +976,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
-	require.NoError(t, input.BankKeeper.SetBalances(ctx, mySender, allVouchers))
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers))
 
 	// CREATE FIRST BATCH
 	// ==================

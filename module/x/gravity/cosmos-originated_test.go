@@ -41,7 +41,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 
 	tv.t = t
 
-	tv.myOrchestratorAddr = make([]byte, sdk.AddrLen)
+	tv.myOrchestratorAddr = make([]byte, 20)
 	tv.myValAddr = sdk.ValAddress(tv.myOrchestratorAddr) // revisit when proper mapping is impl in keeper
 
 	tv.erc20 = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
@@ -123,7 +123,7 @@ func lockCoinsInModule(tv *testingVars) {
 	)
 
 	// we start by depositing some funds into the users balance to send
-	tv.input.BankKeeper.MintCoins(tv.ctx, types.ModuleName, startingCoins)
+	require.NoError(tv.t, tv.input.BankKeeper.MintCoins(tv.ctx, types.ModuleName, startingCoins))
 	tv.input.BankKeeper.SendCoinsFromModuleToAccount(tv.ctx, types.ModuleName, userCosmosAddr, startingCoins)
 	balance1 := tv.input.BankKeeper.GetAllBalances(tv.ctx, userCosmosAddr)
 	assert.Equal(tv.t, sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}, balance1)
@@ -153,7 +153,7 @@ func lockCoinsInModule(tv *testingVars) {
 
 func acceptDepositEvent(tv *testingVars) {
 	var (
-		myOrchestratorAddr sdk.AccAddress = make([]byte, sdk.AddrLen)
+		myOrchestratorAddr sdk.AccAddress = make([]byte, 20)
 		myCosmosAddr, _                   = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
 		myNonce                           = uint64(2)
 		anyETHAddr                        = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"

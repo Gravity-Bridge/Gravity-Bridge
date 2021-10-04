@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -187,6 +189,9 @@ func (app *Gravity) prepForZeroHeightGenesis(ctx sdk.Context, jailWhiteList []st
 
 	for ; iter.Valid(); iter.Next() {
 		addr := sdk.ValAddress(iter.Key()[1:])
+		if err := sdk.VerifyAddressFormat(addr); err != nil {
+			panic(sdkerrors.Wrapf(err, "invalid validator found in store %v", addr))
+		}
 		validator, found := app.stakingKeeper.GetValidator(ctx, addr)
 		if !found {
 			panic("expected validator, not found")

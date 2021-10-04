@@ -33,7 +33,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	ctx := input.Context
 	h := NewHandler(input.GravityKeeper)
-	input.BankKeeper.MintCoins(ctx, types.ModuleName, startingCoins)
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, startingCoins))
 	input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, userCosmosAddr, startingCoins)
 	balance1 := input.BankKeeper.GetAllBalances(ctx, userCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}, balance1)
@@ -79,7 +79,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 //nolint: exhaustivestruct
 func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
 	var (
-		myOrchestratorAddr sdk.AccAddress = make([]byte, sdk.AddrLen)
+		myOrchestratorAddr sdk.AccAddress = make([]byte, 20)
 		myCosmosAddr, _                   = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
 		myValAddr                         = sdk.ValAddress(myOrchestratorAddr) // revisit when proper mapping is impl in keeper
 		myNonce                           = uint64(1)
@@ -279,10 +279,10 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	var (
 		ethAddress, _                 = types.NewEthAddress("0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255")
-		cosmosAddress  sdk.AccAddress = bytes.Repeat([]byte{0x1}, sdk.AddrLen)
+		cosmosAddress  sdk.AccAddress = bytes.Repeat([]byte{0x1}, 20)
 		ethAddress2, _                = types.NewEthAddress("0x26126048c706fB45a5a6De8432F428e794d0b952")
-		cosmosAddress2 sdk.AccAddress = bytes.Repeat([]byte{0x2}, sdk.AddrLen)
-		valAddress     sdk.ValAddress = bytes.Repeat([]byte{0x2}, sdk.AddrLen)
+		cosmosAddress2 sdk.AccAddress = bytes.Repeat([]byte{0x2}, 20)
+		valAddress     sdk.ValAddress = bytes.Repeat([]byte{0x2}, 20)
 		blockTime                     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		blockTime2                    = time.Date(2020, 9, 15, 15, 20, 10, 0, time.UTC)
 		blockHeight    int64          = 200

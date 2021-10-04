@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -13,7 +14,7 @@ import (
 // AttestationHandler processes `observed` Attestations
 type AttestationHandler struct {
 	keeper     Keeper
-	bankKeeper types.BankKeeper
+	bankKeeper bankkeeper.BaseKeeper
 	distKeeper types.DistributionKeeper
 }
 
@@ -132,8 +133,8 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		}
 
 		// Check if denom exists
-		metadata := a.keeper.bankKeeper.GetDenomMetaData(ctx, claim.CosmosDenom)
-		if metadata.Base == "" {
+		metadata, ok := a.keeper.bankKeeper.GetDenomMetaData(ctx, claim.CosmosDenom)
+		if !ok || metadata.Base == "" {
 			return sdkerrors.Wrap(types.ErrUnknown, fmt.Sprintf("denom not found %s", claim.CosmosDenom))
 		}
 
@@ -217,7 +218,9 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				// Note we are minting based on the claim! This is important as the reward value
 				// could change between when this event occurred and the present
 				coins := sdk.Coins{sdk.NewCoin(denom, claim.RewardAmount)}
-				a.bankKeeper.MintCoins(ctx, types.ModuleName, coins)
+				if err := a.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
+					return sdkerrors.Wrapf(err, "unable to mint cosmos originated coins %v", coins)
+				}
 			} else {
 				// // If it is not cosmos originated, burn the coins (aka Vouchers)
 				// // so that we don't think we have more in the bridge than we actually do

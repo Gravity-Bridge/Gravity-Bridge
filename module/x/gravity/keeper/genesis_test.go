@@ -78,7 +78,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	// give sender i a balance of token i
 	for i, v := range senders {
 		input.AccountKeeper.NewAccountWithAddress(ctx, *v)
-		require.NoError(t, input.BankKeeper.SetBalances(ctx, *v, *vouchers[i]))
+		require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, *v, *vouchers[i]))
 	}
 
 	// CREATE TRANSACTIONS

@@ -18,11 +18,17 @@ func (k Keeper) Attest(
 	claim types.EthereumClaim,
 	anyClaim *codectypes.Any,
 ) (*types.Attestation, error) {
+	if err := sdk.VerifyAddressFormat(claim.GetClaimer()); err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid claimer address");
+	}
 	val, found := k.GetOrchestratorValidator(ctx, claim.GetClaimer())
 	if !found {
 		panic("Could not find ValAddr for delegate key, should be checked by now")
 	}
 	valAddr := val.GetOperator()
+	if err := sdk.VerifyAddressFormat(valAddr); err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid orchestrator validator address");
+	}
 	// Check that the nonce of this event is exactly one higher than the last nonce stored by this validator.
 	// We check the event nonce in processAttestation as well,
 	// but checking it here gives individual eth signers a chance to retry,
@@ -163,7 +169,7 @@ func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim
 func (k Keeper) SetAttestation(ctx sdk.Context, eventNonce uint64, claimHash []byte, att *types.Attestation) {
 	store := ctx.KVStore(k.storeKey)
 	aKey := []byte(types.GetAttestationKey(eventNonce, claimHash))
-	store.Set(aKey, k.cdc.MustMarshalBinaryBare(att))
+	store.Set(aKey, k.cdc.MustMarshal(att))
 }
 
 // GetAttestation return an attestation given a nonce
@@ -175,7 +181,7 @@ func (k Keeper) GetAttestation(ctx sdk.Context, eventNonce uint64, claimHash []b
 		return nil
 	}
 	var att types.Attestation
-	k.cdc.MustUnmarshalBinaryBare(bz, &att)
+	k.cdc.MustUnmarshal(bz, &att)
 	return &att
 }
 
@@ -233,7 +239,7 @@ func (k Keeper) IterateAttestaions(ctx sdk.Context, cb func([]byte, types.Attest
 				XXX_sizecache:        0,
 			},
 		}
-		k.cdc.MustUnmarshalBinaryBare(iter.Value(), &att)
+		k.cdc.MustUnmarshal(iter.Value(), &att)
 		// cb returns true to stop early
 		if cb(iter.Key(), att) {
 			return
@@ -299,7 +305,7 @@ func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastOb
 		CosmosBlockHeight:   0,
 		EthereumBlockHeight: 0,
 	}
-	k.cdc.MustUnmarshalBinaryBare(bytes, &height)
+	k.cdc.MustUnmarshal(bytes, &height)
 	return height
 }
 
@@ -310,7 +316,7 @@ func (k Keeper) SetLastObservedEthereumBlockHeight(ctx sdk.Context, ethereumHeig
 		EthereumBlockHeight: ethereumHeight,
 		CosmosBlockHeight:   uint64(ctx.BlockHeight()),
 	}
-	store.Set([]byte(types.LastObservedEthereumBlockHeightKey), k.cdc.MustMarshalBinaryBare(&height))
+	store.Set([]byte(types.LastObservedEthereumBlockHeightKey), k.cdc.MustMarshal(&height))
 }
 
 // GetLastObservedValset retrieves the last observed validator set from the store
@@ -331,14 +337,14 @@ func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 		RewardAmount: sdk.Int{},
 		RewardToken:  "",
 	}
-	k.cdc.MustUnmarshalBinaryBare(bytes, &valset)
+	k.cdc.MustUnmarshal(bytes, &valset)
 	return &valset
 }
 
 // SetLastObservedValset updates the last observed validator set in the store
 func (k Keeper) SetLastObservedValset(ctx sdk.Context, valset types.Valset) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.LastObservedValsetKey), k.cdc.MustMarshalBinaryBare(&valset))
+	store.Set([]byte(types.LastObservedValsetKey), k.cdc.MustMarshal(&valset))
 }
 
 // setLastObservedEventNonce sets the latest observed event nonce
@@ -349,6 +355,9 @@ func (k Keeper) setLastObservedEventNonce(ctx sdk.Context, nonce uint64) {
 
 // GetLastEventNonceByValidator returns the latest event nonce for a given validator
 func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress) uint64 {
+	if err := sdk.VerifyAddressFormat(validator); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid validator address"));
+	}
 	store := ctx.KVStore(k.storeKey)
 	bytes := store.Get([]byte(types.GetLastEventNonceByValidatorKey(validator)))
 
@@ -369,6 +378,9 @@ func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValA
 
 // setLastEventNonceByValidator sets the latest event nonce for a give validator
 func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress, nonce uint64) {
+	if err := sdk.VerifyAddressFormat(validator); err != nil {
+		panic(sdkerrors.Wrap(err, "invalid validator address"));
+	}
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(types.GetLastEventNonceByValidatorKey(validator)), types.UInt64Bytes(nonce))
 }

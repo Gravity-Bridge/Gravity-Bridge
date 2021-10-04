@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -30,7 +32,7 @@ var _ types.MsgServer = msgServer{
 		storeKey:           nil,
 		paramSpace:         paramstypes.Subspace{},
 		cdc:                nil,
-		bankKeeper:         nil,
+		bankKeeper:         bankkeeper.BaseKeeper{},
 		SlashingKeeper:     nil,
 		AttestationHandler: nil,
 	},
@@ -296,6 +298,9 @@ func (k msgServer) confirmHandlerCommon(ctx sdk.Context, orchestrator string, si
 	validator, found := k.GetOrchestratorValidator(ctx, orchaddr)
 	if !found {
 		return sdkerrors.Wrap(types.ErrUnknown, "validator")
+	}
+	if err := sdk.VerifyAddressFormat(validator.GetOperator()); err != nil {
+		return sdkerrors.Wrapf(err, "discovered invalid validator address for orchestrator %v", orchaddr)
 	}
 
 	ethAddress, found := k.GetEthAddressByValidator(ctx, validator.GetOperator())

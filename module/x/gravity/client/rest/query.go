@@ -27,7 +27,7 @@ func getValsetRequestHandler(cliCtx client.Context, storeName string) http.Handl
 		}
 
 		var out types.Valset
-		cliCtx.JSONMarshaler.MustUnmarshalJSON(res, &out)
+		cliCtx.Codec.MustUnmarshalJSON(res, &out)
 		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
 	}
 }
@@ -50,7 +50,7 @@ func batchByNonceHandler(cliCtx client.Context, storeName string) http.HandlerFu
 		}
 
 		var out types.OutgoingTxBatch
-		cliCtx.JSONMarshaler.MustUnmarshalJSON(res, &out)
+		cliCtx.Codec.MustUnmarshalJSON(res, &out)
 		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
 	}
 }
@@ -146,7 +146,7 @@ func lastValsetRequestsByAddressHandler(cliCtx client.Context, storeName string)
 		}
 
 		var out types.Valset
-		cliCtx.JSONMarshaler.MustUnmarshalJSON(res, &out)
+		cliCtx.Codec.MustUnmarshalJSON(res, &out)
 		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
 	}
 }
@@ -167,7 +167,7 @@ func lastBatchesByAddressHandler(cliCtx client.Context, storeName string) http.H
 		}
 
 		var out types.OutgoingTxBatch
-		cliCtx.JSONMarshaler.MustUnmarshalJSON(res, &out)
+		cliCtx.Codec.MustUnmarshalJSON(res, &out)
 		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
 	}
 }
@@ -180,7 +180,7 @@ func currentValsetHandler(cliCtx client.Context, storeName string) http.HandlerF
 			return
 		}
 		var out types.Valset
-		cliCtx.JSONMarshaler.MustUnmarshalJSON(res, &out)
+		cliCtx.Codec.MustUnmarshalJSON(res, &out)
 		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
 	}
 }

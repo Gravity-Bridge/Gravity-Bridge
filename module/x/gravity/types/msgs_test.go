@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,8 +12,8 @@ import (
 func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 	var (
 		ethAddress                   = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
-		cosmosAddress sdk.AccAddress = bytes.Repeat([]byte{0x1}, sdk.AddrLen)
-		valAddress    sdk.ValAddress = bytes.Repeat([]byte{0x1}, sdk.AddrLen)
+		cosmosAddress sdk.AccAddress = bytes.Repeat([]byte{0x1}, 20)
+		valAddress    sdk.ValAddress = bytes.Repeat([]byte{0x1}, 20)
 	)
 	specs := map[string]struct {
 		srcCosmosAddr sdk.AccAddress
@@ -30,26 +31,27 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 			srcCosmosAddr: cosmosAddress,
 			expErr:        true,
 		},
-		"invalid validator address": {
+		"short validator address": {
 			srcValAddr:    []byte{0x1},
 			srcCosmosAddr: cosmosAddress,
 			srcETHAddr:    ethAddress,
-			expErr:        true,
+			expErr:        false,
 		},
 		"empty cosmos address": {
 			srcValAddr: valAddress,
 			srcETHAddr: ethAddress,
 			expErr:     true,
 		},
-		"invalid cosmos address": {
+		"short cosmos address": {
 			srcCosmosAddr: []byte{0x1},
 			srcValAddr:    valAddress,
 			srcETHAddr:    ethAddress,
-			expErr:        true,
+			expErr:        false,
 		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
+			println(fmt.Sprintf("Spec is %v", msg))
 			ethAddr, err := NewEthAddress(spec.srcETHAddr)
 			msg := NewMsgSetOrchestratorAddress(spec.srcValAddr, spec.srcCosmosAddr, *ethAddr)
 			// when
