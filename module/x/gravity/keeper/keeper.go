@@ -235,13 +235,13 @@ func (k Keeper) SetResetBridgeNonce(ctx sdk.Context, nonce uint64) {
 // SetLastSlashedLogicCallBlock sets the latest slashed logic call block height
 func (k Keeper) SetLastSlashedLogicCallBlock(ctx sdk.Context, blockHeight uint64) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.LastSlashedLogicCallBlock, types.UInt64Bytes(blockHeight))
+	store.Set([]byte(types.LastSlashedLogicCallBlock), types.UInt64Bytes(blockHeight))
 }
 
 // GetLastSlashedLogicCallBlock returns the latest slashed logic call block
 func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.LastSlashedLogicCallBlock)
+	bytes := store.Get([]byte(types.LastSlashedLogicCallBlock))
 
 	if len(bytes) == 0 {
 		return 0

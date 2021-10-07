@@ -27,7 +27,7 @@ func (k Keeper) GetOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, inv
 		InvalidationNonce:    invalidationNonce,
 		Block:                0,
 	}
-	k.cdc.MustUnmarshalBinaryBare(store.Get(types.GetOutgoingLogicCallKey(invalidationID, invalidationNonce)), &call)
+	k.cdc.MustUnmarshalBinaryBare(store.Get([]byte(types.GetOutgoingLogicCallKey(invalidationID, invalidationNonce))), &call)
 	return &call
 }
 
@@ -39,18 +39,18 @@ func (k Keeper) SetOutgoingLogicCall(ctx sdk.Context, call *types.OutgoingLogicC
 	checkpoint := call.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
 
-	store.Set(types.GetOutgoingLogicCallKey(call.InvalidationId, call.InvalidationNonce),
+	store.Set([]byte(types.GetOutgoingLogicCallKey(call.InvalidationId, call.InvalidationNonce)),
 		k.cdc.MustMarshalBinaryBare(call))
 }
 
 // DeleteOutgoingLogicCall deletes outgoing logic calls
 func (k Keeper) DeleteOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, invalidationNonce uint64) {
-	ctx.KVStore(k.storeKey).Delete(types.GetOutgoingLogicCallKey(invalidationID, invalidationNonce))
+	ctx.KVStore(k.storeKey).Delete([]byte(types.GetOutgoingLogicCallKey(invalidationID, invalidationNonce)))
 }
 
 // IterateOutgoingLogicCalls iterates over outgoing logic calls
 func (k Keeper) IterateOutgoingLogicCalls(ctx sdk.Context, cb func([]byte, *types.OutgoingLogicCall) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyOutgoingLogicCall)
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyOutgoingLogicCall))
 	iter := prefixStore.Iterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -109,13 +109,13 @@ func (k Keeper) SetLogicCallConfirm(ctx sdk.Context, msg *types.MsgConfirmLogicC
 	}
 
 	ctx.KVStore(k.storeKey).
-		Set(types.GetLogicConfirmKey(bytes, msg.InvalidationNonce, acc), k.cdc.MustMarshalBinaryBare(msg))
+		Set([]byte(types.GetLogicConfirmKey(bytes, msg.InvalidationNonce, acc)), k.cdc.MustMarshalBinaryBare(msg))
 }
 
 // GetLogicCallConfirm gets a logic confirm from the store
 func (k Keeper) GetLogicCallConfirm(ctx sdk.Context, invalidationId []byte, invalidationNonce uint64, val sdk.AccAddress) *types.MsgConfirmLogicCall {
 	store := ctx.KVStore(k.storeKey)
-	data := store.Get(types.GetLogicConfirmKey(invalidationId, invalidationNonce, val))
+	data := store.Get([]byte(types.GetLogicConfirmKey(invalidationId, invalidationNonce, val)))
 	if data == nil {
 		return nil
 	}
@@ -136,7 +136,7 @@ func (k Keeper) DeleteLogicCallConfirm(
 	invalidationID []byte,
 	invalidationNonce uint64,
 	val sdk.AccAddress) {
-	ctx.KVStore(k.storeKey).Delete(types.GetLogicConfirmKey(invalidationID, invalidationNonce, val))
+	ctx.KVStore(k.storeKey).Delete([]byte(types.GetLogicConfirmKey(invalidationID, invalidationNonce, val)))
 }
 
 // IterateLogicConfirmByInvalidationIDAndNonce iterates over all logic confirms stored by nonce
@@ -145,7 +145,7 @@ func (k Keeper) IterateLogicConfirmByInvalidationIDAndNonce(
 	invalidationID []byte,
 	invalidationNonce uint64,
 	cb func([]byte, *types.MsgConfirmLogicCall) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyOutgoingLogicConfirm)
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyOutgoingLogicConfirm))
 	iter := prefixStore.Iterator(prefixRange(append(invalidationID, types.UInt64Bytes(invalidationNonce)...)))
 	defer iter.Close()
 

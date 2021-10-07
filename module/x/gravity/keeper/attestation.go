@@ -162,14 +162,14 @@ func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim
 // SetAttestation sets the attestation in the store
 func (k Keeper) SetAttestation(ctx sdk.Context, eventNonce uint64, claimHash []byte, att *types.Attestation) {
 	store := ctx.KVStore(k.storeKey)
-	aKey := types.GetAttestationKey(eventNonce, claimHash)
+	aKey := []byte(types.GetAttestationKey(eventNonce, claimHash))
 	store.Set(aKey, k.cdc.MustMarshalBinaryBare(att))
 }
 
 // GetAttestation return an attestation given a nonce
 func (k Keeper) GetAttestation(ctx sdk.Context, eventNonce uint64, claimHash []byte) *types.Attestation {
 	store := ctx.KVStore(k.storeKey)
-	aKey := types.GetAttestationKey(eventNonce, claimHash)
+	aKey := []byte(types.GetAttestationKey(eventNonce, claimHash))
 	bz := store.Get(aKey)
 	if len(bz) == 0 {
 		return nil
@@ -191,7 +191,7 @@ func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 	}
 	store := ctx.KVStore(k.storeKey)
 
-	store.Delete(types.GetAttestationKey(claim.GetEventNonce(), hash))
+	store.Delete([]byte(types.GetAttestationKey(claim.GetEventNonce(), hash)))
 }
 
 // GetAttestationMapping returns a mapping of eventnonce -> attestations at that nonce
@@ -217,7 +217,7 @@ func (k Keeper) GetAttestationMapping(ctx sdk.Context) (out map[uint64][]types.A
 func (k Keeper) IterateAttestaions(ctx sdk.Context, cb func([]byte, types.Attestation) bool) {
 	store := ctx.KVStore(k.storeKey)
 	prefix := types.OracleAttestationKey
-	iter := store.Iterator(prefixRange(prefix))
+	iter := store.Iterator(prefixRange([]byte(prefix)))
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -275,7 +275,7 @@ func (k Keeper) GetMostRecentAttestations(ctx sdk.Context, limit uint64) []*type
 // GetLastObservedEventNonce returns the latest observed event nonce
 func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.LastObservedEventNonceKey)
+	bytes := store.Get([]byte(types.LastObservedEventNonceKey))
 
 	if len(bytes) == 0 {
 		return 0
@@ -287,7 +287,7 @@ func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context) uint64 {
 // the store
 func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastObservedEthereumBlockHeight {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.LastObservedEthereumBlockHeightKey)
+	bytes := store.Get([]byte(types.LastObservedEthereumBlockHeightKey))
 
 	if len(bytes) == 0 {
 		return types.LastObservedEthereumBlockHeight{
@@ -310,7 +310,7 @@ func (k Keeper) SetLastObservedEthereumBlockHeight(ctx sdk.Context, ethereumHeig
 		EthereumBlockHeight: ethereumHeight,
 		CosmosBlockHeight:   uint64(ctx.BlockHeight()),
 	}
-	store.Set(types.LastObservedEthereumBlockHeightKey, k.cdc.MustMarshalBinaryBare(&height))
+	store.Set([]byte(types.LastObservedEthereumBlockHeightKey), k.cdc.MustMarshalBinaryBare(&height))
 }
 
 // GetLastObservedValset retrieves the last observed validator set from the store
@@ -319,7 +319,7 @@ func (k Keeper) SetLastObservedEthereumBlockHeight(ctx sdk.Context, ethereumHeig
 // to date you may break the bridge
 func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.LastObservedValsetKey)
+	bytes := store.Get([]byte(types.LastObservedValsetKey))
 
 	if len(bytes) == 0 {
 		return nil
@@ -338,19 +338,19 @@ func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 // SetLastObservedValset updates the last observed validator set in the store
 func (k Keeper) SetLastObservedValset(ctx sdk.Context, valset types.Valset) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.LastObservedValsetKey, k.cdc.MustMarshalBinaryBare(&valset))
+	store.Set([]byte(types.LastObservedValsetKey), k.cdc.MustMarshalBinaryBare(&valset))
 }
 
 // setLastObservedEventNonce sets the latest observed event nonce
 func (k Keeper) setLastObservedEventNonce(ctx sdk.Context, nonce uint64) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.LastObservedEventNonceKey, types.UInt64Bytes(nonce))
+	store.Set([]byte(types.LastObservedEventNonceKey), types.UInt64Bytes(nonce))
 }
 
 // GetLastEventNonceByValidator returns the latest event nonce for a given validator
 func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.GetLastEventNonceByValidatorKey(validator))
+	bytes := store.Get([]byte(types.GetLastEventNonceByValidatorKey(validator)))
 
 	if len(bytes) == 0 {
 		// in the case that we have no existing value this is the first
@@ -370,5 +370,5 @@ func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValA
 // setLastEventNonceByValidator sets the latest event nonce for a give validator
 func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress, nonce uint64) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetLastEventNonceByValidatorKey(validator), types.UInt64Bytes(nonce))
+	store.Set([]byte(types.GetLastEventNonceByValidatorKey(validator)), types.UInt64Bytes(nonce))
 }

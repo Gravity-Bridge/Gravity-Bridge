@@ -12,7 +12,7 @@ import (
 
 func (k Keeper) GetCosmosOriginatedDenom(ctx sdk.Context, tokenContract types.EthAddress) (string, bool) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetERC20ToDenomKey(tokenContract))
+	bz := store.Get([]byte(types.GetERC20ToDenomKey(tokenContract)))
 
 	if bz != nil {
 		return string(bz), true
@@ -22,7 +22,7 @@ func (k Keeper) GetCosmosOriginatedDenom(ctx sdk.Context, tokenContract types.Et
 
 func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (*types.EthAddress, bool) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetDenomToERC20Key(denom))
+	bz := store.Get([]byte(types.GetDenomToERC20Key(denom)))
 	if bz != nil {
 		ethAddr, err := types.NewEthAddress(string(bz))
 		if err != nil {
@@ -36,8 +36,8 @@ func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (*types.
 
 func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, tokenContract types.EthAddress) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetDenomToERC20Key(denom), []byte(tokenContract.GetAddress()))
-	store.Set(types.GetERC20ToDenomKey(tokenContract), []byte(denom))
+	store.Set([]byte(types.GetDenomToERC20Key(denom)), []byte(tokenContract.GetAddress()))
+	store.Set([]byte(types.GetERC20ToDenomKey(tokenContract)), []byte(denom))
 }
 
 // DenomToERC20 returns (bool isCosmosOriginated, EthAddress ERC20, err)
@@ -102,7 +102,7 @@ func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, tokenContract types.EthAddre
 
 // IterateERC20ToDenom iterates over erc20 to denom relations
 func (k Keeper) IterateERC20ToDenom(ctx sdk.Context, cb func([]byte, *types.ERC20ToDenom) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ERC20ToDenomKey)
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.ERC20ToDenomKey))
 	iter := prefixStore.Iterator(nil, nil)
 	defer iter.Close()
 

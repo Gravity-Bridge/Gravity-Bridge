@@ -17,13 +17,13 @@ import (
 // SetOrchestratorValidator sets the Orchestrator key for a given validator
 func (k Keeper) SetOrchestratorValidator(ctx sdk.Context, val sdk.ValAddress, orch sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetOrchestratorAddressKey(orch), val.Bytes())
+	store.Set([]byte(types.GetOrchestratorAddressKey(orch)), val.Bytes())
 }
 
 // GetOrchestratorValidator returns the validator key associated with an orchestrator key
 func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (validator stakingtypes.Validator, found bool) {
 	store := ctx.KVStore(k.storeKey)
-	valAddr := store.Get(types.GetOrchestratorAddressKey(orch))
+	valAddr := store.Get([]byte(types.GetOrchestratorAddressKey(orch)))
 	if valAddr == nil {
 		return stakingtypes.Validator{
 			OperatorAddress: "",
@@ -104,14 +104,14 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 // SetEthAddress sets the ethereum address for a given validator
 func (k Keeper) SetEthAddressForValidator(ctx sdk.Context, validator sdk.ValAddress, ethAddr types.EthAddress) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetEthAddressByValidatorKey(validator), []byte(ethAddr.GetAddress()))
-	store.Set(types.GetValidatorByEthAddressKey(ethAddr), []byte(validator))
+	store.Set([]byte(types.GetEthAddressByValidatorKey(validator)), []byte(ethAddr.GetAddress()))
+	store.Set([]byte(types.GetValidatorByEthAddressKey(ethAddr)), []byte(validator))
 }
 
 // GetEthAddressByValidator returns the eth address for a given gravity validator
 func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddress) (ethAddress *types.EthAddress, found bool) {
 	store := ctx.KVStore(k.storeKey)
-	ethAddr := store.Get(types.GetEthAddressByValidatorKey(validator))
+	ethAddr := store.Get([]byte(types.GetEthAddressByValidatorKey(validator)))
 	if ethAddr == nil {
 		return nil, false
 	}
@@ -126,7 +126,7 @@ func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddre
 // GetValidatorByEthAddress returns the validator for a given eth address
 func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddress) (validator stakingtypes.Validator, found bool) {
 	store := ctx.KVStore(k.storeKey)
-	valAddr := store.Get(types.GetValidatorByEthAddressKey(ethAddr))
+	valAddr := store.Get([]byte(types.GetValidatorByEthAddressKey(ethAddr)))
 	if valAddr == nil {
 		return stakingtypes.Validator{
 			OperatorAddress: "",

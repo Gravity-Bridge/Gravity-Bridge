@@ -50,7 +50,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 	if len(selectedTx) == 0 || err != nil {
 		return nil, err
 	}
-	nextID := k.autoIncrementID(ctx, types.KeyLastOutgoingBatchID)
+	nextID := k.autoIncrementID(ctx, []byte(types.KeyLastOutgoingBatchID))
 	batch, err := types.NewInternalOutgingTxBatch(nextID, k.getBatchTimeoutHeight(ctx), selectedTx, contract, 0)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "unable to create batch"))
@@ -127,10 +127,10 @@ func (k Keeper) StoreBatch(ctx sdk.Context, batch *types.InternalOutgoingTxBatch
 	store := ctx.KVStore(k.storeKey)
 	// set the current block height when storing the batch
 	batch.Block = uint64(ctx.BlockHeight())
-	key := types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce)
+	key := []byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce))
 	store.Set(key, k.cdc.MustMarshalBinaryBare(batch.ToExternal()))
 
-	blockKey := types.GetOutgoingTxBatchBlockKey(batch.Block)
+	blockKey := []byte(types.GetOutgoingTxBatchBlockKey(batch.Block))
 	store.Set(blockKey, k.cdc.MustMarshalBinaryBare(batch.ToExternal()))
 }
 
@@ -141,10 +141,10 @@ func (k Keeper) StoreBatchUnsafe(ctx sdk.Context, batch *types.InternalOutgoingT
 	}
 	batchExt := batch.ToExternal()
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetOutgoingTxBatchKey(batch.TokenContract, batchExt.BatchNonce)
+	key := []byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batchExt.BatchNonce))
 	store.Set(key, k.cdc.MustMarshalBinaryBare(batchExt))
 
-	blockKey := types.GetOutgoingTxBatchBlockKey(batchExt.Block)
+	blockKey := []byte(types.GetOutgoingTxBatchBlockKey(batchExt.Block))
 	store.Set(blockKey, k.cdc.MustMarshalBinaryBare(batchExt))
 }
 
@@ -154,8 +154,8 @@ func (k Keeper) DeleteBatch(ctx sdk.Context, batch types.InternalOutgoingTxBatch
 		panic(sdkerrors.Wrap(err, "attempted to delete invalid batch"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	store.Delete(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce))
-	store.Delete(types.GetOutgoingTxBatchBlockKey(batch.Block))
+	store.Delete([]byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce)))
+	store.Delete([]byte(types.GetOutgoingTxBatchBlockKey(batch.Block)))
 }
 
 // pickUnbatchedTX find TX in pool and remove from "available" second index
@@ -185,7 +185,7 @@ func (k Keeper) pickUnbatchedTX(
 func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAddress, nonce uint64) *types.InternalOutgoingTxBatch {
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetOutgoingTxBatchKey(tokenContract, nonce)
-	bz := store.Get(key)
+	bz := store.Get([]byte(key))
 	if len(bz) == 0 {
 		return nil
 	}
@@ -232,7 +232,7 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 
 // IterateOutgoingTXBatches iterates through all outgoing batches in DESC order.
 func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, batch *types.InternalOutgoingTxBatch) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.OutgoingTXBatchKey)
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.OutgoingTXBatchKey))
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -275,13 +275,13 @@ func (k Keeper) GetLastOutgoingBatchByTokenType(ctx sdk.Context, token types.Eth
 // SetLastSlashedBatchBlock sets the latest slashed Batch block height
 func (k Keeper) SetLastSlashedBatchBlock(ctx sdk.Context, blockHeight uint64) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.LastSlashedBatchBlock, types.UInt64Bytes(blockHeight))
+	store.Set([]byte(types.LastSlashedBatchBlock), types.UInt64Bytes(blockHeight))
 }
 
 // GetLastSlashedBatchBlock returns the latest slashed Batch block
 func (k Keeper) GetLastSlashedBatchBlock(ctx sdk.Context) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.LastSlashedBatchBlock)
+	bytes := store.Get([]byte(types.LastSlashedBatchBlock))
 
 	if len(bytes) == 0 {
 		return 0
@@ -310,7 +310,7 @@ func (k Keeper) IterateBatchBySlashedBatchBlock(
 	lastSlashedBatchBlock uint64,
 	maxHeight uint64,
 	cb func([]byte, *types.InternalOutgoingTxBatch) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.OutgoingTXBatchBlockKey)
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.OutgoingTXBatchBlockKey))
 	iter := prefixStore.Iterator(types.UInt64Bytes(lastSlashedBatchBlock), types.UInt64Bytes(maxHeight))
 	defer iter.Close()
 
