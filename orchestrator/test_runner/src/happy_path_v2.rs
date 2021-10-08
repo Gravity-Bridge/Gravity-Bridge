@@ -122,20 +122,26 @@ pub async fn happy_path_test_v2(
     info!("Sent batch request to move things along");
 
     info!("Waiting for batch to be signed and relayed to Ethereum");
+
     let start = Instant::now();
+    // overly complicated retry logic allows us to handle the possibility that gas prices change between blocks
+    // and cause any individual request to fail.
+
     while Instant::now() - start < TOTAL_TIMEOUT {
-        let balance = web30
+        let new_balance = web30
             .get_erc20_balance(erc20_contract, user.eth_address)
             .await;
-        if balance.is_err() {
+        // only keep trying if our error is gas related
+        if new_balance.is_err() {
             continue;
         }
-        let balance = balance.unwrap();
+        let balance = new_balance.unwrap();
         if balance == amount_to_bridge {
             info!(
                 "Successfully bridged {} Cosmos asset {} to Ethereum!",
                 amount_to_bridge, token_to_send_to_eth
             );
+            assert!(balance == amount_to_bridge.clone());
             break;
         } else if balance != 0u8.into() {
             panic!(

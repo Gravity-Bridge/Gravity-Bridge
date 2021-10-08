@@ -83,8 +83,7 @@ pub async fn send_erc20_bulk(
     destinations: &[EthAddress],
     web3: &Web3,
 ) {
-    let miner_balance = web3.get_erc20_balance(erc20, *MINER_ADDRESS).await.unwrap();
-    assert!(miner_balance > amount.clone() * destinations.len().into());
+    check_erc20_balance(erc20, amount.clone(), *MINER_ADDRESS, web3).await;
     let mut nonce = web3
         .eth_get_transaction_count(*MINER_ADDRESS)
         .await
@@ -110,7 +109,7 @@ pub async fn send_erc20_bulk(
     wait_for_txids(txids, web3).await;
     let mut balance_checks = Vec::new();
     for address in destinations {
-        let check = check_erc20_balance(*address, erc20, amount.clone(), web3);
+        let check = check_erc20_balance(erc20, amount.clone(), *address, web3);
         balance_checks.push(check);
     }
     join_all(balance_checks).await;
@@ -161,7 +160,12 @@ async fn wait_for_txids(txids: Vec<Result<Uint256, Web3Error>>, web3: &Web3) {
 
 /// utility function for bulk checking erc20 balances, used to provide
 /// a single future that contains the assert as well s the request
-async fn check_erc20_balance(address: EthAddress, erc20: EthAddress, amount: Uint256, web3: &Web3) {
+pub async fn check_erc20_balance(
+    erc20: EthAddress,
+    amount: Uint256,
+    address: EthAddress,
+    web3: &Web3,
+) {
     let start = Instant::now();
     // overly complicated retry logic allows us to handle the possibility that gas prices change between blocks
     // and cause any individual request to fail.

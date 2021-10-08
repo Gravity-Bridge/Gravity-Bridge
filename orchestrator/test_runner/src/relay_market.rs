@@ -406,6 +406,7 @@ async fn test_bad_batch(
         "destination eth balance {} == {}",
         dest_eth_bal, send_amount,
     );
+
     info!(
         "Successfully updated txbatch nonce to {} and sent {}{} tokens to Ethereum!",
         current_eth_batch_nonce, cdai_held.amount, cdai_held.denom

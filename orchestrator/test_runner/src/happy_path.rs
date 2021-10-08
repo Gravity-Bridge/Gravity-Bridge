@@ -579,13 +579,8 @@ async fn test_batch(
 
     // we have to send this address one eth so that it can perform contract calls
     send_one_eth(dest_eth_address, web30).await;
-    assert_eq!(
-        web30
-            .get_erc20_balance(erc20_contract, dest_eth_address)
-            .await
-            .unwrap(),
-        amount
-    );
+
+    check_erc20_balance(erc20_contract, amount.clone(), dest_eth_address, web30).await;
     info!(
         "Successfully updated txbatch nonce to {} and sent {}{} tokens to Ethereum!",
         current_eth_batch_nonce, amount, token_name
