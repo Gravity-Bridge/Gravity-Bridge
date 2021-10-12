@@ -162,9 +162,7 @@ async function runSubmitBatchTest(opts: { batchSize: number }) {
   await gravity.submitBatch(
     valset,
 
-    sigs.v,
-    sigs.r,
-    sigs.s,
+    sigs,
 
     txBatch.amounts,
     txBatch.destinations,
@@ -310,9 +308,7 @@ async function runLogicCallTest(opts: {
   await gravity.submitLogicCall(
     valset,
 
-    sigs.v,
-    sigs.r,
-    sigs.s,
+    sigs,
     logicCallArgs
   );
 

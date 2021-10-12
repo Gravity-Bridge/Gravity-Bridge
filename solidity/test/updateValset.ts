@@ -127,31 +127,31 @@ async function runTest(opts: {
   let sigs = await signHash(validators, checkpoint);
   if (opts.badValidatorSig) {
     // Switch the first sig for the second sig to screw things up
-    sigs.v[1] = sigs.v[0];
-    sigs.r[1] = sigs.r[0];
-    sigs.s[1] = sigs.s[0];
+    sigs[1].v = sigs[0].v;
+    sigs[1].r = sigs[0].r;
+    sigs[1].s = sigs[0].s;
   }
 
   if (opts.zeroedValidatorSig) {
     // Switch the first sig for the second sig to screw things up
-    sigs.v[1] = sigs.v[0];
-    sigs.r[1] = sigs.r[0];
-    sigs.s[1] = sigs.s[0];
+    sigs[1].v = sigs[0].v;
+    sigs[1].r = sigs[0].r;
+    sigs[1].s = sigs[0].s;
     // Then zero it out to skip evaluation
-    sigs.v[1] = 0;
+    sigs[1].v = 0;
   }
 
   if (opts.notEnoughPower) {
     // zero out enough signatures that we dip below the threshold
-    sigs.v[1] = 0;
-    sigs.v[2] = 0;
-    sigs.v[3] = 0;
-    sigs.v[5] = 0;
-    sigs.v[6] = 0;
-    sigs.v[7] = 0;
-    sigs.v[9] = 0;
-    sigs.v[11] = 0;
-    sigs.v[13] = 0;
+    sigs[1].v = 0;
+    sigs[2].v = 0;
+    sigs[3].v = 0;
+    sigs[5].v = 0;
+    sigs[6].v = 0;
+    sigs[7].v = 0;
+    sigs[9].v = 0;
+    sigs[11].v = 0;
+    sigs[13].v = 0;
   }
 
   if (opts.malformedCurrentValset) {
@@ -163,9 +163,7 @@ async function runTest(opts: {
   let valsetUpdateTx = await gravity.updateValset(
     newValset,
     currentValset,
-    sigs.v,
-    sigs.r,
-    sigs.s
+    sigs
   );
 
   // check that the relayer was paid

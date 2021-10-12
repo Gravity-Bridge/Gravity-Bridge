@@ -125,9 +125,7 @@ async function runTest(opts: {}) {
   await gravity.submitBatch(
     valset,
 
-    sigs.v,
-    sigs.r,
-    sigs.s,
+    sigs,
 
     txAmounts,
     txDestinations,

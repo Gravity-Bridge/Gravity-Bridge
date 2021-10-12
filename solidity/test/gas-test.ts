@@ -64,9 +64,7 @@ describe("Gas tests", function () {
         await gravity.testCheckValidatorSignatures(
             await getSignerAddresses(validators),
             powers,
-            sigs.v,
-            sigs.r,
-            sigs.s,
+            sigs,
             "0x7bc422a00c175cae98cf2f4c36f2f8b63ec51ab8c57fecda9bccf0987ae2d67d",
             6666
         );
