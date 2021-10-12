@@ -15,7 +15,7 @@ contract ReentrantERC20 {
 
 	function transfer(address, uint256) public returns (bool) {
 		address[] memory addresses = new address[](0);
-		bytes32[] memory bytes32s = new bytes32[](0);
+		Signature[] memory sigs = new Signature[](0);
 		uint256[] memory uint256s = new uint256[](0);
 		address blankAddress = address(0);
 		bytes memory bytess = new bytes(0);
@@ -41,13 +41,7 @@ contract ReentrantERC20 {
 			valset = ValsetArgs(addresses, uint256s, zero, zero, blankAddress);
 		}
 
-		Gravity(state_gravityAddress).submitLogicCall(
-			valset,
-			new uint8[](0),
-			bytes32s,
-			bytes32s,
-			args
-		);
+		Gravity(state_gravityAddress).submitLogicCall(valset, sigs, args);
 		return true;
 	}
 }

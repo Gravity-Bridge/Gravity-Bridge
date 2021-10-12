@@ -9,6 +9,7 @@ export async function getSignerAddresses(signers: Signer[]) {
   return await Promise.all(signers.map(signer => signer.getAddress()));
 }
 
+
 export function makeCheckpoint(
   validators: string[],
   powers: BigNumberish[],
@@ -29,22 +30,24 @@ export function makeCheckpoint(
   return checkpoint;
 }
 
+export type Sig = {
+  v: number,
+  r: string,
+  s: string
+};
+
 export async function signHash(signers: Signer[], hash: string) {
-  let v: number[] = [];
-  let r: string[] = [];
-  let s: string[] = [];
+  let sigs: Sig[] = [];
 
   for (let i = 0; i < signers.length; i = i + 1) {
     const sig = await signers[i].signMessage(ethers.utils.arrayify(hash));
     const address = await signers[i].getAddress();
 
     const splitSig = ethers.utils.splitSignature(sig);
-    v.push(splitSig.v!);
-    r.push(splitSig.r);
-    s.push(splitSig.s);
+    sigs.push({ v: splitSig.v!, r: splitSig.r, s: splitSig.s });
   }
 
-  return { v, r, s };
+  return sigs;
 }
 
 export function makeTxBatchHash(

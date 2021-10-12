@@ -56,6 +56,13 @@ struct ValsetArgs {
 	address rewardToken;
 }
 
+// This represents a validator signature
+struct Signature {
+	uint8 v;
+	bytes32 r;
+	bytes32 s;
+}
+
 contract Gravity is ReentrancyGuard {
 	using SafeERC20 for IERC20;
 
@@ -119,25 +126,21 @@ contract Gravity is ReentrancyGuard {
 
 	// TEST FIXTURES
 	// These are here to make it easier to measure gas usage. They should be removed before production
-	function testMakeCheckpoint(ValsetArgs memory _valsetArgs, bytes32 _gravityId) external pure {
+	function testMakeCheckpoint(ValsetArgs calldata _valsetArgs, bytes32 _gravityId) external pure {
 		makeCheckpoint(_valsetArgs, _gravityId);
 	}
 
 	function testCheckValidatorSignatures(
-		address[] memory _currentValidators,
-		uint256[] memory _currentPowers,
-		uint8[] memory _v,
-		bytes32[] memory _r,
-		bytes32[] memory _s,
+		address[] calldata _currentValidators,
+		uint256[] calldata _currentPowers,
+		Signature[] calldata _sigs,
 		bytes32 _theHash,
 		uint256 _powerThreshold
 	) external pure {
 		checkValidatorSignatures(
 			_currentValidators,
 			_currentPowers,
-			_v,
-			_r,
-			_s,
+			_sigs,
 			_theHash,
 			_powerThreshold
 		);
@@ -157,14 +160,23 @@ contract Gravity is ReentrancyGuard {
 	function verifySig(
 		address _signer,
 		bytes32 _theHash,
-		uint8 _v,
-		bytes32 _r,
-		bytes32 _s
+		Signature calldata _sig
 	) private pure returns (bool) {
 		bytes32 messageDigest = keccak256(
 			abi.encodePacked("\x19Ethereum Signed Message:\n32", _theHash)
 		);
-		return _signer == ECDSA.recover(messageDigest, _v, _r, _s);
+		return _signer == ECDSA.recover(messageDigest, _sig.v, _sig.r, _sig.s);
+	}
+
+	// Utility function to determine that a validator set and signatures are well formed
+	function validateValset(ValsetArgs calldata _valset, Signature[] calldata _sigs) private pure {
+		// Check that current validators, powers, and signatures (v,r,s) set is well-formed
+		if (
+			_valset.validators.length != _valset.powers.length ||
+			_valset.validators.length != _sigs.length
+		) {
+			revert MalformedCurrentValidatorSet();
+		}
 	}
 
 	// Make a new checkpoint from the supplied validator set
@@ -200,12 +212,10 @@ contract Gravity is ReentrancyGuard {
 
 	function checkValidatorSignatures(
 		// The current validator set and their powers
-		address[] memory _currentValidators,
-		uint256[] memory _currentPowers,
+		address[] calldata _currentValidators,
+		uint256[] calldata _currentPowers,
 		// The current validator's signatures
-		uint8[] memory _v,
-		bytes32[] memory _r,
-		bytes32[] memory _s,
+		Signature[] calldata _sigs,
 		// This is what we are checking they have signed
 		bytes32 _theHash,
 		uint256 _powerThreshold
@@ -215,9 +225,9 @@ contract Gravity is ReentrancyGuard {
 		for (uint256 i = 0; i < _currentValidators.length; i++) {
 			// If v is set to 0, this signifies that it was not possible to get a signature from this validator and we skip evaluation
 			// (In a valid signature, it is either 27 or 28)
-			if (_v[i] != 0) {
+			if (_sigs[i].v != 0) {
 				// Check that the current validator has signed off on the hash
-				if (!verifySig(_currentValidators[i], _theHash, _v[i], _r[i], _s[i])) {
+				if (!verifySig(_currentValidators[i], _theHash, _sigs[i])) {
 					revert InvalidSignature();
 				}
 
@@ -245,13 +255,11 @@ contract Gravity is ReentrancyGuard {
 	// the new valset.
 	function updateValset(
 		// The new version of the validator set
-		ValsetArgs memory _newValset,
+		ValsetArgs calldata _newValset,
 		// The current validators that approve the change
-		ValsetArgs memory _currentValset,
+		ValsetArgs calldata _currentValset,
 		// These are arrays of the parts of the current validator's signatures
-		uint8[] memory _v,
-		bytes32[] memory _r,
-		bytes32[] memory _s
+		Signature[] calldata _sigs
 	) external {
 		// CHECKS
 
@@ -282,14 +290,7 @@ contract Gravity is ReentrancyGuard {
 		}
 
 		// Check that current validators, powers, and signatures (v,r,s) set is well-formed
-		if (
-			_currentValset.validators.length != _currentValset.powers.length ||
-			_currentValset.validators.length != _v.length ||
-			_currentValset.validators.length != _r.length ||
-			_currentValset.validators.length != _s.length
-		) {
-			revert MalformedCurrentValidatorSet();
-		}
+		validateValset(_currentValset, _sigs);
 
 		// Check cumulative power to ensure the contract has sufficient power to actually
 		// pass a vote
@@ -318,9 +319,7 @@ contract Gravity is ReentrancyGuard {
 		checkValidatorSignatures(
 			_currentValset.validators,
 			_currentValset.powers,
-			_v,
-			_r,
-			_s,
+			_sigs,
 			newCheckpoint,
 			constant_powerThreshold
 		);
@@ -358,11 +357,9 @@ contract Gravity is ReentrancyGuard {
 	// the batch.
 	function submitBatch(
 		// The validators that approve the batch
-		ValsetArgs memory _currentValset,
+		ValsetArgs calldata _currentValset,
 		// These are arrays of the parts of the validators signatures
-		uint8[] memory _v,
-		bytes32[] memory _r,
-		bytes32[] memory _s,
+		Signature[] calldata _sigs,
 		// The batch of transactions
 		uint256[] memory _amounts,
 		address[] memory _destinations,
@@ -399,14 +396,7 @@ contract Gravity is ReentrancyGuard {
 			}
 
 			// Check that current validators, powers, and signatures (v,r,s) set is well-formed
-			if (
-				_currentValset.validators.length != _currentValset.powers.length ||
-				_currentValset.validators.length != _v.length ||
-				_currentValset.validators.length != _r.length ||
-				_currentValset.validators.length != _s.length
-			) {
-				revert MalformedCurrentValidatorSet();
-			}
+			validateValset(_currentValset, _sigs);
 
 			// Check that the supplied current validator set matches the saved checkpoint
 			if (makeCheckpoint(_currentValset, state_gravityId) != state_lastValsetCheckpoint) {
@@ -422,9 +412,7 @@ contract Gravity is ReentrancyGuard {
 			checkValidatorSignatures(
 				_currentValset.validators,
 				_currentValset.powers,
-				_v,
-				_r,
-				_s,
+				_sigs,
 				// Get hash of the transaction batch and checkpoint
 				keccak256(
 					abi.encode(
@@ -478,11 +466,9 @@ contract Gravity is ReentrancyGuard {
 	// for each call.
 	function submitLogicCall(
 		// The validators that approve the call
-		ValsetArgs memory _currentValset,
+		ValsetArgs calldata _currentValset,
 		// These are arrays of the parts of the validators signatures
-		uint8[] memory _v,
-		bytes32[] memory _r,
-		bytes32[] memory _s,
+		Signature[] calldata _sigs,
 		LogicCallArgs memory _args
 	) external nonReentrant {
 		// CHECKS scoped to reduce stack depth
@@ -505,15 +491,7 @@ contract Gravity is ReentrancyGuard {
 			// is simply not possible
 
 			// Check that current validators, powers, and signatures (v,r,s) set is well-formed
-			// Check that current validators, powers, and signatures (v,r,s) set is well-formed
-			if (
-				_currentValset.validators.length != _currentValset.powers.length ||
-				_currentValset.validators.length != _v.length ||
-				_currentValset.validators.length != _r.length ||
-				_currentValset.validators.length != _s.length
-			) {
-				revert MalformedCurrentValidatorSet();
-			}
+			validateValset(_currentValset, _sigs);
 
 			// Check that the supplied current validator set matches the saved checkpoint
 			if (makeCheckpoint(_currentValset, state_gravityId) != state_lastValsetCheckpoint) {
@@ -528,31 +506,29 @@ contract Gravity is ReentrancyGuard {
 				revert InvalidLogicCallFees();
 			}
 		}
-		bytes32 argsHash = keccak256(
-			abi.encode(
-				state_gravityId,
-				// bytes32 encoding of "logicCall"
-				0x6c6f67696343616c6c0000000000000000000000000000000000000000000000,
-				_args.transferAmounts,
-				_args.transferTokenContracts,
-				_args.feeAmounts,
-				_args.feeTokenContracts,
-				_args.logicContractAddress,
-				_args.payload,
-				_args.timeOut,
-				_args.invalidationId,
-				_args.invalidationNonce
-			)
-		);
-
 		{
+			bytes32 argsHash = keccak256(
+				abi.encode(
+					state_gravityId,
+					// bytes32 encoding of "logicCall"
+					0x6c6f67696343616c6c0000000000000000000000000000000000000000000000,
+					_args.transferAmounts,
+					_args.transferTokenContracts,
+					_args.feeAmounts,
+					_args.feeTokenContracts,
+					_args.logicContractAddress,
+					_args.payload,
+					_args.timeOut,
+					_args.invalidationId,
+					_args.invalidationNonce
+				)
+			);
+
 			// Check that enough current validators have signed off on the transaction batch and valset
 			checkValidatorSignatures(
 				_currentValset.validators,
 				_currentValset.powers,
-				_v,
-				_r,
-				_s,
+				_sigs,
 				// Get hash of the transaction batch and checkpoint
 				argsHash,
 				constant_powerThreshold
