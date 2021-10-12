@@ -45,8 +45,12 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			config := serverCtx.Config
 
-			config.SetRoot(clientCtx.HomeDir)
-
+			homeFlag, _ := cmd.Flags().GetString(flags.FlagHome)
+			if len(homeFlag) > 0 {
+				config = config.SetRoot(homeFlag)
+			} else {
+				config = config.SetRoot(clientCtx.HomeDir)
+			}
 			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				inBuf := bufio.NewReader(cmd.InOrStdin())

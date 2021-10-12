@@ -425,15 +425,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "addr2line"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e61f2b7f93d2c7d2b08263acaa4a363b3e276806c68af6134c44f523bf1aacd"
-dependencies = [
- "gimli",
-]
-
-[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -457,15 +448,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e37cfd5e7657ada45f742d6e99ca5788580b5c529dc78faf11ece6dc702656f"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "anomaly"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "550632e31568ae1a5f47998c3aa48563030fc49b9ec91913ca337cf64fbc5ccb"
-dependencies = [
- "backtrace",
 ]
 
 [[package]]
@@ -579,21 +561,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded",
-]
-
-[[package]]
-name = "backtrace"
-version = "0.3.61"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7a905d892734eea339e896738c14b9afce22b5318f64b951e70bf3844419b01"
-dependencies = [
- "addr2line",
- "cc",
- "cfg-if 1.0.0",
- "libc",
- "miniz_oxide",
- "object",
- "rustc-demangle",
 ]
 
 [[package]]
@@ -810,9 +777,8 @@ checksum = "a2df960f5d869b2dd8532793fde43eb5427cceb126c929747a26823ab0eeb536"
 
 [[package]]
 name = "cosmos-sdk-proto"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7115eae4b8518967b8e737a3ef76025f2d007de7906d88c18f00b8bbfc70f51e"
+version = "0.7.1"
+source = "git+https://github.com/christianborst/cosmos-rust?rev=af39fcf9e5599d28075bd0be1b3540e3622f1a91#af39fcf9e5599d28075bd0be1b3540e3622f1a91"
 dependencies = [
  "prost",
  "prost-types",
@@ -893,8 +859,7 @@ dependencies = [
 [[package]]
 name = "deep_space"
 version = "2.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53cef9474152d5f9ce9f57f6c36cd6a84e029c6d411e54cf37dce46841b63c70"
+source = "git+https://github.com/althea-net/deep_space?rev=3875ec45aa862c1f1b895912e02311f8342b056e#3875ec45aa862c1f1b895912e02311f8342b056e"
 dependencies = [
  "base64",
  "bech32",
@@ -1048,6 +1013,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "eyre"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "221239d1d5ea86bf5d6f91c9d6bc3646ffe471b08ff9b0f91c44f115ac969d2b"
+dependencies = [
+ "indenter",
+ "once_cell",
+]
+
+[[package]]
 name = "fixedbitset"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1063,6 +1038,16 @@ dependencies = [
  "crc32fast",
  "libc",
  "miniz_oxide",
+]
+
+[[package]]
+name = "flex-error"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e8de6bf49fb8856ee814e288a518e0d45598b6f78a95c1233b96eedba8bc06a"
+dependencies = [
+ "eyre",
+ "paste",
 ]
 
 [[package]]
@@ -1282,12 +1267,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gimli"
-version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0a01e0497841a3b2db4f8afa483cce65f7e96a3498bd6c541734792aeac8fe7"
-
-[[package]]
 name = "gravity_proto"
 version = "0.1.0"
 dependencies = [
@@ -1476,6 +1455,12 @@ dependencies = [
  "unicode-bidi",
  "unicode-normalization",
 ]
+
+[[package]]
+name = "indenter"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
 
 [[package]]
 name = "indexmap"
@@ -1913,15 +1898,6 @@ checksum = "05499f3756671c15885fee9034446956fff3f243d6077b91e5767df161f766b3"
 dependencies = [
  "hermit-abi",
  "libc",
-]
-
-[[package]]
-name = "object"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39f37e50073ccad23b6d09bcb5b263f4e76d3bb6038e4a3c08e52162ffa8abc2"
-dependencies = [
- "memchr",
 ]
 
 [[package]]
@@ -2508,12 +2484,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustc-demangle"
-version = "0.1.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ef03e0a2b150c7a90d01faf6254c9c48a41e95fb2a8c2ac1c6f0d2b9aefc342"
-
-[[package]]
 name = "rustc_version"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2869,13 +2839,13 @@ dependencies = [
 
 [[package]]
 name = "tendermint-proto"
-version = "0.21.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfd0371c6b0c7fc4f6b053b8a1bc868a2a47c49a1408c4cd6f595d9f3bd3c238"
+checksum = "4c36f58bd68be7a6e3221c49cc1a14cbc619c189bb26a43425f544831922d2be"
 dependencies = [
- "anomaly",
  "bytes 1.1.0",
  "chrono",
+ "flex-error",
  "num-derive",
  "num-traits",
  "prost",
@@ -2883,7 +2853,6 @@ dependencies = [
  "serde",
  "serde_bytes",
  "subtle-encoding",
- "thiserror",
 ]
 
 [[package]]

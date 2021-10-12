@@ -74,8 +74,12 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			cdc := clientCtx.Codec
 
 			config := serverCtx.Config
-			config.SetRoot(clientCtx.HomeDir)
-
+			homeFlag, _ := cmd.Flags().GetString(flags.FlagHome)
+			if len(homeFlag) > 0 {
+				config = config.SetRoot(homeFlag)
+			} else {
+				config = config.SetRoot(clientCtx.HomeDir)
+			}
 			nodeID, valPubKey, err := genutil.InitializeNodeValidatorFiles(serverCtx.Config)
 			if err != nil {
 				return errors.Wrap(err, "failed to initialize node validator files")
@@ -295,7 +299,12 @@ func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeH
 			clientCtx := client.GetClientContextFromCmd(cmd)
 			cdc := clientCtx.Codec
 
-			config.SetRoot(clientCtx.HomeDir)
+			homeFlag, _ := cmd.Flags().GetString(flags.FlagHome)
+			if len(homeFlag) > 0 {
+				config = config.SetRoot(homeFlag)
+			} else {
+				config = config.SetRoot(clientCtx.HomeDir)
+			}
 
 			nodeID, valPubKey, err := genutil.InitializeNodeValidatorFiles(config)
 			if err != nil {
