@@ -2,6 +2,8 @@ package gravity
 
 import (
 	"bytes"
+	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
@@ -173,6 +175,124 @@ func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
 	require.NoError(t, err)
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountB)}, balance)
+}
+
+const biggestInt = "115792089237316195423570985008687907853269984665640564039457584007913129639935" // 2^256 - 1
+
+// We rely on BitLen() to detect Uint256 overflow, here we ensure BitLen() returns what we expect
+func TestUint256BitLen(t *testing.T) {
+	biggestBigInt, _ := new(big.Int).SetString(biggestInt, 10)
+	require.Equal(t, 256, biggestBigInt.BitLen(), "expected 2^256 - 1 to be represented in 256 bits");
+	biggerThanUint256 := biggestBigInt.Add(biggestBigInt, new(big.Int).SetInt64(1)) // add 1 to the max value of Uint256
+	require.Equal(t, 257, biggerThanUint256.BitLen(), "expected 2^256 to be represented in 257 bits");
+}
+
+func TestMsgSendToCosmosOverflow(t *testing.T) {
+	const grandeInt = "115792089237316195423570985008687907853269984665640564039457584007913129639835" // 2^256 - 101
+	var (
+		biggestBigInt, _                  = new(big.Int).SetString(biggestInt, 10);
+		grandeBigInt, _ 				  = new(big.Int).SetString(grandeInt, 10);
+		myOrchestratorAddr sdk.AccAddress = make([]byte, 20)
+		myCosmosAddr, _                   = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
+		myValAddr                         = sdk.ValAddress(myOrchestratorAddr) // revisit when proper mapping is impl in keeper
+		myNonce                           = uint64(1)
+		anyETHAddr                        = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr1                     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		tokenETHAddr2                     = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
+		myBlockTime                       = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		tokenEthAddress1, _               = types.NewEthAddress(tokenETHAddr1)
+		tokenEthAddress2, _               = types.NewEthAddress(tokenETHAddr2)
+		denom1                            = types.GravityDenom(*tokenEthAddress1)
+		denom2                            = types.GravityDenom(*tokenEthAddress2)
+	)
+
+	// Totally valid, but we're 101 away from the supply limit
+	almostTooMuch := types.ERC20Token{
+		Amount:   sdk.NewIntFromBigInt(grandeBigInt),
+		Contract: tokenETHAddr1,
+	}
+	// This takes us past the supply limit of 2^256 - 1
+	exactlyTooMuch := types.ERC20Token{
+		Amount:   sdk.NewInt(101),
+		Contract: tokenETHAddr1,
+	}
+	almostTooMuchClaim := types.MsgSendToCosmosClaim{
+		EventNonce:     myNonce,
+		TokenContract:  almostTooMuch.Contract,
+		Amount:         almostTooMuch.Amount,
+		EthereumSender: anyETHAddr,
+		CosmosReceiver: myCosmosAddr.String(),
+		Orchestrator:   myOrchestratorAddr.String(),
+	}
+	exactlyTooMuchClaim := types.MsgSendToCosmosClaim{
+		EventNonce:     myNonce+1,
+		TokenContract:  exactlyTooMuch.Contract,
+		Amount:         exactlyTooMuch.Amount,
+		EthereumSender: anyETHAddr,
+		CosmosReceiver: myCosmosAddr.String(),
+		Orchestrator:   myOrchestratorAddr.String(),
+	}
+	// Absoulte max value of 2^256 - 1. Previous versions (v0.43 or v0.44) of cosmos-sdk did not support sdk.Int of this size
+	maxSend := types.ERC20Token{
+		Amount: sdk.NewIntFromBigInt(biggestBigInt),
+		Contract: tokenETHAddr2,
+	}
+	maxSendClaim := types.MsgSendToCosmosClaim{
+		EventNonce:     myNonce+2,
+		TokenContract:  maxSend.Contract,
+		Amount:         maxSend.Amount,
+		EthereumSender: anyETHAddr,
+		CosmosReceiver: myCosmosAddr.String(),
+		Orchestrator:   myOrchestratorAddr.String(),
+	}
+	// Setup
+	input := keeper.CreateTestEnv(t)
+	ctx := input.Context
+	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(myValAddr)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, myValAddr, *types.ZeroAddress())
+	input.GravityKeeper.SetOrchestratorValidator(ctx, myValAddr, myOrchestratorAddr)
+	h := NewHandler(input.GravityKeeper)
+
+	// Require that no tokens were bridged previously
+	preSupply1 := input.BankKeeper.GetSupply(ctx, denom1)
+	require.Equal(t, sdk.NewInt(0), preSupply1.Amount)
+
+	fmt.Println("<<<<START Expecting to see 'minted coins from module account		module=x/bank amount={2^256 - 101}'")
+	// Execute the 2^256 - 101 transaction
+	ctx = ctx.WithBlockTime(myBlockTime)
+	_, err := h(ctx, &almostTooMuchClaim)
+	EndBlocker(ctx, input.GravityKeeper)
+	require.NoError(t, err)
+	// Require that the actual bridged amount is equal to the amount in our almostTooBigClaim
+	middleSupply := input.BankKeeper.GetSupply(ctx, denom1)
+	require.Equal(t, almostTooMuch.Amount, middleSupply.Amount.Sub(preSupply1.Amount))
+	fmt.Println("END>>>>")
+
+	fmt.Println("<<<<START Expecting to see an error about 'invalid supply after SendToCosmos attestation'")
+	// Execute the 101 transaction
+	ctx = ctx.WithBlockTime(myBlockTime)
+	_, err = h(ctx, &exactlyTooMuchClaim)
+	EndBlocker(ctx, input.GravityKeeper)
+	require.NoError(t, err)
+	// Require that the overflowing amount 101 was not bridged, and instead reverted
+	endSupply := input.BankKeeper.GetSupply(ctx, denom1)
+	require.Equal(t, almostTooMuch.Amount, endSupply.Amount.Sub(preSupply1.Amount))
+	fmt.Println("END>>>>")
+
+	// Require that no tokens were bridged previously
+	preSupply2 := input.BankKeeper.GetSupply(ctx, denom2)
+	require.Equal(t, sdk.NewInt(0), preSupply2.Amount)
+
+	fmt.Println("<<<<START Expecting to see 'minted coins from module account		module=x/bank amount={2^256 - 1}'")
+	// Execute the 2^256 - 1 transaction
+	ctx = ctx.WithBlockTime(myBlockTime)
+	_, err = h(ctx, &maxSendClaim)
+	EndBlocker(ctx, input.GravityKeeper)
+	require.NoError(t, err)
+	// Require that the actual bridged amount is equal to the amount in our almostTooBigClaim
+	maxSendSupply := input.BankKeeper.GetSupply(ctx, denom2)
+	require.Equal(t, maxSend.Amount, maxSendSupply.Amount.Sub(preSupply2.Amount))
+	fmt.Println("END>>>>")
 }
 
 //nolint: exhaustivestruct

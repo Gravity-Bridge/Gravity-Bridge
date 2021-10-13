@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -78,6 +79,13 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		} else {
 			// If it is not cosmos originated, mint the coins (aka vouchers)
 			coins := sdk.Coins{sdk.NewCoin(denom, claim.Amount)}
+
+			// This check should cover both a SendToCosmos with Amount >= 2^256 and a SendToCosmos changing the supply >= 2^256
+			prevSupply := a.bankKeeper.GetSupply(ctx, denom);
+			newSupply := new(big.Int).Add(prevSupply.Amount.BigInt(), claim.Amount.BigInt())
+			if newSupply.BitLen() > 256 {
+				return sdkerrors.Wrap(types.ErrIntOverflowAttestation, "invalid supply after SendToCosmos attestation")
+			}
 
 			if err := a.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
 				// in this case we have lost tokens! They are in the bridge, but not
