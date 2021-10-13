@@ -131,19 +131,12 @@ contract Gravity is ReentrancyGuard {
 	}
 
 	function testCheckValidatorSignatures(
-		address[] calldata _currentValidators,
-		uint256[] calldata _currentPowers,
+		ValsetArgs calldata _currentValset,
 		Signature[] calldata _sigs,
 		bytes32 _theHash,
 		uint256 _powerThreshold
 	) external pure {
-		checkValidatorSignatures(
-			_currentValidators,
-			_currentPowers,
-			_sigs,
-			_theHash,
-			_powerThreshold
-		);
+		checkValidatorSignatures(_currentValset, _sigs, _theHash, _powerThreshold);
 	}
 
 	// END TEST FIXTURES
@@ -212,8 +205,7 @@ contract Gravity is ReentrancyGuard {
 
 	function checkValidatorSignatures(
 		// The current validator set and their powers
-		address[] calldata _currentValidators,
-		uint256[] calldata _currentPowers,
+		ValsetArgs calldata _currentValset,
 		// The current validator's signatures
 		Signature[] calldata _sigs,
 		// This is what we are checking they have signed
@@ -222,17 +214,17 @@ contract Gravity is ReentrancyGuard {
 	) private pure {
 		uint256 cumulativePower = 0;
 
-		for (uint256 i = 0; i < _currentValidators.length; i++) {
+		for (uint256 i = 0; i < _currentValset.validators.length; i++) {
 			// If v is set to 0, this signifies that it was not possible to get a signature from this validator and we skip evaluation
 			// (In a valid signature, it is either 27 or 28)
 			if (_sigs[i].v != 0) {
 				// Check that the current validator has signed off on the hash
-				if (!verifySig(_currentValidators[i], _theHash, _sigs[i])) {
+				if (!verifySig(_currentValset.validators[i], _theHash, _sigs[i])) {
 					revert InvalidSignature();
 				}
 
 				// Sum up cumulative power
-				cumulativePower = cumulativePower + _currentPowers[i];
+				cumulativePower = cumulativePower + _currentValset.powers[i];
 
 				// Break early to avoid wasting gas
 				if (cumulativePower > _powerThreshold) {
@@ -316,13 +308,7 @@ contract Gravity is ReentrancyGuard {
 		// Check that enough current validators have signed off on the new validator set
 		bytes32 newCheckpoint = makeCheckpoint(_newValset, state_gravityId);
 
-		checkValidatorSignatures(
-			_currentValset.validators,
-			_currentValset.powers,
-			_sigs,
-			newCheckpoint,
-			constant_powerThreshold
-		);
+		checkValidatorSignatures(_currentValset, _sigs, newCheckpoint, constant_powerThreshold);
 
 		// ACTIONS
 
@@ -361,9 +347,9 @@ contract Gravity is ReentrancyGuard {
 		// These are arrays of the parts of the validators signatures
 		Signature[] calldata _sigs,
 		// The batch of transactions
-		uint256[] memory _amounts,
-		address[] memory _destinations,
-		uint256[] memory _fees,
+		uint256[] calldata _amounts,
+		address[] calldata _destinations,
+		uint256[] calldata _fees,
 		uint256 _batchNonce,
 		address _tokenContract,
 		// a block height beyond which this batch is not valid
@@ -410,8 +396,7 @@ contract Gravity is ReentrancyGuard {
 
 			// Check that enough current validators have signed off on the transaction batch and valset
 			checkValidatorSignatures(
-				_currentValset.validators,
-				_currentValset.powers,
+				_currentValset,
 				_sigs,
 				// Get hash of the transaction batch and checkpoint
 				keccak256(
@@ -526,8 +511,7 @@ contract Gravity is ReentrancyGuard {
 
 			// Check that enough current validators have signed off on the transaction batch and valset
 			checkValidatorSignatures(
-				_currentValset.validators,
-				_currentValset.powers,
+				_currentValset,
 				_sigs,
 				// Get hash of the transaction batch and checkpoint
 				argsHash,

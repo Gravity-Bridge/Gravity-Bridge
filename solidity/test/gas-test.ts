@@ -9,6 +9,7 @@ import {
     examplePowers,
     ZeroAddress
 } from "../test-utils/pure";
+import { BigNumber, BigNumberish } from "ethers";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -61,9 +62,12 @@ describe("Gas tests", function () {
             "0x7bc422a00c175cae98cf2f4c36f2f8b63ec51ab8c57fecda9bccf0987ae2d67d"
         );
 
+
+        let v = {
+            validators: await getSignerAddresses(validators), powers: powers, valsetNonce: 0, rewardAmount: 0, rewardToken: ZeroAddress
+        };
         await gravity.testCheckValidatorSignatures(
-            await getSignerAddresses(validators),
-            powers,
+            v,
             sigs,
             "0x7bc422a00c175cae98cf2f4c36f2f8b63ec51ab8c57fecda9bccf0987ae2d67d",
             6666
