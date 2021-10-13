@@ -42,7 +42,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 	// ensure that this passes validation, checks the key validity
 	err := msg.ValidateBasic()
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Key not valid")
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
@@ -90,7 +90,7 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 	orchaddr, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
 	err := k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not confirm handler common")
 	}
 
 	// persist signature
@@ -123,7 +123,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	}
 	txID, err := k.AddToOutgoingPool(ctx, sender, *dest, msg.Amount, msg.BridgeFee)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not add to outgoing pool")
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -145,12 +145,12 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 	// If not, error out
 	_, tokenContract, err := k.DenomToERC20Lookup(ctx, msg.Denom)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not look up erc 20 denominator")
 	}
 
 	batch, err := k.BuildOutgoingTXBatch(ctx, *tokenContract, OutgoingTxBatchSize)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not build outgoing tx batch")
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -184,7 +184,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	orchaddr, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
 	err = k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not confirm handler common")
 	}
 
 	// check if we already have this confirm
@@ -223,7 +223,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 	orchaddr, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
 	err = k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not confirm Handler")
 	}
 
 	// check if we already have this confirm
@@ -325,15 +325,15 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check orchstrator validator inset")
 	}
 	any, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check Any value")
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
 	}
 
 	return &types.MsgSendToCosmosClaimResponse{}, nil
@@ -348,15 +348,15 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check orchestrator validator")
 	}
 	any, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check Any value")
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
 	}
 
 	return &types.MsgBatchSendToEthClaimResponse{}, nil
@@ -368,15 +368,15 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check orchestrator validator in set")
 	}
 	any, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check Any value")
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
 	}
 
 	return &types.MsgERC20DeployedClaimResponse{}, nil
@@ -388,15 +388,15 @@ func (k msgServer) LogicCallExecutedClaim(c context.Context, msg *types.MsgLogic
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check orchestrator validator in set")
 	}
 	any, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check Any value")
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
 	}
 
 	return &types.MsgLogicCallExecutedClaimResponse{}, nil
@@ -408,15 +408,15 @@ func (k msgServer) ValsetUpdateClaim(c context.Context, msg *types.MsgValsetUpda
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check orchestrator validator in set")
 	}
 	any, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not check Any value")
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
 	}
 
 	return &types.MsgValsetUpdatedClaimResponse{}, nil
