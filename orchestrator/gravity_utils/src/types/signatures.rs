@@ -44,33 +44,27 @@ impl PartialOrd for GravitySignature {
 pub struct GravitySignatureArrays {
     pub addresses: Vec<EthAddress>,
     pub powers: Vec<u64>,
-    pub v: Token,
-    pub r: Token,
-    pub s: Token,
+    pub sigs: Token,
 }
 
 /// This function handles converting the GravitySignature type into an Ethereum
-/// submittable arrays, including the finicky token encoding tricks you need to
+/// submittable signature struct, including the finicky token encoding tricks you need to
 /// perform in order to distinguish between a uint8[] and bytes32[]
 pub fn to_arrays(input: Vec<GravitySignature>) -> GravitySignatureArrays {
     let mut addresses = Vec::new();
     let mut powers = Vec::new();
-    let mut v = Vec::new();
-    let mut r = Vec::new();
-    let mut s = Vec::new();
+    let mut sigs = Vec::new();
     for val in input {
         addresses.push(val.eth_address);
         powers.push(val.power);
-        v.push(val.v);
-        r.push(val.r);
-        s.push(val.s);
+        sigs.push(Token::Struct(
+            [val.v.into(), val.r.into(), val.s.into()].to_vec(),
+        ));
     }
     GravitySignatureArrays {
         addresses,
         powers,
-        v: v.into(),
-        r: r.into(),
-        s: s.into(),
+        sigs: Token::Dynamic(sigs),
     }
 }
 

@@ -157,9 +157,7 @@ fn encode_batch_payload(
     // uint256 _batchTimeout
     let tokens = &[
         current_valset_token,
-        sig_arrays.v,
-        sig_arrays.r,
-        sig_arrays.s,
+        sig_arrays.sigs,
         amounts,
         destinations,
         fees,
@@ -167,7 +165,7 @@ fn encode_batch_payload(
         batch.token_contract.into(),
         batch.batch_timeout.into(),
     ];
-    let payload = clarity::abi::encode_call("submitBatch((address[],uint256[],uint256,uint256,address),uint8[],bytes32[],bytes32[],uint256[],address[],uint256[],uint256,address,uint256)",
+    let payload = clarity::abi::encode_call("submitBatch((address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[],uint256[],address[],uint256[],uint256,address,uint256)",
     tokens).unwrap();
     trace!("Tokens {:?}", tokens);
 

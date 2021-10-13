@@ -22,9 +22,9 @@ mod tests {
             .unwrap();
         let gravity_id = "foo";
         let str = read_to_string("test_files/valset_update_rlp").unwrap();
-        let known_good_bytes = hex_str_to_bytes(&str).unwrap();
         let private_keys = read_to_string("test_files/ethers_test_privkeys").unwrap();
         let powers_str = read_to_string("test_files/ethers_test_powers").unwrap();
+        let known_good_bytes = hex_str_to_bytes(&str).unwrap();
         let mut keys: Vec<PrivateKey> = Vec::new();
 
         for line in private_keys.lines() {
@@ -85,22 +85,5 @@ mod tests {
             bytes_to_hex_str(&encoded_update_bytes),
             bytes_to_hex_str(&known_good_bytes)
         )
-    }
-
-    /// Function used for debug printing hex dumps
-    /// of ethereum events with each uint256 on a new
-    /// line
-    fn _debug_print_data(input: &[u8]) -> String {
-        let mut out = String::new();
-        let count = input.len() / 32;
-        out += "data hex dump\n";
-        for i in 0..count {
-            out += &format!(
-                "0x{}\n",
-                bytes_to_hex_str(&input[(i * 32)..((i * 32) + 32)])
-            )
-        }
-        out += "end hex dump\n";
-        out
     }
 }
