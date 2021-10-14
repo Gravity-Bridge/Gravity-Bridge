@@ -1,4 +1,5 @@
 use crate::get_fee;
+use crate::utils::check_erc20_balance;
 use crate::utils::*;
 use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;

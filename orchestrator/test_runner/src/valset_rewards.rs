@@ -2,7 +2,9 @@
 
 use crate::happy_path::test_valset_update;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
-use crate::utils::{create_parameter_change_proposal, vote_yes_on_proposals, ValidatorKeys};
+use crate::utils::{
+    create_parameter_change_proposal, get_erc20_balance_safe, vote_yes_on_proposals, ValidatorKeys,
+};
 use crate::STAKING_TOKEN;
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
@@ -78,8 +80,7 @@ pub async fn valset_rewards_test(
     let mut found = false;
     for key in keys.iter() {
         let target_address = key.eth_key.to_public_key().unwrap();
-        let balance_of_footoken = web30
-            .get_erc20_balance(erc20_contract, target_address)
+        let balance_of_footoken = get_erc20_balance_safe(erc20_contract, web30, target_address)
             .await
             .unwrap();
         if balance_of_footoken == valset_reward.amount {

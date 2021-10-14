@@ -4,7 +4,9 @@
 use std::time::{Duration, Instant};
 
 use crate::happy_path::test_erc20_deposit_panic;
-use crate::utils::{check_cosmos_balance, send_one_eth, start_orchestrators, ValidatorKeys};
+use crate::utils::{
+    check_cosmos_balance, get_erc20_balance_safe, send_one_eth, start_orchestrators, ValidatorKeys,
+};
 use crate::ADDRESS_PREFIX;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
@@ -330,8 +332,7 @@ async fn test_good_batch(
 
     // we have to send this address one eth so that it can perform contract calls
     send_one_eth(dest_eth_address, web30).await;
-    let dest_eth_bal = web30
-        .get_erc20_balance(erc20_contract, dest_eth_address)
+    let dest_eth_bal = get_erc20_balance_safe(erc20_contract, web30, dest_eth_address)
         .await
         .unwrap();
 
@@ -396,8 +397,7 @@ async fn test_bad_batch(
 
     // we have to send this address one eth so that it can perform contract calls
     send_one_eth(dest_eth_address, web30).await;
-    let dest_eth_bal = web30
-        .get_erc20_balance(erc20_contract, dest_eth_address)
+    let dest_eth_bal = get_erc20_balance_safe(erc20_contract, web30, dest_eth_address)
         .await
         .unwrap();
 

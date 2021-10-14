@@ -166,6 +166,18 @@ pub async fn check_erc20_balance(
     address: EthAddress,
     web3: &Web3,
 ) {
+    let new_balance = get_erc20_balance_safe(erc20, web3, address).await;
+    let new_balance = new_balance.unwrap();
+    assert!(new_balance >= amount.clone());
+}
+
+/// utility function for bulk checking erc20 balances, used to provide
+/// a single future that contains the assert as well s the request
+pub async fn get_erc20_balance_safe(
+    erc20: EthAddress,
+    web3: &Web3,
+    address: EthAddress,
+) -> Result<Uint256, Web3Error> {
     let start = Instant::now();
     // overly complicated retry logic allows us to handle the possibility that gas prices change between blocks
     // and cause any individual request to fail.
@@ -179,8 +191,7 @@ pub async fn check_erc20_balance(
             }
         }
     }
-    let new_balance = new_balance.unwrap();
-    assert!(new_balance >= amount.clone());
+    Ok(new_balance.unwrap())
 }
 
 pub fn get_user_key() -> BridgeUserKey {

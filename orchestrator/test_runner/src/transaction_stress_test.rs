@@ -262,7 +262,9 @@ pub async fn transaction_stress_test(
         for keys in user_keys.iter() {
             let e_dest_addr = keys.eth_dest_address;
             for token in erc20_addresses.iter() {
-                let bal = web30.get_erc20_balance(*token, e_dest_addr).await.unwrap();
+                let bal = get_erc20_balance_safe(*token, web30, e_dest_addr)
+                    .await
+                    .unwrap();
                 if bal != send_amount.clone() {
                     if e_dest_addr == user_who_cancels.eth_address && bal == 0u8.into() {
                         info!("We successfully found the user who canceled their sends!");

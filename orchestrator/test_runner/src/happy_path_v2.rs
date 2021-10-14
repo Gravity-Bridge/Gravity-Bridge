@@ -1,6 +1,7 @@
 //! This is the happy path test for Cosmos to Ethereum asset transfers, meaning assets originated on Cosmos
 
 use crate::utils::create_default_test_config;
+use crate::utils::get_erc20_balance_safe;
 use crate::utils::get_user_key;
 use crate::utils::send_one_eth;
 use crate::utils::start_orchestrators;
@@ -128,9 +129,7 @@ pub async fn happy_path_test_v2(
     // and cause any individual request to fail.
 
     while Instant::now() - start < TOTAL_TIMEOUT {
-        let new_balance = web30
-            .get_erc20_balance(erc20_contract, user.eth_address)
-            .await;
+        let new_balance = get_erc20_balance_safe(erc20_contract, web30, user.eth_address).await;
         // only keep trying if our error is gas related
         if new_balance.is_err() {
             continue;
