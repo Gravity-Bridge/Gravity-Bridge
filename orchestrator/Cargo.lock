@@ -858,8 +858,8 @@ dependencies = [
 
 [[package]]
 name = "deep_space"
-version = "2.4.7"
-source = "git+https://github.com/althea-net/deep_space?rev=3875ec45aa862c1f1b895912e02311f8342b056e#3875ec45aa862c1f1b895912e02311f8342b056e"
+version = "2.5.0"
+source = "git+https://github.com/althea-net/deep_space?rev=68d743331959e45dd789a62852c6eacfb19041f3#68d743331959e45dd789a62852c6eacfb19041f3"
 dependencies = [
  "base64",
  "bech32",

@@ -4,5 +4,5 @@ default-members = ["gbt"]
 
 
 [patch.crates-io]
-deep_space = { git = "https://github.com/althea-net/deep_space", rev = "3875ec45aa862c1f1b895912e02311f8342b056e" }
+deep_space = { git = "https://github.com/althea-net/deep_space", rev = "68d743331959e45dd789a62852c6eacfb19041f3" }
 cosmos-sdk-proto = { git = "https://github.com/christianborst/cosmos-rust", rev = "af39fcf9e5599d28075bd0be1b3540e3622f1a91" }

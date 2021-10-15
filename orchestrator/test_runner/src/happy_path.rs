@@ -523,7 +523,6 @@ async fn test_batch(
         token_name.clone(),
         get_fee(),
         contact,
-        None,
     )
     .await
     .unwrap();

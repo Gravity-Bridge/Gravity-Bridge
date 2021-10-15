@@ -11,7 +11,7 @@ use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_ADDRESS};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
-use cosmos_gravity::send::{send_to_eth, TIMEOUT};
+use cosmos_gravity::send::send_to_eth;
 use cosmos_gravity::{query::get_oldest_unsigned_transaction_batch, send::send_request_batch};
 use deep_space::coin::Coin;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
@@ -297,7 +297,6 @@ async fn test_good_batch(
         request_batch_fee.denom.clone(),
         request_batch_fee,
         contact,
-        Some(TIMEOUT),
     )
     .await
     .unwrap();
@@ -380,7 +379,6 @@ async fn test_bad_batch(
         request_batch_fee.denom.clone(),
         request_batch_fee,
         contact,
-        Some(TIMEOUT),
     )
     .await
     .unwrap();

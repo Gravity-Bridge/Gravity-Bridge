@@ -10,7 +10,6 @@ use crate::TOTAL_TIMEOUT;
 use crate::{get_fee, utils::ValidatorKeys};
 use clarity::Address as EthAddress;
 use clarity::Uint256;
-use cosmos_gravity::send::TIMEOUT;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
 use deep_space::coin::Coin;
 use deep_space::Contact;
@@ -62,12 +61,12 @@ pub async fn happy_path_test_v2(
     let user = get_user_key();
     // send the user some footoken
     contact
-        .send_tokens(
+        .send_coins(
             send_to_user_coin.clone(),
             Some(get_fee()),
             user.cosmos_address,
-            keys[0].validator_key,
             Some(TOTAL_TIMEOUT),
+            keys[0].validator_key,
         )
         .await
         .unwrap();
@@ -116,7 +115,6 @@ pub async fn happy_path_test_v2(
         token_to_send_to_eth.clone(),
         get_fee(),
         contact,
-        Some(TIMEOUT),
     )
     .await
     .unwrap();
