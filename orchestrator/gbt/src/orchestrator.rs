@@ -1,6 +1,7 @@
 use crate::args::OrchestratorOpts;
 use crate::config::config_exists;
 use crate::config::load_keys;
+use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::PrivateKey as CosmosPrivateKey;
 use gravity_utils::connection_prep::{
@@ -119,11 +120,19 @@ pub async fn orchestrator(
     } else {
         let params = get_gravity_params(&mut grpc).await.unwrap();
         let c = params.bridge_ethereum_address.parse();
-        if c.is_err() {
-            error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-            exit(1);
+        match c {
+            Ok(v) => {
+                if v == *ZERO_ADDRESS {
+                    error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
+                    exit(1);
+                }
+                c.unwrap()
+            }
+            Err(_) => {
+                error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
+                exit(1);
+            }
         }
-        c.unwrap()
     };
 
     orchestrator_main_loop(
