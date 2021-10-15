@@ -1,6 +1,6 @@
 module github.com/althea-net/cosmos-gravity-bridge/module
 
-go 1.15
+go 1.16
 
 require (
 	github.com/cosmos/cosmos-sdk v0.44.2
