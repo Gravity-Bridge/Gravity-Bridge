@@ -262,7 +262,6 @@ pub async fn main() {
                 keys,
                 gravity_address,
                 erc20_addresses[0],
-                false,
             )
             .await;
             return;

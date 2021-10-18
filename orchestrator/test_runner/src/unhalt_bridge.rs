@@ -18,8 +18,8 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
 use prost::Message;
 use std::str::FromStr;
-use std::thread::sleep;
 use std::time::{Duration, Instant};
+use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -32,7 +32,6 @@ pub async fn unhalt_bridge_test(
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
     erc20_address: EthAddress,
-    validator_out: bool,
 ) {
     let prefix = contact.get_prefix();
     let mut grpc_client = grpc_client;
@@ -51,7 +50,7 @@ pub async fn unhalt_bridge_test(
     start_orchestrators(
         keys.clone(),
         gravity_address,
-        validator_out,
+        false,
         no_relay_market_config.clone(),
     )
     .await;
@@ -137,7 +136,7 @@ pub async fn unhalt_bridge_test(
         panic!("Bridge not halted!")
     }
 
-    sleep(Duration::from_secs(30));
+    sleep(Duration::from_secs(30)).await;
 
     info!("Getting latest nonce after bridge halt check");
     let after_halt_nonces = get_nonces(&mut grpc_client, &keys, &prefix).await;
@@ -175,7 +174,7 @@ pub async fn unhalt_bridge_test(
             {
                 panic!("10 minutes have elapsed trying to get the validator last nonces to change for val1 and val2!");
             }
-            sleep(Duration::from_secs(10));
+            sleep(Duration::from_secs(10)).await;
             continue;
         } else {
             info!("Nonces changed! {:?}=>{:?}", after_halt_nonces, new_nonces);
@@ -192,7 +191,7 @@ pub async fn unhalt_bridge_test(
 
     // After the governance proposal the resync will happen on the next loop.
     info!("Sleeping so that resync can start!");
-    sleep(Duration::from_secs(10));
+    sleep(Duration::from_secs(10)).await;
 
     info!("Observing attestations before bridging asset to cosmos!");
     print_sends_to_cosmos(&grpc_client, true).await;
