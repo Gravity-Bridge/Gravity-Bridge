@@ -75,7 +75,7 @@ var (
 	// ParamBridgeActive allows governance to temporarily halt the bridge via vote, in this context halting
 	// means no more batches will be created and no oracle events executed. Valset creation will continue
 	// to be allowed as it must continue to ensure bridge continuity.
-	ParamBridgeActive = []byte("BridgeActive")
+	ParamStoreBridgeActive = []byte("BridgeActive")
 
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
@@ -100,6 +100,7 @@ var (
 		},
 		ResetBridgeState: false,
 		ResetBridgeNonce: 0,
+		BridgeActive:     true,
 	}
 )
 
@@ -150,6 +151,7 @@ func DefaultParams() *Params {
 		UnbondSlashingValsetsWindow:  10000,
 		SlashFractionBadEthSignature: sdk.NewDec(1).Quo(sdk.NewDec(1000)),
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
+		BridgeActive:                 true,
 	}
 }
 
@@ -258,6 +260,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
 		paramtypes.NewParamSetPair(ParamStoreResetBridgeState, &p.ResetBridgeState, validateResetBridgeState),
 		paramtypes.NewParamSetPair(ParamStoreResetBridgeNonce, &p.ResetBridgeNonce, validateResetBridgeNonce),
+		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
 	}
 }
 
@@ -420,6 +423,13 @@ func validateResetBridgeState(i interface{}) error {
 func validateResetBridgeNonce(i interface{}) error {
 	if _, ok := i.(uint64); !ok {
 		return fmt.Errorf("invalid parameter type %T", i)
+	}
+	return nil
+}
+
+func validateBridgeActive(i interface{}) error {
+	if _, ok := i.(bool); !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 	return nil
 }

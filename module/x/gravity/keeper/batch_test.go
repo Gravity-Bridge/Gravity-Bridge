@@ -613,3 +613,78 @@ func TestPoolTxRefund(t *testing.T) {
 	balances := input.BankKeeper.GetAllBalances(ctx, mySender)
 	require.Equal(t, sdk.NewInt(104), balances.AmountOf(myDenom))
 }
+
+//nolint: exhaustivestruct
+func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+
+	// pause the bridge
+	params := input.GravityKeeper.GetParams(ctx)
+	params.BridgeActive = false
+	input.GravityKeeper.SetParams(ctx, params)
+
+	var (
+		now                    = time.Now().UTC()
+		mySender, _            = sdk.AccAddressFromBech32("cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn")
+		myReceiver, _          = types.NewEthAddress("0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7")
+		myTokenContractAddr, _ = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5") // Pickle
+		token, err             = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr.GetAddress())
+		allVouchers            = sdk.NewCoins(token.GravityCoin())
+	)
+	require.NoError(t, err)
+
+	// mint some voucher first
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
+	// set senders balance
+	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers))
+
+	// CREATE FIRST BATCH
+	// ==================
+
+	// add some TX to the pool
+	for i, v := range []uint64{2, 3, 2, 1} {
+		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr.GetAddress())
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr.GetAddress())
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
+
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amount, fee)
+		require.NoError(t, err)
+		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v", i, amount, fee))
+		// Should create:
+		// 1: tx amount is 100, fee is 2, id is 1
+		// 2: tx amount is 101, fee is 3, id is 2
+		// 3: tx amount is 102, fee is 2, id is 3
+		// 4: tx amount is 103, fee is 1, id is 4
+	}
+
+	// when
+	ctx = ctx.WithBlockTime(now)
+
+	// tx batch size is 2, so that some of them stay behind
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
+	require.Error(t, err)
+
+	// then batch is persisted
+	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, *myTokenContractAddr, 1)
+	require.Nil(t, gotFirstBatch)
+
+	// resume the bridge
+	params.BridgeActive = true
+	input.GravityKeeper.SetParams(ctx, params)
+
+	// when
+	ctx = ctx.WithBlockTime(now)
+
+	// tx batch size is 2, so that some of them stay behind
+	firstBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
+	require.NoError(t, err)
+
+	// then batch is persisted
+	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, firstBatch.TokenContract, firstBatch.BatchNonce)
+	require.NotNil(t, gotFirstBatch)
+}

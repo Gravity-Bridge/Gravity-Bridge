@@ -202,6 +202,9 @@ var (
 		UnbondSlashingValsetsWindow:  15,
 		SlashFractionBadEthSignature: sdk.NewDecWithPrec(1, 2),
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
+		ResetBridgeState:             false,
+		ResetBridgeNonce:             0,
+		BridgeActive:                 true,
 	}
 )
 

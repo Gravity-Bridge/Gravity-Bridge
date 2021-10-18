@@ -109,6 +109,12 @@ func slashing(ctx sdk.Context, k keeper.Keeper) {
 // "Observe" those who have passed the threshold. Break the loop once we see
 // an attestation that has not passed the threshold
 func attestationTally(ctx sdk.Context, k keeper.Keeper) {
+	params := k.GetParams(ctx)
+	// bridge is currently disabled, do not process attestations from Ethereum
+	if !params.BridgeActive {
+		return
+	}
+
 	attmap := k.GetAttestationMapping(ctx)
 	// We make a slice with all the event nonces that are in the attestation mapping
 	keys := make([]uint64, 0, len(attmap))
@@ -252,7 +258,7 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				valConsAddr, _ := validator.GetConsAddr()
 				valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, valConsAddr)
 
-				// Only slash validators who joined after valset is created and they are unbonding and UNBOND_SLASHING_WINDOW didn't passed
+				// Only slash validators who joined after valset is created and they are unbonding and UNBOND_SLASHING_WINDOW hasn't passed
 				if exist && valSigningInfo.StartHeight < int64(vs.Height) && validator.IsUnbonding() && vs.Height < uint64(validator.UnbondingHeight)+params.UnbondSlashingValsetsWindow {
 					// Check if validator has confirmed valset or not
 					found := false
@@ -484,11 +490,11 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, k keeper.Keeper, nonceCutoff u
 	for vote, _ := range affectedValidatorsSet {
 		val, err := sdk.ValAddressFromBech32(vote)
 		if err != nil {
-			panic(sdkerrors.Wrap(err, "invalid validator address affected by bridge reset"));
+			panic(sdkerrors.Wrap(err, "invalid validator address affected by bridge reset"))
 		}
 		valLastNonce := k.GetLastEventNonceByValidator(ctx, val)
 		if valLastNonce > nonceCutoff {
-			ctx.Logger().Info("Resetting validator's last event nonce due to bridge unhalt", "validator", vote, "lastEventNonce", valLastNonce, "resetNonce", nonceCutoff);
+			ctx.Logger().Info("Resetting validator's last event nonce due to bridge unhalt", "validator", vote, "lastEventNonce", valLastNonce, "resetNonce", nonceCutoff)
 			k.SetLastEventNonceByValidator(ctx, val, nonceCutoff)
 		}
 	}

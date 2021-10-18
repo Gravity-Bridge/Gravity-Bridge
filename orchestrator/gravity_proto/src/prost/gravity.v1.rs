@@ -49,6 +49,19 @@ pub enum ClaimType {
     LogicCallExecuted = 4,
     ValsetUpdated = 5,
 }
+/// IDSet represents a set of IDs
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct IdSet {
+    #[prost(uint64, repeated, tag="1")]
+    pub ids: ::prost::alloc::vec::Vec<u64>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchFees {
+    #[prost(string, tag="1")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub total_fees: ::prost::alloc::string::String,
+}
 /// OutgoingTxBatch represents a batch of transactions going from gravity to ETH
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OutgoingTxBatch {
@@ -104,19 +117,6 @@ pub enum SignType {
     Unspecified = 0,
     OrchestratorSignedMultiSigUpdate = 1,
     OrchestratorSignedWithdrawBatch = 2,
-}
-/// IDSet represents a set of IDs
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct IdSet {
-    #[prost(uint64, repeated, tag="1")]
-    pub ids: ::prost::alloc::vec::Vec<u64>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchFees {
-    #[prost(string, tag="1")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub total_fees: ::prost::alloc::string::String,
 }
 /// BridgeValidator represents a validator's ETH address and its power
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -526,6 +526,27 @@ pub struct MsgSubmitBadSignatureEvidenceResponse {
 /// the token you are using for validator set rewards valset updates will fail and the bridge
 /// will be vulnerable to highjacking. For these paramaters the zero values are special and indicate
 /// not to attempt any reward. This is the default for bootstrapping.
+///
+/// reset_bridge_state
+/// reset_bridge_nonce
+///
+/// These parameters allow for the bridge oracle to resolve a fork on the Ethereum chain without halting
+/// the chain. Once set reset bridge state will roll back events to the nonce provided in reset_bridge_nonce
+/// if and only if those events have not yet been observed (executed on the Cosmos chain). This allows for easy
+/// handling of cases where for example an Ethereum hardfork has occured and more than 1/3 of the vlaidtor set
+/// disagrees with the rest. Normally this would require a chain halt, manual genesis editing and restar to resolve
+/// with this feature a governance proposal can be used instead
+///
+/// bridge_active
+///
+/// This boolean flag can be used by governance to temporarily halt the bridge due to a vulnerability or other issue
+/// In this context halting the bridge means prevent the execution of any oracle events from Ethereum and preventing
+/// the creation of new batches that may be relayed to Ethereum.
+/// This does not prevent the creation of validator sets
+/// or slashing for not submitting validator set signatures as either of these might allow key signers to leave the validator
+/// set and steal funds on Ethereum without consequence.
+/// The practical outcome of this flag being set to 'false' is that deposits from Ethereum will not show up and withdraws from
+/// Cosmos will not execute on Ethereum.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Params {
     #[prost(string, tag="1")]
@@ -564,6 +585,8 @@ pub struct Params {
     pub reset_bridge_state: bool,
     #[prost(uint64, tag="19")]
     pub reset_bridge_nonce: u64,
+    #[prost(bool, tag="20")]
+    pub bridge_active: bool,
 }
 /// GenesisState struct
 #[derive(Clone, PartialEq, ::prost::Message)]

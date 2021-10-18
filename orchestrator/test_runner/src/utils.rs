@@ -307,30 +307,8 @@ pub async fn create_parameter_change_proposal(
     contact: &Contact,
     key: CosmosPrivateKey,
     deposit: Coin,
-    gravity_address: EthAddress,
-    valset_reward: Coin,
+    params_to_change: Vec<ParamChange>,
 ) {
-    let mut params_to_change = Vec::new();
-    // this does not
-    let gravity_address = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "BridgeContractAddress".to_string(),
-        value: format!("\"{}\"", gravity_address),
-    };
-    params_to_change.push(gravity_address);
-    let json_value = serde_json::to_string(&valset_reward).unwrap().to_string();
-    let valset_reward = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "ValsetReward".to_string(),
-        value: json_value.clone(),
-    };
-    params_to_change.push(valset_reward);
-    let chain_id = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "BridgeChainID".to_string(),
-        value: format!("\"{}\"", 1),
-    };
-    params_to_change.push(chain_id);
     let proposal = ParameterChangeProposal {
         title: "Set gravity settings!".to_string(),
         description: "test proposal".to_string(),
