@@ -562,24 +562,10 @@ async fn test_batch(
         }
     }
 
-    let txid = web30
-        .send_transaction(
-            dest_eth_address,
-            Vec::new(),
-            1_000_000_000_000_000_000u128.into(),
-            *MINER_ADDRESS,
-            *MINER_PRIVATE_KEY,
-            vec![],
-        )
-        .await
-        .expect("Failed to send Eth to validator {}");
-    web30
-        .wait_for_transaction(txid, TOTAL_TIMEOUT, None)
-        .await
-        .unwrap();
-
-    // we have to send this address one eth so that it can perform contract calls
-    send_one_eth(dest_eth_address, web30).await;
+    if web30.eth_get_balance(dest_eth_address).await.unwrap() == 0u8.into() {
+        // we have to send this address one eth so that it can perform contract calls
+        send_one_eth(dest_eth_address, web30).await;
+    }
 
     check_erc20_balance(erc20_contract, amount.clone(), dest_eth_address, web30).await;
     info!(
