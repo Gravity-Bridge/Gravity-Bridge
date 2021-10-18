@@ -72,6 +72,10 @@ var (
 	// ResetBridgeHeight stores the nonce after which oracle events should be discarded when resetting the bridge
 	ParamStoreResetBridgeNonce = []byte("ResetBridgeNonce")
 
+	// ParamBridgeActive allows governance to temporarily halt the bridge via vote, in this context halting
+	// means no more batches will be created and no oracle events executed. Valset creation will continue
+	// to be allowed as it must continue to ensure bridge continuity.
+	ParamBridgeActive = []byte("BridgeActive")
 
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
