@@ -2883,6 +2883,7 @@ dependencies = [
  "gravity_utils",
  "lazy_static",
  "log",
+ "num 0.4.0",
  "num256",
  "orchestrator",
  "prost",

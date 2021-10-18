@@ -7,6 +7,7 @@
 extern crate log;
 
 use crate::bootstrapping::*;
+use crate::deposit_overflow::deposit_overflow_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
 use crate::tx_cancel::send_to_eth_and_cancel;
@@ -29,8 +30,8 @@ use std::{env, time::Duration};
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
-
 mod bootstrapping;
+mod deposit_overflow;
 mod evidence_based_slashing;
 mod happy_path;
 mod happy_path_v2;
@@ -230,7 +231,7 @@ pub async fn main() {
             evidence_based_slashing(&web30, &contact, keys, gravity_address).await;
             return;
         } else if test_type == "TXCANCEL" {
-            info!("SendToEth cancellation test!");
+            info!("Starting SendToEth cancellation test!");
             send_to_eth_and_cancel(
                 &contact,
                 grpc_client,
@@ -242,7 +243,7 @@ pub async fn main() {
             .await;
             return;
         } else if test_type == "INVALID_EVENTS" {
-            info!("Invalid events test!");
+            info!("Starting invalid events test!");
             invalid_events(
                 &web30,
                 &contact,
@@ -274,6 +275,18 @@ pub async fn main() {
                 keys,
                 gravity_address,
                 erc20_addresses[0],
+            )
+            .await;
+            return;
+        } else if test_type == "DEPOSIT_OVERFLOW" {
+            info!("Starting deposit overflow test!");
+            deposit_overflow_test(
+                &web30,
+                &contact,
+                keys,
+                gravity_address,
+                erc20_addresses,
+                grpc_client,
             )
             .await;
             return;

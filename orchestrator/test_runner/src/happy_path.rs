@@ -24,10 +24,10 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
 use gravity_proto::gravity::MsgValsetUpdatedClaim;
 use gravity_utils::types::SendToCosmosEvent;
+use num::CheckedAdd;
 use prost::Message;
 use rand::Rng;
 use std::any::type_name;
-use std::thread::sleep;
 use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep as delay_for;
@@ -401,14 +401,23 @@ pub async fn test_erc20_deposit_bool(
                         );
                         return true;
                     }
-                } else if start_coin.amount + amount.clone() == end_coin.amount
-                    && start_coin.denom == end_coin.denom
-                {
-                    info!(
-                        "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
-                        amount, start_coin.denom, end_coin.amount, end_coin.denom
-                    );
-                    return true;
+                } else {
+                    let expected_end = start_coin.amount.checked_add(&amount.clone());
+                    if expected_end.is_none() {
+                        info!(
+                            "Expecting overflow from addition of {:?} + {:?}!",
+                            start_coin.amount,
+                            amount.clone()
+                        );
+                    } else if start_coin.amount + amount.clone() == end_coin.amount
+                        && start_coin.denom == end_coin.denom
+                    {
+                        info!(
+                            "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
+                            amount, start_coin.denom, end_coin.amount, end_coin.denom
+                        );
+                        return true;
+                    }
                 }
             }
             (None, Some(end_coin)) => {
@@ -463,7 +472,8 @@ async fn check_send_to_cosmos_attestation(
         } else if Instant::now() - start > TOTAL_TIMEOUT {
             panic!("Could not find the send_to_cosmos attestation we were looking for!");
         }
-        sleep(Duration::from_secs(5))
+        info!("Looking for send_to_cosmos attestations");
+        delay_for(Duration::from_secs(10)).await;
     }
     info!("Found the expected MsgSendToCosmosClaim attestation");
 }

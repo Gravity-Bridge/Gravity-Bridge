@@ -276,7 +276,7 @@ fn create_unhalt_proposal(nonce: u64) -> ParameterChangeProposal {
 }
 
 // gets the last event nonce for each validator
-async fn get_nonces(
+pub async fn get_nonces(
     grpc_client: &mut GravityQueryClient<Channel>,
     keys: &[ValidatorKeys],
     prefix: &str,
@@ -358,8 +358,7 @@ async fn submit_false_claims(
         futures.push(contact.wait_for_tx(response, OPERATION_TIMEOUT));
     }
 
-    let join_res = join_all(futures).await;
-    info!("join_res: {:?}", join_res);
+    join_all(futures).await;
 }
 
 async fn print_sends_to_cosmos(grpc_client: &GravityQueryClient<Channel>, print_others: bool) {
