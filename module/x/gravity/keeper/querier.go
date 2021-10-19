@@ -203,6 +203,9 @@ func queryAllBatchConfirms(ctx sdk.Context, nonceStr string, tokenContract strin
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 	contract, err := types.NewEthAddress(tokenContract)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+	}
 
 	var confirms []types.MsgConfirmBatch
 	keeper.IterateBatchConfirmByNonceAndTokenContract(ctx, nonce, *contract, func(_ []byte, c types.MsgConfirmBatch) bool {

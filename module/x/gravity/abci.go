@@ -487,7 +487,7 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, k keeper.Keeper, nonceCutoff u
 	}
 
 	// Reset the last event nonce for all validators affected by history deletion
-	for vote, _ := range affectedValidatorsSet {
+	for vote := range affectedValidatorsSet {
 		val, err := sdk.ValAddressFromBech32(vote)
 		if err != nil {
 			panic(sdkerrors.Wrap(err, "invalid validator address affected by bridge reset"))

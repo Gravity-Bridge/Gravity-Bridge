@@ -2,12 +2,13 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 )
 
 // Tests that batches and transactions are preserved during chain restart
@@ -15,8 +16,8 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	// SETUP ENV + DATA
 	// ==================
 	input := CreateTestEnv(t)
-	ctx   := input.Context
-	batchSize    := 100
+	ctx := input.Context
+	batchSize := 100
 	accAddresses := []string{ // Warning: this must match the length of ctrAddresses
 
 		"cosmos1dg55rtevlfxh46w88yjpdd08sqhh5cc3xhkcej",
@@ -45,28 +46,28 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	// SETUP ACCOUNTS
 	// ==================
 	senders := make([]*sdk.AccAddress, len(accAddresses))
-	for i, _ := range senders {
+	for i := range senders {
 		sender, err := sdk.AccAddressFromBech32(accAddresses[i])
 		require.NoError(t, err)
-		senders[i]  = &sender
+		senders[i] = &sender
 	}
 	receivers := make([]*types.EthAddress, len(ethAddresses))
-	for i, _ := range receivers {
+	for i := range receivers {
 		receiver, err := types.NewEthAddress(ethAddresses[i])
 		require.NoError(t, err)
-		receivers[i]  = receiver
+		receivers[i] = receiver
 	}
 	contracts := make([]*types.EthAddress, len(ctrAddresses))
-	for i, _ := range contracts {
+	for i := range contracts {
 		contract, err := types.NewEthAddress(ctrAddresses[i])
 		require.NoError(t, err)
-		contracts[i]  = contract
+		contracts[i] = contract
 	}
 	tokens := make([]*types.InternalERC20Token, len(contracts))
 	vouchers := make([]*sdk.Coins, len(contracts))
 	for i, v := range contracts {
-		token, err  := types.NewInternalERC20Token(sdk.NewInt(99999999), v.GetAddress())
-		tokens[i] 	= token
+		token, err := types.NewInternalERC20Token(sdk.NewInt(99999999), v.GetAddress())
+		tokens[i] = token
 		allVouchers := sdk.NewCoins(token.GravityCoin())
 		vouchers[i] = &allVouchers
 		require.NoError(t, err)
@@ -91,11 +92,11 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		// Pick fee, amount, sender, receiver, and contract for the ith transaction
 		// Sender and contract will always match up (they must since sender i controls the whole balance of the ith token)
 		// Receivers should get a balance of many token types since i % len(receivers) is usually different than i % len(contracts)
-		fee := fees[i % len(fees)] // fee for this transaction
-		amount := amounts[i % len(amounts)]
-		sender := senders[i % len(senders)]
-		receiver := receivers[i % len(receivers)]
-		contract := contracts[i % len(contracts)]
+		fee := fees[i%len(fees)] // fee for this transaction
+		amount := amounts[i%len(amounts)]
+		sender := senders[i%len(senders)]
+		receiver := receivers[i%len(receivers)]
+		contract := contracts[i%len(contracts)]
 		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(amount)), contract.GetAddress())
 		require.NoError(t, err)
 		feeToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(fee)), contract.GetAddress())
@@ -121,7 +122,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	// ==================
 	// Want to create batches for half of the transactions for each contract
 	// with 100 tx in each batch, 1000 txs per contract, we want 5 batches per contract to batch 500 txs per contract
-	batches := make([]*types.InternalOutgoingTxBatch, 5 * len(contracts))
+	batches := make([]*types.InternalOutgoingTxBatch, 5*len(contracts))
 	for i, v := range contracts {
 		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *v, uint(batchSize))
 		require.NoError(t, err)
