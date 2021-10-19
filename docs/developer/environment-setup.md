@@ -104,17 +104,40 @@ make
 make test
 ```
 
+#### Dependency Errors
+
+'''
+go: downloading github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+../../../go/pkg/mod/github.com/tendermint/tendermint@v0.34.13/abci/types/types.pb.go:9:2: reading github.com/regen-network/protobuf/go.mod at revision v1.3.3-alpha.regen.1: unknown revision v1.3.3-alpha.regen.1
+../../../go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.44.2/types/tx/service.pb.go:12:2: reading github.com/regen-network/protobuf/go.mod at revision v1.3.3-alpha.regen.1: unknown revision v1.3.3-alpha.regen.1
+
+```
+
+If you see depednecy errors like this, clean your cache and build again
+
+```
+
+go clean -modcache
+make
+
+```
+
 ### Rust
 
 Change directory into the `cosmos-gravity-bridge/orchestrator` folder and run
 
 ```
+
 # build all crates
+
 cargo build --all
 
 # re-generate Rust protobuf code
+
 # you will need to do this every time you edit a proto file
+
 cd proto-build && cargo run
+
 ```
 
 ### Tips for IDEs
@@ -140,22 +163,31 @@ The integration tests have two methods of operation, one that runs one of a pre-
 of Gravity bridge for you as a developer to interact with. This is very useful for iterating quickly on changes.
 
 ```
+
 # builds the original docker container, only have to run this once
+
 ./tests/build-container.sh
 
 # This starts the Ethereum chain, Cosmos chain, and a full set of Orchestrators + relayers
+
 ./tests/start-chains.sh
+
 ```
 
 switch to a new terminal and run one of these two commands. A list of all predefined tests can be found [here](https://github.com/althea-net/cosmos-gravity-bridge/blob/main/orchestrator/test_runner/src/main.rs#L169)
 
 ```
+
 # This runs a pre-defined test against the chains, keeping state between runs
+
 ./tests/run-tests.sh
 
 # This provides shell access to the running testnet
+
 # RPC endpoints are passed through the container to localhost:8545 (ethereum) and localhost:9090 (Cosmos GRPC)
+
 docker exec -it gravity_test_instance /bin/bash
+
 ```
 
 ### Notes for Mac users
@@ -164,8 +196,10 @@ Due to a bug in Geth's mining feature it will typically eat up all CPU cores whe
 hardhat can not execute tests that depend on transaction queues so keep in mind this isn't a perfect solution.
 
 ```
+
 export HARDHAT=true
 ./tests/start-chains.sh
+
 ```
 
 **Debugging**
@@ -183,13 +217,17 @@ A list of test patterns is defined [here](https://github.com/althea-net/cosmos-g
 To run an individual test run
 
 ```
+
 bash tests/all-up-test.sh TEST_NAME
+
 ```
 
 To run all the integraton tests and check your code completely run
 
 ```
+
 bash tests/run-all-up-tests.sh
+
 ```
 
 This will run every available all up test. This will take quite some time, go get coffee and if your development machine is
@@ -198,7 +236,9 @@ particularly slow I recomend just pushing to Github. Average runtime per all up 
 You can also use
 
 ```
+
 bash tests/run-all-tests.sh
+
 ```
 
 This is essentially a local emulation of the Github tests. Including linting and formatting plus the above all up test script.
@@ -206,3 +246,4 @@ This is essentially a local emulation of the Github tests. Including linting and
 ## Next steps
 
 Now that you are ready to edit, build, and test Gravity Bridge code you can view the [code structure intro](/docs/developer/code-structure.md)
+```
