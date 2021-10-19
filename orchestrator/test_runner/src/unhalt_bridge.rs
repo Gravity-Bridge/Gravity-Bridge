@@ -4,13 +4,12 @@ use crate::{get_fee, one_eth, OPERATION_TIMEOUT, STAKING_TOKEN, TOTAL_TIMEOUT};
 use bytes::BytesMut;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::query::{get_attestations, get_last_event_nonce_for_validator};
-use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
+use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::utils::encode_any;
-use deep_space::{Contact, Msg};
+use deep_space::{Contact, Fee};
 use ethereum_gravity::utils::downcast_uint256;
-use futures::future::join_all;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
     ParamChange, ParameterChangeProposal,
 };
@@ -46,6 +45,12 @@ pub async fn unhalt_bridge_test(
         web30,
     )
     .await;
+    let fee = Fee {
+        amount: vec![get_fee()],
+        gas_limit: 500_000_000u64,
+        granter: None,
+        payer: None,
+    };
 
     start_orchestrators(
         keys.clone(),
@@ -54,6 +59,8 @@ pub async fn unhalt_bridge_test(
         no_relay_market_config.clone(),
     )
     .await;
+    let lying_validators: Vec<CosmosPrivateKey> =
+        keys[1..3].iter().map(|key| key.orch_key).collect();
 
     print_validator_stake(contact).await;
 
@@ -88,13 +95,16 @@ pub async fn unhalt_bridge_test(
 
     info!("Two validators submitting false claims!");
     submit_false_claims(
-        &keys,
+        &lying_validators,
         initial_valid_nonce + 1,
         initial_block_height + 1,
-        &bridge_user,
-        &prefix,
+        one_eth(),
+        bridge_user.cosmos_address,
+        bridge_user.eth_address,
         erc20_address,
         contact,
+        &fee,
+        Some(OPERATION_TIMEOUT),
     )
     .await;
 
@@ -294,71 +304,6 @@ pub async fn get_nonces(
         );
     }
     nonces
-}
-
-// Creates a MsgSendToCosmosClaim
-fn create_claim(
-    nonce: u64,
-    height: u64,
-    token_contract: &EthAddress,
-    initiator_eth_addr: &EthAddress,
-    receiver_cosmos_addr: &CosmosAddress,
-    orchestrator_addr: &CosmosAddress,
-) -> MsgSendToCosmosClaim {
-    MsgSendToCosmosClaim {
-        event_nonce: nonce,
-        block_height: height,
-        token_contract: token_contract.to_string(),
-        amount: one_eth().to_string(),
-        cosmos_receiver: receiver_cosmos_addr.to_string(),
-        ethereum_sender: initiator_eth_addr.to_string(),
-        orchestrator: orchestrator_addr.to_string(),
-    }
-}
-
-// Submits a false send to cosmos for all the lying validators
-#[allow(clippy::too_many_arguments)]
-async fn submit_false_claims(
-    keys: &[ValidatorKeys],
-    nonce: u64,
-    height: u64,
-    bridge_user: &BridgeUserKey,
-    prefix: &str,
-    erc20_address: EthAddress,
-    contact: &Contact,
-) {
-    let mut futures = vec![];
-    for (i, k) in keys.iter().enumerate() {
-        if i == 0 || i == 3 {
-            info!("Skipping validator {} for false claims", i);
-            continue;
-        }
-        let claim = create_claim(
-            nonce,
-            height,
-            &erc20_address,
-            &bridge_user.eth_address,
-            &bridge_user.cosmos_address,
-            &k.orch_key.to_address(prefix).unwrap(),
-        );
-        info!("Oracle number {} submitting false deposit {:?}", i, &claim);
-        let msg_url = "/gravity.v1.MsgSendToCosmosClaim";
-        let msg = Msg::new(msg_url, claim.clone());
-
-        let response = contact
-            .send_message(
-                &[msg],
-                None,
-                &[get_fee()],
-                Some(OPERATION_TIMEOUT),
-                k.orch_key,
-            )
-            .await
-            .unwrap();
-        futures.push(contact.wait_for_tx(response, OPERATION_TIMEOUT));
-    }
-
-    join_all(futures).await;
 }
 
 async fn print_sends_to_cosmos(grpc_client: &GravityQueryClient<Channel>, print_others: bool) {

@@ -4,17 +4,20 @@
 //! therefore adding new tests at the end of this one may fail.
 use crate::happy_path::test_erc20_deposit_panic;
 use crate::unhalt_bridge::get_nonces;
-use crate::utils::{create_default_test_config, get_user_key, start_orchestrators, ValidatorKeys};
+use crate::utils::{
+    create_default_test_config, get_user_key, start_orchestrators, submit_false_claims,
+    ValidatorKeys,
+};
 use crate::OPERATION_TIMEOUT;
 use crate::{get_fee, MINER_ADDRESS};
 use clarity::{Address as EthAddress, Uint256};
 use deep_space::address::Address as CosmosAddress;
-use deep_space::{Coin, Contact, Fee, Msg};
+use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::{Coin, Contact, Fee};
 use ethereum_gravity::utils::downcast_uint256;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::{MsgSendToCosmosClaim, QueryErc20ToDenomRequest};
+use gravity_proto::gravity::QueryErc20ToDenomRequest;
 use num::Bounded;
-use std::time::Duration;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -32,6 +35,8 @@ pub async fn deposit_overflow_test(
     let mut grpc_client = grpc_client;
     let no_relay_market_config = create_default_test_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
+    let orchestrator_keys: Vec<CosmosPrivateKey> =
+        keys.clone().into_iter().map(|key| key.orch_key).collect();
     ///////////////////// SETUP /////////////////////
     let user_keys = get_user_key();
     let dest = user_keys.cosmos_address;
@@ -95,7 +100,7 @@ pub async fn deposit_overflow_test(
     // We would want to deploy a custom ERC20 which allows transfers of any amounts for convenience
     // But this simulates that without testing the solidity portion
     submit_false_claims(
-        &keys,
+        &orchestrator_keys,
         initial_nonce + 1,
         initial_block_height + 1,
         max_amount.clone(),
@@ -121,7 +126,7 @@ pub async fn deposit_overflow_test(
 
     // Expect this one to succeed as we're using an unrelated token
     submit_false_claims(
-        &keys,
+        &orchestrator_keys,
         initial_nonce + 2,
         initial_block_height + 2,
         normal_amount.clone(),
@@ -149,7 +154,7 @@ pub async fn deposit_overflow_test(
 
     // Expect this one to fail, there's no supply left of the false_claims_erc20!
     submit_false_claims(
-        &keys,
+        &orchestrator_keys,
         initial_nonce + 3,
         initial_block_height + 3,
         normal_amount.clone(),
@@ -167,7 +172,7 @@ pub async fn deposit_overflow_test(
 
     // Expect this one to also fail, there's no supply left of the false_claims_erc20, even though account has changed
     submit_false_claims(
-        &keys,
+        &orchestrator_keys,
         initial_nonce + 4,
         initial_block_height + 4,
         normal_amount.clone(),
@@ -186,50 +191,6 @@ pub async fn deposit_overflow_test(
         dest2_bals
     );
     info!("Successful send of Uint256 max value to cosmos user, unable to overflow the supply!");
-}
-
-// Submits a false send to cosmos for all the validators
-#[allow(clippy::too_many_arguments)]
-pub async fn submit_false_claims(
-    keys: &[ValidatorKeys],
-    nonce: u64,
-    height: u64,
-    amount: Uint256,
-    cosmos_receiver: CosmosAddress,
-    ethereum_sender: EthAddress,
-    erc20_address: EthAddress,
-    contact: &Contact,
-    fee: &Fee,
-    timeout: Option<Duration>,
-) {
-    info!("Beginnning to submit false claims for ALL validators");
-    // let mut futures = vec![];
-    for (i, k) in keys.iter().enumerate() {
-        //let orch_pubkey = k.orch_key.to_public_key(&contact.get_prefix()).unwrap().to_string();
-        let orch_addr = k.orch_key.to_address(&contact.get_prefix()).unwrap();
-        let claim = MsgSendToCosmosClaim {
-            event_nonce: nonce,
-            block_height: height,
-            token_contract: erc20_address.to_string(),
-            amount: amount.to_string(),
-            cosmos_receiver: cosmos_receiver.to_string(),
-            ethereum_sender: ethereum_sender.to_string(),
-            orchestrator: orch_addr.to_string(),
-        };
-        info!("Oracle number {} submitting false deposit {:?}", i, claim);
-        let msg_url = "/gravity.v1.MsgSendToCosmosClaim";
-        let msg = Msg::new(msg_url, claim.clone());
-        let res = contact
-            .send_message(
-                &[msg],
-                Some("All your bridge are belong to us".to_string()),
-                fee.amount.as_slice(),
-                timeout,
-                k.orch_key,
-            )
-            .await;
-        info!("Oracle {} false claim response {:?}", i, res);
-    }
 }
 
 // Checks that cosmos_account has each balance specified in expected_cosmos_coins.

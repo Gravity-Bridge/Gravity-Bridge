@@ -12,7 +12,7 @@ use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::utils::encode_any;
-use deep_space::Contact;
+use deep_space::{Contact, Fee, Msg};
 use futures::future::join_all;
 use gravity_proto::cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
@@ -20,6 +20,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::MsgSendToCosmosClaim;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use orchestrator::main_loop::orchestrator_main_loop;
 use rand::Rng;
@@ -299,6 +300,51 @@ pub async fn start_orchestrators(
         if validator_out && count == num_validators - 1 {
             break;
         }
+    }
+}
+
+// Submits a false send to cosmos for every orchestrator key in keys, sending amount of erc20_address
+// tokens to cosmos_receiver, claiming to come from ethereum_sender for the given fee.
+// If a timeout is supplied, contact.send_message() will block waiting for the tx to appear
+// Note: These sends to cosmos are false, meaning the ethereum side will have a lower nonce than the
+// cosmos side and the bridge will effectively break.
+#[allow(clippy::too_many_arguments)]
+pub async fn submit_false_claims(
+    keys: &[CosmosPrivateKey],
+    nonce: u64,
+    height: u64,
+    amount: Uint256,
+    cosmos_receiver: CosmosAddress,
+    ethereum_sender: EthAddress,
+    erc20_address: EthAddress,
+    contact: &Contact,
+    fee: &Fee,
+    timeout: Option<Duration>,
+) {
+    for (i, k) in keys.iter().enumerate() {
+        let orch_addr = k.to_address(&contact.get_prefix()).unwrap();
+        let claim = MsgSendToCosmosClaim {
+            event_nonce: nonce,
+            block_height: height,
+            token_contract: erc20_address.to_string(),
+            amount: amount.to_string(),
+            cosmos_receiver: cosmos_receiver.to_string(),
+            ethereum_sender: ethereum_sender.to_string(),
+            orchestrator: orch_addr.to_string(),
+        };
+        info!("Oracle number {} submitting false deposit {:?}", i, claim);
+        let msg_url = "/gravity.v1.MsgSendToCosmosClaim";
+        let msg = Msg::new(msg_url, claim.clone());
+        let res = contact
+            .send_message(
+                &[msg],
+                Some("All your bridge are belong to us".to_string()),
+                fee.amount.as_slice(),
+                timeout,
+                *k,
+            )
+            .await;
+        info!("Oracle {} false claim response {:?}", i, res);
     }
 }
 
