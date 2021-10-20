@@ -119,16 +119,16 @@ func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params:             DefaultParams(),
 		LastObservedNonce:  0,
-		Valsets:            []*Valset{},
-		ValsetConfirms:     []*MsgValsetConfirm{},
-		Batches:            []*OutgoingTxBatch{},
+		Valsets:            []Valset{},
+		ValsetConfirms:     []MsgValsetConfirm{},
+		Batches:            []OutgoingTxBatch{},
 		BatchConfirms:      []MsgConfirmBatch{},
-		LogicCalls:         []*OutgoingLogicCall{},
+		LogicCalls:         []OutgoingLogicCall{},
 		LogicCallConfirms:  []MsgConfirmLogicCall{},
 		Attestations:       []Attestation{},
-		DelegateKeys:       []*MsgSetOrchestratorAddress{},
-		Erc20ToDenoms:      []*ERC20ToDenom{},
-		UnbatchedTransfers: []*OutgoingTransferTx{},
+		DelegateKeys:       []MsgSetOrchestratorAddress{},
+		Erc20ToDenoms:      []ERC20ToDenom{},
+		UnbatchedTransfers: []OutgoingTransferTx{},
 	}
 }
 

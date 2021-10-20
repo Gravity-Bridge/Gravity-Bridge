@@ -241,7 +241,7 @@ message MsgValsetUpdatedClaim {
   uint64 event_nonce               = 1;
   uint64 valset_nonce              = 2;
   uint64 block_height              = 3;
-  repeated BridgeValidator members = 4;
+  repeated BridgeValidator members = 4 [(gogoproto.nullable) = false];
   string reward_amount             = 5 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable)   = false

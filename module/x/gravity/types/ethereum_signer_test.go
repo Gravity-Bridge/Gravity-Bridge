@@ -75,6 +75,7 @@ func TestValsetConfirmSig(t *testing.T) {
 
 			// when
 			ethAddr, err := NewEthAddress(spec.srcETHAddr)
+			assert.NoError(t, err)
 			err = ValidateEthereumSignature(hashBytes, sigBytes, *ethAddr)
 			if spec.expErr {
 				assert.Error(t, err)

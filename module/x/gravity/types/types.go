@@ -41,12 +41,12 @@ func (b BridgeValidator) ToInternal() (*InternalBridgeValidator, error) {
 }
 
 // BridgeValidators is the sorted set of validator data for Ethereum bridge MultiSig set
-type BridgeValidators []*BridgeValidator
+type BridgeValidators []BridgeValidator
 
 func (b BridgeValidators) ToInternal() (*InternalBridgeValidators, error) {
 	ret := make(InternalBridgeValidators, len(b))
 	for i := range b {
-		ibv, err := NewInternalBridgeValidator(*b[i])
+		ibv, err := NewInternalBridgeValidator(b[i])
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "member %d", i)
 		}
@@ -82,8 +82,8 @@ func (i InternalBridgeValidator) ValidateBasic() error {
 	return nil
 }
 
-func (i InternalBridgeValidator) ToExternal() *BridgeValidator {
-	return &BridgeValidator{
+func (i InternalBridgeValidator) ToExternal() BridgeValidator {
+	return BridgeValidator{
 		Power:           i.Power,
 		EthereumAddress: i.EthereumAddress.GetAddress(),
 	}
@@ -93,7 +93,7 @@ func (i InternalBridgeValidator) ToExternal() *BridgeValidator {
 type InternalBridgeValidators []*InternalBridgeValidator
 
 func (i InternalBridgeValidators) ToExternal() BridgeValidators {
-	bridgeValidators := make([]*BridgeValidator, len(i))
+	bridgeValidators := make([]BridgeValidator, len(i))
 	for b := range bridgeValidators {
 		bridgeValidators[b] = i[b].ToExternal()
 	}
@@ -201,11 +201,12 @@ func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmo
 		return nil, sdkerrors.Wrap(err, "invalid members")
 	}
 	members.Sort()
-	var mem []*BridgeValidator
+	var mem []BridgeValidator
 	for _, val := range members {
 		mem = append(mem, val.ToExternal())
 	}
-	return &Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress()},
+	vs := Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress()}
+	return &vs,
 		nil
 }
 
@@ -275,7 +276,7 @@ func (v *Valset) WithoutEmptyMembers() *Valset {
 	}
 	r := Valset{
 		Nonce:        v.Nonce,
-		Members:      make([]*BridgeValidator, 0, len(v.Members)),
+		Members:      make([]BridgeValidator, 0, len(v.Members)),
 		Height:       0,
 		RewardAmount: sdk.Int{},
 		RewardToken:  "",
@@ -289,7 +290,7 @@ func (v *Valset) WithoutEmptyMembers() *Valset {
 }
 
 // Valsets is a collection of valset
-type Valsets []*Valset
+type Valsets []Valset
 
 func (v Valsets) Len() int {
 	return len(v)

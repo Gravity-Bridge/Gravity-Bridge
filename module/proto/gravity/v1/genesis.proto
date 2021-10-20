@@ -151,14 +151,14 @@ message Params {
 message GenesisState {
   Params                             params              = 1;
   uint64                             last_observed_nonce = 2;
-  repeated Valset                    valsets             = 3;
-  repeated MsgValsetConfirm          valset_confirms     = 4;
-  repeated OutgoingTxBatch           batches             = 5;
+  repeated Valset                    valsets             = 3 [(gogoproto.nullable) = false];
+  repeated MsgValsetConfirm          valset_confirms     = 4 [(gogoproto.nullable) = false];
+  repeated OutgoingTxBatch           batches             = 5 [(gogoproto.nullable) = false];
   repeated MsgConfirmBatch           batch_confirms      = 6 [(gogoproto.nullable) = false];
-  repeated OutgoingLogicCall         logic_calls         = 7;
+  repeated OutgoingLogicCall         logic_calls         = 7 [(gogoproto.nullable) = false];
   repeated MsgConfirmLogicCall       logic_call_confirms = 8 [(gogoproto.nullable) = false];
   repeated Attestation               attestations        = 9 [(gogoproto.nullable) = false];
-  repeated MsgSetOrchestratorAddress delegate_keys       = 10;
-  repeated ERC20ToDenom              erc20_to_denoms     = 11;
-  repeated OutgoingTransferTx        unbatched_transfers = 12;
+  repeated MsgSetOrchestratorAddress delegate_keys       = 10 [(gogoproto.nullable) = false];
+  repeated ERC20ToDenom              erc20_to_denoms     = 11 [(gogoproto.nullable) = false];
+  repeated OutgoingTransferTx        unbatched_transfers = 12 [(gogoproto.nullable) = false];
 }

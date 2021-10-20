@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -17,8 +18,8 @@ import (
 func (k Keeper) GetOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, invalidationNonce uint64) *types.OutgoingLogicCall {
 	store := ctx.KVStore(k.storeKey)
 	call := types.OutgoingLogicCall{
-		Transfers:            []*types.ERC20Token{},
-		Fees:                 []*types.ERC20Token{},
+		Transfers:            []types.ERC20Token{},
+		Fees:                 []types.ERC20Token{},
 		LogicContractAddress: "",
 		Payload:              []byte{},
 		Timeout:              0,
@@ -31,7 +32,7 @@ func (k Keeper) GetOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, inv
 }
 
 // SetOutogingLogicCall sets an outgoing logic call
-func (k Keeper) SetOutgoingLogicCall(ctx sdk.Context, call *types.OutgoingLogicCall) {
+func (k Keeper) SetOutgoingLogicCall(ctx sdk.Context, call types.OutgoingLogicCall) {
 	store := ctx.KVStore(k.storeKey)
 
 	// Store checkpoint to prove that this logic call actually happened
@@ -39,7 +40,7 @@ func (k Keeper) SetOutgoingLogicCall(ctx sdk.Context, call *types.OutgoingLogicC
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
 
 	store.Set([]byte(types.GetOutgoingLogicCallKey(call.InvalidationId, call.InvalidationNonce)),
-		k.cdc.MustMarshal(call))
+		k.cdc.MustMarshal(&call))
 }
 
 // DeleteOutgoingLogicCall deletes outgoing logic calls
@@ -63,9 +64,9 @@ func (k Keeper) IterateOutgoingLogicCalls(ctx sdk.Context, cb func([]byte, *type
 }
 
 // GetOutgoingLogicCalls returns the outgoing logic calls
-func (k Keeper) GetOutgoingLogicCalls(ctx sdk.Context) (out []*types.OutgoingLogicCall) {
+func (k Keeper) GetOutgoingLogicCalls(ctx sdk.Context) (out []types.OutgoingLogicCall) {
 	k.IterateOutgoingLogicCalls(ctx, func(_ []byte, call *types.OutgoingLogicCall) bool {
-		out = append(out, call)
+		out = append(out, *call)
 		return false
 	})
 	return
@@ -115,7 +116,7 @@ func (k Keeper) SetLogicCallConfirm(ctx sdk.Context, msg *types.MsgConfirmLogicC
 func (k Keeper) GetLogicCallConfirm(ctx sdk.Context, invalidationId []byte, invalidationNonce uint64, val sdk.AccAddress) *types.MsgConfirmLogicCall {
 	if err := sdk.VerifyAddressFormat(val); err != nil {
 		ctx.Logger().Error("invalid val address")
-		return nil;
+		return nil
 	}
 	store := ctx.KVStore(k.storeKey)
 	data := store.Get([]byte(types.GetLogicConfirmKey(invalidationId, invalidationNonce, val)))

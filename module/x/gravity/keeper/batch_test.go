@@ -68,9 +68,9 @@ func TestBatches(t *testing.T) {
 	// Should have txs 2: and 3: from above, as ties in fees are broken by transaction index
 	ctx.Logger().Info(fmt.Sprintf("found batch %+v", gotFirstBatch))
 
-	expFirstBatch := &types.OutgoingTxBatch{
+	expFirstBatch := types.OutgoingTxBatch{
 		BatchNonce: 1,
-		Transactions: []*types.OutgoingTransferTx{
+		Transactions: []types.OutgoingTransferTx{
 			{
 				Id:          2,
 				Erc20Fee:    types.NewERC20Token(3, myTokenContractAddr.GetAddress()),
@@ -150,9 +150,9 @@ func TestBatches(t *testing.T) {
 
 	// check that the more profitable batch has the right txs in it
 	// Should only have 5: and 6: above
-	expSecondBatch := &types.OutgoingTxBatch{
+	expSecondBatch := types.OutgoingTxBatch{
 		BatchNonce: 2,
-		Transactions: []*types.OutgoingTransferTx{
+		Transactions: []types.OutgoingTransferTx{
 			{
 				Id:          6,
 				Erc20Fee:    types.NewERC20Token(5, myTokenContractAddr.GetAddress()),
@@ -286,7 +286,7 @@ func TestBatchesFullCoins(t *testing.T) {
 
 	expFirstBatch := &types.OutgoingTxBatch{
 		BatchNonce: 1,
-		Transactions: []*types.OutgoingTransferTx{
+		Transactions: []types.OutgoingTransferTx{
 			{
 				Id:          2,
 				Erc20Fee:    types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(300)), myTokenContractAddr),
@@ -362,7 +362,7 @@ func TestBatchesFullCoins(t *testing.T) {
 	// check that the more profitable batch has the right txs in it
 	expSecondBatch := &types.OutgoingTxBatch{
 		BatchNonce: 2,
-		Transactions: []*types.OutgoingTransferTx{
+		Transactions: []types.OutgoingTransferTx{
 			{
 				Id:          1,
 				Erc20Fee:    types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(20)), myTokenContractAddr),
@@ -509,7 +509,7 @@ func TestManyBatches(t *testing.T) {
 		require.NoError(t, err)
 		for v := 1; v < 5; v++ {
 			batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *contractAddr, 100)
-			batches = append(batches, *batch.ToExternal())
+			batches = append(batches, batch.ToExternal())
 			require.NoError(t, err)
 		}
 	}

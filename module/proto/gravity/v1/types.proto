@@ -15,7 +15,7 @@ message BridgeValidator {
 // ETH because of the significant gas savings
 message Valset {
   uint64                   nonce   = 1;
-  repeated BridgeValidator members = 2;
+  repeated BridgeValidator members = 2 [(gogoproto.nullable) = false];
   uint64                   height  = 3;
   string reward_amount         = 4 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",

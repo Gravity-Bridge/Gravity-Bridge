@@ -59,7 +59,9 @@ func (k Keeper) BuildOutgoingTXBatch(
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "unable to create batch"))
 	}
-	k.StoreBatch(ctx, batch)
+	// set the current block height when storing the batch
+	batch.Block = uint64(ctx.BlockHeight())
+	k.StoreBatch(ctx, *batch)
 
 	// Get the checkpoint and store it as a legit past batch
 	checkpoint := batch.GetCheckpoint(k.GetGravityID(ctx))
@@ -124,32 +126,31 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 }
 
 // StoreBatch stores a transaction batch
-func (k Keeper) StoreBatch(ctx sdk.Context, batch *types.InternalOutgoingTxBatch) {
+func (k Keeper) StoreBatch(ctx sdk.Context, batch types.InternalOutgoingTxBatch) {
 	if err := batch.ValidateBasic(); err != nil {
 		panic(sdkerrors.Wrap(err, "attempted to store invalid batch"))
 	}
+	externalBatch := batch.ToExternal()
 	store := ctx.KVStore(k.storeKey)
-	// set the current block height when storing the batch
-	batch.Block = uint64(ctx.BlockHeight())
 	key := []byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce))
-	store.Set(key, k.cdc.MustMarshal(batch.ToExternal()))
+	store.Set(key, k.cdc.MustMarshal(&externalBatch))
 
 	blockKey := []byte(types.GetOutgoingTxBatchBlockKey(batch.Block))
-	store.Set(blockKey, k.cdc.MustMarshal(batch.ToExternal()))
+	store.Set(blockKey, k.cdc.MustMarshal(&externalBatch))
 }
 
 // StoreBatchUnsafe stores a transaction batch w/o setting the height
-func (k Keeper) StoreBatchUnsafe(ctx sdk.Context, batch *types.InternalOutgoingTxBatch) {
+func (k Keeper) StoreBatchUnsafe(ctx sdk.Context, batch types.InternalOutgoingTxBatch) {
 	if err := batch.ValidateBasic(); err != nil {
 		panic(sdkerrors.Wrap(err, "attempted to store invalid batch"))
 	}
 	batchExt := batch.ToExternal()
 	store := ctx.KVStore(k.storeKey)
 	key := []byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batchExt.BatchNonce))
-	store.Set(key, k.cdc.MustMarshal(batchExt))
+	store.Set(key, k.cdc.MustMarshal(&batchExt))
 
 	blockKey := []byte(types.GetOutgoingTxBatchBlockKey(batchExt.Block))
-	store.Set(blockKey, k.cdc.MustMarshal(batchExt))
+	store.Set(blockKey, k.cdc.MustMarshal(&batchExt))
 }
 
 // DeleteBatch deletes an outgoing transaction batch

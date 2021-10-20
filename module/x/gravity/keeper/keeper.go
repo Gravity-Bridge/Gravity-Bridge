@@ -145,7 +145,7 @@ func (k Keeper) UnpackAttestationClaim(att *types.Attestation) (types.EthereumCl
 // address mapping will mean having to keep two of the same data around just to provide lookups.
 //
 // For the time being this will serve
-func (k Keeper) GetDelegateKeys(ctx sdk.Context) []*types.MsgSetOrchestratorAddress {
+func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddress {
 	store := ctx.KVStore(k.storeKey)
 	prefix := []byte(types.EthAddressByValidatorKey)
 	iter := store.Iterator(prefixRange(prefix))
@@ -193,7 +193,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []*types.MsgSetOrchestratorAddr
 		orchAddresses[valAddress.String()] = orchAddress.String()
 	}
 
-	var result []*types.MsgSetOrchestratorAddress
+	var result []types.MsgSetOrchestratorAddress
 
 	for valAddr, ethAddr := range ethAddresses {
 		orch, ok := orchAddresses[valAddr]
@@ -202,7 +202,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []*types.MsgSetOrchestratorAddr
 			// is somehow inconsistent
 			panic("Can't find address")
 		}
-		result = append(result, &types.MsgSetOrchestratorAddress{
+		result = append(result, types.MsgSetOrchestratorAddress{
 			Orchestrator: orch,
 			Validator:    valAddr,
 			EthAddress:   ethAddr,
@@ -262,7 +262,7 @@ func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context) uint64 {
 }
 
 // GetUnSlashedLogicCalls returns all the unslashed logic calls in state
-func (k Keeper) GetUnSlashedLogicCalls(ctx sdk.Context, maxHeight uint64) (out []*types.OutgoingLogicCall) {
+func (k Keeper) GetUnSlashedLogicCalls(ctx sdk.Context, maxHeight uint64) (out []types.OutgoingLogicCall) {
 	lastSlashedLogicCallBlock := k.GetLastSlashedLogicCallBlock(ctx)
 	calls := k.GetOutgoingLogicCalls(ctx)
 	for _, call := range calls {

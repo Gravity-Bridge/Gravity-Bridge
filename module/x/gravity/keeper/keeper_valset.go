@@ -19,7 +19,7 @@ import (
 // SetValsetRequest returns a new instance of the Gravity BridgeValidatorSet
 // by taking a snapshot of the current set
 // i.e. {"nonce": 1, "memebers": [{"eth_addr": "foo", "power": 11223}]}
-func (k Keeper) SetValsetRequest(ctx sdk.Context) *types.Valset {
+func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 	valset := k.GetCurrentValset(ctx)
 	k.StoreValset(ctx, valset)
 
@@ -46,17 +46,17 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) *types.Valset {
 }
 
 // StoreValset is for storing a valiator set at a given height
-func (k Keeper) StoreValset(ctx sdk.Context, valset *types.Valset) {
+func (k Keeper) StoreValset(ctx sdk.Context, valset types.Valset) {
 	store := ctx.KVStore(k.storeKey)
 	valset.Height = uint64(ctx.BlockHeight())
-	store.Set([]byte(types.GetValsetKey(valset.Nonce)), k.cdc.MustMarshal(valset))
+	store.Set([]byte(types.GetValsetKey(valset.Nonce)), k.cdc.MustMarshal(&valset))
 	k.SetLatestValsetNonce(ctx, valset.Nonce)
 }
 
 // StoreValsetUnsafe is for storing a valiator set at a given height
-func (k Keeper) StoreValsetUnsafe(ctx sdk.Context, valset *types.Valset) {
+func (k Keeper) StoreValsetUnsafe(ctx sdk.Context, valset types.Valset) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.GetValsetKey(valset.Nonce)), k.cdc.MustMarshal(valset))
+	store.Set([]byte(types.GetValsetKey(valset.Nonce)), k.cdc.MustMarshal(&valset))
 	k.SetLatestValsetNonce(ctx, valset.Nonce)
 }
 
@@ -116,9 +116,9 @@ func (k Keeper) IterateValsets(ctx sdk.Context, cb func(key []byte, val *types.V
 }
 
 // GetValsets returns all the validator sets in state
-func (k Keeper) GetValsets(ctx sdk.Context) (out []*types.Valset) {
+func (k Keeper) GetValsets(ctx sdk.Context) (out []types.Valset) {
 	k.IterateValsets(ctx, func(_ []byte, val *types.Valset) bool {
-		out = append(out, val)
+		out = append(out, *val)
 		return false
 	})
 	sort.Sort(types.Valsets(out))
@@ -227,7 +227,7 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedVa
 // The function is intended to return what the valset would look like if you made one now
 // you should call this function, evaluate if you want to save this new valset, and discard
 // it or save
-func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
+func (k Keeper) GetCurrentValset(ctx sdk.Context) types.Valset {
 	validators := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
 	// allocate enough space for all validators, but len zero, we then append
 	// so that we have an array with extra capacity but the correct length depending
@@ -281,7 +281,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) *types.Valset {
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "generated invalid valset"))
 	}
-	return valset
+	return *valset
 }
 
 /////////////////////////////
@@ -322,7 +322,7 @@ func (k Keeper) SetValsetConfirm(ctx sdk.Context, valsetConf types.MsgValsetConf
 }
 
 // GetValsetConfirms returns all validator set confirmations by nonce
-func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []*types.MsgValsetConfirm) {
+func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []types.MsgValsetConfirm) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.ValsetConfirmKey))
 	start, end := prefixRange(types.UInt64Bytes(nonce))
 	iterator := prefixStore.Iterator(start, end)
@@ -337,7 +337,7 @@ func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []*ty
 			Signature:    "",
 		}
 		k.cdc.MustUnmarshal(iterator.Value(), &confirm)
-		confirms = append(confirms, &confirm)
+		confirms = append(confirms, confirm)
 	}
 
 	return confirms

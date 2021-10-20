@@ -53,6 +53,7 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 		t.Run(msg, func(t *testing.T) {
 			println(fmt.Sprintf("Spec is %v", msg))
 			ethAddr, err := NewEthAddress(spec.srcETHAddr)
+			assert.NoError(t, err)
 			msg := NewMsgSetOrchestratorAddress(spec.srcValAddr, spec.srcCosmosAddr, *ethAddr)
 			// when
 			err = msg.ValidateBasic()

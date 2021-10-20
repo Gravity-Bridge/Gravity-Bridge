@@ -326,7 +326,7 @@ func lastPendingBatchRequest(ctx sdk.Context, operatorAddr string, keeper Keeper
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
 	}
 
-	var pendingBatchReq *types.OutgoingTxBatch
+	var pendingBatchReq types.OutgoingTxBatch
 	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
 		foundConfirm := keeper.GetBatchConfirm(ctx, batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
@@ -335,9 +335,6 @@ func lastPendingBatchRequest(ctx sdk.Context, operatorAddr string, keeper Keeper
 		}
 		return false
 	})
-	if pendingBatchReq == nil {
-		return nil, nil
-	}
 	res, err := codec.MarshalJSONIndent(types.ModuleCdc, pendingBatchReq)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
@@ -349,7 +346,7 @@ const MaxResults = 100 // todo: impl pagination
 
 // Gets MaxResults batches from store. Does not select by token type or anything
 func lastBatchesRequest(ctx sdk.Context, keeper Keeper) ([]byte, error) {
-	var batches []*types.OutgoingTxBatch
+	var batches []types.OutgoingTxBatch
 	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
 		batches = append(batches, batch.ToExternal())
 		return len(batches) == MaxResults
@@ -530,8 +527,8 @@ func queryPendingSendToEth(ctx sdk.Context, senderAddr string, k Keeper) ([]byte
 	batches := k.GetOutgoingTxBatches(ctx)
 	unbatched_tx := k.GetUnbatchedTransactions(ctx)
 	res := types.QueryPendingSendToEthResponse{
-		TransfersInBatches: []*types.OutgoingTransferTx{},
-		UnbatchedTransfers: []*types.OutgoingTransferTx{},
+		TransfersInBatches: []types.OutgoingTransferTx{},
+		UnbatchedTransfers: []types.OutgoingTransferTx{},
 	}
 	for _, batch := range batches {
 		for _, tx := range batch.Transactions {

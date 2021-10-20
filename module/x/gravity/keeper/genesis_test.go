@@ -108,7 +108,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v of contract %v from %v to %v", i, amount, fee, contract, sender, receiver))
 
 		// Record the transaction for later testing
-		tx, err := types.NewInternalOutgoingTransferTx(id, sender.String(), receiver.GetAddress(), *amountToken.ToExternal(), *feeToken.ToExternal())
+		tx, err := types.NewInternalOutgoingTransferTx(id, sender.String(), receiver.GetAddress(), amountToken.ToExternal(), feeToken.ToExternal())
 		require.NoError(t, err)
 		txs[i] = tx
 	}

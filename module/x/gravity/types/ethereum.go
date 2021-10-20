@@ -91,13 +91,13 @@ func EthAddrLessThan(e EthAddress, o EthAddress) bool {
 /////////////////////////
 
 // NewERC20Token returns a new instance of an ERC20
-func NewERC20Token(amount uint64, contract string) *ERC20Token {
-	return &ERC20Token{Amount: sdk.NewIntFromUint64(amount), Contract: contract}
+func NewERC20Token(amount uint64, contract string) ERC20Token {
+	return ERC20Token{Amount: sdk.NewIntFromUint64(amount), Contract: contract}
 }
 
 // NewSDKIntERC20Token returns a new instance of an ERC20, accepting a sdk.Int
-func NewSDKIntERC20Token(amount sdk.Int, contract string) *ERC20Token {
-	return &ERC20Token{Amount: amount, Contract: contract}
+func NewSDKIntERC20Token(amount sdk.Int, contract string) ERC20Token {
+	return ERC20Token{Amount: amount, Contract: contract}
 }
 
 // ToInternal converts an ERC20Token to the internal type InternalERC20Token
@@ -141,8 +141,8 @@ func (i *InternalERC20Token) ValidateBasic() error {
 }
 
 // ToExternal converts an InternalERC20Token to the external type ERC20Token
-func (i *InternalERC20Token) ToExternal() *ERC20Token {
-	return &ERC20Token{
+func (i *InternalERC20Token) ToExternal() ERC20Token {
+	return ERC20Token{
 		Amount:   i.Amount,
 		Contract: i.Contract.GetAddress(),
 	}

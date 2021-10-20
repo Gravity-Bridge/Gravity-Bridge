@@ -652,7 +652,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	token1Id := ids1[0]
 	tx1, err1 := input.GravityKeeper.GetUnbatchedTxByFeeAndId(ctx, *token1Fee, token1Id)
 	require.NoError(t, err1)
-	expTx1, err1 := types.NewInternalOutgoingTransferTx(token1Id, mySender1.String(), myReceiver, *token1Amount.ToExternal(), *token1Fee.ToExternal())
+	expTx1, err1 := types.NewInternalOutgoingTransferTx(token1Id, mySender1.String(), myReceiver, token1Amount.ToExternal(), token1Fee.ToExternal())
 	require.NoError(t, err1)
 	require.Equal(t, *expTx1, *tx1)
 
@@ -664,7 +664,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	token2Id := ids2[3]
 	tx2, err2 := input.GravityKeeper.GetUnbatchedTxByFeeAndId(ctx, *token2Fee, token2Id)
 	require.NoError(t, err2)
-	expTx2, err2 := types.NewInternalOutgoingTransferTx(token2Id, mySender2.String(), myReceiver, *token2Amount.ToExternal(), *token2Fee.ToExternal())
+	expTx2, err2 := types.NewInternalOutgoingTransferTx(token2Id, mySender2.String(), myReceiver, token2Amount.ToExternal(), token2Fee.ToExternal())
 	require.NoError(t, err2)
 	require.Equal(t, *expTx2, *tx2)
 
@@ -885,7 +885,7 @@ func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
 	for _, tx := range got.UnbatchedTransfers {
 		cached := unbatchedTxMap[tx.Id]
 		require.NotNil(t, cached)
-		require.Equal(t, cached, *tx, "cached: %+v\nactual: %+v\n", cached, *tx)
+		require.Equal(t, cached, tx, "cached: %+v\nactual: %+v\n", cached, tx)
 		foundTxsMap[tx.Id] = true
 	}
 

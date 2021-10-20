@@ -196,10 +196,10 @@ func cleanupTimedOutLogicCalls(ctx sdk.Context, k keeper.Keeper) {
 // prepValsetConfirms loads all confirmations into a hashmap indexed by validatorAddr
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
-func prepValsetConfirms(ctx sdk.Context, k keeper.Keeper, nonce uint64) map[string]*types.MsgValsetConfirm {
+func prepValsetConfirms(ctx sdk.Context, k keeper.Keeper, nonce uint64) map[string]types.MsgValsetConfirm {
 	confirms := k.GetValsetConfirms(ctx, nonce)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string
-	ret := make(map[string]*types.MsgValsetConfirm)
+	ret := make(map[string]types.MsgValsetConfirm)
 	for _, confirm := range confirms {
 		// TODO this presents problems for delegate key rotation see issue #344
 		confVal, _ := sdk.AccAddressFromBech32(confirm.Orchestrator)
@@ -359,7 +359,7 @@ func BatchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 // prepLogicCallConfirms loads all confirmations into a hashmap indexed by validatorAddr
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
-func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call *types.OutgoingLogicCall) map[string]*types.MsgConfirmLogicCall {
+func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call types.OutgoingLogicCall) map[string]*types.MsgConfirmLogicCall {
 	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]*types.MsgConfirmLogicCall)

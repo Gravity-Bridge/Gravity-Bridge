@@ -20,7 +20,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 
 	// reset valset confirmations in state
 	for _, conf := range data.ValsetConfirms {
-		k.SetValsetConfirm(ctx, *conf)
+		k.SetValsetConfirm(ctx, conf)
 	}
 
 	// reset batches in state
@@ -30,7 +30,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "unable to make batch internal: %v", batch))
 		}
-		k.StoreBatchUnsafe(ctx, intBatch)
+		k.StoreBatchUnsafe(ctx, *intBatch)
 	}
 
 	// reset batch confirmations in state
@@ -166,13 +166,13 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		batches            = k.GetOutgoingTxBatches(ctx)
 		valsets            = k.GetValsets(ctx)
 		attmap             = k.GetAttestationMapping(ctx)
-		vsconfs            = []*types.MsgValsetConfirm{}
+		vsconfs            = []types.MsgValsetConfirm{}
 		batchconfs         = []types.MsgConfirmBatch{}
 		callconfs          = []types.MsgConfirmLogicCall{}
 		attestations       = []types.Attestation{}
 		delegates          = k.GetDelegateKeys(ctx)
 		lastobserved       = k.GetLastObservedEventNonce(ctx)
-		erc20ToDenoms      = []*types.ERC20ToDenom{}
+		erc20ToDenoms      = []types.ERC20ToDenom{}
 		unbatchedTransfers = k.GetUnbatchedTransactions(ctx)
 	)
 
@@ -183,7 +183,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	}
 
 	// export batch confirmations from state
-	extBatches := make([]*types.OutgoingTxBatch, len(batches))
+	extBatches := make([]types.OutgoingTxBatch, len(batches))
 	for i, batch := range batches {
 		// TODO: set height = 0?
 		batchconfs = append(batchconfs,
@@ -206,11 +206,11 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 
 	// export erc20 to denom relations
 	k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
-		erc20ToDenoms = append(erc20ToDenoms, erc20ToDenom)
+		erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
 		return false
 	})
 
-	unbatchedTxs := make([]*types.OutgoingTransferTx, len(unbatchedTransfers))
+	unbatchedTxs := make([]types.OutgoingTransferTx, len(unbatchedTransfers))
 	for i, v := range unbatchedTransfers {
 		unbatchedTxs[i] = v.ToExternal()
 	}

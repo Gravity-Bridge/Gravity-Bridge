@@ -185,12 +185,12 @@ func TestBatchSlashing(t *testing.T) {
 	batch, err := types.NewInternalOutgingTxBatchFromExternalBatch(types.OutgoingTxBatch{
 		BatchNonce:    1,
 		BatchTimeout:  0,
-		Transactions:  []*types.OutgoingTransferTx{},
+		Transactions:  []types.OutgoingTransferTx{},
 		TokenContract: keeper.TokenContractAddrs[0],
 		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
-	pk.StoreBatchUnsafe(ctx, batch)
+	pk.StoreBatchUnsafe(ctx, *batch)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {

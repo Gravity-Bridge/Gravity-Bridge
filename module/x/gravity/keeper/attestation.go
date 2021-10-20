@@ -19,7 +19,7 @@ func (k Keeper) Attest(
 	anyClaim *codectypes.Any,
 ) (*types.Attestation, error) {
 	if err := sdk.VerifyAddressFormat(claim.GetClaimer()); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid claimer address");
+		return nil, sdkerrors.Wrap(err, "invalid claimer address")
 	}
 	val, found := k.GetOrchestratorValidator(ctx, claim.GetClaimer())
 	if !found {
@@ -27,7 +27,7 @@ func (k Keeper) Attest(
 	}
 	valAddr := val.GetOperator()
 	if err := sdk.VerifyAddressFormat(valAddr); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid orchestrator validator address");
+		return nil, sdkerrors.Wrap(err, "invalid orchestrator validator address")
 	}
 	// Check that the nonce of this event is exactly one higher than the last nonce stored by this validator.
 	// We check the event nonce in processAttestation as well,
@@ -250,9 +250,9 @@ func (k Keeper) IterateAttestaions(ctx sdk.Context, cb func([]byte, types.Attest
 // GetMostRecentAttestations returns sorted (by nonce) attestations up to a provided limit number of attestations
 // Note: calls GetAttestationMapping in the hopes that there are potentially many attestations
 // which are distributed between few nonces to minimize sorting time
-func (k Keeper) GetMostRecentAttestations(ctx sdk.Context, limit uint64) []*types.Attestation {
+func (k Keeper) GetMostRecentAttestations(ctx sdk.Context, limit uint64) []types.Attestation {
 	attestationMapping := k.GetAttestationMapping(ctx)
-	attestations := make([]*types.Attestation, 0, limit)
+	attestations := make([]types.Attestation, 0, limit)
 
 	keys := make([]uint64, 0, len(attestationMapping))
 	for k := range attestationMapping {
@@ -270,7 +270,7 @@ func (k Keeper) GetMostRecentAttestations(ctx sdk.Context, limit uint64) []*type
 			if count >= int(limit) {
 				break
 			}
-			attestations = append(attestations, &att)
+			attestations = append(attestations, att)
 			count++
 		}
 	}
@@ -332,7 +332,7 @@ func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 	}
 	valset := types.Valset{
 		Nonce:        0,
-		Members:      []*types.BridgeValidator{},
+		Members:      []types.BridgeValidator{},
 		Height:       0,
 		RewardAmount: sdk.Int{},
 		RewardToken:  "",
@@ -356,7 +356,7 @@ func (k Keeper) setLastObservedEventNonce(ctx sdk.Context, nonce uint64) {
 // GetLastEventNonceByValidator returns the latest event nonce for a given validator
 func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress) uint64 {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"));
+		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
 	bytes := store.Get([]byte(types.GetLastEventNonceByValidatorKey(validator)))
@@ -379,7 +379,7 @@ func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValA
 // setLastEventNonceByValidator sets the latest event nonce for a give validator
 func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress, nonce uint64) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"));
+		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(types.GetLastEventNonceByValidatorKey(validator)), types.UInt64Bytes(nonce))

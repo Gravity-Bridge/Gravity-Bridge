@@ -1,8 +1,8 @@
 syntax = "proto3";
 package gravity.v1;
 
+import "gogoproto/gogo.proto";
 import "gravity/v1/attestation.proto";
-// import "gravity/v1/types.proto";
 
 option go_package = "github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types";
 
@@ -10,7 +10,7 @@ option go_package = "github.com/althea-net/cosmos-gravity-bridge/module/x/gravit
 message OutgoingTxBatch {
   uint64                      batch_nonce    = 1;
   uint64                      batch_timeout  = 2;
-  repeated OutgoingTransferTx transactions   = 3;
+  repeated OutgoingTransferTx transactions   = 3 [(gogoproto.nullable) = false];
   string                      token_contract = 4;
   uint64                      block          = 5;
 }
@@ -20,14 +20,14 @@ message OutgoingTransferTx {
   uint64     id           = 1;
   string     sender       = 2;
   string     dest_address = 3;
-  ERC20Token erc20_token  = 4;
-  ERC20Token erc20_fee    = 5;
+  ERC20Token erc20_token = 4 [(gogoproto.nullable) = false];
+  ERC20Token erc20_fee = 5 [(gogoproto.nullable) = false];
 }
 
 // OutgoingLogicCall represents an individual logic call from gravity to ETH
 message OutgoingLogicCall {
-  repeated ERC20Token transfers              = 1;
-  repeated ERC20Token fees                   = 2;
+  repeated ERC20Token transfers              = 1 [(gogoproto.nullable) = false];
+  repeated ERC20Token fees                   = 2 [(gogoproto.nullable) = false];
   string              logic_contract_address = 3;
   bytes               payload                = 4;
   uint64              timeout                = 5;

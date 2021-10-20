@@ -24,16 +24,16 @@ func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 		BatchNonce: 1,
 		//
 		BatchTimeout: 2111,
-		Transactions: []*OutgoingTransferTx{
+		Transactions: []OutgoingTransferTx{
 			{
 				Id:          0x1,
 				Sender:      senderAddr.String(),
 				DestAddress: destAddress.GetAddress(),
-				Erc20Token: &ERC20Token{
+				Erc20Token: ERC20Token{
 					Amount:   sdk.NewInt(0x1),
 					Contract: erc20Address.GetAddress(),
 				},
-				Erc20Fee: &ERC20Token{
+				Erc20Fee: ERC20Token{
 					Amount:   sdk.NewInt(0x1),
 					Contract: erc20Address.GetAddress(),
 				},
@@ -60,7 +60,7 @@ func TestOutgoingLogicCallCheckpointGold1(t *testing.T) {
 	invalidationId, err := hex.DecodeString("0x696e76616c69646174696f6e4964000000000000000000000000000000000000"[2:])
 	require.NoError(t, err)
 
-	token := []*ERC20Token{{
+	token := []ERC20Token{{
 		Contract: "0xC26eFfa98B8A2632141562Ae7E34953Cfe5B4888",
 		Amount:   sdk.NewIntFromUint64(1),
 	}}

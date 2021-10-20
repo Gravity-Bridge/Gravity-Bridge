@@ -96,7 +96,7 @@ message QueryParamsResponse {
 
 message QueryCurrentValsetRequest {}
 message QueryCurrentValsetResponse {
-  Valset valset = 1;
+  Valset valset = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryValsetRequestRequest {
@@ -118,48 +118,48 @@ message QueryValsetConfirmsByNonceRequest {
   uint64 nonce = 1;
 }
 message QueryValsetConfirmsByNonceResponse {
-  repeated MsgValsetConfirm confirms = 1;
+  repeated MsgValsetConfirm confirms = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryLastValsetRequestsRequest {}
 message QueryLastValsetRequestsResponse {
-  repeated Valset valsets = 1;
+  repeated Valset valsets = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryLastPendingValsetRequestByAddrRequest {
   string address = 1;
 }
 message QueryLastPendingValsetRequestByAddrResponse {
-  repeated Valset valsets = 1;
+  repeated Valset valsets = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryBatchFeeRequest {}
 message QueryBatchFeeResponse {
-  repeated BatchFees batch_fees = 1;
+  repeated BatchFees batch_fees = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryLastPendingBatchRequestByAddrRequest {
   string address = 1;
 }
 message QueryLastPendingBatchRequestByAddrResponse {
-  OutgoingTxBatch batch = 1;
+  OutgoingTxBatch batch = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryLastPendingLogicCallByAddrRequest {
   string address = 1;
 }
 message QueryLastPendingLogicCallByAddrResponse {
-  OutgoingLogicCall call = 1;
+  OutgoingLogicCall call = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryOutgoingTxBatchesRequest {}
 message QueryOutgoingTxBatchesResponse {
-  repeated OutgoingTxBatch batches = 1;
+  repeated OutgoingTxBatch batches = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryOutgoingLogicCallsRequest {}
 message QueryOutgoingLogicCallsResponse {
-  repeated OutgoingLogicCall calls = 1;
+  repeated OutgoingLogicCall calls = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryBatchRequestByNonceRequest {
@@ -167,7 +167,7 @@ message QueryBatchRequestByNonceRequest {
   string contract_address = 2;
 }
 message QueryBatchRequestByNonceResponse {
-  OutgoingTxBatch batch = 1;
+  OutgoingTxBatch batch = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryBatchConfirmsRequest {
@@ -175,7 +175,7 @@ message QueryBatchConfirmsRequest {
   string contract_address = 2;
 }
 message QueryBatchConfirmsResponse {
-  repeated MsgConfirmBatch confirms = 1;
+  repeated MsgConfirmBatch confirms = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryLogicConfirmsRequest {
@@ -183,7 +183,7 @@ message QueryLogicConfirmsRequest {
   uint64 invalidation_nonce = 2;
 }
 message QueryLogicConfirmsResponse {
-  repeated MsgConfirmLogicCall confirms = 1;
+  repeated MsgConfirmLogicCall confirms = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryLastEventNonceByAddrRequest {
@@ -213,7 +213,7 @@ message QueryAttestationsRequest {
   uint64 limit = 1;
 }
 message QueryAttestationsResponse {
-  repeated Attestation attestations = 1;
+  repeated Attestation attestations = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryDelegateKeysByValidatorAddress {
@@ -244,6 +244,6 @@ message QueryPendingSendToEth {
   string sender_address = 1;
 }
 message QueryPendingSendToEthResponse {
-  repeated OutgoingTransferTx transfers_in_batches = 1;
-  repeated OutgoingTransferTx unbatched_transfers  = 2;
+  repeated OutgoingTransferTx transfers_in_batches = 1 [(gogoproto.nullable) = false];
+  repeated OutgoingTransferTx unbatched_transfers  = 2 [(gogoproto.nullable) = false];
 }
