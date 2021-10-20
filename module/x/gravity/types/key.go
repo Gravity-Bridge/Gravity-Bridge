@@ -62,9 +62,6 @@ var (
 	// OutgoingTXBatchKey indexes outgoing tx batches under a nonce and token address
 	OutgoingTXBatchKey = "OutgoingTXBatchKey"
 
-	// OutgoingTXBatchBlockKey indexes outgoing tx batches under a block height and token address
-	OutgoingTXBatchBlockKey = "OutgoingTXBatchBlockKey"
-
 	// BatchConfirmKey indexes validator confirmations by token contract address
 	BatchConfirmKey = "BatchConfirmKey"
 
@@ -251,13 +248,6 @@ func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) string {
 // [0xa][0 0 0 0 0 0 0 1][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 func GetOutgoingTxBatchKey(tokenContract EthAddress, nonce uint64) string {
 	return OutgoingTXBatchKey + tokenContract.GetAddress() + string(UInt64Bytes(nonce))
-}
-
-// GetOutgoingTxBatchBlockKey returns the following key format
-// prefix     blockheight
-// [0xb][0 0 0 0 2 1 4 3]
-func GetOutgoingTxBatchBlockKey(block uint64) string {
-	return OutgoingTXBatchBlockKey + string(UInt64Bytes(block))
 }
 
 // GetBatchConfirmKey returns the following key format
