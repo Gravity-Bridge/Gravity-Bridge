@@ -19,7 +19,7 @@ type AttestationHandler struct {
 }
 
 // SendToCommunityPool handles sending incorrect deposits to the community pool, since the deposits
-// have already been made on Ethereum there's nothing we can do to revserse them and we should at least
+// have already been made on Ethereum there's nothing we can do to reverse them, and we should at least
 // make use of the tokens which would otherwise be lost
 func (a AttestationHandler) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 	if err := a.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distypes.ModuleName, coins); err != nil {
@@ -54,7 +54,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 			if err != nil {
 				// invalid deposit address, send coins to community pool, we don't care to block this on the Ethereum side because
 				// validation is expensive, and only users of improper frontends should ever encounter it. If we did not transfer
-				// the coins somewhere they would be 'lost' an inaccessible to the chain so this is strictly superior
+				// the coins somewhere they would be 'lost' and inaccessible to the chain so this is strictly superior
 				if err = a.SendToCommunityPool(ctx, coins); err != nil {
 					return sdkerrors.Wrap(err, "failed to send to Community pool")
 				}
