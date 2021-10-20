@@ -107,6 +107,23 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 	if b == nil {
 		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract, nonce))
 	}
+	contract := b.TokenContract
+	// Burn tokens if they're Ethereum originated
+	if isCosmosOriginated, _ := k.ERC20ToDenomLookup(ctx, contract); !isCosmosOriginated {
+		totalToBurn := sdk.NewInt(0)
+		for _, tx := range b.Transactions {
+			totalToBurn = totalToBurn.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
+		}
+		// burn vouchers to send them back to ETH
+		erc20, err := types.NewInternalERC20Token(totalToBurn, contract.GetAddress())
+		if err != nil {
+			panic(sdkerrors.Wrapf(err, "invalid ERC20 address in executed batch"))
+		}
+		burnVouchers := sdk.NewCoins(erc20.GravityCoin())
+		if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, burnVouchers); err != nil {
+			panic(err)
+		}
+	}
 
 	// Iterate through remaining batches
 	k.IterateOutgoingTXBatches(ctx, func(key []byte, iter_batch *types.InternalOutgoingTxBatch) bool {
@@ -122,7 +139,6 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 
 	// Delete batch since it is finished
 	k.DeleteBatch(ctx, *b)
-
 }
 
 // StoreBatch stores a transaction batch
