@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"sort"
 
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -26,6 +27,7 @@ type Keeper struct {
 	cdc            codec.BinaryCodec // The wire codec for binary encoding/decoding.
 	bankKeeper     bankkeeper.BaseKeeper
 	SlashingKeeper types.SlashingKeeper
+	accountKeeper  authkeeper.AccountKeeper
 
 	AttestationHandler interface {
 		Handle(sdk.Context, types.Attestation, types.EthereumClaim) error
@@ -33,7 +35,16 @@ type Keeper struct {
 }
 
 // NewKeeper returns a new instance of the gravity keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace, stakingKeeper types.StakingKeeper, bankKeeper bankkeeper.BaseKeeper, distKeeper types.DistributionKeeper, slashingKeeper types.SlashingKeeper) Keeper {
+func NewKeeper(
+	cdc codec.BinaryCodec,
+	storeKey sdk.StoreKey,
+	paramSpace paramtypes.Subspace,
+	stakingKeeper types.StakingKeeper,
+	bankKeeper bankkeeper.BaseKeeper,
+	distKeeper types.DistributionKeeper,
+	slashingKeeper types.SlashingKeeper,
+	accKeeper authkeeper.AccountKeeper,
+) Keeper {
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
 		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
@@ -46,6 +57,7 @@ func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace paramtyp
 		cdc:                cdc,
 		bankKeeper:         bankKeeper,
 		SlashingKeeper:     slashingKeeper,
+		accountKeeper:		accKeeper,
 		AttestationHandler: nil,
 	}
 	k.AttestationHandler = AttestationHandler{

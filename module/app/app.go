@@ -384,6 +384,7 @@ func NewGravityApp(
 		app.bankKeeper,
 		app.distrKeeper,
 		app.slashingKeeper,
+		app.accountKeeper,
 	)
 
 	app.stakingKeeper = *stakingKeeper.SetHooks(
