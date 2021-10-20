@@ -82,7 +82,7 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	vs.Nonce = pk.GetLatestValsetNonce(ctx) + 1
 	pk.StoreValsetUnsafe(ctx, vs)
 
-	for i, val := range keeper.AccAddrs {
+	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
 			// don't sign with first validator
 			continue
@@ -90,7 +90,7 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
 		require.NoError(t, err)
 
-		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, val, "dummysig")
+		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
 		pk.SetValsetConfirm(ctx, *conf)
 	}
 
@@ -145,7 +145,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	undelegateMsg2 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[1], keeper.StakingAmount)
 	sh(input.Context, undelegateMsg2)
 
-	for i, val := range keeper.AccAddrs {
+	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
 			// don't sign with first validator
 			continue
@@ -153,7 +153,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
 		require.NoError(t, err)
 
-		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, val, "dummysig")
+		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
 		pk.SetValsetConfirm(ctx, *conf)
 	}
 	staking.EndBlocker(input.Context, input.StakingKeeper)
@@ -192,7 +192,7 @@ func TestBatchSlashing(t *testing.T) {
 	require.NoError(t, err)
 	pk.StoreBatchUnsafe(ctx, batch)
 
-	for i, val := range keeper.AccAddrs {
+	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
 			// don't sign with first validator
 			continue
@@ -216,7 +216,7 @@ func TestBatchSlashing(t *testing.T) {
 			Nonce:         batch.BatchNonce,
 			TokenContract: keeper.TokenContractAddrs[0],
 			EthSigner:     keeper.EthAddrs[i].String(),
-			Orchestrator:  val.String(),
+			Orchestrator:  orch.String(),
 			Signature:     "",
 		})
 	}

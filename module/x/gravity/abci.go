@@ -193,6 +193,25 @@ func cleanupTimedOutLogicCalls(ctx sdk.Context, k keeper.Keeper) {
 	}
 }
 
+// prepValsetConfirms loads all confirmations into a hashmap indexed by validatorAddr
+// reducing the lookup time dramatically and separating out the task of looking up
+// the orchestrator for each validator
+func prepValsetConfirms(ctx sdk.Context, k keeper.Keeper, nonce uint64) map[string]*types.MsgValsetConfirm {
+	confirms := k.GetValsetConfirms(ctx, nonce)
+	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string
+	ret := make(map[string]*types.MsgValsetConfirm)
+	for _, confirm := range confirms {
+		// TODO this presents problems for delegate key rotation see issue #344
+		confVal, _ := sdk.AccAddressFromBech32(confirm.Orchestrator)
+		val, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
+		if !foundValidator {
+			panic("Confirm from validator we can't identify?")
+		}
+		ret[val.GetOperator().String()] = confirm
+	}
+	return ret
+}
+
 func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 	// don't slash in the beginning before there aren't even SignedValsetsWindow blocks yet
 	if uint64(ctx.BlockHeight()) <= params.SignedValsetsWindow {
@@ -204,7 +223,7 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 	// unslashedValsets are sorted by nonce in ASC order
 	// Question: do we need to sort each time? See if this can be epoched
 	for _, vs := range unslashedValsets {
-		confirms := k.GetValsetConfirms(ctx, vs.Nonce)
+		confirms := prepValsetConfirms(ctx, k, vs.Nonce)
 
 		// SLASH BONDED VALIDTORS who didn't attest valset request
 		currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
@@ -215,15 +234,7 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			//  Slash validator ONLY if he joined before valset is created
 			if exist && uint64(valSigningInfo.StartHeight) < vs.Height {
 				// Check if validator has confirmed valset or not
-				found := false
-				for _, conf := range confirms {
-					// problem site for delegate key rotation, see issue #344
-					ethAddress, foundEthAddress := k.GetEthAddressByValidator(ctx, val.GetOperator())
-					if foundEthAddress && conf.EthAddress == ethAddress.GetAddress() {
-						found = true
-						break
-					}
-				}
+				_, found := confirms[val.GetOperator().String()]
 				// slash validators for not confirming valsets
 				if !found {
 					cons, _ := val.GetConsAddr()
@@ -261,16 +272,7 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				// Only slash validators who joined after valset is created and they are unbonding and UNBOND_SLASHING_WINDOW hasn't passed
 				if exist && valSigningInfo.StartHeight < int64(vs.Height) && validator.IsUnbonding() && vs.Height < uint64(validator.UnbondingHeight)+params.UnbondSlashingValsetsWindow {
 					// Check if validator has confirmed valset or not
-					found := false
-					for _, conf := range confirms {
-						// TODO this presents problems for delegate key rotation see issue #344
-						confVal, _ := sdk.AccAddressFromBech32(conf.Orchestrator)
-						valAddr, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
-						if foundValidator && valAddr.GetOperator().Equals(validator.GetOperator()) {
-							found = true
-							break
-						}
-					}
+					_, found := confirms[validator.GetOperator().String()]
 
 					// slash validators for not confirming valsets
 					if !found {
@@ -288,6 +290,25 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 		// then we set the latest slashed valset  nonce
 		k.SetLastSlashedValsetNonce(ctx, vs.Nonce)
 	}
+}
+
+// prepBatchConfirms loads all confirmations into a hashmap indexed by validatorAddr
+// reducing the lookup time dramatically and separating out the task of looking up
+// the orchestrator for each validator
+func prepBatchConfirms(ctx sdk.Context, k keeper.Keeper, batch *types.InternalOutgoingTxBatch) map[string]types.MsgConfirmBatch {
+	confirms := k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract)
+	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
+	ret := make(map[string]types.MsgConfirmBatch)
+	for _, confirm := range confirms {
+		// TODO this presents problems for delegate key rotation see issue #344
+		confVal, _ := sdk.AccAddressFromBech32(confirm.Orchestrator)
+		val, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
+		if !foundValidator {
+			panic("Confirm from validator we can't identify?")
+		}
+		ret[val.GetOperator().String()] = confirm
+	}
+	return ret
 }
 
 func BatchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
@@ -309,7 +330,7 @@ func BatchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 
 		// SLASH BONDED VALIDTORS who didn't attest batch requests
 		currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
-		confirms := k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract)
+		confirms := prepBatchConfirms(ctx, k, batch)
 		for _, val := range currentBondedSet {
 			// Don't slash validators who joined after batch is created
 			consAddr, _ := val.GetConsAddr()
@@ -318,16 +339,7 @@ func BatchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				continue
 			}
 
-			found := false
-			for _, conf := range confirms {
-				// TODO this presents problems for delegate key rotation see issue #344
-				confVal, _ := sdk.AccAddressFromBech32(conf.Orchestrator)
-				valAddr, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
-				if foundValidator && valAddr.GetOperator().Equals(val.GetOperator()) {
-					found = true
-					break
-				}
-			}
+			_, found := confirms[val.GetOperator().String()]
 			if !found {
 				cons, _ := val.GetConsAddr()
 				k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBatch)
@@ -342,6 +354,25 @@ func BatchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 		// then we set the latest slashed batch block
 		k.SetLastSlashedBatchBlock(ctx, batch.Block)
 	}
+}
+
+// prepLogicCallConfirms loads all confirmations into a hashmap indexed by validatorAddr
+// reducing the lookup time dramatically and separating out the task of looking up
+// the orchestrator for each validator
+func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call *types.OutgoingLogicCall) map[string]*types.MsgConfirmLogicCall {
+	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)
+	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
+	ret := make(map[string]*types.MsgConfirmLogicCall)
+	for _, confirm := range confirms {
+		// TODO this presents problems for delegate key rotation see issue #344
+		confVal, _ := sdk.AccAddressFromBech32(confirm.Orchestrator)
+		val, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
+		if !foundValidator {
+			panic("Confirm from validator we can't identify?")
+		}
+		ret[val.GetOperator().String()] = &confirm
+	}
+	return ret
 }
 
 func LogicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
@@ -363,7 +394,7 @@ func LogicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 
 		// SLASH BONDED VALIDTORS who didn't attest batch requests
 		currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
-		confirms := k.GetLogicConfirmByInvalidationIDAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)
+		confirms := prepLogicCallConfirms(ctx, k, call)
 		for _, val := range currentBondedSet {
 			// Don't slash validators who joined after batch is created
 			consAddr, _ := val.GetConsAddr()
@@ -372,16 +403,7 @@ func LogicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				continue
 			}
 
-			found := false
-			for _, conf := range confirms {
-				// TODO this presents problems for delegate key rotation see issue #344
-				confVal, _ := sdk.AccAddressFromBech32(conf.Orchestrator)
-				valAddr, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
-				if foundValidator && valAddr.GetOperator().Equals(val.GetOperator()) {
-					found = true
-					break
-				}
-			}
+			_, found := confirms[val.GetOperator().String()]
 			if !found {
 				cons, _ := val.GetConsAddr()
 				k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionLogicCall)

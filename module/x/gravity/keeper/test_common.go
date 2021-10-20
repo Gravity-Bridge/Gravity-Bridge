@@ -142,6 +142,33 @@ var (
 		sdk.ValAddress(AccPubKeys[4].Address()),
 	}
 
+	// AccPubKeys holds the pub keys for the account keys
+	OrchPubKeys = []ccrypto.PubKey{
+		OrchPrivKeys[0].PubKey(),
+		OrchPrivKeys[1].PubKey(),
+		OrchPrivKeys[2].PubKey(),
+		OrchPrivKeys[3].PubKey(),
+		OrchPrivKeys[4].PubKey(),
+	}
+
+	// Orchestrator private keys
+	OrchPrivKeys = []ccrypto.PrivKey{
+		secp256k1.GenPrivKey(),
+		secp256k1.GenPrivKey(),
+		secp256k1.GenPrivKey(),
+		secp256k1.GenPrivKey(),
+		secp256k1.GenPrivKey(),
+	}
+
+	// AccAddrs holds the sdk.AccAddresses
+	OrchAddrs = []sdk.AccAddress{
+		sdk.AccAddress(OrchPubKeys[0].Address()),
+		sdk.AccAddress(OrchPubKeys[1].Address()),
+		sdk.AccAddress(OrchPubKeys[2].Address()),
+		sdk.AccAddress(OrchPubKeys[3].Address()),
+		sdk.AccAddress(OrchPubKeys[4].Address()),
+	}
+
 	// TODO: generate the eth priv keys here and
 	// derive the address from them.
 
@@ -261,13 +288,15 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 	// Run the staking endblocker to ensure valset is correct in state
 	staking.EndBlocker(input.Context, input.StakingKeeper)
 
-	// Register eth addresses for each validator
+	// Register eth addresses and orchestrator address for each validator
 	for i, addr := range ValAddrs {
 		ethAddr, err := types.NewEthAddress(EthAddrs[i].String())
 		if err != nil {
 			panic("found invalid address in EthAddrs")
 		}
 		input.GravityKeeper.SetEthAddressForValidator(input.Context, addr, *ethAddr)
+
+		input.GravityKeeper.SetOrchestratorValidator(input.Context, addr, OrchAddrs[i])
 	}
 
 	// Return the test input
