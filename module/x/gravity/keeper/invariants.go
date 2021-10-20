@@ -2,9 +2,10 @@ package keeper
 
 import (
 	"fmt"
+
+	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
-import "github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 
 // TODO: Add any future invariants here
 // TODO: (see the sdk docs for more info https://docs.cosmos.network/master/building-modules/invariants.html)
@@ -35,7 +36,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 		}
 
 		// The module is given the balance of all unobserved batches
-		k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+		k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 			batchTotal := sdk.NewInt(0)
 			// Collect the send amount + fee amount for each tx
 			for _, tx := range batch.Transactions {
@@ -48,8 +49,8 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			denomTotal := expectedBals[denom].Add(batchTotal)
 			expectedBals[denom] = &denomTotal
 
-			return false; // continue iterating
-		});
+			return false // continue iterating
+		})
 		// It is also given the balance of all unbatched txs in the pool
 		k.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 			contract := tx.Erc20Token.Contract
@@ -59,7 +60,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			txTotal := tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount)
 			*expectedBals[denom] = expectedBals[denom].Add(txTotal)
 
-			return false; // continue iterating
+			return false // continue iterating
 		})
 
 		for _, actual := range actualBals {

@@ -130,10 +130,10 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 	}
 
 	var pendingBatchReq *types.InternalOutgoingTxBatch
-	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
-			pendingBatchReq = batch
+			pendingBatchReq = &batch
 			return true
 		}
 		return false
@@ -168,7 +168,7 @@ func (k Keeper) OutgoingTxBatches(
 	c context.Context,
 	req *types.QueryOutgoingTxBatchesRequest) (*types.QueryOutgoingTxBatchesResponse, error) {
 	var batches []types.OutgoingTxBatch
-	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		batches = append(batches, batch.ToExternal())
 		return len(batches) == MaxResults
 	})

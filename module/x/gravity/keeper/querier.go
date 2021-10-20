@@ -327,7 +327,7 @@ func lastPendingBatchRequest(ctx sdk.Context, operatorAddr string, keeper Keeper
 	}
 
 	var pendingBatchReq types.OutgoingTxBatch
-	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		foundConfirm := keeper.GetBatchConfirm(ctx, batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
 			pendingBatchReq = batch.ToExternal()
@@ -347,7 +347,7 @@ const MaxResults = 100 // todo: impl pagination
 // Gets MaxResults batches from store. Does not select by token type or anything
 func lastBatchesRequest(ctx sdk.Context, keeper Keeper) ([]byte, error) {
 	var batches []types.OutgoingTxBatch
-	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+	keeper.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		batches = append(batches, batch.ToExternal())
 		return len(batches) == MaxResults
 	})

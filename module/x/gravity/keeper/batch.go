@@ -126,7 +126,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 	}
 
 	// Iterate through remaining batches
-	k.IterateOutgoingTXBatches(ctx, func(key []byte, iter_batch *types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTXBatches(ctx, func(key []byte, iter_batch types.InternalOutgoingTxBatch) bool {
 		// If the iterated batches nonce is lower than the one that was just executed, cancel it
 		if iter_batch.BatchNonce < b.BatchNonce && iter_batch.TokenContract.GetAddress() == tokenContract.GetAddress() {
 			err := k.CancelOutgoingTXBatch(ctx, tokenContract, iter_batch.BatchNonce)
@@ -245,7 +245,7 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 }
 
 // IterateOutgoingTXBatches iterates through all outgoing batches in DESC order.
-func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, batch *types.InternalOutgoingTxBatch) bool) {
+func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, batch types.InternalOutgoingTxBatch) bool) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.OutgoingTXBatchKey))
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
@@ -253,19 +253,19 @@ func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, ba
 		var batch types.OutgoingTxBatch
 		k.cdc.MustUnmarshal(iter.Value(), &batch)
 		intBatch, err := batch.ToInternal()
-		if err != nil {
+		if err != nil || intBatch == nil {
 			panic(sdkerrors.Wrap(err, "found invalid batch in store"))
 		}
 		// cb returns true to stop early
-		if cb(iter.Key(), intBatch) {
+		if cb(iter.Key(), *intBatch) {
 			break
 		}
 	}
 }
 
 // GetOutgoingTxBatches returns the outgoing tx batches
-func (k Keeper) GetOutgoingTxBatches(ctx sdk.Context) (out []*types.InternalOutgoingTxBatch) {
-	k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch *types.InternalOutgoingTxBatch) bool {
+func (k Keeper) GetOutgoingTxBatches(ctx sdk.Context) (out []types.InternalOutgoingTxBatch) {
+	k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		out = append(out, batch)
 		return false
 	})
@@ -279,7 +279,7 @@ func (k Keeper) GetLastOutgoingBatchByTokenType(ctx sdk.Context, token types.Eth
 	lastNonce := uint64(0)
 	for _, batch := range batches {
 		if batch.TokenContract.GetAddress() == token.GetAddress() && batch.BatchNonce > lastNonce {
-			lastBatch = batch
+			lastBatch = &batch
 			lastNonce = batch.BatchNonce
 		}
 	}
@@ -304,7 +304,7 @@ func (k Keeper) GetLastSlashedBatchBlock(ctx sdk.Context) uint64 {
 }
 
 // GetUnSlashedBatches returns all the unslashed batches in state
-func (k Keeper) GetUnSlashedBatches(ctx sdk.Context, maxHeight uint64) (out []*types.InternalOutgoingTxBatch) {
+func (k Keeper) GetUnSlashedBatches(ctx sdk.Context, maxHeight uint64) (out []types.InternalOutgoingTxBatch) {
 	lastSlashedBatchBlock := k.GetLastSlashedBatchBlock(ctx)
 	batches := k.GetOutgoingTxBatches(ctx)
 	for _, batch := range batches {

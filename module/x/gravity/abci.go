@@ -295,7 +295,7 @@ func ValsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 // prepBatchConfirms loads all confirmations into a hashmap indexed by validatorAddr
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
-func prepBatchConfirms(ctx sdk.Context, k keeper.Keeper, batch *types.InternalOutgoingTxBatch) map[string]types.MsgConfirmBatch {
+func prepBatchConfirms(ctx sdk.Context, k keeper.Keeper, batch types.InternalOutgoingTxBatch) map[string]types.MsgConfirmBatch {
 	confirms := k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]types.MsgConfirmBatch)
