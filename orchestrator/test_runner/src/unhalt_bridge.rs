@@ -1,5 +1,5 @@
 use crate::happy_path::{test_erc20_deposit_bool, test_erc20_deposit_panic};
-use crate::{get_deposit, utils::*};
+use crate::{get_deposit, utils::*, TOTAL_TIMEOUT};
 use crate::{get_fee, one_eth, OPERATION_TIMEOUT};
 use bytes::BytesMut;
 use clarity::{Address as EthAddress, Uint256};
@@ -75,19 +75,28 @@ pub async fn unhalt_bridge_test(
     )
     .await;
 
-    // These are the nonces each validator is aware of before false claims are submitted
-    let initial_nonces = get_nonces(&mut grpc_client, &keys, &prefix).await;
-    // All nonces should be the same right now
-    assert!(
-        initial_nonces[0] == initial_nonces[1]
+    let start = Instant::now();
+    let mut initial_nonces_same = false;
+    let mut initial_valid_nonce = None;
+    while Instant::now() - start < TOTAL_TIMEOUT {
+        // These are the nonces each validator is aware of before false claims are submitted
+        let initial_nonces = get_nonces(&mut grpc_client, &keys, &prefix).await;
+        initial_nonces_same = initial_nonces[0] == initial_nonces[1]
             && initial_nonces[0] == initial_nonces[2]
-            && initial_nonces[0] == initial_nonces[3],
-        "The initial nonces differed!"
-    );
+            && initial_nonces[0] == initial_nonces[3];
+        if initial_nonces_same {
+            initial_valid_nonce = Some(initial_nonces[0]);
+            break;
+        }
+        sleep(Duration::from_secs(1)).await;
+    }
+    // All nonces should be the same right now
+    assert!(initial_nonces_same, "The initial nonces differed!");
+
     let initial_block_height =
         downcast_uint256(web30.eth_get_latest_block().await.unwrap().number).unwrap();
     // At this point we can use any nonce since all the validators have the same state
-    let initial_valid_nonce = initial_nonces[0];
+    let initial_valid_nonce = initial_valid_nonce.unwrap();
 
     info!("Two validators submitting false claims!");
     submit_false_claims(
@@ -104,23 +113,10 @@ pub async fn unhalt_bridge_test(
     )
     .await;
 
-    info!("Getting latest nonce after false claims for each validator");
-    let after_false_claims_nonces = get_nonces(&mut grpc_client, &keys, &prefix).await;
-    info!(
-        "initial_nonce: {} after_false_claims_nonces: {:?}",
-        initial_valid_nonce, after_false_claims_nonces,
-    );
-
-    // validator_1 nonce and validator_2 nonce should be initial + 1 but val1_nonce should not
-    assert!(
-        after_false_claims_nonces[1] == initial_valid_nonce + 1
-            && after_false_claims_nonces[1] == after_false_claims_nonces[2],
-        "The false claims validators do not have updated nonces"
-    );
-    assert_eq!(
-        after_false_claims_nonces[0], initial_valid_nonce,
-        "The honest validator should not have an updated nonce!"
-    );
+    contact
+        .wait_for_next_block(OPERATION_TIMEOUT)
+        .await
+        .unwrap();
 
     info!("Checking that bridge is halted!");
 
@@ -183,11 +179,19 @@ pub async fn unhalt_bridge_test(
             break;
         }
     }
-    let after_unhalt_nonces = get_nonces(&mut grpc_client, &keys, &prefix).await;
-    assert!(
-        after_unhalt_nonces
+    let mut not_equal = false;
+    while Instant::now() - start < TOTAL_TIMEOUT {
+        let after_unhalt_nonces = get_nonces(&mut grpc_client, &keys, &prefix).await;
+        not_equal = after_unhalt_nonces
             .iter()
-            .all(|&nonce| nonce == initial_valid_nonce),
+            .all(|&nonce| nonce == initial_valid_nonce);
+        if not_equal {
+            break;
+        }
+        sleep(Duration::from_secs(1)).await;
+    }
+    assert!(
+        not_equal,
         "The post-reset nonces are not equal to the initial nonce",
     );
 
