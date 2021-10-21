@@ -68,7 +68,7 @@ impl TryFrom<gravity_proto::gravity::OutgoingLogicCall> for LogicCall {
         }
         if transfers.is_empty() || fees.is_empty() {
             return Err(GravityError::InvalidBridgeStateError(
-                "Transaction batch containing no transactions!".to_string(),
+                "Logic call containing no transfers!".to_string(),
             ));
         }
 

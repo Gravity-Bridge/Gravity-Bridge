@@ -142,14 +142,14 @@ message QueryLastPendingBatchRequestByAddrRequest {
   string address = 1;
 }
 message QueryLastPendingBatchRequestByAddrResponse {
-  OutgoingTxBatch batch = 1 [(gogoproto.nullable) = false];
+  OutgoingTxBatch batch = 1;
 }
 
 message QueryLastPendingLogicCallByAddrRequest {
   string address = 1;
 }
 message QueryLastPendingLogicCallByAddrResponse {
-  OutgoingLogicCall call = 1 [(gogoproto.nullable) = false];
+  OutgoingLogicCall call = 1;
 }
 
 message QueryOutgoingTxBatchesRequest {}

@@ -129,17 +129,24 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
 	}
 
-	var pendingBatchReq *types.InternalOutgoingTxBatch
+	var pendingBatchReq types.InternalOutgoingTxBatch
+	found := false
 	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
-			pendingBatchReq = &batch
+			pendingBatchReq = batch
+			found = true
 			return true
 		}
 		return false
 	})
 
-	return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: pendingBatchReq.ToExternal()}, nil
+	if found {
+		ref := pendingBatchReq.ToExternal()
+		return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: &ref}, nil
+	} else {
+		return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: nil}, nil
+	}
 }
 
 func (k Keeper) LastPendingLogicCallByAddr(
@@ -151,16 +158,24 @@ func (k Keeper) LastPendingLogicCallByAddr(
 	}
 
 	var pendingLogicReq types.OutgoingLogicCall
+	found := false
 	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, logic *types.OutgoingLogicCall) bool {
 		foundConfirm := k.GetLogicCallConfirm(sdk.UnwrapSDKContext(c),
 			logic.InvalidationId, logic.InvalidationNonce, addr) != nil
 		if !foundConfirm {
 			pendingLogicReq = *logic
+			found = true
 			return true
 		}
 		return false
 	})
-	return &types.QueryLastPendingLogicCallByAddrResponse{Call: pendingLogicReq}, nil
+
+	if found {
+		return &types.QueryLastPendingLogicCallByAddrResponse{Call: &pendingLogicReq}, nil
+	} else {
+
+		return &types.QueryLastPendingLogicCallByAddrResponse{Call: nil}, nil
+	}
 }
 
 // OutgoingTxBatches queries the OutgoingTxBatches of the gravity module
