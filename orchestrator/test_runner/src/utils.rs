@@ -26,6 +26,7 @@ use orchestrator::main_loop::orchestrator_main_loop;
 use rand::Rng;
 use std::thread;
 use std::time::{Duration, Instant};
+use tokio::time::sleep;
 use web30::jsonrpc::error::Web3Error;
 use web30::{client::Web3, types::SendTxOption};
 
@@ -428,4 +429,63 @@ pub async fn vote_yes_on_proposals(
             contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
         }
     }
+}
+
+// Checks that cosmos_account has each balance specified in expected_cosmos_coins.
+// Note: ignores balances not in expected_cosmos_coins
+pub async fn check_cosmos_balances(
+    contact: &Contact,
+    cosmos_account: CosmosAddress,
+    expected_cosmos_coins: &[Coin],
+) {
+    let mut num_found = 0;
+
+    let start = Instant::now();
+
+    while Instant::now() - start < TOTAL_TIMEOUT {
+        let mut good = true;
+        let curr_balances = contact.get_balances(cosmos_account).await.unwrap();
+        // These loops use loop labels, see the documentation on loop labels here for more information
+        // https://doc.rust-lang.org/reference/expressions/loop-expr.html#loop-labels
+        'outer: for bal in curr_balances.iter() {
+            if num_found == expected_cosmos_coins.len() {
+                break 'outer; // done searching entirely
+            }
+            'inner: for j in 0..expected_cosmos_coins.len() {
+                if num_found == expected_cosmos_coins.len() {
+                    break 'outer; // done searching entirely
+                }
+                if expected_cosmos_coins[j].denom != bal.denom {
+                    continue;
+                }
+                let check = expected_cosmos_coins[j].amount == bal.amount;
+                good = check;
+                if !check {
+                    warn!(
+                        "found balance {}! expected {} trying again",
+                        bal, expected_cosmos_coins[j].amount
+                    );
+                }
+                num_found += 1;
+                break 'inner; // done searching for this particular balance
+            }
+        }
+
+        let check = num_found == curr_balances.len();
+        // if it's already false don't set to true
+        good = check || good;
+        if !check {
+            warn!(
+                "did not find the correct balance for each expected coin! found {} of {}, trying again",
+                num_found,
+                curr_balances.len()
+            );
+        }
+        if good {
+            return;
+        } else {
+            sleep(Duration::from_secs(1)).await;
+        }
+    }
+    panic!("Failed to find correct balances in check_cosmos_balances")
 }

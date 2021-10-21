@@ -5,13 +5,12 @@
 use crate::happy_path::test_erc20_deposit_panic;
 use crate::unhalt_bridge::get_nonces;
 use crate::utils::{
-    create_default_test_config, get_user_key, start_orchestrators, submit_false_claims,
-    ValidatorKeys,
+    check_cosmos_balances, create_default_test_config, get_user_key, start_orchestrators,
+    submit_false_claims, ValidatorKeys,
 };
 use crate::OPERATION_TIMEOUT;
 use crate::{get_fee, MINER_ADDRESS};
 use clarity::{Address as EthAddress, Uint256};
-use deep_space::address::Address as CosmosAddress;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::{Coin, Contact, Fee};
 use ethereum_gravity::utils::downcast_uint256;
@@ -191,44 +190,4 @@ pub async fn deposit_overflow_test(
         dest2_bals
     );
     info!("Successful send of Uint256 max value to cosmos user, unable to overflow the supply!");
-}
-
-// Checks that cosmos_account has each balance specified in expected_cosmos_coins.
-// Note: ignores balances not in expected_cosmos_coins
-async fn check_cosmos_balances(
-    contact: &Contact,
-    cosmos_account: CosmosAddress,
-    expected_cosmos_coins: &[Coin],
-) {
-    let curr_balances = contact.get_balances(cosmos_account).await.unwrap();
-
-    let mut num_found = 0;
-
-    // These loops use loop labels, see the documentation on loop labels here for more information
-    // https://doc.rust-lang.org/reference/expressions/loop-expr.html#loop-labels
-    'outer: for bal in curr_balances.iter() {
-        if num_found == expected_cosmos_coins.len() {
-            break 'outer; // done searching entirely
-        }
-        'inner: for j in 0..expected_cosmos_coins.len() {
-            if num_found == expected_cosmos_coins.len() {
-                break 'outer; // done searching entirely
-            }
-            if expected_cosmos_coins[j].denom != bal.denom {
-                continue;
-            }
-            info!("found balance {:?}!", bal);
-            assert_eq!(expected_cosmos_coins[j].amount, bal.amount);
-            num_found += 1;
-            break 'inner; // done searching for this particular balance
-        }
-    }
-
-    assert_eq!(
-        num_found,
-        curr_balances.len(),
-        "did not find the correct balance for each expected coin! found {} of {}",
-        num_found,
-        curr_balances.len()
-    )
 }
