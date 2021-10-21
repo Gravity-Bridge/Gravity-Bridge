@@ -49,7 +49,7 @@ func (k Keeper) DeleteOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, 
 }
 
 // IterateOutgoingLogicCalls iterates over outgoing logic calls
-func (k Keeper) IterateOutgoingLogicCalls(ctx sdk.Context, cb func([]byte, *types.OutgoingLogicCall) bool) {
+func (k Keeper) IterateOutgoingLogicCalls(ctx sdk.Context, cb func([]byte, types.OutgoingLogicCall) bool) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyOutgoingLogicCall))
 	iter := prefixStore.Iterator(nil, nil)
 	defer iter.Close()
@@ -57,7 +57,7 @@ func (k Keeper) IterateOutgoingLogicCalls(ctx sdk.Context, cb func([]byte, *type
 		var call types.OutgoingLogicCall
 		k.cdc.MustUnmarshal(iter.Value(), &call)
 		// cb returns true to stop early
-		if cb(iter.Key(), &call) {
+		if cb(iter.Key(), call) {
 			break
 		}
 	}
@@ -65,8 +65,8 @@ func (k Keeper) IterateOutgoingLogicCalls(ctx sdk.Context, cb func([]byte, *type
 
 // GetOutgoingLogicCalls returns the outgoing logic calls
 func (k Keeper) GetOutgoingLogicCalls(ctx sdk.Context) (out []types.OutgoingLogicCall) {
-	k.IterateOutgoingLogicCalls(ctx, func(_ []byte, call *types.OutgoingLogicCall) bool {
-		out = append(out, *call)
+	k.IterateOutgoingLogicCalls(ctx, func(_ []byte, call types.OutgoingLogicCall) bool {
+		out = append(out, call)
 		return false
 	})
 	return

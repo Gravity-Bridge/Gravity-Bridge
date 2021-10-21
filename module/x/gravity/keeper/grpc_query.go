@@ -159,11 +159,11 @@ func (k Keeper) LastPendingLogicCallByAddr(
 
 	var pendingLogicReq types.OutgoingLogicCall
 	found := false
-	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, logic *types.OutgoingLogicCall) bool {
+	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, logic types.OutgoingLogicCall) bool {
 		foundConfirm := k.GetLogicCallConfirm(sdk.UnwrapSDKContext(c),
 			logic.InvalidationId, logic.InvalidationNonce, addr) != nil
 		if !foundConfirm {
-			pendingLogicReq = *logic
+			pendingLogicReq = logic
 			found = true
 			return true
 		}
@@ -195,8 +195,8 @@ func (k Keeper) OutgoingLogicCalls(
 	c context.Context,
 	req *types.QueryOutgoingLogicCallsRequest) (*types.QueryOutgoingLogicCallsResponse, error) {
 	var calls []types.OutgoingLogicCall
-	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, call *types.OutgoingLogicCall) bool {
-		calls = append(calls, *call)
+	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, call types.OutgoingLogicCall) bool {
+		calls = append(calls, call)
 		return len(calls) == MaxResults
 	})
 	return &types.QueryOutgoingLogicCallsResponse{Calls: calls}, nil

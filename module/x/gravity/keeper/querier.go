@@ -372,8 +372,8 @@ func queryBatchFees(ctx sdk.Context, keeper Keeper) ([]byte, error) {
 
 // Gets MaxResults logic calls from store.
 func lastLogicCallRequests(ctx sdk.Context, keeper Keeper) ([]byte, error) {
-	var calls []*types.OutgoingLogicCall
-	keeper.IterateOutgoingLogicCalls(ctx, func(_ []byte, call *types.OutgoingLogicCall) bool {
+	var calls []types.OutgoingLogicCall
+	keeper.IterateOutgoingLogicCalls(ctx, func(_ []byte, call types.OutgoingLogicCall) bool {
 		calls = append(calls, call)
 		return len(calls) == MaxResults
 	})
@@ -415,16 +415,18 @@ func lastPendingLogicCallRequest(ctx sdk.Context, operatorAddr string, keeper Ke
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
 	}
 
-	var pendingLogicCalls *types.OutgoingLogicCall
-	keeper.IterateOutgoingLogicCalls(ctx, func(_ []byte, call *types.OutgoingLogicCall) bool {
+	var pendingLogicCalls types.OutgoingLogicCall
+	found := false
+	keeper.IterateOutgoingLogicCalls(ctx, func(_ []byte, call types.OutgoingLogicCall) bool {
 		foundConfirm := keeper.GetLogicCallConfirm(ctx, call.InvalidationId, call.InvalidationNonce, addr) != nil
 		if !foundConfirm {
 			pendingLogicCalls = call
+			found = true
 			return true
 		}
 		return false
 	})
-	if pendingLogicCalls == nil {
+	if !found {
 		return nil, nil
 	}
 	res, err := codec.MarshalJSONIndent(types.ModuleCdc, pendingLogicCalls)
