@@ -94,6 +94,13 @@ pub fn get_fee() -> Coin {
     }
 }
 
+pub fn get_deposit() -> Coin {
+    Coin {
+        denom: STAKING_TOKEN.to_string(),
+        amount: 1_000_000_000u64.into(),
+    }
+}
+
 pub fn get_test_token_name() -> String {
     "footoken".to_string()
 }

@@ -2,9 +2,9 @@
 //! situation to prevent the bridge from being drained of funds
 //!
 use crate::happy_path::{test_erc20_deposit_bool, test_erc20_deposit_panic};
-use crate::utils::*;
 use crate::MINER_ADDRESS;
-use crate::{get_fee, OPERATION_TIMEOUT, STAKING_TOKEN, TOTAL_TIMEOUT};
+use crate::{get_deposit, utils::*};
+use crate::{get_fee, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
@@ -66,10 +66,6 @@ pub async fn pause_bridge_test(
     // next we pause the bridge via governance
 
     info!("Voting to pause the bridge!");
-    let deposit = Coin {
-        denom: STAKING_TOKEN.to_string(),
-        amount: 1_000_000_000u64.into(),
-    };
     let mut params_to_change = Vec::new();
     let halt = ParamChange {
         subspace: "gravity".to_string(),
@@ -82,7 +78,7 @@ pub async fn pause_bridge_test(
     create_parameter_change_proposal(
         contact,
         keys[0].validator_key,
-        deposit.clone(),
+        get_deposit(),
         params_to_change,
     )
     .await;
@@ -167,8 +163,13 @@ pub async fn pause_bridge_test(
     params_to_change.push(unhalt);
 
     // crate a governance proposal to resume the bridge
-    create_parameter_change_proposal(contact, keys[0].validator_key, deposit, params_to_change)
-        .await;
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        get_deposit(),
+        params_to_change,
+    )
+    .await;
 
     vote_yes_on_proposals(contact, &keys, None).await;
 

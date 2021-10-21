@@ -1,11 +1,11 @@
 //! This is a test for validator set relaying rewards
 
+use crate::get_deposit;
 use crate::happy_path::test_valset_update;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{
     create_parameter_change_proposal, get_erc20_balance_safe, vote_yes_on_proposals, ValidatorKeys,
 };
-use crate::STAKING_TOKEN;
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::coin::Coin;
@@ -47,11 +47,6 @@ pub async fn valset_rewards_test(
         denom: token_to_send_to_eth,
         amount: 1_000_000u64.into(),
     };
-    // 1000 altg deposit
-    let deposit = Coin {
-        denom: STAKING_TOKEN.to_string(),
-        amount: 1_000_000_000u64.into(),
-    };
 
     let mut params_to_change = Vec::new();
     let gravity_address_param = ParamChange {
@@ -77,8 +72,13 @@ pub async fn valset_rewards_test(
     // next we create a governance proposal to use the newly bridged asset as the reward
     // and vote to pass the proposal
     info!("Creating parameter change governance proposal");
-    create_parameter_change_proposal(contact, keys[0].validator_key, deposit, params_to_change)
-        .await;
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        get_deposit(),
+        params_to_change,
+    )
+    .await;
 
     vote_yes_on_proposals(contact, &keys, None).await;
 

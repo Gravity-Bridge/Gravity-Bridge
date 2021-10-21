@@ -1,18 +1,14 @@
 use crate::happy_path::{test_erc20_deposit_bool, test_erc20_deposit_panic};
-use crate::utils::*;
-use crate::{get_fee, one_eth, OPERATION_TIMEOUT, STAKING_TOKEN, TOTAL_TIMEOUT};
+use crate::{get_deposit, utils::*};
+use crate::{get_fee, one_eth, OPERATION_TIMEOUT};
 use bytes::BytesMut;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::query::{get_attestations, get_last_event_nonce_for_validator};
-use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
-use deep_space::utils::encode_any;
 use deep_space::{Contact, Fee};
 use ethereum_gravity::utils::downcast_uint256;
-use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
-    ParamChange, ParameterChangeProposal,
-};
+use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
 use prost::Message;
@@ -162,11 +158,7 @@ pub async fn unhalt_bridge_test(
 
     info!("Preparing governance proposal!!");
     // Unhalt the bridge
-    let deposit = Coin {
-        denom: STAKING_TOKEN.to_string(),
-        amount: 1_000_000_000u64.into(),
-    };
-    let _ = submit_and_pass_gov_proposal(initial_valid_nonce, &deposit, contact, &keys)
+    let _ = submit_and_pass_gov_proposal(initial_valid_nonce, contact, &keys)
         .await
         .expect("Governance proposal failed");
     let start = Instant::now();
@@ -232,37 +224,9 @@ pub async fn unhalt_bridge_test(
 // Submits a governance proposal, votes yes for each validator, waits for votes to be submitted
 async fn submit_and_pass_gov_proposal(
     nonce: u64,
-    deposit: &Coin,
     contact: &Contact,
     keys: &[ValidatorKeys],
 ) -> Result<bool, CosmosGrpcError> {
-    let proposal = create_unhalt_proposal(nonce);
-
-    let any = encode_any(
-        proposal,
-        "/cosmos.params.v1beta1.ParameterChangeProposal".to_string(),
-    );
-
-    let res = contact
-        .create_gov_proposal(
-            any.clone(),
-            deposit.clone(),
-            get_fee(),
-            keys[0].validator_key,
-            Some(TOTAL_TIMEOUT),
-        )
-        .await;
-    info!("Proposal response is {:?}", res);
-    if res.is_err() {
-        return Err(res.unwrap_err());
-    }
-
-    vote_yes_on_proposals(contact, keys, None).await;
-    Ok(true)
-}
-
-// creates a proposal to reset the bridge back to event_nonce = `nonce`
-fn create_unhalt_proposal(nonce: u64) -> ParameterChangeProposal {
     let mut params_to_change: Vec<ParamChange> = Vec::new();
     // this does not
     let reset_state = ParamChange {
@@ -278,11 +242,17 @@ fn create_unhalt_proposal(nonce: u64) -> ParameterChangeProposal {
         value: format!("\"{}\"", nonce),
     };
     params_to_change.push(reset_nonce);
-    ParameterChangeProposal {
-        title: "Reset Bridge State".to_string(),
-        description: "Test resetting bridge state to before things were messed up".to_string(),
-        changes: params_to_change,
-    }
+
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        get_deposit(),
+        params_to_change,
+    )
+    .await;
+
+    vote_yes_on_proposals(contact, keys, None).await;
+    Ok(true)
 }
 
 // gets the last event nonce for each validator
