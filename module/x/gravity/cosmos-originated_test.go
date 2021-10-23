@@ -26,14 +26,12 @@ func TestCosmosOriginated(t *testing.T) {
 }
 
 type testingVars struct {
-	myOrchestratorAddr sdk.AccAddress
-	myValAddr          sdk.ValAddress
-	erc20              string
-	denom              string
-	input              keeper.TestInput
-	ctx                sdk.Context
-	h                  sdk.Handler
-	t                  *testing.T
+	erc20 string
+	denom string
+	input keeper.TestInput
+	ctx   sdk.Context
+	h     sdk.Handler
+	t     *testing.T
 }
 
 func initializeTestingVars(t *testing.T) *testingVars {
@@ -41,17 +39,10 @@ func initializeTestingVars(t *testing.T) *testingVars {
 
 	tv.t = t
 
-	tv.myOrchestratorAddr = make([]byte, 20)
-	tv.myValAddr = sdk.ValAddress(tv.myOrchestratorAddr) // revisit when proper mapping is impl in keeper
-
 	tv.erc20 = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-	tv.denom = "uatom"
+	tv.denom = "ugraviton"
 
-	tv.input = keeper.CreateTestEnv(t)
-	tv.ctx = tv.input.Context
-	tv.input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(tv.myValAddr)
-	tv.input.GravityKeeper.SetEthAddressForValidator(tv.ctx, tv.myValAddr, *types.ZeroAddress())
-	tv.input.GravityKeeper.SetOrchestratorValidator(tv.ctx, tv.myValAddr, tv.myOrchestratorAddr)
+	tv.input, tv.ctx = keeper.SetupFiveValChain(t)
 	tv.h = NewHandler(tv.input.GravityKeeper)
 
 	return &tv
@@ -59,41 +50,43 @@ func initializeTestingVars(t *testing.T) *testingVars {
 
 func addDenomToERC20Relation(tv *testingVars) {
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, bank.Metadata{
-		Description: "The native staking token of the Cosmos Hub.",
+		Description: "The native staking token of the Cosmos Gravity Bridge",
 		DenomUnits: []*bank.DenomUnit{
-			{Denom: "uatom", Exponent: uint32(0), Aliases: []string{"microatom"}},
-			{Denom: "matom", Exponent: uint32(3), Aliases: []string{"milliatom"}},
-			{Denom: "atom", Exponent: uint32(6), Aliases: []string{}},
+			{Denom: "ugraviton", Exponent: uint32(0), Aliases: []string{"micrograviton"}},
+			{Denom: "mgraviton", Exponent: uint32(3), Aliases: []string{"milligraviton"}},
+			{Denom: "graviton", Exponent: uint32(6), Aliases: []string{}},
 		},
-		Base:    "uatom",
-		Display: "atom",
+		Base:    "ugraviton",
+		Display: "graviton",
 	})
 
 	var (
 		myNonce = uint64(1)
 	)
 
-	ethClaim := types.MsgERC20DeployedClaim{
-		EventNonce:    myNonce,
-		BlockHeight:   0,
-		CosmosDenom:   tv.denom,
-		TokenContract: tv.erc20,
-		Name:          "atom",
-		Symbol:        "atom",
-		Decimals:      6,
-		Orchestrator:  tv.myOrchestratorAddr.String(),
+	// have all five validators observe this event
+	for _, v := range keeper.OrchAddrs {
+		ethClaim := types.MsgERC20DeployedClaim{
+			EventNonce:    myNonce,
+			BlockHeight:   0,
+			CosmosDenom:   tv.denom,
+			TokenContract: tv.erc20,
+			Name:          "graviton",
+			Symbol:        "graviton",
+			Decimals:      6,
+			Orchestrator:  v.String(),
+		}
+		_, err := tv.h(tv.ctx, &ethClaim)
+		require.NoError(tv.t, err)
+
+		// check if attestations persisted
+		hash, err := ethClaim.ClaimHash()
+		require.NoError(tv.t, err)
+		a := tv.input.GravityKeeper.GetAttestation(tv.ctx, myNonce, hash)
+		require.NotNil(tv.t, a)
 	}
 
-	_, err := tv.h(tv.ctx, &ethClaim)
-	require.NoError(tv.t, err)
-
 	EndBlocker(tv.ctx, tv.input.GravityKeeper)
-
-	// check if attestation persisted
-	hash, err := ethClaim.ClaimHash()
-	require.NoError(tv.t, err)
-	a := tv.input.GravityKeeper.GetAttestation(tv.ctx, myNonce, hash)
-	require.NotNil(tv.t, a)
 
 	// check if erc20<>denom relation added to db
 	isCosmosOriginated, gotERC20, err := tv.input.GravityKeeper.DenomToERC20Lookup(tv.ctx, tv.denom)
@@ -112,7 +105,7 @@ func addDenomToERC20Relation(tv *testingVars) {
 func lockCoinsInModule(tv *testingVars) {
 	var (
 		userCosmosAddr, _            = sdk.AccAddressFromBech32("cosmos1990z7dqsvh8gthw9pa5sn4wuy2xrsd80mg5z6y")
-		denom                        = "uatom"
+		denom                        = "ugraviton"
 		startingCoinAmount sdk.Int   = sdk.NewIntFromUint64(150)
 		sendAmount         sdk.Int   = sdk.NewIntFromUint64(50)
 		feeAmount          sdk.Int   = sdk.NewIntFromUint64(5)
@@ -153,10 +146,9 @@ func lockCoinsInModule(tv *testingVars) {
 
 func acceptDepositEvent(tv *testingVars) {
 	var (
-		myOrchestratorAddr sdk.AccAddress = make([]byte, 20)
-		myCosmosAddr, _                   = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
-		myNonce                           = uint64(2)
-		anyETHAddr                        = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		myCosmosAddr, _ = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
+		myNonce         = uint64(2)
+		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
 	)
 
 	myErc20 := types.ERC20Token{
@@ -164,25 +156,28 @@ func acceptDepositEvent(tv *testingVars) {
 		Contract: tv.erc20,
 	}
 
-	ethClaim := types.MsgSendToCosmosClaim{
-		EventNonce:     myNonce,
-		BlockHeight:    0,
-		TokenContract:  myErc20.Contract,
-		Amount:         myErc20.Amount,
-		EthereumSender: anyETHAddr,
-		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   myOrchestratorAddr.String(),
+	// have all five validators observe this event
+	for _, v := range keeper.OrchAddrs {
+		ethClaim := types.MsgSendToCosmosClaim{
+			EventNonce:     myNonce,
+			BlockHeight:    0,
+			TokenContract:  myErc20.Contract,
+			Amount:         myErc20.Amount,
+			EthereumSender: anyETHAddr,
+			CosmosReceiver: myCosmosAddr.String(),
+			Orchestrator:   v.String(),
+		}
+
+		_, err := tv.h(tv.ctx, &ethClaim)
+		require.NoError(tv.t, err)
+		EndBlocker(tv.ctx, tv.input.GravityKeeper)
+
+		// check that attestation persisted
+		hash, err := ethClaim.ClaimHash()
+		require.NoError(tv.t, err)
+		a := tv.input.GravityKeeper.GetAttestation(tv.ctx, myNonce, hash)
+		require.NotNil(tv.t, a)
 	}
-
-	_, err := tv.h(tv.ctx, &ethClaim)
-	require.NoError(tv.t, err)
-	EndBlocker(tv.ctx, tv.input.GravityKeeper)
-
-	// check that attestation persisted
-	hash, err := ethClaim.ClaimHash()
-	require.NoError(tv.t, err)
-	a := tv.input.GravityKeeper.GetAttestation(tv.ctx, myNonce, hash)
-	require.NotNil(tv.t, a)
 
 	// Check that user balance has gone up
 	assert.Equal(tv.t,

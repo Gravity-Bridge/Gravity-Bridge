@@ -79,23 +79,16 @@ func TestHandleMsgSendToEth(t *testing.T) {
 }
 
 //nolint: exhaustivestruct
-func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
+func TestMsgSendToCosmosClaim(t *testing.T) {
 	var (
-		myOrchestratorAddr sdk.AccAddress = make([]byte, 20)
-		myCosmosAddr, _                   = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
-		myValAddr                         = sdk.ValAddress(myOrchestratorAddr) // revisit when proper mapping is impl in keeper
-		myNonce                           = uint64(1)
-		anyETHAddr                        = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr                      = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		myBlockTime                       = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
-		amountA, _                        = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
-		amountB, _                        = sdk.NewIntFromString("100000000000000000000") // 100 ETH
+		myCosmosAddr, _ = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
+		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		amountA, _      = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
+		amountB, _      = sdk.NewIntFromString("100000000000000000000") // 100 ETH
 	)
-	input := keeper.CreateTestEnv(t)
-	ctx := input.Context
-	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(myValAddr)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, myValAddr, *types.ZeroAddress())
-	input.GravityKeeper.SetOrchestratorValidator(ctx, myValAddr, myOrchestratorAddr)
+	input, ctx := keeper.SetupFiveValChain(t)
 	h := NewHandler(input.GravityKeeper)
 
 	myErc20 := types.ERC20Token{
@@ -103,76 +96,85 @@ func TestMsgSendToCosmosClaimSingleValidator(t *testing.T) {
 		Contract: tokenETHAddr,
 	}
 
-	ethClaim := types.MsgSendToCosmosClaim{
-		EventNonce:     myNonce,
-		TokenContract:  myErc20.Contract,
-		Amount:         myErc20.Amount,
-		EthereumSender: anyETHAddr,
-		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   myOrchestratorAddr.String(),
+	// send attestations from all five validators
+	for _, v := range keeper.OrchAddrs {
+		ethClaim := types.MsgSendToCosmosClaim{
+			EventNonce:     uint64(1),
+			TokenContract:  myErc20.Contract,
+			Amount:         myErc20.Amount,
+			EthereumSender: anyETHAddr,
+			CosmosReceiver: myCosmosAddr.String(),
+			Orchestrator:   v.String(),
+		}
+		// each msg goes into it's own block
+		ctx = ctx.WithBlockTime(myBlockTime)
+		_, err := h(ctx, &ethClaim)
+		EndBlocker(ctx, input.GravityKeeper)
+		require.NoError(t, err)
+
+		// and attestation persisted
+		hash, err := ethClaim.ClaimHash()
+		require.NoError(t, err)
+		a := input.GravityKeeper.GetAttestation(ctx, uint64(1), hash)
+		require.NotNil(t, a)
+
+		// Test to reject duplicate deposit
+		// when
+		ctx = ctx.WithBlockTime(myBlockTime)
+		_, err = h(ctx, &ethClaim)
+		EndBlocker(ctx, input.GravityKeeper)
+		// then
+		require.Error(t, err)
 	}
 
-	// when
-	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err := h(ctx, &ethClaim)
-	EndBlocker(ctx, input.GravityKeeper)
-	require.NoError(t, err)
-
-	// and attestation persisted
-	hash, err := ethClaim.ClaimHash()
-	require.NoError(t, err)
-	a := input.GravityKeeper.GetAttestation(ctx, myNonce, hash)
-	require.NotNil(t, a)
 	// and vouchers added to the account
 	balance := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountA)}, balance)
 
-	// Test to reject duplicate deposit
-	// when
-	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err = h(ctx, &ethClaim)
-	EndBlocker(ctx, input.GravityKeeper)
-	// then
-	require.Error(t, err)
+	// send attestations from all five validators
+	for _, v := range keeper.OrchAddrs {
+		// Test to reject skipped nonce
+		ethClaim := types.MsgSendToCosmosClaim{
+			EventNonce:     uint64(3),
+			TokenContract:  tokenETHAddr,
+			Amount:         amountA,
+			EthereumSender: anyETHAddr,
+			CosmosReceiver: myCosmosAddr.String(),
+			Orchestrator:   v.String(),
+		}
+
+		// when
+		ctx = ctx.WithBlockTime(myBlockTime)
+		_, err := h(ctx, &ethClaim)
+		EndBlocker(ctx, input.GravityKeeper)
+		// then
+		require.Error(t, err)
+	}
+
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountA)}, balance)
 
-	// Test to reject skipped nonce
-	ethClaim = types.MsgSendToCosmosClaim{
-		EventNonce:     uint64(3),
-		TokenContract:  tokenETHAddr,
-		Amount:         amountA,
-		EthereumSender: anyETHAddr,
-		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   myOrchestratorAddr.String(),
+	// send attestations from all five validators
+	for _, v := range keeper.OrchAddrs {
+		// Test to finally accept consecutive nonce
+		ethClaim := types.MsgSendToCosmosClaim{
+			EventNonce:     uint64(2),
+			Amount:         amountA,
+			TokenContract:  tokenETHAddr,
+			EthereumSender: anyETHAddr,
+			CosmosReceiver: myCosmosAddr.String(),
+			Orchestrator:   v.String(),
+		}
+
+		// when
+		ctx = ctx.WithBlockTime(myBlockTime)
+		_, err := h(ctx, &ethClaim)
+		EndBlocker(ctx, input.GravityKeeper)
+
+		// then
+		require.NoError(t, err)
 	}
 
-	// when
-	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err = h(ctx, &ethClaim)
-	EndBlocker(ctx, input.GravityKeeper)
-	// then
-	require.Error(t, err)
-	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountA)}, balance)
-
-	// Test to finally accept consecutive nonce
-	ethClaim = types.MsgSendToCosmosClaim{
-		EventNonce:     uint64(2),
-		Amount:         amountA,
-		TokenContract:  tokenETHAddr,
-		EthereumSender: anyETHAddr,
-		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   myOrchestratorAddr.String(),
-	}
-
-	// when
-	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err = h(ctx, &ethClaim)
-	EndBlocker(ctx, input.GravityKeeper)
-
-	// then
-	require.NoError(t, err)
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountB)}, balance)
 }
@@ -182,28 +184,37 @@ const biggestInt = "115792089237316195423570985008687907853269984665640564039457
 // We rely on BitLen() to detect Uint256 overflow, here we ensure BitLen() returns what we expect
 func TestUint256BitLen(t *testing.T) {
 	biggestBigInt, _ := new(big.Int).SetString(biggestInt, 10)
-	require.Equal(t, 256, biggestBigInt.BitLen(), "expected 2^256 - 1 to be represented in 256 bits");
+	require.Equal(t, 256, biggestBigInt.BitLen(), "expected 2^256 - 1 to be represented in 256 bits")
 	biggerThanUint256 := biggestBigInt.Add(biggestBigInt, new(big.Int).SetInt64(1)) // add 1 to the max value of Uint256
-	require.Equal(t, 257, biggerThanUint256.BitLen(), "expected 2^256 to be represented in 257 bits");
+	require.Equal(t, 257, biggerThanUint256.BitLen(), "expected 2^256 to be represented in 257 bits")
+}
+
+// sendSendToCosmosClaim is a minor utility function that pairs with the five validator test environment
+// allowing us to easily send 5 claims easily
+func sendSendToCosmosClaim(msg types.MsgSendToCosmosClaim, ctx sdk.Context, h sdk.Handler, t *testing.T) {
+	// send attestations from all five validators
+	for _, v := range keeper.OrchAddrs {
+		msg.Orchestrator = v.String()
+		_, err := h(ctx, &msg)
+		require.NoError(t, err)
+	}
 }
 
 func TestMsgSendToCosmosOverflow(t *testing.T) {
 	const grandeInt = "115792089237316195423570985008687907853269984665640564039457584007913129639835" // 2^256 - 101
 	var (
-		biggestBigInt, _                  = new(big.Int).SetString(biggestInt, 10);
-		grandeBigInt, _ 				  = new(big.Int).SetString(grandeInt, 10);
-		myOrchestratorAddr sdk.AccAddress = make([]byte, 20)
-		myCosmosAddr, _                   = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
-		myValAddr                         = sdk.ValAddress(myOrchestratorAddr) // revisit when proper mapping is impl in keeper
-		myNonce                           = uint64(1)
-		anyETHAddr                        = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr1                     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		tokenETHAddr2                     = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
-		myBlockTime                       = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
-		tokenEthAddress1, _               = types.NewEthAddress(tokenETHAddr1)
-		tokenEthAddress2, _               = types.NewEthAddress(tokenETHAddr2)
-		denom1                            = types.GravityDenom(*tokenEthAddress1)
-		denom2                            = types.GravityDenom(*tokenEthAddress2)
+		biggestBigInt, _    = new(big.Int).SetString(biggestInt, 10)
+		grandeBigInt, _     = new(big.Int).SetString(grandeInt, 10)
+		myCosmosAddr, _     = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
+		myNonce             = uint64(1)
+		anyETHAddr          = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr1       = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		tokenETHAddr2       = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
+		myBlockTime         = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		tokenEthAddress1, _ = types.NewEthAddress(tokenETHAddr1)
+		tokenEthAddress2, _ = types.NewEthAddress(tokenETHAddr2)
+		denom1              = types.GravityDenom(*tokenEthAddress1)
+		denom2              = types.GravityDenom(*tokenEthAddress2)
 	)
 
 	// Totally valid, but we're 101 away from the supply limit
@@ -222,35 +233,31 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 		Amount:         almostTooMuch.Amount,
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   myOrchestratorAddr.String(),
+		Orchestrator:   "",
 	}
 	exactlyTooMuchClaim := types.MsgSendToCosmosClaim{
-		EventNonce:     myNonce+1,
+		EventNonce:     myNonce + 1,
 		TokenContract:  exactlyTooMuch.Contract,
 		Amount:         exactlyTooMuch.Amount,
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   myOrchestratorAddr.String(),
+		Orchestrator:   "",
 	}
 	// Absoulte max value of 2^256 - 1. Previous versions (v0.43 or v0.44) of cosmos-sdk did not support sdk.Int of this size
 	maxSend := types.ERC20Token{
-		Amount: sdk.NewIntFromBigInt(biggestBigInt),
+		Amount:   sdk.NewIntFromBigInt(biggestBigInt),
 		Contract: tokenETHAddr2,
 	}
 	maxSendClaim := types.MsgSendToCosmosClaim{
-		EventNonce:     myNonce+2,
+		EventNonce:     myNonce + 2,
 		TokenContract:  maxSend.Contract,
 		Amount:         maxSend.Amount,
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   myOrchestratorAddr.String(),
+		Orchestrator:   "",
 	}
 	// Setup
-	input := keeper.CreateTestEnv(t)
-	ctx := input.Context
-	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(myValAddr)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, myValAddr, *types.ZeroAddress())
-	input.GravityKeeper.SetOrchestratorValidator(ctx, myValAddr, myOrchestratorAddr)
+	input, ctx := keeper.SetupFiveValChain(t)
 	h := NewHandler(input.GravityKeeper)
 
 	// Require that no tokens were bridged previously
@@ -260,9 +267,8 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	fmt.Println("<<<<START Expecting to see 'minted coins from module account		module=x/bank amount={2^256 - 101}'")
 	// Execute the 2^256 - 101 transaction
 	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err := h(ctx, &almostTooMuchClaim)
+	sendSendToCosmosClaim(almostTooMuchClaim, ctx, h, t)
 	EndBlocker(ctx, input.GravityKeeper)
-	require.NoError(t, err)
 	// Require that the actual bridged amount is equal to the amount in our almostTooBigClaim
 	middleSupply := input.BankKeeper.GetSupply(ctx, denom1)
 	require.Equal(t, almostTooMuch.Amount, middleSupply.Amount.Sub(preSupply1.Amount))
@@ -271,9 +277,8 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	fmt.Println("<<<<START Expecting to see an error about 'invalid supply after SendToCosmos attestation'")
 	// Execute the 101 transaction
 	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err = h(ctx, &exactlyTooMuchClaim)
+	sendSendToCosmosClaim(exactlyTooMuchClaim, ctx, h, t)
 	EndBlocker(ctx, input.GravityKeeper)
-	require.NoError(t, err)
 	// Require that the overflowing amount 101 was not bridged, and instead reverted
 	endSupply := input.BankKeeper.GetSupply(ctx, denom1)
 	require.Equal(t, almostTooMuch.Amount, endSupply.Amount.Sub(preSupply1.Amount))
@@ -286,9 +291,8 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	fmt.Println("<<<<START Expecting to see 'minted coins from module account		module=x/bank amount={2^256 - 1}'")
 	// Execute the 2^256 - 1 transaction
 	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err = h(ctx, &maxSendClaim)
+	sendSendToCosmosClaim(maxSendClaim, ctx, h, t)
 	EndBlocker(ctx, input.GravityKeeper)
-	require.NoError(t, err)
 	// Require that the actual bridged amount is equal to the amount in our almostTooBigClaim
 	maxSendSupply := input.BankKeeper.GetSupply(ctx, denom2)
 	require.Equal(t, maxSend.Amount, maxSendSupply.Amount.Sub(preSupply2.Amount))
@@ -296,32 +300,15 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 }
 
 //nolint: exhaustivestruct
-func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
+func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 	var (
-		orchestratorAddr1, _ = sdk.AccAddressFromBech32("cosmos1dg55rtevlfxh46w88yjpdd08sqhh5cc3xhkcej")
-		orchestratorAddr2, _ = sdk.AccAddressFromBech32("cosmos164knshrzuuurf05qxf3q5ewpfnwzl4gj4m4dfy")
-		orchestratorAddr3, _ = sdk.AccAddressFromBech32("cosmos193fw83ynn76328pty4yl7473vg9x86alq2cft7")
-		validatorEthAddr1, _ = types.NewEthAddress("0x0000000000000000000000000000000000000001")
-		validatorEthAddr2, _ = types.NewEthAddress("0x0000000000000000000000000000000000000002")
-		validatorEthAddr3, _ = types.NewEthAddress("0x0000000000000000000000000000000000000003")
-		myCosmosAddr, _      = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
-		valAddr1             = sdk.ValAddress(orchestratorAddr1) // revisit when proper mapping is impl in keeper
-		valAddr2             = sdk.ValAddress(orchestratorAddr2) // revisit when proper mapping is impl in keeper
-		valAddr3             = sdk.ValAddress(orchestratorAddr3) // revisit when proper mapping is impl in keeper
-		myNonce              = uint64(1)
-		anyETHAddr           = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr         = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		myBlockTime          = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		myCosmosAddr, _ = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
+		myNonce         = uint64(1)
+		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 	)
-	input := keeper.CreateTestEnv(t)
-	ctx := input.Context
-	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(valAddr1, valAddr2, valAddr3)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr1, *validatorEthAddr1)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr2, *validatorEthAddr2)
-	input.GravityKeeper.SetEthAddressForValidator(ctx, valAddr3, *validatorEthAddr3)
-	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr1, orchestratorAddr1)
-	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr2, orchestratorAddr2)
-	input.GravityKeeper.SetOrchestratorValidator(ctx, valAddr3, orchestratorAddr3)
+	input, ctx := keeper.SetupFiveValChain(t)
 	h := NewHandler(input.GravityKeeper)
 
 	myErc20 := types.ERC20Token{
@@ -329,53 +316,44 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 		Contract: tokenETHAddr,
 	}
 
-	ethClaim1 := types.MsgSendToCosmosClaim{
+	ethClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce,
 		TokenContract:  myErc20.Contract,
 		Amount:         myErc20.Amount,
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   orchestratorAddr1.String(),
+		Orchestrator:   "",
 	}
-	ethClaim2 := types.MsgSendToCosmosClaim{
-		EventNonce:     myNonce,
-		TokenContract:  myErc20.Contract,
-		Amount:         myErc20.Amount,
-		EthereumSender: anyETHAddr,
-		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   orchestratorAddr2.String(),
-	}
-	ethClaim3 := types.MsgSendToCosmosClaim{
-		EventNonce:     myNonce,
-		TokenContract:  myErc20.Contract,
-		Amount:         myErc20.Amount,
-		EthereumSender: anyETHAddr,
-		CosmosReceiver: myCosmosAddr.String(),
-		Orchestrator:   orchestratorAddr3.String(),
+
+	for i := range []int{0, 1, 2} {
+		// when
+		ctx = ctx.WithBlockTime(myBlockTime)
+		ethClaim.Orchestrator = keeper.OrchAddrs[i].String()
+		_, err := h(ctx, &ethClaim)
+		EndBlocker(ctx, input.GravityKeeper)
+		require.NoError(t, err)
+
+		// and attestation persisted
+		hash, err := ethClaim.ClaimHash()
+		require.NoError(t, err)
+		a1 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash)
+		require.NotNil(t, a1)
+		// and vouchers not yet added to the account
+		balance1 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
+		assert.NotEqual(t, sdk.Coins{sdk.NewInt64Coin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", 12)}, balance1)
 	}
 
 	// when
 	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err := h(ctx, &ethClaim1)
-	EndBlocker(ctx, input.GravityKeeper)
-	require.NoError(t, err)
-	// and attestation persisted
-	hash1, err := ethClaim1.ClaimHash()
-	require.NoError(t, err)
-	a1 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash1)
-	require.NotNil(t, a1)
-	// and vouchers not yet added to the account
-	balance1 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.NotEqual(t, sdk.Coins{sdk.NewInt64Coin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", 12)}, balance1)
-
-	// when
-	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err = h(ctx, &ethClaim2)
+	ethClaim.Orchestrator = keeper.OrchAddrs[3].String()
+	_, err := h(ctx, &ethClaim)
 	EndBlocker(ctx, input.GravityKeeper)
 	require.NoError(t, err)
 
 	// and attestation persisted
-	a2 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash1)
+	hash, err := ethClaim.ClaimHash()
+	require.NoError(t, err)
+	a2 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash)
 	require.NotNil(t, a2)
 	// and vouchers now added to the account
 	balance2 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
@@ -383,12 +361,15 @@ func TestMsgSendToCosmosClaimsMultiValidator(t *testing.T) {
 
 	// when
 	ctx = ctx.WithBlockTime(myBlockTime)
-	_, err = h(ctx, &ethClaim3)
+	ethClaim.Orchestrator = keeper.OrchAddrs[4].String()
+	_, err = h(ctx, &ethClaim)
 	EndBlocker(ctx, input.GravityKeeper)
 	require.NoError(t, err)
 
 	// and attestation persisted
-	a3 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash1)
+	hash, err = ethClaim.ClaimHash()
+	require.NoError(t, err)
+	a3 := input.GravityKeeper.GetAttestation(ctx, myNonce, hash)
 	require.NotNil(t, a3)
 	// and no additional added to the account
 	balance3 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
