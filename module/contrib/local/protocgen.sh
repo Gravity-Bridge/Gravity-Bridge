@@ -2,6 +2,16 @@
 
 set -eo pipefail
 
+if [ -z $GOPATH ]; then
+	echo "GOPATH not set!"
+	exit 1
+fi
+
+if [[ $PATH != *"$GOPATH/bin"* ]]; then
+	echo "GOPATH/bin must be added to PATH"
+	exit 1
+fi
+
 proto_dirs=$(find ./proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
 for dir in $proto_dirs; do
   buf protoc \
