@@ -334,7 +334,10 @@ func (msg *MsgSendToCosmosClaim) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "erc20 token")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Orchestrator)
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "orchestrator")
+	}
+	if _, err := IBCAddressFromBech32(msg.CosmosReceiver); err != nil {
+		return sdkerrors.Wrap(err, "cosmos receiver")
 	}
 	if msg.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")

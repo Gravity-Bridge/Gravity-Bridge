@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -29,6 +30,29 @@ func UInt64Bytes(n uint64) []byte {
 // UInt64FromString to parse out a uint64 for a nonce
 func UInt64FromString(s string) (uint64, error) {
 	return strconv.ParseUint(s, 10, 64)
+}
+
+// IBCAddressFromBech32 decodes an IBC-compatible Address from a Bech32
+// encoded string
+// TODO: This is very similar to the sdk's GetFromBech32 method, but makes no
+// assertions about the bech32 prefix (aka "human readable part"), when Gravity
+// IBC Forwarding is completed, this function should return invalid prefix errors
+func IBCAddressFromBech32(bech32str string) ([]byte, error) {
+	if len(bech32str) == 0 {
+		return nil, ErrEmpty
+	}
+
+	_, bz, err := bech32.DecodeAndConvert(bech32str)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sdk.VerifyAddressFormat(bz)
+	if err != nil {
+		return nil, err
+	}
+
+	return bz, nil
 }
 
 //////////////////////////////////////

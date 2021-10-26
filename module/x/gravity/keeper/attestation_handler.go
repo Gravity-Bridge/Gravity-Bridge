@@ -5,10 +5,9 @@ import (
 	"math/big"
 	"strconv"
 
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 	distypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -39,53 +38,29 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 	switch claim := claim.(type) {
 	// deposit in this context means a deposit into the Ethereum side of the bridge
 	case *types.MsgSendToCosmosClaim:
+		invalidAddress := false
+		receiverAddress, addressErr := types.IBCAddressFromBech32(claim.CosmosReceiver)
+		if addressErr != nil {
+			invalidAddress = true
+		}
+
 		tokenAddress, err := types.NewEthAddress(claim.TokenContract)
 		if err != nil {
 			// this is not possible unless the validators get together and submit
-			// a bogus event, this would cause the lost tokens stuck in the bridge
-			// but not accessible to anyone
+			// a bogus event, this would create lost tokens stuck in the bridge
+			// and not accessible to anyone
 			return sdkerrors.Wrap(err, "invalid token contract on claim")
 		}
+
 		// Check if coin is Cosmos-originated asset and get denom
 		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *tokenAddress)
-
-		if isCosmosOriginated {
-			// If it is cosmos originated, unlock the coins
-			coins := sdk.Coins{sdk.NewCoin(denom, claim.Amount)}
-
-			addr, err := sdk.AccAddressFromBech32(claim.CosmosReceiver)
-			if err != nil {
-				// invalid deposit address, send coins to community pool, we don't care to block this on the Ethereum side because
-				// validation is expensive, and only users of improper frontends should ever encounter it. If we did not transfer
-				// the coins somewhere they would be 'lost' and inaccessible to the chain so this is strictly superior
-				if err = a.SendToCommunityPool(ctx, coins); err != nil {
-					return sdkerrors.Wrap(err, "failed to send to Community pool")
-				}
-
-			} else {
-				if err = a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, coins); err != nil {
-					// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
-					// for similar reasons
-					hash, _ := claim.ClaimHash()
-					a.keeper.logger(ctx).Error("Blacklisted deposit",
-						"cause", err.Error(),
-						"claim type", claim.GetType(),
-						"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
-						"nonce", fmt.Sprint(claim.GetEventNonce()),
-					)
-					if err = a.SendToCommunityPool(ctx, coins); err != nil {
-						return sdkerrors.Wrap(err, "failed to send to Community pool")
-					}
-				}
-			}
-		} else {
-			// If it is not cosmos originated, mint the coins (aka vouchers)
-			coins := sdk.Coins{sdk.NewCoin(denom, claim.Amount)}
-
-			// This check should cover both a SendToCosmos with Amount >= 2^256 and a SendToCosmos changing the supply >= 2^256
+		coins := sdk.Coins{sdk.NewCoin(denom, claim.Amount)}
+		if !isCosmosOriginated {
+			// We need to mint eth-originated coins (aka vouchers)
+			// Make sure that users are not bridging an impossible amount
 			prevSupply := a.bankKeeper.GetSupply(ctx, denom)
 			newSupply := new(big.Int).Add(prevSupply.Amount.BigInt(), claim.Amount.BigInt())
-			if newSupply.BitLen() > 256 {
+			if newSupply.BitLen() > 256 { // new supply overflows uint256
 				return sdkerrors.Wrap(types.ErrIntOverflowAttestation, "invalid supply after SendToCosmos attestation")
 			}
 
@@ -95,30 +70,25 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				// error needs to be detected and resolved
 				return sdkerrors.Wrapf(err, "mint vouchers coins: %s", coins)
 			}
-
-			addr, err := sdk.AccAddressFromBech32(claim.CosmosReceiver)
-			if err != nil {
-				// invalid deposit address, send coins from our module where they where minted to community pool, we don't care to block this on the Ethereum side because
-				// validation is expensive, and only users of improper frontends should ever encounter it. If we did not transfer
-				// the coins somewhere they would be 'lost' an inaccessible to the chain so this is strictly superior
-				if err = a.SendToCommunityPool(ctx, coins); err != nil {
-					return sdkerrors.Wrap(err, "failed to send to Community pool")
-				}
-			} else {
-				if err = a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, coins); err != nil {
-					// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
-					// for similar reasons
-					hash, _ := claim.ClaimHash()
-					a.keeper.logger(ctx).Error("Blacklisted deposit",
-						"cause", err.Error(),
-						"claim type", claim.GetType(),
-						"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
-						"nonce", fmt.Sprint(claim.GetEventNonce()),
-					)
-					if err = a.SendToCommunityPool(ctx, coins); err != nil {
-						return sdkerrors.Wrap(err, "failed to send to Community pool")
-					}
-				}
+		}
+		if !invalidAddress { // valid address, lock up the coins
+			if err := a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiverAddress, coins); err != nil {
+				// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
+				hash, _ := claim.ClaimHash()
+				a.keeper.logger(ctx).Error("Blacklisted deposit",
+					"cause", err.Error(),
+					"claim type", claim.GetType(),
+					"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+					"nonce", fmt.Sprint(claim.GetEventNonce()),
+				)
+			}
+		} else {
+			// invalid deposit address, send coins to community pool
+			// we don't care to block this on the Ethereum side because validation is expensive,
+			// and only users of improper frontends should ever encounter it. If we did not transfer
+			// the coins somewhere they would be 'lost' and inaccessible to the chain so this is strictly superior
+			if err = a.SendToCommunityPool(ctx, coins); err != nil {
+				return sdkerrors.Wrap(err, "failed to send to Community pool")
 			}
 		}
 		ctx.EventManager().EmitEvent(

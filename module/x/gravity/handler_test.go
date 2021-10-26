@@ -376,6 +376,71 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 	assert.Equal(t, sdk.Coins{sdk.NewInt64Coin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", 12)}, balance3)
 }
 
+// Tests sending funds to a native account and to that same account with a foreign prefix
+// The SendToCosmosClaims should modify the balance of the underlying account
+func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
+	var (
+		coreAddress          = "6ahjkfqxpp6lvfy9fpfnfjg39xr96qet"
+		myForeignBytes, err0 = types.IBCAddressFromBech32("levity1" + coreAddress + "vanuy5")
+		myForeignAddr        = sdk.AccAddress(myForeignBytes)
+		myNativeAddr, err1   = sdk.AccAddressFromBech32("gravity1" + coreAddress + "0l08hu")
+
+		myNonce      = uint64(1)
+		anyETHAddr   = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		myBlockTime  = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+	)
+	require.NoError(t, err0)
+	require.NoError(t, err1)
+	input, ctx := keeper.SetupFiveValChain(t)
+	k := input.GravityKeeper
+
+	h := NewHandler(k)
+
+	myErc20 := types.ERC20Token{
+		Amount:   sdk.NewInt(12),
+		Contract: tokenETHAddr,
+	}
+
+	myTokenAddress, _ := types.NewEthAddress(myErc20.Contract)
+	_, erc20Denom := k.ERC20ToDenomLookup(ctx, *myTokenAddress)
+
+	foreignEthClaim := types.MsgSendToCosmosClaim{
+		EventNonce:     myNonce + 0,
+		TokenContract:  myErc20.Contract,
+		Amount:         myErc20.Amount,
+		EthereumSender: anyETHAddr,
+		CosmosReceiver: myForeignAddr.String(),
+		Orchestrator:   "",
+	}
+
+	nativeEthClaim := types.MsgSendToCosmosClaim{
+		EventNonce:     myNonce + 1,
+		TokenContract:  myErc20.Contract,
+		Amount:         myErc20.Amount,
+		EthereumSender: anyETHAddr,
+		CosmosReceiver: myNativeAddr.String(),
+		Orchestrator:   "",
+	}
+	fmt.Println("myForeignAddr initial balance:", input.BankKeeper.GetAllBalances(ctx, myForeignAddr))
+	fmt.Println("myNativeAddr initial balance:", input.BankKeeper.GetAllBalances(ctx, myNativeAddr))
+
+	fmt.Println("Sending", myErc20.Amount, "to", myForeignAddr)
+	ctx = ctx.WithBlockTime(myBlockTime)
+	sendSendToCosmosClaim(foreignEthClaim, ctx, h, t)
+	EndBlocker(ctx, input.GravityKeeper)
+	foreignBals := input.BankKeeper.GetAllBalances(ctx, myForeignAddr)
+	require.Equal(t, foreignBals, sdk.NewCoins(sdk.NewCoin(erc20Denom, myErc20.Amount)))
+
+	fmt.Println("Sending", myErc20.Amount, "to", myNativeAddr)
+	ctx = ctx.WithBlockTime(myBlockTime)
+	sendSendToCosmosClaim(nativeEthClaim, ctx, h, t)
+	EndBlocker(ctx, input.GravityKeeper)
+	nativeBals := input.BankKeeper.GetAllBalances(ctx, myForeignAddr)
+	expectedDoubleBalance := myErc20.Amount.Mul(sdk.NewInt(2))
+	require.Equal(t, nativeBals, sdk.NewCoins(sdk.NewCoin(erc20Denom, expectedDoubleBalance)))
+}
+
 //nolint: exhaustivestruct
 func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	var (
