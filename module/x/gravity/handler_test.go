@@ -18,7 +18,7 @@ import (
 //nolint: exhaustivestruct
 func TestHandleMsgSendToEth(t *testing.T) {
 	var (
-		userCosmosAddr, _               = sdk.AccAddressFromBech32("cosmos1990z7dqsvh8gthw9pa5sn4wuy2xrsd80mg5z6y")
+		userCosmosAddr, _               = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
 		blockTime                       = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		blockHeight           int64     = 200
 		denom                           = "gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
@@ -81,7 +81,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 //nolint: exhaustivestruct
 func TestMsgSendToCosmosClaim(t *testing.T) {
 	var (
-		myCosmosAddr, _ = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
+		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
 		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
 		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
@@ -205,7 +205,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	var (
 		biggestBigInt, _    = new(big.Int).SetString(biggestInt, 10)
 		grandeBigInt, _     = new(big.Int).SetString(grandeInt, 10)
-		myCosmosAddr, _     = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
+		myCosmosAddr, _     = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		myNonce             = uint64(1)
 		anyETHAddr          = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
 		tokenETHAddr1       = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
@@ -302,7 +302,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 //nolint: exhaustivestruct
 func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 	var (
-		myCosmosAddr, _ = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
+		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		myNonce         = uint64(1)
 		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
 		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"

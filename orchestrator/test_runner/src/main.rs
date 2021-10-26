@@ -17,7 +17,6 @@ use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::utils::wait_for_cosmos_online;
 use deep_space::coin::Coin;
-use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
 use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -54,7 +53,7 @@ const TOTAL_TIMEOUT: Duration = Duration::from_secs(300);
 // Retrieve values from runtime ENV vars
 lazy_static! {
     static ref ADDRESS_PREFIX: String =
-        env::var("ADDRESS_PREFIX").unwrap_or_else(|_| CosmosAddress::DEFAULT_PREFIX.to_owned());
+        env::var("ADDRESS_PREFIX").unwrap_or_else(|_| "gravity".to_string());
     static ref STAKING_TOKEN: String =
         env::var("STAKING_TOKEN").unwrap_or_else(|_| "stake".to_owned());
     static ref COSMOS_NODE_GRPC: String =

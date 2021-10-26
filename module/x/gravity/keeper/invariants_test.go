@@ -2,12 +2,13 @@ package keeper
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 // Tests that the gravity module's balance is accounted for with unbatched txs, including tx cancellation
@@ -16,7 +17,7 @@ func TestModuleBalanceUnbatchedTxs(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
 	var (
-		mySender, _         = sdk.AccAddressFromBech32("cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn")
+		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 	)
@@ -74,9 +75,9 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
 	var (
-		now                    = time.Now().UTC()
-		mySender, _            = sdk.AccAddressFromBech32("cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn")
-		myReceiver, _          = types.NewEthAddress("0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7")
+		now                     = time.Now().UTC()
+		mySender, _             = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
+		myReceiver, _           = types.NewEthAddress("0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7")
 		myTokenContractAddr1, _ = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")
 		myTokenContractAddr2, _ = types.NewEthAddress("0xF815240800ddf3E0be80e0d848B13ecaa504BF37")
 	)
@@ -101,7 +102,6 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 		input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
 		require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, v))
 	}
-
 
 	////////////////// EXECUTE //////////////////
 	// Check the invariant without any transactions

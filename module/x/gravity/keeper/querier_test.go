@@ -19,10 +19,11 @@ import (
 //nolint: exhaustivestruct
 func TestQueryValsetConfirm(t *testing.T) {
 	var (
-		nonce                                       = uint64(1)
-		myValidatorCosmosAddr, _                    = sdk.AccAddressFromBech32("cosmos1ees2tqhhhm9ahlhceh2zdguww9lqn2ckukn86l")
-		myValidatorEthereumAddr  gethcommon.Address = gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(50)}, 20))
+		nonce                                         = uint64(1)
+		myValidatorCosmosAddr, err                    = sdk.AccAddressFromBech32("gravity1ees2tqhhhm9ahlhceh2zdguww9lqn2ckcxpllh")
+		myValidatorEthereumAddr    gethcommon.Address = gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(50)}, 20))
 	)
+	require.NoError(t, err)
 	input := CreateTestEnv(t)
 	ctx := input.Context
 	input.GravityKeeper.SetValsetConfirm(ctx, types.MsgValsetConfirm{
@@ -41,7 +42,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 		"all good": {
 			srcNonce: "1",
 			srcAddr:  myValidatorCosmosAddr.String(),
-			expResp:  []byte(`{"type":"gravity/MsgValsetConfirm", "value":{"eth_address":"0x3232323232323232323232323232323232323232", "nonce": "1", "orchestrator": "cosmos1ees2tqhhhm9ahlhceh2zdguww9lqn2ckukn86l",  "signature": "alksdjhflkasjdfoiasjdfiasjdfoiasdj"}}`),
+			expResp:  []byte(`{"type":"gravity/MsgValsetConfirm", "value":{"eth_address":"0x3232323232323232323232323232323232323232", "nonce": "1", "orchestrator": "gravity1ees2tqhhhm9ahlhceh2zdguww9lqn2ckcxpllh",  "signature": "alksdjhflkasjdfoiasjdfiasjdfoiasdj"}}`),
 		},
 		"unknown nonce": {
 			srcNonce: "999999",
@@ -76,14 +77,14 @@ func TestQueryValsetConfirm(t *testing.T) {
 }
 
 //nolint: exhaustivestruct
-func TestAllValsetConfirmsBynonce(t *testing.T) {
+func TestAllValsetConfirmsByNonce(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
 
 	addrs := []string{
-		"cosmos1u508cfnsk2nhakv80vdtq3nf558ngyvldkfjj9",
-		"cosmos1krtcsrxhadj54px0vy6j33pjuzcd3jj8kmsazv",
-		"cosmos1u94xef3cp9thkcpxecuvhtpwnmg8mhlja8hzkd",
+		"gravity1u508cfnsk2nhakv80vdtq3nf558ngyvlfxm2hd",
+		"gravity1krtcsrxhadj54px0vy6j33pjuzcd3jj8jtz98y",
+		"gravity1u94xef3cp9thkcpxecuvhtpwnmg8mhljeh96n9",
 	}
 	// seed confirmations
 	for i := 0; i < 3; i++ {
@@ -104,9 +105,9 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		"all good": {
 			srcNonce: "1",
 			expResp: []byte(`[
-      {"eth_address":"0x0202020202020202020202020202020202020202", "nonce": "1", "orchestrator": "cosmos1krtcsrxhadj54px0vy6j33pjuzcd3jj8kmsazv", "signature": "signature 2"},
-	  {"eth_address":"0x0303030303030303030303030303030303030303", "nonce": "1", "orchestrator": "cosmos1u94xef3cp9thkcpxecuvhtpwnmg8mhlja8hzkd", "signature": "signature 3"},
-	  {"eth_address":"0x0101010101010101010101010101010101010101", "nonce": "1", "orchestrator": "cosmos1u508cfnsk2nhakv80vdtq3nf558ngyvldkfjj9", "signature": "signature 1"}
+      {"eth_address":"0x0202020202020202020202020202020202020202", "nonce": "1", "orchestrator": "gravity1krtcsrxhadj54px0vy6j33pjuzcd3jj8jtz98y", "signature": "signature 2"},
+	  {"eth_address":"0x0303030303030303030303030303030303030303", "nonce": "1", "orchestrator": "gravity1u94xef3cp9thkcpxecuvhtpwnmg8mhljeh96n9", "signature": "signature 3"},
+	  {"eth_address":"0x0101010101010101010101010101010101010101", "nonce": "1", "orchestrator": "gravity1u508cfnsk2nhakv80vdtq3nf558ngyvlfxm2hd", "signature": "signature 1"}
 ]`),
 		},
 		"unknown nonce": {
@@ -503,7 +504,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 	"transactions": [
 		{
 		"id": "2",
-		"sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
+		"sender": "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 		"dest_address": "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 		"erc20_token": {
 			"amount": "101",
@@ -516,7 +517,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 		},
 		{
 		"id": "3",
-		"sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
+		"sender": "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 		"dest_address": "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 		"erc20_token": {
 			"amount": "102",
@@ -600,9 +601,10 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	ctx := input.Context
 
 	var (
-		tokenContract    = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
-		validatorAddr, _ = sdk.AccAddressFromBech32("cosmos1mgamdcs9dah0vn0gqupl05up7pedg2mvupe6hh")
+		tokenContract      = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
+		validatorAddr, err = sdk.AccAddressFromBech32("gravity1mgamdcs9dah0vn0gqupl05up7pedg2mvc3tzjl")
 	)
+	require.NoError(t, err)
 
 	input.GravityKeeper.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
 		Nonce:         1,
@@ -615,7 +617,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	batchConfirms, err := queryAllBatchConfirms(ctx, "1", tokenContract, input.GravityKeeper)
 	require.NoError(t, err)
 
-	expectedJSON := []byte(`[{"eth_signer":"0xf35e2cc8e6523d683ed44870f5b7cc785051a77d", "nonce":"1", "signature":"signature", "token_contract":"0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B", "orchestrator":"cosmos1mgamdcs9dah0vn0gqupl05up7pedg2mvupe6hh"}]`)
+	expectedJSON := []byte(`[{"eth_signer":"0xf35e2cc8e6523d683ed44870f5b7cc785051a77d", "nonce":"1", "signature":"signature", "token_contract":"0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B", "orchestrator":"gravity1mgamdcs9dah0vn0gqupl05up7pedg2mvc3tzjl"}]`)
 
 	assert.JSONEq(t, string(expectedJSON), string(batchConfirms), "json is equal")
 }
@@ -770,7 +772,7 @@ func TestQueryBatch(t *testing.T) {
 				"amount": "101",
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
-			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
+			  "sender": "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 			  "id": "2"
 			},
 			{
@@ -783,7 +785,7 @@ func TestQueryBatch(t *testing.T) {
 				"amount": "102",
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
-			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
+			  "sender": "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 			  "id": "3"
 			}
 		  ],
@@ -822,7 +824,7 @@ func TestLastBatchesRequest(t *testing.T) {
 				"amount": "101",
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
-			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
+			  "sender": "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 			  "id": "6"
 			},
 			{
@@ -835,7 +837,7 @@ func TestLastBatchesRequest(t *testing.T) {
 				"amount": "102",
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
-			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
+			  "sender": "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 			  "id": "7"
 			}
 		  ],
@@ -855,7 +857,7 @@ func TestLastBatchesRequest(t *testing.T) {
 				"amount": "101",
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
-			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
+			  "sender": "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 			  "id": "2"
 			},
 			{
@@ -868,7 +870,7 @@ func TestLastBatchesRequest(t *testing.T) {
 				"amount": "102",
 				"contract": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 			  },
-			  "sender": "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpjnp7du",
+			  "sender": "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 			  "id": "3"
 			}
 		  ],
@@ -960,13 +962,14 @@ func TestQueryPendingSendToEth(t *testing.T) {
 	ctx := input.Context
 	var (
 		now                 = time.Now().UTC()
-		mySender, _         = sdk.AccAddressFromBech32("cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn")
+		mySender, err1      = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
-		token, err          = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+		token, err2         = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
-	require.NoError(t, err)
+	require.NoError(t, err1)
+	require.NoError(t, err2)
 	receiver, err := types.NewEthAddress(myReceiver)
 	require.NoError(t, err)
 	tokenContract, err := types.NewEthAddress(myTokenContractAddr)
@@ -1013,7 +1016,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
   "transfers_in_batches": [
     {
       "id": "2",
-      "sender": "cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn",
+      "sender": "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
       "dest_address": "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
       "erc20_token": {
         "contract": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
@@ -1026,7 +1029,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
     },
     {
       "id": "3",
-      "sender": "cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn",
+      "sender": "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
       "dest_address": "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
       "erc20_token": {
         "contract": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
@@ -1041,7 +1044,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
   "unbatched_transfers": [
     {
       "id": "1",
-      "sender": "cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn",
+      "sender": "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
       "dest_address": "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
       "erc20_token": {
         "contract": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
@@ -1054,7 +1057,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
     },
     {
       "id": "4",
-      "sender": "cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn",
+      "sender": "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
       "dest_address": "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
       "erc20_token": {
         "contract": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",

@@ -144,12 +144,12 @@ func TestDelegateKeys(t *testing.T) {
 			"0x610277F0208D342C576b991daFdCb36E36515e76", "0x835973768750b3ED2D5c3EF5AdcD5eDb44d12aD4",
 			"0xb2A7F3E84F8FdcA1da46c810AEa110dd96BAE6bF"}
 
-		valAddrs = []string{"cosmosvaloper1jpz0ahls2chajf78nkqczdwwuqcu97w6z3plt4",
-			"cosmosvaloper15n79nty2fj37ant3p2gj4wju4ls6eu6tjwmdt0", "cosmosvaloper16dnkc6ac6ruuyr6l372fc3p77jgjpet6fka0cq",
-			"cosmosvaloper1vrptwhl3ht2txmzy28j9msqkcvmn8gjz507pgu"}
+		valAddrs = []string{"gravityvaloper1jpz0ahls2chajf78nkqczdwwuqcu97w6j77vg6",
+			"gravityvaloper15n79nty2fj37ant3p2gj4wju4ls6eu6tzpy7gq", "gravityvaloper16dnkc6ac6ruuyr6l372fc3p77jgjpet6eezum0",
+			"gravityvaloper1vrptwhl3ht2txmzy28j9msqkcvmn8gjzyqpjtn"}
 
-		orchAddrs = []string{"cosmos1g0etv93428tvxqftnmj25jn06mz6dtdasj5nz7", "cosmos1rhfs24tlw4na04v35tzmjncy785kkw9j27d5kx",
-			"cosmos10upq3tmt04zf55f6hw67m0uyrda3mp722q70rw", "cosmos1nt2uwjh5peg9vz2wfh2m3jjwqnu9kpjlhgpmen"}
+		orchAddrs = []string{"gravity1g0etv93428tvxqftnmj25jn06mz6dtda5zxt8k", "gravity1rhfs24tlw4na04v35tzmjncy785kkw9jwwlvnw",
+			"gravity10upq3tmt04zf55f6hw67m0uyrda3mp72wsvhxx", "gravity1nt2uwjh5peg9vz2wfh2m3jjwqnu9kpjlncnrum"}
 	)
 
 	for i := range ethAddrs {

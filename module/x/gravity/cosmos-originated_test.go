@@ -104,15 +104,15 @@ func addDenomToERC20Relation(tv *testingVars) {
 
 func lockCoinsInModule(tv *testingVars) {
 	var (
-		userCosmosAddr, _            = sdk.AccAddressFromBech32("cosmos1990z7dqsvh8gthw9pa5sn4wuy2xrsd80mg5z6y")
-		denom                        = "ugraviton"
-		startingCoinAmount sdk.Int   = sdk.NewIntFromUint64(150)
-		sendAmount         sdk.Int   = sdk.NewIntFromUint64(50)
-		feeAmount          sdk.Int   = sdk.NewIntFromUint64(5)
-		startingCoins      sdk.Coins = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
-		sendingCoin        sdk.Coin  = sdk.NewCoin(denom, sendAmount)
-		feeCoin            sdk.Coin  = sdk.NewCoin(denom, feeAmount)
-		ethDestination               = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
+		userCosmosAddr, err           = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
+		denom                         = "ugraviton"
+		startingCoinAmount  sdk.Int   = sdk.NewIntFromUint64(150)
+		sendAmount          sdk.Int   = sdk.NewIntFromUint64(50)
+		feeAmount           sdk.Int   = sdk.NewIntFromUint64(5)
+		startingCoins       sdk.Coins = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
+		sendingCoin         sdk.Coin  = sdk.NewCoin(denom, sendAmount)
+		feeCoin             sdk.Coin  = sdk.NewCoin(denom, feeAmount)
+		ethDestination                = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
 	)
 
 	// we start by depositing some funds into the users balance to send
@@ -129,7 +129,7 @@ func lockCoinsInModule(tv *testingVars) {
 		BridgeFee: feeCoin,
 	}
 
-	_, err := tv.h(tv.ctx, msg)
+	_, err = tv.h(tv.ctx, msg)
 	require.NoError(tv.t, err)
 
 	// Check that user balance has gone down
@@ -146,10 +146,11 @@ func lockCoinsInModule(tv *testingVars) {
 
 func acceptDepositEvent(tv *testingVars) {
 	var (
-		myCosmosAddr, _ = sdk.AccAddressFromBech32("cosmos16ahjkfqxpp6lvfy9fpfnfjg39xr96qett0alj5")
-		myNonce         = uint64(2)
-		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		myCosmosAddr, err = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
+		myNonce           = uint64(2)
+		anyETHAddr        = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
 	)
+	require.NoError(tv.t, err)
 
 	myErc20 := types.ERC20Token{
 		Amount:   sdk.NewInt(12),

@@ -278,7 +278,7 @@ mod tests {
                 ),
             },
             // this value is totally random as it's not included in any way in the eth encoding.
-            orchestrator: "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
+            orchestrator: "gravity1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96uxq5xf"
                 .parse()
                 .unwrap(),
         };

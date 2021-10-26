@@ -20,11 +20,11 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	batchSize := 100
 	accAddresses := []string{ // Warning: this must match the length of ctrAddresses
 
-		"cosmos1dg55rtevlfxh46w88yjpdd08sqhh5cc3xhkcej",
-		"cosmos164knshrzuuurf05qxf3q5ewpfnwzl4gj4m4dfy",
-		"cosmos193fw83ynn76328pty4yl7473vg9x86alq2cft7",
-		"cosmos1ahx7f8wyertuus9r20284ej0asrs085case3kn",
-		"cosmos1ees2tqhhhm9ahlhceh2zdguww9lqn2ckukn86l",
+		"gravity1dg55rtevlfxh46w88yjpdd08sqhh5cc3z8yqu6",
+		"gravity164knshrzuuurf05qxf3q5ewpfnwzl4gj3t84vv",
+		"gravity193fw83ynn76328pty4yl7473vg9x86aly623wk",
+		"gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
+		"gravity1ees2tqhhhm9ahlhceh2zdguww9lqn2ckcxpllh",
 	}
 	ethAddresses := []string{
 		"0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",

@@ -244,7 +244,7 @@ mod test {
         let erc20_addr = "0x0635FF793Edf48cf5dB294916720A78e6e490E40"
             .parse()
             .unwrap();
-        let sender_addr = "cosmos1g0etv93428tvxqftnmj25jn06mz6dtdasj5nz7"
+        let sender_addr = "gravity1g0etv93428tvxqftnmj25jn06mz6dtda5zxt8k"
             .parse()
             .unwrap();
 
