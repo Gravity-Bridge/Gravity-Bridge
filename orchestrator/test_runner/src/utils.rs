@@ -13,6 +13,7 @@ use deep_space::coin::Coin;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::utils::encode_any;
 use deep_space::{Contact, Fee, Msg};
+use ethereum_gravity::utils::get_event_nonce;
 use futures::future::join_all;
 use gravity_proto::cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
@@ -488,4 +489,27 @@ pub async fn check_cosmos_balances(
         }
     }
     panic!("Failed to find correct balances in check_cosmos_balances")
+}
+
+/// utility function for bulk checking erc20 balances, used to provide
+/// a single future that contains the assert as well s the request
+pub async fn get_event_nonce_safe(
+    gravity_contract_address: EthAddress,
+    web3: &Web3,
+    caller_address: EthAddress,
+) -> Result<u64, Web3Error> {
+    let start = Instant::now();
+    // overly complicated retry logic allows us to handle the possibility that gas prices change between blocks
+    // and cause any individual request to fail.
+    let mut new_balance = Err(Web3Error::BadInput("Intentional Error".to_string()));
+    while new_balance.is_err() && Instant::now() - start < TOTAL_TIMEOUT {
+        new_balance = get_event_nonce(gravity_contract_address, caller_address, web3).await;
+        // only keep trying if our error is gas related
+        if let Err(ref e) = new_balance {
+            if !e.to_string().contains("maxFeePerGas") {
+                break;
+            }
+        }
+    }
+    Ok(new_balance.unwrap())
 }

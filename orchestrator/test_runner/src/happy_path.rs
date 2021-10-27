@@ -17,7 +17,6 @@ use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::Contact;
-use ethereum_gravity::utils::get_event_nonce;
 use ethereum_gravity::utils::get_valset_nonce;
 use ethereum_gravity::{send_to_cosmos::send_to_cosmos, utils::get_tx_batch_nonce};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -94,7 +93,7 @@ pub async fn happy_path_test(
         .await;
     }
 
-    let event_nonce = get_event_nonce(gravity_address, *MINER_ADDRESS, web30)
+    let event_nonce = get_event_nonce_safe(gravity_address, web30, *MINER_ADDRESS)
         .await
         .unwrap();
 

@@ -2,6 +2,7 @@
 
 use crate::utils::create_default_test_config;
 use crate::utils::get_erc20_balance_safe;
+use crate::utils::get_event_nonce_safe;
 use crate::utils::get_user_key;
 use crate::utils::send_one_eth;
 use crate::utils::start_orchestrators;
@@ -14,8 +15,8 @@ use clarity::Uint256;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
 use deep_space::coin::Coin;
 use deep_space::Contact;
+use ethereum_gravity::deploy_erc20::deploy_erc20;
 use ethereum_gravity::utils::get_valset_nonce;
-use ethereum_gravity::{deploy_erc20::deploy_erc20, utils::get_event_nonce};
 use gravity_proto::gravity::{
     query_client::QueryClient as GravityQueryClient, QueryDenomToErc20Request,
 };
@@ -168,7 +169,7 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
-    let starting_event_nonce = get_event_nonce(gravity_address, *MINER_ADDRESS, web30)
+    let starting_event_nonce = get_event_nonce_safe(gravity_address, web30, *MINER_ADDRESS)
         .await
         .unwrap();
 
@@ -188,7 +189,7 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
     )
     .await
     .unwrap();
-    let ending_event_nonce = get_event_nonce(gravity_address, *MINER_ADDRESS, web30)
+    let ending_event_nonce = get_event_nonce_safe(gravity_address, web30, *MINER_ADDRESS)
         .await
         .unwrap();
 
