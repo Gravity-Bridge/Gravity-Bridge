@@ -43,13 +43,18 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		if addressErr != nil {
 			invalidAddress = true
 		}
-
 		tokenAddress, err := types.NewEthAddress(claim.TokenContract)
 		if err != nil {
 			// this is not possible unless the validators get together and submit
 			// a bogus event, this would create lost tokens stuck in the bridge
 			// and not accessible to anyone
 			return sdkerrors.Wrap(err, "invalid token contract on claim")
+		}
+		// While not strictly necessary, explicitly making the receiver a native address
+		// insulates us from the implicit address conversion done in x/bank's account store iterator
+		nativeReceiver, err := types.GetNativePrefixedAccAddress(receiverAddress)
+		if err != nil {
+			invalidAddress = true
 		}
 
 		// Check if coin is Cosmos-originated asset and get denom
@@ -72,7 +77,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 			}
 		}
 		if !invalidAddress { // valid address, lock up the coins
-			if err := a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiverAddress, coins); err != nil {
+			if err := a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, nativeReceiver, coins); err != nil {
 				// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
 				hash, _ := claim.ClaimHash()
 				a.keeper.logger(ctx).Error("Blacklisted deposit",
