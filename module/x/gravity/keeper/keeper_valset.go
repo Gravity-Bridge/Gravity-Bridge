@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"math/big"
 	"sort"
 	"strconv"
 
@@ -233,30 +234,31 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) types.Valset {
 	// so that we have an array with extra capacity but the correct length depending
 	// on how many validators have keys set.
 	bridgeValidators := make([]*types.InternalBridgeValidator, 0, len(validators))
-	var totalPower uint64
+	totalPower := sdk.NewInt(0)
 	// TODO someone with in depth info on Cosmos staking should determine
 	// if this is doing what I think it's doing
-	for _, validator := range validators {
+	for i, validator := range validators {
 		val := validator.GetOperator()
 		if err := sdk.VerifyAddressFormat(val); err != nil {
 			panic(sdkerrors.Wrapf(err, "invalid validator address in current valset %v", val))
 		}
 
-		p := uint64(k.StakingKeeper.GetLastValidatorPower(ctx, val))
+		p := sdk.NewInt(k.StakingKeeper.GetLastValidatorPower(ctx, val))
+		fmt.Println("validator", i, "power is", p.String())
 
 		if ethAddr, found := k.GetEthAddressByValidator(ctx, val); found {
-			bv := types.BridgeValidator{Power: p, EthereumAddress: ethAddr.GetAddress()}
+			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: ethAddr.GetAddress()}
 			ibv, err := types.NewInternalBridgeValidator(bv)
 			if err != nil {
 				panic(sdkerrors.Wrapf(err, "discovered invalid eth address stored for validator %v", val))
 			}
 			bridgeValidators = append(bridgeValidators, ibv)
-			totalPower += p
+			totalPower = totalPower.Add(p)
 		}
 	}
 	// normalize power values to the maximum bridge power which is 2^32
 	for i := range bridgeValidators {
-		bridgeValidators[i].Power = sdk.NewUint(bridgeValidators[i].Power).MulUint64(4294967296).QuoUint64(totalPower).Uint64()
+		bridgeValidators[i].Power = normalizeValidatorPower(bridgeValidators[i].Power, totalPower)
 	}
 
 	// get the reward from the params store
@@ -282,6 +284,24 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) types.Valset {
 		panic(sdkerrors.Wrap(err, "generated invalid valset"))
 	}
 	return *valset
+}
+
+// normalizeValidatorPower scales rawPower with respect to totalValidatorPower to take a value between 0 and 2^32
+// Uses BigInt operations to avoid overflow errors
+// Example: rawPower = max (2^63 - 1), totalValidatorPower = 1 validator: (2^63 - 1)
+//   result: (2^63 - 1) * 2^32 / (2^63 - 1) = 2^32 = 4294967296 [this is the multiplier value below, our max output]
+// Example: rawPower = max (2^63 - 1), totalValidatorPower = 1000 validators with the same power: 1000*(2^63 - 1)
+//   result: (2^63 - 1) * 2^32 / (1000(2^63 - 1)) = 2^32 / 1000 = 4294967
+func normalizeValidatorPower(rawPower uint64, totalValidatorPower sdk.Int) uint64 {
+	// Compute rawPower * multiplier / quotient
+	// Set the upper limit to 2^32, which would happen if there is a single validator with all the power
+	multiplier := new(big.Int).SetUint64(4294967296)
+	// Scale by current validator powers, a particularly low-power validator (1 out of over 2^32) would have 0 power
+	quotient := new(big.Int).Set(totalValidatorPower.BigInt())
+	power := new(big.Int).SetUint64(rawPower)
+	power.Mul(power, multiplier)
+	power.Quo(power, quotient)
+	return power.Uint64()
 }
 
 /////////////////////////////
