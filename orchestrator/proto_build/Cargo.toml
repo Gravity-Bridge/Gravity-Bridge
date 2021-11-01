@@ -6,10 +6,10 @@ edition = "2018"
 
 
 [dependencies]
-prost = "0.7"
-tonic = "0.4"
-prost-build = "0.7"
+prost = "0.9"
+tonic = "0.6"
+prost-build = "0.9"
 tempdir = "0.3"
 walkdir = "2"
-tonic-build = "0.4"
+tonic-build = "0.6"
 regex = "1.5"
