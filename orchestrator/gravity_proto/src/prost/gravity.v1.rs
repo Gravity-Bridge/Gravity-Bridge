@@ -697,8 +697,8 @@ pub struct QueryLastPendingBatchRequestByAddrRequest {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryLastPendingBatchRequestByAddrResponse {
-    #[prost(message, optional, tag="1")]
-    pub batch: ::core::option::Option<OutgoingTxBatch>,
+    #[prost(message, repeated, tag="1")]
+    pub batch: ::prost::alloc::vec::Vec<OutgoingTxBatch>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryLastPendingLogicCallByAddrRequest {
@@ -707,8 +707,8 @@ pub struct QueryLastPendingLogicCallByAddrRequest {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryLastPendingLogicCallByAddrResponse {
-    #[prost(message, optional, tag="1")]
-    pub call: ::core::option::Option<OutgoingLogicCall>,
+    #[prost(message, repeated, tag="1")]
+    pub call: ::prost::alloc::vec::Vec<OutgoingLogicCall>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryOutgoingTxBatchesRequest {
