@@ -131,12 +131,12 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
 	}
 
-	var pendingBatchReq types.InternalOutgoingTxBatch
+	var pendingBatchReq types.InternalOutgoingTxBatches
 	found := false
 	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
-			pendingBatchReq = batch
+			pendingBatchReq = append(pendingBatchReq, batch)
 			found = true
 			return true
 		}
@@ -144,8 +144,8 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 	})
 
 	if found {
-		ref := pendingBatchReq.ToExternal()
-		return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: &ref}, nil
+		ref := pendingBatchReq.ToExternalArray()
+		return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: ref}, nil
 	} else {
 		return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: nil}, nil
 	}
@@ -159,13 +159,13 @@ func (k Keeper) LastPendingLogicCallByAddr(
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
 	}
 
-	var pendingLogicReq types.OutgoingLogicCall
+	var pendingLogicReq []types.OutgoingLogicCall
 	found := false
 	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, logic types.OutgoingLogicCall) bool {
 		foundConfirm := k.GetLogicCallConfirm(sdk.UnwrapSDKContext(c),
 			logic.InvalidationId, logic.InvalidationNonce, addr) != nil
 		if !foundConfirm {
-			pendingLogicReq = logic
+			pendingLogicReq = append(pendingLogicReq, logic)
 			found = true
 			return true
 		}
@@ -173,7 +173,7 @@ func (k Keeper) LastPendingLogicCallByAddr(
 	})
 
 	if found {
-		return &types.QueryLastPendingLogicCallByAddrResponse{Call: &pendingLogicReq}, nil
+		return &types.QueryLastPendingLogicCallByAddrResponse{Call: pendingLogicReq}, nil
 	} else {
 
 		return &types.QueryLastPendingLogicCallByAddrResponse{Call: nil}, nil

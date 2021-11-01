@@ -11,7 +11,7 @@ use bytes::BytesMut;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::query::get_attestations;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
-use cosmos_gravity::{query::get_oldest_unsigned_transaction_batch, send::send_ethereum_claims};
+use cosmos_gravity::{query::get_oldest_unsigned_transaction_batches, send::send_ethereum_claims};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
@@ -541,7 +541,7 @@ async fn test_batch(
     let requester_address = requester_cosmos_private_key
         .to_address(&contact.get_prefix())
         .unwrap();
-    get_oldest_unsigned_transaction_batch(
+    get_oldest_unsigned_transaction_batches(
         &mut grpc_client,
         requester_address,
         contact.get_prefix(),

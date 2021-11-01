@@ -87,6 +87,9 @@ func (i InternalOutgoingTransferTx) ValidateBasic() error {
 	return nil
 }
 
+// InternalOutgoingTxBatch is an internal duplicate array of OutgoingTxBatch with validation
+type InternalOutgoingTxBatches []InternalOutgoingTxBatch
+
 // InternalOutgoingTxBatch is an internal duplicate of OutgoingTxBatch with validation
 type InternalOutgoingTxBatch struct {
 	BatchNonce    uint64
@@ -155,6 +158,27 @@ func (i *InternalOutgoingTxBatch) ToExternal() OutgoingTxBatch {
 		TokenContract: i.TokenContract.GetAddress(),
 		Block:         i.Block,
 	}
+}
+
+func (i *InternalOutgoingTxBatches) ToExternalArray() []OutgoingTxBatch {
+	var arr []OutgoingTxBatch
+
+	for index, val := range *i {
+		txs := make([]OutgoingTransferTx, len((*i)[index].Transactions))
+		for i, tx := range (*i)[index].Transactions {
+			txs[i] = tx.ToExternal()
+		}
+
+		arr = append(arr, OutgoingTxBatch{
+			BatchNonce:    val.BatchNonce,
+			BatchTimeout:  val.BatchTimeout,
+			Transactions:  txs,
+			TokenContract: val.TokenContract.GetAddress(),
+			Block:         val.Block,
+		})
+	}
+
+	return arr
 }
 
 func (i *InternalOutgoingTxBatch) ValidateBasic() error {

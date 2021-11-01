@@ -14,7 +14,7 @@ use crate::{one_eth, MINER_ADDRESS};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::send::send_to_eth;
-use cosmos_gravity::{query::get_oldest_unsigned_transaction_batch, send::send_request_batch};
+use cosmos_gravity::{query::get_oldest_unsigned_transaction_batches, send::send_request_batch};
 use deep_space::coin::Coin;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::{Address, Contact};
@@ -224,7 +224,7 @@ async fn wait_for_batch(
 ) -> u64 {
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
-    get_oldest_unsigned_transaction_batch(
+    get_oldest_unsigned_transaction_batches(
         &mut grpc_client,
         requester_address,
         contact.get_prefix(),

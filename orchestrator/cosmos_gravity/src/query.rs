@@ -113,21 +113,24 @@ pub async fn get_all_valset_confirms(
     Ok(parsed_confirms)
 }
 
-pub async fn get_oldest_unsigned_transaction_batch(
+pub async fn get_oldest_unsigned_transaction_batches(
     client: &mut GravityQueryClient<Channel>,
     address: Address,
     prefix: String,
-) -> Result<Option<TransactionBatch>, GravityError> {
+) -> Result<Vec<TransactionBatch>, GravityError> {
     let request = client
         .last_pending_batch_request_by_addr(QueryLastPendingBatchRequestByAddrRequest {
             address: address.to_bech32(prefix).unwrap(),
         })
         .await?;
-    let batch = request.into_inner().batch;
-    match batch {
-        Some(batch) => Ok(Some(TransactionBatch::try_from(batch)?)),
-        None => Ok(None),
+    let batches = request.into_inner().batch;
+
+    let mut ret_batches = Vec::new();
+
+    for batch in batches {
+        ret_batches.push(TransactionBatch::try_from(batch)?);
     }
+    Ok(ret_batches)
 }
 
 /// gets the latest 100 transaction batches, regardless of token type
@@ -215,21 +218,24 @@ pub async fn get_logic_call_signatures(
     Ok(out)
 }
 
-pub async fn get_oldest_unsigned_logic_call(
+pub async fn get_oldest_unsigned_logic_calls(
     client: &mut GravityQueryClient<Channel>,
     address: Address,
     prefix: String,
-) -> Result<Option<LogicCall>, GravityError> {
+) -> Result<Vec<LogicCall>, GravityError> {
     let request = client
         .last_pending_logic_call_by_addr(QueryLastPendingLogicCallByAddrRequest {
             address: address.to_bech32(prefix).unwrap(),
         })
         .await?;
-    let call = request.into_inner().call;
-    match call {
-        Some(call) => Ok(Some(LogicCall::try_from(call)?)),
-        None => Ok(None),
+    let calls = request.into_inner().call;
+
+    let mut ret_calls = Vec::new();
+
+    for call in calls {
+        ret_calls.push(LogicCall::try_from(call)?);
     }
+    Ok(ret_calls)
 }
 
 pub async fn get_attestations(

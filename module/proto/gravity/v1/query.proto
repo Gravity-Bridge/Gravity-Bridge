@@ -48,7 +48,6 @@ service Query {
   rpc BatchFees(QueryBatchFeeRequest) returns (QueryBatchFeeResponse) {
     option (google.api.http).get = "/gravity/v1beta/batchfees";
   }
-
   rpc OutgoingTxBatches(QueryOutgoingTxBatchesRequest) returns (QueryOutgoingTxBatchesResponse) {
     option (google.api.http).get = "/gravity/v1beta/batch/outgoingtx";
   }
@@ -70,7 +69,6 @@ service Query {
   rpc DenomToERC20(QueryDenomToERC20Request) returns (QueryDenomToERC20Response) {
     option (google.api.http).get = "/gravity/v1beta/cosmos_originated/denom_to_erc20";
   }
-
   rpc GetAttestations(QueryAttestationsRequest) returns (QueryAttestationsResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_attestations";
   }
@@ -132,31 +130,26 @@ message QueryLastPendingValsetRequestByAddrRequest {
 message QueryLastPendingValsetRequestByAddrResponse {
   repeated Valset valsets = 1 [(gogoproto.nullable) = false];
 }
-
 message QueryBatchFeeRequest {}
 message QueryBatchFeeResponse {
   repeated BatchFees batch_fees = 1 [(gogoproto.nullable) = false];
 }
-
 message QueryLastPendingBatchRequestByAddrRequest {
   string address = 1;
 }
 message QueryLastPendingBatchRequestByAddrResponse {
-  OutgoingTxBatch batch = 1;
+  repeated OutgoingTxBatch batch = 1 [(gogoproto.nullable) = false];
 }
-
 message QueryLastPendingLogicCallByAddrRequest {
   string address = 1;
 }
 message QueryLastPendingLogicCallByAddrResponse {
-  OutgoingLogicCall call = 1;
+  repeated OutgoingLogicCall call = 1 [(gogoproto.nullable) = false];
 }
-
 message QueryOutgoingTxBatchesRequest {}
 message QueryOutgoingTxBatchesResponse {
   repeated OutgoingTxBatch batches = 1 [(gogoproto.nullable) = false];
 }
-
 message QueryOutgoingLogicCallsRequest {}
 message QueryOutgoingLogicCallsResponse {
   repeated OutgoingLogicCall calls = 1 [(gogoproto.nullable) = false];

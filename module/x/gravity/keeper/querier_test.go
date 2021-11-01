@@ -521,39 +521,41 @@ func TestLastPendingBatchRequest(t *testing.T) {
 		expResp types.QueryLastPendingBatchRequestByAddrResponse
 	}{
 		"find batch": {
-			expResp: types.QueryLastPendingBatchRequestByAddrResponse{Batch: &types.OutgoingTxBatch{
-				BatchNonce:   1,
-				BatchTimeout: 0,
-				Transactions: []types.OutgoingTransferTx{
-					{
-						Id:          2,
-						Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
-						DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
-						Erc20Token: types.ERC20Token{
-							Amount:   sdk.NewInt(101),
-							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+			expResp: types.QueryLastPendingBatchRequestByAddrResponse{Batch: []types.OutgoingTxBatch{
+				types.OutgoingTxBatch{
+					BatchNonce:   1,
+					BatchTimeout: 0,
+					Transactions: []types.OutgoingTransferTx{
+						{
+							Id:          2,
+							Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
+							DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
+							Erc20Token: types.ERC20Token{
+								Amount:   sdk.NewInt(101),
+								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+							},
+							Erc20Fee: types.ERC20Token{
+								Amount:   sdk.NewInt(3),
+								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+							},
 						},
-						Erc20Fee: types.ERC20Token{
-							Amount:   sdk.NewInt(3),
-							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+						{
+							Id:          3,
+							Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
+							DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
+							Erc20Token: types.ERC20Token{
+								Amount:   sdk.NewInt(102),
+								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+							},
+							Erc20Fee: types.ERC20Token{
+								Amount:   sdk.NewInt(2),
+								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+							},
 						},
 					},
-					{
-						Id:          3,
-						Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
-						DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
-						Erc20Token: types.ERC20Token{
-							Amount:   sdk.NewInt(102),
-							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-						},
-						Erc20Fee: types.ERC20Token{
-							Amount:   sdk.NewInt(2),
-							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-						},
-					},
+					TokenContract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+					Block:         1234567,
 				},
-				TokenContract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-				Block:         1234567,
 			},
 			},
 		},

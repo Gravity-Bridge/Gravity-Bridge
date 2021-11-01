@@ -3,11 +3,11 @@
 //! own crate and binary so that anyone may run it.
 
 use crate::{ethereum_event_watcher::check_for_events, oracle_resync::get_last_checked_block};
+use clarity::PrivateKey as EthPrivateKey;
 use clarity::{address::Address as EthAddress, Uint256};
-use clarity::{utils::bytes_to_hex_str, PrivateKey as EthPrivateKey};
 use cosmos_gravity::{
     query::{
-        get_oldest_unsigned_logic_call, get_oldest_unsigned_transaction_batch,
+        get_oldest_unsigned_logic_calls, get_oldest_unsigned_transaction_batches,
         get_oldest_unsigned_valsets,
     },
     send::{send_batch_confirm, send_logic_call_confirm, send_valset_confirms},
@@ -303,65 +303,71 @@ pub async fn eth_signer_main_loop(
         }
 
         // sign the last unsigned batch, TODO check if we already have signed this
-        match get_oldest_unsigned_transaction_batch(
+        match get_oldest_unsigned_transaction_batches(
             &mut grpc_client,
             our_cosmos_address,
             contact.get_prefix(),
         )
         .await
         {
-            Ok(Some(last_unsigned_batch)) => {
-                info!(
-                    "Sending batch confirm for {}:{} with {} in fees",
-                    last_unsigned_batch.token_contract,
-                    last_unsigned_batch.nonce,
-                    last_unsigned_batch.total_fee.amount
-                );
-                let res = send_batch_confirm(
-                    &contact,
-                    ethereum_key,
-                    fee.clone(),
-                    vec![last_unsigned_batch],
-                    cosmos_key,
-                    gravity_id.clone(),
-                )
-                .await;
-                trace!("Batch confirm result is {:?}", res);
-                check_for_fee_error(res, &fee);
+            Ok(last_unsigned_batches) => {
+                if last_unsigned_batches.is_empty() {
+                    trace!("No unsigned batch sets to sign, node is caught up!")
+                } else {
+                    info!(
+                        "Sending {} valset confirms starting with {}",
+                        last_unsigned_batches.len(),
+                        last_unsigned_batches[0].nonce
+                    );
+
+                    let res = send_batch_confirm(
+                        &contact,
+                        ethereum_key,
+                        fee.clone(),
+                        last_unsigned_batches,
+                        cosmos_key,
+                        gravity_id.clone(),
+                    )
+                    .await;
+                    trace!("Batch confirm result is {:?}", res);
+                    check_for_fee_error(res, &fee);
+                }
             }
-            Ok(None) => trace!("No unsigned batches! Everything good!"),
             Err(e) => trace!(
                 "Failed to get unsigned Batches, check your Cosmos gRPC {:?}",
                 e
             ),
         }
 
-        match get_oldest_unsigned_logic_call(
+        match get_oldest_unsigned_logic_calls(
             &mut grpc_client,
             our_cosmos_address,
             contact.get_prefix(),
         )
         .await
         {
-            Ok(Some(last_unsigned_call)) => {
-                info!(
-                    "Sending Logic call confirm for {}:{}",
-                    bytes_to_hex_str(&last_unsigned_call.invalidation_id),
-                    last_unsigned_call.invalidation_nonce
-                );
-                let res = send_logic_call_confirm(
-                    &contact,
-                    ethereum_key,
-                    fee.clone(),
-                    vec![last_unsigned_call],
-                    cosmos_key,
-                    gravity_id.clone(),
-                )
-                .await;
-                trace!("call confirm result is {:?}", res);
-                check_for_fee_error(res, &fee);
+            Ok(last_unsigned_calls) => {
+                if last_unsigned_calls.is_empty() {
+                    trace!("No unsigned call sets to sign, node is caught up!")
+                } else {
+                    info!(
+                        "Sending {} valset confirms starting with {}",
+                        last_unsigned_calls.len(),
+                        last_unsigned_calls[0].invalidation_nonce
+                    );
+                    let res = send_logic_call_confirm(
+                        &contact,
+                        ethereum_key,
+                        fee.clone(),
+                        last_unsigned_calls,
+                        cosmos_key,
+                        gravity_id.clone(),
+                    )
+                    .await;
+                    trace!("call confirm result is {:?}", res);
+                    check_for_fee_error(res, &fee);
+                }
             }
-            Ok(None) => trace!("No unsigned logic call! Everything good!"),
             Err(e) => info!(
                 "Failed to get unsigned Logic Calls, check your Cosmos gRPC {:?}",
                 e
