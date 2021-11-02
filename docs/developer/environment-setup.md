@@ -85,11 +85,11 @@ Change directory into the `cosmos-gravity-bridge/module` folder and run
 sudo make proto-tools
 
 # Install protobufs plugins
-go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
+
 go install github.com/regen-network/cosmos-proto/protoc-gen-gocosmos
 go get github.com/regen-network/cosmos-proto/protoc-gen-gocosmos
-go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
-go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
+go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.16.0
+go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.16.0
 ```
 
 ```
