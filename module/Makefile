@@ -1,8 +1,12 @@
+#!/usr/bin/make -f
+
 PACKAGES=$(shell go list ./... | grep -v '/simulation')
 VERSION := $(shell git describe --abbrev=6 --dirty --always --tags)
 COMMIT := $(shell git log -1 --format='%H')
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
+BUILDDIR ?= $(CURDIR)/build
+LEDGER_ENABLED ?= true
 
 build_tags = netgo
 ifeq ($(LEDGER_ENABLED),true)
@@ -45,7 +49,7 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=gravity \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
 
-BUILD_FLAGS := -ldflags '$(ldflags)' -gcflags="all=-N -l"
+BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)' -gcflags="all=-N -l"
 
 all: install
 
@@ -181,3 +185,29 @@ buf-stamp:
 
 tools-clean:
 	rm -f proto-tools-stamp buf-stamp
+
+# below are all for the reproducible builder
+
+build-reproducible: go.sum
+	$(DOCKER) rm latest-build || true
+	$(DOCKER) run --volume=/home/justin/go/src/github.com/cosmos/gravity-bridge/:/sources:ro \
+        --env TARGET_PLATFORMS='linux/amd64 darwin/amd64 linux/arm64 windows/amd64' \
+        --env APP=gravity \
+        --env VERSION=$(VERSION) \
+        --env COMMIT=$(COMMIT) \
+        --env LEDGER_ENABLED=$(LEDGER_ENABLED) \
+        --name latest-build cosmossdk/rbuilder:latest
+	$(DOCKER) cp -a latest-build:/home/builder/artifacts/ $(CURDIR)/
+
+clean:
+	rm -rf $(BUILDDIR)/ artifacts/
+
+BUILD_TARGETS := build
+
+build: BUILD_ARGS=-o $(BUILDDIR)/
+
+$(BUILD_TARGETS): go.sum $(BUILDDIR)/
+	go $@ -mod=readonly $(BUILD_FLAGS) $(BUILD_ARGS) ./...
+
+$(BUILDDIR)/:
+	mkdir -p $(BUILDDIR)/
