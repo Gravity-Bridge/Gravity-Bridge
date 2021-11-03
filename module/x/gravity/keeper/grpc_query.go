@@ -69,6 +69,8 @@ func (k Keeper) ValsetConfirmsByNonce(
 	return &types.QueryValsetConfirmsByNonceResponse{Confirms: confirms}, nil
 }
 
+const maxValsetRequestsReturned = 5
+
 // LastValsetRequests queries the LastValsetRequests of the gravity module
 func (k Keeper) LastValsetRequests(
 	c context.Context,
@@ -177,6 +179,8 @@ func (k Keeper) LastPendingLogicCallByAddr(
 		return &types.QueryLastPendingLogicCallByAddrResponse{Call: nil}, nil
 	}
 }
+
+const MaxResults = 100 // todo: impl pagination
 
 // OutgoingTxBatches queries the OutgoingTxBatches of the gravity module
 func (k Keeper) OutgoingTxBatches(
