@@ -11,6 +11,7 @@ import (
 
 const (
 	QueryCurrentValset = "currentValset"
+	QueryGravityID     = "gravityID"
 )
 
 // NewQuerier is the module level router for state queries
@@ -21,6 +22,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		// Valsets
 		case QueryCurrentValset:
 			return queryCurrentValset(ctx, keeper)
+		case QueryGravityID:
+			return queryGravityID(ctx, keeper)
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unknown %s query endpoint", types.ModuleName)
 		}
@@ -35,6 +38,16 @@ func queryCurrentValset(ctx sdk.Context, keeper Keeper) ([]byte, error) {
 	}
 
 	return res, nil
+}
+
+func queryGravityID(ctx sdk.Context, keeper Keeper) ([]byte, error) {
+	gravityID := keeper.GetGravityID(ctx)
+	res, err := codec.MarshalJSONIndent(types.ModuleCdc, gravityID)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	} else {
+		return res, nil
+	}
 }
 
 type MultiSigUpdateResponse struct {
