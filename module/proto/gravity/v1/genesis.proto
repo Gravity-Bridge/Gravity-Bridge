@@ -145,6 +145,7 @@ message Params {
   bool reset_bridge_state = 18;
   uint64 reset_bridge_nonce = 19;
   bool bridge_active = 20;
+  repeated string governance_deposit_blacklist = 21;
 }
 
 // GenesisState struct

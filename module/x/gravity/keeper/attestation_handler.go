@@ -38,6 +38,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 	switch claim := claim.(type) {
 	// deposit in this context means a deposit into the Ethereum side of the bridge
 	case *types.MsgSendToCosmosClaim:
+		params := a.keeper.GetParams(ctx)
 		invalidAddress := false
 		receiverAddress, addressErr := types.IBCAddressFromBech32(claim.CosmosReceiver)
 		if addressErr != nil {
@@ -53,13 +54,24 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		// While not strictly necessary, explicitly making the receiver a native address
 		// insulates us from the implicit address conversion done in x/bank's account store iterator
 		nativeReceiver, err := types.GetNativePrefixedAccAddress(receiverAddress)
+
 		if err != nil {
 			invalidAddress = true
+		}
+
+		// Checkes the address if it's inside the blacklisted address list and marks
+		// if it's inside the list.
+		for index := 0; index < len(params.GovernanceDepositBlacklist); index++ {
+			if params.GovernanceDepositBlacklist[index] == claim.EthereumSender {
+				invalidAddress = true
+				break
+			}
 		}
 
 		// Check if coin is Cosmos-originated asset and get denom
 		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *tokenAddress)
 		coins := sdk.Coins{sdk.NewCoin(denom, claim.Amount)}
+
 		if !isCosmosOriginated {
 			// We need to mint eth-originated coins (aka vouchers)
 			// Make sure that users are not bridging an impossible amount

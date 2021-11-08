@@ -179,6 +179,77 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountB)}, balance)
 }
 
+//nolint: exhaustivestruct
+func TestDespositBlacklist(t *testing.T) {
+	var (
+		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
+		anyETHSender    = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		amountA, _      = sdk.NewIntFromString("50000000000000000000") // 50 ETH
+	)
+	input, ctx := keeper.SetupFiveValChain(t)
+	h := NewHandler(input.GravityKeeper)
+
+	myErc20 := types.ERC20Token{
+		Amount:   amountA,
+		Contract: tokenETHAddr,
+	}
+
+	k := input.GravityKeeper
+	blockedAddress := anyETHSender
+	newParams := k.GetParams(ctx)
+
+	newParams.GovernanceDepositBlacklist = []string{blockedAddress}
+
+	k.SetParams(ctx, newParams)
+
+	assert.Equal(t, k.GetParams(ctx).GovernanceDepositBlacklist, []string{blockedAddress})
+
+	// send attestations from all five validators
+	for _, v := range keeper.OrchAddrs {
+		ethClaim := types.MsgSendToCosmosClaim{
+			EventNonce:     uint64(1),
+			TokenContract:  myErc20.Contract,
+			Amount:         myErc20.Amount,
+			EthereumSender: anyETHSender,
+			CosmosReceiver: myCosmosAddr.String(),
+			Orchestrator:   v.String(),
+		}
+		// each msg goes into it's own block
+		ctx = ctx.WithBlockTime(myBlockTime)
+		_, err := h(ctx, &ethClaim)
+		EndBlocker(ctx, input.GravityKeeper)
+		require.NoError(t, err)
+
+		// and attestation persisted
+		hash, err := ethClaim.ClaimHash()
+		require.NoError(t, err)
+		a := input.GravityKeeper.GetAttestation(ctx, uint64(1), hash)
+		require.NotNil(t, a)
+
+		// Test to reject duplicate deposit
+		// when
+		ctx = ctx.WithBlockTime(myBlockTime)
+		_, err = h(ctx, &ethClaim)
+		EndBlocker(ctx, input.GravityKeeper)
+		// then
+		require.Error(t, err)
+	}
+
+	// and vouchers added to the account
+	balance := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
+	assert.NotEqual(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountA)}, balance)
+
+	// Make sure that the balance is empty since funds should be sent to the community pool
+	assert.Equal(t, balance, sdk.Coins{})
+
+	//Check community pool has received the money instead of the address
+	community_pool_balance := input.DistKeeper.GetFeePool(ctx).CommunityPool
+	assert.Equal(t, sdk.NewDecCoinsFromCoins(sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountA)), community_pool_balance)
+
+}
+
 const biggestInt = "115792089237316195423570985008687907853269984665640564039457584007913129639935" // 2^256 - 1
 
 // We rely on BitLen() to detect Uint256 overflow, here we ensure BitLen() returns what we expect

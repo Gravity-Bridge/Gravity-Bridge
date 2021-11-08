@@ -587,6 +587,8 @@ pub struct Params {
     pub reset_bridge_nonce: u64,
     #[prost(bool, tag="20")]
     pub bridge_active: bool,
+    #[prost(string, repeated, tag="21")]
+    pub governance_blacklisted_address: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// GenesisState struct
 #[derive(Clone, PartialEq, ::prost::Message)]

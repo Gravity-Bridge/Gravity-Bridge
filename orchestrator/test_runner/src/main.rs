@@ -8,6 +8,7 @@ extern crate log;
 
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
+use crate::governance_blacklist_test::governance_blacklist_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
 use crate::tx_cancel::send_to_eth_and_cancel;
@@ -32,6 +33,7 @@ use valset_stress::validator_set_stress_test;
 mod bootstrapping;
 mod deposit_overflow;
 mod evidence_based_slashing;
+mod governance_blacklist_test;
 mod happy_path;
 mod happy_path_v2;
 mod invalid_events;
@@ -181,7 +183,7 @@ pub async fn main() {
     //                 is created and deployed vai the bridge.
     let test_type = env::var("TEST_TYPE");
     info!("Starting tests with {:?}", test_type);
-    if let Ok(test_type) = test_type {
+    if let Ok(test_type) = test_type.clone() {
         if test_type == "VALIDATOR_OUT" {
             info!("Starting Validator out test");
             happy_path_test(
@@ -296,8 +298,13 @@ pub async fn main() {
             )
             .await;
             return;
+        } else if test_type == "GOVERNANCE_TEST" {
+            info!("Starting governance test");
+            governance_blacklist_test(grpc_client, &contact, keys).await;
+            return;
         }
     }
+    info!("{}", test_type.unwrap());
     info!("Starting Happy path test");
     happy_path_test(
         &web30,

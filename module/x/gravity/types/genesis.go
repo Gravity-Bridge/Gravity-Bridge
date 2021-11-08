@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -77,6 +78,9 @@ var (
 	// to be allowed as it must continue to ensure bridge continuity.
 	ParamStoreBridgeActive = []byte("BridgeActive")
 
+	// ParamStoreBlockedAddresses allows storage of blocked addresses
+	ParamStoreGovernanceDepositBlacklist = []byte("GovernanceDepositBlacklist")
+
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
 		GravityId:                    "",
@@ -98,9 +102,10 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		ResetBridgeState: false,
-		ResetBridgeNonce: 0,
-		BridgeActive:     true,
+		ResetBridgeState:           false,
+		ResetBridgeNonce:           0,
+		BridgeActive:               true,
+		GovernanceDepositBlacklist: []string{},
 	}
 )
 
@@ -152,6 +157,7 @@ func DefaultParams() *Params {
 		SlashFractionBadEthSignature: sdk.NewDec(1).Quo(sdk.NewDec(1000)),
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
+		GovernanceDepositBlacklist:   []string{},
 	}
 }
 
@@ -261,6 +267,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreResetBridgeState, &p.ResetBridgeState, validateResetBridgeState),
 		paramtypes.NewParamSetPair(ParamStoreResetBridgeNonce, &p.ResetBridgeNonce, validateResetBridgeNonce),
 		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
+		paramtypes.NewParamSetPair(ParamStoreGovernanceDepositBlacklist, &p.GovernanceDepositBlacklist, validateStoreBlockedAddress),
 	}
 }
 
@@ -430,6 +437,22 @@ func validateResetBridgeNonce(i interface{}) error {
 func validateBridgeActive(i interface{}) error {
 	if _, ok := i.(bool); !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	return nil
+}
+
+func validateStoreBlockedAddress(i interface{}) error {
+	strArr, ok := i.([]string)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	for index, value := range strArr {
+		if err := ValidateEthAddress(value); err != nil {
+
+			if !strings.Contains(err.Error(), "empty, index is"+strconv.Itoa(index)) {
+				return err
+			}
+		}
 	}
 	return nil
 }

@@ -147,3 +147,12 @@ jobs:
         continue-on-error: true
       - name: Submit an overflowing deposit
         run: tests/all-up-test.sh DEPOSIT_OVERFLOW
+  governance-blacklist-deposit:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+      - name: Attempting to deposit to a blacklisted address
+        run: tests/all-up-test.sh GOVERNANCE_TEST      
