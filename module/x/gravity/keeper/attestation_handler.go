@@ -88,7 +88,8 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				return sdkerrors.Wrapf(err, "mint vouchers coins: %s", coins)
 			}
 		}
-		if !invalidAddress { // valid address, lock up the coins
+
+		if !invalidAddress { // valid address so far, try to lock up the coins in the requested cosmos address
 			if err := a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, nativeReceiver, coins); err != nil {
 				// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
 				hash, _ := claim.ClaimHash()
@@ -98,12 +99,15 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 					"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
 					"nonce", fmt.Sprint(claim.GetEventNonce()),
 				)
+				invalidAddress = true
 			}
-		} else {
-			// invalid deposit address, send coins to community pool
-			// we don't care to block this on the Ethereum side because validation is expensive,
-			// and only users of improper frontends should ever encounter it. If we did not transfer
-			// the coins somewhere they would be 'lost' and inaccessible to the chain so this is strictly superior
+		}
+
+		// for whatever reason above, blacklisted, invalid string, etc this deposit is not valid
+		// we can't send the tokens back on the Ethereum side, and if we don't put them somewhere on
+		// the cosmos side they will be lost an inaccessible even though they are locked in the bridge.
+		// so we deposit the tokens into the community pool for later use
+		if invalidAddress {
 			if err = a.SendToCommunityPool(ctx, coins); err != nil {
 				return sdkerrors.Wrap(err, "failed to send to Community pool")
 			}
