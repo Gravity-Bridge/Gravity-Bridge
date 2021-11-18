@@ -49,6 +49,13 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 			// this is not possible unless the validators get together and submit
 			// a bogus event, this would create lost tokens stuck in the bridge
 			// and not accessible to anyone
+			hash, _ := claim.ClaimHash()
+			a.keeper.logger(ctx).Error("Invalid token contract for deposit",
+				"cause", err.Error(),
+				"claim type", claim.GetType(),
+				"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+				"nonce", fmt.Sprint(claim.GetEventNonce()),
+			)
 			return sdkerrors.Wrap(err, "invalid token contract on claim")
 		}
 		// While not strictly necessary, explicitly making the receiver a native address
@@ -78,6 +85,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 			prevSupply := a.bankKeeper.GetSupply(ctx, denom)
 			newSupply := new(big.Int).Add(prevSupply.Amount.BigInt(), claim.Amount.BigInt())
 			if newSupply.BitLen() > 256 { // new supply overflows uint256
+				a.keeper.logger(ctx).Error("Deposit Overflow",
+					"claim type", claim.GetType(),
+					"nonce", fmt.Sprint(claim.GetEventNonce()),
+				)
 				return sdkerrors.Wrap(types.ErrIntOverflowAttestation, "invalid supply after SendToCosmos attestation")
 			}
 
@@ -85,6 +96,13 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				// in this case we have lost tokens! They are in the bridge, but not
 				// in the community pool our out in some users balance, every instance of this
 				// error needs to be detected and resolved
+				hash, _ := claim.ClaimHash()
+				a.keeper.logger(ctx).Error("Failed minting",
+					"cause", err.Error(),
+					"claim type", claim.GetType(),
+					"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+					"nonce", fmt.Sprint(claim.GetEventNonce()),
+				)
 				return sdkerrors.Wrapf(err, "mint vouchers coins: %s", coins)
 			}
 		}
@@ -109,6 +127,13 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		// so we deposit the tokens into the community pool for later use
 		if invalidAddress {
 			if err = a.SendToCommunityPool(ctx, coins); err != nil {
+				hash, _ := claim.ClaimHash()
+				a.keeper.logger(ctx).Error("Failed community pool send",
+					"cause", err.Error(),
+					"claim type", claim.GetType(),
+					"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+					"nonce", fmt.Sprint(claim.GetEventNonce()),
+				)
 				return sdkerrors.Wrap(err, "failed to send to Community pool")
 			}
 		}
