@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Apache-2.0
-pragma solidity 0.8.9;
+pragma solidity 0.8.10;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // One of three testing coins
