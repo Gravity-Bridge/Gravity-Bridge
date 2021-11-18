@@ -51,6 +51,8 @@ func initializeTestingVars(t *testing.T) *testingVars {
 func addDenomToERC20Relation(tv *testingVars) {
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, bank.Metadata{
 		Description: "The native staking token of the Cosmos Gravity Bridge",
+		Name:        "Graviton",
+		Symbol:      "GRAV",
 		DenomUnits: []*bank.DenomUnit{
 			{Denom: "ugraviton", Exponent: uint32(0), Aliases: []string{"micrograviton"}},
 			{Denom: "mgraviton", Exponent: uint32(3), Aliases: []string{"milligraviton"}},
@@ -71,8 +73,8 @@ func addDenomToERC20Relation(tv *testingVars) {
 			BlockHeight:   0,
 			CosmosDenom:   tv.denom,
 			TokenContract: tv.erc20,
-			Name:          "graviton",
-			Symbol:        "graviton",
+			Name:          "Graviton",
+			Symbol:        "GRAV",
 			Decimals:      6,
 			Orchestrator:  v.String(),
 		}

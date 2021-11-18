@@ -1,4 +1,5 @@
 use crate::get_fee;
+use crate::happy_path_v2::CosmosRepresentationMetadata;
 use crate::ADDRESS_PREFIX;
 use crate::COSMOS_NODE_GRPC;
 use crate::ETH_NODE;
@@ -30,6 +31,17 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use web30::jsonrpc::error::Web3Error;
 use web30::{client::Web3, types::SendTxOption};
+
+/// returns the required denom metadata for deployed the Footoken
+/// token defined in our test environment, you could get this same
+/// data using the denom metadata endpoints.
+pub fn footoken_metadata() -> CosmosRepresentationMetadata {
+    CosmosRepresentationMetadata {
+        denom: "footoken".to_string(),
+        name: "Foo Token".to_string(),
+        symbol: "FOO".to_string(),
+    }
+}
 
 pub fn create_default_test_config() -> GravityBridgeToolsConfig {
     let mut no_relay_market_config = GravityBridgeToolsConfig::default();

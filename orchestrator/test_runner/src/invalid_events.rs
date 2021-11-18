@@ -6,6 +6,7 @@ use crate::happy_path::test_erc20_deposit_panic;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::one_eth;
 use crate::utils::create_default_test_config;
+use crate::utils::footoken_metadata;
 use crate::utils::get_event_nonce_safe;
 use crate::utils::get_user_key;
 use crate::utils::start_orchestrators;
@@ -106,9 +107,6 @@ pub async fn invalid_events(
 
     web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
-    let token_to_send_to_eth = "footoken".to_string();
-    let token_to_send_to_eth_display_name = "mfootoken".to_string();
-
     // make sure this actual deployment works after all the bad ones
     let _ = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
@@ -116,8 +114,7 @@ pub async fn invalid_events(
         None,
         &mut grpc_client,
         false,
-        token_to_send_to_eth.clone(),
-        token_to_send_to_eth_display_name.clone(),
+        footoken_metadata(),
     )
     .await;
 

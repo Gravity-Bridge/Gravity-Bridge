@@ -129,14 +129,13 @@ dependencies = [
 
 [[package]]
 name = "actix-http"
-version = "3.0.0-beta.10"
+version = "3.0.0-beta.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd38a862fa7fead2b47ee55e550982aba583ebc7365ccf0155b49934ad6f16f9"
+checksum = "afaeb3d3fcb06b775ac62f05d580aae4afe5a149513333a73f688fdf26c06639"
 dependencies = [
  "actix-codec 0.4.0",
  "actix-rt 2.3.0",
  "actix-service 2.0.1",
- "actix-tls 3.0.0-beta.5",
  "actix-utils 3.0.0",
  "ahash",
  "base64",
@@ -151,22 +150,18 @@ dependencies = [
  "h2 0.3.6",
  "http",
  "httparse",
+ "httpdate",
  "itoa",
  "language-tags 0.3.2",
  "local-channel",
  "log",
  "mime",
- "once_cell",
  "percent-encoding",
  "pin-project 1.0.8",
  "pin-project-lite 0.2.7",
  "rand 0.8.4",
- "regex",
- "serde",
  "sha-1",
  "smallvec",
- "time",
- "tokio 1.12.0",
  "zstd",
 ]
 
@@ -315,9 +310,9 @@ dependencies = [
 
 [[package]]
 name = "actix-tls"
-version = "3.0.0-beta.5"
+version = "3.0.0-beta.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65b7bb60840962ef0332f7ea01a57d73a24d2cb663708511ff800250bbfef569"
+checksum = "a563b0245222230c860c1b077ca7309179fff0f575b1914967c1ee385aa5da64"
 dependencies = [
  "actix-codec 0.4.0",
  "actix-rt 2.3.0",
@@ -538,19 +533,25 @@ dependencies = [
 
 [[package]]
 name = "awc"
-version = "3.0.0-beta.8"
+version = "3.0.0-beta.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b276021b5aa1df71969acc8adc03973e4fc7d00bba0cbb6338e6f8ad0d7a3c2"
+checksum = "f122bed94dc044b13a991b292ff6a3cde4c3fba890a4e3dbbec0f2eedc607f0a"
 dependencies = [
  "actix-codec 0.4.0",
- "actix-http 3.0.0-beta.10",
+ "actix-http 3.0.0-beta.12",
  "actix-rt 2.3.0",
  "actix-service 2.0.1",
+ "actix-tls 3.0.0-beta.8",
+ "actix-utils 3.0.0",
+ "ahash",
  "base64",
  "bytes 1.1.0",
  "cfg-if 1.0.0",
  "derive_more",
  "futures-core",
+ "futures-util",
+ "h2 0.3.6",
+ "http",
  "itoa",
  "log",
  "mime",
@@ -561,6 +562,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded",
+ "tokio 1.12.0",
 ]
 
 [[package]]
@@ -3455,11 +3457,11 @@ checksum = "0237232789cf037d5480773fe568aac745bfe2afbc11a863e97901780a6b47cc"
 
 [[package]]
 name = "web30"
-version = "0.17.1"
+version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "976d9b2f052305462a5ae2452a09b95ab40b3d4bf8bbefd54fcf866070975ef6"
+checksum = "c7cabcc67c1c63d8a2b66ec032779151a04fd8dd5710268403054f1d18a07caf"
 dependencies = [
- "awc 3.0.0-beta.8",
+ "awc 3.0.0-beta.10",
  "clarity",
  "futures",
  "lazy_static",

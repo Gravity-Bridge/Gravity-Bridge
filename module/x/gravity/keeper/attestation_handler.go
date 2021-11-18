@@ -150,16 +150,16 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		}
 
 		// Check if attributes of ERC20 match Cosmos denom
-		if claim.Name != metadata.Display {
+		if claim.Name != metadata.Name {
 			return sdkerrors.Wrap(
 				types.ErrInvalid,
-				fmt.Sprintf("ERC20 name %s does not match denom display %s", claim.Name, metadata.Description))
+				fmt.Sprintf("ERC20 name %s does not match denom name %s", claim.Name, metadata.Description))
 		}
 
-		if claim.Symbol != metadata.Display {
+		if claim.Symbol != metadata.Symbol {
 			return sdkerrors.Wrap(
 				types.ErrInvalid,
-				fmt.Sprintf("ERC20 symbol %s does not match denom display %s", claim.Symbol, metadata.Display))
+				fmt.Sprintf("ERC20 symbol %s does not match denom symbol %s", claim.Symbol, metadata.Display))
 		}
 
 		// ERC20 tokens use a very simple mechanism to tell you where to display the decimal point.
