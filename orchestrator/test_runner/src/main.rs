@@ -183,7 +183,7 @@ pub async fn main() {
     //                 is created and deployed vai the bridge.
     let test_type = env::var("TEST_TYPE");
     info!("Starting tests with {:?}", test_type);
-    if let Ok(test_type) = test_type.clone() {
+    if let Ok(test_type) = test_type {
         if test_type == "VALIDATOR_OUT" {
             info!("Starting Validator out test");
             happy_path_test(
@@ -298,13 +298,12 @@ pub async fn main() {
             )
             .await;
             return;
-        } else if test_type == "GOVERNANCE_TEST" {
-            info!("Starting governance test");
+        } else if test_type == "DEPOSIT_BLACKLIST" {
+            info!("Starting deposit blacklist test");
             governance_blacklist_test(grpc_client, &contact, keys).await;
             return;
         }
     }
-    info!("{}", test_type.unwrap());
     info!("Starting Happy path test");
     happy_path_test(
         &web30,

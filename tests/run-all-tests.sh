@@ -15,6 +15,7 @@ bash all-up-test.sh EVIDENCE
 bash all-up-test.sh TXCANCEL
 bash all-up-test.sh INVALID_EVENTS
 bash all-up-test.sh DEPOSIT_OVERFLOW
+bash all-up-test.sh DEPOSIT_BLACKLIST
 if [ ! -z "$ALCHEMY_ID" ]; then
     bash all-up-test.sh ARBITRARY_LOGIC $ALCHEMY_ID
     bash all-up-test.sh RELAY_MARKET $ALCHEMY_ID
