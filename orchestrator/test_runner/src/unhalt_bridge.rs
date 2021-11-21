@@ -60,6 +60,18 @@ pub async fn unhalt_bridge_test(
 
     print_validator_stake(contact).await;
 
+    while get_event_nonce_safe(gravity_address, web30, bridge_user.eth_address)
+        .await
+        .unwrap()
+        == 0
+    {
+        // this prevents race conditions by allowing the orchestrators to submit the events they
+        // have seen so far, since events are submitted in batches we only need to wait for a value
+        // that's not zero to be sure that all events so far have been submitted.
+        info!("Waiting for Orchestrators to warm up");
+        sleep(Duration::from_secs(5)).await;
+    }
+
     info!("Test bridge before false claims!");
     // Test a deposit to increment the event nonce before false claims happen
     test_erc20_deposit_panic(
@@ -74,6 +86,11 @@ pub async fn unhalt_bridge_test(
         None,
     )
     .await;
+
+    contact
+        .wait_for_next_block(OPERATION_TIMEOUT)
+        .await
+        .unwrap();
 
     let start = Instant::now();
     let mut initial_nonces_same = false;
