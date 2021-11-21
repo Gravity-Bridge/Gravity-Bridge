@@ -40,7 +40,10 @@ pub async fn deposit_overflow_test(
     let user_keys = get_user_key();
     let dest = user_keys.cosmos_address;
     let dest2 = get_user_key().cosmos_address;
-    let overflowing_erc20 = user_keys.eth_address; // new eth address for the max_value tx
+    // this is a valid eth address we are pretending is an erc20
+    // since this test is not completely end to end (we don't have an actual overflowing erc20 solidity contract)
+    // we just pretend that this random address i an erc20 that overflows with false events.
+    let overflowing_erc20 = user_keys.eth_address;
     let check_module_erc20 = erc20_addresses[0]; // unrelated erc20 to check module functions
     let overflowing_denom = grpc_client
         .erc20_to_denom(QueryErc20ToDenomRequest {
