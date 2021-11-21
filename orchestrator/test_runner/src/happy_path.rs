@@ -331,7 +331,13 @@ pub async fn test_erc20_deposit_panic(
     }
 }
 
-/// this function tests Ethereum -> Cosmos
+/// this function tests Ethereum -> Cosmos deposits of ERC20 tokens
+/// it validates the that the contract being called is the gravity contract
+/// the erc20 provided is a valid erc20 implementation, sends the prescribed
+/// amount of tokens, and then finds the attestations submitted by orchestrators
+/// on the Cosmos chain. Finally it checks that the balance has changed by the
+/// correct amount, which is either the deposit amount or the 'expected change'
+/// provided by the caller
 #[allow(clippy::too_many_arguments)]
 pub async fn test_erc20_deposit_bool(
     web30: &Web3,
@@ -347,6 +353,10 @@ pub async fn test_erc20_deposit_bool(
     get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+    web30
+        .get_erc20_name(erc20_address, *MINER_ADDRESS)
+        .await
+        .expect("Not a valid ERC20 contract address");
 
     let mut grpc_client = grpc_client.clone();
     let start_coin = check_cosmos_balance("gravity", dest, contact).await;
@@ -370,12 +380,12 @@ pub async fn test_erc20_deposit_bool(
     .expect("Failed to send tokens to Cosmos");
     info!("Send to Cosmos txid: {:#066x}", tx_id);
 
-    check_send_to_cosmos_attestation(&mut grpc_client, erc20_address, dest, *MINER_ADDRESS).await;
-
     let _tx_res = web30
         .wait_for_transaction(tx_id, OPERATION_TIMEOUT, None)
         .await
         .expect("Send to cosmos transaction failed to be included into ethereum side");
+
+    check_send_to_cosmos_attestation(&mut grpc_client, erc20_address, dest, *MINER_ADDRESS).await;
 
     let start = Instant::now();
     let duration = match timeout {
