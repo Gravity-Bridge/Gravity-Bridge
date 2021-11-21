@@ -357,7 +357,8 @@ pub async fn submit_false_claims(
                 timeout,
                 *k,
             )
-            .await;
+            .await
+            .expect("Failed to submit false claim");
         info!("Oracle {} false claim response {:?}", i, res);
     }
 }
