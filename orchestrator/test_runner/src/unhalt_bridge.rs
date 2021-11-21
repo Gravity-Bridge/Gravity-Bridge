@@ -1,4 +1,4 @@
-use crate::happy_path::{test_erc20_deposit_bool, test_erc20_deposit_panic};
+use crate::happy_path::{test_erc20_deposit_panic, test_erc20_deposit_result};
 use crate::{get_deposit, utils::*, TOTAL_TIMEOUT};
 use crate::{get_fee, one_eth, OPERATION_TIMEOUT};
 use bytes::BytesMut;
@@ -87,10 +87,13 @@ pub async fn unhalt_bridge_test(
     )
     .await;
 
-    contact
-        .wait_for_next_block(OPERATION_TIMEOUT)
-        .await
-        .unwrap();
+    // wait for several blocks to pass to reduce orchestrator race conditions
+    for _ in 0..15 {
+        contact
+            .wait_for_next_block(OPERATION_TIMEOUT)
+            .await
+            .unwrap();
+    }
 
     let start = Instant::now();
     let mut initial_nonces_same = false;
@@ -139,7 +142,7 @@ pub async fn unhalt_bridge_test(
 
     let halted_bridge_amt = Uint256::from_str("100_000_000_000_000_000").unwrap();
     // Attempt transaction on halted bridge
-    let success = test_erc20_deposit_bool(
+    let res = test_erc20_deposit_result(
         web30,
         contact,
         &mut grpc_client,
@@ -151,7 +154,7 @@ pub async fn unhalt_bridge_test(
         None,
     )
     .await;
-    if success {
+    if res.is_ok() {
         panic!("Bridge not halted!")
     }
 
@@ -224,7 +227,7 @@ pub async fn unhalt_bridge_test(
     // After the reset, our earlier halted_bridge_amt tx on the halted bridge will go through while our new
     // fixed_bridge_amt tx goes through, we need to pass in the expected amount so the function knows what to watch for
     let expected_increase = Some(halted_bridge_amt.clone() + fixed_bridge_amt.clone());
-    let res = test_erc20_deposit_bool(
+    let res = test_erc20_deposit_result(
         web30,
         contact,
         &mut grpc_client,
@@ -236,7 +239,7 @@ pub async fn unhalt_bridge_test(
         expected_increase,
     )
     .await;
-    match res {
+    match res.is_ok() {
         true => info!("Successfully bridged asset!"),
         false => panic!("Failed to bridge ERC20!"),
     }

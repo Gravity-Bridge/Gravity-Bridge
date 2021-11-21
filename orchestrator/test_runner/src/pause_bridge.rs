@@ -1,7 +1,7 @@
 //! this test simulates pausing and unpausing the bridge via governance action. This would be used in an emergency
 //! situation to prevent the bridge from being drained of funds
 //!
-use crate::happy_path::{test_erc20_deposit_bool, test_erc20_deposit_panic};
+use crate::happy_path::{test_erc20_deposit_panic, test_erc20_deposit_result};
 use crate::MINER_ADDRESS;
 use crate::{get_deposit, utils::*};
 use crate::{get_fee, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
@@ -91,7 +91,7 @@ pub async fn pause_bridge_test(
     assert!(!params.bridge_active);
 
     // now we try to bridge some tokens
-    let result = test_erc20_deposit_bool(
+    let result = test_erc20_deposit_result(
         web30,
         contact,
         &mut grpc_client,
@@ -103,7 +103,7 @@ pub async fn pause_bridge_test(
         None,
     )
     .await;
-    if result {
+    if result.is_ok() {
         panic!("Deposit succeeded after bridge pause!")
     } else {
         info!("Bridge pause successfully stopped deposit");

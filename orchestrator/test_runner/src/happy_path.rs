@@ -22,6 +22,7 @@ use ethereum_gravity::{send_to_cosmos::send_to_cosmos, utils::get_tx_batch_nonce
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
 use gravity_proto::gravity::MsgValsetUpdatedClaim;
+use gravity_utils::error::GravityError;
 use gravity_utils::types::SendToCosmosEvent;
 use num::CheckedAdd;
 use prost::Message;
@@ -309,7 +310,7 @@ pub async fn test_erc20_deposit_panic(
     timeout: Option<Duration>, // how long to wait for balance on cosmos to change
     expected_change: Option<Uint256>, // provide an expected change when multiple transactions will take place at once
 ) {
-    match test_erc20_deposit_bool(
+    match test_erc20_deposit_result(
         web30,
         contact,
         grpc_client,
@@ -322,10 +323,10 @@ pub async fn test_erc20_deposit_panic(
     )
     .await
     {
-        true => {
+        Ok(_) => {
             info!("Successfully bridged ERC20!")
         }
-        false => {
+        Err(_) => {
             panic!("Failed to bridge ERC20!")
         }
     }
@@ -339,7 +340,7 @@ pub async fn test_erc20_deposit_panic(
 /// correct amount, which is either the deposit amount or the 'expected change'
 /// provided by the caller
 #[allow(clippy::too_many_arguments)]
-pub async fn test_erc20_deposit_bool(
+pub async fn test_erc20_deposit_result(
     web30: &Web3,
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,
@@ -349,7 +350,7 @@ pub async fn test_erc20_deposit_bool(
     amount: Uint256,
     timeout: Option<Duration>,
     expected_change: Option<Uint256>, // provide an expected change when multiple transactions will take place at once
-) -> bool {
+) -> Result<(), GravityError> {
     get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
@@ -385,7 +386,7 @@ pub async fn test_erc20_deposit_bool(
         .await
         .expect("Send to cosmos transaction failed to be included into ethereum side");
 
-    check_send_to_cosmos_attestation(&mut grpc_client, erc20_address, dest, *MINER_ADDRESS).await;
+    check_send_to_cosmos_attestation(&mut grpc_client, erc20_address, dest, *MINER_ADDRESS).await?;
 
     let start = Instant::now();
     let duration = match timeout {
@@ -408,7 +409,7 @@ pub async fn test_erc20_deposit_bool(
                             "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
                             amount, start_coin.denom, end_coin.amount, end_coin.denom
                         );
-                        return true;
+                        return Ok(());
                     }
                 } else {
                     let expected_end = start_coin.amount.checked_add(&amount.clone());
@@ -425,7 +426,7 @@ pub async fn test_erc20_deposit_bool(
                             "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
                             amount, start_coin.denom, end_coin.amount, end_coin.denom
                         );
-                        return true;
+                        return Ok(());
                     }
                 }
             }
@@ -438,14 +439,14 @@ pub async fn test_erc20_deposit_bool(
                             "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
                             amount, end_coin.denom, end_coin.amount, end_coin.denom,
                         );
-                        return true;
+                        return Ok(());
                     }
                 } else if amount == end_coin.amount {
                     info!(
                         "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
                         amount, end_coin.denom, end_coin.amount, end_coin.denom
                     );
-                    return true;
+                    return Ok(());
                 } else {
                     panic!("Failed to bridge ERC20!")
                 }
@@ -455,7 +456,9 @@ pub async fn test_erc20_deposit_bool(
         info!("Waiting for ERC20 deposit");
         contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
     }
-    false
+    Err(GravityError::InvalidBridgeStateError(
+        "Did not complete deposit!".to_string(),
+    ))
 }
 
 // Tries up to TOTAL_TIMEOUT time to find a MsgSendToCosmosClaim attestation created in the
@@ -465,7 +468,7 @@ async fn check_send_to_cosmos_attestation(
     erc20_address: EthAddress,
     receiver: CosmosAddress,
     sender: EthAddress,
-) {
+) -> Result<(), GravityError> {
     let start = Instant::now();
     let mut found = false;
     loop {
@@ -479,12 +482,15 @@ async fn check_send_to_cosmos_attestation(
         if found {
             break;
         } else if Instant::now() - start > TOTAL_TIMEOUT {
-            panic!("Could not find the send_to_cosmos attestation we were looking for!");
+            return Err(GravityError::InvalidBridgeStateError(
+                "Could not find the send_to_cosmos attestation we were looking for!".to_string(),
+            ));
         }
         info!("Looking for send_to_cosmos attestations");
         delay_for(Duration::from_secs(10)).await;
     }
     info!("Found the expected MsgSendToCosmosClaim attestation");
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
