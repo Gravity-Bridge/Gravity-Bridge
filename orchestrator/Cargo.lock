@@ -686,17 +686,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "chrono"
-version = "0.4.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "670ad68c9088c2a963aaa298cb369688cf3f9465ce5e2d4ca10e6e0098a1ce73"
-dependencies = [
- "num-integer",
- "num-traits",
- "serde",
-]
-
-[[package]]
 name = "clap"
 version = "3.0.0-beta.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -775,14 +764,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2df960f5d869b2dd8532793fde43eb5427cceb126c929747a26823ab0eeb536"
 
 [[package]]
-name = "cosmos-sdk-proto"
-version = "0.8.0"
+name = "cosmos-sdk-proto-althea"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edb5204c6ddc4352c74297638b5561f2929d6334866c156e5f3c75e1e1a1436a"
+checksum = "09c5c3be72fe3fcb7ea6ce9858b3cb90b42cd953b8fe0d81ce49be2dfa15f3d4"
 dependencies = [
  "prost",
  "prost-types",
- "tendermint-proto",
  "tonic",
 ]
 
@@ -858,14 +846,14 @@ dependencies = [
 
 [[package]]
 name = "deep_space"
-version = "2.5.1"
+version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e56cb7fa22e4f28319cdfc65cd62d19d493306a18247371197b7e0672b7b968b"
+checksum = "677ad3fff463dee67c2049d8d9d7325f4e70706ece3d46f6630b2758be68881a"
 dependencies = [
  "base64",
  "bech32",
  "bytes 1.1.0",
- "cosmos-sdk-proto",
+ "cosmos-sdk-proto-althea",
  "hmac",
  "log",
  "num-bigint 0.4.2",
@@ -882,7 +870,6 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "sha2",
- "tendermint-proto",
  "tokio 1.12.0",
  "tonic",
  "unicode-normalization",
@@ -1029,15 +1016,6 @@ dependencies = [
  "crc32fast",
  "libc",
  "miniz_oxide",
-]
-
-[[package]]
-name = "flex-error"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c606d892c9de11507fa0dcffc116434f94e105d0bbdc4e405b61519464c49d7b"
-dependencies = [
- "paste",
 ]
 
 [[package]]
@@ -1260,7 +1238,7 @@ dependencies = [
 name = "gravity_proto"
 version = "0.1.0"
 dependencies = [
- "cosmos-sdk-proto",
+ "cosmos-sdk-proto-althea",
  "prost",
  "prost-types",
  "tonic",
@@ -2792,15 +2770,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
-name = "subtle-encoding"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dcb1ed7b8330c5eed5441052651dd7a12c75e2ed88f2ec024ae1fa3a5e59945"
-dependencies = [
- "zeroize",
-]
-
-[[package]]
 name = "syn"
 version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2833,24 +2802,6 @@ dependencies = [
  "redox_syscall",
  "remove_dir_all",
  "winapi 0.3.9",
-]
-
-[[package]]
-name = "tendermint-proto"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff16a7b42bdbcf31c8cd10a4cffc7631f2a301360ba3a3f71dde48eabfa5bced"
-dependencies = [
- "bytes 1.1.0",
- "chrono",
- "flex-error",
- "num-derive",
- "num-traits",
- "prost",
- "prost-types",
- "serde",
- "serde_bytes",
- "subtle-encoding",
 ]
 
 [[package]]
@@ -3552,12 +3503,6 @@ dependencies = [
  "winapi 0.2.8",
  "winapi-build",
 ]
-
-[[package]]
-name = "zeroize"
-version = "1.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf68b08513768deaa790264a7fac27a58cbf2705cfcdc9448362229217d7e970"
 
 [[package]]
 name = "zstd"
