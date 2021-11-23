@@ -2,12 +2,8 @@
 //! contract which are later relayed by the orchestrator).
 //! NOTE: In the process of testing the module, the bridge is desync'd due to false validator claims,
 //! therefore adding new tests at the end of this one may fail.
-use crate::happy_path::test_erc20_deposit_panic;
 use crate::unhalt_bridge::get_nonces;
-use crate::utils::{
-    check_cosmos_balances, create_default_test_config, get_user_key, start_orchestrators,
-    submit_false_claims, ValidatorKeys,
-};
+use crate::utils::{check_cosmos_balances, get_user_key, submit_false_claims, ValidatorKeys};
 use crate::OPERATION_TIMEOUT;
 use crate::{get_fee, MINER_ADDRESS};
 use clarity::{Address as EthAddress, Uint256};
@@ -27,13 +23,10 @@ pub async fn deposit_overflow_test(
     web30: &Web3,
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
-    gravity_address: EthAddress,
     erc20_addresses: Vec<EthAddress>,
     grpc_client: GravityQueryClient<Channel>,
 ) {
     let mut grpc_client = grpc_client;
-    let no_relay_market_config = create_default_test_config();
-    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
     let orchestrator_keys: Vec<CosmosPrivateKey> =
         keys.clone().into_iter().map(|key| key.orch_key).collect();
     ///////////////////// SETUP /////////////////////
@@ -70,20 +63,6 @@ pub async fn deposit_overflow_test(
         granter: None,
         payer: None,
     };
-
-    info!("Test initial transfer to increment nonce and verify bridge function");
-    test_erc20_deposit_panic(
-        web30,
-        contact,
-        &mut grpc_client,
-        dest,
-        gravity_address,
-        check_module_erc20,
-        normal_amount.clone(),
-        Some(OPERATION_TIMEOUT),
-        None,
-    )
-    .await;
 
     ///////////////////// EXECUTION /////////////////////
     let initial_nonce = get_nonces(&mut grpc_client, &keys, &contact.get_prefix()).await[0];

@@ -288,15 +288,7 @@ pub async fn main() {
             return;
         } else if test_type == "DEPOSIT_OVERFLOW" {
             info!("Starting deposit overflow test!");
-            deposit_overflow_test(
-                &web30,
-                &contact,
-                keys,
-                gravity_address,
-                erc20_addresses,
-                grpc_client,
-            )
-            .await;
+            deposit_overflow_test(&web30, &contact, keys, erc20_addresses, grpc_client).await;
             return;
         } else if test_type == "DEPOSIT_BLACKLIST" {
             info!("Starting deposit blacklist test");
