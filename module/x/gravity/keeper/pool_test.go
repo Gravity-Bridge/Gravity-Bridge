@@ -165,7 +165,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	mtSend := new(sdk.AccAddress)
 	var mtRecieve = types.ZeroAddress() // This address should not actually cause an issue
 	mtCoin := new(sdk.Coin)
-	r, err = input.GravityKeeper.AddToOutgoingPool(*mtCtx, *mtSend, *mtRecieve, *mtCoin, *mtCoin)
+	r, err = input.GravityKeeper.AddToOutgoingPool(*mtCtx, *mtSend, mtRecieve, *mtCoin, *mtCoin)
 	require.Error(t, err)
 	require.Zero(t, r)
 

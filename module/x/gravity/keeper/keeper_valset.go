@@ -269,7 +269,8 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) types.Valset {
 		// the case where a validator has 'no reward'. The 'no reward' value is interpreted as having a zero
 		// address for the ERC20 token and a zero value for the reward amount. Since we store a coin with the
 		// params, a coin with a blank denom and/or zero amount is interpreted in this way.
-		rewardToken = types.ZeroAddress()
+		za := types.ZeroAddress()
+		rewardToken = &za
 		rewardAmount = sdk.NewIntFromUint64(0)
 
 	} else {

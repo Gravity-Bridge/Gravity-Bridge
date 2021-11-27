@@ -948,7 +948,7 @@ func TestQueryCurrentValset(t *testing.T) {
 	internalBridgeVal, err := bridgeVal.ToInternal()
 	require.NoError(t, err)
 	internalBridgeVals := types.InternalBridgeValidators([]*types.InternalBridgeValidator{internalBridgeVal})
-	expectedValset, err := types.NewValset(1, 1234567, internalBridgeVals, sdk.NewIntFromUint64(0), *types.ZeroAddress())
+	expectedValset, err := types.NewValset(1, 1234567, internalBridgeVals, sdk.NewIntFromUint64(0), types.ZeroAddress())
 	require.NoError(t, err)
 	assert.Equal(t, *expectedValset, currentValset)
 }

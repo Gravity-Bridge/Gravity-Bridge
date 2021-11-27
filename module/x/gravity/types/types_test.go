@@ -30,7 +30,7 @@ func TestValsetConfirmHash(t *testing.T) {
 		members[i] = ibv
 	}
 
-	v, err := NewValset(0, 0, members, sdk.NewInt(0), *ZeroAddress())
+	v, err := NewValset(0, 0, members, sdk.NewInt(0), ZeroAddress())
 	require.NoError(t, err)
 
 	// normally we would load the GravityID from the store, but for this test we use
@@ -47,7 +47,7 @@ func TestValsetCheckpointGold1(t *testing.T) {
 		EthereumAddress: "0xc783df8a850f42e7F7e57013759C285caa701eB6",
 	}}.ToInternal()
 	require.NoError(t, err)
-	src, err := NewValset(0, 0, *bridgeValidators, sdk.NewInt(0), *ZeroAddress())
+	src, err := NewValset(0, 0, *bridgeValidators, sdk.NewInt(0), ZeroAddress())
 	require.NoError(t, err)
 
 	// normally we would load the GravityID from the store, but for this test we use

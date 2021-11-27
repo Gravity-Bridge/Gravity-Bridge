@@ -56,8 +56,8 @@ func NewEthAddress(address string) (*EthAddress, error) {
 }
 
 // Returns a new EthAddress with 0x0000000000000000000000000000000000000000 as the wrapped address
-func ZeroAddress() *EthAddress {
-	return &EthAddress{ZeroAddressString}
+func ZeroAddress() EthAddress {
+	return EthAddress{ZeroAddressString}
 }
 
 // Validates the input string as an Ethereum Address
