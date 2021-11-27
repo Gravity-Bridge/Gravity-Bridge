@@ -286,7 +286,8 @@ func (k Keeper) GetLastOutgoingBatchByTokenType(ctx sdk.Context, token types.Eth
 	return lastBatch
 }
 
-// SetLastSlashedBatchBlock sets the latest slashed Batch block height
+// SetLastSlashedBatchBlock sets the latest slashed Batch block height this is done by
+// block height instead of nonce because batches could have individual nonces for each token type
 func (k Keeper) SetLastSlashedBatchBlock(ctx sdk.Context, blockHeight uint64) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(types.LastSlashedBatchBlock), types.UInt64Bytes(blockHeight))
@@ -298,7 +299,7 @@ func (k Keeper) GetLastSlashedBatchBlock(ctx sdk.Context) uint64 {
 	bytes := store.Get([]byte(types.LastSlashedBatchBlock))
 
 	if len(bytes) == 0 {
-		return 0
+		panic("Last slashed batch block not initialized from genesis")
 	}
 	return types.UInt64FromBytes(bytes)
 }

@@ -2,8 +2,9 @@ package keeper
 
 import (
 	"fmt"
-	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"sort"
+
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 
@@ -57,7 +58,7 @@ func NewKeeper(
 		cdc:                cdc,
 		bankKeeper:         bankKeeper,
 		SlashingKeeper:     slashingKeeper,
-		accountKeeper:		accKeeper,
+		accountKeeper:      accKeeper,
 		AttestationHandler: nil,
 	}
 	k.AttestationHandler = AttestationHandler{
@@ -268,7 +269,7 @@ func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context) uint64 {
 	bytes := store.Get([]byte(types.LastSlashedLogicCallBlock))
 
 	if len(bytes) == 0 {
-		return 0
+		panic("Last slashed logic call block not initialized in genesis")
 	}
 	return types.UInt64FromBytes(bytes)
 }

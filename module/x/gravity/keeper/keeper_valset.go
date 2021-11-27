@@ -78,7 +78,7 @@ func (k Keeper) GetLatestValsetNonce(ctx sdk.Context) uint64 {
 	bytes := store.Get([]byte(types.LatestValsetNonce))
 
 	if len(bytes) == 0 {
-		return 0
+		panic("Valset nonce not initialized from genesis")
 	}
 	return types.UInt64FromBytes(bytes)
 }

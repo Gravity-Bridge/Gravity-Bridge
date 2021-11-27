@@ -47,7 +47,7 @@ pub async fn governance_blacklist_test(
 
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
     // check that params have changed
-    assert_eq!(params.governance_blacklisted_address, blocked_addresses);
+    assert_eq!(params.governance_deposit_blacklist, blocked_addresses);
 
     info!("Successfully Issued set reward!");
 }

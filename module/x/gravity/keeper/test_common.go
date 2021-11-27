@@ -484,6 +484,15 @@ func CreateTestEnv(t *testing.T) TestInput {
 		),
 	)
 
+	// set gravityIDs for batches and tx items, simulating genesis setup
+	k.SetLatestValsetNonce(ctx, 0)
+	k.setLastObservedEventNonce(ctx, 0)
+	k.SetLastSlashedValsetNonce(ctx, 0)
+	k.SetLastSlashedBatchBlock(ctx, 0)
+	k.SetLastSlashedLogicCallBlock(ctx, 0)
+	k.setID(ctx, 0, []byte(types.KeyLastTXPoolID))
+	k.setID(ctx, 0, []byte(types.KeyLastOutgoingBatchID))
+
 	k.SetParams(ctx, TestingGravityParams)
 	params := k.GetParams(ctx)
 

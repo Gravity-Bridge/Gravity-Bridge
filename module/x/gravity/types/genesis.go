@@ -119,11 +119,10 @@ func (s GenesisState) ValidateBasic() error {
 }
 
 // DefaultGenesisState returns empty genesis state
-// TODO: set some better defaults here
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params:             DefaultParams(),
-		LastObservedNonce:  0,
+		GravityNonces:      GravityNonces{},
 		Valsets:            []Valset{},
 		ValsetConfirms:     []MsgValsetConfirm{},
 		Batches:            []OutgoingTxBatch{},

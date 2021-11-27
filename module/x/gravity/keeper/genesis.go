@@ -12,6 +12,16 @@ import (
 // InitGenesis starts a chain from a genesis state
 func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	k.SetParams(ctx, *data.Params)
+
+	// restore various nonces, this MUST match GravityNonces in genesis
+	k.SetLatestValsetNonce(ctx, data.GravityNonces.LatestValsetNonce)
+	k.setLastObservedEventNonce(ctx, data.GravityNonces.LastObservedNonce)
+	k.SetLastSlashedValsetNonce(ctx, data.GravityNonces.LastSlashedValsetNonce)
+	k.SetLastSlashedBatchBlock(ctx, data.GravityNonces.LastSlashedBatchBlock)
+	k.SetLastSlashedLogicCallBlock(ctx, data.GravityNonces.LastSlashedLogicCallBlock)
+	k.setID(ctx, data.GravityNonces.LastTxPoolId, []byte(types.KeyLastTXPoolID))
+	k.setID(ctx, data.GravityNonces.LastBatchId, []byte(types.KeyLastOutgoingBatchID))
+
 	// reset valsets in state
 	for _, vs := range data.Valsets {
 		// TODO: block height?
@@ -76,7 +86,6 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		}
 		k.SetAttestation(ctx, claim.GetEventNonce(), hash, &att)
 	}
-	k.setLastObservedEventNonce(ctx, data.LastObservedNonce)
 
 	// reset attestation state of specific validators
 	// this must be done after the above to be correct
@@ -174,7 +183,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		callconfs          = []types.MsgConfirmLogicCall{}
 		attestations       = []types.Attestation{}
 		delegates          = k.GetDelegateKeys(ctx)
-		lastobserved       = k.GetLastObservedEventNonce(ctx)
 		erc20ToDenoms      = []types.ERC20ToDenom{}
 		unbatchedTransfers = k.GetUnbatchedTransactions(ctx)
 	)
@@ -219,8 +227,16 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	}
 
 	return types.GenesisState{
-		Params:             &p,
-		LastObservedNonce:  lastobserved,
+		Params: &p,
+		GravityNonces: types.GravityNonces{
+			LatestValsetNonce:         k.GetLatestValsetNonce(ctx),
+			LastObservedNonce:         k.GetLastObservedEventNonce(ctx),
+			LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx),
+			LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx),
+			LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx),
+			LastTxPoolId:              k.getID(ctx, []byte(types.KeyLastTXPoolID)),
+			LastBatchId:               k.getID(ctx, []byte(types.KeyLastOutgoingBatchID)),
+		},
 		Valsets:            valsets,
 		ValsetConfirms:     vsconfs,
 		Batches:            extBatches,

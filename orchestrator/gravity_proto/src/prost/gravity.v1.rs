@@ -588,15 +588,15 @@ pub struct Params {
     #[prost(bool, tag="20")]
     pub bridge_active: bool,
     #[prost(string, repeated, tag="21")]
-    pub governance_blacklisted_address: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    pub governance_deposit_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
-/// GenesisState struct
+/// GenesisState struct, containing all persistant data required by the Gravity module
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GenesisState {
     #[prost(message, optional, tag="1")]
     pub params: ::core::option::Option<Params>,
-    #[prost(uint64, tag="2")]
-    pub last_observed_nonce: u64,
+    #[prost(message, optional, tag="2")]
+    pub gravity_nonces: ::core::option::Option<GravityNonces>,
     #[prost(message, repeated, tag="3")]
     pub valsets: ::prost::alloc::vec::Vec<Valset>,
     #[prost(message, repeated, tag="4")]
@@ -617,6 +617,35 @@ pub struct GenesisState {
     pub erc20_to_denoms: ::prost::alloc::vec::Vec<Erc20ToDenom>,
     #[prost(message, repeated, tag="12")]
     pub unbatched_transfers: ::prost::alloc::vec::Vec<OutgoingTransferTx>,
+}
+/// GravityCounters contains the many noces and counters required to maintain the bridge state in the genesis
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GravityNonces {
+    /// the nonce of the last generated validator set
+    #[prost(uint64, tag="1")]
+    pub latest_valset_nonce: u64,
+    /// the last observed Gravity.sol contract event nonce
+    #[prost(uint64, tag="2")]
+    pub last_observed_nonce: u64,
+    /// the last valset nonce we have slashed, to prevent double slashing
+    #[prost(uint64, tag="3")]
+    pub last_slashed_valset_nonce: u64,
+    /// the last batch Cosmos chain block that batch slashing has completed for
+    /// there is an individual batch nonce for each token type so this removes
+    /// the need to store them all
+    #[prost(uint64, tag="4")]
+    pub last_slashed_batch_block: u64,
+    /// the last cosmos block that logic call slashing has completed for
+    #[prost(uint64, tag="5")]
+    pub last_slashed_logic_call_block: u64,
+    /// the last transaction id from the Gravity TX pool, this prevents ID
+    /// duplication during chain upgrades
+    #[prost(uint64, tag="6")]
+    pub last_tx_pool_id: u64,
+    /// the last batch id from the Gravity batch pool, this prevents ID duplication
+    /// during chain upgrades
+    #[prost(uint64, tag="7")]
+    pub last_batch_id: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryParamsRequest {

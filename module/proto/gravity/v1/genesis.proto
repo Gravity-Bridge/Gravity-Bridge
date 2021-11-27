@@ -148,10 +148,10 @@ message Params {
   repeated string governance_deposit_blacklist = 21;
 }
 
-// GenesisState struct
+// GenesisState struct, containing all persistant data required by the Gravity module
 message GenesisState {
   Params                             params              = 1;
-  uint64                             last_observed_nonce = 2;
+  GravityNonces                      gravity_nonces      = 2 [(gogoproto.nullable) = false];
   repeated Valset                    valsets             = 3 [(gogoproto.nullable) = false];
   repeated MsgValsetConfirm          valset_confirms     = 4 [(gogoproto.nullable) = false];
   repeated OutgoingTxBatch           batches             = 5 [(gogoproto.nullable) = false];
@@ -162,4 +162,26 @@ message GenesisState {
   repeated MsgSetOrchestratorAddress delegate_keys       = 10 [(gogoproto.nullable) = false];
   repeated ERC20ToDenom              erc20_to_denoms     = 11 [(gogoproto.nullable) = false];
   repeated OutgoingTransferTx        unbatched_transfers = 12 [(gogoproto.nullable) = false];
+}
+
+// GravityCounters contains the many noces and counters required to maintain the bridge state in the genesis
+message GravityNonces {
+  // the nonce of the last generated validator set
+  uint64 latest_valset_nonce = 1;
+  // the last observed Gravity.sol contract event nonce
+  uint64 last_observed_nonce = 2;
+  // the last valset nonce we have slashed, to prevent double slashing
+  uint64 last_slashed_valset_nonce = 3;
+  // the last batch Cosmos chain block that batch slashing has completed for
+  // there is an individual batch nonce for each token type so this removes
+  // the need to store them all
+  uint64 last_slashed_batch_block = 4;
+  // the last cosmos block that logic call slashing has completed for
+  uint64 last_slashed_logic_call_block = 5;
+  // the last transaction id from the Gravity TX pool, this prevents ID
+  // duplication during chain upgrades
+  uint64 last_tx_pool_id = 6;
+  // the last batch id from the Gravity batch pool, this prevents ID duplication
+  // during chain upgrades
+  uint64 last_batch_id = 7;
 }

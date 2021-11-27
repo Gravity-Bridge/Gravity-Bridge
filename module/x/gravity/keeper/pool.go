@@ -335,14 +335,28 @@ func addFeeToMap(fee *types.InternalERC20Token, batchFeesMap map[string]types.Ba
 	}
 }
 
+// a specialized function used for iterating store counters, handling
+// returning, initializing and incrementing all at once. This is particularly
+// used for the transaction pool and batch pool where each batch or transaction is
+// assigned a unique ID.
 func (k Keeper) autoIncrementID(ctx sdk.Context, idKey []byte) uint64 {
+	id := k.getID(ctx, idKey)
+	id += 1
+	k.setID(ctx, id, idKey)
+	return id
+}
+
+// gets a generic uint64 counter from the store, initializing to 1 if no value exists
+func (k Keeper) getID(ctx sdk.Context, idKey []byte) uint64 {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(idKey)
-	var id uint64 = 1
-	if bz != nil {
-		id = binary.BigEndian.Uint64(bz)
-	}
-	bz = sdk.Uint64ToBigEndian(id + 1)
-	store.Set(idKey, bz)
+	id := binary.BigEndian.Uint64(bz)
 	return id
+}
+
+// sets a generic uint64 counter in the store
+func (k Keeper) setID(ctx sdk.Context, id uint64, idKey []byte) {
+	store := ctx.KVStore(k.storeKey)
+	bz := sdk.Uint64ToBigEndian(id)
+	store.Set(idKey, bz)
 }
