@@ -150,7 +150,10 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		}
 	}
 
-	// reset bridge - ignore the genesis data as we do not want to reset immediately
+	// reset bridge - this feature is used by governance to restore the bridge
+	// to it's previous state, it should be implemented using a custom handler
+	// rather than parameters, but since it is implemented that we we'll need to
+	// make sure we don't perform a reset right on startup
 	resetBridgeState := false
 	k.SetResetBridgeState(ctx, resetBridgeState)
 	resetBridgeNonce := uint64(0)
