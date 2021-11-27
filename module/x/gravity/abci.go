@@ -2,7 +2,6 @@ package gravity
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/keeper"
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
@@ -115,14 +114,7 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 		return
 	}
 
-	attmap := k.GetAttestationMapping(ctx)
-	// We make a slice with all the event nonces that are in the attestation mapping
-	keys := make([]uint64, 0, len(attmap))
-	for k := range attmap {
-		keys = append(keys, k)
-	}
-	// Then we sort it
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	attmap, keys := k.GetAttestationMapping(ctx)
 
 	// This iterates over all keys (event nonces) in the attestation mapping. Each value contains
 	// a slice with one or more attestations at that event nonce. There can be multiple attestations
@@ -478,14 +470,7 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 // but (A) pruning keeps the iteration small in the first place and (B) there is
 // already enough nuance in the other handler that it's best not to complicate it further
 func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
-	attmap := k.GetAttestationMapping(ctx)
-	// We make a slice with all the event nonces that are in the attestation mapping
-	keys := make([]uint64, 0, len(attmap))
-	for k := range attmap {
-		keys = append(keys, k)
-	}
-	// Then we sort it
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	attmap, keys := k.GetAttestationMapping(ctx)
 
 	// we delete all attestations earlier than the current event nonce
 	// minus some buffer value. This buffer value is purely to allow
@@ -526,13 +511,7 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, k keeper.Keeper, nonceCutoff u
 	}
 
 	// Get relevant event nonces
-	attmap := k.GetAttestationMapping(ctx)
-	keys := make([]uint64, 0, len(attmap))
-	for k := range attmap {
-		keys = append(keys, k)
-	}
-	// Sort the nonces for iteration
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	attmap, keys := k.GetAttestationMapping(ctx)
 
 	// Discover all affected validators whose LastEventNonce must be reset to nonceCutoff
 

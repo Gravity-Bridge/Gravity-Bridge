@@ -201,21 +201,30 @@ func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 }
 
 // GetAttestationMapping returns a mapping of eventnonce -> attestations at that nonce
-func (k Keeper) GetAttestationMapping(ctx sdk.Context) (out map[uint64][]types.Attestation) {
-	out = make(map[uint64][]types.Attestation)
+// it also returns a pre-sorted array of the keys, this assists callers of this function
+// by providing a deterministic iteration order. You should always iterate over ordered keys
+// if you are iterating this map at all.
+func (k Keeper) GetAttestationMapping(ctx sdk.Context) (attestationMapping map[uint64][]types.Attestation, orderedKeys []uint64) {
+	attestationMapping = make(map[uint64][]types.Attestation)
 	k.IterateAttestaions(ctx, func(_ []byte, att types.Attestation) bool {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
 			panic("couldn't cast to claim")
 		}
 
-		if val, ok := out[claim.GetEventNonce()]; !ok {
-			out[claim.GetEventNonce()] = []types.Attestation{att}
+		if val, ok := attestationMapping[claim.GetEventNonce()]; !ok {
+			attestationMapping[claim.GetEventNonce()] = []types.Attestation{att}
 		} else {
-			out[claim.GetEventNonce()] = append(val, att)
+			attestationMapping[claim.GetEventNonce()] = append(val, att)
 		}
 		return false
 	})
+	orderedKeys = make([]uint64, 0, len(attestationMapping))
+	for k := range attestationMapping {
+		orderedKeys = append(orderedKeys, k)
+	}
+	sort.Slice(orderedKeys, func(i, j int) bool { return orderedKeys[i] < orderedKeys[j] })
+
 	return
 }
 
@@ -251,14 +260,8 @@ func (k Keeper) IterateAttestaions(ctx sdk.Context, cb func([]byte, types.Attest
 // Note: calls GetAttestationMapping in the hopes that there are potentially many attestations
 // which are distributed between few nonces to minimize sorting time
 func (k Keeper) GetMostRecentAttestations(ctx sdk.Context, limit uint64) []types.Attestation {
-	attestationMapping := k.GetAttestationMapping(ctx)
+	attestationMapping, keys := k.GetAttestationMapping(ctx)
 	attestations := make([]types.Attestation, 0, limit)
-
-	keys := make([]uint64, 0, len(attestationMapping))
-	for k := range attestationMapping {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 
 	// Iterate the nonces and collect the attestations
 	count := 0

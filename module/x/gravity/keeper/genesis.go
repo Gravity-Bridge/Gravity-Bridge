@@ -165,7 +165,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		calls              = k.GetOutgoingLogicCalls(ctx)
 		batches            = k.GetOutgoingTxBatches(ctx)
 		valsets            = k.GetValsets(ctx)
-		attmap             = k.GetAttestationMapping(ctx)
+		attmap, attKeys    = k.GetAttestationMapping(ctx)
 		vsconfs            = []types.MsgValsetConfirm{}
 		batchconfs         = []types.MsgConfirmBatch{}
 		callconfs          = []types.MsgConfirmLogicCall{}
@@ -199,9 +199,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	}
 
 	// export attestations from state
-	for _, atts := range attmap {
+	for _, key := range attKeys {
 		// TODO: set height = 0?
-		attestations = append(attestations, atts...)
+		attestations = append(attestations, attmap[key]...)
 	}
 
 	// export erc20 to denom relations
