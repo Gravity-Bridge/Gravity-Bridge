@@ -501,7 +501,8 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 }
 
 // Iterate over all attestations currently being voted on in order of nonce
-// and prune those that are older than nonceCutoff
+// and prune those that are older than nonceCutoff, this function is only used
+// in the context of restoring the bridge after a validator disagreement about attestations
 func pruneAttestationsAfterNonce(ctx sdk.Context, k keeper.Keeper, nonceCutoff uint64) {
 	// Decide on the most recent nonce we can actually roll back to
 	lastObserved := k.GetLastObservedEventNonce(ctx)
