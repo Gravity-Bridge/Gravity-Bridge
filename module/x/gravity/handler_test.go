@@ -196,7 +196,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 }
 
 //nolint: exhaustivestruct
-func TestDespositBlacklist(t *testing.T) {
+func TestEthereumBlacklist(t *testing.T) {
 	var (
 		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		anyETHSender    = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
@@ -216,11 +216,11 @@ func TestDespositBlacklist(t *testing.T) {
 	blockedAddress := anyETHSender
 	newParams := k.GetParams(ctx)
 
-	newParams.GovernanceDepositBlacklist = []string{blockedAddress}
+	newParams.EthereumBlacklist = []string{blockedAddress}
 
 	k.SetParams(ctx, newParams)
 
-	assert.Equal(t, k.GetParams(ctx).GovernanceDepositBlacklist, []string{blockedAddress})
+	assert.Equal(t, k.GetParams(ctx).EthereumBlacklist, []string{blockedAddress})
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {

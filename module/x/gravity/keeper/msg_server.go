@@ -106,13 +106,13 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid eth dest")
 	}
+	_, erc20, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid denom")
+	}
 
-	// OpenZeppelin forbids transfers to the zero address. Other tokens
-	// have their own block lists, any blocked token in a transaction batch will
-	// prevent execution of the whole batch. A complete solution would have a token
-	// specific blocklist
-	if *dest == types.ZeroAddress() {
-		return nil, sdkerrors.Wrap(err, "invalid eth dest")
+	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
+		return nil, sdkerrors.Wrap(err, "destination address is invalid or blacklisted")
 	}
 
 	txID, err := k.AddToOutgoingPool(ctx, sender, *dest, msg.Amount, msg.BridgeFee)

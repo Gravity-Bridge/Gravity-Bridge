@@ -78,8 +78,9 @@ var (
 	// to be allowed as it must continue to ensure bridge continuity.
 	ParamStoreBridgeActive = []byte("BridgeActive")
 
-	// ParamStoreBlockedAddresses allows storage of blocked addresses
-	ParamStoreGovernanceDepositBlacklist = []byte("GovernanceDepositBlacklist")
+	// ParamStoreEthereumBlacklist allows storage of blocked Ethereum addresses blocked for use with the bridge
+	// this could be for technical reasons (zero address) or non-technical reasons, these apply across all ERC20 tokens
+	ParamStoreEthereumBlacklist = []byte("EthereumBlacklist")
 
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
@@ -102,8 +103,8 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		BridgeActive:               true,
-		GovernanceDepositBlacklist: []string{},
+		BridgeActive:      true,
+		EthereumBlacklist: []string{},
 	}
 )
 
@@ -154,7 +155,7 @@ func DefaultParams() *Params {
 		SlashFractionBadEthSignature: sdk.NewDec(1).Quo(sdk.NewDec(1000)),
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
-		GovernanceDepositBlacklist:   []string{},
+		EthereumBlacklist:            []string{},
 	}
 }
 
@@ -256,7 +257,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreSlashFractionBadEthSignature, &p.SlashFractionBadEthSignature, validateSlashFractionBadEthSignature),
 		paramtypes.NewParamSetPair(ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
 		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
-		paramtypes.NewParamSetPair(ParamStoreGovernanceDepositBlacklist, &p.GovernanceDepositBlacklist, validateStoreBlockedAddress),
+		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
 	}
 }
 
@@ -416,7 +417,7 @@ func validateBridgeActive(i interface{}) error {
 	return nil
 }
 
-func validateStoreBlockedAddress(i interface{}) error {
+func validateEthereumBlacklistAddresses(i interface{}) error {
 	strArr, ok := i.([]string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)

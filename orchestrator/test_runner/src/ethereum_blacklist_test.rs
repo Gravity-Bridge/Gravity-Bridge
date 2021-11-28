@@ -1,4 +1,4 @@
-//! This is a test for validator set relaying rewards
+//! This is a test for the Ethereum blacklist, which prevents specific addresses from depositing to or withdrawing from the bridge
 
 use crate::get_deposit;
 use crate::utils::{create_parameter_change_proposal, vote_yes_on_proposals, ValidatorKeys};
@@ -9,7 +9,7 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use std::time::Duration;
 use tokio::time::sleep;
 use tonic::transport::Channel;
-pub async fn governance_blacklist_test(
+pub async fn ethereum_blacklist_test(
     grpc_client: GravityQueryClient<Channel>,
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
@@ -23,8 +23,7 @@ pub async fn governance_blacklist_test(
     let mut params_to_change = Vec::new();
     let blocked_address_param = ParamChange {
         subspace: "gravity".to_string(),
-        key: "GovernanceDepositBlacklist".to_string(),
-        // is our goal format "["address","address"]"
+        key: "GovernanceBlacklist".to_string(),
         value: json_value,
     };
     params_to_change.push(blocked_address_param);
@@ -47,7 +46,7 @@ pub async fn governance_blacklist_test(
 
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
     // check that params have changed
-    assert_eq!(params.governance_deposit_blacklist, blocked_addresses);
+    assert_eq!(params.ethereum_blacklist, blocked_addresses);
 
     info!("Successfully Issued set reward!");
 }

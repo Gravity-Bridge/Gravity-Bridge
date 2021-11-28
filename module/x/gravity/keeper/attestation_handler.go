@@ -38,26 +38,37 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 	switch claim := claim.(type) {
 	// deposit in this context means a deposit into the Ethereum side of the bridge
 	case *types.MsgSendToCosmosClaim:
-		params := a.keeper.GetParams(ctx)
 		invalidAddress := false
 		receiverAddress, addressErr := types.IBCAddressFromBech32(claim.CosmosReceiver)
 		if addressErr != nil {
 			invalidAddress = true
 		}
-		tokenAddress, err := types.NewEthAddress(claim.TokenContract)
-		if err != nil {
-			// this is not possible unless the validators get together and submit
-			// a bogus event, this would create lost tokens stuck in the bridge
-			// and not accessible to anyone
+		tokenAddress, errTokenAddress := types.NewEthAddress(claim.TokenContract)
+		ethereumSender, errEthereumSender := types.NewEthAddress(claim.EthereumSender)
+		// these are not possible unless the validators get together and submit
+		// a bogus event, this would create lost tokens stuck in the bridge
+		// and not accessible to anyone
+		if errTokenAddress != nil {
 			hash, _ := claim.ClaimHash()
-			a.keeper.logger(ctx).Error("Invalid token contract for deposit",
-				"cause", err.Error(),
+			a.keeper.logger(ctx).Error("Invalid token contract",
+				"cause", errTokenAddress.Error(),
 				"claim type", claim.GetType(),
 				"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
 				"nonce", fmt.Sprint(claim.GetEventNonce()),
 			)
-			return sdkerrors.Wrap(err, "invalid token contract on claim")
+			return sdkerrors.Wrap(errTokenAddress, "invalid token contract on claim")
 		}
+		if errEthereumSender != nil {
+			hash, _ := claim.ClaimHash()
+			a.keeper.logger(ctx).Error("Invalid ethereum sender",
+				"cause", errEthereumSender.Error(),
+				"claim type", claim.GetType(),
+				"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+				"nonce", fmt.Sprint(claim.GetEventNonce()),
+			)
+			return sdkerrors.Wrap(errTokenAddress, "invalid ethereum sender on claim")
+		}
+
 		// While not strictly necessary, explicitly making the receiver a native address
 		// insulates us from the implicit address conversion done in x/bank's account store iterator
 		nativeReceiver, err := types.GetNativePrefixedAccAddress(receiverAddress)
@@ -66,13 +77,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 			invalidAddress = true
 		}
 
-		// Checkes the address if it's inside the blacklisted address list and marks
+		// Checks the address if it's inside the blacklisted address list and marks
 		// if it's inside the list.
-		for index := 0; index < len(params.GovernanceDepositBlacklist); index++ {
-			if params.GovernanceDepositBlacklist[index] == claim.EthereumSender {
-				invalidAddress = true
-				break
-			}
+		if a.keeper.IsOnBlacklist(ctx, *ethereumSender) {
+			invalidAddress = true
 		}
 
 		// Check if coin is Cosmos-originated asset and get denom

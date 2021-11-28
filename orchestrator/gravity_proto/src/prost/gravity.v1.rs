@@ -588,8 +588,10 @@ pub struct Params {
     pub valset_reward: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
     #[prost(bool, tag="18")]
     pub bridge_active: bool,
+    /// addresses on this blacklist are forbidden from depositing or withdrawing
+    /// from Ethereum to the bridge
     #[prost(string, repeated, tag="19")]
-    pub governance_deposit_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    pub ethereum_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// GenesisState struct, containing all persistant data required by the Gravity module
 #[derive(Clone, PartialEq, ::prost::Message)]

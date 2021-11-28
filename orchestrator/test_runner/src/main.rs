@@ -8,7 +8,7 @@ extern crate log;
 
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
-use crate::governance_blacklist_test::governance_blacklist_test;
+use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
 use crate::tx_cancel::send_to_eth_and_cancel;
@@ -32,8 +32,8 @@ use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
 mod bootstrapping;
 mod deposit_overflow;
+mod ethereum_blacklist_test;
 mod evidence_based_slashing;
-mod governance_blacklist_test;
 mod happy_path;
 mod happy_path_v2;
 mod invalid_events;
@@ -290,9 +290,9 @@ pub async fn main() {
             info!("Starting deposit overflow test!");
             deposit_overflow_test(&web30, &contact, keys, erc20_addresses, grpc_client).await;
             return;
-        } else if test_type == "DEPOSIT_BLACKLIST" {
-            info!("Starting deposit blacklist test");
-            governance_blacklist_test(grpc_client, &contact, keys).await;
+        } else if test_type == "ETHEREUM_BLACKLIST" {
+            info!("Starting ethereum blacklist test");
+            ethereum_blacklist_test(grpc_client, &contact, keys).await;
             return;
         }
     }

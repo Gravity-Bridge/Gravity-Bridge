@@ -315,3 +315,31 @@ func (k Keeper) DeserializeValidatorIterator(vals []byte) stakingtypes.ValAddres
 	k.cdc.MustUnmarshal(vals, &validators)
 	return validators
 }
+
+// Checks if the provided Ethereum address is on the Governance blacklist
+func (k Keeper) IsOnBlacklist(ctx sdk.Context, addr types.EthAddress) bool {
+	params := k.GetParams(ctx)
+	// Checks the address if it's inside the blacklisted address list and marks
+	// if it's inside the list.
+	for index := 0; index < len(params.EthereumBlacklist); index++ {
+		baddr, err := types.NewEthAddress(params.EthereumBlacklist[index])
+		if err != nil {
+			// this should not be possible we validate on genesis load
+			panic("unvalidated black list address!")
+		}
+		if *baddr == addr {
+			return true
+		}
+	}
+	return false
+}
+
+// Returns true if the provided address is invalid to send to Ethereum this could be
+// for one of several reasons. (1) it is invalid in general like the Zero address, (2)
+// it is invalid for a subset of ERC20 addresses or (3) it is on the governance deposit/withdraw
+// blacklist. (2) is not yet implemented
+// Blocking some addresses is technically motivated, if any ERC20 transfers in a batch fail the entire batch
+// becomes impossible to execute.
+func (k Keeper) InvalidSendToEthAddress(ctx sdk.Context, addr types.EthAddress, _erc20Addr types.EthAddress) bool {
+	return k.IsOnBlacklist(ctx, addr) || addr == types.ZeroAddress()
+}
