@@ -102,8 +102,6 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		ResetBridgeState:           false,
-		ResetBridgeNonce:           0,
 		BridgeActive:               true,
 		GovernanceDepositBlacklist: []string{},
 	}
@@ -210,12 +208,6 @@ func (p Params) ValidateBasic() error {
 	if err := validateValsetRewardAmount(p.ValsetReward); err != nil {
 		return sdkerrors.Wrap(err, "ValsetReward amount")
 	}
-	if err := validateResetBridgeState(p.ResetBridgeState); err != nil {
-		return sdkerrors.Wrap(err, "Reset Bridge State")
-	}
-	if err := validateResetBridgeNonce(p.ResetBridgeNonce); err != nil {
-		return sdkerrors.Wrap(err, "Reset Bridge Nonce")
-	}
 	return nil
 }
 
@@ -263,8 +255,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreUnbondSlashingValsetsWindow, &p.UnbondSlashingValsetsWindow, validateUnbondSlashingValsetsWindow),
 		paramtypes.NewParamSetPair(ParamStoreSlashFractionBadEthSignature, &p.SlashFractionBadEthSignature, validateSlashFractionBadEthSignature),
 		paramtypes.NewParamSetPair(ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
-		paramtypes.NewParamSetPair(ParamStoreResetBridgeState, &p.ResetBridgeState, validateResetBridgeState),
-		paramtypes.NewParamSetPair(ParamStoreResetBridgeNonce, &p.ResetBridgeNonce, validateResetBridgeNonce),
 		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
 		paramtypes.NewParamSetPair(ParamStoreGovernanceDepositBlacklist, &p.GovernanceDepositBlacklist, validateStoreBlockedAddress),
 	}
@@ -415,20 +405,6 @@ func validateSlashFractionBadEthSignature(i interface{}) error {
 func validateValsetRewardAmount(i interface{}) error {
 	if _, ok := i.(sdk.Coin); !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-	return nil
-}
-
-func validateResetBridgeState(i interface{}) error {
-	if _, ok := i.(bool); !ok {
-		return fmt.Errorf("invalid parameter type %T", i)
-	}
-	return nil
-}
-
-func validateResetBridgeNonce(i interface{}) error {
-	if _, ok := i.(uint64); !ok {
-		return fmt.Errorf("invalid parameter type %T", i)
 	}
 	return nil
 }

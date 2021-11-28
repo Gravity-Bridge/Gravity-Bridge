@@ -289,6 +289,17 @@ func NewGravityApp(
 		app.GetSubspace(stakingtypes.ModuleName),
 	)
 
+	app.gravityKeeper = keeper.NewKeeper(
+		appCodec,
+		keys[gravitytypes.StoreKey],
+		app.GetSubspace(gravitytypes.ModuleName),
+		stakingKeeper,
+		app.bankKeeper,
+		app.distrKeeper,
+		app.slashingKeeper,
+		app.accountKeeper,
+	)
+
 	app.mintKeeper = mintkeeper.NewKeeper(
 		appCodec,
 		keys[minttypes.StoreKey],
@@ -346,7 +357,8 @@ func NewGravityApp(
 		AddRoute(paramsproposal.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
 		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper)).
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper)).
-		AddRoute(ibchost.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper))
+		AddRoute(ibchost.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper)).
+		AddRoute(gravitytypes.RouterKey, keeper.NewGravityProposalHandler(app.gravityKeeper))
 
 	app.govKeeper = govkeeper.NewKeeper(
 		appCodec,
@@ -376,17 +388,6 @@ func NewGravityApp(
 		app.slashingKeeper,
 	)
 	app.evidenceKeeper = *evidenceKeeper
-
-	app.gravityKeeper = keeper.NewKeeper(
-		appCodec,
-		keys[gravitytypes.StoreKey],
-		app.GetSubspace(gravitytypes.ModuleName),
-		stakingKeeper,
-		app.bankKeeper,
-		app.distrKeeper,
-		app.slashingKeeper,
-		app.accountKeeper,
-	)
 
 	app.stakingKeeper = *stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(
@@ -551,6 +552,8 @@ func NewGravityApp(
 
 	app.ScopedIBCKeeper = scopedIBCKeeper
 	app.ScopedTransferKeeper = scopedTransferKeeper
+
+	keeper.RegisterProposalTypes()
 
 	return app
 }

@@ -6,11 +6,12 @@ use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::query::{get_attestations, get_last_event_nonce_for_validator};
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::utils::encode_any;
 use deep_space::{Contact, Fee};
 use ethereum_gravity::utils::downcast_uint256;
-use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
+use gravity_proto::gravity::UnhaltBridgeProposal;
 use prost::Message;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
@@ -32,6 +33,7 @@ pub async fn unhalt_bridge_test(
     let mut grpc_client = grpc_client;
     let no_relay_market_config = create_default_test_config();
     let bridge_user = get_user_key();
+
     info!("Sending bridge user some tokens");
     send_one_eth(bridge_user.eth_address, web30).await;
     send_erc20_bulk(
@@ -174,7 +176,7 @@ pub async fn unhalt_bridge_test(
 
     info!("Preparing governance proposal!!");
     // Unhalt the bridge
-    let _ = submit_and_pass_gov_proposal(initial_valid_nonce, contact, &keys)
+    let _ = submit_and_pass_unhalt_bridge_proposal(initial_valid_nonce, contact, &keys)
         .await
         .expect("Governance proposal failed");
     let start = Instant::now();
@@ -245,35 +247,38 @@ pub async fn unhalt_bridge_test(
     }
 }
 
-// Submits a governance proposal, votes yes for each validator, waits for votes to be submitted
-async fn submit_and_pass_gov_proposal(
+// Submits the custom Unhalt bridge governance proposal, votes yes for each validator, waits for votes to be submitted
+async fn submit_and_pass_unhalt_bridge_proposal(
     nonce: u64,
     contact: &Contact,
     keys: &[ValidatorKeys],
 ) -> Result<bool, CosmosGrpcError> {
-    let mut params_to_change: Vec<ParamChange> = Vec::new();
-    // this does not
-    let reset_state = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "ResetBridgeState".to_string(),
-        value: serde_json::to_string(&true).unwrap(),
+    let proposal_content = UnhaltBridgeProposal {
+        title: "Proposal to reset the oracle".to_string(),
+        description: "this resets the oracle to an earlier nonce".to_string(),
+        target_nonce: nonce,
     };
     info!("Submit and pass gov proposal: nonce is {}", nonce);
-    params_to_change.push(reset_state);
-    let reset_nonce = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "ResetBridgeNonce".to_string(),
-        value: format!("\"{}\"", nonce),
-    };
-    params_to_change.push(reset_nonce);
 
-    create_parameter_change_proposal(
-        contact,
-        keys[0].validator_key,
-        get_deposit(),
-        params_to_change,
-    )
-    .await;
+    // encode as a generic proposal
+    let any = encode_any(
+        proposal_content,
+        "/gravity.v1.UnhaltBridgeProposal".to_string(),
+    );
+
+    let res = contact
+        .create_gov_proposal(
+            any,
+            get_deposit(),
+            get_fee(),
+            keys[0].validator_key,
+            Some(TOTAL_TIMEOUT),
+        )
+        .await
+        .unwrap();
+    trace!("Gov proposal submitted with {:?}", res);
+    let res = contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
+    trace!("Gov proposal executed with {:?}", res);
 
     vote_yes_on_proposals(contact, keys, None).await;
     Ok(true)

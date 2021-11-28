@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
 // ModuleCdc is the codec for the module
@@ -42,6 +43,8 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgLogicCallExecutedClaim{},
 		&MsgValsetUpdatedClaim{},
 	)
+
+	registry.RegisterImplementations((*govtypes.Content)(nil), &UnhaltBridgeProposal{})
 
 	registry.RegisterInterface("gravity.v1beta1.EthereumSigned", (*EthereumSigned)(nil), &Valset{}, &OutgoingTxBatch{}, &OutgoingLogicCall{})
 

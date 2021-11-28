@@ -164,6 +164,21 @@ pub struct Erc20ToDenom {
     #[prost(string, tag="2")]
     pub denom: ::prost::alloc::string::String,
 }
+/// UnhaltBridgeProposal defines a custom governance proposal useful for restoring
+/// the bridge after a oracle disagreement. Once this proposal is passed bridge state will roll back events 
+/// to the nonce provided in target_nonce if and only if those events have not yet been observed (executed on the Cosmos chain). This allows for easy
+/// handling of cases where for example an Ethereum hardfork has occured and more than 1/3 of the vlaidtor set
+/// disagrees with the rest. Normally this would require a chain halt, manual genesis editing and restar to resolve
+/// with this feature a governance proposal can be used instead
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UnhaltBridgeProposal {
+    #[prost(string, tag="1")]
+    pub title: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(uint64, tag="4")]
+    pub target_nonce: u64,
+}
 /// MsgSetOrchestratorAddress
 /// this message allows validators to delegate their voting responsibilities
 /// to a given key. This key is then used as an optional authentication method
@@ -520,16 +535,6 @@ pub struct MsgSubmitBadSignatureEvidenceResponse {
 ///
 /// valset_reward
 ///
-/// Valset rewards are the amount of tokens this chain issues to relayers of validator sets.
-/// These can be any ERC20 token in the bridge, but it's strongly advised that chains use only
-/// Cosmos originated tokens, which the bridge effectively mints on Ethereum. If you run out of
-/// the token you are using for validator set rewards valset updates will fail and the bridge
-/// will be vulnerable to highjacking. For these paramaters the zero values are special and indicate
-/// not to attempt any reward. This is the default for bootstrapping.
-///
-/// reset_bridge_state
-/// reset_bridge_nonce
-///
 /// These parameters allow for the bridge oracle to resolve a fork on the Ethereum chain without halting
 /// the chain. Once set reset bridge state will roll back events to the nonce provided in reset_bridge_nonce
 /// if and only if those events have not yet been observed (executed on the Cosmos chain). This allows for easy
@@ -582,12 +587,8 @@ pub struct Params {
     #[prost(message, optional, tag="17")]
     pub valset_reward: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
     #[prost(bool, tag="18")]
-    pub reset_bridge_state: bool,
-    #[prost(uint64, tag="19")]
-    pub reset_bridge_nonce: u64,
-    #[prost(bool, tag="20")]
     pub bridge_active: bool,
-    #[prost(string, repeated, tag="21")]
+    #[prost(string, repeated, tag="19")]
     pub governance_deposit_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// GenesisState struct, containing all persistant data required by the Gravity module

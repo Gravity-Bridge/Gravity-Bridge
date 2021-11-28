@@ -82,16 +82,6 @@ option go_package = "github.com/althea-net/cosmos-gravity-bridge/module/x/gravit
 //
 // valset_reward
 //
-// Valset rewards are the amount of tokens this chain issues to relayers of validator sets.
-// These can be any ERC20 token in the bridge, but it's strongly advised that chains use only
-// Cosmos originated tokens, which the bridge effectively mints on Ethereum. If you run out of
-// the token you are using for validator set rewards valset updates will fail and the bridge
-// will be vulnerable to highjacking. For these paramaters the zero values are special and indicate
-// not to attempt any reward. This is the default for bootstrapping.
-//
-// reset_bridge_state
-// reset_bridge_nonce
-//
 // These parameters allow for the bridge oracle to resolve a fork on the Ethereum chain without halting
 // the chain. Once set reset bridge state will roll back events to the nonce provided in reset_bridge_nonce
 // if and only if those events have not yet been observed (executed on the Cosmos chain). This allows for easy
@@ -142,10 +132,8 @@ message Params {
   cosmos.base.v1beta1.Coin valset_reward = 17 [
     (gogoproto.nullable)   = false
   ];
-  bool reset_bridge_state = 18;
-  uint64 reset_bridge_nonce = 19;
-  bool bridge_active = 20;
-  repeated string governance_deposit_blacklist = 21;
+  bool bridge_active = 18;
+  repeated string governance_deposit_blacklist = 19;
 }
 
 // GenesisState struct, containing all persistant data required by the Gravity module
