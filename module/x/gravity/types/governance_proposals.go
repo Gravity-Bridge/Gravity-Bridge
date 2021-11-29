@@ -9,6 +9,7 @@ import (
 
 const (
 	ProposalTypeUnhaltBridge = "UnhaltBridge"
+	ProposalTypeAirdrop      = "Airdrop"
 )
 
 func (p *UnhaltBridgeProposal) GetTitle() string { return p.Title }
@@ -36,5 +37,34 @@ func (p UnhaltBridgeProposal) String() string {
   Description:    %s
   target_nonce:   %d
 `, p.Title, p.Description, p.TargetNonce))
+	return b.String()
+}
+
+func (p *AirdropProposal) GetTitle() string { return p.Title }
+
+func (p *AirdropProposal) GetDescription() string { return p.Description }
+
+func (p *AirdropProposal) ProposalRoute() string { return RouterKey }
+
+func (p *AirdropProposal) ProposalType() string {
+	return ProposalTypeAirdrop
+}
+
+func (p *AirdropProposal) ValidateBasic() error {
+	err := govtypes.ValidateAbstract(p)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p AirdropProposal) String() string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf(`Airdrop Proposal:
+  Title:          %s
+  Description:    %s
+  Amount:         %d%s
+  Recipients:     %s
+`, p.Title, p.Description, p.Amount.Amount.Int64(), p.Amount.Denom, p.Recipients))
 	return b.String()
 }

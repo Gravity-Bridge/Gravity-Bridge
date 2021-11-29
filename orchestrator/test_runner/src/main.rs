@@ -6,6 +6,7 @@
 #[macro_use]
 extern crate log;
 
+use crate::airdrop_proposal::airdrop_proposal_test;
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
@@ -30,6 +31,8 @@ use std::{env, time::Duration};
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
+
+mod airdrop_proposal;
 mod bootstrapping;
 mod deposit_overflow;
 mod ethereum_blacklist_test;
@@ -293,6 +296,10 @@ pub async fn main() {
         } else if test_type == "ETHEREUM_BLACKLIST" {
             info!("Starting ethereum blacklist test");
             ethereum_blacklist_test(grpc_client, &contact, keys).await;
+            return;
+        } else if test_type == "AIRDROP_PROPOSAL" {
+            info!("Starting airdrop governance proposal test");
+            airdrop_proposal_test(&contact, keys).await;
             return;
         }
     }

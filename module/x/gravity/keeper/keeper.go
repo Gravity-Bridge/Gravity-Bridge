@@ -28,6 +28,7 @@ type Keeper struct {
 	cdc            codec.BinaryCodec // The wire codec for binary encoding/decoding.
 	bankKeeper     bankkeeper.BaseKeeper
 	SlashingKeeper types.SlashingKeeper
+	DistKeeper     types.DistributionKeeper
 	accountKeeper  authkeeper.AccountKeeper
 
 	AttestationHandler interface {
@@ -58,6 +59,7 @@ func NewKeeper(
 		cdc:                cdc,
 		bankKeeper:         bankKeeper,
 		SlashingKeeper:     slashingKeeper,
+		DistKeeper:         distKeeper,
 		accountKeeper:      accKeeper,
 		AttestationHandler: nil,
 	}

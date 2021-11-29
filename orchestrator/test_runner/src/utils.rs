@@ -68,6 +68,15 @@ pub async fn send_one_eth(dest: EthAddress, web30: &Web3) {
     send_eth_bulk(one_eth(), &[dest], web30).await;
 }
 
+pub fn get_coins(denom: &str, balances: &[Coin]) -> Option<Coin> {
+    for coin in balances {
+        if coin.denom.starts_with(denom) {
+            return Some(coin.clone());
+        }
+    }
+    None
+}
+
 pub async fn check_cosmos_balance(
     denom: &str,
     address: CosmosAddress,
@@ -426,10 +435,9 @@ pub async fn vote_yes_on_proposals(
         .get_governance_proposals_in_voting_period()
         .await
         .unwrap();
-    info!("Found proposals: {:?}", proposals.proposals);
+    trace!("Found proposals: {:?}", proposals.proposals);
     for proposal in proposals.proposals {
         for key in keys.iter() {
-            info!("Voting yes on governance proposal");
             let res = contact
                 .vote_on_gov_proposal(
                     proposal.proposal_id,
@@ -440,7 +448,11 @@ pub async fn vote_yes_on_proposals(
                 )
                 .await
                 .unwrap();
-            contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
+            let res = contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
+            info!(
+                "Voting yes on governance proposal costing {} gas",
+                res.gas_used
+            );
         }
     }
 }

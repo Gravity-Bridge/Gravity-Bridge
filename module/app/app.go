@@ -289,6 +289,17 @@ func NewGravityApp(
 		app.GetSubspace(stakingtypes.ModuleName),
 	)
 
+	app.distrKeeper = distrkeeper.NewKeeper(
+		appCodec,
+		keys[distrtypes.StoreKey],
+		app.GetSubspace(distrtypes.ModuleName),
+		app.accountKeeper,
+		app.bankKeeper,
+		&stakingKeeper,
+		authtypes.FeeCollectorName,
+		app.ModuleAccountAddrs(),
+	)
+
 	app.gravityKeeper = keeper.NewKeeper(
 		appCodec,
 		keys[gravitytypes.StoreKey],
@@ -308,17 +319,6 @@ func NewGravityApp(
 		app.accountKeeper,
 		app.bankKeeper,
 		authtypes.FeeCollectorName,
-	)
-
-	app.distrKeeper = distrkeeper.NewKeeper(
-		appCodec,
-		keys[distrtypes.StoreKey],
-		app.GetSubspace(distrtypes.ModuleName),
-		app.accountKeeper,
-		app.bankKeeper,
-		&stakingKeeper,
-		authtypes.FeeCollectorName,
-		app.ModuleAccountAddrs(),
 	)
 
 	app.slashingKeeper = slashingkeeper.NewKeeper(

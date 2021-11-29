@@ -6,6 +6,7 @@ import (
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
@@ -14,6 +15,8 @@ import (
 func RegisterProposalTypes() {
 	govtypes.RegisterProposalType(types.ProposalTypeUnhaltBridge)
 	govtypes.RegisterProposalTypeCodec(&types.UnhaltBridgeProposal{}, "gravity/UnhaltBridge")
+	govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
+	govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, "gravity/Airdrop")
 }
 
 func NewGravityProposalHandler(k Keeper) govtypes.Handler {
@@ -21,9 +24,11 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 		switch c := content.(type) {
 		case *types.UnhaltBridgeProposal:
 			return k.HandleUnhaltBridgeProposal(ctx, c)
+		case *types.AirdropProposal:
+			return k.HandleAirdropProposal(ctx, c)
 
 		default:
-			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized bech32 ibc proposal content type: %T", c)
+			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
 		}
 	}
 }
@@ -89,4 +94,64 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, k Keeper, nonceCutoff uint64) 
 			k.SetLastEventNonceByValidator(ctx, val, nonceCutoff)
 		}
 	}
+}
+
+// In the event the bridge is halted and governance has decided to reset oracle
+// history, we roll back oracle history and reset the parameters
+func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal) error {
+	ctx.Logger().Info("Gov vote passed: Performing airdrop", "amount", p.Amount)
+
+	validateDenom := sdk.ValidateDenom(p.Amount.Denom)
+	if validateDenom != nil {
+		ctx.Logger().Info("Airdrop failed to execute invalid denom!")
+		return sdkerrors.Wrap(types.ErrInvalid, "Invalid airdrop denom")
+	}
+
+	feePool := k.DistKeeper.GetFeePool(ctx)
+	decAmount := sdk.NewDecCoinFromCoin(p.Amount)
+	feePoolAmount := feePool.CommunityPool.AmountOf(decAmount.Denom)
+
+	// check that we have enough tokens in the community pool to actually execute
+	// this airdrop with the provided recipients list
+	totalRequired := decAmount.Amount.MulInt64(int64(len(p.Recipients)))
+	if totalRequired.GT(feePoolAmount) {
+		ctx.Logger().Info("Airdrop failed to excute insufficient tokens in the community pool!")
+		return sdkerrors.Wrap(types.ErrInvalid, "Insufficient tokens in community pool")
+	}
+
+	parsedRecipients := make([]sdk.AccAddress, len(p.Recipients))
+	for i, addr := range p.Recipients {
+		parsedAddr, err := sdk.AccAddressFromBech32(addr)
+		if err != nil {
+			ctx.Logger().Info("invalid address in airdrop! not executing", "address", addr)
+			return err
+		}
+		parsedRecipients[i] = parsedAddr
+	}
+
+	// the total amount actually sent in dec coins
+	totalSent := sdk.NewDec(0)
+	for _, addr := range parsedRecipients {
+		err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, disttypes.ModuleName, addr, sdk.NewCoins(p.Amount))
+		// if there is no error we add to the total actually sent
+		if err == nil {
+			totalSent = totalSent.Add(decAmount.Amount)
+		} else {
+			// return an err to prevent execution from finishing, this will prevent the changes we
+			// have made so far from taking effect the governance proposal will instead time out
+			ctx.Logger().Info("invalid address in airdrop! not executing", "address", addr)
+			return err
+		}
+	}
+
+	newCoins, InvalidModuleBalance := feePool.CommunityPool.SafeSub(sdk.NewDecCoins(sdk.NewDecCoinFromDec(p.Amount.Denom, totalSent)))
+	// this shouldn't ever happen because we check that we have enough before starting
+	// but lets be conservative.
+	if InvalidModuleBalance {
+		panic("Negative community pool coins after airdrop, chain in invalid state")
+	}
+	feePool.CommunityPool = newCoins
+	k.DistKeeper.SetFeePool(ctx, feePool)
+
+	return nil
 }

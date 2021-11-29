@@ -58,3 +58,21 @@ message UnhaltBridgeProposal {
   string description = 2;
   uint64 target_nonce = 4;
 }
+
+// AirdropProposal defines a custom governance proposal type that allows an airdrop to occur in a decentralized
+// fashion. A list of destination addresses and an amount per airdrop recipient is provided. The funds for this
+// airdrop are removed from the Community Pool, if the community pool does not have sufficient funding to perform
+// the airdrop to all provided recipients nothing will occur
+message AirdropProposal {
+  option (gogoproto.equal) = true;
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  string title = 1;
+  string description = 2;
+  repeated string recipients = 3; 
+  // this amount is *per recpient* total = amount * length(recipients)
+  cosmos.base.v1beta1.Coin amount   = 4 [
+    (gogoproto.nullable) = false
+  ];
+}

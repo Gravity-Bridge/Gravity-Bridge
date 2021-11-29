@@ -44,7 +44,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgValsetUpdatedClaim{},
 	)
 
-	registry.RegisterImplementations((*govtypes.Content)(nil), &UnhaltBridgeProposal{})
+	registry.RegisterImplementations((*govtypes.Content)(nil), &UnhaltBridgeProposal{}, &AirdropProposal{})
 
 	registry.RegisterInterface("gravity.v1beta1.EthereumSigned", (*EthereumSigned)(nil), &Valset{}, &OutgoingTxBatch{}, &OutgoingLogicCall{})
 

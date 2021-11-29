@@ -179,6 +179,22 @@ pub struct UnhaltBridgeProposal {
     #[prost(uint64, tag="4")]
     pub target_nonce: u64,
 }
+/// AirdropProposal defines a custom governance proposal type that allows an airdrop to occur in a decentralized
+/// fashion. A list of destination addresses and an amount per airdrop recipient is provided. The funds for this
+/// airdrop are removed from the Community Pool, if the community pool does not have sufficient funding to perform
+/// the airdrop to all provided recipients nothing will occur
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AirdropProposal {
+    #[prost(string, tag="1")]
+    pub title: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag="3")]
+    pub recipients: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// this amount is *per recpient* total = amount * length(recipients)
+    #[prost(message, optional, tag="4")]
+    pub amount: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+}
 /// MsgSetOrchestratorAddress
 /// this message allows validators to delegate their voting responsibilities
 /// to a given key. This key is then used as an optional authentication method
