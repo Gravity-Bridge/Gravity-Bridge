@@ -68,6 +68,7 @@ pub async fn transaction_stress_test(
         send_erc20_bulk(one_hundred_eth(), *token, &sending_eth_addresses, web30).await;
         info!("Sent {} addresses 100 {}", NUM_USERS, token);
     }
+    web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
     for token in erc20_addresses.iter() {
         let mut sends = Vec::new();
         for keys in user_keys.iter() {
@@ -98,6 +99,7 @@ pub async fn transaction_stress_test(
             "Locked 100 {} from {} into the Gravity Ethereum Contract",
             token, NUM_USERS
         );
+        web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
     }
 
     let start = Instant::now();
