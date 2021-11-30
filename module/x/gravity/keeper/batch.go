@@ -181,13 +181,31 @@ func (k Keeper) pickUnbatchedTX(
 	var err error
 	k.IterateUnbatchedTransactionsByContract(ctx, contractAddress, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		if tx != nil && tx.Erc20Fee != nil {
-			selectedTx = append(selectedTx, tx)
-			err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, tx.Id)
-			oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
-			if oldTx != nil || oldTxErr == nil {
-				panic("picked a duplicate transaction from the pool, duplicates should never exist!")
+			// check the blacklist before picking this tx, this was already
+			// checked on MsgSendToEth, but we want to double check. For example
+			// a major erc20 throws on send to address X a MsgSendToEth is made with that destination
+			// batches with that tx will forever panic, blocking that erc20. With this check governance
+			// can add that address to the blacklist and quickly eliminate the issue. Note this is
+			// very inefficient, IsOnBlacklist is O(blacklist-length) and should be made faster
+			if !k.IsOnBlacklist(ctx, *tx.DestAddress) {
+				selectedTx = append(selectedTx, tx)
+				err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, tx.Id)
+				if err != nil {
+					panic("Failed to remote tx from unbatched queue")
+				}
+
+				// double check that no duplicates exist in the index
+				oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
+				if oldTx != nil || oldTxErr == nil {
+					panic("picked a duplicate transaction from the pool, duplicates should never exist!")
+				}
+
+				return uint(len(selectedTx)) == maxElements
+			} else {
+				// if the tx was on the blacklist we return false
+				// to continue to the next loop iteration
+				return false
 			}
-			return err != nil || uint(len(selectedTx)) == maxElements
 		} else {
 			panic("tx and fee should never be nil!")
 		}
