@@ -10,6 +10,7 @@ import (
 const (
 	ProposalTypeUnhaltBridge = "UnhaltBridge"
 	ProposalTypeAirdrop      = "Airdrop"
+	ProposalTypeIBCMetadata  = "IBCMetadata"
 )
 
 func (p *UnhaltBridgeProposal) GetTitle() string { return p.Title }
@@ -66,5 +67,45 @@ func (p AirdropProposal) String() string {
   Amount:         %d%s
   Recipients:     %s
 `, p.Title, p.Description, p.Amount.Amount.Int64(), p.Amount.Denom, p.Recipients))
+	return b.String()
+}
+
+func (p *IBCMetadataProposal) GetTitle() string { return p.Title }
+
+func (p *IBCMetadataProposal) GetDescription() string { return p.Description }
+
+func (p *IBCMetadataProposal) ProposalRoute() string { return RouterKey }
+
+func (p *IBCMetadataProposal) ProposalType() string {
+	return ProposalTypeIBCMetadata
+}
+
+func (p *IBCMetadataProposal) ValidateBasic() error {
+	err := govtypes.ValidateAbstract(p)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p IBCMetadataProposal) String() string {
+	decimals := uint32(0)
+	for _, denomUnit := range p.Metadata.DenomUnits {
+		if denomUnit.Denom == p.Metadata.Display {
+			decimals = denomUnit.Exponent
+			break
+		}
+	}
+
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf(`IBC Metadata setting proposal:
+  Title:             %s
+  Description:       %s
+  Token Name:        %s
+  Token Symbol:      %s
+  Token Display:     %s
+  Token Decimals:    %d
+  Token Description: %s
+`, p.Title, p.Description, p.Metadata.Name, p.Metadata.Symbol, p.Metadata.Display, decimals, p.Metadata.Description))
 	return b.String()
 }

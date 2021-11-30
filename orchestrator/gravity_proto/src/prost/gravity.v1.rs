@@ -195,6 +195,26 @@ pub struct AirdropProposal {
     #[prost(message, optional, tag="4")]
     pub amount: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
 }
+/// IBCMetadataProposal defines a custom governance proposal type that allows governance to set the
+/// metadata for an IBC token, this will allow Gravity to deploy an ERC20 representing this token on
+/// Ethereum
+/// Name: the token name
+/// Symbol: the token symbol
+/// Description: the token description, not sent to ETH at all, only used on Cosmos
+/// Display: the token display name (only used on Cosmos to decide ERC20 Decimals)
+/// Deicmals: the decimals for the display unit
+/// ibc_denom is the denom of the token in question on this chain
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct IbcMetadataProposal {
+    #[prost(string, tag="1")]
+    pub title: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(message, optional, tag="3")]
+    pub metadata: ::core::option::Option<cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata>,
+    #[prost(string, tag="4")]
+    pub ibc_denom: ::prost::alloc::string::String,
+}
 /// MsgSetOrchestratorAddress
 /// this message allows validators to delegate their voting responsibilities
 /// to a given key. This key is then used as an optional authentication method

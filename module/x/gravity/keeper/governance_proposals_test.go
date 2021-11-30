@@ -5,6 +5,7 @@ import (
 
 	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,5 +53,91 @@ func TestAirdropProposal(t *testing.T) {
 	require.NoError(t, err)
 	feePool = gk.DistKeeper.GetFeePool(ctx)
 	assert.Equal(t, feePool.CommunityPool.AmountOf("grav"), sdk.NewInt64DecCoin("grav", 9000).Amount)
+
+}
+
+//nolint: exhaustivestruct
+func TestIBCMetadataProposal(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
+	goodProposal := types.IBCMetadataProposal{
+		Title:       "test tile",
+		Description: "test description",
+		Metadata: &banktypes.Metadata{
+			Description: "Atom",
+			Name:        "Atom",
+			Base:        ibcDenom,
+			Display:     "Atom",
+			Symbol:      "ATOM",
+			DenomUnits: []*banktypes.DenomUnit{
+				{
+					Denom:    ibcDenom,
+					Exponent: 0,
+				},
+				{
+					Denom:    "Atom",
+					Exponent: 6,
+				},
+			},
+		},
+		IbcDenom: ibcDenom,
+	}
+
+	gk := input.GravityKeeper
+
+	err := gk.HandleIBCMetadataProposal(ctx, &goodProposal)
+	require.NoError(t, err)
+	metadata, exists := gk.bankKeeper.GetDenomMetaData(ctx, ibcDenom)
+	require.True(t, exists)
+	require.Equal(t, metadata, *goodProposal.Metadata)
+
+	// does not have a zero base unit
+	badMetadata := goodProposal
+	badMetadata.Metadata.DenomUnits = []*banktypes.DenomUnit{
+		{
+			Denom:    ibcDenom,
+			Exponent: 1,
+		},
+		{
+			Denom:    "Atom",
+			Exponent: 6,
+		},
+	}
+
+	err = gk.HandleIBCMetadataProposal(ctx, &badMetadata)
+	require.Error(t, err)
+
+	// no denom unit for display
+	badMetadata2 := goodProposal
+	badMetadata2.Metadata.DenomUnits = []*banktypes.DenomUnit{
+		{
+			Denom:    ibcDenom,
+			Exponent: 0,
+		},
+		{
+			Denom:    "a",
+			Exponent: 6,
+		},
+	}
+
+	err = gk.HandleIBCMetadataProposal(ctx, &badMetadata2)
+	require.Error(t, err)
+
+	// incorrect base unit
+	badMetadata3 := goodProposal
+	badMetadata3.Metadata.DenomUnits = []*banktypes.DenomUnit{
+		{
+			Denom:    "atom",
+			Exponent: 0,
+		},
+		{
+			Denom:    "a",
+			Exponent: 6,
+		},
+	}
+
+	err = gk.HandleIBCMetadataProposal(ctx, &badMetadata3)
+	require.Error(t, err)
 
 }
