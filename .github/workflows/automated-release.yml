@@ -26,23 +26,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # build the code before creating the release, GO and Solidity first for faster failures
-      - name: Build GO
-        run: |
-          cd module
-          make
-
       - name: Set ENV var for GOPATH
         run: |
           echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
 
-      - name: Build Solidity artifacts
+      # build the code before creating the release, GO and Solidity first for faster failures
+      - name: Build Gravity Bridge Blockchain
+        run: |
+          cd module
+          make build-reproducible
+
+      - name: Build Gravity.sol
         run: cd solidity && npm ci && npm run typechain
 
-      - name: Build contract deployment script into a static binary
-        run: cd solidity && npm ci && npm run compile-deployer
-
-      - name: Build Rust x86_64
+      - name: Build Gravity Bridge tools
         run: |
           cargo install cross
           cd orchestrator
@@ -60,67 +57,80 @@ jobs:
           draft: false
           prerelease: true
 
-      # the 5 Rust binaries, a loop would make this much more compact
-      - name: Upload Rust client
-        id: upload-rust-release-client
+      - name: Upload Gravity Bridge Tools
+        id: upload-gbt
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/x86_64-unknown-linux-musl/release/client
-          asset_name: client
-          asset_content_type: application/bin
-      - name: Upload Rust Orchestrator
-        id: upload-rust-release-orchestrator
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/x86_64-unknown-linux-musl/release/orchestrator
-          asset_name: orchestrator
-          asset_content_type: application/bin
-      - name: Upload Rust Relayer
-        id: upload-rust-release-relayer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/x86_64-unknown-linux-musl/release/relayer
-          asset_name: relayer
-          asset_content_type: application/bin
-      - name: Upload Rust register-delegate-keys
-        id: upload-rust-release-key-delegator
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/x86_64-unknown-linux-musl/release/register-delegate-keys
-          asset_name: register-delegate-keys
-          asset_content_type: application/bin
-      - name: Upload Rust test runner
-        id: upload-rust-test-runner
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/x86_64-unknown-linux-musl/release/test-runner
-          asset_name: test-runner
+          asset_path: ./orchestrator/target/x86_64-unknown-linux-musl/release/gbt
+          asset_name: gbt
           asset_content_type: application/bin
 
-      - name: Upload Go Release Asset
-        id: upload-go-release-asset
+      - name: Upload Gravity Bridge Build Report
+        id: upload-gravity-bridge-build-report
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.GOPATH }}/bin/gravity
-          asset_name: gravity
+          asset_path: ./module/artifacts/build_report
+          asset_name: build_report
+          asset_content_type: text
+ 
+      # the file names are hard to predict, so we rename them
+      - name: Rename build files
+        run: |
+          pushd ./module/artifacts/
+          cp *linux-amd64 gravity-linux-amd64
+          cp *darwin-amd64 gravity-darwin-amd64
+          cp *windows-amd64.exe gravity-windows-amd64.exe
+          cp *linux-arm64 gravity-linux-arm64
+          popd
+
+      - name: Upload Gravity Bridge Linux
+        id: upload-gravity-bridge-linux
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./module/artifacts/gravity-linux-amd64
+          asset_name: gravity-${{ steps.branch_name.outputs.SOURCE_TAG }}-linux-amd64
+          asset_content_type: application/bin
+
+      - name: Upload Gravity Bridge Mac
+        id: upload-gravity-bridge-mac
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./module/artifacts/gravity-darwin-amd64
+          asset_name: gravity-${{ steps.branch_name.outputs.SOURCE_TAG }}-darwin-amd64
+          asset_content_type: application/bin
+
+      - name: Upload Gravity Bridge Windows
+        id: upload-gravity-bridge-windows
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./module/artifacts/gravity-windows-amd64.exe
+          asset_name: gravity-${{ steps.branch_name.outputs.SOURCE_TAG }}-windows-amd64.exe
+          asset_content_type: application/bin
+
+      - name: Upload Gravity Bridge Linux ARM
+        id: upload-gravity-bridge-linux-arm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./module/artifacts/gravity-linux-arm64
+          asset_name: gravity-${{ steps.branch_name.outputs.SOURCE_TAG }}-linux-arm64
           asset_content_type: application/bin
 
       # next we upload the contract artifact, in a production situation a previous version will
@@ -138,48 +148,6 @@ jobs:
           asset_name: Gravity.json
           asset_content_type: application/bin
 
-      - name: Upload Gravity Ethereum test artifact A
-        id: upload-solidity-test-a
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json
-          asset_name: TestERC20A.json
-          asset_content_type: application/bin
-      - name: Upload Gravity Ethereum test artifact B
-        id: upload-solidity-test-b
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json
-          asset_name: TestERC20B.json
-          asset_content_type: application/bin
-      - name: Upload Gravity Ethereum test artifact C
-        id: upload-solidity-test-c
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json
-          asset_name: TestERC20C.json
-          asset_content_type: application/bin
-
-      - name: Upload contract deployer
-        id: upload-contract-deployer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: solidity/contract-deployer
-          asset_name: contract-deployer
-          asset_content_type: application/bin
-
       # finally we start arm builds and uploads, we do this because the release
       # entry is already made and rust builds take nearly 10 minutes, so instead
       # of having a workable release in 20 minutes we can have one in 10 with the ARM
@@ -189,59 +157,13 @@ jobs:
           cd orchestrator
           cross build --target aarch64-unknown-linux-musl --release --all
 
-      - name: Build GO ARM64
-        run: |
-          cd module
-          GOARCH=arm64 make
-
-      - name: Upload Rust client ARM
-        id: upload-rust-release-client-arm
+      - name: Upload Gravity Bridge Tools ARM
+        id: upload-gbt-arm
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/aarch64-unknown-linux-musl/release/client
-          asset_name: client-arm
-          asset_content_type: application/bin
-      - name: Upload Rust Orchestrator ARM
-        id: upload-rust-release-orchestrator-arm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/aarch64-unknown-linux-musl/release/orchestrator
-          asset_name: orchestrator-arm
-          asset_content_type: application/bin
-      - name: Upload Rust Relayer ARM
-        id: upload-rust-release-relayer-arm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/aarch64-unknown-linux-musl/release/relayer
-          asset_name: relayer-arm
-          asset_content_type: application/bin
-      - name: Upload Rust register-delegate-keys ARM
-        id: upload-rust-release-key-delegator-arm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/aarch64-unknown-linux-musl/release/register-delegate-keys
-          asset_name: register-delegate-keys-arm
-          asset_content_type: application/bin
-
-      - name: Upload Go Release Asset ARM
-        id: upload-go-release-asset-arm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.GOPATH }}/bin/gravity
-          asset_name: gravity-arm
+          asset_path: ./orchestrator/target/aarch64-unknown-linux-musl/release/gbt
+          asset_name: gbt-arm
           asset_content_type: application/bin

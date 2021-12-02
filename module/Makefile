@@ -190,7 +190,7 @@ tools-clean:
 
 build-reproducible: go.sum
 	$(DOCKER) rm latest-build || true
-	$(DOCKER) run --volume=/home/justin/go/src/github.com/cosmos/gravity-bridge/:/sources:ro \
+	$(DOCKER) run --volume=$(CURDIR)/.././:/sources:ro \
         --env TARGET_PLATFORMS='linux/amd64 darwin/amd64 linux/arm64 windows/amd64' \
         --env APP=gravity \
         --env VERSION=$(VERSION) \
