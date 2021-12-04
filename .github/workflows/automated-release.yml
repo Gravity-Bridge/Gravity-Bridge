@@ -97,7 +97,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./module/artifacts/gravity-linux-amd64
-          asset_name: gravity-${{ steps.branch_name.outputs.SOURCE_TAG }}-linux-amd64
+          asset_name: gravity-linux-amd64
           asset_content_type: application/bin
 
       - name: Upload Gravity Bridge Mac
@@ -108,7 +108,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./module/artifacts/gravity-darwin-amd64
-          asset_name: gravity-${{ steps.branch_name.outputs.SOURCE_TAG }}-darwin-amd64
+          asset_name: gravity-darwin-amd64
           asset_content_type: application/bin
 
       - name: Upload Gravity Bridge Windows
@@ -119,7 +119,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./module/artifacts/gravity-windows-amd64.exe
-          asset_name: gravity-${{ steps.branch_name.outputs.SOURCE_TAG }}-windows-amd64.exe
+          asset_name: gravity-windows-amd64.exe
           asset_content_type: application/bin
 
       - name: Upload Gravity Bridge Linux ARM
@@ -130,7 +130,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./module/artifacts/gravity-linux-arm64
-          asset_name: gravity-${{ steps.branch_name.outputs.SOURCE_TAG }}-linux-arm64
+          asset_name: gravity-linux-arm64
           asset_content_type: application/bin
 
       # next we upload the contract artifact, in a production situation a previous version will
