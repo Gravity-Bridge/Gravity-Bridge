@@ -311,6 +311,10 @@ pub async fn check_delegate_addresses(
 
 /// Checks if a given Coin, used for fees is in the provided address in a sufficient quantity
 pub async fn check_for_fee(fee: &Coin, address: CosmosAddress, contact: &Contact) {
+    // if we decide to pay no fees it doesn't matter
+    if fee.amount == 0u8.into() {
+        return;
+    }
     let balances = get_balances_with_retry(address, contact).await;
     for balance in balances {
         if balance.denom.contains(&fee.denom) {
