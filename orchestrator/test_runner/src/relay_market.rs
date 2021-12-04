@@ -217,20 +217,16 @@ async fn wait_for_batch(
     expect_batch: bool,
     web30: &Web3,
     contact: &Contact,
-    mut grpc_client: &mut GravityQueryClient<Channel>,
+    grpc_client: &mut GravityQueryClient<Channel>,
     requester_address: Address,
     erc20_contract: EthAddress,
     gravity_address: EthAddress,
 ) -> u64 {
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
-    get_oldest_unsigned_transaction_batches(
-        &mut grpc_client,
-        requester_address,
-        contact.get_prefix(),
-    )
-    .await
-    .expect("Failed to get batch to sign");
+    get_oldest_unsigned_transaction_batches(grpc_client, requester_address, contact.get_prefix())
+        .await
+        .expect("Failed to get batch to sign");
 
     let mut current_eth_batch_nonce =
         get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
