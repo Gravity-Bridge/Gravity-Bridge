@@ -260,6 +260,7 @@ pub async fn check_delegate_addresses(
                 && req_delegate_orchestrator_address != delegate_orchestrator_address
             {
                 error!("Your Delegate Ethereum and Orchestrator addresses are both incorrect!");
+                error!("If you are getting this error you must have made at least two validators and mixed up the keys between them");
                 error!(
                     "You provided {}  Correct Value {}",
                     delegate_eth_address, req_delegate_eth_address
@@ -268,7 +269,10 @@ pub async fn check_delegate_addresses(
                     "You provided {}  Correct Value {}",
                     delegate_orchestrator_address, req_delegate_orchestrator_address
                 );
-                error!("In order to resolve this issue you should double check your input value or re-register your delegate keys");
+                error!("In order to resolve this issue locate the key phrase and private key you registered for this validator and run the following commands");
+                error!("`gbt keys set-ethereum-key --key \"eth private key\"`");
+                error!("`gbt keys set-orchestrator-key --phrase \"orchestrator key phrase\"`");
+                error!("If you can not find the private key and phrase for these addresses you will need to create a new validator");
                 exit(1);
             } else if req_delegate_eth_address != delegate_eth_address {
                 error!("Your Delegate Ethereum address is incorrect!");
@@ -276,7 +280,8 @@ pub async fn check_delegate_addresses(
                     "You provided {}  Correct Value {}",
                     delegate_eth_address, req_delegate_eth_address
                 );
-                error!("In order to resolve this issue you should double check how you input your eth private key");
+                error!("In order to resolve this issue locate the private key you registered for this validator and run the following command");
+                error!("`gbt keys set-ethereum-key --key \"eth private key\"`");
                 exit(1);
             } else if req_delegate_orchestrator_address != delegate_orchestrator_address {
                 error!("Your Delegate Orchestrator address is incorrect!");
@@ -284,7 +289,8 @@ pub async fn check_delegate_addresses(
                     "You provided {}  Correct Value {}",
                     delegate_eth_address, req_delegate_eth_address
                 );
-                error!("In order to resolve this issue you should double check how you input your Orchestrator address phrase, make sure you didn't use your Validator phrase!");
+                error!("In order to resolve this issue locate the key phrase you registered for this validator and run the following command");
+                error!("`gbt keys set-orchestrator-key --phrase \"orchestrator key phrase\"`");
                 exit(1);
             }
 
@@ -295,15 +301,16 @@ pub async fn check_delegate_addresses(
             }
         }
         (Err(e), Ok(_)) => {
-            error!("Your delegate Ethereum address is incorrect, please double check you private key. If you can't locate the correct private key register your delegate keys again and use the new value {:?}", e);
+            error!("Your delegate Ethereum address is incorrect, please double check you private key. If you can't locate the correct private key you will need to create a new validator {:?}", e);
             exit(1);
         }
         (Ok(_), Err(e)) => {
-            error!("Your delegate Cosmos address is incorrect, please double check your phrase. If you can't locate the correct phrase register your delegate keys again and use the new value {:?}", e);
+            error!("Your delegate Orchestrator address is incorrect, please double check your phrase. If you can't locate the correct phrase you will need to create a new validator {:?}", e);
             exit(1);
         }
         (Err(_), Err(_)) => {
             error!("Delegate keys are not set! Please Register your delegate keys");
+            error!("To do so run 'gbt keys register-orchestrator-address'");
             exit(1);
         }
     }
