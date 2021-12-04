@@ -24,7 +24,6 @@ pub async fn valset_rewards_test(
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
-    validator_out: bool,
 ) {
     let mut grpc_client = grpc_client;
     let token_to_send_to_eth = footoken_metadata().denom;
@@ -36,7 +35,7 @@ pub async fn valset_rewards_test(
         web30,
         Some(keys.clone()),
         &mut grpc_client,
-        validator_out,
+        false,
         footoken_metadata(),
     )
     .await;

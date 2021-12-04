@@ -12,6 +12,7 @@ use crate::deposit_overflow::deposit_overflow_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
+use crate::signature_slashing::signature_slashing_test;
 use crate::tx_cancel::send_to_eth_and_cancel;
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
@@ -43,6 +44,7 @@ mod invalid_events;
 mod orch_keys;
 mod pause_bridge;
 mod relay_market;
+mod signature_slashing;
 mod transaction_stress_test;
 mod tx_cancel;
 mod unhalt_bridge;
@@ -223,7 +225,7 @@ pub async fn main() {
             return;
         } else if test_type == "VALSET_REWARDS" {
             info!("Starting Valset rewards test");
-            valset_rewards_test(&web30, grpc_client, &contact, keys, gravity_address, false).await;
+            valset_rewards_test(&web30, grpc_client, &contact, keys, gravity_address).await;
             return;
         } else if test_type == "V2_HAPPY_PATH" || test_type == "HAPPY_PATH_V2" {
             info!("Starting happy path for Gravity v2");
@@ -301,7 +303,12 @@ pub async fn main() {
             info!("Starting airdrop governance proposal test");
             airdrop_proposal_test(&contact, keys).await;
             return;
+        } else if test_type == "SIGNATURE_SLASHING" {
+            info!("Starting Signature Slashing test");
+            signature_slashing_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            return;
         }
+        panic!("Err Unknown test type")
     }
     info!("Starting Happy path test");
     happy_path_test(

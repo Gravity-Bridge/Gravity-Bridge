@@ -16,12 +16,13 @@ bash all-up-test.sh TXCANCEL
 bash all-up-test.sh INVALID_EVENTS
 bash all-up-test.sh DEPOSIT_OVERFLOW
 bash all-up-test.sh ETHEREUM_BLACKLIST
+bash all-up-test.sh SIGNATURE_SLASHING
+bash all-up-test.sh UNHALT_BRIDGE
+bash all-up-test.sh PAUSE_BRIDGE
 if [ ! -z "$ALCHEMY_ID" ]; then
     bash all-up-test.sh ARBITRARY_LOGIC $ALCHEMY_ID
     bash all-up-test.sh RELAY_MARKET $ALCHEMY_ID
 else
     echo "Alchemy API key not set under variable ALCHEMY_ID, not running ARBITRARY_LOGIC nor RELAY_MARKET"
 fi
-bash all-up-test.sh UNHALT_BRIDGE
-bash all-up-test.sh PAUSE_BRIDGE
 echo "All tests succeeded!"

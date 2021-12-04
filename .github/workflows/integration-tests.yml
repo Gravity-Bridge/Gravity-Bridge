@@ -147,12 +147,30 @@ jobs:
         continue-on-error: true
       - name: Submit an overflowing deposit
         run: tests/all-up-test.sh DEPOSIT_OVERFLOW
-  deposit-blacklist:
+  ethereum-blacklist:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
       - uses: satackey/action-docker-layer-caching@v0.0.11
         continue-on-error: true
-      - name: Attempting to deposit to a blacklisted address
-        run: tests/all-up-test.sh DEPOSIT_BLACKLIST
+      - name: Attempt to deposit to a blacklisted address
+        run: tests/all-up-test.sh ETHEREUM_BLACKLIST
+  AIRDROP_PROPOSAL:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+      - name: Execute a governance powered airdrop
+        run: tests/all-up-test.sh AIRDROP_PROPOSAL
+  SIGNATURE_SLASHING:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+      - name: Test slashing for unsubmitted signatures
+        run: tests/all-up-test.sh SIGNATURE_SLASHING

@@ -250,130 +250,144 @@ func NewGravityApp(
 		memKeys:           memKeys,
 	}
 
-	app.paramsKeeper = initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tKeys[paramstypes.TStoreKey])
+	paramsKeeper := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tKeys[paramstypes.TStoreKey])
+	app.paramsKeeper = paramsKeeper
 
 	bApp.SetParamStore(app.paramsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable()))
 
-	app.capabilityKeeper = capabilitykeeper.NewKeeper(
+	capabilityKeeper := capabilitykeeper.NewKeeper(
 		appCodec,
 		keys[capabilitytypes.StoreKey],
 		memKeys[capabilitytypes.MemStoreKey],
 	)
+	app.capabilityKeeper = capabilityKeeper
+
 	scopedIBCKeeper := app.capabilityKeeper.ScopeToModule(ibchost.ModuleName)
 	scopedTransferKeeper := app.capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
 	// Applications that wish to enforce statically created ScopedKeepers should call `Seal` after creating
 	// their scoped modules in `NewApp` with `ScopeToModule`
 	app.capabilityKeeper.Seal()
 
-	app.accountKeeper = authkeeper.NewAccountKeeper(
+	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
 		keys[authtypes.StoreKey],
 		app.GetSubspace(authtypes.ModuleName),
 		authtypes.ProtoBaseAccount,
 		maccPerms,
 	)
+	app.accountKeeper = accountKeeper
 
-	app.bankKeeper = bankkeeper.NewBaseKeeper(
+	bankKeeper := bankkeeper.NewBaseKeeper(
 		appCodec,
 		keys[banktypes.StoreKey],
-		app.accountKeeper,
+		accountKeeper,
 		app.GetSubspace(banktypes.ModuleName),
 		app.BlockedAddrs(),
 	)
+	app.bankKeeper = bankKeeper
 
 	stakingKeeper := stakingkeeper.NewKeeper(
 		appCodec,
 		keys[stakingtypes.StoreKey],
-		app.accountKeeper,
-		app.bankKeeper,
+		accountKeeper,
+		bankKeeper,
 		app.GetSubspace(stakingtypes.ModuleName),
 	)
+	app.stakingKeeper = stakingKeeper
 
-	app.distrKeeper = distrkeeper.NewKeeper(
+	distrKeeper := distrkeeper.NewKeeper(
 		appCodec,
 		keys[distrtypes.StoreKey],
 		app.GetSubspace(distrtypes.ModuleName),
-		app.accountKeeper,
-		app.bankKeeper,
-		&stakingKeeper,
+		accountKeeper,
+		bankKeeper,
+		stakingKeeper,
 		authtypes.FeeCollectorName,
 		app.ModuleAccountAddrs(),
 	)
+	app.distrKeeper = distrKeeper
 
-	app.gravityKeeper = keeper.NewKeeper(
-		appCodec,
-		keys[gravitytypes.StoreKey],
-		app.GetSubspace(gravitytypes.ModuleName),
-		stakingKeeper,
-		app.bankKeeper,
-		app.distrKeeper,
-		app.slashingKeeper,
-		app.accountKeeper,
-	)
-
-	app.mintKeeper = mintkeeper.NewKeeper(
-		appCodec,
-		keys[minttypes.StoreKey],
-		app.GetSubspace(minttypes.ModuleName),
-		&stakingKeeper,
-		app.accountKeeper,
-		app.bankKeeper,
-		authtypes.FeeCollectorName,
-	)
-
-	app.slashingKeeper = slashingkeeper.NewKeeper(
+	slashingKeeper := slashingkeeper.NewKeeper(
 		appCodec,
 		keys[slashingtypes.StoreKey],
 		&stakingKeeper,
 		app.GetSubspace(slashingtypes.ModuleName),
 	)
+	app.slashingKeeper = slashingKeeper
 
-	app.crisisKeeper = crisiskeeper.NewKeeper(
-		app.GetSubspace(crisistypes.ModuleName),
-		invCheckPeriod,
-		app.bankKeeper,
+	gravityKeeper := keeper.NewKeeper(
+		appCodec,
+		keys[gravitytypes.StoreKey],
+		app.GetSubspace(gravitytypes.ModuleName),
+		stakingKeeper,
+		bankKeeper,
+		distrKeeper,
+		slashingKeeper,
+		accountKeeper,
+	)
+	app.gravityKeeper = gravityKeeper
+
+	mintKeeper := mintkeeper.NewKeeper(
+		appCodec,
+		keys[minttypes.StoreKey],
+		app.GetSubspace(minttypes.ModuleName),
+		stakingKeeper,
+		accountKeeper,
+		bankKeeper,
 		authtypes.FeeCollectorName,
 	)
+	app.mintKeeper = mintKeeper
 
-	app.upgradeKeeper = upgradekeeper.NewKeeper(
+	crisisKeeper := crisiskeeper.NewKeeper(
+		app.GetSubspace(crisistypes.ModuleName),
+		invCheckPeriod,
+		bankKeeper,
+		authtypes.FeeCollectorName,
+	)
+	app.crisisKeeper = crisisKeeper
+
+	upgradeKeeper := upgradekeeper.NewKeeper(
 		skipUpgradeHeights,
 		keys[upgradetypes.StoreKey],
 		appCodec,
 		homePath,
 		app.BaseApp,
 	)
+	app.upgradeKeeper = upgradeKeeper
 
-	app.ibcKeeper = ibckeeper.NewKeeper(
+	ibcKeeper := ibckeeper.NewKeeper(
 		appCodec,
 		keys[ibchost.StoreKey],
 		app.GetSubspace(ibchost.ModuleName),
-		app.stakingKeeper,
-		app.upgradeKeeper,
+		stakingKeeper,
+		upgradeKeeper,
 		scopedIBCKeeper,
 	)
+	app.ibcKeeper = ibcKeeper
 
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		AddRoute(paramsproposal.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
-		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper)).
-		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper)).
-		AddRoute(ibchost.RouterKey, ibcclient.NewClientProposalHandler(app.ibcKeeper.ClientKeeper)).
-		AddRoute(gravitytypes.RouterKey, keeper.NewGravityProposalHandler(app.gravityKeeper))
+		AddRoute(paramsproposal.RouterKey, params.NewParamChangeProposalHandler(paramsKeeper)).
+		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrKeeper)).
+		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeKeeper)).
+		AddRoute(ibchost.RouterKey, ibcclient.NewClientProposalHandler(ibcKeeper.ClientKeeper)).
+		AddRoute(gravitytypes.RouterKey, keeper.NewGravityProposalHandler(gravityKeeper))
 
-	app.govKeeper = govkeeper.NewKeeper(
+	govKeeper := govkeeper.NewKeeper(
 		appCodec,
 		keys[govtypes.StoreKey],
 		app.GetSubspace(govtypes.ModuleName),
-		app.accountKeeper,
-		app.bankKeeper,
-		&stakingKeeper,
+		accountKeeper,
+		bankKeeper,
+		stakingKeeper,
 		govRouter,
 	)
+	app.govKeeper = govKeeper
 
 	app.transferKeeper = ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
-		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
-		app.accountKeeper, app.bankKeeper, scopedTransferKeeper,
+		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
+		accountKeeper, bankKeeper, scopedTransferKeeper,
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
 
@@ -391,9 +405,9 @@ func NewGravityApp(
 
 	app.stakingKeeper = *stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(
-			app.distrKeeper.Hooks(),
-			app.slashingKeeper.Hooks(),
-			app.gravityKeeper.Hooks(),
+			distrKeeper.Hooks(),
+			slashingKeeper.Hooks(),
+			gravityKeeper.Hooks(),
 		),
 	)
 
@@ -401,8 +415,8 @@ func NewGravityApp(
 
 	app.mm = module.NewManager(
 		genutil.NewAppModule(
-			app.accountKeeper,
-			app.stakingKeeper,
+			accountKeeper,
+			stakingKeeper,
 			app.BaseApp.DeliverTx,
 			encodingConfig.TxConfig,
 		),
@@ -412,60 +426,60 @@ func NewGravityApp(
 			nil,
 		),
 		vesting.NewAppModule(
-			app.accountKeeper,
-			app.bankKeeper,
+			accountKeeper,
+			bankKeeper,
 		),
 		bank.NewAppModule(
 			appCodec,
-			app.bankKeeper,
-			app.accountKeeper,
+			bankKeeper,
+			accountKeeper,
 		),
 		capability.NewAppModule(
 			appCodec,
-			*app.capabilityKeeper,
+			*capabilityKeeper,
 		),
 		crisis.NewAppModule(
-			&app.crisisKeeper,
+			&crisisKeeper,
 			skipGenesisInvariants,
 		),
 		gov.NewAppModule(
 			appCodec,
-			app.govKeeper,
-			app.accountKeeper,
-			app.bankKeeper,
+			govKeeper,
+			accountKeeper,
+			bankKeeper,
 		),
 		mint.NewAppModule(
 			appCodec,
-			app.mintKeeper,
-			app.accountKeeper,
+			mintKeeper,
+			accountKeeper,
 		),
 		slashing.NewAppModule(
 			appCodec,
-			app.slashingKeeper,
-			app.accountKeeper,
-			app.bankKeeper,
-			app.stakingKeeper,
+			slashingKeeper,
+			accountKeeper,
+			bankKeeper,
+			stakingKeeper,
 		),
 		distr.NewAppModule(
 			appCodec,
-			app.distrKeeper,
-			app.accountKeeper,
-			app.bankKeeper,
-			app.stakingKeeper,
+			distrKeeper,
+			accountKeeper,
+			bankKeeper,
+			stakingKeeper,
 		),
 		staking.NewAppModule(appCodec,
-			app.stakingKeeper,
-			app.accountKeeper,
-			app.bankKeeper,
+			stakingKeeper,
+			accountKeeper,
+			bankKeeper,
 		),
-		upgrade.NewAppModule(app.upgradeKeeper),
-		evidence.NewAppModule(app.evidenceKeeper),
-		ibc.NewAppModule(app.ibcKeeper),
-		params.NewAppModule(app.paramsKeeper),
+		upgrade.NewAppModule(upgradeKeeper),
+		evidence.NewAppModule(*evidenceKeeper),
+		ibc.NewAppModule(ibcKeeper),
+		params.NewAppModule(paramsKeeper),
 		transferModule,
 		gravity.NewAppModule(
-			app.gravityKeeper,
-			app.bankKeeper,
+			gravityKeeper,
+			bankKeeper,
 		),
 	)
 
@@ -508,17 +522,17 @@ func NewGravityApp(
 	app.mm.RegisterServices(module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter()))
 
 	app.sm = module.NewSimulationManager(
-		auth.NewAppModule(appCodec, app.accountKeeper, authsims.RandomGenesisAccounts),
-		bank.NewAppModule(appCodec, app.bankKeeper, app.accountKeeper),
-		capability.NewAppModule(appCodec, *app.capabilityKeeper),
-		gov.NewAppModule(appCodec, app.govKeeper, app.accountKeeper, app.bankKeeper),
-		mint.NewAppModule(appCodec, app.mintKeeper, app.accountKeeper),
-		staking.NewAppModule(appCodec, app.stakingKeeper, app.accountKeeper, app.bankKeeper),
-		distr.NewAppModule(appCodec, app.distrKeeper, app.accountKeeper, app.bankKeeper, app.stakingKeeper),
-		slashing.NewAppModule(appCodec, app.slashingKeeper, app.accountKeeper, app.bankKeeper, app.stakingKeeper),
-		params.NewAppModule(app.paramsKeeper),
-		evidence.NewAppModule(app.evidenceKeeper),
-		ibc.NewAppModule(app.ibcKeeper),
+		auth.NewAppModule(appCodec, accountKeeper, authsims.RandomGenesisAccounts),
+		bank.NewAppModule(appCodec, bankKeeper, accountKeeper),
+		capability.NewAppModule(appCodec, *capabilityKeeper),
+		gov.NewAppModule(appCodec, govKeeper, accountKeeper, bankKeeper),
+		mint.NewAppModule(appCodec, mintKeeper, accountKeeper),
+		staking.NewAppModule(appCodec, stakingKeeper, accountKeeper, bankKeeper),
+		distr.NewAppModule(appCodec, distrKeeper, accountKeeper, bankKeeper, stakingKeeper),
+		slashing.NewAppModule(appCodec, slashingKeeper, accountKeeper, bankKeeper, stakingKeeper),
+		params.NewAppModule(paramsKeeper),
+		evidence.NewAppModule(*evidenceKeeper),
+		ibc.NewAppModule(ibcKeeper),
 		transferModule,
 	)
 
@@ -531,8 +545,8 @@ func NewGravityApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	options := ante.HandlerOptions{
-		AccountKeeper:   app.accountKeeper,
-		BankKeeper:      app.bankKeeper,
+		AccountKeeper:   accountKeeper,
+		BankKeeper:      bankKeeper,
 		FeegrantKeeper:  nil,
 		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
 		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
