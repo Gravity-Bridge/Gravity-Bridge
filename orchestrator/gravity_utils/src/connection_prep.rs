@@ -3,6 +3,7 @@
 //! by trying more than one thing to handle potentially misconfigured inputs.
 
 use clarity::Address as EthAddress;
+use deep_space::error::CosmosGrpcError;
 use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
 use deep_space::{client::ChainStatus, Coin};
@@ -318,8 +319,16 @@ pub async fn check_delegate_addresses(
 
 /// Checks if a given Coin, used for fees is in the provided address in a sufficient quantity
 pub async fn check_for_fee(fee: &Coin, address: CosmosAddress, contact: &Contact) {
-    // if we decide to pay no fees it doesn't matter
+    // if we decide to pay no fees it doesn't matter, but we do need some coin balance
     if fee.amount == 0u8.into() {
+        if let Err(CosmosGrpcError::NoToken) = contact.get_account_info(address).await {
+            error!("Your Orchestrator address has no tokens of any kind. Even if you are paying zero fees this account needs to be 'initialized' by depositing tokens");
+            error!(
+                "Send the smallest possible unit of any token to {} to resolve this error",
+                address
+            );
+            exit(1);
+        }
         return;
     }
     let balances = get_balances_with_retry(address, contact).await;
