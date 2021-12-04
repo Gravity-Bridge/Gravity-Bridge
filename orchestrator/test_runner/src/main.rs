@@ -307,8 +307,9 @@ pub async fn main() {
             info!("Starting Signature Slashing test");
             signature_slashing_test(&web30, grpc_client, &contact, keys, gravity_address).await;
             return;
+        } else if !test_type.is_empty() {
+            panic!("Err Unknown test type")
         }
-        panic!("Err Unknown test type")
     }
     info!("Starting Happy path test");
     happy_path_test(
