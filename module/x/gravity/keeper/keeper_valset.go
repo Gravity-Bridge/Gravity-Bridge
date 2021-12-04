@@ -239,14 +239,13 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) types.Valset {
 	totalPower := sdk.NewInt(0)
 	// TODO someone with in depth info on Cosmos staking should determine
 	// if this is doing what I think it's doing
-	for i, validator := range validators {
+	for _, validator := range validators {
 		val := validator.GetOperator()
 		if err := sdk.VerifyAddressFormat(val); err != nil {
 			panic(sdkerrors.Wrapf(err, "invalid validator address in current valset %v", val))
 		}
 
 		p := sdk.NewInt(k.StakingKeeper.GetLastValidatorPower(ctx, val))
-		fmt.Println("validator", i, "power is", p.String())
 
 		if ethAddr, found := k.GetEthAddressByValidator(ctx, val); found {
 			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: ethAddr.GetAddress()}
