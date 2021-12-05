@@ -146,6 +146,8 @@ func (b InternalBridgeValidators) TotalPower() (out uint64) {
 // HasDuplicates returns true if there are duplicates in the set
 func (b InternalBridgeValidators) HasDuplicates() bool {
 	m := make(map[string]struct{}, len(b))
+	// creates a hashmap then ensures that the hashmap and the array
+	// have the same length, this acts as an O(n) duplicates check
 	for i := range b {
 		m[b[i].EthereumAddress.GetAddress()] = struct{}{}
 	}
@@ -163,7 +165,6 @@ func (b InternalBridgeValidators) GetPowers() []uint64 {
 
 // ValidateBasic performs stateless checks
 func (b InternalBridgeValidators) ValidateBasic() error {
-	// TODO: check if the set is sorted here?
 	if len(b) == 0 {
 		return ErrEmpty
 	}

@@ -31,10 +31,16 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	val, _ := sdk.ValAddressFromBech32(msg.Validator)
-	orch, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
-	addr, _ := types.NewEthAddress(msg.EthAddress)
 
+	// check the following, all should be validated in validate basic
+	val, e1 := sdk.ValAddressFromBech32(msg.Validator)
+	orch, e2 := sdk.AccAddressFromBech32(msg.Orchestrator)
+	addr, e3 := types.NewEthAddress(msg.EthAddress)
+	if e1 != nil || e2 != nil || e3 != nil {
+		return nil, sdkerrors.Wrap(err, "Key not valid")
+	}
+
+	// check that the validator does not have an existing key
 	_, foundExistingOrchestratorKey := k.GetOrchestratorValidator(ctx, orch)
 	_, foundExistingEthAddress := k.GetEthAddressByValidator(ctx, val)
 
@@ -43,6 +49,17 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 		return nil, sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, val.String())
 	} else if foundExistingOrchestratorKey || foundExistingEthAddress {
 		return nil, sdkerrors.Wrap(types.ErrResetDelegateKeys, val.String())
+	}
+
+	// check that neither key is a duplicate
+	delegateKeys := k.GetDelegateKeys(ctx)
+	for i := range delegateKeys {
+		if delegateKeys[i].EthAddress == addr.GetAddress() {
+			return nil, sdkerrors.Wrap(err, "Duplicate Ethereum Key")
+		}
+		if delegateKeys[i].Orchestrator == addr.GetAddress() {
+			return nil, sdkerrors.Wrap(err, "Duplicate Orchestrator Key")
+		}
 	}
 
 	// set the orchestrator address
