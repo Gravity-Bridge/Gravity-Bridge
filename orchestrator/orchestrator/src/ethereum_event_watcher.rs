@@ -25,6 +25,7 @@ pub struct CheckedNonces {
     pub event_nonce: Uint256,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn check_for_events(
     web3: &Web3,
     contact: &Contact,
@@ -33,10 +34,11 @@ pub async fn check_for_events(
     our_private_key: CosmosPrivateKey,
     fee: Coin,
     starting_block: Uint256,
+    block_delay: Uint256,
 ) -> Result<CheckedNonces, GravityError> {
     let our_cosmos_address = our_private_key.to_address(&contact.get_prefix()).unwrap();
     let latest_block = get_block_number_with_retry(web3).await;
-    let latest_block = latest_block - get_block_delay(web3).await;
+    let latest_block = latest_block - block_delay;
 
     let deposits = web3
         .check_for_events(
