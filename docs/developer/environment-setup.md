@@ -10,9 +10,9 @@ We're always happy to help new developers get started
 
 Gravity bridge has three major components
 
-[The Gravity bridge Solidity](https://github.com/althea-net/cosmos-gravity-bridge/tree/main/solidity) and associated tooling. This requires NodeJs
-[The Gravity bridge Cosmos Module and test chain](https://github.com/althea-net/cosmos-gravity-bridge/tree/main/module). this requires Go.
-[The Gravity bridge tools](https://github.com/althea-net/cosmos-gravity-bridge/tree/main/orchestrator) these require Rust.
+[The Gravity bridge Solidity](https://github.com/Gravity-Bridge/Gravity-Bridge/tree/main/solidity) and associated tooling. This requires NodeJs
+[The Gravity bridge Cosmos Module and test chain](https://github.com/Gravity-Bridge/Gravity-Bridge/tree/main/module). this requires Go.
+[The Gravity bridge tools](https://github.com/Gravity-Bridge/Gravity-Bridge/tree/main/orchestrator) these require Rust.
 
 ### Installing Go
 
@@ -47,12 +47,12 @@ If you are a linux user and prefer your package manager to manually installed de
 At this step download the repo
 
 ```
-git clone https://github.com/althea-net/cosmos-gravity-bridge/
+git clone https://github.com/Gravity-Bridge/Gravity-Bridge/
 ```
 
 ### Solidity
 
-Change directory into the `cosmos-gravity-bridge/solidity` folder and run
+Change directory into the `Gravity-Bridge/solidity` folder and run
 
 ```
 # Install JavaScript dependencies
@@ -78,7 +78,7 @@ npm run test
 
 ### Go
 
-Change directory into the `cosmos-gravity-bridge/module` folder and run
+Change directory into the `Gravity-Bridge/module` folder and run
 
 ```
 # Installing the protobuf tooling
@@ -124,7 +124,7 @@ make
 
 ### Rust
 
-Change directory into the `cosmos-gravity-bridge/orchestrator` folder and run
+Change directory into the `Gravity-Bridge/orchestrator` folder and run
 
 ```
 
@@ -174,7 +174,7 @@ of Gravity bridge for you as a developer to interact with. This is very useful f
 
 ```
 
-switch to a new terminal and run one of these two commands. A list of all predefined tests can be found [here](https://github.com/althea-net/cosmos-gravity-bridge/blob/main/orchestrator/test_runner/src/main.rs#L169)
+switch to a new terminal and run one of these two commands. A list of all predefined tests can be found [here](https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/orchestrator/test_runner/src/main.rs#L169)
 
 ```
 
@@ -212,7 +212,7 @@ To use a stepping debugger in VS Code, follow the "Working inside the container"
 All up tests are pre-defined test patterns that are run 'all up' which means including re-building all dependencies and deploying a fresh testnet for each test.
 These tests _only_ work on checked in code. You must commit your latest changes to git.
 
-A list of test patterns is defined [here](https://github.com/althea-net/cosmos-gravity-bridge/blob/main/orchestrator/test_runner/src/main.rs#L169)
+A list of test patterns is defined [here](https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/orchestrator/test_runner/src/main.rs#L169)
 
 To run an individual test run
 

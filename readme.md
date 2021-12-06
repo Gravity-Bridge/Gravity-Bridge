@@ -14,9 +14,9 @@ To understand Gravity at a high level, read [this blog post](https://blog.althea
 
 This documentation lives with the code it references and helps to understand the functions and data structures involved. This is useful if you are reviewing or working on the code.
 
-[Solidity Ethereum contract documentation](https://github.com/althea-net/cosmos-gravity-bridge/blob/main/solidity/contracts/contract-explanation.md)
+[Solidity Ethereum contract documentation](https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/solidity/contracts/contract-explanation.md)
 
-[Go Cosmos module documentation](https://github.com/althea-net/cosmos-gravity-bridge/tree/main/module/x/gravity/spec)
+[Go Cosmos module documentation](https://github.com/Gravity-Bridge/Gravity-Bridge/tree/main/module/x/gravity/spec)
 
 ### Specs
 

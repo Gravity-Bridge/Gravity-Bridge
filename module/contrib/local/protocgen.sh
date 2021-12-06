@@ -31,5 +31,5 @@ Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:. \
 done
 
 # move proto files to the right places
-cp -r github.com/althea-net/cosmos-gravity-bridge/module/* ./
+cp -r github.com/Gravity-Bridge/Gravity-Bridge/module/* ./
 rm -rf github.com

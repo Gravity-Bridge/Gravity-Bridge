@@ -6,7 +6,7 @@ import "google/api/annotations.proto";
 import "gravity/v1/types.proto";
 import "google/protobuf/any.proto";
 import "cosmos_proto/cosmos.proto";
-option go_package = "github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types";
+option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types";
 
 // Msg defines the state transitions possible within gravity
 service Msg {
