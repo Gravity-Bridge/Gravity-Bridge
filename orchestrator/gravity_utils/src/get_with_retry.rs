@@ -25,7 +25,7 @@ pub async fn get_eth_balances_with_retry(address: EthAddress, web3: &Web3) -> Ui
     while res.is_err() {
         error!("Failed to get Eth balances! Is your Eth node working?");
         delay_for(RETRY_TIME).await;
-        res = web3.eth_block_number().await;
+        res = web3.eth_get_balance(address).await;
     }
     res.unwrap()
 }
