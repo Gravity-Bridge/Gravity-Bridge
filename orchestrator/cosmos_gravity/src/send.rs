@@ -243,7 +243,7 @@ pub async fn send_ethereum_claims(
             orchestrator: our_address.to_string(),
         };
         let msg = Msg::new("/gravity.v1.MsgSendToCosmosClaim", claim);
-        unordered_msgs.insert(deposit.event_nonce, msg);
+        assert!(unordered_msgs.insert(deposit.event_nonce, msg).is_none());
     }
     for withdraw in withdraws {
         let claim = MsgBatchSendToEthClaim {
@@ -254,7 +254,7 @@ pub async fn send_ethereum_claims(
             orchestrator: our_address.to_string(),
         };
         let msg = Msg::new("/gravity.v1.MsgBatchSendToEthClaim", claim);
-        unordered_msgs.insert(withdraw.event_nonce, msg);
+        assert!(unordered_msgs.insert(withdraw.event_nonce, msg).is_none());
     }
     for deploy in erc20_deploys {
         let claim = MsgErc20DeployedClaim {
@@ -268,7 +268,7 @@ pub async fn send_ethereum_claims(
             orchestrator: our_address.to_string(),
         };
         let msg = Msg::new("/gravity.v1.MsgERC20DeployedClaim", claim);
-        unordered_msgs.insert(deploy.event_nonce, msg);
+        assert!(unordered_msgs.insert(deploy.event_nonce, msg).is_none());
     }
     for call in logic_calls {
         let claim = MsgLogicCallExecutedClaim {
@@ -279,7 +279,7 @@ pub async fn send_ethereum_claims(
             orchestrator: our_address.to_string(),
         };
         let msg = Msg::new("/gravity.v1.MsgLogicCallExecutedClaim", claim);
-        unordered_msgs.insert(call.event_nonce, msg);
+        assert!(unordered_msgs.insert(call.event_nonce, msg).is_none());
     }
     for valset in valsets {
         let claim = MsgValsetUpdatedClaim {
@@ -295,7 +295,7 @@ pub async fn send_ethereum_claims(
             orchestrator: our_address.to_string(),
         };
         let msg = Msg::new("/gravity.v1.MsgValsetUpdatedClaim", claim);
-        unordered_msgs.insert(valset.event_nonce, msg);
+        assert!(unordered_msgs.insert(valset.event_nonce, msg).is_none());
     }
     let mut keys = Vec::new();
     for (key, _) in unordered_msgs.iter() {
