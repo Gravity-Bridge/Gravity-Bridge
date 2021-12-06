@@ -191,7 +191,10 @@ func (k Keeper) GetUnbatchedTxByFeeAndId(ctx sdk.Context, fee types.InternalERC2
 		return nil, sdkerrors.Wrap(types.ErrUnknown, "pool transaction")
 	}
 	var r types.OutgoingTransferTx
-	k.cdc.Unmarshal(bz, &r)
+	err := k.cdc.Unmarshal(bz, &r)
+	if err != nil {
+		panic(sdkerrors.Wrapf(err, "invalid unbatched tx in store: %v", r))
+	}
 	intR, err := r.ToInternal()
 	if err != nil {
 		panic(sdkerrors.Wrapf(err, "invalid unbatched tx in store: %v", r))

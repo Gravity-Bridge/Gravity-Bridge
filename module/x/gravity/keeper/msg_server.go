@@ -89,8 +89,11 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 
 	gravityID := k.GetGravityID(ctx)
 	checkpoint := valset.GetCheckpoint(gravityID)
-	orchaddr, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
-	err := k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
+	orchaddr, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrInvalid, "acc address invalid")
+	}
+	err = k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not confirm handler common")
 	}
@@ -181,7 +184,10 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid MsgConfirmBatch")
 	}
-	contract, _ := types.NewEthAddress(msg.TokenContract)
+	contract, err := types.NewEthAddress(msg.TokenContract)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrInvalid, "eth address invalid")
+	}
 	ctx := sdk.UnwrapSDKContext(c)
 
 	// fetch the outgoing batch given the nonce
@@ -231,7 +237,10 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 
 	gravityID := k.GetGravityID(ctx)
 	checkpoint := logic.GetCheckpoint(gravityID)
-	orchaddr, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	orchaddr, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		return nil, sdkerrors.Wrap(types.ErrInvalid, "acc address invalid")
+	}
 	err = k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not confirm Handler")
@@ -257,7 +266,10 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 // checkOrchestratorValidatorInSet checks that the orchestrator refers to a validator that is
 // currently in the set
 func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator string) error {
-	orchaddr, _ := sdk.AccAddressFromBech32(orchestrator)
+	orchaddr, err := sdk.AccAddressFromBech32(orchestrator)
+	if err != nil {
+		return sdkerrors.Wrap(types.ErrInvalid, "acc address invalid")
+	}
 	validator, found := k.GetOrchestratorValidator(ctx, orchaddr)
 	if !found {
 		return sdkerrors.Wrap(types.ErrUnknown, "validator")
@@ -305,7 +317,10 @@ func (k msgServer) confirmHandlerCommon(ctx sdk.Context, orchestrator string, si
 		return sdkerrors.Wrap(types.ErrInvalid, "signature decoding")
 	}
 
-	orchaddr, _ := sdk.AccAddressFromBech32(orchestrator)
+	orchaddr, err := sdk.AccAddressFromBech32(orchestrator)
+	if err != nil {
+		return sdkerrors.Wrap(types.ErrInvalid, "acc address invalid")
+	}
 	validator, found := k.GetOrchestratorValidator(ctx, orchaddr)
 	if !found {
 		return sdkerrors.Wrap(types.ErrUnknown, "validator")
