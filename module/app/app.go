@@ -88,10 +88,10 @@ import (
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 
-	gravityparams "github.com/althea-net/cosmos-gravity-bridge/module/app/params"
-	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity"
-	"github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/keeper"
-	gravitytypes "github.com/althea-net/cosmos-gravity-bridge/module/x/gravity/types"
+	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
+	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 const appName = "app"

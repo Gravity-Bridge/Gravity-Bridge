@@ -47,7 +47,7 @@ This message is expected to fail if:
 
 When the gravity daemon witnesses a complete validator set within the gravity module, the validator submits a signature of a message containing the entire validator set.
 
-+++ https://github.com/althea-net/cosmos-gravity-bridge/blob/main/module/proto/gravity/v1/msgs.proto#L79-84
++++ https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/module/proto/gravity/v1/msgs.proto#L79-84
 
 This message is expected to fail if:
 
