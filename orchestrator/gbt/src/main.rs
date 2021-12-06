@@ -8,7 +8,7 @@ use crate::config::init_config;
 use crate::keys::show_keys;
 use crate::{orchestrator::orchestrator, relayer::relayer};
 use args::Opts;
-use clap::Clap;
+use clap::Parser;
 use client::cosmos_to_eth::cosmos_to_eth;
 use client::deploy_erc20_representation::deploy_erc20_representation;
 use client::eth_to_cosmos::eth_to_cosmos;

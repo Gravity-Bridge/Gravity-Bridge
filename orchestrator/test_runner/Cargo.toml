@@ -25,7 +25,6 @@ clarity = "0.4"
 docopt = "1"
 serde = "1.0"
 actix = "0.12"
-actix-web = {version = "3", features=["openssl"]}
 actix-rt = "2.2"
 lazy_static = "1"
 url = "2"
