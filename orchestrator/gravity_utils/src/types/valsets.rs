@@ -153,11 +153,15 @@ impl Valset {
                 } else {
                     // the go code verifies signatures, if we ever see this it means
                     // that something has gone horribly wrong with our parsing or ordering
-                    // in the orchestrator, therefore we panic.
-                    panic!(
-                        "Found invalid signature for {} how did this get here?",
-                        sig.get_eth_address()
-                    )
+                    // in the orchestrator
+                    // this has been observed to occur spuriously, not currently root caused
+                    let err = format!(
+                        "Found invalid signature from {} {:?}",
+                        sig.get_eth_address(),
+                        sig.get_signature()
+                    );
+                    error!("{}", err);
+                    return Err(GravityError::InvalidBridgeStateError(err));
                 }
             } else {
                 out.push(GravitySignature {
