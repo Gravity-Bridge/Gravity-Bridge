@@ -95,7 +95,7 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 	}
 	err = k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not confirm handler common")
+		return nil, err
 	}
 
 	// persist signature
@@ -201,7 +201,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	orchaddr, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
 	err = k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not confirm handler common")
+		return nil, err
 	}
 
 	// check if we already have this confirm
@@ -243,7 +243,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 	}
 	err = k.confirmHandlerCommon(ctx, msg.Orchestrator, msg.Signature, checkpoint)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not confirm Handler")
+		return nil, err
 	}
 
 	// check if we already have this confirm
@@ -359,7 +359,7 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
+		return nil, err
 	}
 
 	return &types.MsgSendToCosmosClaimResponse{}, nil
@@ -382,7 +382,7 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
+		return nil, err
 	}
 
 	return &types.MsgBatchSendToEthClaimResponse{}, nil
@@ -402,7 +402,7 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
+		return nil, err
 	}
 
 	return &types.MsgERC20DeployedClaimResponse{}, nil
@@ -422,7 +422,7 @@ func (k msgServer) LogicCallExecutedClaim(c context.Context, msg *types.MsgLogic
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
+		return nil, err
 	}
 
 	return &types.MsgLogicCallExecutedClaimResponse{}, nil
@@ -442,7 +442,7 @@ func (k msgServer) ValsetUpdateClaim(c context.Context, msg *types.MsgValsetUpda
 	}
 	err = k.claimHandlerCommon(ctx, any, msg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not claim handler common")
+		return nil, err
 	}
 
 	return &types.MsgValsetUpdatedClaimResponse{}, nil
