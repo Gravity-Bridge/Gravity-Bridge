@@ -586,3 +586,73 @@ func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	_, err = h(ctx, msg)
 	require.Error(t, err)
 }
+
+// TestMsgValsetConfirm ensures that the valset confirm message sets a validator set confirm
+// in the store and validates the signature
+func TestMsgValsetConfirm(t *testing.T) {
+	var (
+		blockTime          = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		blockHeight  int64 = 200
+		signature          = "7c331bd8f2f586b04a2e2cafc6542442ef52e8b8be49533fa6b8962e822bc01e295a62733abfd65a412a8de8286f2794134c160c27a2827bdb71044b94b003cc1c"
+		badSignature       = "6c331bd8f2f586b04a2e2cafc6542442ef52e8b8be49533fa6b8962e822bc01e295a62733abfd65a412a8de8286f2794134c160c27a2827bdb71044b94b003cc1c"
+		ethAddress         = "0xd62FF457C6165FF214C1658c993A8a203E601B03"
+		wrongAddress       = "0xb9a2c7853F181C3dd4a0517FCb9470C0f709C08C"
+	)
+	ethAddressParsed, err := types.NewEthAddress(ethAddress)
+	require.NoError(t, err)
+
+	input, ctx := keeper.SetupFiveValChain(t)
+	k := input.GravityKeeper
+	h := NewHandler(input.GravityKeeper)
+
+	// set a validator set in the store
+	vs := k.GetCurrentValset(ctx)
+	vs.Height = uint64(1)
+	vs.Nonce = uint64(1)
+	k.StoreValsetUnsafe(ctx, vs)
+	k.SetEthAddressForValidator(input.Context, keeper.ValAddrs[0], *ethAddressParsed)
+
+	// try wrong eth address
+	msg := &types.MsgValsetConfirm{
+		Nonce:        1,
+		Orchestrator: keeper.OrchAddrs[0].String(),
+		EthAddress:   wrongAddress,
+		Signature:    signature,
+	}
+	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
+	_, err = h(ctx, msg)
+	require.Error(t, err)
+
+	// try a nonexisting valset
+	msg = &types.MsgValsetConfirm{
+		Nonce:        10,
+		Orchestrator: keeper.OrchAddrs[0].String(),
+		EthAddress:   ethAddress,
+		Signature:    signature,
+	}
+	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
+	_, err = h(ctx, msg)
+	require.Error(t, err)
+
+	// try a bad signature
+	msg = &types.MsgValsetConfirm{
+		Nonce:        1,
+		Orchestrator: keeper.OrchAddrs[0].String(),
+		EthAddress:   ethAddress,
+		Signature:    badSignature,
+	}
+	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
+	_, err = h(ctx, msg)
+	require.Error(t, err)
+
+	msg = &types.MsgValsetConfirm{
+		Nonce:        1,
+		Orchestrator: keeper.OrchAddrs[0].String(),
+		EthAddress:   ethAddress,
+		Signature:    signature,
+	}
+	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
+	_, err = h(ctx, msg)
+	require.NoError(t, err)
+
+}
