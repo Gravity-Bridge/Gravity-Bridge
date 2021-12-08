@@ -131,10 +131,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 
 	// Create Valset request
 	ctx = ctx.WithBlockHeight(valsetRequestHeight)
-	vs := pk.GetCurrentValset(ctx)
-	vs.Height = uint64(valsetRequestHeight)
-	vs.Nonce = pk.GetLatestValsetNonce(ctx) + 1
-	pk.StoreValset(ctx, vs)
+	vs := pk.SetValsetRequest(ctx)
 
 	// Start Unbonding validators
 	// Validator-1  Unbond slash window is not expired. if not attested, slash

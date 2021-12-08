@@ -51,10 +51,20 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 	return valset
 }
 
-// StoreValset is for storing a valiator set at a given height
+// StoreValset is for storing a valiator set at a given height, once this function is called
+// the validator set will be available to the Ethereum Signers (orchestrators) to submit signatures
+// therefore this function will panic if you attempt to overwrite an existing key. Any changes to
+// historical valsets can not possibly be correct, as it would invalidate the signatures. The only
+// valid operation on the same index is store followed by delete when it is time to prune state
 func (k Keeper) StoreValset(ctx sdk.Context, valset types.Valset) {
+	key := []byte(types.GetValsetKey(valset.Nonce))
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.GetValsetKey(valset.Nonce)), k.cdc.MustMarshal(&valset))
+
+	if store.Has(key) {
+		panic("Trying to overwrite existing valset!")
+	}
+
+	store.Set((key), k.cdc.MustMarshal(&valset))
 }
 
 // HasValsetRequest returns true if a valset defined by a nonce exists
@@ -68,19 +78,34 @@ func (k Keeper) DeleteValset(ctx sdk.Context, nonce uint64) {
 	ctx.KVStore(k.storeKey).Delete([]byte(types.GetValsetKey(nonce)))
 }
 
+// CheckLatestValsetNonce returns true if the latest valset nonce
+// is declared in the store and false if it has not been initialized
+func (k Keeper) CheckLatestValsetNonce(ctx sdk.Context) bool {
+	store := ctx.KVStore(k.storeKey)
+	has := store.Has([]byte(types.LatestValsetNonce))
+	return has
+}
+
 // GetLatestValsetNonce returns the latest valset nonce
 func (k Keeper) GetLatestValsetNonce(ctx sdk.Context) uint64 {
-	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get([]byte(types.LatestValsetNonce))
-
-	if len(bytes) == 0 {
+	if !k.CheckLatestValsetNonce(ctx) {
 		panic("Valset nonce not initialized from genesis")
 	}
+
+	store := ctx.KVStore(k.storeKey)
+	bytes := store.Get([]byte(types.LatestValsetNonce))
 	return types.UInt64FromBytes(bytes)
 }
 
-//  SetLatestValsetNonce sets the latest valset nonce
+// SetLatestValsetNonce sets the latest valset nonce, since it's
+// expected that this value will only increase it panics on an attempt
+// to decrement
 func (k Keeper) SetLatestValsetNonce(ctx sdk.Context, nonce uint64) {
+	// this is purely an increasing counter and should never decrease
+	if k.CheckLatestValsetNonce(ctx) && k.GetLatestValsetNonce(ctx) > nonce {
+		panic("Decrementing valset nonce!")
+	}
+
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(types.LatestValsetNonce), types.UInt64Bytes(nonce))
 }
