@@ -231,7 +231,7 @@ mod test {
         let mut rng = rand::thread_rng();
         let secret: [u8; 32] = rng.gen();
         let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
-        let eth_address = eth_key.to_public_key().unwrap();
+        let eth_address = eth_key.to_address();
         let checkpoint = encode_tx_batch_confirm_hashed("foo".to_string(), batch);
 
         let eth_signature = eth_key.sign_hash(&checkpoint);
@@ -273,7 +273,7 @@ mod test {
         let secret: [u8; 32] = rng.gen();
         // the starting location of the funds
         let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
-        let eth_address = eth_key.to_public_key().unwrap();
+        let eth_address = eth_key.to_address();
 
         let checkpoint = encode_tx_batch_confirm_hashed("foo".to_string(), batch);
 

@@ -16,7 +16,7 @@ gravity_proto = {path = "../gravity_proto/"}
 
 deep_space = "2.6"
 serde_derive = "1.0"
-clarity = "0.4"
+clarity = "0.5"
 docopt = "1"
 serde = "1.0"
 actix-rt = "2"

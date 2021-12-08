@@ -32,7 +32,7 @@ pub async fn evidence_based_slashing(
     // our slashing victim is just the first validator
     let cosmos_private_key = keys[0].validator_key;
     let eth_private_key = keys[0].eth_key;
-    let eth_addr = eth_private_key.to_public_key().unwrap();
+    let eth_addr = eth_private_key.to_address();
     // reporter is another validator using their delegate key
     let submitter_private_key = keys[1].orch_key;
     // this is a false valset, one that happens to contain only the

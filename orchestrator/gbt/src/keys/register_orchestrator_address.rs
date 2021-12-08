@@ -78,7 +78,7 @@ pub async fn register_orchestrator_address(
         key.unwrap()
     };
 
-    let ethereum_address = ethereum_key.to_public_key().unwrap();
+    let ethereum_address = ethereum_key.to_address();
     let cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
     let res = set_gravity_delegate_addresses(
         &contact,
@@ -107,11 +107,11 @@ pub async fn register_orchestrator_address(
         info!(
             "No Ethereum key provided, your generated key is\n Private: {} -> Address: {}",
             ethereum_key,
-            ethereum_key.to_public_key().unwrap()
+            ethereum_key.to_address()
         );
     }
 
-    let eth_address = ethereum_key.to_public_key().unwrap();
+    let eth_address = ethereum_key.to_address();
     info!(
         "Registered Delegate Ethereum address {} and Cosmos address {}",
         eth_address, cosmos_address

@@ -196,13 +196,9 @@ pub async fn test_valset_update(
     keys: &[ValidatorKeys],
     gravity_address: EthAddress,
 ) {
-    get_valset_nonce(
-        gravity_address,
-        keys[0].eth_key.to_public_key().unwrap(),
-        web30,
-    )
-    .await
-    .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+    get_valset_nonce(gravity_address, keys[0].eth_key.to_address(), web30)
+        .await
+        .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
     let mut grpc_client = grpc_client.clone();
     // if we don't do this the orchestrators may run ahead of us and we'll be stuck here after
@@ -277,7 +273,7 @@ async fn check_valset_update_attestation(
         // Check that each bridge validator is one of the addresses in our keys
         for bridge_val in decoded.members {
             let found_val = keys.iter().any(|key: &ValidatorKeys| {
-                let eth_pub_key = key.eth_key.to_public_key().unwrap().to_string();
+                let eth_pub_key = key.eth_key.to_address().to_string();
                 bridge_val.ethereum_address == eth_pub_key
             });
             if !found_val {

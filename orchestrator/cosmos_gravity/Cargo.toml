@@ -12,11 +12,11 @@ ethereum_gravity = {path = "../ethereum_gravity"}
 gravity_proto = {path = "../gravity_proto/"}
 
 deep_space = "2.6"
-clarity = "0.4"
+clarity = "0.5"
 serde = "1.0"
 num256 = "0.3"
 log = "0.4"
-sha3 = "0.9"
+sha3 = "0.10"
 tokio = "1.4"
 web30 = "0.17"
 tonic = "0.6"

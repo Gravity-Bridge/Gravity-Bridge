@@ -21,7 +21,7 @@ pub async fn send_eth_logic_call(
     our_eth_key: EthPrivateKey,
 ) -> Result<(), GravityError> {
     let new_call_nonce = call.invalidation_nonce;
-    let eth_address = our_eth_key.to_public_key().unwrap();
+    let eth_address = our_eth_key.to_address();
     info!(
         "Ordering signatures and submitting LogicCall {}:{} to Ethereum",
         bytes_to_hex_str(&call.invalidation_id),
@@ -98,7 +98,7 @@ pub async fn estimate_logic_call_cost(
     gravity_id: String,
     our_eth_key: EthPrivateKey,
 ) -> Result<GasCost, GravityError> {
-    let our_eth_address = our_eth_key.to_public_key().unwrap();
+    let our_eth_address = our_eth_key.to_address();
     let our_balance = web3.eth_get_balance(our_eth_address).await?;
     let our_nonce = web3.eth_get_transaction_count(our_eth_address).await?;
     let gas_limit = min((u64::MAX - 1).into(), our_balance.clone());

@@ -26,7 +26,7 @@ pub async fn deploy_erc20(
     sender_secret: PrivateKey,
     options: Vec<SendTxOption>,
 ) -> Result<Uint256, GravityError> {
-    let sender_address = sender_secret.to_public_key().unwrap();
+    let sender_address = sender_secret.to_address();
     let tx_hash = web3
         .send_transaction(
             gravity_contract,

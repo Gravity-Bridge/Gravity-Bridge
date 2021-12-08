@@ -182,7 +182,7 @@ async fn submit_batches(
     possible_batches: HashMap<EthAddress, Vec<SubmittableBatch>>,
     config: &RelayerConfig,
 ) {
-    let our_ethereum_address = ethereum_key.to_public_key().unwrap();
+    let our_ethereum_address = ethereum_key.to_address();
     let ethereum_block_height = if let Ok(bn) = web3.eth_block_number().await {
         bn
     } else {

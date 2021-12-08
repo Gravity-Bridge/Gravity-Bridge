@@ -24,7 +24,7 @@ pub async fn send_eth_valset_update(
     let old_nonce = old_valset.nonce;
     let new_nonce = new_valset.nonce;
     assert!(new_nonce > old_nonce);
-    let eth_address = our_eth_key.to_public_key().unwrap();
+    let eth_address = our_eth_key.to_address();
     info!(
         "Ordering signatures and submitting validator set {} -> {} update to Ethereum",
         old_nonce, new_nonce
@@ -79,7 +79,7 @@ pub async fn estimate_valset_cost(
     gravity_id: String,
     our_eth_key: EthPrivateKey,
 ) -> Result<GasCost, GravityError> {
-    let our_eth_address = our_eth_key.to_public_key().unwrap();
+    let our_eth_address = our_eth_key.to_address();
     let our_balance = web3.eth_get_balance(our_eth_address).await?;
     let our_nonce = web3.eth_get_transaction_count(our_eth_address).await?;
     let gas_limit = min((u64::MAX - 1).into(), our_balance.clone());

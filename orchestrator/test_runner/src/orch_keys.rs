@@ -22,7 +22,7 @@ pub async fn orch_keys(
     // just to test that we have the right keys from the gentx
     info!("About to check already set delegate addresses");
     for k in keys.iter() {
-        let eth_address = k.eth_key.to_public_key().unwrap();
+        let eth_address = k.eth_key.to_address();
         let orch_address = k.orch_key.to_address(&contact.get_prefix()).unwrap();
         let eth_response = grpc_client
             .get_delegate_key_by_eth(QueryDelegateKeysByEthAddress {

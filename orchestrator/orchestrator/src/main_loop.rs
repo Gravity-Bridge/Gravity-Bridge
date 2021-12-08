@@ -220,7 +220,7 @@ pub async fn eth_signer_main_loop(
     fee: Coin,
 ) {
     let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
-    let our_ethereum_address = ethereum_key.to_public_key().unwrap();
+    let our_ethereum_address = ethereum_key.to_address();
     let mut grpc_client = grpc_client;
     let gravity_id = get_gravity_id(gravity_contract_address, our_ethereum_address, &web3).await;
     if gravity_id.is_err() {

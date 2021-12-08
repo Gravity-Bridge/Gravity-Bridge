@@ -25,7 +25,7 @@ pub async fn deploy_erc20_representation(
 
     let mut grpc = connections.grpc.unwrap();
 
-    let ethereum_public_key = ethereum_key.to_public_key().unwrap();
+    let ethereum_public_key = ethereum_key.to_address();
     check_for_eth(ethereum_public_key, &web3).await;
 
     let contract_address = if let Some(c) = args.gravity_contract_address {

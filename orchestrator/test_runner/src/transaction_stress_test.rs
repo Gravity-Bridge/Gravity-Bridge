@@ -297,14 +297,9 @@ pub async fn transaction_stress_test(
     // executed
     for token in erc20_addresses {
         assert!(
-            get_tx_batch_nonce(
-                gravity_address,
-                token,
-                keys[0].eth_key.to_public_key().unwrap(),
-                web30
-            )
-            .await
-            .unwrap()
+            get_tx_batch_nonce(gravity_address, token, keys[0].eth_key.to_address(), web30)
+                .await
+                .unwrap()
                 > 0
         )
     }

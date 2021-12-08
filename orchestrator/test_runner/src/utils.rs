@@ -59,7 +59,7 @@ pub async fn send_eth_to_orchestrators(keys: &[ValidatorKeys], web30: &Web3) {
     );
     let mut eth_keys = Vec::new();
     for key in keys {
-        eth_keys.push(key.eth_key.to_public_key().unwrap());
+        eth_keys.push(key.eth_key.to_address());
     }
     send_eth_bulk(one_eth() * 100u16.into(), &eth_keys, web30).await;
 }
@@ -223,7 +223,7 @@ pub fn get_user_key() -> BridgeUserKey {
     let secret: [u8; 32] = rng.gen();
     // the starting location of the funds
     let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
-    let eth_address = eth_key.to_public_key().unwrap();
+    let eth_address = eth_key.to_address();
     // the destination on cosmos that sends along to the final ethereum destination
     let cosmos_key = CosmosPrivateKey::from_secret(&secret);
     let cosmos_address = cosmos_key.to_address(ADDRESS_PREFIX.as_str()).unwrap();
@@ -231,7 +231,7 @@ pub fn get_user_key() -> BridgeUserKey {
     let secret: [u8; 32] = rng.gen();
     // the final destination of the tokens back on Ethereum
     let eth_dest_key = EthPrivateKey::from_slice(&secret).unwrap();
-    let eth_dest_address = eth_key.to_public_key().unwrap();
+    let eth_dest_address = eth_key.to_address();
     BridgeUserKey {
         eth_address,
         eth_key,
@@ -285,7 +285,7 @@ pub async fn start_orchestrators(
         let config = orchestrator_config.clone();
         info!(
             "Spawning Orchestrator with delegate keys {} {} and validator key {}",
-            k.eth_key.to_public_key().unwrap(),
+            k.eth_key.to_address(),
             k.orch_key.to_address(ADDRESS_PREFIX.as_str()).unwrap(),
             k.validator_key
                 .to_address(&format!("{}valoper", ADDRESS_PREFIX.as_str()))

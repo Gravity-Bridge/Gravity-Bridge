@@ -22,7 +22,7 @@ pub async fn send_to_cosmos(
     web3: &Web3,
     options: Vec<SendTxOption>,
 ) -> Result<Uint256, GravityError> {
-    let sender_address = sender_secret.to_public_key()?;
+    let sender_address = sender_secret.to_address();
     let mut approve_nonce = None;
 
     for option in options.iter() {

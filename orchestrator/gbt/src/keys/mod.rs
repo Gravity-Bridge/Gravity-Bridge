@@ -24,7 +24,7 @@ pub fn show_keys(home_dir: &Path, prefix: &str) {
     }
     match keys.ethereum_key {
         Some(v) => {
-            let address = v.to_public_key().unwrap();
+            let address = v.to_address();
             info!("Your Ethereum key, {}", address);
         }
         None => info!("You do not have an Ethereum key set"),

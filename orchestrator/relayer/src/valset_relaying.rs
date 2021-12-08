@@ -90,7 +90,7 @@ async fn valset_cost_error(
     latest_cosmos_confirmed: &[ValsetConfirmResponse],
     current_valset: Valset,
 ) {
-    let our_address = ethereum_key.to_public_key().unwrap();
+    let our_address = ethereum_key.to_address();
     let current_valset_from_eth =
         get_valset_nonce(*gravity_contract_address, our_address, web3).await;
     if let Ok(current_valset_from_eth) = current_valset_from_eth {
@@ -129,7 +129,7 @@ async fn should_relay_valset(
     let mut should_relay;
 
     let relaying_cost = cost.gas * cost.gas_price;
-    let pub_key = ethereum_key.to_public_key().unwrap();
+    let pub_key = ethereum_key.to_address();
     let reward = valset.reward_amount.clone();
     let token_in = valset.reward_token;
     if token_in.is_none() {

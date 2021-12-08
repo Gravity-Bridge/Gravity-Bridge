@@ -94,7 +94,7 @@ pub async fn valset_rewards_test(
     // check that one of the relayers has footoken now
     let mut found = false;
     for key in keys.iter() {
-        let target_address = key.eth_key.to_public_key().unwrap();
+        let target_address = key.eth_key.to_address();
         let balance_of_footoken = get_erc20_balance_safe(erc20_contract, web30, target_address)
             .await
             .unwrap();

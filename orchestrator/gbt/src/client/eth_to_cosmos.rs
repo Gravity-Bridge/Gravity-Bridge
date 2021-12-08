@@ -12,7 +12,7 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     let erc20_address = args.token_contract_address;
     let cosmos_dest = args.destination;
     let ethereum_key = args.ethereum_key;
-    let ethereum_public_key = ethereum_key.to_public_key().unwrap();
+    let ethereum_public_key = ethereum_key.to_address();
     let ethereum_rpc = args.ethereum_rpc;
     let amount = args.amount;
 

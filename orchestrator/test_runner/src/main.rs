@@ -86,7 +86,7 @@ lazy_static! {
         "0xb1bab011e03a9862664706fc3bbaa1b16651528e5f0e7fbfcbfdd8be302a13e7"
             .parse()
             .unwrap();
-    static ref MINER_ADDRESS: EthAddress = MINER_PRIVATE_KEY.to_public_key().unwrap();
+    static ref MINER_ADDRESS: EthAddress = MINER_PRIVATE_KEY.to_address();
 }
 
 /// Gets the standard non-token fee for the testnet. We deploy the test chain with STAKE
