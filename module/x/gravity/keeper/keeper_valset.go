@@ -18,15 +18,20 @@ import (
 /////////////////////////////
 
 // SetValsetRequest returns a new instance of the Gravity BridgeValidatorSet
-// by taking a snapshot of the current set
+// by taking a snapshot of the current set, this validator set is also placed
+// into the store to be signed by validators and submitted to Ethereum. This
+// is the only function to call when you want to create a validator set that
+// is signed by consensus. If you want to peek at the present state of the set
+// and perhaps take action based on that use k.GetCurrentValset
 // i.e. {"nonce": 1, "memebers": [{"eth_addr": "foo", "power": 11223}]}
 func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 	valset := k.GetCurrentValset(ctx)
 	k.StoreValset(ctx, valset)
+	k.SetLatestValsetNonce(ctx, valset.Nonce)
 
 	// Store the checkpoint as a legit past valset, this is only for evidence
 	// based slashing. We are storing the checkpoint that will be signed with
-	// the validators Etheruem keys so that we know not to slash them if someone
+	// the validators Ethereum keys so that we know not to slash them if someone
 	// attempts to submit the signature of this validator set as evidence of bad behavior
 	checkpoint := valset.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
@@ -50,7 +55,6 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 func (k Keeper) StoreValset(ctx sdk.Context, valset types.Valset) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(types.GetValsetKey(valset.Nonce)), k.cdc.MustMarshal(&valset))
-	k.SetLatestValsetNonce(ctx, valset.Nonce)
 }
 
 // HasValsetRequest returns true if a valset defined by a nonce exists

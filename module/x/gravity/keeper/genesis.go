@@ -23,9 +23,14 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	k.setID(ctx, data.GravityNonces.LastBatchId, []byte(types.KeyLastOutgoingBatchID))
 
 	// reset valsets in state
+	highest := uint64(0)
 	for _, vs := range data.Valsets {
+		if vs.Nonce > highest {
+			highest = vs.Nonce
+		}
 		k.StoreValset(ctx, vs)
 	}
+	k.SetLatestValsetNonce(ctx, highest)
 
 	// reset valset confirmations in state
 	for _, conf := range data.ValsetConfirms {

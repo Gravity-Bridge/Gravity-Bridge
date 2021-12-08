@@ -81,6 +81,7 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 
 	vs.Nonce = pk.GetLatestValsetNonce(ctx) + 1
 	pk.StoreValset(ctx, vs)
+	pk.SetLatestValsetNonce(ctx, vs.Nonce)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
