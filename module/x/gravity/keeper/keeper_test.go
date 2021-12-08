@@ -211,7 +211,7 @@ func TestLastSlashedValsetNonce(t *testing.T) {
 	for ; i < 10; i++ {
 		vs.Height = uint64(i)
 		vs.Nonce = uint64(i)
-		k.StoreValsetUnsafe(ctx, vs)
+		k.StoreValset(ctx, vs)
 	}
 
 	latestValsetNonce := k.GetLatestValsetNonce(ctx)

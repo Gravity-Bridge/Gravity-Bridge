@@ -58,7 +58,7 @@ func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
 	height := uint64(ctx.BlockHeight()) - (params.SignedValsetsWindow + 1)
 	vs.Height = height
 	vs.Nonce = height
-	pk.StoreValsetUnsafe(ctx, vs)
+	pk.StoreValset(ctx, vs)
 
 	EndBlocker(ctx, pk)
 
@@ -80,7 +80,7 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	vs.Height = height
 
 	vs.Nonce = pk.GetLatestValsetNonce(ctx) + 1
-	pk.StoreValsetUnsafe(ctx, vs)
+	pk.StoreValset(ctx, vs)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
@@ -133,7 +133,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	vs := pk.GetCurrentValset(ctx)
 	vs.Height = uint64(valsetRequestHeight)
 	vs.Nonce = pk.GetLatestValsetNonce(ctx) + 1
-	pk.StoreValsetUnsafe(ctx, vs)
+	pk.StoreValset(ctx, vs)
 
 	// Start Unbonding validators
 	// Validator-1  Unbond slash window is not expired. if not attested, slash

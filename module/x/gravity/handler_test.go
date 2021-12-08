@@ -609,7 +609,7 @@ func TestMsgValsetConfirm(t *testing.T) {
 	vs := k.GetCurrentValset(ctx)
 	vs.Height = uint64(1)
 	vs.Nonce = uint64(1)
-	k.StoreValsetUnsafe(ctx, vs)
+	k.StoreValset(ctx, vs)
 	k.SetEthAddressForValidator(input.Context, keeper.ValAddrs[0], *ethAddressParsed)
 
 	// try wrong eth address

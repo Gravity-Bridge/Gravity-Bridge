@@ -49,14 +49,6 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 // StoreValset is for storing a valiator set at a given height
 func (k Keeper) StoreValset(ctx sdk.Context, valset types.Valset) {
 	store := ctx.KVStore(k.storeKey)
-	valset.Height = uint64(ctx.BlockHeight())
-	store.Set([]byte(types.GetValsetKey(valset.Nonce)), k.cdc.MustMarshal(&valset))
-	k.SetLatestValsetNonce(ctx, valset.Nonce)
-}
-
-// StoreValsetUnsafe is for storing a valiator set at a given height
-func (k Keeper) StoreValsetUnsafe(ctx sdk.Context, valset types.Valset) {
-	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(types.GetValsetKey(valset.Nonce)), k.cdc.MustMarshal(&valset))
 	k.SetLatestValsetNonce(ctx, valset.Nonce)
 }
