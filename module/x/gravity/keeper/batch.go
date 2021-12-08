@@ -155,17 +155,6 @@ func (k Keeper) StoreBatch(ctx sdk.Context, batch types.InternalOutgoingTxBatch)
 	store.Set(key, k.cdc.MustMarshal(&externalBatch))
 }
 
-// StoreBatchUnsafe stores a transaction batch w/o setting the height
-func (k Keeper) StoreBatchUnsafe(ctx sdk.Context, batch types.InternalOutgoingTxBatch) {
-	if err := batch.ValidateBasic(); err != nil {
-		panic(sdkerrors.Wrap(err, "attempted to store invalid batch"))
-	}
-	batchExt := batch.ToExternal()
-	store := ctx.KVStore(k.storeKey)
-	key := []byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batchExt.BatchNonce))
-	store.Set(key, k.cdc.MustMarshal(&batchExt))
-}
-
 // DeleteBatch deletes an outgoing transaction batch
 func (k Keeper) DeleteBatch(ctx sdk.Context, batch types.InternalOutgoingTxBatch) {
 	if err := batch.ValidateBasic(); err != nil {

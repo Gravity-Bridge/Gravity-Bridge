@@ -44,7 +44,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "unable to make batch internal: %v", batch))
 		}
-		k.StoreBatchUnsafe(ctx, *intBatch)
+		k.StoreBatch(ctx, *intBatch)
 	}
 
 	// reset batch confirmations in state

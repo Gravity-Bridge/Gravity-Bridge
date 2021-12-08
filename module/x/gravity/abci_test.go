@@ -188,7 +188,7 @@ func TestBatchSlashing(t *testing.T) {
 		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
-	pk.StoreBatchUnsafe(ctx, *batch)
+	pk.StoreBatch(ctx, *batch)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
