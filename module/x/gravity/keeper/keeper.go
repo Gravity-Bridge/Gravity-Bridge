@@ -239,8 +239,20 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 //   Logic Call Slashing   //
 /////////////////////////////
 
+// SetLastSlashedLogicCallBlock returns true if the last slashed logic call block
+// has been set in the store
+func (k Keeper) HasLastSlashedLogicCallBlock(ctx sdk.Context) bool {
+	store := ctx.KVStore(k.storeKey)
+	return store.Has([]byte(types.LastSlashedLogicCallBlock))
+}
+
 // SetLastSlashedLogicCallBlock sets the latest slashed logic call block height
 func (k Keeper) SetLastSlashedLogicCallBlock(ctx sdk.Context, blockHeight uint64) {
+
+	if k.HasLastSlashedLogicCallBlock(ctx) && k.GetLastSlashedLogicCallBlock(ctx) > blockHeight {
+		panic("Attempted to decrement LastSlashedBatchBlock")
+	}
+
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(types.LastSlashedLogicCallBlock), types.UInt64Bytes(blockHeight))
 }

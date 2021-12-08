@@ -31,15 +31,19 @@ func (k Keeper) GetOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, inv
 	return &call
 }
 
-// SetOutogingLogicCall sets an outgoing logic call
+// SetOutogingLogicCall sets an outgoing logic call, panics if one already exists at this
+// index, since we collect signatures over logic calls no mutation can be valid
 func (k Keeper) SetOutgoingLogicCall(ctx sdk.Context, call types.OutgoingLogicCall) {
 	store := ctx.KVStore(k.storeKey)
 
 	// Store checkpoint to prove that this logic call actually happened
 	checkpoint := call.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
-
-	store.Set([]byte(types.GetOutgoingLogicCallKey(call.InvalidationId, call.InvalidationNonce)),
+	key := []byte(types.GetOutgoingLogicCallKey(call.InvalidationId, call.InvalidationNonce))
+	if store.Has(key) {
+		panic("Can not overwrite logic call")
+	}
+	store.Set(key,
 		k.cdc.MustMarshal(&call))
 }
 
