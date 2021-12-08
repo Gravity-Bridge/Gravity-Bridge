@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	bank "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -54,11 +53,11 @@ func initializeTestingVars(t *testing.T) *testingVars {
 }
 
 func addDenomToERC20Relation(tv *testingVars) {
-	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, bank.Metadata{
+	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, banktypes.Metadata{
 		Description: "The native staking token of the Cosmos Gravity Bridge",
 		Name:        "Graviton",
 		Symbol:      "GRAV",
-		DenomUnits: []*bank.DenomUnit{
+		DenomUnits: []*banktypes.DenomUnit{
 			{Denom: "ugraviton", Exponent: uint32(0), Aliases: []string{"micrograviton"}},
 			{Denom: "mgraviton", Exponent: uint32(3), Aliases: []string{"milligraviton"}},
 			{Denom: "graviton", Exponent: uint32(6), Aliases: []string{}},
