@@ -4,7 +4,6 @@ use deep_space::address::Address;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey;
 use deep_space::Contact;
-use deep_space::Fee;
 use deep_space::Msg;
 use deep_space::{coin::Coin, utils::bytes_to_hex_str};
 use ethereum_gravity::message_signatures::{
@@ -12,7 +11,6 @@ use ethereum_gravity::message_signatures::{
 };
 use ethereum_gravity::utils::downcast_uint256;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
-use gravity_proto::cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use gravity_proto::gravity::MsgConfirmLogicCall;
 use gravity_proto::gravity::MsgErc20DeployedClaim;
 use gravity_proto::gravity::MsgLogicCallExecutedClaim;
@@ -308,23 +306,9 @@ pub async fn send_ethereum_claims(
         msgs.push(unordered_msgs.remove_entry(&i).unwrap().1);
     }
 
-    let fee = Fee {
-        amount: vec![fee],
-        gas_limit: 500_000_000u64,
-        granter: None,
-        payer: None,
-    };
-
-    let args = contact.get_message_args(our_address, fee).await?;
-    trace!("got optional tx info");
-
-    let msg_bytes = private_key.sign_std_msg(&msgs, args, MEMO)?;
-
-    let response = contact
-        .send_transaction(msg_bytes, BroadcastMode::Sync)
-        .await?;
-
-    contact.wait_for_tx(response, TIMEOUT).await
+    Ok(contact
+        .send_message(&msgs, None, &[fee], Some(TIMEOUT), private_key)
+        .await?)
 }
 
 /// Sends tokens from Cosmos to Ethereum. These tokens will not be sent immediately instead
