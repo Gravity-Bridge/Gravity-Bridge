@@ -54,7 +54,7 @@ pub struct OrchestratorConfig {
 }
 
 fn default_relayer_enabled() -> bool {
-    true
+    false
 }
 
 impl Default for OrchestratorConfig {

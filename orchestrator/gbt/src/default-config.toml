@@ -1,7 +1,7 @@
 # Orchestrator configuration options
 [orchestrator]
 # If the built-in relayer is enabled, this relayer is configured in the [relayer] section
-relayer_enabled = true
+relayer_enabled = false
 
 [relayer]
 valset_market_enabled = false
