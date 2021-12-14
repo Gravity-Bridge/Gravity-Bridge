@@ -45,6 +45,8 @@ pub fn footoken_metadata() -> CosmosRepresentationMetadata {
 
 pub fn create_default_test_config() -> GravityBridgeToolsConfig {
     let mut no_relay_market_config = GravityBridgeToolsConfig::default();
+    // enable integrated relayer by default for tests
+    no_relay_market_config.orchestrator.relayer_enabled = true;
     no_relay_market_config.relayer.batch_market_enabled = false;
     no_relay_market_config.relayer.valset_market_enabled = false;
     no_relay_market_config.relayer.logic_call_market_enabled = false;

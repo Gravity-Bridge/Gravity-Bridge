@@ -1,8 +1,6 @@
 //! This is the testing module for relay market functionality, testing that
 //! relayers utilize web30 to interact with a testnet to obtain coin swap values
 //! and determine whether relays should happen or not
-use std::time::{Duration, Instant};
-
 use crate::happy_path::test_erc20_deposit_panic;
 use crate::utils::{
     check_cosmos_balance, get_erc20_balance_safe, send_one_eth, start_orchestrators, ValidatorKeys,
@@ -22,6 +20,7 @@ use ethereum_gravity::utils::get_tx_batch_nonce;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use rand::Rng;
+use std::time::{Duration, Instant};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::amm::{DAI_CONTRACT_ADDRESS, WETH_CONTRACT_ADDRESS};
@@ -46,8 +45,10 @@ async fn test_batches(
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
 ) {
-    // Start Orchestrators
-    let default_config = GravityBridgeToolsConfig::default();
+    // Start Orchestrators with the default config, but modified to enable the integrated
+    // relayer by default
+    let mut default_config = GravityBridgeToolsConfig::default();
+    default_config.orchestrator.relayer_enabled = true;
     start_orchestrators(keys.clone(), gravity_address, false, default_config).await;
 
     test_good_batch(
