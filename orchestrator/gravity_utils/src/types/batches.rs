@@ -137,7 +137,11 @@ impl TryFrom<gravity_proto::gravity::OutgoingTransferTx> for BatchTransaction {
     fn try_from(
         input: gravity_proto::gravity::OutgoingTransferTx,
     ) -> Result<BatchTransaction, GravityError> {
-        if input.erc20_fee.is_none() || input.erc20_token.is_none() {
+        if input.erc20_fee.is_none()
+            || input.erc20_token.is_none()
+            || input.erc20_fee.clone().unwrap().contract
+                != input.erc20_token.clone().unwrap().contract
+        {
             return Err(GravityError::InvalidBridgeStateError(
                 "Can not have tx with null erc20_token!".to_string(),
             ));
