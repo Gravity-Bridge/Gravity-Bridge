@@ -18,7 +18,6 @@ use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
-use cosmos_gravity::utils::wait_for_cosmos_online;
 use deep_space::coin::Coin;
 use deep_space::Contact;
 use evidence_based_slashing::evidence_based_slashing;

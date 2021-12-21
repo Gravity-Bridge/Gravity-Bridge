@@ -11,6 +11,7 @@ use clarity::{Address as EthAddress, Uint256};
 use clarity::{PrivateKey as EthPrivateKey, Transaction};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
+use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::utils::encode_any;
 use deep_space::{Contact, Fee, Msg};
@@ -539,4 +540,19 @@ pub async fn get_event_nonce_safe(
         }
     }
     Ok(new_balance.unwrap())
+}
+
+pub async fn wait_for_cosmos_online(contact: &Contact, timeout: Duration) {
+    let start = Instant::now();
+    while let Err(CosmosGrpcError::NodeNotSynced) | Err(CosmosGrpcError::ChainNotRunning) =
+        contact.wait_for_next_block(timeout).await
+    {
+        sleep(Duration::from_secs(1)).await;
+        if Instant::now() - start > timeout {
+            panic!("Cosmos node has not come online during timeout!")
+        }
+    }
+    contact.wait_for_next_block(timeout).await.unwrap();
+    contact.wait_for_next_block(timeout).await.unwrap();
+    contact.wait_for_next_block(timeout).await.unwrap();
 }
