@@ -43,7 +43,7 @@ pub async fn invalid_events(
     // figure out how many of a given erc20 we already have on startup so that we can
     // keep track of incrementation. This makes it possible to run this test again without
     // having to restart your test chain
-    let community_pool_contents = contact.get_community_pool_coins().await.unwrap();
+    let community_pool_contents = contact.query_community_pool().await.unwrap();
     let mut starting_pool_amount = None;
     for coin in community_pool_contents {
         if coin.denom == erc20_denom {
@@ -83,7 +83,7 @@ pub async fn invalid_events(
         .await;
 
         // finally we check that the deposit has been added to the community pool
-        let community_pool_contents = contact.get_community_pool_coins().await.unwrap();
+        let community_pool_contents = contact.query_community_pool().await.unwrap();
         for coin in community_pool_contents {
             if coin.denom == erc20_denom {
                 let expected = starting_pool_amount + one_eth();
