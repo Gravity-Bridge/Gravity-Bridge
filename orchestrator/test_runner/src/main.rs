@@ -13,6 +13,7 @@ use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
 use crate::signature_slashing::signature_slashing_test;
+use crate::slashing_delegation::slashing_delegation_test;
 use crate::tx_cancel::send_to_eth_and_cancel;
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
@@ -44,6 +45,7 @@ mod orch_keys;
 mod pause_bridge;
 mod relay_market;
 mod signature_slashing;
+mod slashing_delegation;
 mod transaction_stress_test;
 mod tx_cancel;
 mod unhalt_bridge;
@@ -305,6 +307,10 @@ pub async fn main() {
         } else if test_type == "SIGNATURE_SLASHING" {
             info!("Starting Signature Slashing test");
             signature_slashing_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            return;
+        } else if test_type == "SLASHING_DELEGATION" {
+            info!("Starting Slashing Delegation test");
+            slashing_delegation_test(&web30, grpc_client, &contact, keys, gravity_address).await;
             return;
         } else if !test_type.is_empty() {
             panic!("Err Unknown test type")

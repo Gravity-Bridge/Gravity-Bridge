@@ -291,9 +291,7 @@ pub async fn start_orchestrators(
             "Spawning Orchestrator with delegate keys {} {} and validator key {}",
             k.eth_key.to_address(),
             k.orch_key.to_address(ADDRESS_PREFIX.as_str()).unwrap(),
-            k.validator_key
-                .to_address(&format!("{}valoper", ADDRESS_PREFIX.as_str()))
-                .unwrap()
+            get_operator_address(k.validator_key),
         );
         let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
             .await
@@ -555,8 +553,6 @@ pub async fn wait_for_cosmos_online(contact: &Contact, timeout: Duration) {
             panic!("Cosmos node has not come online during timeout!")
         }
     }
-    contact.wait_for_next_block(timeout).await.unwrap();
-    contact.wait_for_next_block(timeout).await.unwrap();
     contact.wait_for_next_block(timeout).await.unwrap();
 }
 
