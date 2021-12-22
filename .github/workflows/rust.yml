@@ -46,6 +46,16 @@ jobs:
           working-directory: orchestrator/
       - name: Check for Clippy lints
         run: rustup component add clippy && cd orchestrator && cargo clippy --all --all-targets --all-features -- -D warnings
+  audit:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: orchestrator/
+      - name: Run Cargo Audit
+        run: cargo install cargo-audit && cd orchestrator && cargo audit
   cross-compile-arm64:
     runs-on: ubuntu-latest
     needs: build
