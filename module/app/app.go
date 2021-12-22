@@ -178,31 +178,59 @@ type Gravity struct {
 	memKeys map[string]*sdk.MemoryStoreKey
 
 	// keepers
-	accountKeeper    authkeeper.AccountKeeper
-	bankKeeper       bankkeeper.BaseKeeper
+	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
+	accountKeeper    *authkeeper.AccountKeeper
+	bankKeeper       *bankkeeper.BaseKeeper
 	capabilityKeeper *capabilitykeeper.Keeper
-	stakingKeeper    stakingkeeper.Keeper
-	slashingKeeper   slashingkeeper.Keeper
-	mintKeeper       mintkeeper.Keeper
-	distrKeeper      distrkeeper.Keeper
-	govKeeper        govkeeper.Keeper
-	crisisKeeper     crisiskeeper.Keeper
-	upgradeKeeper    upgradekeeper.Keeper
-	paramsKeeper     paramskeeper.Keeper
+	stakingKeeper    *stakingkeeper.Keeper
+	slashingKeeper   *slashingkeeper.Keeper
+	mintKeeper       *mintkeeper.Keeper
+	distrKeeper      *distrkeeper.Keeper
+	govKeeper        *govkeeper.Keeper
+	crisisKeeper     *crisiskeeper.Keeper
+	upgradeKeeper    *upgradekeeper.Keeper
+	paramsKeeper     *paramskeeper.Keeper
 	ibcKeeper        *ibckeeper.Keeper
-	evidenceKeeper   evidencekeeper.Keeper
-	transferKeeper   ibctransferkeeper.Keeper
-	gravityKeeper    keeper.Keeper
+	evidenceKeeper   *evidencekeeper.Keeper
+	transferKeeper   *ibctransferkeeper.Keeper
+	gravityKeeper    *keeper.Keeper
 
 	// make scoped keepers public for test purposes
-	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
-	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
+	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
+	ScopedIBCKeeper      *capabilitykeeper.ScopedKeeper
+	ScopedTransferKeeper *capabilitykeeper.ScopedKeeper
 
 	// Module Manager
 	mm *module.Manager
 
 	// simulation manager
 	sm *module.SimulationManager
+}
+
+// ValidateMembers checks for nil members
+func (g Gravity) ValidateMembers() {
+	if g.legacyAmino == nil { panic("Nil legacyAmino!") }
+
+	// keepers
+	if g.accountKeeper    == nil { panic("Nil accountKeeper!") }
+	if g.bankKeeper       == nil { panic("Nil bankKeeper!") }
+	if g.capabilityKeeper == nil { panic("Nil capabilityKeeper!") }
+	if g.stakingKeeper    == nil { panic("Nil stakingKeeper!") }
+	if g.slashingKeeper   == nil { panic("Nil slashingKeeper!") }
+	if g.mintKeeper       == nil { panic("Nil mintKeeper!") }
+	if g.distrKeeper      == nil { panic("Nil distrKeeper!") }
+	if g.govKeeper        == nil { panic("Nil govKeeper!") }
+	if g.crisisKeeper     == nil { panic("Nil crisisKeeper!") }
+	if g.upgradeKeeper    == nil { panic("Nil upgradeKeeper!") }
+	if g.paramsKeeper     == nil { panic("Nil paramsKeeper!") }
+	if g.ibcKeeper        == nil { panic("Nil ibcKeeper!") }
+	if g.evidenceKeeper   == nil { panic("Nil evidenceKeeper!") }
+	if g.transferKeeper   == nil { panic("Nil transferKeeper!") }
+	if g.gravityKeeper    == nil { panic("Nil gravityKeeper!") }
+
+	// scoped keepers
+	if g.ScopedIBCKeeper      == nil { panic("Nil ScopedIBCKeeper!") }
+	if g.ScopedTransferKeeper == nil { panic("Nil ScopedTransferKeeper!") }
 }
 
 func init() {
@@ -251,9 +279,9 @@ func NewGravityApp(
 	}
 
 	paramsKeeper := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tKeys[paramstypes.TStoreKey])
-	app.paramsKeeper = paramsKeeper
+	app.paramsKeeper = &paramsKeeper
 
-	bApp.SetParamStore(app.paramsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable()))
+	bApp.SetParamStore(paramsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable()))
 
 	capabilityKeeper := capabilitykeeper.NewKeeper(
 		appCodec,
@@ -275,7 +303,7 @@ func NewGravityApp(
 		authtypes.ProtoBaseAccount,
 		maccPerms,
 	)
-	app.accountKeeper = accountKeeper
+	app.accountKeeper = &accountKeeper
 
 	bankKeeper := bankkeeper.NewBaseKeeper(
 		appCodec,
@@ -284,7 +312,7 @@ func NewGravityApp(
 		app.GetSubspace(banktypes.ModuleName),
 		app.BlockedAddrs(),
 	)
-	app.bankKeeper = bankKeeper
+	app.bankKeeper = &bankKeeper
 
 	stakingKeeper := stakingkeeper.NewKeeper(
 		appCodec,
@@ -293,7 +321,7 @@ func NewGravityApp(
 		bankKeeper,
 		app.GetSubspace(stakingtypes.ModuleName),
 	)
-	app.stakingKeeper = stakingKeeper
+	app.stakingKeeper = &stakingKeeper
 
 	distrKeeper := distrkeeper.NewKeeper(
 		appCodec,
@@ -305,7 +333,7 @@ func NewGravityApp(
 		authtypes.FeeCollectorName,
 		app.ModuleAccountAddrs(),
 	)
-	app.distrKeeper = distrKeeper
+	app.distrKeeper = &distrKeeper
 
 	slashingKeeper := slashingkeeper.NewKeeper(
 		appCodec,
@@ -313,19 +341,28 @@ func NewGravityApp(
 		&stakingKeeper,
 		app.GetSubspace(slashingtypes.ModuleName),
 	)
-	app.slashingKeeper = slashingKeeper
+	app.slashingKeeper = &slashingKeeper
 
-	gravityKeeper := keeper.NewKeeper(
-		appCodec,
+	var gravityKeeper keeper.Keeper = keeper.NewKeeper(
 		keys[gravitytypes.StoreKey],
 		app.GetSubspace(gravitytypes.ModuleName),
-		stakingKeeper,
-		bankKeeper,
-		distrKeeper,
-		slashingKeeper,
-		accountKeeper,
+		appCodec,
+		&bankKeeper,
+		&stakingKeeper,
+		&slashingKeeper,
+		&distrKeeper,
+		&accountKeeper,
 	)
-	app.gravityKeeper = gravityKeeper
+	app.gravityKeeper = &gravityKeeper
+
+	// Add the staking hooks from distribution, slashing, and gravity to staking
+	stakingKeeper.SetHooks(
+		stakingtypes.NewMultiStakingHooks(
+			app.distrKeeper.Hooks(),
+			app.slashingKeeper.Hooks(),
+			app.gravityKeeper.Hooks(),
+		),
+	)
 
 	mintKeeper := mintkeeper.NewKeeper(
 		appCodec,
@@ -336,7 +373,7 @@ func NewGravityApp(
 		bankKeeper,
 		authtypes.FeeCollectorName,
 	)
-	app.mintKeeper = mintKeeper
+	app.mintKeeper = &mintKeeper
 
 	crisisKeeper := crisiskeeper.NewKeeper(
 		app.GetSubspace(crisistypes.ModuleName),
@@ -344,7 +381,7 @@ func NewGravityApp(
 		bankKeeper,
 		authtypes.FeeCollectorName,
 	)
-	app.crisisKeeper = crisisKeeper
+	app.crisisKeeper = &crisisKeeper
 
 	upgradeKeeper := upgradekeeper.NewKeeper(
 		skipUpgradeHeights,
@@ -353,7 +390,7 @@ func NewGravityApp(
 		homePath,
 		app.BaseApp,
 	)
-	app.upgradeKeeper = upgradeKeeper
+	app.upgradeKeeper = &upgradeKeeper
 
 	ibcKeeper := ibckeeper.NewKeeper(
 		appCodec,
@@ -382,14 +419,15 @@ func NewGravityApp(
 		stakingKeeper,
 		govRouter,
 	)
-	app.govKeeper = govKeeper
+	app.govKeeper = &govKeeper
 
-	app.transferKeeper = ibctransferkeeper.NewKeeper(
+	transferKeeper := ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
 		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
 		accountKeeper, bankKeeper, scopedTransferKeeper,
 	)
-	transferModule := transfer.NewAppModule(app.transferKeeper)
+	app.transferKeeper = &transferKeeper
+	transferModule := transfer.NewAppModule(transferKeeper)
 
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferModule)
@@ -401,15 +439,7 @@ func NewGravityApp(
 		&stakingKeeper,
 		app.slashingKeeper,
 	)
-	app.evidenceKeeper = *evidenceKeeper
-
-	app.stakingKeeper = *stakingKeeper.SetHooks(
-		stakingtypes.NewMultiStakingHooks(
-			distrKeeper.Hooks(),
-			slashingKeeper.Hooks(),
-			gravityKeeper.Hooks(),
-		),
-	)
+	app.evidenceKeeper = evidenceKeeper
 
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
@@ -422,7 +452,7 @@ func NewGravityApp(
 		),
 		auth.NewAppModule(
 			appCodec,
-			app.accountKeeper,
+			accountKeeper,
 			nil,
 		),
 		vesting.NewAppModule(
@@ -517,9 +547,9 @@ func NewGravityApp(
 		gravitytypes.ModuleName,
 	)
 
-	app.mm.RegisterInvariants(&app.crisisKeeper)
+	app.mm.RegisterInvariants(&crisisKeeper)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
-	app.mm.RegisterServices(module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter()))
+	app.mm.RegisterServices(module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter()))
 
 	app.sm = module.NewSimulationManager(
 		auth.NewAppModule(appCodec, accountKeeper, authsims.RandomGenesisAccounts),
@@ -564,11 +594,13 @@ func NewGravityApp(
 		}
 	}
 
-	app.ScopedIBCKeeper = scopedIBCKeeper
-	app.ScopedTransferKeeper = scopedTransferKeeper
+	app.ScopedIBCKeeper = &scopedIBCKeeper
+	app.ScopedTransferKeeper = &scopedTransferKeeper
 
 	keeper.RegisterProposalTypes()
 
+	// We don't allow anything to be nil
+	app.ValidateMembers()
 	return app
 }
 
