@@ -6,6 +6,7 @@ use crate::ethereum_event_watcher::get_block_delay;
 use crate::{ethereum_event_watcher::check_for_events, oracle_resync::get_last_checked_block};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{address::Address as EthAddress, Uint256};
+use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::{
     query::{
         get_oldest_unsigned_logic_calls, get_oldest_unsigned_transaction_batches,
@@ -17,13 +18,13 @@ use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
 use deep_space::{client::ChainStatus, utils::FeeInfo};
 use deep_space::{coin::Coin, private_key::PrivateKey as CosmosPrivateKey};
-use ethereum_gravity::utils::get_gravity_id;
 use futures::future::join;
 use futures::future::join3;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use relayer::main_loop::relayer_main_loop;
+use std::cmp::min;
 use std::process::exit;
 use std::time::Duration;
 use std::time::Instant;
@@ -66,10 +67,8 @@ pub async fn orchestrator_main_loop(
     let b = eth_signer_main_loop(
         cosmos_key,
         ethereum_key,
-        web3.clone(),
         contact.clone(),
         grpc_client.clone(),
-        gravity_contract_address,
         fee.clone(),
     );
     let c = relayer_main_loop(
@@ -213,57 +212,50 @@ pub async fn eth_oracle_main_loop(
 pub async fn eth_signer_main_loop(
     cosmos_key: CosmosPrivateKey,
     ethereum_key: EthPrivateKey,
-    web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
-    gravity_contract_address: EthAddress,
     fee: Coin,
 ) {
     let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
-    let our_ethereum_address = ethereum_key.to_address();
     let mut grpc_client = grpc_client;
-    let gravity_id = get_gravity_id(gravity_contract_address, our_ethereum_address, &web3).await;
-    if gravity_id.is_err() {
-        error!("Failed to get GravityID, check your Eth node");
-        return;
-    }
-    let gravity_id = gravity_id.unwrap();
 
     loop {
         let loop_start = Instant::now();
 
-        let latest_eth_block = web3.eth_block_number().await;
-        let latest_cosmos_block = contact.get_chain_status().await;
-        match (latest_eth_block, latest_cosmos_block) {
-            (Ok(latest_eth_block), Ok(ChainStatus::Moving { block_height })) => {
-                trace!(
-                    "Latest Eth block {} Latest Cosmos block {}",
-                    latest_eth_block,
-                    block_height,
-                );
+        // repeatedly refreshing the parameters here maintains loop correctness
+        // if the gravity_id is changed or slashing windows are changed. Neither of these
+        // is very probable
+        let params = match get_gravity_params(&mut grpc_client).await {
+            Ok(p) => p,
+            Err(e) => {
+                error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
+                continue;
             }
-            (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
+        };
+        let blocks_until_slashing = min(
+            min(params.signed_valsets_window, params.signed_batches_window),
+            params.signed_logic_calls_window,
+        );
+        let gravity_id = params.gravity_id;
+
+        let latest_cosmos_block = contact.get_chain_status().await;
+        match latest_cosmos_block {
+            Ok(ChainStatus::Moving { block_height }) => {
+                trace!("Latest Cosmos block {}", block_height,);
+            }
+            Ok(ChainStatus::Syncing) => {
                 warn!("Cosmos node syncing, Eth signer paused");
+                warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
                 delay_for(DELAY).await;
                 continue;
             }
-            (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
+            Ok(ChainStatus::WaitingToStart) => {
                 warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
                 delay_for(DELAY).await;
                 continue;
             }
-            (Ok(_), Err(_)) => {
-                warn!("Could not contact Cosmos grpc, trying again");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Err(_), Ok(_)) => {
-                warn!("Could not contact Eth node, trying again");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Err(_), Err(_)) => {
-                error!("Could not reach Ethereum or Cosmos rpc!");
+            Err(_) => {
+                error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
                 delay_for(DELAY).await;
                 continue;
             }
