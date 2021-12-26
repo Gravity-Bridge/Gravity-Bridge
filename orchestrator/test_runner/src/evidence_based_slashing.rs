@@ -100,7 +100,7 @@ async fn check_validator(contact: &Contact, key: PrivateKey, filter: &str) -> (b
         .await
         .unwrap();
     let addr = get_operator_address(key);
-    for val in validators.validators {
+    for val in validators {
         if val.operator_address == addr.to_string() {
             return (true, val.jailed);
         }
@@ -110,7 +110,7 @@ async fn check_validator(contact: &Contact, key: PrivateKey, filter: &str) -> (b
 
 async fn print_validator_status(contact: &Contact) {
     let validators = contact.get_active_validators().await.unwrap();
-    for val in validators.validators.iter() {
+    for val in validators.iter() {
         info!(
             "Validator: {} Power: {} Jailed: {}",
             val.operator_address, val.tokens, val.jailed

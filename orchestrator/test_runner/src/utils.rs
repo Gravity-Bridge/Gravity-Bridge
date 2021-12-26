@@ -416,7 +416,7 @@ pub async fn print_validator_stake(contact: &Contact) {
         .get_validators_list(QueryValidatorsRequest::default())
         .await
         .unwrap();
-    for validator in validators.validators {
+    for validator in validators {
         info!(
             "Validator {} has {} tokens",
             validator.operator_address, validator.tokens
@@ -565,7 +565,7 @@ pub async fn wait_for_cosmos_online(contact: &Contact, timeout: Duration) {
 /// create a 5% or greater change in voting power, triggering the
 /// creation of a validator set update.
 pub async fn get_validator_to_delegate_to(contact: &Contact) -> (CosmosAddress, Coin) {
-    let validators = contact.get_active_validators().await.unwrap().validators;
+    let validators = contact.get_active_validators().await.unwrap();
     let mut total_bonded_stake: Uint256 = 0u8.into();
     let mut has_the_least = None;
     let mut lowest = 0u8.into();

@@ -19,7 +19,7 @@ gravity_proto = {path = "../gravity_proto/"}
 relayer = {path = "../relayer/"}
 orchestrator = {path = "../orchestrator/"}
 
-deep_space = "2.7"
+deep_space = "2.8"
 serde_derive = "1.0"
 clarity = "0.5"
 clap = {version="3.0.0-rc.7", features=["derive"]}
