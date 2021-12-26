@@ -74,7 +74,8 @@ pub async fn get_latest_block(contact: &Contact) -> u64 {
 
 /// Reduces the slashing window for validator sets and batches
 /// from 10k blocks to 10 blocks in order to trigger Gravity's slashing
-/// code in the integration test environment
+/// code in the integration test environment. This also reduces the
+/// unbonding time down to 60 seconds so that unbonding can be tested
 pub async fn reduce_slashing_window(
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,

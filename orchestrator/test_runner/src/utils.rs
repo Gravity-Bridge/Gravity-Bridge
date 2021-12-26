@@ -245,7 +245,7 @@ pub fn get_user_key() -> BridgeUserKey {
         eth_dest_key,
     }
 }
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct BridgeUserKey {
     // the starting addresses that get Eth balances to send across the bridge
     pub eth_address: EthAddress,
