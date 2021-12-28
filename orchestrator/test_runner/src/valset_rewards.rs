@@ -1,6 +1,6 @@
 //! This is a test for validator set relaying rewards
 
-use crate::get_deposit;
+use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::test_valset_update;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{
@@ -13,8 +13,6 @@ use deep_space::coin::Coin;
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use std::time::Duration;
-use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -70,18 +68,12 @@ pub async fn valset_rewards_test(
     // next we create a governance proposal to use the newly bridged asset as the reward
     // and vote to pass the proposal
     info!("Creating parameter change governance proposal");
-    create_parameter_change_proposal(
-        contact,
-        keys[0].validator_key,
-        get_deposit(),
-        params_to_change,
-    )
-    .await;
+    create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
 
     vote_yes_on_proposals(contact, &keys, None).await;
 
     // wait for the voting period to pass
-    sleep(Duration::from_secs(65)).await;
+    wait_for_proposals_to_execute(contact).await;
 
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
     // check that params have changed

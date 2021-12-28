@@ -1,9 +1,10 @@
 //! this test simulates pausing and unpausing the bridge via governance action. This would be used in an emergency
 //! situation to prevent the bridge from being drained of funds
 //!
+use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::{test_erc20_deposit_panic, test_erc20_deposit_result};
+use crate::utils::*;
 use crate::MINER_ADDRESS;
-use crate::{get_deposit, utils::*};
 use crate::{get_fee, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
@@ -69,18 +70,12 @@ pub async fn pause_bridge_test(
     params_to_change.push(halt);
 
     // next we create a governance proposal halt the bridge temporarily
-    create_parameter_change_proposal(
-        contact,
-        keys[0].validator_key,
-        get_deposit(),
-        params_to_change,
-    )
-    .await;
+    create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
 
     vote_yes_on_proposals(contact, &keys, None).await;
 
     // wait for the voting period to pass
-    sleep(Duration::from_secs(65)).await;
+    wait_for_proposals_to_execute(contact).await;
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
     assert!(!params.bridge_active);
 
@@ -168,13 +163,7 @@ pub async fn pause_bridge_test(
     params_to_change.push(unhalt);
 
     // crate a governance proposal to resume the bridge
-    create_parameter_change_proposal(
-        contact,
-        keys[0].validator_key,
-        get_deposit(),
-        params_to_change,
-    )
-    .await;
+    create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
 
     vote_yes_on_proposals(contact, &keys, None).await;
 

@@ -34,6 +34,7 @@ pub enum SubCommand {
     Orchestrator(OrchestratorOpts),
     Relayer(RelayerOpts),
     Client(ClientOpts),
+    Gov(GovOpts),
     Keys(KeyOpts),
     Init(InitOpts),
 }
@@ -232,3 +233,138 @@ pub struct SetOrchestratorKeyOpts {
 /// Initialize configuration
 #[derive(Parser)]
 pub struct InitOpts {}
+
+/// The Gravity Bridge Governance subcommand contains tools for interacting with governance and submitting
+/// proposal types custom to Gravity Bridge
+#[derive(Parser)]
+pub struct GovOpts {
+    #[clap(subcommand)]
+    pub subcmd: GovSubcommand,
+}
+
+#[derive(Parser)]
+pub enum GovSubcommand {
+    #[clap(subcommand)]
+    /// Submit custom governance proposal types
+    Submit(GovSubmitSubcommand),
+    #[clap(subcommand)]
+    /// Query info about custom governance proposal types
+    Query(GovQuerySubcommand),
+}
+
+#[derive(Parser)]
+pub enum GovSubmitSubcommand {
+    IbcMetadata(IbcMetadataProposalOpts),
+    Airdrop(AirdropProposalOpts),
+    EmergencyBridgeHalt(EmergencyBridgeHaltProposalOpts),
+    OracleUnhalt(OracleUnhaltProposalOpts),
+}
+
+#[derive(Parser)]
+pub enum GovQuerySubcommand {
+    Airdrop(AirdropQueryOpts),
+}
+
+#[derive(Parser)]
+/// Queries active airdrop proposals and pretty-prints the interpreted data
+pub struct AirdropQueryOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to perform the query
+    #[clap(short, long, default_value = "http://localhost:9090")]
+    pub cosmos_grpc: String,
+    /// (Optional) query airdrops not actively being voted on
+    #[clap(short, long)]
+    pub query_history: bool,
+    /// (Optional) display full recipients list for airdrops over 100 members
+    #[clap(short, long)]
+    pub full_list: bool,
+}
+
+/// An IBC metadata proposal is a Governance proposal which allows setting denom metadata
+/// for an IBC token. This is an essential first setup in taking IBC tokens to Ethereum.
+/// The provided denom metadata will be used to set the name, symbol, description, and decimals
+/// for the resulting ERC20
+#[derive(Parser)]
+pub struct IbcMetadataProposalOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = "http://localhost:9090")]
+    pub cosmos_grpc: String,
+    /// The phrase for an address containing enough funds to submit the proposal.
+    #[clap(short, long, parse(try_from_str))]
+    pub cosmos_phrase: CosmosPrivateKey,
+    /// Path to the proposal.json
+    #[clap(short, long, parse(try_from_str))]
+    pub json: PathBuf,
+    /// The Cosmos Denom and amount to pay the governance proposal deposit
+    #[clap(short, long, parse(try_from_str))]
+    pub deposit: Coin,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Coin,
+}
+
+/// An Airdrop Proposal allows the community to create, vote on, and execute
+/// an airdrop. A list of addresses are all send an equal amount of tokens from the community pool.
+#[derive(Parser)]
+pub struct AirdropProposalOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = "http://localhost:9090")]
+    pub cosmos_grpc: String,
+    /// The phrase for an address containing enough funds to submit the proposal.
+    #[clap(short, long, parse(try_from_str))]
+    pub cosmos_phrase: CosmosPrivateKey,
+    /// Path to the proposal.json
+    #[clap(short, long, parse(try_from_str))]
+    pub json: PathBuf,
+    /// The Cosmos Denom and amount to pay the governance proposal deposit
+    #[clap(short, long, parse(try_from_str))]
+    pub deposit: Coin,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Coin,
+}
+
+/// In case of a critical bug or other event involving the bridge the Gravity Bridge community may
+/// choose to halt the operation of the bridge. What this will do is pause the processing of SendToEth
+/// MsgCreateBatch and all Oracle claims messages. Effectively stopping the bridge from functioning until
+/// governance takes action to turn it on again
+#[derive(Parser)]
+pub struct EmergencyBridgeHaltProposalOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = "http://localhost:9090")]
+    pub cosmos_grpc: String,
+    /// The phrase for an address containing enough funds to submit the proposal.
+    #[clap(short, long, parse(try_from_str))]
+    pub cosmos_phrase: CosmosPrivateKey,
+    /// Path to the proposal.json
+    #[clap(short, long, parse(try_from_str))]
+    pub json: PathBuf,
+    /// The Cosmos Denom and amount to pay the governance proposal deposit
+    #[clap(short, long, parse(try_from_str))]
+    pub deposit: Coin,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Coin,
+}
+
+/// If there is a fork on the Ethereum mainnet it may cause disagreement in the bridge Oracle
+/// since there is no way for validators to retract a claim once made normally this fork would
+/// cause an irresolveable deadlock in the oracle. If this where to occur passing a OracleUnhaltProposal
+/// will reset the oracle and allow the bridge to progress normally
+#[derive(Parser)]
+pub struct OracleUnhaltProposalOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = "http://localhost:9090")]
+    pub cosmos_grpc: String,
+    /// The phrase for an address containing enough funds to submit the proposal.
+    #[clap(short, long, parse(try_from_str))]
+    pub cosmos_phrase: CosmosPrivateKey,
+    /// Path to the proposal.json
+    #[clap(short, long, parse(try_from_str))]
+    pub json: PathBuf,
+    /// The Cosmos Denom and amount to pay the governance proposal deposit
+    #[clap(short, long, parse(try_from_str))]
+    pub deposit: Coin,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Coin,
+}

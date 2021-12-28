@@ -5,7 +5,7 @@ use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{vote_yes_on_proposals, ValidatorKeys};
 use crate::{get_deposit, get_fee, TOTAL_TIMEOUT};
 use clarity::Address;
-use deep_space::utils::encode_any;
+use cosmos_gravity::proposals::submit_ibc_metadata_proposal;
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{DenomUnit, Metadata};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -99,7 +99,6 @@ pub async fn ibc_metadata_proposal_test(
     // the actual valid proposal
     submit_and_pass_ibc_metadata_proposal(target_denom.clone(), test_metadata, contact, &keys)
         .await;
-    wait_for_proposals_to_execute(contact).await;
     let metadata_end = contact.get_all_denoms_metadata().await.unwrap();
     info!("Ending metadata {:?}", metadata_end);
     let mut found = None;
@@ -136,28 +135,18 @@ async fn submit_and_pass_ibc_metadata_proposal(
         ibc_denom: denom,
         metadata: Some(metadata),
     };
-
-    // encode as a generic proposal
-    let any = encode_any(
+    let res = submit_ibc_metadata_proposal(
         proposal_content,
-        "/gravity.v1.IBCMetadataProposal".to_string(),
-    );
-
-    let res = contact
-        .create_gov_proposal(
-            any,
-            get_deposit(),
-            get_fee(),
-            keys[0].validator_key,
-            Some(TOTAL_TIMEOUT),
-        )
-        .await
-        .unwrap();
-    trace!("Gov proposal submitted with {:?}", res);
-    let res = contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
-    trace!("Gov proposal executed with {:?}", res);
-
+        get_deposit(),
+        get_fee(),
+        contact,
+        keys[0].validator_key,
+        Some(TOTAL_TIMEOUT),
+    )
+    .await;
     vote_yes_on_proposals(contact, keys, None).await;
+    wait_for_proposals_to_execute(contact).await;
+    trace!("Gov proposal executed with {:?}", res);
 }
 
 async fn submit_and_fail_ibc_metadata_proposal(
@@ -172,21 +161,14 @@ async fn submit_and_fail_ibc_metadata_proposal(
         ibc_denom: denom,
         metadata: Some(metadata),
     };
-
-    // encode as a generic proposal
-    let any = encode_any(
+    let res = submit_ibc_metadata_proposal(
         proposal_content,
-        "/gravity.v1.IBCMetadataProposal".to_string(),
-    );
-
-    let res = contact
-        .create_gov_proposal(
-            any,
-            get_deposit(),
-            get_fee(),
-            keys[0].validator_key,
-            Some(TOTAL_TIMEOUT),
-        )
-        .await;
+        get_deposit(),
+        get_fee(),
+        contact,
+        keys[0].validator_key,
+        Some(TOTAL_TIMEOUT),
+    )
+    .await;
     assert!(res.is_err());
 }

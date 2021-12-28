@@ -6,11 +6,14 @@ use crate::ADDRESS_PREFIX;
 use crate::STAKING_TOKEN;
 use crate::{get_deposit, get_fee, TOTAL_TIMEOUT};
 use clarity::Uint256;
+use cosmos_gravity::proposals::{
+    submit_airdrop_proposal, AirdropProposalJson, AIRDROP_PROPOSAL_TYPE_URL,
+};
 use deep_space::error::CosmosGrpcError;
 use deep_space::utils::encode_any;
 use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
-use gravity_proto::gravity::AirdropProposal;
+use gravity_proto::gravity::AirdropProposal as AirdropProposalMsg;
 use rand::prelude::ThreadRng;
 use rand::Rng;
 use std::time::{Duration, Instant};
@@ -112,32 +115,25 @@ async fn submit_and_pass_airdrop_proposal(
     contact: &Contact,
     keys: &[ValidatorKeys],
 ) -> Result<bool, CosmosGrpcError> {
-    let mut byte_recipients = Vec::new();
-    for r in recipients {
-        byte_recipients.extend_from_slice(r.as_bytes())
-    }
-
-    let proposal_content = AirdropProposal {
+    let proposal_content = AirdropProposalJson {
         title: format!("Proposal to perform {} airdrop", denom),
         description: "Airdrop time!".to_string(),
         denom,
         amounts: amounts.to_vec(),
-        recipients: byte_recipients,
+        recipients: recipients.to_vec(),
     };
 
-    // encode as a generic proposal
-    let any = encode_any(proposal_content, "/gravity.v1.AirdropProposal".to_string());
+    let res = submit_airdrop_proposal(
+        proposal_content,
+        get_deposit(),
+        get_fee(),
+        contact,
+        keys[0].validator_key,
+        Some(TOTAL_TIMEOUT),
+    )
+    .await
+    .unwrap();
 
-    let res = contact
-        .create_gov_proposal(
-            any,
-            get_deposit(),
-            get_fee(),
-            keys[0].validator_key,
-            Some(TOTAL_TIMEOUT),
-        )
-        .await
-        .unwrap();
     trace!("Gov proposal submitted with {:?}", res);
     let res = contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
     trace!("Gov proposal executed with {:?}", res);
@@ -170,7 +166,7 @@ async fn submit_and_fail_airdrop_proposal(
         byte_recipients.extend_from_slice(&[0, 1, 2, 3, 4]);
     }
 
-    let proposal_content = AirdropProposal {
+    let proposal_content = AirdropProposalMsg {
         title: format!("Proposal to perform {} airdrop", denom),
         description: "Airdrop time!".to_string(),
         denom,
@@ -184,7 +180,7 @@ async fn submit_and_fail_airdrop_proposal(
     );
 
     // encode as a generic proposal
-    let any = encode_any(proposal_content, "/gravity.v1.AirdropProposal".to_string());
+    let any = encode_any(proposal_content, AIRDROP_PROPOSAL_TYPE_URL.to_string());
 
     let res = contact
         .create_gov_proposal(

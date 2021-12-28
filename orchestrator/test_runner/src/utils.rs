@@ -1,3 +1,4 @@
+use crate::get_deposit;
 use crate::get_fee;
 use crate::ADDRESS_PREFIX;
 use crate::COSMOS_NODE_GRPC;
@@ -9,12 +10,12 @@ use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
 use clarity::{Address as EthAddress, Uint256};
 use clarity::{PrivateKey as EthPrivateKey, Transaction};
+use cosmos_gravity::proposals::submit_parameter_change_proposal;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
-use deep_space::utils::encode_any;
 use deep_space::{Contact, Fee, Msg};
 use ethereum_gravity::utils::get_event_nonce;
 use futures::future::join_all;
@@ -389,7 +390,6 @@ pub async fn submit_false_claims(
 pub async fn create_parameter_change_proposal(
     contact: &Contact,
     key: CosmosPrivateKey,
-    deposit: Coin,
     params_to_change: Vec<ParamChange>,
 ) {
     let proposal = ParameterChangeProposal {
@@ -397,17 +397,16 @@ pub async fn create_parameter_change_proposal(
         description: "test proposal".to_string(),
         changes: params_to_change,
     };
-    let any = encode_any(
+    let res = submit_parameter_change_proposal(
         proposal,
-        "/cosmos.params.v1beta1.ParameterChangeProposal".to_string(),
-    );
-
-    let res = contact
-        .create_gov_proposal(any, deposit, get_fee(), key, Some(TOTAL_TIMEOUT))
-        .await
-        .unwrap();
-    trace!("Gov proposal submitted with {:?}", res);
-    let res = contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
+        get_deposit(),
+        get_fee(),
+        contact,
+        key,
+        Some(TOTAL_TIMEOUT),
+    )
+    .await
+    .unwrap();
     trace!("Gov proposal executed with {:?}", res);
 }
 

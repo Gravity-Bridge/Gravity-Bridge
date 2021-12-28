@@ -4,9 +4,9 @@ use crate::{get_deposit, utils::*, TOTAL_TIMEOUT};
 use crate::{get_fee, one_eth, OPERATION_TIMEOUT};
 use bytes::BytesMut;
 use clarity::{Address as EthAddress, Uint256};
+use cosmos_gravity::proposals::submit_unhalt_bridge_proposal;
 use cosmos_gravity::query::{get_attestations, get_last_event_nonce_for_validator};
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
-use deep_space::utils::encode_any;
 use deep_space::{Contact, Fee};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
@@ -224,25 +224,16 @@ async fn submit_and_pass_unhalt_bridge_proposal(
         target_nonce: nonce,
     };
     info!("Submit and pass gov proposal: nonce is {}", nonce);
-
-    // encode as a generic proposal
-    let any = encode_any(
+    let res = submit_unhalt_bridge_proposal(
         proposal_content,
-        "/gravity.v1.UnhaltBridgeProposal".to_string(),
-    );
-
-    let res = contact
-        .create_gov_proposal(
-            any,
-            get_deposit(),
-            get_fee(),
-            keys[0].validator_key,
-            Some(TOTAL_TIMEOUT),
-        )
-        .await
-        .unwrap();
-    trace!("Gov proposal submitted with {:?}", res);
-    let res = contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
+        get_deposit(),
+        get_fee(),
+        contact,
+        keys[0].validator_key,
+        Some(TOTAL_TIMEOUT),
+    )
+    .await
+    .unwrap();
     trace!("Gov proposal executed with {:?}", res);
 
     vote_yes_on_proposals(contact, keys, None).await;
