@@ -30,6 +30,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -37,6 +38,8 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
+	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -120,6 +123,7 @@ var (
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
+		authzmodule.AppModuleBasic{},
 		ibc.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
@@ -193,6 +197,7 @@ type Gravity struct {
 	ibcKeeper        *ibckeeper.Keeper
 	evidenceKeeper   *evidencekeeper.Keeper
 	transferKeeper   *ibctransferkeeper.Keeper
+	authzKeeper      *authzkeeper.Keeper
 	gravityKeeper    *keeper.Keeper
 
 	// make scoped keepers public for test purposes
@@ -226,6 +231,7 @@ func (g Gravity) ValidateMembers() {
 	if g.ibcKeeper        == nil { panic("Nil ibcKeeper!") }
 	if g.evidenceKeeper   == nil { panic("Nil evidenceKeeper!") }
 	if g.transferKeeper   == nil { panic("Nil transferKeeper!") }
+	if g.authzKeeper      == nil { panic("Nil authzKeeper!") }
 	if g.gravityKeeper    == nil { panic("Nil gravityKeeper!") }
 
 	// scoped keepers
@@ -261,7 +267,7 @@ func NewGravityApp(
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		gravitytypes.StoreKey,
+		authzkeeper.StoreKey, gravitytypes.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -304,6 +310,13 @@ func NewGravityApp(
 		maccPerms,
 	)
 	app.accountKeeper = &accountKeeper
+
+	authzKeeper := authzkeeper.NewKeeper(
+		keys[authzkeeper.StoreKey],
+		appCodec,
+		app.BaseApp.MsgServiceRouter(),
+	)
+	app.authzKeeper = &authzKeeper
 
 	bankKeeper := bankkeeper.NewBaseKeeper(
 		appCodec,
@@ -506,6 +519,13 @@ func NewGravityApp(
 		evidence.NewAppModule(*evidenceKeeper),
 		ibc.NewAppModule(ibcKeeper),
 		params.NewAppModule(paramsKeeper),
+		authzmodule.NewAppModule(
+			appCodec,
+			authzKeeper,
+			accountKeeper,
+			bankKeeper,
+			app.interfaceRegistry,
+		),
 		transferModule,
 		gravity.NewAppModule(
 			gravityKeeper,
@@ -528,6 +548,7 @@ func NewGravityApp(
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
+		authz.ModuleName,
 		gravitytypes.ModuleName,
 	)
 	app.mm.SetOrderInitGenesis(
@@ -544,6 +565,7 @@ func NewGravityApp(
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
+		authz.ModuleName,
 		gravitytypes.ModuleName,
 	)
 
