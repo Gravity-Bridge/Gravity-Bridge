@@ -1,6 +1,6 @@
 [package]
 name = "gbt"
-version = "1.0.10"
+version = "1.2.0"
 authors = ["Justin Kilpatrick <justin@althea.net>"]
 edition = "2018"
 license = "Apache-2.0"
