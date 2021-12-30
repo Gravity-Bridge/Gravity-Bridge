@@ -336,9 +336,14 @@ func (msg *MsgSendToCosmosClaim) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "orchestrator")
 	}
-	if _, err := IBCAddressFromBech32(msg.CosmosReceiver); err != nil {
-		return sdkerrors.Wrap(err, "cosmos receiver")
-	}
+	// note the destination address is intentionally not validated here, since
+	// MsgSendToEth has it's destination as a string many invalid inputs are possible
+	// the orchestrator will convert these invalid deposits to simply the string invalid'
+	// this is done because the oracle requires an event be processed on Cosmos for each event
+	// nonce on the Ethereum side, otherwise (A) the oracle will never proceed and (B) the funds
+	// sent with the invalid deposit will forever be lost, with no representation minted anywhere
+	// on cosmos. The attestation handler deals with this by managing invalid deposits and placing
+	// them into the community pool
 	if msg.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
 	}

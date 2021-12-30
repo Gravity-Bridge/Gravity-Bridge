@@ -133,6 +133,10 @@ fn get_deposit_test_strings() -> Vec<Vec<u8>> {
     let bad = "bad destination".to_string();
     test_strings.push(bad.as_bytes().to_vec());
 
+    // someone is trying to deposit to an eth address
+    let incorrect = "0x00000000000000000000000089bde264cc4e819326482e041d4ae167981935ce";
+    test_strings.push(incorrect.as_bytes().to_vec());
+
     // a very long, but valid utf8 string
     let rand_string: String = thread_rng()
         .sample_iter(&Alphanumeric)
@@ -155,8 +159,7 @@ fn get_deposit_test_strings() -> Vec<Vec<u8>> {
     }
     test_strings.push(rand_invalid_long);
 
-    //test_strings
-    Vec::new()
+    test_strings
 }
 
 fn get_erc20_test_values() -> Vec<Erc20Params> {
