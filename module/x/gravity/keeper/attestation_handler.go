@@ -156,15 +156,25 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				)
 				return sdkerrors.Wrap(err, "failed to send to Community pool")
 			}
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					types.EventTypeInvalidSendToCosmosReceiver,
+					sdk.NewAttribute("MsgSendToCosmosAmount", claim.Amount.String()),
+					sdk.NewAttribute("MsgSendToCosmosNonce", strconv.Itoa(int(claim.GetEventNonce()))),
+					sdk.NewAttribute("MsgSendToCosmosToken", tokenAddress.GetAddress()),
+					sdk.NewAttribute("MsgSendToCosmosSender", claim.EthereumSender),
+				),
+			)
+		} else {
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					sdk.EventTypeMessage,
+					sdk.NewAttribute("MsgSendToCosmosAmount", claim.Amount.String()),
+					sdk.NewAttribute("MsgSendToCosmosNonce", strconv.Itoa(int(claim.GetEventNonce()))),
+					sdk.NewAttribute("MsgSendToCosmosToken", tokenAddress.GetAddress()),
+				),
+			)
 		}
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				sdk.EventTypeMessage,
-				sdk.NewAttribute("MsgSendToCosmosAmount", claim.Amount.String()),
-				sdk.NewAttribute("MsgSendToCosmosNonce", strconv.Itoa(int(claim.GetEventNonce()))),
-				sdk.NewAttribute("MsgSendToCosmosToken", tokenAddress.GetAddress()),
-			),
-		)
 	// withdraw in this context means a withdraw from the Ethereum side of the bridge
 	case *types.MsgBatchSendToEthClaim:
 		contract, err := types.NewEthAddress(claim.TokenContract)
