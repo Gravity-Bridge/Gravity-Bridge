@@ -19,6 +19,11 @@ done
 
 cd /gravity/module/
 export PATH=$PATH:/usr/local/go/bin
+sudo dnf -y install dnf-plugins-core
+sudo dnf -y config-manager \
+    --add-repo \
+    https://download.docker.com/linux/fedora/docker-ce.repo
+sudo dnf -y install docker-ce docker-ce-cli containerd.io
 make
 make install
 cd /gravity/
