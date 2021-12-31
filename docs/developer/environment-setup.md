@@ -2,7 +2,7 @@
 
 Welcome! This guide covers how to get your development machine setup to contribute to Gravity Bridge, as well as the basics of how the code is laid out.
 
-If you find anything in this guide that is confusing or does not work, please open an issue or [chat with us](https://discord.com/invite/vw8twzR).
+If you find anything in this guide that is confusing or does not work, please open an issue or [chat with us](https://discord.gg/d3DshmHpXA).
 
 We're always happy to help new developers get started
 
