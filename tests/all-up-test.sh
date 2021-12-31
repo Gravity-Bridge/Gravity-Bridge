@@ -24,5 +24,13 @@ TEST_TYPE=$1
 ALCHEMY_ID=$2
 set -u
 
+# setup for Mac M1 Compatibility 
+PLATFORM_CMD=""
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [[ -n $(sysctl -a | grep brand | grep "M1") ]]; then
+       echo "Setting --platform=linux/amd64 for Mac M1 compatibility"
+       PLATFORM_CMD="--platform=linux/amd64"; fi
+fi
+
 # Run new test container instance
-docker run --name gravity_all_up_test_instance --cap-add=NET_ADMIN -t gravity-base /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh $NODES $TEST_TYPE $ALCHEMY_ID
+docker run --name gravity_all_up_test_instance $PLATFORM_CMD --cap-add=NET_ADMIN -t gravity-base /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh $NODES $TEST_TYPE $ALCHEMY_ID
