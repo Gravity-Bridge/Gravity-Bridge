@@ -14,6 +14,7 @@ pushd $REPOFOLDER
 git archive --format=tar.gz -o $DOCKERFOLDER/gravity.tar.gz --prefix=gravity/ HEAD
 pushd $DOCKERFOLDER
 
+# setup for Mac M1 Compatibility 
 PLATFORM_CMD=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
     if [[ -n $(sysctl -a | grep brand | grep "M1") ]]; then
