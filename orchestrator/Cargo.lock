@@ -776,7 +776,7 @@ dependencies = [
 
 [[package]]
 name = "gbt"
-version = "1.0.10"
+version = "1.2.0"
 dependencies = [
  "actix-rt",
  "clap",
@@ -2354,9 +2354,9 @@ checksum = "fd6fbd9a79829dd1ad0cc20627bf1ed606756a7f77edff7b66b7064f9cb327c6"
 
 [[package]]
 name = "web30"
-version = "0.17.4"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "645e8db5ecdf11ddd9a7b054d013a224f8b1afa06455daf9220945da6b5587ac"
+checksum = "72b74b36774b3d736d0d7c897daa35eaa2f16b7b835464b44a31c5605436a788"
 dependencies = [
  "awc",
  "clarity",
