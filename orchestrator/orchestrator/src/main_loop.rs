@@ -74,7 +74,10 @@ pub async fn orchestrator_main_loop(
     );
     let c = relayer_main_loop(
         ethereum_key,
+        Some(cosmos_key),
+        Some(fee),
         web3,
+        contact,
         grpc_client.clone(),
         gravity_contract_address,
         gravity_id,

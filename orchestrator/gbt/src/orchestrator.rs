@@ -1,6 +1,7 @@
 use crate::args::OrchestratorOpts;
 use crate::config::config_exists;
 use crate::config::load_keys;
+use crate::utils::print_relaying_explanation;
 use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::PrivateKey as CosmosPrivateKey;
@@ -8,6 +9,7 @@ use gravity_utils::connection_prep::{
     check_delegate_addresses, check_for_eth, wait_for_cosmos_node_ready,
 };
 use gravity_utils::connection_prep::{check_for_fee, create_rpc_connections};
+use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use orchestrator::main_loop::orchestrator_main_loop;
 use orchestrator::main_loop::{ETH_ORACLE_LOOP_SPEED, ETH_SIGNER_LOOP_SPEED};
@@ -136,6 +138,17 @@ pub async fn orchestrator(
             }
         }
     };
+
+    if config.orchestrator.relayer_enabled {
+        // setup and explain relayer settings
+        if config.relayer.batch_request_mode != BatchRequestMode::None {
+            let public_cosmos_key = cosmos_key.to_address(&contact.get_prefix()).unwrap();
+            check_for_fee(&fee, public_cosmos_key, &contact).await;
+            print_relaying_explanation(&config.relayer, true)
+        } else {
+            print_relaying_explanation(&config.relayer, false)
+        }
+    }
 
     orchestrator_main_loop(
         cosmos_key,

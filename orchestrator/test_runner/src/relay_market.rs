@@ -11,8 +11,8 @@ use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_ADDRESS};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
+use cosmos_gravity::query::get_oldest_unsigned_transaction_batches;
 use cosmos_gravity::send::send_to_eth;
-use cosmos_gravity::{query::get_oldest_unsigned_transaction_batches, send::send_request_batch};
 use deep_space::coin::Coin;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::{Address, Contact};
@@ -273,32 +273,24 @@ async fn test_good_batch(
     erc20_contract: EthAddress,
 ) {
     let bridge_fee_amount = one_eth() * 10u8.into();
-    let (cdai_held, send_amount, requester_cosmos_private_key, requester_address, dest_eth_address) =
-        setup_batch_test(
-            web30,
-            contact,
-            keys,
-            gravity_address,
-            erc20_contract,
-            bridge_fee_amount,
-            grpc_client,
-        )
-        .await;
+    let (
+        cdai_held,
+        send_amount,
+        _requester_cosmos_private_key,
+        requester_address,
+        dest_eth_address,
+    ) = setup_batch_test(
+        web30,
+        contact,
+        keys,
+        gravity_address,
+        erc20_contract,
+        bridge_fee_amount,
+        grpc_client,
+    )
+    .await;
 
     info!("Requesting transaction batch for 20 CosmosDai");
-    let request_batch_fee = Coin {
-        denom: cdai_held.denom.clone(),
-        amount: one_eth() * 20u64.into(),
-    };
-
-    send_request_batch(
-        requester_cosmos_private_key,
-        request_batch_fee.denom.clone(),
-        request_batch_fee,
-        contact,
-    )
-    .await
-    .unwrap();
 
     let current_eth_batch_nonce = wait_for_batch(
         true,
@@ -354,32 +346,24 @@ async fn test_bad_batch(
     erc20_contract: EthAddress,
 ) {
     let bridge_fee_amount: Uint256 = 2500u32.into();
-    let (cdai_held, send_amount, requester_cosmos_private_key, requester_address, dest_eth_address) =
-        setup_batch_test(
-            web30,
-            contact,
-            keys,
-            gravity_address,
-            erc20_contract,
-            bridge_fee_amount,
-            grpc_client,
-        )
-        .await;
+    let (
+        cdai_held,
+        send_amount,
+        _requester_cosmos_private_key,
+        requester_address,
+        dest_eth_address,
+    ) = setup_batch_test(
+        web30,
+        contact,
+        keys,
+        gravity_address,
+        erc20_contract,
+        bridge_fee_amount,
+        grpc_client,
+    )
+    .await;
 
     info!("Requesting transaction batch for very little CosmosDAI");
-    let request_batch_fee = Coin {
-        denom: cdai_held.denom.clone(),
-        amount: 2_500u64.into(), // approximately 1 ETH wei in DAI
-    };
-
-    send_request_batch(
-        requester_cosmos_private_key,
-        request_batch_fee.denom.clone(),
-        request_batch_fee,
-        contact,
-    )
-    .await
-    .unwrap();
 
     let current_eth_batch_nonce = wait_for_batch(
         false,

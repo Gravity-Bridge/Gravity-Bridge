@@ -373,7 +373,7 @@ pub async fn send_to_eth(
 pub async fn send_request_batch(
     private_key: PrivateKey,
     denom: String,
-    fee: Coin,
+    fee: Option<Coin>,
     contact: &Contact,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
@@ -383,11 +383,16 @@ pub async fn send_request_batch(
         denom,
     };
     let msg = Msg::new("/gravity.v1.MsgRequestBatch", msg_request_batch);
+
+    let fee: Vec<Coin> = match fee {
+        Some(fee) => vec![fee],
+        None => vec![],
+    };
     contact
         .send_message(
             &[msg],
             Some(MEMO.to_string()),
-            &[fee],
+            &fee,
             Some(TIMEOUT),
             private_key,
         )

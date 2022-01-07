@@ -13,7 +13,7 @@ use crate::TOTAL_TIMEOUT;
 use crate::{get_fee, utils::ValidatorKeys};
 use clarity::Address as EthAddress;
 use clarity::Uint256;
-use cosmos_gravity::send::{send_request_batch, send_to_eth};
+use cosmos_gravity::send::send_to_eth;
 use deep_space::coin::Coin;
 use deep_space::Contact;
 use ethereum_gravity::deploy_erc20::deploy_erc20;
@@ -111,17 +111,6 @@ pub async fn happy_path_test_v2(
         "Locked up {} {} to send to Cosmos",
         amount_to_bridge, token_to_send_to_eth
     );
-
-    let res = send_request_batch(
-        keys[0].validator_key,
-        token_to_send_to_eth.clone(),
-        get_fee(),
-        contact,
-    )
-    .await
-    .unwrap();
-    info!("Batch request res {:?}", res);
-    info!("Sent batch request to move things along");
 
     info!("Waiting for batch to be signed and relayed to Ethereum");
 

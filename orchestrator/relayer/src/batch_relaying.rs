@@ -13,6 +13,7 @@ use std::time::Duration;
 use tonic::transport::Channel;
 use web30::amm::WETH_CONTRACT_ADDRESS;
 use web30::client::Web3;
+use web30::jsonrpc::error::Web3Error;
 
 #[derive(Debug, Clone)]
 struct SubmittableBatch {
@@ -124,39 +125,48 @@ async fn should_relay_batch(
 ) -> bool {
     let batch_reward_amount = batch.total_fee.amount.clone();
     let batch_reward_token = batch.total_fee.token_contract_address;
-    // If we're given WETH, we just want to know if the reward covers gas
-    if batch_reward_token == *WETH_CONTRACT_ADDRESS {
-        // TODO: Allow users to specify what sort of margin they want on rewards, to account for
-        return batch_reward_amount > cost;
-    }
-
+    let price = get_price(batch_reward_token, batch_reward_amount, pubkey, web3).await;
     // Otherwise we need to see how much WETH we can get for the reward token amount,
     // and compare that value to the gas cost
     // TODO: Allow users to specify what sort of margin they want on rewards, to account for
     // cost of electricity, etc.
+    match price {
+        Ok(price) => price > cost,
+        Err(e) => {
+            info!(
+                "Unable to determine swap price of token {} for WETH due to \
+             communication error {:?} - Will not be relaying batch {:?}",
+                batch_reward_token, e, batch
+            );
+            false
+        }
+    }
+}
+
+/// utility function, gets the price of a given token in uniswap in WETH given the erc20 address and amount
+pub async fn get_price(
+    token: EthAddress,
+    amount: Uint256,
+    pubkey: EthAddress,
+    web3: &Web3,
+) -> Result<Uint256, Web3Error> {
+    if token == *WETH_CONTRACT_ADDRESS {
+        return Ok(amount);
+    }
+
+    // TODO: Make sure the market is not too thin
     let price = web3
         .get_uniswap_price(
             pubkey,
-            batch_reward_token,
+            token,
             *WETH_CONTRACT_ADDRESS,
             None,
-            batch_reward_amount.clone(),
+            amount.clone(),
             None,
             None,
         )
         .await;
-    if price.is_err() {
-        info!(
-            "Unable to determine swap price of token {} for WETH due to \
-             communication error {:?} - Will not be relaying batch {:?}",
-            batch_reward_token,
-            price.err(),
-            batch
-        );
-        return false;
-    };
-    let price = price.unwrap();
-    price > cost
+    price
 }
 
 #[allow(clippy::too_many_arguments)]

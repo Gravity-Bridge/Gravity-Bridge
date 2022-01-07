@@ -70,8 +70,18 @@ pub struct OrchestratorOpts {
 #[derive(Parser)]
 pub struct RelayerOpts {
     /// An Ethereum private key containing ETH to pay for fees, this will also hold the relayers earnings
+    /// This overrides the key set in the config, which will be used if no key is provided here
     #[clap(short, long, parse(try_from_str))]
     pub ethereum_key: Option<EthPrivateKey>,
+    /// Cosmos mnemonic phrase containing tokens used to pay fees on Cosmos for requesting batches
+    /// This overrides the key set in the config, which will be used if no key is provided here.
+    /// If no key is provided and no key is set in the config, this relayer will not request batches
+    #[clap(long, parse(try_from_str))]
+    pub cosmos_phrase: Option<CosmosPrivateKey>,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees. If not set this relayer will not automatically
+    /// request batches
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Option<Coin>,
     /// The address fo the Gravity contract on Ethereum
     #[clap(short, long, parse(try_from_str))]
     pub gravity_contract_address: Option<EthAddress>,

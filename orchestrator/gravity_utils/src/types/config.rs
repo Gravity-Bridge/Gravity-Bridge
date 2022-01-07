@@ -14,6 +14,8 @@ pub struct GravityBridgeToolsConfig {
 pub struct RelayerConfig {
     #[serde(default = "default_valset_relaying_mode")]
     pub valset_relaying_mode: ValsetRelayingMode,
+    #[serde(default = "default_batch_request_mode")]
+    pub batch_request_mode: BatchRequestMode,
     #[serde(default = "default_batch_market_enabled")]
     pub batch_market_enabled: bool,
     #[serde(default = "default_logic_call_market_enabled")]
@@ -33,6 +35,18 @@ pub enum ValsetRelayingMode {
     EveryValset,
 }
 
+/// The various possible modes for automatic requests of batches
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
+pub enum BatchRequestMode {
+    /// Only ever request profitable batches, regardless of all other
+    /// considerations
+    ProfitableOnly,
+    /// Every possible valid batch should be requested
+    EveryBatch,
+    /// Does not automatically request batches
+    None,
+}
+
 fn default_batch_market_enabled() -> bool {
     true
 }
@@ -45,10 +59,15 @@ fn default_valset_relaying_mode() -> ValsetRelayingMode {
     ValsetRelayingMode::Altruistic
 }
 
+fn default_batch_request_mode() -> BatchRequestMode {
+    BatchRequestMode::ProfitableOnly
+}
+
 impl Default for RelayerConfig {
     fn default() -> Self {
         RelayerConfig {
             valset_relaying_mode: default_valset_relaying_mode(),
+            batch_request_mode: default_batch_request_mode(),
             batch_market_enabled: default_batch_market_enabled(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
         }

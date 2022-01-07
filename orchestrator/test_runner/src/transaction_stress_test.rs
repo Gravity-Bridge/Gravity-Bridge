@@ -44,7 +44,7 @@ pub async fn transaction_stress_test(
 ) {
     let mut grpc_client = grpc_client;
 
-    let no_relay_market_config = create_default_test_config();
+    let no_relay_market_config = create_no_batch_requests_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
     // Generate 100 user keys to send ETH and multiple types of tokens
@@ -249,7 +249,7 @@ pub async fn transaction_stress_test(
 
     for denom in denoms {
         info!("Requesting batch for {}", denom);
-        let res = send_request_batch(keys[0].validator_key, denom, get_fee(), contact)
+        let res = send_request_batch(keys[0].validator_key, denom, Some(get_fee()), contact)
             .await
             .unwrap();
         info!("batch request response is {:?}", res);
