@@ -16,7 +16,7 @@ pub async fn relayer(
     args: RelayerOpts,
     address_prefix: String,
     home_dir: &Path,
-    config: &RelayerConfig,
+    config: RelayerConfig,
 ) {
     let cosmos_grpc = args.cosmos_grpc;
     let ethereum_rpc = args.ethereum_rpc;

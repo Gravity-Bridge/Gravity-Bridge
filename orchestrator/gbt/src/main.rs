@@ -74,7 +74,7 @@ async fn main() {
             orchestrator(orchestrator_opts, address_prefix, &home_dir, config).await
         }
         SubCommand::Relayer(relayer_opts) => {
-            relayer(relayer_opts, address_prefix, &home_dir, &config.relayer).await
+            relayer(relayer_opts, address_prefix, &home_dir, config.relayer).await
         }
         SubCommand::Init(init_opts) => init_config(init_opts, home_dir),
     }

@@ -3,7 +3,12 @@
 # If the built-in relayer is enabled, this relayer is configured in the [relayer] section
 relayer_enabled = false
 
+# Relayer configuration options
 [relayer]
+# If we check profitability before relaying
 valset_market_enabled = false
 batch_market_enabled = true
 logic_call_market_enabled = true
+# If we relay every possible valset, only applicable when not checking
+# for profitability
+relay_every_valset = false

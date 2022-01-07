@@ -37,7 +37,7 @@ pub async fn relay_batches(
     gravity_contract_address: EthAddress,
     gravity_id: String,
     timeout: Duration,
-    config: &RelayerConfig,
+    config: RelayerConfig,
 ) {
     let possible_batches =
         get_batches_and_signatures(current_valset.clone(), grpc_client, gravity_id.clone()).await;
@@ -180,7 +180,7 @@ async fn submit_batches(
     gravity_id: String,
     timeout: Duration,
     possible_batches: HashMap<EthAddress, Vec<SubmittableBatch>>,
-    config: &RelayerConfig,
+    config: RelayerConfig,
 ) {
     let our_ethereum_address = ethereum_key.to_address();
     let ethereum_block_height = if let Ok(bn) = web3.eth_block_number().await {

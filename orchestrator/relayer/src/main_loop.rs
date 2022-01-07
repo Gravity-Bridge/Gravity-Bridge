@@ -21,7 +21,7 @@ pub async fn relayer_main_loop(
     web3: Web3,
     grpc_client: GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
-    relayer_config: &RelayerConfig,
+    relayer_config: RelayerConfig,
 ) {
     let mut grpc_client = grpc_client;
     loop {
@@ -52,7 +52,7 @@ pub async fn relayer_main_loop(
             gravity_contract_address,
             gravity_id.clone(),
             LOOP_SPEED,
-            relayer_config,
+            relayer_config.clone(),
         )
         .await;
 
@@ -64,7 +64,7 @@ pub async fn relayer_main_loop(
             gravity_contract_address,
             gravity_id.clone(),
             LOOP_SPEED,
-            relayer_config,
+            relayer_config.clone(),
         )
         .await;
 
@@ -76,7 +76,7 @@ pub async fn relayer_main_loop(
             gravity_contract_address,
             gravity_id.clone(),
             LOOP_SPEED,
-            relayer_config,
+            relayer_config.clone(),
         )
         .await;
 

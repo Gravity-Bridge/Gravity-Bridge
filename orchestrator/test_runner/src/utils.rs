@@ -26,6 +26,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRe
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
 use gravity_utils::types::GravityBridgeToolsConfig;
+use gravity_utils::types::ValsetRelayingMode;
 use orchestrator::main_loop::orchestrator_main_loop;
 use rand::Rng;
 use std::thread;
@@ -50,8 +51,8 @@ pub fn create_default_test_config() -> GravityBridgeToolsConfig {
     // enable integrated relayer by default for tests
     no_relay_market_config.orchestrator.relayer_enabled = true;
     no_relay_market_config.relayer.batch_market_enabled = false;
-    no_relay_market_config.relayer.valset_market_enabled = false;
     no_relay_market_config.relayer.logic_call_market_enabled = false;
+    no_relay_market_config.relayer.valset_relaying_mode = ValsetRelayingMode::EveryValset;
     no_relay_market_config
 }
 
