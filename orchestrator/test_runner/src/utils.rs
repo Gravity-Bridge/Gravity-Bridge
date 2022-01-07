@@ -10,6 +10,7 @@ use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
 use clarity::{Address as EthAddress, Uint256};
 use clarity::{PrivateKey as EthPrivateKey, Transaction};
+use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
@@ -294,9 +295,13 @@ pub async fn start_orchestrators(
             k.orch_key.to_address(ADDRESS_PREFIX.as_str()).unwrap(),
             get_operator_address(k.validator_key),
         );
-        let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+        let mut grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
             .await
             .unwrap();
+        let params = get_gravity_params(&mut grpc_client)
+            .await
+            .expect("Failed to get Gravity Bridge module parameters!");
+
         // we have only one actual futures executor thread (see the actix runtime tag on our main function)
         // but that will execute all the orchestrators in our test in parallel
         thread::spawn(move || {
@@ -314,6 +319,7 @@ pub async fn start_orchestrators(
                 contact,
                 grpc_client,
                 gravity_address,
+                params.gravity_id,
                 get_fee(),
                 config,
             );

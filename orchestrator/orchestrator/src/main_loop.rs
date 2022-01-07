@@ -51,6 +51,7 @@ pub async fn orchestrator_main_loop(
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
+    gravity_id: String,
     user_fee_amount: Coin,
     config: GravityBridgeToolsConfig,
 ) {
@@ -76,6 +77,7 @@ pub async fn orchestrator_main_loop(
         web3,
         grpc_client.clone(),
         gravity_contract_address,
+        gravity_id,
         config.relayer,
     );
 

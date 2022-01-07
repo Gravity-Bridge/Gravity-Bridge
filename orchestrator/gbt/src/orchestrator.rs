@@ -112,11 +112,15 @@ pub async fn orchestrator(
     check_for_fee(&fee, public_cosmos_key, &contact).await;
     check_for_eth(public_eth_key, &web3).await;
 
+    // get the gravity parameters
+    let params = get_gravity_params(&mut grpc)
+        .await
+        .expect("Failed to get Gravity Bridge module parameters!");
+
     // get the gravity contract address, if not provided
     let contract_address = if let Some(c) = args.gravity_contract_address {
         c
     } else {
-        let params = get_gravity_params(&mut grpc).await.unwrap();
         let c = params.bridge_ethereum_address.parse();
         match c {
             Ok(v) => {
@@ -140,6 +144,7 @@ pub async fn orchestrator(
         connections.contact.unwrap(),
         connections.grpc.unwrap(),
         contract_address,
+        params.gravity_id,
         fee,
         config,
     )

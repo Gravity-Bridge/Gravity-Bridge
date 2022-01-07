@@ -63,11 +63,15 @@ pub async fn relayer(
     wait_for_cosmos_node_ready(&contact).await;
     check_for_eth(public_eth_key, &web3).await;
 
+    // get the gravity parameters
+    let params = get_gravity_params(&mut grpc)
+        .await
+        .expect("Failed to get Gravity Bridge module parameters!");
+
     // get the gravity contract address, if not provided
     let contract_address = if let Some(c) = args.gravity_contract_address {
         c
     } else {
-        let params = get_gravity_params(&mut grpc).await.unwrap();
         let c = params.bridge_ethereum_address.parse();
 
         match c {
@@ -87,5 +91,13 @@ pub async fn relayer(
     };
     println!("Gravity contract address {}", contract_address);
 
-    relayer_main_loop(ethereum_key, web3, grpc, contract_address, config).await
+    relayer_main_loop(
+        ethereum_key,
+        web3,
+        grpc,
+        contract_address,
+        params.gravity_id,
+        config,
+    )
+    .await
 }
