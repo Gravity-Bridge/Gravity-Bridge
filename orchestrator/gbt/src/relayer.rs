@@ -1,6 +1,7 @@
 use crate::args::RelayerOpts;
 use crate::config::config_exists;
 use crate::config::load_keys;
+use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use gravity_utils::connection_prep::{
     check_for_eth, create_rpc_connections, wait_for_cosmos_node_ready,
@@ -68,12 +69,23 @@ pub async fn relayer(
     } else {
         let params = get_gravity_params(&mut grpc).await.unwrap();
         let c = params.bridge_ethereum_address.parse();
-        if c.is_err() {
-            error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-            exit(1);
+
+        match c {
+            Ok(v) => {
+                if v == *ZERO_ADDRESS {
+                    error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
+                    exit(1);
+                }
+
+                v
+            }
+            Err(_) => {
+                error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
+                exit(1);
+            }
         }
-        c.unwrap()
     };
+    println!("Gravity contract address {}", contract_address);
 
     relayer_main_loop(ethereum_key, web3, grpc, contract_address, config).await
 }
