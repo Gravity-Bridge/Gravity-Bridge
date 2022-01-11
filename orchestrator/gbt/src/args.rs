@@ -116,19 +116,19 @@ pub struct CosmosToEthOpts {
     /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
     #[clap(long, default_value = "http://localhost:9090")]
     pub cosmos_grpc: String,
-    /// The Denom and amount you wish to send eg: 100uatom
+    /// The Denom and amount you wish to send eg: 100ugraviton
     #[clap(short, long, parse(try_from_str))]
     pub amount: Coin,
-    /// The Cosmos Denom and amount to pay Cosmos chain fees eg: 1uatom
+    /// The Cosmos Denom and amount to pay Cosmos chain fees eg: 1ugraviton
     #[clap(short, long, parse(try_from_str))]
-    pub fees: Coin,
+    pub fee: Coin,
+    /// The amount you want to pay in bridge fees, these are used to pay relayers
+    /// on Ethereum and must be of the same denomination as `amount`
+    #[clap(short, long, parse(try_from_str))]
+    pub bridge_fee: Coin,
     /// The destination address on the Ethereum chain
     #[clap(short, long, parse(try_from_str))]
     pub eth_destination: EthAddress,
-    /// If this command should request a batch to push
-    /// your tx along immediately
-    #[clap(short, long)]
-    pub no_batch: bool,
 }
 
 /// Send an Ethereum ERC20 token to Cosmos
