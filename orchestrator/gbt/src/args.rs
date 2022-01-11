@@ -173,15 +173,6 @@ pub struct DeployErc20RepresentationOpts {
     /// The address fo the Gravity contract on Ethereum
     #[clap(short, long, parse(try_from_str))]
     pub gravity_contract_address: Option<EthAddress>,
-    /// The name value for the ERC20 contract, must mach Cosmos denom metadata in order to be adopted
-    #[clap(long)]
-    pub erc20_name: String,
-    /// The symbol value for the ERC20 contract, must mach Cosmos denom metadata in order to be adopted
-    #[clap(long)]
-    pub erc20_symbol: String,
-    /// The decimals value for the ERC20 contract, must mach Cosmos denom metadata in order to be adopted
-    #[clap(long)]
-    pub erc20_decimals: u8,
 }
 
 /// Manage keys

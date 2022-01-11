@@ -4,6 +4,7 @@ use ethereum_gravity::deploy_erc20::deploy_erc20;
 use gravity_proto::gravity::QueryDenomToErc20Request;
 use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
 use std::{
+    convert::TryInto,
     process::exit,
     time::{Duration, Instant},
 };
@@ -22,6 +23,7 @@ pub async fn deploy_erc20_representation(
     let connections =
         create_rpc_connections(address_prefix, Some(grpc_url), Some(ethereum_rpc), TIMEOUT).await;
     let web3 = connections.web3.unwrap();
+    let contact = connections.contact.unwrap();
 
     let mut grpc = connections.grpc.unwrap();
 
@@ -54,44 +56,61 @@ pub async fn deploy_erc20_representation(
         exit(1);
     }
 
-    info!("Starting deploy of ERC20");
-    let res = deploy_erc20(
-        denom.clone(),
-        args.erc20_name,
-        args.erc20_symbol,
-        args.erc20_decimals,
-        contract_address,
-        &web3,
-        Some(TIMEOUT),
-        ethereum_key,
-        vec![SendTxOption::GasPriceMultiplier(1.5)],
-    )
-    .await
-    .unwrap();
+    let res = contact.get_denom_metadata(denom.clone()).await;
+    match res {
+        Ok(Some(metadata)) => {
+            info!("Retrieved metadta starting deploy of ERC20");
+            let mut decimals = None;
+            for unit in metadata.denom_units {
+                if unit.denom == metadata.display {
+                    decimals = Some(unit.exponent)
+                }
+            }
+            let decimals = decimals.unwrap();
+            let res = deploy_erc20(
+                metadata.display,
+                metadata.name,
+                metadata.symbol,
+                decimals.try_into().unwrap(),
+                contract_address,
+                &web3,
+                Some(TIMEOUT),
+                ethereum_key,
+                vec![SendTxOption::GasPriceMultiplier(1.5)],
+            )
+            .await
+            .unwrap();
 
-    info!("We have deployed ERC20 contract {:#066x}, waiting to see if the Cosmos chain choses to adopt it", res);
+            info!("We have deployed ERC20 contract {:#066x}, waiting to see if the Cosmos chain choses to adopt it", res);
 
-    let start = Instant::now();
-    loop {
-        let res = grpc
-            .denom_to_erc20(QueryDenomToErc20Request {
-                denom: denom.clone(),
-            })
-            .await;
+            let start = Instant::now();
+            loop {
+                let res = grpc
+                    .denom_to_erc20(QueryDenomToErc20Request {
+                        denom: denom.clone(),
+                    })
+                    .await;
 
-        if let Ok(val) = res {
-            info!(
-                "Asset {} has accepted new ERC20 representation {}",
-                denom,
-                val.into_inner().erc20
-            );
-            exit(0);
+                if let Ok(val) = res {
+                    info!(
+                        "Asset {} has accepted new ERC20 representation {}",
+                        denom,
+                        val.into_inner().erc20
+                    );
+                    exit(0);
+                }
+
+                if Instant::now() - start > Duration::from_secs(100) {
+                    info!("Your ERC20 contract was not adopted, double check the metadata and try again");
+                    exit(1);
+                }
+                delay_for(Duration::from_secs(1)).await;
+            }
         }
-
-        if Instant::now() - start > Duration::from_secs(100) {
-            info!("Your ERC20 contract was not adopted, double check the metadata and try again");
-            exit(1);
+        Ok(None) => {
+            warn!("denom {} has no denom metadata set, this means it is impossible to deploy an ERC20 representation at this time", denom);
+            warn!("A governance proposal to set this denoms metadata will need to pass before running this command");
         }
-        delay_for(Duration::from_secs(1)).await;
+        Err(e) => error!("Unable to make metadata request, check grpc {:?}", e),
     }
 }
