@@ -49,6 +49,7 @@ async fn test_batches(
     // relayer by default
     let mut default_config = GravityBridgeToolsConfig::default();
     default_config.orchestrator.relayer_enabled = true;
+    default_config.relayer.relayer_loop_speed = 10;
     start_orchestrators(keys.clone(), gravity_address, false, default_config).await;
 
     test_good_batch(

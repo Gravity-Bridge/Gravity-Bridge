@@ -13,10 +13,10 @@ use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use orchestrator::main_loop::orchestrator_main_loop;
 use orchestrator::main_loop::{ETH_ORACLE_LOOP_SPEED, ETH_SIGNER_LOOP_SPEED};
-use relayer::main_loop::LOOP_SPEED as RELAYER_LOOP_SPEED;
 use std::cmp::min;
 use std::path::Path;
 use std::process::exit;
+use std::time::Duration;
 
 pub async fn orchestrator(
     args: OrchestratorOpts,
@@ -71,7 +71,7 @@ pub async fn orchestrator(
 
     let timeout = min(
         min(ETH_SIGNER_LOOP_SPEED, ETH_ORACLE_LOOP_SPEED),
-        RELAYER_LOOP_SPEED,
+        Duration::from_secs(config.relayer.relayer_loop_speed),
     );
 
     trace!("Probing RPC connections");

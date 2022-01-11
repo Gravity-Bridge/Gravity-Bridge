@@ -20,6 +20,10 @@ pub struct RelayerConfig {
     pub batch_market_enabled: bool,
     #[serde(default = "default_logic_call_market_enabled")]
     pub logic_call_market_enabled: bool,
+    #[serde(default = "default_relayer_loop_speed")]
+    /// the speed at which the relayer loop runs, in seconds
+    /// higher values reduce the chances of money lost to a collision
+    pub relayer_loop_speed: u64,
 }
 
 /// The various possible modes for relaying validator set updates
@@ -63,6 +67,10 @@ fn default_batch_request_mode() -> BatchRequestMode {
     BatchRequestMode::ProfitableOnly
 }
 
+fn default_relayer_loop_speed() -> u64 {
+    600
+}
+
 impl Default for RelayerConfig {
     fn default() -> Self {
         RelayerConfig {
@@ -70,6 +78,7 @@ impl Default for RelayerConfig {
             batch_request_mode: default_batch_request_mode(),
             batch_market_enabled: default_batch_market_enabled(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
+            relayer_loop_speed: default_relayer_loop_speed(),
         }
     }
 }

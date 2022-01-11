@@ -13,7 +13,7 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
-pub const LOOP_SPEED: Duration = Duration::from_secs(17);
+pub const TIMEOUT: Duration = Duration::from_secs(10);
 
 /// This function contains the orchestrator primary loop, it is broken out of the main loop so that
 /// it can be called in the test runner for easier orchestration of multi-node tests
@@ -48,7 +48,7 @@ pub async fn relayer_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             gravity_id.clone(),
-            LOOP_SPEED,
+            TIMEOUT,
             relayer_config.clone(),
         )
         .await;
@@ -60,7 +60,7 @@ pub async fn relayer_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             gravity_id.clone(),
-            LOOP_SPEED,
+            TIMEOUT,
             relayer_config.clone(),
         )
         .await;
@@ -72,7 +72,7 @@ pub async fn relayer_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             gravity_id.clone(),
-            LOOP_SPEED,
+            TIMEOUT,
             relayer_config.clone(),
         )
         .await;
@@ -94,8 +94,9 @@ pub async fn relayer_main_loop(
         // this is not required for any specific reason. In fact we expect and plan for
         // the timing being off significantly
         let elapsed = Instant::now() - loop_start;
-        if elapsed < LOOP_SPEED {
-            delay_for(LOOP_SPEED - elapsed).await;
+        let loop_speed = Duration::from_secs(relayer_config.relayer_loop_speed);
+        if elapsed < loop_speed {
+            delay_for(loop_speed - elapsed).await;
         }
     }
 }
