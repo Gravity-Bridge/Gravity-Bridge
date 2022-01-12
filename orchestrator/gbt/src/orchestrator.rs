@@ -16,6 +16,8 @@ use std::cmp::min;
 use std::path::Path;
 use std::process::exit;
 
+use metrics_exporter::metrics_server;
+
 pub async fn orchestrator(
     args: OrchestratorOpts,
     address_prefix: String,
@@ -94,6 +96,9 @@ pub async fn orchestrator(
         public_eth_key, public_cosmos_key
     );
 
+    if config.metrics.metrics_enabled {
+        metrics_server(&config.metrics);
+    };
     // check if the cosmos node is syncing, if so wait for it
     // we can't move any steps above this because they may fail on an incorrect
     // historic chain state while syncing occurs
@@ -132,6 +137,7 @@ pub async fn orchestrator(
             }
         }
     };
+
 
     orchestrator_main_loop(
         cosmos_key,
