@@ -31,6 +31,8 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
+use metrics_exporter::MAJOR_ERROR;
+
 /// The execution speed governing all loops in this file
 /// which is to say all loops started by Orchestrator main
 /// loop except the relayer loop
@@ -154,6 +156,9 @@ pub async fn eth_oracle_main_loop(
             }
             (Err(_), Err(_)) => {
                 error!("Could not reach Ethereum or Cosmos rpc!");
+
+                MAJOR_ERROR.inc();
+
                 delay_for(DELAY).await;
                 continue;
             }
