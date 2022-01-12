@@ -23,8 +23,7 @@ use futures::future::join3;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
-use metrics_exporter::metrics_errors_counter;
-use metrics_exporter::metrics_warnings_counter;
+use metrics_exporter::{metrics_errors_counter, metrics_warnings_counter, metrics_latest};
 use relayer::main_loop::relayer_main_loop;
 use std::cmp::min;
 use std::process::exit;
@@ -137,6 +136,11 @@ pub async fn eth_oracle_main_loop(
                     latest_eth_block,
                     block_height,
                 );
+
+                // Mismatch conversion Uint256 to i64
+                //metrics_latest(latest_eth_block as i64, "latest_eth_block");
+                // Possible overflow
+                metrics_latest(block_height as i64 , "latest_cosmos_block");
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
                 warn!("Cosmos node syncing, Eth oracle paused");
@@ -262,7 +266,8 @@ pub async fn eth_signer_main_loop(
                 warn!("Cosmos node syncing, Eth signer paused");
                 warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
                 metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
-                // need gauge
+                // Possible overflow
+                metrics_latest(blocks_until_slashing as i64 , "blocks_until_slashing");
                 delay_for(DELAY).await;
                 continue;
             }
@@ -275,6 +280,8 @@ pub async fn eth_signer_main_loop(
             Err(_) => {
                 error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
                 delay_for(DELAY).await;
+                // Possible overflow
+                metrics_latest(blocks_until_slashing as i64 , "blocks_until_slashing");
                 metrics_errors_counter(2, "Could not reach Cosmos rpc! You must correct this or you risk being slashed");
                 continue;
             }

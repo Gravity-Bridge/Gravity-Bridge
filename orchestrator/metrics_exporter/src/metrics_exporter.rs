@@ -1,8 +1,8 @@
 use gravity_utils::types::MetricsConfig;
 use lazy_static::lazy_static;
-use prometheus_exporter::prometheus::{IntCounter, IntCounterVec};
+use prometheus_exporter::prometheus::{IntCounter, IntCounterVec, IntGaugeVec};
 use prometheus_exporter::prometheus::{
-    register_int_counter, register_int_counter_vec,
+    register_int_counter, register_int_counter_vec, register_int_gauge_vec,
 };
 use std::net::SocketAddr;
 
@@ -34,28 +34,33 @@ lazy_static! {
         register_int_counter_vec!("orchestator_warnings_count_unclassified", "Chech orchestator logs for more details", &["warn_message"]).unwrap();
 
     // Information gauges
+    pub static ref LATEST_INFO: IntGaugeVec =
+        register_int_gauge_vec!("orchestator_information", "Latest orchestator information", &["gauge"]).unwrap();
 }
 
 pub fn metrics_errors_counter(s: i32, e: &str) {
-        match s  {
-            0 => ERROR.with_label_values(&[e]).inc(),
-            1 => ERROR_ETH.with_label_values(&[e]).inc(),
-            2 => ERROR_COSMOS.with_label_values(&[e]).inc(),
-            _ => ERROR_UNCLASSIFIED.with_label_values(&[e]).inc(),
-        }
-        ERRORS_TOTAL.inc()
+    match s  {
+        0 => ERROR.with_label_values(&[e]).inc(),
+        1 => ERROR_ETH.with_label_values(&[e]).inc(),
+        2 => ERROR_COSMOS.with_label_values(&[e]).inc(),
+        _ => ERROR_UNCLASSIFIED.with_label_values(&[e]).inc(),
+    }
+    ERRORS_TOTAL.inc()
 
 }
 
 pub fn metrics_warnings_counter(s: i32, e: &str) {
-        match s  {
-            0 => WARNING.with_label_values(&[e]).inc(),
-            1 => WARNING_ETH.with_label_values(&[e]).inc(),
-            2 => WARNING_COSMOS.with_label_values(&[e]).inc(),
-            _ => WARNING_UNCLASSIFIED.with_label_values(&[e]).inc(),
-        }
-        WARNINGS_TOTAL.inc()
+    match s  {
+        0 => WARNING.with_label_values(&[e]).inc(),
+        1 => WARNING_ETH.with_label_values(&[e]).inc(),
+        2 => WARNING_COSMOS.with_label_values(&[e]).inc(),
+        _ => WARNING_UNCLASSIFIED.with_label_values(&[e]).inc(),
+    }
+    WARNINGS_TOTAL.inc()
+}
 
+pub fn metrics_latest(i: i64, e: &str) {
+    LATEST_INFO.with_label_values(&[e]).set(i as i64);
 }
 
 pub fn metrics_server(config: &MetricsConfig) {
