@@ -7,3 +7,7 @@ relayer_enabled = true
 valset_market_enabled = false
 batch_market_enabled = true
 logic_call_market_enabled = true
+
+[metrics]
+metrics_enabled = true
+metrics_bind = "127.0.0.1:6631"
