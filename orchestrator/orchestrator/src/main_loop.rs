@@ -23,7 +23,8 @@ use futures::future::join3;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
-use metrics_exporter::metrics_error_counter;
+use metrics_exporter::metrics_errors_counter;
+use metrics_exporter::metrics_warnings_counter;
 use relayer::main_loop::relayer_main_loop;
 use std::cmp::min;
 use std::process::exit;
@@ -139,28 +140,32 @@ pub async fn eth_oracle_main_loop(
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
                 warn!("Cosmos node syncing, Eth oracle paused");
+                metrics_warnings_counter(2, "Cosmos node syncing, Eth oracle paused");
                 delay_for(DELAY).await;
                 continue;
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
                 warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
+                metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start, Eth oracle paused");
                 delay_for(DELAY).await;
                 continue;
             }
             (Ok(_), Err(_)) => {
                 warn!("Could not contact Cosmos grpc, trying again");
+                metrics_warnings_counter(2, "Could not contact Cosmos grpc, trying again");
                 delay_for(DELAY).await;
                 continue;
             }
             (Err(_), Ok(_)) => {
                 warn!("Could not contact Eth node, trying again");
+                metrics_warnings_counter(1, "Could not contact Eth node, trying again");
                 delay_for(DELAY).await;
                 continue;
             }
             (Err(_), Err(_)) => {
                 error!("Could not reach Ethereum or Cosmos rpc!");
 
-                metrics_error_counter(0, "Could not reach Ethereum or Cosmos rpc!");
+                metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc!");
 
                 delay_for(DELAY).await;
                 continue;
@@ -201,7 +206,7 @@ pub async fn eth_oracle_main_loop(
             }
             Err(e) => {
                 error!("Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}", e);
-                metrics_error_counter(0, "Failed to get events for block range");
+                metrics_errors_counter(0, "Failed to get events for block range");
             }
         }
 
@@ -238,7 +243,7 @@ pub async fn eth_signer_main_loop(
             Ok(p) => p,
             Err(e) => {
                 error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
-                metrics_error_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
+                metrics_errors_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
                 continue;
             }
         };
@@ -256,18 +261,21 @@ pub async fn eth_signer_main_loop(
             Ok(ChainStatus::Syncing) => {
                 warn!("Cosmos node syncing, Eth signer paused");
                 warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
+                metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
+                // need gauge
                 delay_for(DELAY).await;
                 continue;
             }
             Ok(ChainStatus::WaitingToStart) => {
                 warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
+                metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start, Eth signer paused");
                 delay_for(DELAY).await;
                 continue;
             }
             Err(_) => {
                 error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
                 delay_for(DELAY).await;
-                metrics_error_counter(2, "Could not reach Cosmos rpc! You must correct this or you risk being slashed");
+                metrics_errors_counter(2, "Could not reach Cosmos rpc! You must correct this or you risk being slashed");
                 continue;
             }
         }
