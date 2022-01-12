@@ -105,10 +105,10 @@ impl Default for OrchestratorConfig {
     }
 }
 
-/// Metrics configuration options
+/// Metrics server configuration options
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct MetricsConfig {
-    /// If this Orchestrator should run an integrated metrics or not
+    /// If this Orchestrator should run an integrated metrics server or not
     #[serde(default = "default_metrics_enabled")]
     pub metrics_enabled: bool,
     /// Bind to specified ip:port
