@@ -11,14 +11,13 @@ use gravity_utils::connection_prep::{
 use gravity_utils::connection_prep::{check_for_fee, create_rpc_connections};
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
+use metrics_exporter::metrics_server;
 use orchestrator::main_loop::orchestrator_main_loop;
 use orchestrator::main_loop::{ETH_ORACLE_LOOP_SPEED, ETH_SIGNER_LOOP_SPEED};
 use std::cmp::min;
 use std::path::Path;
 use std::process::exit;
 use std::time::Duration;
-
-use metrics_exporter::metrics_server;
 
 pub async fn orchestrator(
     args: OrchestratorOpts,

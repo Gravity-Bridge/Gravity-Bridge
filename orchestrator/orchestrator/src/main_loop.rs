@@ -23,6 +23,7 @@ use futures::future::join3;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
+use metrics_exporter::metrics_error_counter;
 use relayer::main_loop::relayer_main_loop;
 use std::cmp::min;
 use std::process::exit;
@@ -31,8 +32,6 @@ use std::time::Instant;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
-
-use metrics_exporter::MAJOR_ERROR;
 
 /// The execution speed governing all loops in this file
 /// which is to say all loops started by Orchestrator main
@@ -161,7 +160,7 @@ pub async fn eth_oracle_main_loop(
             (Err(_), Err(_)) => {
                 error!("Could not reach Ethereum or Cosmos rpc!");
 
-                MAJOR_ERROR.inc();
+                metrics_error_counter(0, "Could not reach Ethereum or Cosmos rpc!");
 
                 delay_for(DELAY).await;
                 continue;
@@ -200,10 +199,10 @@ pub async fn eth_oracle_main_loop(
                 }
                 last_checked_event = nonces.event_nonce;
             }
-            Err(e) => error!(
-                "Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}",
-                e
-            ),
+            Err(e) => {
+                error!("Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}", e);
+                metrics_error_counter(0, "Failed to get events for block range");
+            }
         }
 
         // a bit of logic that tires to keep things running every LOOP_SPEED seconds exactly
@@ -239,6 +238,7 @@ pub async fn eth_signer_main_loop(
             Ok(p) => p,
             Err(e) => {
                 error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
+                metrics_error_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
                 continue;
             }
         };
@@ -267,6 +267,7 @@ pub async fn eth_signer_main_loop(
             Err(_) => {
                 error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
                 delay_for(DELAY).await;
+                metrics_error_counter(2, "Could not reach Cosmos rpc! You must correct this or you risk being slashed");
                 continue;
             }
         }
