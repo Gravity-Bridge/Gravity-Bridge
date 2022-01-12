@@ -14,5 +14,5 @@ logic_call_market_enabled = true
 relay_every_valset = false
 
 [metrics]
-metrics_enabled = true
+metrics_enabled = false
 metrics_bind = "127.0.0.1:6631"
