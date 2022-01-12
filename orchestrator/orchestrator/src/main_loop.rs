@@ -137,8 +137,6 @@ pub async fn eth_oracle_main_loop(
                     block_height,
                 );
 
-                // Mismatch conversion Uint256 to i64
-                //metrics_latest(latest_eth_block as i64, "latest_eth_block");
                 metrics_latest(block_height, "latest_cosmos_block");
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
