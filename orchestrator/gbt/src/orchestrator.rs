@@ -98,9 +98,7 @@ pub async fn orchestrator(
         public_eth_key, public_cosmos_key
     );
 
-    if config.metrics.metrics_enabled {
-        metrics_server(&config.metrics);
-    };
+
     // check if the cosmos node is syncing, if so wait for it
     // we can't move any steps above this because they may fail on an incorrect
     // historic chain state while syncing occurs
@@ -154,6 +152,11 @@ pub async fn orchestrator(
             print_relaying_explanation(&config.relayer, false)
         }
     }
+
+    // Start monitiring if enabled on config.toml
+    if config.metrics.metrics_enabled {
+        metrics_server(&config.metrics);
+    };
 
     orchestrator_main_loop(
         cosmos_key,
