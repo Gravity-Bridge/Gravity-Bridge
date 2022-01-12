@@ -139,8 +139,7 @@ pub async fn eth_oracle_main_loop(
 
                 // Mismatch conversion Uint256 to i64
                 //metrics_latest(latest_eth_block as i64, "latest_eth_block");
-                // Possible overflow
-                metrics_latest(block_height as i64 , "latest_cosmos_block");
+                metrics_latest(block_height, "latest_cosmos_block");
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
                 warn!("Cosmos node syncing, Eth oracle paused");
@@ -266,8 +265,7 @@ pub async fn eth_signer_main_loop(
                 warn!("Cosmos node syncing, Eth signer paused");
                 warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
                 metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
-                // Possible overflow
-                metrics_latest(blocks_until_slashing as i64 , "blocks_until_slashing");
+                metrics_latest(blocks_until_slashing, "blocks_until_slashing");
                 delay_for(DELAY).await;
                 continue;
             }
@@ -280,8 +278,7 @@ pub async fn eth_signer_main_loop(
             Err(_) => {
                 error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
                 delay_for(DELAY).await;
-                // Possible overflow
-                metrics_latest(blocks_until_slashing as i64 , "blocks_until_slashing");
+                metrics_latest(blocks_until_slashing, "blocks_until_slashing");
                 metrics_errors_counter(2, "Could not reach Cosmos rpc! You must correct this or you risk being slashed");
                 continue;
             }

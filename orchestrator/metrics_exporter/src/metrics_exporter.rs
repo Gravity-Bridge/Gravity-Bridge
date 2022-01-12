@@ -59,8 +59,14 @@ pub fn metrics_warnings_counter(s: i32, e: &str) {
     WARNINGS_TOTAL.inc()
 }
 
-pub fn metrics_latest(i: i64, e: &str) {
-    LATEST_INFO.with_label_values(&[e]).set(i as i64);
+pub fn metrics_latest(u: u64, e: &str) {
+    match i64::try_from(u).is_ok() {
+        true => {
+            LATEST_INFO.with_label_values(&[e]).set(u as i64);
+        },
+        false => {
+        }
+    }
 }
 
 pub fn metrics_server(config: &MetricsConfig) {
