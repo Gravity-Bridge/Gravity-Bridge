@@ -1,6 +1,7 @@
 use crate::args::OrchestratorOpts;
 use crate::config::config_exists;
 use crate::config::load_keys;
+use crate::utils::print_relaying_explanation;
 use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::PrivateKey as CosmosPrivateKey;
@@ -8,13 +9,14 @@ use gravity_utils::connection_prep::{
     check_delegate_addresses, check_for_eth, wait_for_cosmos_node_ready,
 };
 use gravity_utils::connection_prep::{check_for_fee, create_rpc_connections};
+use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use orchestrator::main_loop::orchestrator_main_loop;
 use orchestrator::main_loop::{ETH_ORACLE_LOOP_SPEED, ETH_SIGNER_LOOP_SPEED};
-use relayer::main_loop::LOOP_SPEED as RELAYER_LOOP_SPEED;
 use std::cmp::min;
 use std::path::Path;
 use std::process::exit;
+use std::time::Duration;
 
 use metrics_exporter::metrics_server;
 
@@ -71,7 +73,7 @@ pub async fn orchestrator(
 
     let timeout = min(
         min(ETH_SIGNER_LOOP_SPEED, ETH_ORACLE_LOOP_SPEED),
-        RELAYER_LOOP_SPEED,
+        Duration::from_secs(config.relayer.relayer_loop_speed),
     );
 
     trace!("Probing RPC connections");
@@ -117,11 +119,15 @@ pub async fn orchestrator(
     check_for_fee(&fee, public_cosmos_key, &contact).await;
     check_for_eth(public_eth_key, &web3).await;
 
+    // get the gravity parameters
+    let params = get_gravity_params(&mut grpc)
+        .await
+        .expect("Failed to get Gravity Bridge module parameters!");
+
     // get the gravity contract address, if not provided
     let contract_address = if let Some(c) = args.gravity_contract_address {
         c
     } else {
-        let params = get_gravity_params(&mut grpc).await.unwrap();
         let c = params.bridge_ethereum_address.parse();
         match c {
             Ok(v) => {
@@ -138,6 +144,16 @@ pub async fn orchestrator(
         }
     };
 
+    if config.orchestrator.relayer_enabled {
+        // setup and explain relayer settings
+        if config.relayer.batch_request_mode != BatchRequestMode::None {
+            let public_cosmos_key = cosmos_key.to_address(&contact.get_prefix()).unwrap();
+            check_for_fee(&fee, public_cosmos_key, &contact).await;
+            print_relaying_explanation(&config.relayer, true)
+        } else {
+            print_relaying_explanation(&config.relayer, false)
+        }
+    }
 
     orchestrator_main_loop(
         cosmos_key,
@@ -146,6 +162,7 @@ pub async fn orchestrator(
         connections.contact.unwrap(),
         connections.grpc.unwrap(),
         contract_address,
+        params.gravity_id,
         fee,
         config,
     )

@@ -19,7 +19,7 @@ const NUM_AIRDROP_RECIPIENTS: usize = 10_000;
 // note this test can only be run once because we exhaust the community pool
 // after that the chain must be restarted to reset that state.
 pub async fn airdrop_proposal_test(contact: &Contact, keys: Vec<ValidatorKeys>) {
-    let community_pool_contents_start = contact.get_community_pool_coins().await.unwrap();
+    let community_pool_contents_start = contact.query_community_pool().await.unwrap();
     let starting_amount_in_pool =
         get_coins(&*STAKING_TOKEN, &community_pool_contents_start).unwrap();
     let airdrop_amount = Coin {
@@ -92,7 +92,7 @@ pub async fn airdrop_proposal_test(contact: &Contact, keys: Vec<ValidatorKeys>) 
     )
     .await;
 
-    let community_pool_contents_end = contact.get_community_pool_coins().await.unwrap();
+    let community_pool_contents_end = contact.query_community_pool().await.unwrap();
     let end = get_coins(&*STAKING_TOKEN, &community_pool_contents_end).unwrap();
     info!(
         "FeePool start {} and End {}",

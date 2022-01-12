@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	"math/big"
 	"strconv"
 
@@ -13,11 +14,22 @@ import (
 	distypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
+// Check that distKeeper implements the expected type
+var _ types.DistributionKeeper = (*distrkeeper.Keeper)(nil)
+
 // AttestationHandler processes `observed` Attestations
 type AttestationHandler struct {
-	keeper     Keeper
-	bankKeeper bankkeeper.BaseKeeper
-	distKeeper types.DistributionKeeper
+	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
+	keeper     *Keeper
+	bankKeeper *bankkeeper.BaseKeeper
+	distKeeper *distrkeeper.Keeper
+}
+
+// Check for nil members
+func (a AttestationHandler) ValidateMembers() {
+	if a.keeper     == nil { panic("Nil keeper!") }
+	if a.bankKeeper == nil { panic("Nil bankKeeper!") }
+	if a.distKeeper == nil { panic("Nil distKeeper!") }
 }
 
 // SendToCommunityPool handles sending incorrect deposits to the community pool, since the deposits
@@ -27,9 +39,9 @@ func (a AttestationHandler) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins
 	if err := a.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distypes.ModuleName, coins); err != nil {
 		return sdkerrors.Wrap(err, "transfer to community pool failed")
 	}
-	feePool := a.distKeeper.GetFeePool(ctx)
+	feePool := (*a.distKeeper).GetFeePool(ctx)
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
-	a.distKeeper.SetFeePool(ctx, feePool)
+	(*a.distKeeper).SetFeePool(ctx, feePool)
 	return nil
 }
 
@@ -144,15 +156,25 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				)
 				return sdkerrors.Wrap(err, "failed to send to Community pool")
 			}
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					types.EventTypeInvalidSendToCosmosReceiver,
+					sdk.NewAttribute("MsgSendToCosmosAmount", claim.Amount.String()),
+					sdk.NewAttribute("MsgSendToCosmosNonce", strconv.Itoa(int(claim.GetEventNonce()))),
+					sdk.NewAttribute("MsgSendToCosmosToken", tokenAddress.GetAddress()),
+					sdk.NewAttribute("MsgSendToCosmosSender", claim.EthereumSender),
+				),
+			)
+		} else {
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					sdk.EventTypeMessage,
+					sdk.NewAttribute("MsgSendToCosmosAmount", claim.Amount.String()),
+					sdk.NewAttribute("MsgSendToCosmosNonce", strconv.Itoa(int(claim.GetEventNonce()))),
+					sdk.NewAttribute("MsgSendToCosmosToken", tokenAddress.GetAddress()),
+				),
+			)
 		}
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				sdk.EventTypeMessage,
-				sdk.NewAttribute("MsgSendToCosmosAmount", claim.Amount.String()),
-				sdk.NewAttribute("MsgSendToCosmosNonce", strconv.Itoa(int(claim.GetEventNonce()))),
-				sdk.NewAttribute("MsgSendToCosmosToken", tokenAddress.GetAddress()),
-			),
-		)
 	// withdraw in this context means a withdraw from the Ethereum side of the bridge
 	case *types.MsgBatchSendToEthClaim:
 		contract, err := types.NewEthAddress(claim.TokenContract)

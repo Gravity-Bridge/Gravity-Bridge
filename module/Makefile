@@ -54,6 +54,9 @@ BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)' -gcflags="all=-N -l"
 all: install
 
 install: go.sum
+		export GOFLAGS='-buildmode=pie'
+		export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
+		export CGO_LDFLAGS="-Wl,-z,relro,-z,now -fstack-protector"
 		go install $(BUILD_FLAGS) ./cmd/gravity
 
 go.sum: go.mod
@@ -191,12 +194,12 @@ tools-clean:
 build-reproducible: go.sum
 	$(DOCKER) rm latest-build || true
 	$(DOCKER) run --volume=$(CURDIR)/.././:/sources:ro \
-        --env TARGET_PLATFORMS='linux/amd64 darwin/amd64 linux/arm64 windows/amd64' \
+        --env TARGET_PLATFORMS='windows/amd64 darwin/amd64 linux/amd64 linux/arm64 ' \
         --env APP=gravity \
         --env VERSION=$(VERSION) \
         --env COMMIT=$(COMMIT) \
         --env LEDGER_ENABLED=$(LEDGER_ENABLED) \
-        --name latest-build cosmossdk/rbuilder:latest
+        --name latest-build altheanet/cosmos-rbuilder:latest
 	$(DOCKER) cp -a latest-build:/home/builder/artifacts/ $(CURDIR)/
 
 clean:

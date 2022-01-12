@@ -535,24 +535,23 @@ func TestMsgSetOrchestratorAddresses(t *testing.T) {
 		cosmosAddress  sdk.AccAddress = bytes.Repeat([]byte{0x1}, 20)
 		ethAddress2, _                = types.NewEthAddress("0x26126048c706fB45a5a6De8432F428e794d0b952")
 		cosmosAddress2 sdk.AccAddress = bytes.Repeat([]byte{0x2}, 20)
-		valAddress     sdk.ValAddress = bytes.Repeat([]byte{0x2}, 20)
 		blockTime                     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		blockTime2                    = time.Date(2020, 9, 15, 15, 20, 10, 0, time.UTC)
 		blockHeight    int64          = 200
 		blockHeight2   int64          = 210
 	)
-	input := keeper.CreateTestEnv(t)
-	input.GravityKeeper.StakingKeeper = keeper.NewStakingKeeperMock(valAddress)
-	ctx := input.Context
+	input, ctx := keeper.SetupTestChain(t, []uint64{1000000000}, false)
 	wctx := sdk.WrapSDKContext(ctx)
 	k := input.GravityKeeper
 	h := NewHandler(input.GravityKeeper)
 	ctx = ctx.WithBlockTime(blockTime)
+	valAddress, err := sdk.ValAddressFromBech32(input.StakingKeeper.GetValidators(ctx, 10)[0].OperatorAddress)
+	require.NoError(t, err)
 
 	// test setting keys
 	msg := types.NewMsgSetOrchestratorAddress(valAddress, cosmosAddress, *ethAddress)
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
-	_, err := h(ctx, msg)
+	_, err = h(ctx, msg)
 	require.NoError(t, err)
 
 	// test all lookup methods

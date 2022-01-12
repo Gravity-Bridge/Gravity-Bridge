@@ -36,14 +36,8 @@ pub async fn pause_bridge_test(
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
     assert!(params.bridge_active);
 
-    let no_relay_market_config = create_default_test_config();
-    start_orchestrators(
-        keys.clone(),
-        gravity_address,
-        false,
-        no_relay_market_config.clone(),
-    )
-    .await;
+    let no_relay_market_config = create_no_batch_requests_config();
+    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
     // generate an address for coin sending tests, this ensures test imdepotency
     let user_keys = get_user_key();
@@ -134,7 +128,13 @@ pub async fn pause_bridge_test(
     )
     .await
     .unwrap();
-    let res = send_request_batch(keys[0].orch_key, token_name.clone(), get_fee(), contact).await;
+    let res = send_request_batch(
+        keys[0].orch_key,
+        token_name.clone(),
+        Some(get_fee()),
+        contact,
+    )
+    .await;
     assert!(res.is_err());
 
     contact
@@ -192,9 +192,14 @@ pub async fn pause_bridge_test(
             .expect("Failed to get current eth valset");
 
     // now we make sure our tokens in the batch queue make it across
-    send_request_batch(keys[0].orch_key, token_name.clone(), get_fee(), contact)
-        .await
-        .unwrap();
+    send_request_batch(
+        keys[0].orch_key,
+        token_name.clone(),
+        Some(get_fee()),
+        contact,
+    )
+    .await
+    .unwrap();
 
     let starting_batch_nonce = current_eth_batch_nonce;
 

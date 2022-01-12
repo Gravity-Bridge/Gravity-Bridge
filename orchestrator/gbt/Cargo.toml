@@ -1,6 +1,6 @@
 [package]
 name = "gbt"
-version = "1.0.6"
+version = "1.2.2"
 authors = ["Justin Kilpatrick <justin@althea.net>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -20,15 +20,15 @@ relayer = {path = "../relayer/"}
 orchestrator = {path = "../orchestrator/"}
 metrics_exporter = {path = "../metrics_exporter/"}
 
-deep_space = "2.6"
+deep_space = "2.8"
 serde_derive = "1.0"
 clarity = "0.5"
-clap = "3.0.0-beta.5"
+clap = {version="3.0.0-rc.7", features=["derive"]}
 serde = "1.0"
 actix-rt = "2.2"
 lazy_static = "1"
 url = "2"
-web30 = "0.17"
+web30 = "0.18"
 env_logger = "0.9"
 log = "0.4"
 openssl-probe = "0.1"

@@ -79,7 +79,7 @@ pub async fn relay_logic_calls(
     gravity_contract_address: EthAddress,
     gravity_id: String,
     timeout: Duration,
-    config: &RelayerConfig,
+    config: RelayerConfig,
 ) {
     let our_ethereum_address = ethereum_key.to_address();
 

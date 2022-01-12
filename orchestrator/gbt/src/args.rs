@@ -70,8 +70,18 @@ pub struct OrchestratorOpts {
 #[derive(Parser)]
 pub struct RelayerOpts {
     /// An Ethereum private key containing ETH to pay for fees, this will also hold the relayers earnings
+    /// This overrides the key set in the config, which will be used if no key is provided here
     #[clap(short, long, parse(try_from_str))]
     pub ethereum_key: Option<EthPrivateKey>,
+    /// Cosmos mnemonic phrase containing tokens used to pay fees on Cosmos for requesting batches
+    /// This overrides the key set in the config, which will be used if no key is provided here.
+    /// If no key is provided and no key is set in the config, this relayer will not request batches
+    #[clap(long, parse(try_from_str))]
+    pub cosmos_phrase: Option<CosmosPrivateKey>,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees. If not set this relayer will not automatically
+    /// request batches
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Option<Coin>,
     /// The address fo the Gravity contract on Ethereum
     #[clap(short, long, parse(try_from_str))]
     pub gravity_contract_address: Option<EthAddress>,
@@ -106,19 +116,19 @@ pub struct CosmosToEthOpts {
     /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
     #[clap(long, default_value = "http://localhost:9090")]
     pub cosmos_grpc: String,
-    /// The Denom and amount you wish to send eg: 100uatom
+    /// The Denom and amount you wish to send eg: 100ugraviton
     #[clap(short, long, parse(try_from_str))]
     pub amount: Coin,
-    /// The Cosmos Denom and amount to pay Cosmos chain fees eg: 1uatom
+    /// The Cosmos Denom and amount to pay Cosmos chain fees eg: 1ugraviton
     #[clap(short, long, parse(try_from_str))]
-    pub fees: Coin,
+    pub fee: Coin,
+    /// The amount you want to pay in bridge fees, these are used to pay relayers
+    /// on Ethereum and must be of the same denomination as `amount`
+    #[clap(short, long, parse(try_from_str))]
+    pub bridge_fee: Coin,
     /// The destination address on the Ethereum chain
     #[clap(short, long, parse(try_from_str))]
     pub eth_destination: EthAddress,
-    /// If this command should request a batch to push
-    /// your tx along immediately
-    #[clap(short, long)]
-    pub no_batch: bool,
 }
 
 /// Send an Ethereum ERC20 token to Cosmos
@@ -163,15 +173,6 @@ pub struct DeployErc20RepresentationOpts {
     /// The address fo the Gravity contract on Ethereum
     #[clap(short, long, parse(try_from_str))]
     pub gravity_contract_address: Option<EthAddress>,
-    /// The name value for the ERC20 contract, must mach Cosmos denom metadata in order to be adopted
-    #[clap(long)]
-    pub erc20_name: String,
-    /// The symbol value for the ERC20 contract, must mach Cosmos denom metadata in order to be adopted
-    #[clap(long)]
-    pub erc20_symbol: String,
-    /// The decimals value for the ERC20 contract, must mach Cosmos denom metadata in order to be adopted
-    #[clap(long)]
-    pub erc20_decimals: u8,
 }
 
 /// Manage keys

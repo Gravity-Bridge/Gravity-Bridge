@@ -17,14 +17,14 @@ gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {path = "../gravity_proto/"}
 metrics_exporter = {path = "../metrics_exporter/"}
 
-deep_space = "2.6"
+deep_space = "2.8"
 serde_derive = "1.0"
 clarity = "0.5"
 docopt = "1"
 serde = "1.0"
 actix-rt = "2.2"
 lazy_static = "1"
-web30 = "0.17"
+web30 = "0.18"
 num256 = "0.3"
 log = "0.4"
 env_logger = "0.9"

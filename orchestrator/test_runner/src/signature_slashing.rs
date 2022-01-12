@@ -33,6 +33,54 @@ pub async fn signature_slashing_test(
 
     test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
 
+    reduce_slashing_window(contact, &mut grpc_client, &keys).await;
+
+    // check that the block height is greater than 20 if not wait until it is
+    // there's some logic here to handle the chian progressing slowly over blocks
+    // which probably isn't needed for block height 20
+    wait_for_height(20, contact).await;
+
+    // make sure everything is still moving!
+    test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
+}
+
+pub async fn wait_for_height(target_height: u64, contact: &Contact) {
+    let mut last_update = Instant::now();
+    let mut last_seen_block = 0;
+    while get_latest_block(contact).await < 20 {
+        let latest = get_latest_block(contact).await;
+        if last_seen_block != latest {
+            last_seen_block = latest;
+            last_update = Instant::now()
+        }
+
+        if Instant::now() - last_update > TOTAL_TIMEOUT {
+            panic!(
+                "Chain has halted while waiting for height {}",
+                target_height
+            )
+        }
+        sleep(Duration::from_secs(10)).await;
+    }
+}
+
+pub async fn get_latest_block(contact: &Contact) -> u64 {
+    let block = contact.get_chain_status().await.unwrap();
+    match block {
+        ChainStatus::Moving { block_height } => block_height,
+        ChainStatus::Syncing | ChainStatus::WaitingToStart => panic!("Cosmos chain not running!"),
+    }
+}
+
+/// Reduces the slashing window for validator sets and batches
+/// from 10k blocks to 10 blocks in order to trigger Gravity's slashing
+/// code in the integration test environment. This also reduces the
+/// unbonding time down to 60 seconds so that unbonding can be tested
+pub async fn reduce_slashing_window(
+    contact: &Contact,
+    grpc_client: &mut GravityQueryClient<Channel>,
+    keys: &[ValidatorKeys],
+) {
     let mut params_to_change = Vec::new();
     let signed_valsets_window = ParamChange {
         subspace: "gravity".to_string(),
@@ -64,43 +112,14 @@ pub async fn signature_slashing_test(
     )
     .await;
 
-    vote_yes_on_proposals(contact, &keys, None).await;
+    vote_yes_on_proposals(contact, keys, None).await;
 
     // wait for the voting period to pass
     sleep(Duration::from_secs(65)).await;
 
-    let params = get_gravity_params(&mut grpc_client).await.unwrap();
+    let params = get_gravity_params(grpc_client).await.unwrap();
     // check that params have changed
     assert_eq!(params.signed_valsets_window, 10);
     assert_eq!(params.signed_batches_window, 10);
     assert_eq!(params.signed_logic_calls_window, 10);
-
-    // check that the block height is greater than 20 if not wait until it is
-    // there's some logic here to handle the chian progressing slowly over blocks
-    // which probably isn't needed for block height 20
-    let mut last_update = Instant::now();
-    let mut last_seen_block = 0;
-    while get_latest_block(contact).await < 20 {
-        let latest = get_latest_block(contact).await;
-        if last_seen_block != latest {
-            last_seen_block = latest;
-            last_update = Instant::now()
-        }
-
-        if Instant::now() - last_update > TOTAL_TIMEOUT {
-            panic!("Chain has halted in slashing test! check locks for endblock panic!")
-        }
-        sleep(Duration::from_secs(10)).await;
-    }
-
-    // make sure everything is still moving!
-    test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
-}
-
-async fn get_latest_block(contact: &Contact) -> u64 {
-    let block = contact.get_chain_status().await.unwrap();
-    match block {
-        ChainStatus::Moving { block_height } => block_height,
-        ChainStatus::Syncing | ChainStatus::WaitingToStart => panic!("Cosmos chain not running!"),
-    }
 }

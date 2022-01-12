@@ -4,17 +4,14 @@ use crate::utils::*;
 use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::OPERATION_TIMEOUT;
-use crate::STAKING_TOKEN;
-use crate::STARTING_STAKE_PER_VALIDATOR;
 use crate::TOTAL_TIMEOUT;
 use bytes::BytesMut;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::query::get_attestations;
-use cosmos_gravity::send::{send_request_batch, send_to_eth};
+use cosmos_gravity::send::send_to_eth;
 use cosmos_gravity::{query::get_oldest_unsigned_transaction_batches, send::send_ethereum_claims};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
-use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::Contact;
 use ethereum_gravity::utils::get_valset_nonce;
@@ -26,7 +23,6 @@ use gravity_utils::error::GravityError;
 use gravity_utils::types::SendToCosmosEvent;
 use num::CheckedAdd;
 use prost::Message;
-use rand::Rng;
 use std::any::type_name;
 use std::time::Duration;
 use std::time::Instant;
@@ -208,23 +204,7 @@ pub async fn test_valset_update(
         .expect("Failed to get starting eth valset");
     let start = Instant::now();
 
-    // now we send a valset request that the orchestrators will pick up on
-    // in this case we send it as the first validator because they can pay the fee
-    info!("Sending in valset request");
-
-    // this is hacky and not really a good way to test validator set updates in a highly
-    // repeatable fashion. What we really need to do is be aware of the total staking state
-    // and manipulate the validator set very intentionally rather than kinda blindly like
-    // we are here. For example the more your run this function the less this fixed amount
-    // makes any difference, eventually it will fail because the change to the total staked
-    // percentage is too small.
-    let mut rng = rand::thread_rng();
-    let validator_to_change = rng.gen_range(0..keys.len());
-    let delegate_address = get_operator_address(keys[validator_to_change].validator_key);
-    let amount = Coin {
-        denom: STAKING_TOKEN.to_string(),
-        amount: (STARTING_STAKE_PER_VALIDATOR / 4).into(),
-    };
+    let (delegate_address, amount) = get_validator_to_delegate_to(contact).await;
     info!(
         "Delegating {} to {} in order to generate a validator set update",
         amount, delegate_address
@@ -539,16 +519,6 @@ async fn test_batch(
     .unwrap();
     info!("Sent tokens to Ethereum with {:?}", res);
 
-    info!("Requesting transaction batch");
-    send_request_batch(
-        requester_cosmos_private_key,
-        token_name.clone(),
-        get_fee(),
-        contact,
-    )
-    .await
-    .unwrap();
-
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
     let requester_address = requester_cosmos_private_key
         .to_address(&contact.get_prefix())
@@ -626,27 +596,19 @@ async fn submit_duplicate_erc20_send(
 
     // iterate through all validators and try to send an event with duplicate nonce
     for k in keys.iter() {
-        let start = Instant::now();
-        let mut res = Err(CosmosGrpcError::BadInput("Dummy Error".to_string()));
-        while Instant::now() - start < TOTAL_TIMEOUT {
-            let c_key = k.orch_key;
-            res = send_ethereum_claims(
-                contact,
-                c_key,
-                vec![event.clone()],
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-                get_fee(),
-            )
-            .await;
-            if res.is_ok() {
-                break;
-            }
-        }
+        let c_key = k.orch_key;
+        let res = send_ethereum_claims(
+            contact,
+            c_key,
+            vec![event.clone()],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            get_fee(),
+        )
+        .await;
         info!("Submitted duplicate sendToCosmos event: {:?}", res);
-        res.unwrap();
     }
 
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();

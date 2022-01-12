@@ -30,6 +30,15 @@ for platform in ${TARGET_PLATFORMS} ; do
     # cases except when the target platform is 'windows'.
     setup_build_env_for_platform "${platform}"
 
+    # build linux builds with security features these env vars
+    # are not unset, so it's important to run the linux builds last
+    if  [[ $platform == linux* ]] ;
+    then
+        export GOFLAGS='-buildmode=pie'
+        export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
+        export CGO_LDFLAGS="-Wl,-z,relro,-z,now -fstack-protector"
+    fi
+
     make clean
     echo Building for $(go env GOOS)/$(go env GOARCH) >&2
     GOROOT_FINAL="$(go env GOROOT)" \

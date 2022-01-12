@@ -50,13 +50,7 @@ pub async fn unhalt_bridge_test(
         payer: None,
     };
 
-    start_orchestrators(
-        keys.clone(),
-        gravity_address,
-        false,
-        no_relay_market_config.clone(),
-    )
-    .await;
+    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
     let lying_validators: Vec<CosmosPrivateKey> =
         keys[1..3].iter().map(|key| key.orch_key).collect();
 

@@ -17,7 +17,7 @@ var _ types.QueryServer = Keeper{
 	storeKey:           nil,
 	paramSpace:         paramstypes.Subspace{},
 	cdc:                nil,
-	bankKeeper:         bankkeeper.BaseKeeper{},
+	bankKeeper:         &bankkeeper.BaseKeeper{},
 	SlashingKeeper:     nil,
 	AttestationHandler: nil,
 }

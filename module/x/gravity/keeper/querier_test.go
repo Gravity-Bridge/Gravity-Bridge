@@ -8,6 +8,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -148,66 +149,45 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 // TODO: Check failure modes
 //nolint: exhaustivestruct
 func TestLastValsetRequests(t *testing.T) {
-
-	input := CreateTestEnv(t)
-	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
-	k := input.GravityKeeper
-	// seed with maxValsetRequestsReturns + 1 requests
-	for i := 0; i < maxValsetRequestsReturned+1; i++ {
-		var validators []sdk.ValAddress
-		for j := 0; j <= i; j++ {
-			// add an validator each block
-			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
-			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
-			require.NoError(t, err)
-			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
-			validators = append(validators, valAddr)
-		}
-		input.GravityKeeper.StakingKeeper = NewStakingKeeperMock(validators...)
-		sdkCtx = sdkCtx.WithBlockHeight(int64(100 + i))
-		input.GravityKeeper.SetValsetRequest(sdkCtx)
-	}
-
 	val1 := types.Valset{
 		Nonce:        6,
-		Height:       105,
+		Height:       1235167,
 		RewardAmount: sdk.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
 			{
-				Power:           715827882,
+				Power:           858993459,
+				EthereumAddress: "0x0000000000000000000000000000000000000000",
+			},
+			{
+				Power:           858993459,
 				EthereumAddress: "0x0101010101010101010101010101010101010101",
 			},
 			{
-				Power:           715827882,
+				Power:           858993459,
 				EthereumAddress: "0x0202020202020202020202020202020202020202",
 			},
 			{
-				Power:           715827882,
+				Power:           858993459,
 				EthereumAddress: "0x0303030303030303030303030303030303030303",
 			},
 			{
-				Power:           715827882,
+				Power:           858993459,
 				EthereumAddress: "0x0404040404040404040404040404040404040404",
-			},
-			{
-				Power:           715827882,
-				EthereumAddress: "0x0505050505050505050505050505050505050505",
-			},
-			{
-				Power:           715827882,
-				EthereumAddress: "0x0606060606060606060606060606060606060606",
 			},
 		},
 	}
 
 	val2 := types.Valset{
 		Nonce:        5,
-		Height:       104,
+		Height:       1235067,
 		RewardAmount: sdk.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
+			{
+				Power:           858993459,
+				EthereumAddress: "0x0000000000000000000000000000000000000000",
+			},
 			{
 				Power:           858993459,
 				EthereumAddress: "0x0101010101010101010101010101010101010101",
@@ -223,20 +203,20 @@ func TestLastValsetRequests(t *testing.T) {
 			{
 				Power:           858993459,
 				EthereumAddress: "0x0404040404040404040404040404040404040404",
-			},
-			{
-				Power:           858993459,
-				EthereumAddress: "0x0505050505050505050505050505050505050505",
 			},
 		},
 	}
 
 	val3 := types.Valset{
 		Nonce:        4,
-		Height:       103,
+		Height:       1234967,
 		RewardAmount: sdk.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
+			{
+				Power:           1073741824,
+				EthereumAddress: "0x0000000000000000000000000000000000000000",
+			},
 			{
 				Power:           1073741824,
 				EthereumAddress: "0x0101010101010101010101010101010101010101",
@@ -248,20 +228,20 @@ func TestLastValsetRequests(t *testing.T) {
 			{
 				Power:           1073741824,
 				EthereumAddress: "0x0303030303030303030303030303030303030303",
-			},
-			{
-				Power:           1073741824,
-				EthereumAddress: "0x0404040404040404040404040404040404040404",
 			},
 		},
 	}
 
 	val4 := types.Valset{
 		Nonce:        3,
-		Height:       102,
+		Height:       1234867,
 		RewardAmount: sdk.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
+			{
+				Power:           1431655765,
+				EthereumAddress: "0x0000000000000000000000000000000000000000",
+			},
 			{
 				Power:           1431655765,
 				EthereumAddress: "0x0101010101010101010101010101010101010101",
@@ -269,27 +249,23 @@ func TestLastValsetRequests(t *testing.T) {
 			{
 				Power:           1431655765,
 				EthereumAddress: "0x0202020202020202020202020202020202020202",
-			},
-			{
-				Power:           1431655765,
-				EthereumAddress: "0x0303030303030303030303030303030303030303",
 			},
 		},
 	}
 
 	val5 := types.Valset{
 		Nonce:        2,
-		Height:       101,
+		Height:       1234767,
 		RewardAmount: sdk.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
 			{
 				Power:           2147483648,
-				EthereumAddress: "0x0101010101010101010101010101010101010101",
+				EthereumAddress: "0x0000000000000000000000000000000000000000",
 			},
 			{
 				Power:           2147483648,
-				EthereumAddress: "0x0202020202020202020202020202020202020202",
+				EthereumAddress: "0x0101010101010101010101010101010101010101",
 			},
 		},
 	}
@@ -303,6 +279,22 @@ func TestLastValsetRequests(t *testing.T) {
 			expResp: types.QueryLastValsetRequestsResponse{*valArray},
 		},
 	}
+	// any lower than this and a validator won't be created
+	const minStake = 1000000
+	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	ctx := sdk.WrapSDKContext(input.Context)
+
+	// one more valset request
+
+	// increase block height by 100 blocks
+	input.Context = input.Context.WithBlockHeight(input.Context.BlockHeight() + 100)
+
+	// Run the staking endblocker to ensure valset is correct in state
+	staking.EndBlocker(input.Context, input.StakingKeeper)
+
+	input.GravityKeeper.SetValsetRequest(input.Context)
+
+	k := input.GravityKeeper
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			got, err := k.LastValsetRequests(ctx, &types.QueryLastValsetRequestsRequest{})
@@ -316,67 +308,21 @@ func TestLastValsetRequests(t *testing.T) {
 // TODO: check that it doesn't accidently return a valset that HAS been signed
 // Right now it is basically just testing that any valset comes back
 func TestPendingValsetRequests(t *testing.T) {
-	input := CreateTestEnv(t)
-	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
-	k := input.GravityKeeper
-
-	// seed with requests
-	for i := 0; i < 6; i++ {
-		var validators []sdk.ValAddress
-		for j := 0; j <= i; j++ {
-			// add an validator each block
-			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
-			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
-			require.NoError(t, err)
-			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
-			validators = append(validators, valAddr)
-		}
-		input.GravityKeeper.StakingKeeper = NewStakingKeeperMock(validators...)
-		sdkCtx = sdkCtx.WithBlockHeight(int64(100 + i))
-		input.GravityKeeper.SetValsetRequest(sdkCtx)
-	}
-
 	specs := map[string]struct {
 		expResp types.QueryLastPendingValsetRequestByAddrResponse
 	}{
 		"find valset": {
 			expResp: types.QueryLastPendingValsetRequestByAddrResponse{Valsets: []types.Valset{
 				{
-					Nonce: 6,
-					Members: []types.BridgeValidator{
-						{
-							Power:           715827882,
-							EthereumAddress: "0x0101010101010101010101010101010101010101",
-						},
-						{
-							Power:           715827882,
-							EthereumAddress: "0x0202020202020202020202020202020202020202",
-						},
-						{
-							Power:           715827882,
-							EthereumAddress: "0x0303030303030303030303030303030303030303",
-						},
-						{
-							Power:           715827882,
-							EthereumAddress: "0x0404040404040404040404040404040404040404",
-						},
-						{
-							Power:           715827882,
-							EthereumAddress: "0x0505050505050505050505050505050505050505",
-						},
-						{
-							Power:           715827882,
-							EthereumAddress: "0x0606060606060606060606060606060606060606",
-						},
-					},
-					Height:       105,
-					RewardAmount: sdk.NewInt(0),
+					Nonce:        6,
+					Height:       1235167,
+					RewardAmount: sdk.ZeroInt(),
 					RewardToken:  "0x0000000000000000000000000000000000000000",
-				},
-				{
-					Nonce: 5,
 					Members: []types.BridgeValidator{
+						{
+							Power:           858993459,
+							EthereumAddress: "0x0000000000000000000000000000000000000000",
+						},
 						{
 							Power:           858993459,
 							EthereumAddress: "0x0101010101010101010101010101010101010101",
@@ -393,42 +339,70 @@ func TestPendingValsetRequests(t *testing.T) {
 							Power:           858993459,
 							EthereumAddress: "0x0404040404040404040404040404040404040404",
 						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0505050505050505050505050505050505050505",
-						},
 					},
-					Height:       104,
-					RewardAmount: sdk.NewInt(0),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
 				},
 				{
-					Nonce: 4,
+					Nonce:        5,
+					Height:       1235067,
+					RewardAmount: sdk.ZeroInt(),
+					RewardToken:  "0x0000000000000000000000000000000000000000",
 					Members: []types.BridgeValidator{
 						{
-							Power:           1073741824,
+							Power:           858993459,
+							EthereumAddress: "0x0000000000000000000000000000000000000000",
+						},
+						{
+							Power:           858993459,
 							EthereumAddress: "0x0101010101010101010101010101010101010101",
 						},
 						{
-							Power:           1073741824,
+							Power:           858993459,
 							EthereumAddress: "0x0202020202020202020202020202020202020202",
 						},
 						{
-							Power:           1073741824,
+							Power:           858993459,
 							EthereumAddress: "0x0303030303030303030303030303030303030303",
 						},
 						{
-							Power:           1073741824,
+							Power:           858993459,
 							EthereumAddress: "0x0404040404040404040404040404040404040404",
 						},
 					},
-					Height:       103,
-					RewardAmount: sdk.NewInt(0),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
 				},
 				{
-					Nonce: 3,
+					Nonce:        4,
+					Height:       1234967,
+					RewardAmount: sdk.ZeroInt(),
+					RewardToken:  "0x0000000000000000000000000000000000000000",
 					Members: []types.BridgeValidator{
+						{
+							Power:           1073741824,
+							EthereumAddress: "0x0000000000000000000000000000000000000000",
+						},
+						{
+							Power:           1073741824,
+							EthereumAddress: "0x0101010101010101010101010101010101010101",
+						},
+						{
+							Power:           1073741824,
+							EthereumAddress: "0x0202020202020202020202020202020202020202",
+						},
+						{
+							Power:           1073741824,
+							EthereumAddress: "0x0303030303030303030303030303030303030303",
+						},
+					},
+				},
+				{
+					Nonce:        3,
+					Height:       1234867,
+					RewardAmount: sdk.ZeroInt(),
+					RewardToken:  "0x0000000000000000000000000000000000000000",
+					Members: []types.BridgeValidator{
+						{
+							Power:           1431655765,
+							EthereumAddress: "0x0000000000000000000000000000000000000000",
+						},
 						{
 							Power:           1431655765,
 							EthereumAddress: "0x0101010101010101010101010101010101010101",
@@ -437,40 +411,33 @@ func TestPendingValsetRequests(t *testing.T) {
 							Power:           1431655765,
 							EthereumAddress: "0x0202020202020202020202020202020202020202",
 						},
-						{
-							Power:           1431655765,
-							EthereumAddress: "0x0303030303030303030303030303030303030303",
-						},
 					},
-					Height:       102,
-					RewardAmount: sdk.NewInt(0),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
 				},
 				{
-					Nonce: 2,
+					Nonce:        2,
+					Height:       1234767,
+					RewardAmount: sdk.ZeroInt(),
+					RewardToken:  "0x0000000000000000000000000000000000000000",
 					Members: []types.BridgeValidator{
+						{
+							Power:           2147483648,
+							EthereumAddress: "0x0000000000000000000000000000000000000000",
+						},
 						{
 							Power:           2147483648,
 							EthereumAddress: "0x0101010101010101010101010101010101010101",
 						},
-						{
-							Power:           2147483648,
-							EthereumAddress: "0x0202020202020202020202020202020202020202",
-						},
 					},
-					Height:       101,
-					RewardAmount: sdk.NewInt(0),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
 				},
 				{
 					Nonce: 1,
 					Members: []types.BridgeValidator{
 						{
 							Power:           4294967296,
-							EthereumAddress: "0x0101010101010101010101010101010101010101",
+							EthereumAddress: "0x0000000000000000000000000000000000000000",
 						},
 					},
-					Height:       100,
+					Height:       1234667,
 					RewardAmount: sdk.NewInt(0),
 					RewardToken:  "0x0000000000000000000000000000000000000000",
 				},
@@ -478,12 +445,27 @@ func TestPendingValsetRequests(t *testing.T) {
 			},
 		},
 	}
+	// any lower than this and a validator won't be created
+	const minStake = 1000000
+	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	ctx := sdk.WrapSDKContext(input.Context)
+
+	// one more valset request
+
+	// increase block height by 100 blocks
+	input.Context = input.Context.WithBlockHeight(input.Context.BlockHeight() + 100)
+
+	// Run the staking endblocker to ensure valset is correct in state
+	staking.EndBlocker(input.Context, input.StakingKeeper)
+
+	input.GravityKeeper.SetValsetRequest(input.Context)
+
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			req := new(types.QueryLastPendingValsetRequestByAddrRequest)
 			req.Address = valAddr.String()
-			got, err := k.LastPendingValsetRequestByAddr(ctx, req)
+			got, err := input.GravityKeeper.LastPendingValsetRequestByAddr(ctx, req)
 			require.NoError(t, err)
 			assert.Equal(t, &spec.expResp, got, got)
 		})
@@ -493,29 +475,6 @@ func TestPendingValsetRequests(t *testing.T) {
 //nolint: exhaustivestruct
 // TODO: check that it actually returns a batch that has NOT been signed, not just any batch
 func TestLastPendingBatchRequest(t *testing.T) {
-	input := CreateTestEnv(t)
-	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
-	k := input.GravityKeeper
-
-	// seed with valset requests and eth addresses to make validators
-	// that we will later use to lookup batches to be signed
-	for i := 0; i < 6; i++ {
-		var validators []sdk.ValAddress
-		for j := 0; j <= i; j++ {
-			// add an validator each block
-			// TODO: replace with real SDK addresses
-			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
-			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
-			require.NoError(t, err)
-			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
-			validators = append(validators, valAddr)
-		}
-		input.GravityKeeper.StakingKeeper = NewStakingKeeperMock(validators...)
-		input.GravityKeeper.SetValsetRequest(sdkCtx)
-	}
-
-	createTestBatch(t, input)
 
 	specs := map[string]struct {
 		expResp types.QueryLastPendingBatchRequestByAddrResponse
@@ -554,18 +513,23 @@ func TestLastPendingBatchRequest(t *testing.T) {
 						},
 					},
 					TokenContract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-					Block:         1234567,
+					Block:         1235067,
 				},
 			},
 			},
 		},
 	}
+	// any lower than this and a validator won't be created
+	const minStake = 1000000
+	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	ctx := sdk.WrapSDKContext(input.Context)
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
+	createTestBatch(t, input)
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			req := new(types.QueryLastPendingBatchRequestByAddrRequest)
 			req.Address = valAddr.String()
-			got, err := k.LastPendingBatchRequestByAddr(ctx, req)
+			got, err := input.GravityKeeper.LastPendingBatchRequestByAddr(ctx, req)
 			require.NoError(t, err)
 			assert.Equal(t, &spec.expResp, got, got)
 		})
@@ -688,7 +652,6 @@ func TestQueryLogicCalls(t *testing.T) {
 			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
 			validators = append(validators, valAddr)
 		}
-		input.GravityKeeper.StakingKeeper = NewStakingKeeperMock(validators...)
 	}
 
 	token := []types.ERC20Token{{
@@ -747,7 +710,6 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
 			validators = append(validators, valAddr)
 		}
-		input.GravityKeeper.StakingKeeper = NewStakingKeeperMock(validators...)
 	}
 
 	token := []types.ERC20Token{{
@@ -932,25 +894,41 @@ func TestLastBatchesRequest(t *testing.T) {
 // tests setting and querying eth address and orchestrator addresses
 func TestQueryCurrentValset(t *testing.T) {
 	var (
-		ethAddress                = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
-		valAddress sdk.ValAddress = bytes.Repeat([]byte{0x2}, 20)
+		expectedValset = types.Valset{
+			Nonce:        1,
+			Height:       1234567,
+			RewardAmount: sdk.ZeroInt(),
+			RewardToken:  "0x0000000000000000000000000000000000000000",
+			Members: []types.BridgeValidator{
+				{
+					Power:           858993459,
+					EthereumAddress: "0x0101010101010101010101010101010101010101",
+				},
+				{
+					Power:           858993459,
+					EthereumAddress: "0x0202020202020202020202020202020202020202",
+				},
+				{
+					Power:           858993459,
+					EthereumAddress: "0x0303030303030303030303030303030303030303",
+				},
+				{
+					Power:           858993459,
+					EthereumAddress: "0x0404040404040404040404040404040404040404",
+				},
+				{
+					Power:           858993459,
+					EthereumAddress: "0x0505050505050505050505050505050505050505",
+				},
+			},
+		}
 	)
-	addr, err := types.NewEthAddress(ethAddress)
-	require.NoError(t, err)
-	input := CreateTestEnv(t)
-	input.GravityKeeper.StakingKeeper = NewStakingKeeperMock(valAddress)
+	input, _ := SetupFiveValChain(t)
 	sdkCtx := input.Context
-	input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddress, *addr)
 
 	currentValset := input.GravityKeeper.GetCurrentValset(sdkCtx)
 
-	bridgeVal := types.BridgeValidator{EthereumAddress: ethAddress, Power: 4294967296}
-	internalBridgeVal, err := bridgeVal.ToInternal()
-	require.NoError(t, err)
-	internalBridgeVals := types.InternalBridgeValidators([]*types.InternalBridgeValidator{internalBridgeVal})
-	expectedValset, err := types.NewValset(1, 1234567, internalBridgeVals, sdk.NewIntFromUint64(0), types.ZeroAddress())
-	require.NoError(t, err)
-	assert.Equal(t, *expectedValset, currentValset)
+	assert.Equal(t, expectedValset, currentValset)
 }
 
 //nolint: exhaustivestruct

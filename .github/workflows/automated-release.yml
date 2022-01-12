@@ -156,7 +156,7 @@ jobs:
       # entry is already made and rust builds take nearly 10 minutes, so instead
       # of having a workable release in 20 minutes we can have one in 10 with the ARM
       # binaries coming 10 minutes later.
-      - name: Build Rust ARM64
+      - name: Build GBT ARM64
         run: |
           cd orchestrator
           cross build --target aarch64-unknown-linux-musl --release --all
@@ -170,4 +170,20 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./orchestrator/target/aarch64-unknown-linux-musl/release/gbt
           asset_name: gbt-arm
+          asset_content_type: application/bin
+
+      - name: Build GBT Windows 
+        run: |
+          cd orchestrator
+          cross build --target x86_64-pc-windows-gnu --release --all
+
+      - name: Upload Gravity Bridge Tools Windows 
+        id: upload-gbt-windows
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./orchestrator/target/x86_64-pc-windows-gnu/release/gbt.exe
+          asset_name: gbt.exe
           asset_content_type: application/bin

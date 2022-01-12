@@ -27,6 +27,7 @@ pub enum GravityError {
     GravityGrpcError(Status),
     InsufficientVotingPowerToPass(String),
     ParseBigIntError(ParseBigIntError),
+    ValsetUpToDate,
 }
 
 impl fmt::Display for GravityError {
@@ -56,6 +57,12 @@ impl fmt::Display for GravityError {
                 write!(f, "{}", val)
             }
             GravityError::ParseBigIntError(val) => write!(f, "Failed to parse big integer {}", val),
+            GravityError::ValsetUpToDate => {
+                write!(
+                    f,
+                    "latest validator set is synced between Ethereum and Cosmos"
+                )
+            }
         }
     }
 }

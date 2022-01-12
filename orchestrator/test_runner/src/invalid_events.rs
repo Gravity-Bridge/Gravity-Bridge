@@ -43,7 +43,7 @@ pub async fn invalid_events(
     // figure out how many of a given erc20 we already have on startup so that we can
     // keep track of incrementation. This makes it possible to run this test again without
     // having to restart your test chain
-    let community_pool_contents = contact.get_community_pool_coins().await.unwrap();
+    let community_pool_contents = contact.query_community_pool().await.unwrap();
     let mut starting_pool_amount = None;
     for coin in community_pool_contents {
         if coin.denom == erc20_denom {
@@ -83,7 +83,7 @@ pub async fn invalid_events(
         .await;
 
         // finally we check that the deposit has been added to the community pool
-        let community_pool_contents = contact.get_community_pool_coins().await.unwrap();
+        let community_pool_contents = contact.query_community_pool().await.unwrap();
         for coin in community_pool_contents {
             if coin.denom == erc20_denom {
                 let expected = starting_pool_amount + one_eth();
@@ -133,6 +133,10 @@ fn get_deposit_test_strings() -> Vec<Vec<u8>> {
     let bad = "bad destination".to_string();
     test_strings.push(bad.as_bytes().to_vec());
 
+    // someone is trying to deposit to an eth address
+    let incorrect = "0x00000000000000000000000089bde264cc4e819326482e041d4ae167981935ce";
+    test_strings.push(incorrect.as_bytes().to_vec());
+
     // a very long, but valid utf8 string
     let rand_string: String = thread_rng()
         .sample_iter(&Alphanumeric)
@@ -155,8 +159,7 @@ fn get_deposit_test_strings() -> Vec<Vec<u8>> {
     }
     test_strings.push(rand_invalid_long);
 
-    //test_strings
-    Vec::new()
+    test_strings
 }
 
 fn get_erc20_test_values() -> Vec<Erc20Params> {
