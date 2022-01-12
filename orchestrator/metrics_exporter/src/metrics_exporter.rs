@@ -76,3 +76,11 @@ pub fn metrics_server(config: &MetricsConfig) {
     // Start exporter
     prometheus_exporter::start(addr).expect("can not start exporter");
 }
+
+
+/// Test overflowing bigint
+#[test]
+fn test_overflow_big_integer() {
+    let res = i64::try_from(18446744073709551615u64).is_ok();
+    assert_eq!(res, false)
+}
