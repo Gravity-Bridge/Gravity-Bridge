@@ -13,5 +13,5 @@ path = "src/metrics_exporter.rs"
 [dependencies]
 gravity_utils = {path = "../gravity_utils"}
 
-prometheus_exporter = "0.8"
+prometheus_exporter = "0.8.3"
 lazy_static = "1.4"
