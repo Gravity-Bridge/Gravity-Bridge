@@ -10,11 +10,10 @@ use cosmos_gravity::query::get_pending_batch_fees;
 use cosmos_gravity::send::send_request_batch;
 use deep_space::{Coin, Contact, PrivateKey};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_utils::prices::get_weth_price;
 use gravity_utils::types::BatchRequestMode;
 use tonic::transport::Channel;
 use web30::client::Web3;
-
-use crate::batch_relaying::get_price;
 
 pub async fn request_batches(
     contact: &Contact,
@@ -68,7 +67,7 @@ pub async fn request_batches(
         match batch_request_mode {
             BatchRequestMode::ProfitableOnly => {
                 let weth_cost_estimate = eth_gas_price.clone() * BATCH_GAS.into();
-                match get_price(token, total_fee, eth_address, web30).await {
+                match get_weth_price(token, total_fee, eth_address, web30).await {
                     Ok(price) => {
                         if price > weth_cost_estimate {
                             let res = send_request_batch(

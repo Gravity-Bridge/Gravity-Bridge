@@ -8,11 +8,11 @@ use cosmos_gravity::query::get_latest_valsets;
 use cosmos_gravity::query::{get_all_valset_confirms, get_valset};
 use ethereum_gravity::message_signatures::encode_valset_confirm_hashed;
 use ethereum_gravity::{
-    one_eth, utils::downcast_to_u128, utils::get_valset_nonce, utils::GasCost,
-    valset_update::send_eth_valset_update,
+    utils::get_valset_nonce, utils::GasCost, valset_update::send_eth_valset_update,
 };
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::error::GravityError;
+use gravity_utils::num_conversion::{print_eth, print_gwei};
 use gravity_utils::types::{RelayerConfig, Valset};
 use gravity_utils::types::{ValsetConfirmResponse, ValsetRelayingMode};
 use tonic::transport::Channel;
@@ -121,12 +121,12 @@ async fn relay_valid_valset(
     let cost = cost.unwrap();
 
     info!(
-           "We have detected that valset {} is valid to submit. Latest on Ethereum is {} This update is estimated to cost {} Gas / {:.4} ETH to submit",
-            valset_to_relay.nonce, current_valset.nonce,
-            cost.gas_price.clone(),
-            downcast_to_u128(cost.get_total()).unwrap() as f32
-                / downcast_to_u128(one_eth()).unwrap() as f32
-        );
+       "We have detected that valset {} is valid to submit. Latest on Ethereum is {} This update is estimated to cost {} Gas @ {} Gwei/ {:.4} ETH to submit",
+        valset_to_relay.nonce, current_valset.nonce,
+        cost.gas.clone(),
+        print_gwei(cost.gas_price.clone()),
+        print_eth(cost.get_total())
+    );
 
     let should_relay = match relayer_config.valset_relaying_mode {
         // if the user has configured only profitable relaying then it is our only consideration

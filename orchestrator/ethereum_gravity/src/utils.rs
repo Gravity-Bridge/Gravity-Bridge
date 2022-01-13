@@ -2,74 +2,9 @@ use clarity::abi::encode_call;
 use clarity::Address as EthAddress;
 use clarity::Uint256;
 use clarity::{abi::Token, constants::ZERO_ADDRESS};
+use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
-use std::u128::MAX as U128MAX;
-use std::u64::MAX as U64MAX;
 use web30::{client::Web3, jsonrpc::error::Web3Error};
-
-pub fn downcast_uint256(input: Uint256) -> Option<u64> {
-    if input >= U64MAX.into() {
-        None
-    } else {
-        let mut val = input.to_bytes_be();
-        // pad to 8 bytes
-        while val.len() < 8 {
-            val.insert(0, 0);
-        }
-        let mut lower_bytes: [u8; 8] = [0; 8];
-        // get the 'lowest' 8 bytes from a 256 bit integer
-        lower_bytes.copy_from_slice(&val[0..val.len()]);
-        Some(u64::from_be_bytes(lower_bytes))
-    }
-}
-
-pub fn downcast_to_u128(input: Uint256) -> Option<u128> {
-    if input >= U128MAX.into() {
-        None
-    } else {
-        let mut val = input.to_bytes_be();
-        // pad to 8 bytes
-        while val.len() < 16 {
-            val.insert(0, 0);
-        }
-        let mut lower_bytes: [u8; 16] = [0; 16];
-        // get the 'lowest' 16 bytes from a 256 bit integer
-        lower_bytes.copy_from_slice(&val[0..val.len()]);
-        Some(u128::from_be_bytes(lower_bytes))
-    }
-}
-
-#[test]
-fn test_downcast_nonce() {
-    let mut i = 0u64;
-    while i < 100_000 {
-        assert_eq!(i, downcast_uint256(i.into()).unwrap());
-        i += 1
-    }
-    let mut i: u64 = std::u32::MAX.into();
-    i -= 100;
-    let end = i + 100_000;
-    while i < end {
-        assert_eq!(i, downcast_uint256(i.into()).unwrap());
-        i += 1
-    }
-}
-
-#[test]
-fn test_downcast_to_u128() {
-    let mut i = 0u128;
-    while i < 100_000 {
-        assert_eq!(i, downcast_to_u128(i.into()).unwrap());
-        i += 1
-    }
-    let mut i: u128 = std::u64::MAX.into();
-    i -= 100;
-    let end = i + 100_000;
-    while i < end {
-        assert_eq!(i, downcast_to_u128(i.into()).unwrap());
-        i += 1
-    }
-}
 
 /// Gets the latest validator set nonce
 pub async fn get_valset_nonce(

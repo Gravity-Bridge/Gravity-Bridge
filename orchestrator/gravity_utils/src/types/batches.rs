@@ -1,10 +1,14 @@
-use std::convert::TryFrom;
-
 use super::*;
 use crate::error::GravityError;
+use crate::num_conversion::print_eth;
+use crate::prices::{get_dai_price, get_weth_price};
 use clarity::Signature as EthSignature;
 use clarity::{abi::Token, Address as EthAddress};
 use deep_space::Address as CosmosAddress;
+use log::LevelFilter;
+use std::convert::TryFrom;
+use tokio::join;
+use web30::client::Web3;
 
 /// This represents an individual transaction being bridged over to Ethereum
 /// parallel is the OutgoingTransferTx in x/gravity/types/batch.go
@@ -60,6 +64,74 @@ impl TransactionBatch {
             destinations.into(),
             Token::Dynamic(fees),
         )
+    }
+
+    /// this function displays info about this batch including metadata
+    /// such as the name of the ERC20, it's current value etc
+    pub async fn display_with_eth_info(&self, pubkey: EthAddress, web30: &Web3) {
+        let level = log::max_level();
+        // do not run all these queries if logging is set below info
+        if LevelFilter::Info > level {
+            return;
+        }
+
+        let token = self.token_contract;
+        let fee_total = self.total_fee.amount.clone();
+        let mut tx_total: Uint256 = 0u8.into();
+        for tx in self.transactions.clone() {
+            tx_total += tx.erc20_token.amount.clone();
+        }
+        let fee_value_weth = get_weth_price(token, fee_total.clone(), pubkey, web30);
+        let fee_value_dai = get_dai_price(token, fee_total.clone(), pubkey, web30);
+        let tx_value_weth = get_weth_price(token, tx_total.clone(), pubkey, web30);
+        let tx_value_dai = get_dai_price(token, tx_total.clone(), pubkey, web30);
+        let token_symbol = web30.get_erc20_symbol(token, pubkey);
+        let current_block = web30.eth_block_number();
+        if let (
+            Ok(fee_value_weth),
+            Ok(fee_value_dai),
+            Ok(tx_value_weth),
+            Ok(tx_value_dai),
+            Ok(token_symbol),
+            Ok(current_block),
+        ) = join!(
+            fee_value_weth,
+            fee_value_dai,
+            tx_value_weth,
+            tx_value_dai,
+            token_symbol,
+            current_block,
+        ) {
+            info!("Batch Info:");
+            info!("Token: {}  Contract Address: {}", token_symbol, token);
+            info!(
+                "Contains {} transactions, total value {} DAI {} ETH",
+                self.transactions.len(),
+                print_eth(tx_value_dai),
+                print_eth(tx_value_weth)
+            );
+            info!(
+                "Total fee value {} DAI, {} ETH",
+                print_eth(fee_value_dai),
+                print_eth(fee_value_weth)
+            );
+            if current_block < self.batch_timeout.into() {
+                let batch_timeout: Uint256 = self.batch_timeout.into();
+                info!("Timeout in {} blocks", batch_timeout - current_block)
+            } else {
+                info!("Batch is timed out and can't be submitted")
+            }
+        } else {
+            info!("Batch Info:");
+            info!("Contract Address: {}", token);
+            info!(
+                "Contains {} transactions, total value {}",
+                self.transactions.len(),
+                tx_total,
+            );
+            info!("Total fee value {}", fee_total);
+            info!("Timeout block is {}", self.batch_timeout);
+        }
     }
 }
 

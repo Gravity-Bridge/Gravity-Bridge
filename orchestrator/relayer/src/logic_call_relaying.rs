@@ -2,12 +2,9 @@ use clarity::{address::Address as EthAddress, utils::bytes_to_hex_str};
 use clarity::{PrivateKey as EthPrivateKey, Uint256};
 use cosmos_gravity::query::{get_latest_logic_calls, get_logic_call_signatures};
 use ethereum_gravity::message_signatures::encode_logic_call_confirm_hashed;
-use ethereum_gravity::one_eth;
-use ethereum_gravity::{
-    logic_call::send_eth_logic_call,
-    utils::{downcast_to_u128, get_logic_call_nonce},
-};
+use ethereum_gravity::{logic_call::send_eth_logic_call, utils::get_logic_call_nonce};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_utils::num_conversion::{print_eth, print_gwei};
 use gravity_utils::types::{LogicCall, RelayerConfig};
 use gravity_utils::types::{LogicCallConfirmResponse, Valset};
 use std::collections::HashMap;
@@ -161,12 +158,12 @@ pub async fn relay_logic_calls(
         }
         let cost = cost.unwrap();
         info!(
-                "We have detected latest LogicCall {} but latest on Ethereum is {} This LogicCall is estimated to cost {} Gas / {:.4} ETH to submit",
+                "We have detected latest LogicCall {} but latest on Ethereum is {} This LogicCall is estimated to cost {} Gas @ {} Gwei / {:.4} ETH to submit",
                 latest_cosmos_call_nonce,
                 latest_ethereum_call,
-                cost.gas_price.clone(),
-                downcast_to_u128(cost.get_total()).unwrap() as f32
-                    / downcast_to_u128(one_eth()).unwrap() as f32
+                cost.gas.clone(),
+                print_gwei(cost.gas_price.clone()),
+                print_eth(cost.get_total())
             );
 
         let should_relay = if config.logic_call_market_enabled {

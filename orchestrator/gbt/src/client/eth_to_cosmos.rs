@@ -1,11 +1,13 @@
 use std::process::exit;
 
 use crate::args::EthToCosmosOpts;
-use crate::utils::fraction_to_exponent;
 use crate::utils::TIMEOUT;
 use ethereum_gravity::send_to_cosmos::send_to_cosmos;
 use ethereum_gravity::utils::get_valset_nonce;
-use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
+use gravity_utils::{
+    connection_prep::{check_for_eth, create_rpc_connections},
+    num_conversion::fraction_to_exponent,
+};
 
 pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     let gravity_address = args.gravity_contract_address;

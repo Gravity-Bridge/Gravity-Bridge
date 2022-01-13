@@ -23,7 +23,6 @@ pub struct Opts {
     #[clap(short, long, parse(from_str))]
     pub home: Option<PathBuf>,
     /// Set the address prefix for the Cosmos chain
-    /// default is 'cosmos'
     #[clap(short, long, default_value = "gravity")]
     pub address_prefix: String,
     #[clap(subcommand)]
@@ -78,7 +77,7 @@ pub struct RelayerOpts {
     /// If no key is provided and no key is set in the config, this relayer will not request batches
     #[clap(long, parse(try_from_str))]
     pub cosmos_phrase: Option<CosmosPrivateKey>,
-    /// The Cosmos Denom and amount to pay Cosmos chain fees. If not set this relayer will not automatically
+    /// (Optional) The Cosmos Denom and amount to pay Cosmos chain fees. If not set this relayer will not automatically
     /// request batches
     #[clap(short, long, parse(try_from_str))]
     pub fees: Option<Coin>,
@@ -146,7 +145,7 @@ pub struct EthToCosmosOpts {
     /// The ERC20 contract address of the ERC20 you are sending
     #[clap(short, long, parse(try_from_str))]
     pub token_contract_address: EthAddress,
-    /// The amount of tokens you are sending eg. 1.2 ATOM
+    /// The amount of tokens you are sending eg. 1.2
     #[clap(short, long, parse(try_from_str))]
     pub amount: f64,
     /// The destination address on the Cosmos blockchain

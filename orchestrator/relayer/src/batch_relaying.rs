@@ -4,16 +4,17 @@ use clarity::Uint256;
 use cosmos_gravity::query::get_latest_transaction_batches;
 use cosmos_gravity::query::get_transaction_batch_signatures;
 use ethereum_gravity::message_signatures::encode_tx_batch_confirm_hashed;
-use ethereum_gravity::utils::{downcast_to_u128, get_tx_batch_nonce};
-use ethereum_gravity::{one_eth, submit_batch::send_eth_transaction_batch};
+use ethereum_gravity::submit_batch::send_eth_transaction_batch;
+use ethereum_gravity::utils::get_tx_batch_nonce;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_utils::num_conversion::print_eth;
+use gravity_utils::num_conversion::print_gwei;
+use gravity_utils::prices::get_weth_price;
 use gravity_utils::types::{BatchConfirmResponse, RelayerConfig, TransactionBatch, Valset};
 use std::collections::HashMap;
 use std::time::Duration;
 use tonic::transport::Channel;
-use web30::amm::WETH_CONTRACT_ADDRESS;
 use web30::client::Web3;
-use web30::jsonrpc::error::Web3Error;
 
 #[derive(Debug, Clone)]
 struct SubmittableBatch {
@@ -125,7 +126,7 @@ async fn should_relay_batch(
 ) -> bool {
     let batch_reward_amount = batch.total_fee.amount.clone();
     let batch_reward_token = batch.total_fee.token_contract_address;
-    let price = get_price(batch_reward_token, batch_reward_amount, pubkey, web3).await;
+    let price = get_weth_price(batch_reward_token, batch_reward_amount, pubkey, web3).await;
     // Otherwise we need to see how much WETH we can get for the reward token amount,
     // and compare that value to the gas cost
     // TODO: Allow users to specify what sort of margin they want on rewards, to account for
@@ -141,32 +142,6 @@ async fn should_relay_batch(
             false
         }
     }
-}
-
-/// utility function, gets the price of a given token in uniswap in WETH given the erc20 address and amount
-pub async fn get_price(
-    token: EthAddress,
-    amount: Uint256,
-    pubkey: EthAddress,
-    web3: &Web3,
-) -> Result<Uint256, Web3Error> {
-    if token == *WETH_CONTRACT_ADDRESS {
-        return Ok(amount);
-    }
-
-    // TODO: Make sure the market is not too thin
-    let price = web3
-        .get_uniswap_price(
-            pubkey,
-            token,
-            *WETH_CONTRACT_ADDRESS,
-            None,
-            amount.clone(),
-            None,
-            None,
-        )
-        .await;
-    price
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -252,14 +227,16 @@ async fn submit_batches(
                     continue;
                 }
                 let cost = cost.unwrap();
+
                 info!(
-                    "We have detected latest batch {} but latest on Ethereum is {} This batch is estimated to cost {} Gas / {:.4} ETH to submit",
-                    latest_cosmos_batch_nonce,
-                    latest_ethereum_batch,
-                    cost.gas_price.clone(),
-                    downcast_to_u128(cost.get_total()).unwrap() as f32
-                        / downcast_to_u128(one_eth()).unwrap() as f32
+                    "We have detected a batch to relay. This batch is estimated to cost {} Gas @ {} gwei / {:.4} ETH to submit",
+                    cost.gas.clone(),
+                    print_gwei(cost.gas_price.clone()),
+                    print_eth(cost.get_total())
                 );
+                oldest_signed_batch
+                    .display_with_eth_info(our_ethereum_address, web3)
+                    .await;
 
                 // TODO: Convert the other methods to this style
                 let should_relay = if config.batch_market_enabled {
@@ -291,8 +268,8 @@ async fn submit_batches(
                     }
                 } else {
                     info!(
-                        "Not relaying batch due to it not being profitable: {:?}",
-                        oldest_signed_batch
+                        "Not relaying batch {}/{} due to it not being profitable",
+                        oldest_signed_batch.token_contract, oldest_signed_batch.nonce
                     );
                 }
             }
