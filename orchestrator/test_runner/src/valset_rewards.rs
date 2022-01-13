@@ -49,7 +49,7 @@ pub async fn valset_rewards_test(
     let mut params_to_change = Vec::new();
     let gravity_address_param = ParamChange {
         subspace: "gravity".to_string(),
-        key: "BridgeContractAddress".to_string(),
+        key: "BridgeEthereumAddress".to_string(),
         value: format!("\"{}\"", gravity_address),
     };
     params_to_change.push(gravity_address_param);

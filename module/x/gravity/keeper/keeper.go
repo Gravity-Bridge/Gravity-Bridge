@@ -2,9 +2,10 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
+
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
-	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -45,11 +46,21 @@ type Keeper struct {
 
 // Check for nil members
 func (k Keeper) ValidateMembers() {
-	if k.bankKeeper     == nil { panic("Nil bankKeeper!") }
-	if k.StakingKeeper  == nil { panic("Nil StakingKeeper!") }
-	if k.SlashingKeeper == nil { panic("Nil SlashingKeeper!") }
-	if k.DistKeeper     == nil { panic("Nil DistKeeper!") }
-	if k.accountKeeper  == nil { panic("Nil accountKeeper!") }
+	if k.bankKeeper == nil {
+		panic("Nil bankKeeper!")
+	}
+	if k.StakingKeeper == nil {
+		panic("Nil StakingKeeper!")
+	}
+	if k.SlashingKeeper == nil {
+		panic("Nil SlashingKeeper!")
+	}
+	if k.DistKeeper == nil {
+		panic("Nil DistKeeper!")
+	}
+	if k.accountKeeper == nil {
+		panic("Nil accountKeeper!")
+	}
 }
 
 // NewKeeper returns a new instance of the gravity keeper
@@ -69,8 +80,8 @@ func NewKeeper(
 	}
 
 	k := Keeper{
-		storeKey:           storeKey,
-		paramSpace:         paramSpace,
+		storeKey:   storeKey,
+		paramSpace: paramSpace,
 
 		cdc:                cdc,
 		bankKeeper:         bankKeeper,
@@ -111,7 +122,7 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 // GetBridgeContractAddress returns the bridge contract address on ETH
 func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) *types.EthAddress {
 	var a string
-	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeContractAddress, &a)
+	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeEthereumAddress, &a)
 	addr, err := types.NewEthAddress(a)
 	if err != nil {
 		panic(sdkerrors.Wrapf(err, "found invalid bridge contract address in store: %v", a))
