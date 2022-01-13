@@ -77,6 +77,6 @@ pub fn metrics_server(config: &MetricsConfig) {
 /// Test overflowing bigint
 #[test]
 fn test_overflow_big_integer() {
-    let res = i64::try_from(18446744073709551615u64).is_ok();
-    assert_eq!(res, false)
+    let res = i64::try_from(18446744073709551615u64).is_err();
+    assert!(res);
 }
