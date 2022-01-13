@@ -23,7 +23,7 @@ use futures::future::join3;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
-use metrics_exporter::{metrics_errors_counter, metrics_warnings_counter, metrics_latest};
+use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
 use relayer::main_loop::relayer_main_loop;
 use std::cmp::min;
 use std::process::exit;
@@ -147,7 +147,10 @@ pub async fn eth_oracle_main_loop(
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
                 warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
-                metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start, Eth oracle paused");
+                metrics_warnings_counter(
+                    2,
+                    "Cosmos node syncing waiting for chain start, Eth oracle paused",
+                );
                 delay_for(DELAY).await;
                 continue;
             }
@@ -269,7 +272,10 @@ pub async fn eth_signer_main_loop(
             }
             Ok(ChainStatus::WaitingToStart) => {
                 warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
-                metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start, Eth signer paused");
+                metrics_warnings_counter(
+                    2,
+                    "Cosmos node syncing waiting for chain start, Eth signer paused",
+                );
                 delay_for(DELAY).await;
                 continue;
             }
@@ -277,7 +283,10 @@ pub async fn eth_signer_main_loop(
                 error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
                 delay_for(DELAY).await;
                 metrics_latest(blocks_until_slashing, "blocks_until_slashing");
-                metrics_errors_counter(2, "Could not reach Cosmos rpc! You must correct this or you risk being slashed");
+                metrics_errors_counter(
+                    2,
+                    "Could not reach Cosmos rpc! You must correct this or you risk being slashed",
+                );
                 continue;
             }
         }

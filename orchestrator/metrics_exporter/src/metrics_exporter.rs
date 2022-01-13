@@ -1,11 +1,10 @@
 use gravity_utils::types::MetricsConfig;
 use lazy_static::lazy_static;
-use prometheus_exporter::prometheus::{IntCounter, IntCounterVec, IntGaugeVec};
 use prometheus_exporter::prometheus::{
     register_int_counter, register_int_counter_vec, register_int_gauge_vec,
 };
+use prometheus_exporter::prometheus::{IntCounter, IntCounterVec, IntGaugeVec};
 use std::net::SocketAddr;
-
 
 lazy_static! {
 
@@ -39,18 +38,17 @@ lazy_static! {
 }
 
 pub fn metrics_errors_counter(s: i32, e: &str) {
-    match s  {
+    match s {
         0 => ERROR.with_label_values(&[e]).inc(),
         1 => ERROR_ETH.with_label_values(&[e]).inc(),
         2 => ERROR_COSMOS.with_label_values(&[e]).inc(),
         _ => ERROR_UNCLASSIFIED.with_label_values(&[e]).inc(),
     }
     ERRORS_TOTAL.inc()
-
 }
 
 pub fn metrics_warnings_counter(s: i32, e: &str) {
-    match s  {
+    match s {
         0 => WARNING.with_label_values(&[e]).inc(),
         1 => WARNING_ETH.with_label_values(&[e]).inc(),
         2 => WARNING_COSMOS.with_label_values(&[e]).inc(),
@@ -63,9 +61,8 @@ pub fn metrics_latest(u: u64, e: &str) {
     match i64::try_from(u).is_ok() {
         true => {
             LATEST_INFO.with_label_values(&[e]).set(u as i64);
-        },
-        false => {
         }
+        false => {}
     }
 }
 
@@ -76,7 +73,6 @@ pub fn metrics_server(config: &MetricsConfig) {
     // Start exporter
     prometheus_exporter::start(addr).expect("can not start exporter");
 }
-
 
 /// Test overflowing bigint
 #[test]

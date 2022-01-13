@@ -105,7 +105,10 @@ pub async fn get_last_checked_block(
         {
             error!("Failed to get blockchain events while resyncing, is your Eth node working? If you see only one of these it's fine",);
             delay_for(RETRY_TIME).await;
-            metrics_errors_counter(1, "Failed to get blockchain events while resyncing, is your Eth node working?");
+            metrics_errors_counter(
+                1,
+                "Failed to get blockchain events while resyncing, is your Eth node working?",
+            );
             continue;
         }
         let batch_events = batch_events.unwrap();

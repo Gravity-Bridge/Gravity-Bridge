@@ -97,7 +97,6 @@ pub async fn orchestrator(
         public_eth_key, public_cosmos_key
     );
 
-
     // check if the cosmos node is syncing, if so wait for it
     // we can't move any steps above this because they may fail on an incorrect
     // historic chain state while syncing occurs
