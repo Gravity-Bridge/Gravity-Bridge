@@ -92,22 +92,6 @@ pub fn get_coins(denom: &str, balances: &[Coin]) -> Option<Coin> {
     None
 }
 
-pub async fn check_cosmos_balance(
-    denom: &str,
-    address: CosmosAddress,
-    contact: &Contact,
-) -> Option<Coin> {
-    let account_info = contact.get_balances(address).await.unwrap();
-    trace!("Cosmos balance {:?}", account_info);
-    for coin in account_info {
-        // make sure the name and amount is correct
-        if coin.denom.starts_with(denom) {
-            return Some(coin);
-        }
-    }
-    None
-}
-
 /// This is a hardcoded very high gas value used in transaction stress test to counteract rollercoaster
 /// gas prices due to the way that test fills blocks
 pub const HIGH_GAS_PRICE: u64 = 1_000_000_000u64;

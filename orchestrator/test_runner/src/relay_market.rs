@@ -2,9 +2,7 @@
 //! relayers utilize web30 to interact with a testnet to obtain coin swap values
 //! and determine whether relays should happen or not
 use crate::happy_path::test_erc20_deposit_panic;
-use crate::utils::{
-    check_cosmos_balance, get_erc20_balance_safe, send_one_eth, start_orchestrators, ValidatorKeys,
-};
+use crate::utils::{get_erc20_balance_safe, send_one_eth, start_orchestrators, ValidatorKeys};
 use crate::ADDRESS_PREFIX;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
@@ -172,8 +170,10 @@ async fn setup_batch_test(
         None,
     )
     .await;
-    let cdai_held = check_cosmos_balance("gravity", dest_cosmos_address, contact)
+    let cdai_held = contact
+        .get_balance(dest_cosmos_address, format!("gravity{}", erc20_contract))
         .await
+        .unwrap()
         .unwrap();
     let cdai_name = cdai_held.denom.clone();
     let cdai_amount = cdai_held.amount.clone();

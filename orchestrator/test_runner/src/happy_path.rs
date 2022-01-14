@@ -336,7 +336,10 @@ pub async fn test_erc20_deposit_result(
         .expect("Not a valid ERC20 contract address");
 
     let mut grpc_client = grpc_client.clone();
-    let start_coin = check_cosmos_balance("gravity", dest, contact).await;
+    let start_coin = contact
+        .get_balance(dest, format!("gravity{}", erc20_address))
+        .await
+        .unwrap();
 
     info!(
         "Sending to Cosmos from {} to {} with amount {}",
@@ -372,7 +375,10 @@ pub async fn test_erc20_deposit_result(
     while Instant::now() - start < duration {
         match (
             start_coin.clone(),
-            check_cosmos_balance("gravity", dest, contact).await,
+            contact
+                .get_balance(dest, format!("gravity{}", erc20_address))
+                .await
+                .unwrap(),
         ) {
             (Some(start_coin), Some(end_coin)) => {
                 // When a bridge governance vote happens, the orchestrator will replay all incomplete
@@ -488,8 +494,10 @@ async fn test_batch(
     let dest_cosmos_address = dest_cosmos_private_key
         .to_address(&contact.get_prefix())
         .unwrap();
-    let coin = check_cosmos_balance("gravity", dest_cosmos_address, contact)
+    let coin = contact
+        .get_balance(dest_cosmos_address, format!("gravity{}", erc20_contract))
         .await
+        .unwrap()
         .unwrap();
     let token_name = coin.denom;
     let amount = coin.amount;
@@ -576,9 +584,11 @@ async fn submit_duplicate_erc20_send(
     receiver: CosmosAddress,
     keys: &[ValidatorKeys],
 ) {
-    let start_coin = check_cosmos_balance("gravity", receiver, contact)
+    let start_coin = contact
+        .get_balance(receiver, format!("gravity{}", erc20_address))
         .await
-        .expect("Did not find coins!");
+        .unwrap()
+        .unwrap();
 
     let ethereum_sender = "0x912fd21d7a69678227fe6d08c64222db41477ba0"
         .parse()
@@ -613,13 +623,14 @@ async fn submit_duplicate_erc20_send(
 
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
-    if let Some(end_coin) = check_cosmos_balance("gravity", receiver, contact).await {
-        if start_coin.amount == end_coin.amount && start_coin.denom == end_coin.denom {
-            info!("Successfully failed to duplicate ERC20!");
-        } else {
-            panic!("Duplicated ERC20!")
-        }
+    let end_coin = contact
+        .get_balance(receiver, format!("gravity{}", erc20_address))
+        .await
+        .unwrap()
+        .unwrap();
+    if start_coin.amount == end_coin.amount && start_coin.denom == end_coin.denom {
+        info!("Successfully failed to duplicate ERC20!");
     } else {
-        panic!("Duplicate test failed for unknown reasons!");
+        panic!("Duplicated ERC20!")
     }
 }

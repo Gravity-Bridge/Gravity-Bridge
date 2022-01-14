@@ -104,8 +104,13 @@ pub async fn pause_bridge_test(
     }
 
     // Try to create a batch and send tokens to Ethereum
-    let coin = check_cosmos_balance("gravity", user_keys.cosmos_address, contact)
+    let coin = contact
+        .get_balance(
+            user_keys.cosmos_address,
+            format!("gravity{}", erc20_address),
+        )
         .await
+        .unwrap()
         .unwrap();
     let token_name = coin.denom;
     let amount = coin.amount;
@@ -179,8 +184,13 @@ pub async fn pause_bridge_test(
     assert!(params.bridge_active);
 
     // finally we check that our batch executes and our new withdraw processes
-    let res = check_cosmos_balance("gravity", user_keys.cosmos_address, contact)
+    let res = contact
+        .get_balance(
+            user_keys.cosmos_address,
+            format!("gravity{}", erc20_address),
+        )
         .await
+        .unwrap()
         .unwrap();
     // check that our balance is equal to 200 (two deposits) minus 95 (sent to eth) - 1 (fee) - 1 (fee for batch request)
     // NOTE this makes the test not imdepotent but it's not anyways, a crash may leave the bridge halted

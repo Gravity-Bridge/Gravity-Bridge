@@ -168,16 +168,17 @@ pub async fn main() {
     // for things
     send_eth_to_orchestrators(&keys, &web30).await;
 
-    assert!(check_cosmos_balance(
-        &get_test_token_name(),
-        keys[0]
-            .validator_key
-            .to_address(&contact.get_prefix())
-            .unwrap(),
-        &contact
-    )
-    .await
-    .is_some());
+    assert!(contact
+        .get_balance(
+            keys[0]
+                .validator_key
+                .to_address(&contact.get_prefix())
+                .unwrap(),
+            get_test_token_name(),
+        )
+        .await
+        .unwrap()
+        .is_some());
 
     // This segment contains optional tests, by default we run a happy path test
     // this tests all major functionality of Gravity once or twice.
