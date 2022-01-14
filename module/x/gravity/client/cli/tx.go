@@ -1,17 +1,17 @@
 package cli
 
 import (
-	"crypto/ecdsa"
-	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ethCrypto "github.com/ethereum/go-ethereum/crypto"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -31,69 +31,183 @@ func GetTxCmd(storeKey string) *cobra.Command {
 		CmdSendToEth(),
 		CmdRequestBatch(),
 		CmdSetOrchestratorAddress(),
-		GetUnsafeTestingCmd(),
+		CmdGovIbcMetadataProposal(),
+		CmdGovAirdropProposal(),
+		CmdGovUnhaltBridgeProposal(),
 	}...)
 
 	return gravityTxCmd
 }
 
-func GetUnsafeTestingCmd() *cobra.Command {
+func CmdGovIbcMetadataProposal() *cobra.Command {
 	//nolint: exhaustivestruct
-	testingTxCmd := &cobra.Command{
-		Use:                        "unsafe_testing",
-		Short:                      "helpers for testing. not going into production",
-		DisableFlagParsing:         true,
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-	testingTxCmd.AddCommand([]*cobra.Command{
-		CmdUnsafeETHPrivKey(),
-		CmdUnsafeETHAddr(),
-	}...)
-
-	return testingTxCmd
-}
-
-func CmdUnsafeETHPrivKey() *cobra.Command {
-	//nolint: exhaustivestruct
-	return &cobra.Command{
-		Use:   "gen-eth-key",
-		Short: "Generate and print a new ecdsa key",
+	cmd := &cobra.Command{
+		Use:   "gov-ibc-metadata [path-to-proposal-json] [initial-deposit]",
+		Short: "Creates a governance proposal to set the Metadata of the given IBC token. Once the metadata is set this token can be moved to Ethereum using Gravity Bridge",
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			key, err := ethCrypto.GenerateKey()
+			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
-				return sdkerrors.Wrap(err, "can not generate key")
+				return err
 			}
-			k := "0x" + hex.EncodeToString(ethCrypto.FromECDSA(key))
-			println(k)
-			return nil
+			cosmosAddr := cliCtx.GetFromAddress()
+
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[1])
+			if err != nil {
+				return sdkerrors.Wrap(err, "bad initial deposit amount")
+			}
+
+			if len(initialDeposit) > 1 {
+				return fmt.Errorf("coin amounts too long, expecting just 1 coin amount for both amount and bridgeFee")
+			}
+
+			proposalFile := args[0]
+
+			contents, err := os.ReadFile(proposalFile)
+			if err != nil {
+				return sdkerrors.Wrap(err, "failed to read proposal json file")
+			}
+
+			proposal := &types.IBCMetadataProposal{}
+			err = json.Unmarshal(contents, proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "proposal json file is not valid json")
+			}
+
+			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+			}
+
+			// Make the message
+			msg := govtypes.MsgSubmitProposal{
+				Proposer:       cosmosAddr.String(),
+				InitialDeposit: initialDeposit,
+				Content:        proposalAny,
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
-func CmdUnsafeETHAddr() *cobra.Command {
+func CmdGovAirdropProposal() *cobra.Command {
 	//nolint: exhaustivestruct
-	return &cobra.Command{
-		Use:   "eth-address",
-		Short: "Print address for an ECDSA eth key",
-		Args:  cobra.ExactArgs(1),
+	cmd := &cobra.Command{
+		Use:   "gov-airdrop [path-to-proposal-json] [initial-deposit]",
+		Short: "Creates a governance proposal for an airdrop",
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			privKeyString := args[0][2:]
-			privateKey, err := ethCrypto.HexToECDSA(privKeyString)
+			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
-			// You've got to do all this to get an Eth address from the private key
-			publicKey := privateKey.Public()
-			publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-			if !ok {
-				log.Fatal("error casting public key to ECDSA")
+			cosmosAddr := cliCtx.GetFromAddress()
+
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[1])
+			if err != nil {
+				return sdkerrors.Wrap(err, "bad initial deposit amount")
 			}
-			ethAddress := ethCrypto.PubkeyToAddress(*publicKeyECDSA).Hex()
-			println(ethAddress)
-			return nil
+
+			if len(initialDeposit) > 1 {
+				return fmt.Errorf("coin amounts too long, expecting just 1 coin amount for both amount and bridgeFee")
+			}
+
+			proposalFile := args[0]
+
+			contents, err := os.ReadFile(proposalFile)
+			if err != nil {
+				return sdkerrors.Wrap(err, "failed to read proposal json file")
+			}
+
+			proposal := &types.AirdropProposal{}
+			err = json.Unmarshal(contents, proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "proposal json file is not valid json")
+			}
+
+			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+			}
+
+			// Make the message
+			msg := govtypes.MsgSubmitProposal{
+				Proposer:       cosmosAddr.String(),
+				InitialDeposit: initialDeposit,
+				Content:        proposalAny,
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func CmdGovUnhaltBridgeProposal() *cobra.Command {
+	//nolint: exhaustivestruct
+	cmd := &cobra.Command{
+		Use:   "gov-unhalt-bridge [path-to-proposal-json] [initial-deposit]",
+		Short: "Creates a governance proposal to unhalt the Ethereum bridge after an oracle dispute",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			cosmosAddr := cliCtx.GetFromAddress()
+
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[1])
+			if err != nil {
+				return sdkerrors.Wrap(err, "bad initial deposit amount")
+			}
+
+			if len(initialDeposit) > 1 {
+				return fmt.Errorf("coin amounts too long, expecting just 1 coin amount for both amount and bridgeFee")
+			}
+
+			proposalFile := args[0]
+
+			contents, err := os.ReadFile(proposalFile)
+			if err != nil {
+				return sdkerrors.Wrap(err, "failed to read proposal json file")
+			}
+
+			proposal := &types.UnhaltBridgeProposal{}
+			err = json.Unmarshal(contents, proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "proposal json file is not valid json")
+			}
+
+			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+			}
+
+			// Make the message
+			msg := govtypes.MsgSubmitProposal{
+				Proposer:       cosmosAddr.String(),
+				InitialDeposit: initialDeposit,
+				Content:        proposalAny,
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
 func CmdSendToEth() *cobra.Command {
