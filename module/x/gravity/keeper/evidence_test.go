@@ -14,7 +14,7 @@ import (
 
 //nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 
 	var (
@@ -72,7 +72,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
-	//input := CreateTestEnv(t)
+	//input := CreateTestEnv(t, false)
 	input, ctx := SetupFiveValChain(t)
 	//ctx := input.Context
 
@@ -91,7 +91,7 @@ func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 
 	logicCall := types.OutgoingLogicCall{

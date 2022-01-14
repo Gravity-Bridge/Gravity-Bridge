@@ -15,7 +15,7 @@ import (
 func TestBatchAndTxImportExport(t *testing.T) {
 	// SETUP ENV + DATA
 	// ==================
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	batchSize := 100
 	accAddresses := []string{ // Warning: this must match the length of ctrAddresses
@@ -166,7 +166,7 @@ func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, txs
 // Exports and then imports all bridge state, overwrites the `input` test environment to simulate chain restart
 func exportImport(t *testing.T, input *TestInput) {
 	genesisState := ExportGenesis(input.Context, input.GravityKeeper)
-	newEnv := CreateTestEnv(t)
+	newEnv := CreateTestEnv(t, false)
 	input = &newEnv
 	unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context)
 	require.Empty(t, unbatched)

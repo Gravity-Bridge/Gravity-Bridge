@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -54,6 +55,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -244,7 +246,7 @@ type TestInput struct {
 // SetupFiveValChain does all the initialization for a 5 Validator chain using the keys here
 func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 	t.Helper()
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 
 	// Set the params for our modules
 	input.StakingKeeper.SetParams(input.Context, TestingStakeParams)
@@ -298,7 +300,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 // SetupTestChain sets up a test environment with the provided validator voting weights
 func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (TestInput, sdk.Context) {
 	t.Helper()
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 
 	// Set the params for our modules
 	TestingStakeParams.MaxValidators = 100
@@ -370,7 +372,8 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 }
 
 // CreateTestEnv creates the keeper testing environment for gravity
-func CreateTestEnv(t *testing.T) TestInput {
+// if usingGenesis, then this func will not modify any accounts, balances, or supply
+func CreateTestEnv(t *testing.T, usingGenesis bool) TestInput {
 	t.Helper()
 
 	// Initialize store keys
@@ -477,35 +480,36 @@ func CreateTestEnv(t *testing.T) TestInput {
 
 	distKeeper := distrkeeper.NewKeeper(marshaler, keyDistro, getSubspace(paramsKeeper, distrtypes.ModuleName), accountKeeper, bankKeeper, stakingKeeper, authtypes.FeeCollectorName, nil)
 	distKeeper.SetParams(ctx, distrtypes.DefaultParams())
-
-	// set genesis items required for distribution
 	distKeeper.SetFeePool(ctx, distrtypes.InitialFeePool())
 
-	// total supply to track this
-	totalSupply := sdk.NewCoins(sdk.NewInt64Coin("stake", 100000000))
+	// Add staking pool accounts, balances, and supply
+	if !usingGenesis {
+		// total supply to track this
+		totalSupply := sdk.NewCoins(sdk.NewInt64Coin("stake", 100000000))
 
-	// set up initial accounts
-	for name, perms := range maccPerms {
-		mod := authtypes.NewEmptyModuleAccount(name, perms...)
-		if name == stakingtypes.NotBondedPoolName {
-			err = bankKeeper.MintCoins(ctx, types.ModuleName, totalSupply)
-			require.NoError(t, err)
-			err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mod.Name, totalSupply)
-			require.NoError(t, err)
-		} else if name == distrtypes.ModuleName {
-			// some big pot to pay out
-			amt := sdk.NewCoins(sdk.NewInt64Coin("stake", 500000))
-			err = bankKeeper.MintCoins(ctx, types.ModuleName, amt)
-			require.NoError(t, err)
-			err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mod.Name, amt)
-			require.NoError(t, err)
+		// set up initial accounts
+		for name, perms := range maccPerms {
+			mod := authtypes.NewEmptyModuleAccount(name, perms...)
+			if name == stakingtypes.NotBondedPoolName {
+				err = bankKeeper.MintCoins(ctx, types.ModuleName, totalSupply)
+				require.NoError(t, err)
+				err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mod.Name, totalSupply)
+				require.NoError(t, err)
+			} else if name == distrtypes.ModuleName {
+				// some big pot to pay out
+				amt := sdk.NewCoins(sdk.NewInt64Coin("stake", 500000))
+				err = bankKeeper.MintCoins(ctx, types.ModuleName, amt)
+				require.NoError(t, err)
+				err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mod.Name, amt)
+				require.NoError(t, err)
+			}
+			accountKeeper.SetModuleAccount(ctx, mod)
 		}
-		accountKeeper.SetModuleAccount(ctx, mod)
-	}
 
-	stakeAddr := authtypes.NewModuleAddress(stakingtypes.BondedPoolName)
-	moduleAcct := accountKeeper.GetAccount(ctx, stakeAddr)
-	require.NotNil(t, moduleAcct)
+		stakeAddr := authtypes.NewModuleAddress(stakingtypes.BondedPoolName)
+		moduleAcct := accountKeeper.GetAccount(ctx, stakeAddr)
+		require.NotNil(t, moduleAcct)
+	}
 
 	router := baseapp.NewRouter()
 	router.AddRoute(bank.AppModule{
@@ -576,6 +580,40 @@ func CreateTestEnv(t *testing.T) TestInput {
 		Marshaler:      marshaler,
 		LegacyAmino:    cdc,
 	}
+}
+
+// Initialize the x/auth accounts, x/bank, x/staking, and x/distribution keepers using the input genDoc
+func InitFromGenesis(t *testing.T, genDoc *tmtypes.GenesisDoc, input TestInput) {
+	ctx := input.Context
+	var genesisState map[string]json.RawMessage
+	err := json.Unmarshal(genDoc.AppState, &genesisState)
+	fmt.Println("Loading auth genesis")
+	// Load genesis state into
+	var authGenesisState authtypes.GenesisState
+	input.Marshaler.MustUnmarshalJSON(genesisState[authtypes.ModuleName], &authGenesisState)
+	require.NoError(t, err)
+	auth.InitGenesis(ctx, input.AccountKeeper, authGenesisState)
+
+	fmt.Println("Loading bank genesis")
+	// Load genesis state into bank
+	var bankGenesisState banktypes.GenesisState
+	input.Marshaler.MustUnmarshalJSON(genesisState[banktypes.ModuleName], &bankGenesisState)
+	require.NoError(t, err)
+	input.BankKeeper.InitGenesis(ctx, &bankGenesisState)
+
+	fmt.Println("Loading steak genesis")
+	// Load genesis state into staking
+	var stakingGenesisState stakingtypes.GenesisState
+	input.Marshaler.MustUnmarshalJSON(genesisState[stakingtypes.ModuleName], &stakingGenesisState)
+	require.NoError(t, err)
+	staking.InitGenesis(ctx, input.StakingKeeper, input.AccountKeeper, input.BankKeeper, &stakingGenesisState)
+
+	fmt.Println("Loading distribution genesis")
+	// Load genesis state into distribution
+	var distGenesisState distrtypes.GenesisState
+	input.Marshaler.MustUnmarshalJSON(genesisState[distrtypes.ModuleName], &distGenesisState)
+	require.NoError(t, err)
+	input.DistKeeper.InitGenesis(ctx, distGenesisState)
 }
 
 // getSubspace returns a param subspace for a given module name.

@@ -13,7 +13,7 @@ import (
 
 //nolint: exhaustivestruct
 func TestAirdropProposal(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	goodAirdrop := types.AirdropProposal{
 		Title:       "test tile",
@@ -58,7 +58,7 @@ func TestAirdropProposal(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestIBCMetadataProposal(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
 	goodProposal := types.IBCMetadataProposal{

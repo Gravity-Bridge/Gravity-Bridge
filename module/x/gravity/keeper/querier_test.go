@@ -25,7 +25,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 	)
 	require.NoError(t, err1)
 	require.NoError(t, err2)
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -99,7 +99,7 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		myValidatorEthereumAddr3, _ = types.NewEthAddress("0x0303030303030303030303030303030303030303")
 	)
 
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -588,7 +588,7 @@ func createTestBatch(t *testing.T, input TestInput) {
 
 //nolint: exhaustivestruct
 func TestQueryAllBatchConfirms(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -627,7 +627,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestQueryLogicCalls(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -686,7 +686,7 @@ func TestQueryLogicCalls(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestQueryLogicCallsConfirms(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	sdkCtx := input.Context
 	k := input.GravityKeeper
 	var (
@@ -748,7 +748,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 // TODO: test that it gets the correct batch, not just any batch.
 // Check with multiple nonces and tokenContracts
 func TestQueryBatch(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 
@@ -804,7 +804,7 @@ func TestQueryBatch(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestLastBatchesRequest(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 
@@ -942,7 +942,7 @@ func TestQueryERC20ToDenom(t *testing.T) {
 		Denom:            denom,
 		CosmosOriginated: true,
 	}
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -965,7 +965,7 @@ func TestQueryDenomToERC20(t *testing.T) {
 		Erc20:            erc20.GetAddress(),
 		CosmosOriginated: true,
 	}
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -979,7 +979,7 @@ func TestQueryDenomToERC20(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestQueryPendingSendToEth(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper

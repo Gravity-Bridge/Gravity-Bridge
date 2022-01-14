@@ -14,7 +14,7 @@ import (
 // Tests that the gravity module's balance is accounted for with unbatched txs, including tx cancellation
 func TestModuleBalanceUnbatchedTxs(t *testing.T) {
 	////////////////// SETUP //////////////////
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	var (
 		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -72,7 +72,7 @@ func TestModuleBalanceUnbatchedTxs(t *testing.T) {
 // Tests that the gravity module's balance is accounted for with batches of txs, including unbatched txs and tx cancellation
 func TestModuleBalanceBatchedTxs(t *testing.T) {
 	////////////////// SETUP //////////////////
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	var (
 		now                     = time.Now().UTC()

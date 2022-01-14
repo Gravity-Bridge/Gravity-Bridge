@@ -15,7 +15,7 @@ import (
 
 //nolint: exhaustivestruct
 func TestBatches(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	var (
 		now                    = time.Now().UTC()
@@ -233,7 +233,7 @@ func TestBatches(t *testing.T) {
 // tests but using much bigger numbers
 //nolint: exhaustivestruct
 func TestBatchesFullCoins(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	var (
 		now                 = time.Now().UTC()
@@ -444,7 +444,7 @@ func TestBatchesFullCoins(t *testing.T) {
 // out of sequential order, which is exactly what happens on the
 //nolint: exhaustivestruct
 func TestManyBatches(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	var (
 		now                = time.Now().UTC()
@@ -542,7 +542,7 @@ func TestManyBatches(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestPoolTxRefund(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	var (
 		now                 = time.Now().UTC()
@@ -616,7 +616,7 @@ func TestPoolTxRefund(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 
 	// pause the bridge
@@ -692,7 +692,7 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 //nolint: exhaustivestruct
 // test that tokens on the blacklist do not enter batches
 func TestEthereumBlacklistBatches(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	var (
 		now                    = time.Now().UTC()

@@ -33,7 +33,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	)
 
 	// we start by depositing some funds into the users balance to send
-	input := keeper.CreateTestEnv(t)
+	input := keeper.CreateTestEnv(t, false)
 	ctx := input.Context
 	h := NewHandler(input.GravityKeeper)
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, startingCoins))

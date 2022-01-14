@@ -102,7 +102,7 @@ func TestCurrentValsetNormalization(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestAttestationIterator(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	// add some attestations to the store
 
@@ -149,7 +149,7 @@ func TestAttestationIterator(t *testing.T) {
 
 //nolint: exhaustivestruct
 func TestDelegateKeys(t *testing.T) {
-	input := CreateTestEnv(t)
+	input := CreateTestEnv(t, false)
 	ctx := input.Context
 	k := input.GravityKeeper
 	var (
