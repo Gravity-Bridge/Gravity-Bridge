@@ -213,7 +213,7 @@ func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataP
 	}
 
 	// write out metadata, this will update existing metadata if no erc20 has been deployed
-	k.bankKeeper.SetDenomMetaData(ctx, *p.Metadata)
+	k.bankKeeper.SetDenomMetaData(ctx, p.Metadata)
 
 	return nil
 }

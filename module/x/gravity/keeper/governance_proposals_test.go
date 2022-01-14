@@ -84,7 +84,7 @@ func TestIBCMetadataProposal(t *testing.T) {
 	goodProposal := types.IBCMetadataProposal{
 		Title:       "test tile",
 		Description: "test description",
-		Metadata: &banktypes.Metadata{
+		Metadata: banktypes.Metadata{
 			Description: "Atom",
 			Name:        "Atom",
 			Base:        ibcDenom,
@@ -110,7 +110,7 @@ func TestIBCMetadataProposal(t *testing.T) {
 	require.NoError(t, err)
 	metadata, exists := gk.bankKeeper.GetDenomMetaData(ctx, ibcDenom)
 	require.True(t, exists)
-	require.Equal(t, metadata, *goodProposal.Metadata)
+	require.Equal(t, metadata, goodProposal.Metadata)
 
 	// does not have a zero base unit
 	badMetadata := goodProposal

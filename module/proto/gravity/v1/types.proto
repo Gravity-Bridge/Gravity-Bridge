@@ -92,6 +92,8 @@ message IBCMetadataProposal {
 
   string title = 1;
   string description = 2;
-  cosmos.bank.v1beta1.Metadata metadata  = 3;
+  cosmos.bank.v1beta1.Metadata metadata  = 3 [
+    (gogoproto.nullable) = false
+  ];
   string ibc_denom = 4;
 }
