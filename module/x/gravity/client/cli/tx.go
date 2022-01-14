@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -29,6 +30,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 
 	gravityTxCmd.AddCommand([]*cobra.Command{
 		CmdSendToEth(),
+		CmdCancelSendToEth(),
 		CmdRequestBatch(),
 		CmdSetOrchestratorAddress(),
 		CmdGovIbcMetadataProposal(),
@@ -214,7 +216,7 @@ func CmdSendToEth() *cobra.Command {
 	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "send-to-eth [eth-dest] [amount] [bridge-fee]",
-		Short: "Adds a new entry to the transaction pool to withdraw an amount from the Ethereum bridge contract",
+		Short: "Adds a new entry to the transaction pool to withdraw an amount from the Ethereum bridge contract. This will not execute until a batch is requested and then actually relayed. Your funds can be reclaimed using cancel-send-to-eth so long as they remain in the pool",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -247,6 +249,40 @@ func CmdSendToEth() *cobra.Command {
 				EthDest:   ethAddr.GetAddress(),
 				Amount:    amount[0],
 				BridgeFee: bridgeFee[0],
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func CmdCancelSendToEth() *cobra.Command {
+	//nolint: exhaustivestruct
+	cmd := &cobra.Command{
+		Use:   "cancel-send-to-eth [transaction id]",
+		Short: "Removes an entry from the transaction pool, preventing your tokens from going to Ethereum and refunding the send.",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			cosmosAddr := cliCtx.GetFromAddress()
+
+			txId, err := strconv.ParseUint(args[1], 0, 64)
+			if err != nil {
+				return sdkerrors.Wrap(err, "failed to parse transaction id")
+			}
+
+			// Make the message
+			msg := types.MsgCancelSendToEth{
+				Sender:        cosmosAddr.String(),
+				TransactionId: txId,
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err

@@ -25,51 +25,10 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetValsetConfirm(),
 		CmdGetPendingValsetRequest(),
 		CmdGetPendingOutgoingTXBatchRequest(),
-		// CmdGetAllOutgoingTXBatchRequest(),
-		// CmdGetOutgoingTXBatchByNonceRequest(),
-		// CmdGetAllAttestationsRequest(),
-		// CmdGetAttestationRequest(),
-		QueryObserved(),
-		QueryApproved(),
+		CmdGetPendingSendToEth(),
 	}...)
 
 	return gravityQueryCmd
-}
-
-func QueryObserved() *cobra.Command {
-	//nolint: exhaustivestruct
-	testingTxCmd := &cobra.Command{
-		Use:                        "observed",
-		Short:                      "observed ETH events",
-		DisableFlagParsing:         true,
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-	testingTxCmd.AddCommand([]*cobra.Command{
-		// CmdGetLastObservedNonceRequest(storeKey, cdc),
-		// CmdGetLastObservedNoncesRequest(storeKey, cdc),
-		// CmdGetLastObservedMultiSigUpdateRequest(storeKey, cdc),
-		// CmdGetAllBridgedDenominatorsRequest(storeKey, cdc),
-	}...)
-
-	return testingTxCmd
-}
-func QueryApproved() *cobra.Command {
-	//nolint: exhaustivestruct
-	testingTxCmd := &cobra.Command{
-		Use:                        "approved",
-		Short:                      "approved cosmos operation",
-		DisableFlagParsing:         true,
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-	testingTxCmd.AddCommand([]*cobra.Command{
-		// CmdGetLastApprovedNoncesRequest(storeKey, cdc),
-		// CmdGetLastApprovedMultiSigUpdateRequest(storeKey, cdc),
-		// CmdGetInflightBatchesRequest(storeKey, cdc),
-	}...)
-
-	return testingTxCmd
 }
 
 func CmdGetCurrentValset() *cobra.Command {
@@ -200,6 +159,32 @@ func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
 			}
 
 			res, err := queryClient.LastPendingBatchRequestByAddr(cmd.Context(), req)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func CmdGetPendingSendToEth() *cobra.Command {
+	//nolint: exhaustivestruct
+	cmd := &cobra.Command{
+		Use:   "pending-send-to-eth [address]",
+		Short: "Query transactions waiting to go to Ethereum",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			queryClient := types.NewQueryClient(clientCtx)
+
+			req := &types.QueryPendingSendToEth{
+				SenderAddress: args[0],
+			}
+
+			res, err := queryClient.GetPendingSendToEth(cmd.Context(), req)
 			if err != nil {
 				return err
 			}
