@@ -9,6 +9,7 @@ use gravity_utils::types::{
     Erc20DeployedEvent, LogicCallExecutedEvent, SendToCosmosEvent, TransactionBatchExecutedEvent,
     ValsetUpdatedEvent,
 };
+use metrics_exporter::metrics_errors_counter;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
@@ -104,6 +105,10 @@ pub async fn get_last_checked_block(
         {
             error!("Failed to get blockchain events while resyncing, is your Eth node working? If you see only one of these it's fine",);
             delay_for(RETRY_TIME).await;
+            metrics_errors_counter(
+                1,
+                "Failed to get blockchain events while resyncing, is your Eth node working?",
+            );
             continue;
         }
         let batch_events = batch_events.unwrap();
@@ -129,7 +134,10 @@ pub async fn get_last_checked_block(
                         return event.block_number.unwrap();
                     }
                 }
-                Err(e) => error!("Got batch event that we can't parse {}", e),
+                Err(e) => {
+                    error!("Got batch event that we can't parse {}", e);
+                    metrics_errors_counter(1, "Got batch event that we can't parse");
+                }
             }
         }
         for event in send_to_cosmos_events {
@@ -145,7 +153,10 @@ pub async fn get_last_checked_block(
                         return event.block_number.unwrap();
                     }
                 }
-                Err(e) => error!("Got SendToCosmos event that we can't parse {}", e),
+                Err(e) => {
+                    error!("Got SendToCosmos event that we can't parse {}", e);
+                    metrics_errors_counter(3, "Got SendToCosmos event that we can't parse");
+                }
             }
         }
         for event in erc20_deployed_events {
@@ -162,7 +173,10 @@ pub async fn get_last_checked_block(
                         return event.block_number.unwrap();
                     }
                 }
-                Err(e) => error!("Got ERC20Deployed event that we can't parse {}", e),
+                Err(e) => {
+                    error!("Got ERC20Deployed event that we can't parse {}", e);
+                    metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
+                }
             }
         }
         for event in logic_call_executed_events {
@@ -178,7 +192,10 @@ pub async fn get_last_checked_block(
                         return event.block_number.unwrap();
                     }
                 }
-                Err(e) => error!("Got ERC20Deployed event that we can't parse {}", e),
+                Err(e) => {
+                    error!("Got ERC20Deployed event that we can't parse {}", e);
+                    metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
+                }
             }
         }
 
@@ -212,7 +229,10 @@ pub async fn get_last_checked_block(
                         panic!("Could not find the last event relayed by {}, Last Event nonce is {} but no event matching that could be found!", our_cosmos_address, last_event_nonce)
                     }
                 }
-                Err(e) => error!("Got valset event that we can't parse {}", e),
+                Err(e) => {
+                    error!("Got valset event that we can't parse {}", e);
+                    metrics_errors_counter(3, "Got valset event that we can't parse");
+                }
             }
         }
         current_block = end_search;

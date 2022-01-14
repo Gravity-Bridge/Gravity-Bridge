@@ -7,6 +7,8 @@ pub struct GravityBridgeToolsConfig {
     pub relayer: RelayerConfig,
     #[serde(default = "OrchestratorConfig::default")]
     pub orchestrator: OrchestratorConfig,
+    #[serde(default = "MetricsConfig::default")]
+    pub metrics: MetricsConfig,
 }
 
 /// Relayer configuration options
@@ -99,6 +101,34 @@ impl Default for OrchestratorConfig {
     fn default() -> Self {
         OrchestratorConfig {
             relayer_enabled: default_relayer_enabled(),
+        }
+    }
+}
+
+/// Metrics server configuration options
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub struct MetricsConfig {
+    /// If this Orchestrator should run an integrated metrics server or not
+    #[serde(default = "default_metrics_enabled")]
+    pub metrics_enabled: bool,
+    /// Bind to specified ip:port
+    #[serde(default = "default_metrics_bind")]
+    pub metrics_bind: String,
+}
+
+fn default_metrics_enabled() -> bool {
+    false
+}
+
+fn default_metrics_bind() -> String {
+    "127.0.0.1:6631".to_string()
+}
+
+impl Default for MetricsConfig {
+    fn default() -> Self {
+        MetricsConfig {
+            metrics_enabled: default_metrics_enabled(),
+            metrics_bind: default_metrics_bind(),
         }
     }
 }

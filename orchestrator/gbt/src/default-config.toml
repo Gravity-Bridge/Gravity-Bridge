@@ -12,3 +12,7 @@ logic_call_market_enabled = true
 # If we relay every possible valset, only applicable when not checking
 # for profitability
 relay_every_valset = false
+
+[metrics]
+metrics_enabled = false
+metrics_bind = "127.0.0.1:6631"

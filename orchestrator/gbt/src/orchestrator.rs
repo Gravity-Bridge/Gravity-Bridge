@@ -11,6 +11,7 @@ use gravity_utils::connection_prep::{
 use gravity_utils::connection_prep::{check_for_fee, create_rpc_connections};
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
+use metrics_exporter::metrics_server;
 use orchestrator::main_loop::orchestrator_main_loop;
 use orchestrator::main_loop::{ETH_ORACLE_LOOP_SPEED, ETH_SIGNER_LOOP_SPEED};
 use std::cmp::min;
@@ -149,6 +150,11 @@ pub async fn orchestrator(
             print_relaying_explanation(&config.relayer, false)
         }
     }
+
+    // Start monitiring if enabled on config.toml
+    if config.metrics.metrics_enabled {
+        metrics_server(&config.metrics);
+    };
 
     orchestrator_main_loop(
         cosmos_key,

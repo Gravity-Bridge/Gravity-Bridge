@@ -18,6 +18,7 @@ gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {path = "../gravity_proto/"}
 relayer = {path = "../relayer/"}
 orchestrator = {path = "../orchestrator/"}
+metrics_exporter = {path = "../metrics_exporter/"}
 
 deep_space = "2.8"
 serde_derive = "1.0"

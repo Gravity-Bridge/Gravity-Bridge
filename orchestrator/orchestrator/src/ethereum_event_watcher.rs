@@ -16,6 +16,7 @@ use gravity_utils::{
         TransactionBatchExecutedEvent, ValsetUpdatedEvent,
     },
 };
+use metrics_exporter::metrics_errors_counter;
 use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
@@ -213,6 +214,7 @@ pub async fn check_for_events(
         })
     } else {
         error!("Failed to get events");
+        metrics_errors_counter(1, "Failed to get events");
         Err(GravityError::EthereumRestError(Web3Error::BadResponse(
             "Failed to get logs!".to_string(),
         )))

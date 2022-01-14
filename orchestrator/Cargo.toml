@@ -1,6 +1,7 @@
 [workspace]
-members = ["orchestrator", "cosmos_gravity", "ethereum_gravity", "gravity_utils", "proto_build", "test_runner", "gravity_proto", "relayer", "gbt"]
+members = ["orchestrator", "cosmos_gravity", "ethereum_gravity", "gravity_utils", "proto_build", "test_runner", "gravity_proto", "relayer", "gbt", "metrics_exporter"]
 default-members = ["gbt"]
 
 
 [patch.crates-io]
+prometheus_exporter  = { git = 'https://github.com/gadost/prometheus_exporter' }
