@@ -4,4 +4,3 @@ default-members = ["gbt"]
 
 
 [patch.crates-io]
-prometheus_exporter  = { git = 'https://github.com/gadost/prometheus_exporter' }
