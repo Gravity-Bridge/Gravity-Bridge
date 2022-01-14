@@ -2,6 +2,7 @@
 
 use crate::utils::create_default_test_config;
 use crate::utils::footoken_metadata;
+use crate::utils::get_decimals;
 use crate::utils::get_erc20_balance_safe;
 use crate::utils::get_event_nonce_safe;
 use crate::utils::get_user_key;
@@ -18,6 +19,7 @@ use deep_space::coin::Coin;
 use deep_space::Contact;
 use ethereum_gravity::deploy_erc20::deploy_erc20;
 use ethereum_gravity::utils::get_valset_nonce;
+use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::gravity::{
     query_client::QueryClient as GravityQueryClient, QueryDenomToErc20Request,
 };
@@ -43,11 +45,11 @@ pub async fn happy_path_test_v2(
         Some(keys.clone()),
         &mut grpc_client,
         validator_out,
-        footoken_metadata(),
+        footoken_metadata(contact).await,
     )
     .await;
 
-    let token_to_send_to_eth = footoken_metadata().denom;
+    let token_to_send_to_eth = footoken_metadata(contact).await.base;
 
     // one foo token
     let amount_to_bridge: Uint256 = 1_000_000u64.into();
@@ -142,15 +144,6 @@ pub async fn happy_path_test_v2(
     }
 }
 
-pub struct CosmosRepresentationMetadata {
-    /// the denom for the token, as you interact with it on the Cosmos command line
-    pub denom: String,
-    /// the name for the token, as defined by the cosmos denom metadata
-    pub name: String,
-    /// the symbol for the token, as defined by the cosmos denom metadata
-    pub symbol: String,
-}
-
 /// This segment is broken out because it's used in two different tests
 /// once here where we verify that tokens bridge correctly and once in valset_rewards
 /// where we do a governance update to enable rewards
@@ -160,7 +153,7 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
     keys: Option<Vec<ValidatorKeys>>,
     grpc_client: &mut GravityQueryClient<Channel>,
     validator_out: bool,
-    token_metadata: CosmosRepresentationMetadata,
+    token_metadata: Metadata,
 ) -> EthAddress {
     get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
         .await
@@ -170,9 +163,9 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
         .await
         .unwrap();
 
-    let cosmos_decimals = 6;
+    let cosmos_decimals = get_decimals(&token_metadata);
     deploy_erc20(
-        token_metadata.denom.clone(),
+        token_metadata.base.clone(),
         token_metadata.name.clone(),
         token_metadata.symbol.clone(),
         cosmos_decimals,
@@ -216,14 +209,14 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
     while Instant::now() - start < TOTAL_TIMEOUT {
         let res = grpc_client
             .denom_to_erc20(QueryDenomToErc20Request {
-                denom: token_metadata.denom.clone(),
+                denom: token_metadata.base.clone(),
             })
             .await;
         if let Ok(res) = res {
             let erc20 = res.into_inner().erc20;
             info!(
                 "Successfully adopted {} token contract of {}",
-                token_metadata.denom, erc20
+                token_metadata.base, erc20
             );
             erc20_contract = Some(erc20);
             break;
@@ -233,7 +226,7 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
     if erc20_contract.is_none() {
         panic!(
             "Cosmos did not adopt the ERC20 contract for {} it must be invalid in some way",
-            token_metadata.denom
+            token_metadata.base
         );
     }
     let erc20_contract: EthAddress = erc20_contract.unwrap().parse().unwrap();

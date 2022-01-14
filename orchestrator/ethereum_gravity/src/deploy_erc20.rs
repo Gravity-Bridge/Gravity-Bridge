@@ -19,7 +19,7 @@ pub async fn deploy_erc20(
     cosmos_denom: String,
     erc20_name: String,
     erc20_symbol: String,
-    decimals: u8,
+    decimals: u32,
     gravity_contract: Address,
     web3: &Web3,
     wait_timeout: Option<Duration>,

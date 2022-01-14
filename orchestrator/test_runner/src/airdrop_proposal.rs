@@ -104,7 +104,7 @@ pub async fn airdrop_proposal_test(contact: &Contact, keys: Vec<ValidatorKeys>) 
     info!("Successfully Issued Airdrop!");
 }
 
-// Submits the custom Unhalt bridge governance proposal, votes yes for each validator, waits for votes to be submitted
+// Submits the custom airdrop governance proposal, votes yes for each validator, waits for votes to be submitted
 async fn submit_and_pass_airdrop_proposal(
     denom: String,
     amounts: &[u64],
@@ -152,7 +152,7 @@ async fn submit_and_pass_airdrop_proposal(
     Ok(true)
 }
 
-// Submits the custom Unhalt bridge governance proposal, panics if the airdrop submission does not fail
+// Submits the custom airdrop governance proposal, panics if the airdrop submission does not fail
 async fn submit_and_fail_airdrop_proposal(
     denom: String,
     amounts: &[u64],
@@ -200,7 +200,7 @@ async fn submit_and_fail_airdrop_proposal(
 
 /// waits for the governance proposal to execute by waiting for it to leave
 /// the 'voting' status
-async fn wait_for_proposals_to_execute(contact: &Contact) {
+pub async fn wait_for_proposals_to_execute(contact: &Contact) {
     let start = Instant::now();
     loop {
         let proposals = contact

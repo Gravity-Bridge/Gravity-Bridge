@@ -114,7 +114,7 @@ pub async fn invalid_events(
         None,
         &mut grpc_client,
         false,
-        footoken_metadata(),
+        footoken_metadata(contact).await,
     )
     .await;
 

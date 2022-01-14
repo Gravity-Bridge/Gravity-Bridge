@@ -4,7 +4,6 @@ use ethereum_gravity::deploy_erc20::deploy_erc20;
 use gravity_proto::gravity::QueryDenomToErc20Request;
 use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
 use std::{
-    convert::TryInto,
     process::exit,
     time::{Duration, Instant},
 };
@@ -68,10 +67,10 @@ pub async fn deploy_erc20_representation(
             }
             let decimals = decimals.unwrap();
             let res = deploy_erc20(
-                metadata.display,
+                metadata.base,
                 metadata.name,
                 metadata.symbol,
-                decimals.try_into().unwrap(),
+                decimals,
                 contract_address,
                 &web3,
                 Some(TIMEOUT),

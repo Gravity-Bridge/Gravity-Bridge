@@ -1,5 +1,4 @@
 use crate::get_fee;
-use crate::happy_path_v2::CosmosRepresentationMetadata;
 use crate::ADDRESS_PREFIX;
 use crate::COSMOS_NODE_GRPC;
 use crate::ETH_NODE;
@@ -19,6 +18,7 @@ use deep_space::utils::encode_any;
 use deep_space::{Contact, Fee, Msg};
 use ethereum_gravity::utils::get_event_nonce;
 use futures::future::join_all;
+use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
     ParamChange, ParameterChangeProposal,
@@ -38,14 +38,24 @@ use web30::jsonrpc::error::Web3Error;
 use web30::{client::Web3, types::SendTxOption};
 
 /// returns the required denom metadata for deployed the Footoken
-/// token defined in our test environment, you could get this same
-/// data using the denom metadata endpoints.
-pub fn footoken_metadata() -> CosmosRepresentationMetadata {
-    CosmosRepresentationMetadata {
-        denom: "footoken".to_string(),
-        name: "Foo Token".to_string(),
-        symbol: "FOO".to_string(),
+/// token defined in our test environment
+pub async fn footoken_metadata(contact: &Contact) -> Metadata {
+    let metadata = contact.get_all_denoms_metadata().await.unwrap();
+    for m in metadata {
+        if m.base == "footoken" {
+            return m;
+        }
     }
+    panic!("Footoken metadata not set?");
+}
+
+pub fn get_decimals(meta: &Metadata) -> u32 {
+    for m in meta.denom_units.iter() {
+        if m.denom == meta.display {
+            return m.exponent;
+        }
+    }
+    panic!("Invalid metadata!")
 }
 
 pub fn create_default_test_config() -> GravityBridgeToolsConfig {

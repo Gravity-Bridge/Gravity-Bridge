@@ -26,7 +26,7 @@ pub async fn valset_rewards_test(
     gravity_address: EthAddress,
 ) {
     let mut grpc_client = grpc_client;
-    let token_to_send_to_eth = footoken_metadata().denom;
+    let token_to_send_to_eth = footoken_metadata(contact).await.base;
 
     // first we deploy the Cosmos asset that we will use as a reward and make sure it is adopted
     // by the Cosmos chain
@@ -36,7 +36,7 @@ pub async fn valset_rewards_test(
         Some(keys.clone()),
         &mut grpc_client,
         false,
-        footoken_metadata(),
+        footoken_metadata(contact).await,
     )
     .await;
 
