@@ -4,6 +4,7 @@ import (
 	fmt "fmt"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
@@ -61,12 +62,28 @@ func (p *AirdropProposal) ValidateBasic() error {
 
 func (p AirdropProposal) String() string {
 	var b strings.Builder
+	total := uint64(0)
+	for _, v := range p.Amounts {
+		total += v
+	}
+	parsedRecipients := make([]sdk.AccAddress, len(p.Recipients)/20)
+	for i := 0; i < len(p.Recipients)/20; i++ {
+		indexStart := i * 20
+		indexEnd := indexStart + 20
+		addr := p.Recipients[indexStart:indexEnd]
+		parsedRecipients[i] = addr
+	}
+	recipients := ""
+	for i, a := range parsedRecipients {
+		recipients += fmt.Sprintf("Account: %s Amount: %d%s", a.String(), p.Amounts[i], p.Denom)
+	}
+
 	b.WriteString(fmt.Sprintf(`Airdrop Proposal:
   Title:          %s
   Description:    %s
-  Amount:         %d%s
+  Total Amount:   %d%s
   Recipients:     %s
-`, p.Title, p.Description, p.Amount.Amount.Int64(), p.Amount.Denom, p.Recipients))
+`, p.Title, p.Description, total, p.Denom, recipients))
 	return b.String()
 }
 

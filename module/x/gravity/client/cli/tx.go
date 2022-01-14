@@ -98,6 +98,17 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 	return cmd
 }
 
+// AirDropProposalPlain is a struct with plaintext recipients so that the proposal.json can be readable
+// and not subject to the strange encoding of the airdrop proposal tx where the recipients are packed as 20
+// byte sets
+type AirdropProposalPlain struct {
+	Title       string
+	Description string
+	Denom       string
+	Recipients  []string
+	Amounts     []uint64
+}
+
 func CmdGovAirdropProposal() *cobra.Command {
 	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
@@ -127,13 +138,35 @@ func CmdGovAirdropProposal() *cobra.Command {
 				return sdkerrors.Wrap(err, "failed to read proposal json file")
 			}
 
-			proposal := &types.AirdropProposal{}
+			proposal := &AirdropProposalPlain{}
 			err = json.Unmarshal(contents, proposal)
 			if err != nil {
 				return sdkerrors.Wrap(err, "proposal json file is not valid json")
 			}
 
-			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			// convert the plaintext proposal to the actual type
+			parsedRecipients := make([]sdk.AccAddress, len(proposal.Recipients))
+			for i, v := range proposal.Recipients {
+				parsed, err := sdk.AccAddressFromBech32(v)
+				if err != nil {
+					return sdkerrors.Wrap(err, "Address not valid!")
+				}
+				parsedRecipients[i] = parsed
+			}
+			byteEncodedRecipients := []byte{}
+			for _, v := range parsedRecipients {
+				byteEncodedRecipients = append(byteEncodedRecipients, v.Bytes()...)
+			}
+
+			finalProposal := &types.AirdropProposal{
+				Title:       proposal.Title,
+				Description: proposal.Description,
+				Denom:       proposal.Denom,
+				Amounts:     proposal.Amounts,
+				Recipients:  byteEncodedRecipients,
+			}
+
+			proposalAny, err := codectypes.NewAnyWithValue(finalProposal)
 			if err != nil {
 				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
 			}

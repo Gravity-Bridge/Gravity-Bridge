@@ -15,18 +15,35 @@ import (
 func TestAirdropProposal(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
+
+	testAddr := []string{"gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm", "gravity1n38caqg63jf9hefycw3yp95fpkpk669nvekqy2", "gravity1qz4zm5s0vwfuu46lg3q0vmnwsukd8e9yfmcgjj"}
+
+	parsedRecipients := make([]sdk.AccAddress, len(testAddr))
+	for i, v := range testAddr {
+		parsed, err := sdk.AccAddressFromBech32(v)
+		require.NoError(t, err)
+		parsedRecipients[i] = parsed
+	}
+	byteEncodedRecipients := []byte{}
+	for _, v := range parsedRecipients {
+		byteEncodedRecipients = append(byteEncodedRecipients, v.Bytes()...)
+	}
+
 	goodAirdrop := types.AirdropProposal{
 		Title:       "test tile",
 		Description: "test description",
-		Amount:      sdk.NewInt64Coin("grav", 1000),
-		Recipients:  []string{"gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm"},
+		Denom:       "grav",
+		Amounts:     []uint64{1000, 900, 1100},
+		Recipients:  byteEncodedRecipients,
 	}
 	airdropTooBig := goodAirdrop
-	airdropTooBig.Amount = sdk.NewInt64Coin("grav", 100000)
+	airdropTooBig.Amounts = []uint64{100000, 100000, 100000}
 	airdropBadToken := goodAirdrop
-	airdropBadToken.Amount = sdk.NewInt64Coin("notreal", 1000)
+	airdropBadToken.Denom = "notreal"
+	airdropAmountsMismatch := goodAirdrop
+	airdropAmountsMismatch.Amounts = []uint64{1000, 1000}
 	airdropBadDest := goodAirdrop
-	airdropBadDest.Recipients = []string{"gravity1junk"}
+	airdropBadDest.Recipients = []byte{0, 1, 2, 3, 4}
 
 	gk := input.GravityKeeper
 	feePoolBalance := sdk.NewInt64Coin("grav", 10000)
@@ -46,13 +63,16 @@ func TestAirdropProposal(t *testing.T) {
 	err = gk.HandleAirdropProposal(ctx, &airdropBadToken)
 	require.Error(t, err)
 
+	err = gk.HandleAirdropProposal(ctx, &airdropAmountsMismatch)
+	require.Error(t, err)
+
 	err = gk.HandleAirdropProposal(ctx, &airdropBadDest)
 	require.Error(t, err)
 
 	err = gk.HandleAirdropProposal(ctx, &goodAirdrop)
 	require.NoError(t, err)
 	feePool = gk.DistKeeper.GetFeePool(ctx)
-	assert.Equal(t, feePool.CommunityPool.AmountOf("grav"), sdk.NewInt64DecCoin("grav", 9000).Amount)
+	assert.Equal(t, feePool.CommunityPool.AmountOf("grav"), sdk.NewInt64DecCoin("grav", 7000).Amount)
 
 }
 
