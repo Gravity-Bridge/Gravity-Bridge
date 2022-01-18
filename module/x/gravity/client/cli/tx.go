@@ -46,7 +46,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gov-ibc-metadata [path-to-proposal-json] [initial-deposit]",
 		Short: "Creates a governance proposal to set the Metadata of the given IBC token. Once the metadata is set this token can be moved to Ethereum using Gravity Bridge",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -114,7 +114,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gov-airdrop [path-to-proposal-json] [initial-deposit]",
 		Short: "Creates a governance proposal for an airdrop",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -193,7 +193,7 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gov-unhalt-bridge [path-to-proposal-json] [initial-deposit]",
 		Short: "Creates a governance proposal to unhalt the Ethereum bridge after an oracle dispute",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -299,7 +299,7 @@ func CmdCancelSendToEth() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cancel-send-to-eth [transaction id]",
 		Short: "Removes an entry from the transaction pool, preventing your tokens from going to Ethereum and refunding the send.",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -307,7 +307,7 @@ func CmdCancelSendToEth() *cobra.Command {
 			}
 			cosmosAddr := cliCtx.GetFromAddress()
 
-			txId, err := strconv.ParseUint(args[1], 0, 64)
+			txId, err := strconv.ParseUint(args[0], 0, 64)
 			if err != nil {
 				return sdkerrors.Wrap(err, "failed to parse transaction id")
 			}
