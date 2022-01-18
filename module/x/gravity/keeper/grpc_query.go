@@ -36,7 +36,8 @@ func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types
 func (k Keeper) CurrentValset(
 	c context.Context,
 	req *types.QueryCurrentValsetRequest) (*types.QueryCurrentValsetResponse, error) {
-	return &types.QueryCurrentValsetResponse{Valset: k.GetCurrentValset(sdk.UnwrapSDKContext(c))}, nil
+	vs, _ := k.GetCurrentValset(sdk.UnwrapSDKContext(c))
+	return &types.QueryCurrentValsetResponse{Valset: vs}, nil
 }
 
 // ValsetRequest queries the ValsetRequest of the gravity module

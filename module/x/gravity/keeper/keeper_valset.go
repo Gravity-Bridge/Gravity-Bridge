@@ -25,7 +25,7 @@ import (
 // and perhaps take action based on that use k.GetCurrentValset
 // i.e. {"nonce": 1, "memebers": [{"eth_addr": "foo", "power": 11223}]}
 func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
-	valset := k.GetCurrentValset(ctx)
+	valset, _ := k.GetCurrentValset(ctx)
 	k.StoreValset(ctx, valset)
 	k.SetLatestValsetNonce(ctx, valset.Nonce)
 
@@ -251,8 +251,11 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedVa
 // The function is intended to return what the valset would look like if you made one now
 // you should call this function, evaluate if you want to save this new valset, and discard
 // it or save
-func (k Keeper) GetCurrentValset(ctx sdk.Context) types.Valset {
+func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	validators := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	if len(validators) == 0 {
+		return types.Valset{}, fmt.Errorf("validator set is empty")
+	}
 	// allocate enough space for all validators, but len zero, we then append
 	// so that we have an array with extra capacity but the correct length depending
 	// on how many validators have keys set.
@@ -306,7 +309,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) types.Valset {
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "generated invalid valset"))
 	}
-	return *valset
+	return *valset, nil
 }
 
 // normalizeValidatorPower scales rawPower with respect to totalValidatorPower to take a value between 0 and 2^32

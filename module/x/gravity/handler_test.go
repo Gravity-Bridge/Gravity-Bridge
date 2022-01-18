@@ -606,7 +606,8 @@ func TestMsgValsetConfirm(t *testing.T) {
 	h := NewHandler(input.GravityKeeper)
 
 	// set a validator set in the store
-	vs := k.GetCurrentValset(ctx)
+	vs, err := k.GetCurrentValset(ctx)
+	require.NoError(t, err)
 	vs.Height = uint64(1)
 	vs.Nonce = uint64(1)
 	k.StoreValset(ctx, vs)

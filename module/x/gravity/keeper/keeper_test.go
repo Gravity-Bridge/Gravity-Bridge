@@ -92,7 +92,8 @@ func TestCurrentValsetNormalization(t *testing.T) {
 		spec := spec
 		t.Run(msg, func(t *testing.T) {
 			input, ctx := SetupTestChain(t, spec.srcPowers, true)
-			r := input.GravityKeeper.GetCurrentValset(ctx)
+			r, err := input.GravityKeeper.GetCurrentValset(ctx)
+			require.NoError(t, err)
 			rMembers, err := types.BridgeValidators(r.Members).ToInternal()
 			require.NoError(t, err)
 			assert.Equal(t, spec.expPowers, rMembers.GetPowers())
@@ -194,7 +195,8 @@ func TestLastSlashedValsetNonce(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	k := input.GravityKeeper
 
-	vs := k.GetCurrentValset(ctx)
+	vs, err := k.GetCurrentValset(ctx)
+	require.NoError(t, err)
 
 	i := 1
 	for ; i < 10; i++ {

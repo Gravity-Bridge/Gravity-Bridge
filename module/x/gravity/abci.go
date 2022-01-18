@@ -35,7 +35,12 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 
 	significantPowerDiff := false
 	if latestValset != nil {
-		intCurrMembers, err := types.BridgeValidators(k.GetCurrentValset(ctx).Members).ToInternal()
+		vs, err := k.GetCurrentValset(ctx)
+		if err != nil {
+			// log error
+			return
+		}
+		intCurrMembers, err := types.BridgeValidators(vs.Members).ToInternal()
 		if err != nil {
 			panic(sdkerrors.Wrap(err, "invalid current valset members"))
 		}

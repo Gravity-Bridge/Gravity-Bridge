@@ -54,7 +54,8 @@ func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
 	pk := input.GravityKeeper
 	params := input.GravityKeeper.GetParams(ctx)
 
-	vs := pk.GetCurrentValset(ctx)
+	vs, err := pk.GetCurrentValset(ctx)
+	require.NoError(t, err)
 	height := uint64(ctx.BlockHeight()) - (params.SignedValsetsWindow + 1)
 	vs.Height = height
 	vs.Nonce = height
@@ -75,7 +76,8 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	params := input.GravityKeeper.GetParams(ctx)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
-	vs := pk.GetCurrentValset(ctx)
+	vs, err := pk.GetCurrentValset(ctx)
+	require.NoError(t, err)
 	height := uint64(ctx.BlockHeight()) - (params.SignedValsetsWindow + 1)
 	vs.Height = height
 
@@ -240,7 +242,8 @@ func TestValsetEmission(t *testing.T) {
 	pk := input.GravityKeeper
 
 	// Store a validator set with a power change as the most recent validator set
-	vs := pk.GetCurrentValset(ctx)
+	vs, err := pk.GetCurrentValset(ctx)
+	require.NoError(t, err)
 	vs.Nonce--
 	internalMembers, err := types.BridgeValidators(vs.Members).ToInternal()
 	require.NoError(t, err)
