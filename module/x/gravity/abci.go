@@ -37,7 +37,9 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 	if latestValset != nil {
 		vs, err := k.GetCurrentValset(ctx)
 		if err != nil {
-			// log error
+			ctx.Logger().Error("invalid current valset members",
+					"cause", err.Error(),
+			)
 			return
 		}
 		intCurrMembers, err := types.BridgeValidators(vs.Members).ToInternal()
