@@ -564,13 +564,13 @@ func NewGravityApp(
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
-		crisistypes.ModuleName,
 		ibchost.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		authz.ModuleName,
 		gravitytypes.ModuleName,
+		crisistypes.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&crisisKeeper)
