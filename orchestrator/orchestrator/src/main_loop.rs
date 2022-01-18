@@ -141,7 +141,7 @@ pub async fn eth_oracle_main_loop(
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
                 warn!("Cosmos node syncing, Eth oracle paused");
-                metrics_warnings_counter(2, "Cosmos node syncing, Eth oracle paused");
+                metrics_warnings_counter(2, "Cosmos node syncing");
                 delay_for(DELAY).await;
                 continue;
             }
@@ -149,27 +149,27 @@ pub async fn eth_oracle_main_loop(
                 warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
                 metrics_warnings_counter(
                     2,
-                    "Cosmos node syncing waiting for chain start, Eth oracle paused",
+                    "Cosmos node syncing waiting for chain start",
                 );
                 delay_for(DELAY).await;
                 continue;
             }
             (Ok(_), Err(_)) => {
                 warn!("Could not contact Cosmos grpc, trying again");
-                metrics_warnings_counter(2, "Could not contact Cosmos grpc, trying again");
+                metrics_warnings_counter(2, "Could not contact Cosmos grpc");
                 delay_for(DELAY).await;
                 continue;
             }
             (Err(_), Ok(_)) => {
                 warn!("Could not contact Eth node, trying again");
-                metrics_warnings_counter(1, "Could not contact Eth node, trying again");
+                metrics_warnings_counter(1, "Could not contact Eth node");
                 delay_for(DELAY).await;
                 continue;
             }
             (Err(_), Err(_)) => {
                 error!("Could not reach Ethereum or Cosmos rpc!");
 
-                metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc!");
+                metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc");
 
                 delay_for(DELAY).await;
                 continue;

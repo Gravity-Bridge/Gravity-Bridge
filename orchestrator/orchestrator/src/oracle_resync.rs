@@ -107,7 +107,7 @@ pub async fn get_last_checked_block(
             delay_for(RETRY_TIME).await;
             metrics_errors_counter(
                 1,
-                "Failed to get blockchain events while resyncing, is your Eth node working?",
+                "Failed to get blockchain events while resyncing",
             );
             continue;
         }
