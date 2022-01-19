@@ -138,7 +138,7 @@ pub async fn eth_oracle_main_loop(
                 );
 
                 metrics_latest(block_height, "latest_cosmos_block");
-                // Converting into u64 
+                // Converting into u64
                 metrics_latest(latest_eth_block.to_u64_digits()[0], "latest_eth_block");
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {

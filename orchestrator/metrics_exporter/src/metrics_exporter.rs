@@ -10,31 +10,31 @@ lazy_static! {
 
     //  Errors
     pub static ref ERRORS_TOTAL: IntCounter =
-        register_int_counter!("orchestator_errors_count_total", "Total errors since startup").unwrap();
+        register_int_counter!("orchestrator_errors_count_total", "Total errors since startup").unwrap();
     pub static ref ERROR: IntCounterVec =
-        register_int_counter_vec!("orchestator_errors_count_cosmos_eth", "Both ETH & Cosmos related errors", &["error_message"]).unwrap();
+        register_int_counter_vec!("orchestrator_errors_count_cosmos_eth", "Both ETH & Cosmos related errors", &["error_message"]).unwrap();
     pub static ref ERROR_ETH: IntCounterVec =
-        register_int_counter_vec!("orchestator_errors_count_eth", "ETH related errors", &["error_message"]).unwrap();
+        register_int_counter_vec!("orchestrator_errors_count_eth", "ETH related errors", &["error_message"]).unwrap();
     pub static ref ERROR_COSMOS: IntCounterVec =
-        register_int_counter_vec!("orchestator_errors_count_cosmos", "Cosmos related errors", &["error_message"]).unwrap();
+        register_int_counter_vec!("orchestrator_errors_count_cosmos", "Cosmos related errors", &["error_message"]).unwrap();
     pub static ref ERROR_UNCLASSIFIED: IntCounterVec =
-        register_int_counter_vec!("orchestator_errors_count_unclassified", "Chech orchestator logs for more details", &["error_message"]).unwrap();
+        register_int_counter_vec!("orchestrator_errors_count_unclassified", "Chech orchestrator logs for more details", &["error_message"]).unwrap();
 
-    // Warnings 
+    // Warnings
     pub static ref WARNINGS_TOTAL: IntCounter =
-        register_int_counter!("orchestator_warnings_count_total", "Total warnings since startup").unwrap();
+        register_int_counter!("orchestrator_warnings_count_total", "Total warnings since startup").unwrap();
     pub static ref WARNING: IntCounterVec =
-        register_int_counter_vec!("orchestator_warnings_count_cosmos_eth", "Both ETH & Cosmos related warnings", &["warn_message"]).unwrap();
+        register_int_counter_vec!("orchestrator_warnings_count_cosmos_eth", "Both ETH & Cosmos related warnings", &["warn_message"]).unwrap();
     pub static ref WARNING_ETH: IntCounterVec =
-        register_int_counter_vec!("orchestator_warnings_count_eth", "ETH related warnings", &["warn_message"]).unwrap();
+        register_int_counter_vec!("orchestrator_warnings_count_eth", "ETH related warnings", &["warn_message"]).unwrap();
     pub static ref WARNING_COSMOS: IntCounterVec =
-        register_int_counter_vec!("orchestator_warnings_count_cosmos", "Cosmos related warnings", &["warn_message"]).unwrap();
+        register_int_counter_vec!("orchestrator_warnings_count_cosmos", "Cosmos related warnings", &["warn_message"]).unwrap();
     pub static ref WARNING_UNCLASSIFIED: IntCounterVec =
-        register_int_counter_vec!("orchestator_warnings_count_unclassified", "Chech orchestator logs for more details", &["warn_message"]).unwrap();
+        register_int_counter_vec!("orchestrator_warnings_count_unclassified", "Chech orchestrator logs for more details", &["warn_message"]).unwrap();
 
     // Information gauges
     pub static ref LATEST_INFO: IntGaugeVec =
-        register_int_gauge_vec!("orchestator_information", "Latest orchestator information", &["gauge"]).unwrap();
+        register_int_gauge_vec!("orchestrator_information", "Latest orchestrator information", &["gauge"]).unwrap();
 }
 
 pub fn metrics_errors_counter(s: i32, e: &str) {
