@@ -138,38 +138,37 @@ pub async fn eth_oracle_main_loop(
                 );
 
                 metrics_latest(block_height, "latest_cosmos_block");
+                // Converting into u64
+                metrics_latest(latest_eth_block.to_u64_digits()[0], "latest_eth_block");
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
                 warn!("Cosmos node syncing, Eth oracle paused");
-                metrics_warnings_counter(2, "Cosmos node syncing, Eth oracle paused");
+                metrics_warnings_counter(2, "Cosmos node syncing");
                 delay_for(DELAY).await;
                 continue;
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
                 warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
-                metrics_warnings_counter(
-                    2,
-                    "Cosmos node syncing waiting for chain start, Eth oracle paused",
-                );
+                metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start");
                 delay_for(DELAY).await;
                 continue;
             }
             (Ok(_), Err(_)) => {
                 warn!("Could not contact Cosmos grpc, trying again");
-                metrics_warnings_counter(2, "Could not contact Cosmos grpc, trying again");
+                metrics_warnings_counter(2, "Could not contact Cosmos grpc");
                 delay_for(DELAY).await;
                 continue;
             }
             (Err(_), Ok(_)) => {
                 warn!("Could not contact Eth node, trying again");
-                metrics_warnings_counter(1, "Could not contact Eth node, trying again");
+                metrics_warnings_counter(1, "Could not contact Eth node");
                 delay_for(DELAY).await;
                 continue;
             }
             (Err(_), Err(_)) => {
                 error!("Could not reach Ethereum or Cosmos rpc!");
 
-                metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc!");
+                metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc");
 
                 delay_for(DELAY).await;
                 continue;
@@ -207,6 +206,7 @@ pub async fn eth_oracle_main_loop(
                     .await;
                 }
                 last_checked_event = nonces.event_nonce;
+                metrics_latest(last_checked_event.to_u64_digits()[0], "last_checked_event");
             }
             Err(e) => {
                 error!("Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}", e);
