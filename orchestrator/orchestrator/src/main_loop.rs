@@ -149,10 +149,7 @@ pub async fn eth_oracle_main_loop(
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
                 warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
-                metrics_warnings_counter(
-                    2,
-                    "Cosmos node syncing waiting for chain start",
-                );
+                metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start");
                 delay_for(DELAY).await;
                 continue;
             }
