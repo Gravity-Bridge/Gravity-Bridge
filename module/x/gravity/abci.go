@@ -37,10 +37,15 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 	if latestValset != nil {
 		vs, err := k.GetCurrentValset(ctx)
 		if err != nil {
-			ctx.Logger().Error("invalid current valset members",
+			// this condition should only occur in the simulator
+			// ref : https://github.com/Gravity-Bridge/Gravity-Bridge/issues/35
+			if err == types.ErrNoValidators {
+				ctx.Logger().Error("no bonded validators",
 					"cause", err.Error(),
-			)
-			return
+				)
+				return
+			}
+			panic(err)
 		}
 		intCurrMembers, err := types.BridgeValidators(vs.Members).ToInternal()
 		if err != nil {
@@ -82,7 +87,6 @@ func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 }
 
 func slashing(ctx sdk.Context, k keeper.Keeper) {
-
 	params := k.GetParams(ctx)
 
 	// Slash validator for not confirming valset requests, batch requests, logic call requests
@@ -352,7 +356,6 @@ func prepBatchConfirms(ctx sdk.Context, k keeper.Keeper, batch types.InternalOut
 // signatures. This is distinct from validator sets, which includes unbonding validators
 // because validator set updates must succeed as validators leave the set, batches will just be re-created
 func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
-
 	// We look through the full bonded set (the active set)
 	// and we slash users who haven't signed a batch confirmation that is >15hrs in blocks old
 	var maxHeight uint64
@@ -430,7 +433,6 @@ func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call types.Outgoing
 // signatures. This is distinct from validator sets, which includes unbonding validators
 // because validator set updates must succeed as validators leave the set, logicCalls will just be re-created
 func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
-
 	// We look through the full bonded set (the active set)
 	// and we slash users who haven't signed a batch confirmation that is >15hrs in blocks old
 	var maxHeight uint64

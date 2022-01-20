@@ -25,7 +25,10 @@ import (
 // and perhaps take action based on that use k.GetCurrentValset
 // i.e. {"nonce": 1, "memebers": [{"eth_addr": "foo", "power": 11223}]}
 func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
-	valset, _ := k.GetCurrentValset(ctx)
+	valset, err := k.GetCurrentValset(ctx)
+	if err != nil {
+		panic(err)
+	}
 	k.StoreValset(ctx, valset)
 	k.SetLatestValsetNonce(ctx, valset.Nonce)
 
@@ -254,7 +257,7 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedVa
 func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	validators := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
 	if len(validators) == 0 {
-		return types.Valset{}, fmt.Errorf("validator set is empty")
+		return types.Valset{}, types.ErrNoValidators
 	}
 	// allocate enough space for all validators, but len zero, we then append
 	// so that we have an array with extra capacity but the correct length depending
@@ -266,7 +269,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	for _, validator := range validators {
 		val := validator.GetOperator()
 		if err := sdk.VerifyAddressFormat(val); err != nil {
-			panic(sdkerrors.Wrapf(err, "invalid validator address in current valset %v", val))
+			return types.Valset{}, sdkerrors.Wrap(err, types.ErrInvalidValAddress.Error())
 		}
 
 		p := sdk.NewInt(k.StakingKeeper.GetLastValidatorPower(ctx, val))
@@ -275,7 +278,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: ethAddr.GetAddress()}
 			ibv, err := types.NewInternalBridgeValidator(bv)
 			if err != nil {
-				panic(sdkerrors.Wrapf(err, "discovered invalid eth address stored for validator %v", val))
+				return types.Valset{}, sdkerrors.Wrapf(err, types.ErrInvalidEthAddress.Error(), val)
 			}
 			bridgeValidators = append(bridgeValidators, ibv)
 			totalPower = totalPower.Add(p)
@@ -307,7 +310,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 
 	valset, err := types.NewValset(valsetNonce, uint64(ctx.BlockHeight()), bridgeValidators, rewardAmount, *rewardToken)
 	if err != nil {
-		panic(sdkerrors.Wrap(err, "generated invalid valset"))
+		return types.Valset{}, (sdkerrors.Wrap(err, types.ErrInvalidValset.Error()))
 	}
 	return *valset, nil
 }
