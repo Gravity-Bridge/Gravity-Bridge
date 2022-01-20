@@ -31,4 +31,4 @@ DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full TEST_TYPE=$TEST_TYPE NO_GAS_OPT=1 RUST_LO
 
 # This keeps the script open to prevent Docker from stopping the container
 # immediately if the nodes are killed by a different process
-read -p "Press Return to Close..."
+read -p "Press Return to Close...(don't press enter if you want Docker to keep running)"
