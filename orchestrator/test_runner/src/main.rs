@@ -22,6 +22,7 @@ use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use deep_space::coin::Coin;
 use deep_space::Contact;
+use erc_721_happy_path::erc721_happy_path_test;
 use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use happy_path::happy_path_test;
@@ -37,6 +38,7 @@ use valset_stress::validator_set_stress_test;
 mod airdrop_proposal;
 mod bootstrapping;
 mod deposit_overflow;
+mod erc_721_happy_path;
 mod ethereum_blacklist_test;
 mod evidence_based_slashing;
 mod happy_path;
@@ -163,9 +165,12 @@ pub async fn main() {
     let contracts = parse_contract_addresses();
     // the address of the deployed Gravity contract
     let gravity_address = contracts.gravity_contract;
+    // the address of the deployed GravityERC721 contract
+    let gravity_erc721_address = contracts.gravity_erc721_contract;
     // addresses of deployed ERC20 token contracts to be used for testing
     let erc20_addresses = contracts.erc20_addresses;
-
+    // addresses of deployed ERC721 token contracts to be used for testing
+    let erc721_addresses = contracts.erc721_addresses;
     // before we start the orchestrators send them some funds so they can pay
     // for things
     send_eth_to_orchestrators(&keys, &web30).await;
@@ -318,6 +323,19 @@ pub async fn main() {
         } else if test_type == "IBC_METADATA" {
             info!("Starting IBC metadata proposal test");
             ibc_metadata_proposal_test(gravity_address, keys, grpc_client, &contact, &web30).await;
+            return;
+        } else if test_type == "ERC721_HAPPY_PATH" {
+            info!("Starting ERC 721 transfer test");
+            erc721_happy_path_test(
+                &web30,
+                &contact,
+                keys,
+                gravity_address,
+                gravity_erc721_address,
+                erc721_addresses[0],
+                false,
+            )
+            .await;
             return;
         } else if !test_type.is_empty() {
             panic!("Err Unknown test type")
