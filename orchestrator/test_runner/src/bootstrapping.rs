@@ -159,7 +159,9 @@ pub async fn deploy_contracts(contact: &Contact) {
 
 pub struct BootstrapContractAddresses {
     pub gravity_contract: EthAddress,
+    pub gravity_erc721_contract: EthAddress,
     pub erc20_addresses: Vec<EthAddress>,
+    pub erc721_addresses: Vec<EthAddress>,
     pub uniswap_liquidity_address: Option<EthAddress>,
 }
 
@@ -171,24 +173,37 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
     let mut output = String::new();
     file.read_to_string(&mut output).unwrap();
     let mut maybe_gravity_address = None;
+    let mut maybe_gravity_erc721_address = None;
     let mut erc20_addresses = Vec::new();
+    let mut erc721_addresses = Vec::new();
     let mut uniswap_liquidity = None;
     for line in output.lines() {
         if line.contains("Gravity deployed at Address -") {
             let address_string = line.split('-').last().unwrap();
             maybe_gravity_address = Some(address_string.trim().parse().unwrap());
+        } else if line.contains("GravityERC721 deployed at Address -") {
+            let address_string = line.split('-').last().unwrap();
+            maybe_gravity_erc721_address = Some(address_string.trim().parse().unwrap());
         } else if line.contains("ERC20 deployed at Address -") {
             let address_string = line.split('-').last().unwrap();
             erc20_addresses.push(address_string.trim().parse().unwrap());
+            info!("found erc20 address it is {}", address_string);
+        } else if line.contains("ERC721 deployed at Address -") {
+            let address_string = line.split('-').last().unwrap();
+            erc721_addresses.push(address_string.trim().parse().unwrap());
+            info!("found erc721 address it is {}", address_string);
         } else if line.contains("Uniswap Liquidity test deployed at Address - ") {
             let address_string = line.split('-').last().unwrap();
             uniswap_liquidity = Some(address_string.trim().parse().unwrap());
         }
     }
     let gravity_address: EthAddress = maybe_gravity_address.unwrap();
+    let gravity_erc721_address: EthAddress = maybe_gravity_erc721_address.unwrap();
     BootstrapContractAddresses {
         gravity_contract: gravity_address,
+        gravity_erc721_contract: gravity_erc721_address,
         erc20_addresses,
+        erc721_addresses,
         uniswap_liquidity_address: uniswap_liquidity,
     }
 }

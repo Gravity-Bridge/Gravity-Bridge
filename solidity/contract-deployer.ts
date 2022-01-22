@@ -183,7 +183,7 @@ async function deploy() {
     console.log("ERC20 deployed at Address - ", erc20TestAddress2);
     
     const { abi: abi3, bytecode: bytecode3 } = getContractArtifacts(erc721_a_path);
-    const erc721Factory1 = new ethers.ContractFactory(abi3, bytecode2, wallet);
+    const erc721Factory1 = new ethers.ContractFactory(abi3, bytecode3, wallet);
     const testERC721 = (await erc721Factory1.deploy(overrides)) as TestERC721A;
     await testERC721.deployed();
     const erc721TestAddress = testERC721.address;

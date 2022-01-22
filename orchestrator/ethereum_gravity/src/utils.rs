@@ -1,5 +1,6 @@
 use clarity::abi::encode_call;
 use clarity::Address as EthAddress;
+
 use clarity::Uint256;
 use clarity::{abi::Token, constants::ZERO_ADDRESS};
 use gravity_utils::num_conversion::downcast_uint256;
@@ -119,6 +120,29 @@ pub async fn get_gravity_id(
     let gravity_id = String::from_utf8(val);
     match gravity_id {
         Ok(val) => Ok(val),
+        Err(e) => Err(Web3Error::BadResponse(e.to_string())),
+    }
+}
+/// This function is used to retrieve the state_gravitySolAddress from
+/// GravityERC721.sol. Note that only address that is allowed to call the withdraw
+/// function on GravityERC721.sol is the state_gravitySolAddress which is
+/// set at contract instantiation
+pub async fn get_gravity_sol_address(
+    contract_address: EthAddress,
+    caller_address: EthAddress,
+    web3: &Web3,
+) -> Result<EthAddress, Web3Error> {
+    let payload = encode_call("state_gravitySolAddress()", &[]).unwrap();
+    let val = web3
+        .simulate_transaction(contract_address, 0u8.into(), payload, caller_address, None)
+        .await?;
+
+    let mut data: [u8; 20] = Default::default();
+    data.copy_from_slice(&val[12..]);
+    let gravity_sol_address = EthAddress::from_slice(&data);
+
+    match gravity_sol_address {
+        Ok(address_response) => Ok(address_response),
         Err(e) => Err(Web3Error::BadResponse(e.to_string())),
     }
 }
