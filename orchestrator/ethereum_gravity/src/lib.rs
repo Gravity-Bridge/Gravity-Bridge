@@ -7,6 +7,7 @@ pub mod deploy_erc20;
 pub mod logic_call;
 pub mod message_signatures;
 pub mod send_to_cosmos;
+pub mod send_erc721_to_cosmos;
 pub mod submit_batch;
 mod test_cases;
 pub mod utils;

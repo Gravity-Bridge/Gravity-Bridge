@@ -12,7 +12,7 @@ use web30::types::SendTxOption;
 pub const SEND_TO_COSMOS_GAS_LIMIT: u128 = 100_000;
  
 #[allow(clippy::too_many_arguments)]
-pub async fn send_to_cosmos(
+pub async fn send_erc721_to_cosmos(
     erc20: Address,
     gravity_contract: Address,
     amount: Uint256,
@@ -22,6 +22,7 @@ pub async fn send_to_cosmos(
     web3: &Web3,
     options: Vec<SendTxOption>,
 ) -> Result<Uint256, GravityError> {
+    print!("Now in the send_erc721_to_cosmos function!");
     let sender_address = sender_secret.to_address();
     let mut approve_nonce = None;
 

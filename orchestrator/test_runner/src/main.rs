@@ -26,6 +26,7 @@ use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
+use erc_721_happy_path::erc721_happy_path_test;
 use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use relay_market::relay_market_test;
@@ -41,6 +42,7 @@ mod ethereum_blacklist_test;
 mod evidence_based_slashing;
 mod happy_path;
 mod happy_path_v2;
+mod erc_721_happy_path;
 mod ibc_metadata;
 mod invalid_events;
 mod orch_keys;
@@ -319,7 +321,21 @@ pub async fn main() {
             info!("Starting IBC metadata proposal test");
             ibc_metadata_proposal_test(gravity_address, keys, grpc_client, &contact, &web30).await;
             return;
-        } else if !test_type.is_empty() {
+        } else if test_type == "ERC721" {
+            info!("Starting ERC 721 transfer test");
+            erc721_happy_path_test(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                gravity_address,
+                erc20_addresses[0],
+                false,
+            )
+            .await;
+            return;
+        }  
+        else if !test_type.is_empty() {
             panic!("Err Unknown test type")
         }
     }
