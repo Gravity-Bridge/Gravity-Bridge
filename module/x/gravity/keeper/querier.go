@@ -31,7 +31,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 }
 
 func queryCurrentValset(ctx sdk.Context, keeper Keeper) ([]byte, error) {
-	valset := keeper.GetCurrentValset(ctx)
+	valset, err := keeper.GetCurrentValset(ctx)
+	if err != nil {
+		return nil, err
+	}
 	res, err := codec.MarshalJSONIndent(types.ModuleCdc, valset)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())

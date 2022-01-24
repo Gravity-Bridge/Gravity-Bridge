@@ -927,7 +927,8 @@ func TestQueryCurrentValset(t *testing.T) {
 	input, _ := SetupFiveValChain(t)
 	sdkCtx := input.Context
 
-	currentValset := input.GravityKeeper.GetCurrentValset(sdkCtx)
+	currentValset, err := input.GravityKeeper.GetCurrentValset(sdkCtx)
+	require.NoError(t, err)
 
 	assert.Equal(t, expectedValset, currentValset)
 }
