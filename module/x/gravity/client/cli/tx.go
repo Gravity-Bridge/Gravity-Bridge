@@ -15,10 +15,13 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 func GetTxCmd(storeKey string) *cobra.Command {
+	// needed for governance proposal txs
+	keeper.RegisterProposalTypes()
 	//nolint: exhaustivestruct
 	gravityTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
@@ -88,7 +91,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				Content:        proposalAny,
 			}
 			if err := msg.ValidateBasic(); err != nil {
-				return err
+				return sdkerrors.Wrap(err, "Your proposal.json is not valid, please correct it")
 			}
 			// Send it
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
