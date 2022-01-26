@@ -20,8 +20,10 @@ import (
 )
 
 func GetTxCmd(storeKey string) *cobra.Command {
-	// needed for governance proposal txs
+	// needed for governance proposal txs in cli case
+	// internal check prevents double registration in node case
 	keeper.RegisterProposalTypes()
+
 	//nolint: exhaustivestruct
 	gravityTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,

@@ -14,12 +14,28 @@ import (
 // this file contains code related to custom governance proposals
 
 func RegisterProposalTypes() {
-	govtypes.RegisterProposalType(types.ProposalTypeUnhaltBridge)
-	govtypes.RegisterProposalTypeCodec(&types.UnhaltBridgeProposal{}, "gravity/UnhaltBridge")
-	govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
-	govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, "gravity/Airdrop")
-	govtypes.RegisterProposalType(types.ProposalTypeIBCMetadata)
-	govtypes.RegisterProposalTypeCodec(&types.IBCMetadataProposal{}, "gravity/IBCMetadata")
+	// use of prefix stripping to prevent a typo between the proposal we check
+	// and the one we register, any issues with the registration string will prevent
+	// the proposal from working. We must check for double registration so that cli commands
+	// submitting these proposals work.
+	// For some reason the cli code is run during app.go startup, but of course app.go is not
+	// run during operation of one off tx commands, so we need to run this 'twice'
+	prefix := "gravity/"
+	metadata := "gravity/IBCMetadata"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(metadata, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeIBCMetadata)
+		govtypes.RegisterProposalTypeCodec(&types.IBCMetadataProposal{}, metadata)
+	}
+	unhalt := "gravity/UnhaltBridge"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(unhalt, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeUnhaltBridge)
+		govtypes.RegisterProposalTypeCodec(&types.UnhaltBridgeProposal{}, unhalt)
+	}
+	airdrop := "gravity/Airdrop"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(airdrop, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
+		govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
+	}
 }
 
 func NewGravityProposalHandler(k Keeper) govtypes.Handler {
