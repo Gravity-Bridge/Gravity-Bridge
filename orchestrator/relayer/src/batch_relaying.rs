@@ -135,9 +135,9 @@ async fn should_relay_batch(
         Ok(price) => price > cost,
         Err(e) => {
             info!(
-                "Unable to determine swap price of token {} for WETH due to \
-             communication error {:?} - Will not be relaying batch {:?}",
-                batch_reward_token, e, batch
+                "Unable to determine swap price of token {} for WETH \n
+                it may just not be on Uniswap - Will not be relaying batch {:?}",
+                batch_reward_token, e
             );
             false
         }
