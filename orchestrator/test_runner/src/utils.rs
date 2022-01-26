@@ -26,6 +26,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
 use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
+use gravity_utils::types::BatchRelayingMode;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use gravity_utils::types::ValsetRelayingMode;
@@ -62,7 +63,7 @@ pub fn create_default_test_config() -> GravityBridgeToolsConfig {
     let mut no_relay_market_config = GravityBridgeToolsConfig::default();
     // enable integrated relayer by default for tests
     no_relay_market_config.orchestrator.relayer_enabled = true;
-    no_relay_market_config.relayer.batch_market_enabled = false;
+    no_relay_market_config.relayer.batch_relaying_mode = BatchRelayingMode::EveryBatch;
     no_relay_market_config.relayer.logic_call_market_enabled = false;
     no_relay_market_config.relayer.valset_relaying_mode = ValsetRelayingMode::EveryValset;
     no_relay_market_config.relayer.batch_request_mode = BatchRequestMode::EveryBatch;

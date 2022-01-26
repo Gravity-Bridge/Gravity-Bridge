@@ -10,6 +10,8 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::num_conversion::print_eth;
 use gravity_utils::num_conversion::print_gwei;
 use gravity_utils::prices::get_weth_price;
+use gravity_utils::types::BatchRelayingMode;
+use gravity_utils::types::WhitelistToken;
 use gravity_utils::types::{BatchConfirmResponse, RelayerConfig, TransactionBatch, Valset};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -123,25 +125,73 @@ async fn should_relay_batch(
     batch: &TransactionBatch,
     cost: Uint256,
     pubkey: EthAddress,
+    config: &BatchRelayingMode,
 ) -> bool {
+    // skip price request below in the trivial case, couldn't really
+    // figure the code duplication / extra network IO balance otherwise
+    if let BatchRelayingMode::EveryBatch = config {
+        return true;
+    }
+
     let batch_reward_amount = batch.total_fee.amount.clone();
     let batch_reward_token = batch.total_fee.token_contract_address;
     let price = get_weth_price(batch_reward_token, batch_reward_amount, pubkey, web3).await;
-    // Otherwise we need to see how much WETH we can get for the reward token amount,
-    // and compare that value to the gas cost
-    // TODO: Allow users to specify what sort of margin they want on rewards, to account for
-    // cost of electricity, etc.
-    match price {
-        Ok(price) => price > cost,
-        Err(e) => {
-            info!(
-                "Unable to determine swap price of token {} for WETH \n
+
+    match config {
+        BatchRelayingMode::EveryBatch => true,
+        BatchRelayingMode::ProfitableOnly { margin } => {
+            let cost_with_margin = get_cost_with_margin(cost, *margin);
+
+            // we need to see how much WETH we can get for the reward token amount,
+            // and compare that value to the gas cost times the margin
+            match price {
+                Ok(price) => price > cost_with_margin,
+                Err(e) => {
+                    info!(
+                        "Unable to determine swap price of token {} for WETH \n
                 it may just not be on Uniswap - Will not be relaying batch {:?}",
-                batch_reward_token, e
-            );
-            false
+                        batch_reward_token, e
+                    );
+                    false
+                }
+            }
+        }
+        BatchRelayingMode::ProfitableWithWhitelist { margin, whitelist } => {
+            let cost_with_margin = get_cost_with_margin(cost, *margin);
+            // we need to see how much WETH we can get for the reward token amount,
+            // and compare that value to the gas cost times the margin
+            match (price, get_whitelist_amount(batch.token_contract, whitelist)) {
+                (_, Some(amount)) => amount > batch.total_fee.amount,
+                (Ok(price), None) => price > cost_with_margin,
+                (Err(e), None) => {
+                    info!(
+                        "Unable to determine swap price of token {} for WETH \n
+                it may just not be on Uniswap - Will not be relaying batch {:?}",
+                        batch_reward_token, e
+                    );
+                    false
+                }
+            }
         }
     }
+}
+
+/// Takes a token price whitelist, gets the amount of tokens for the specified
+/// ERC20, returns none if not whitelisted
+fn get_whitelist_amount(erc20: EthAddress, whitelist: &[WhitelistToken]) -> Option<Uint256> {
+    for i in whitelist {
+        if i.token == erc20 {
+            return Some(i.amount.clone());
+        }
+    }
+    None
+}
+
+/// bakes the margin into the cost to provide an easy value to compare against
+pub fn get_cost_with_margin(cost: Uint256, margin: f32) -> Uint256 {
+    let cost_as_float: f32 = cost.to_string().parse().unwrap();
+    let cost_with_margin = cost_as_float * margin;
+    (cost_with_margin as u128).into()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -238,18 +288,14 @@ async fn submit_batches(
                     .display_with_eth_info(our_ethereum_address, web3)
                     .await;
 
-                // TODO: Convert the other methods to this style
-                let should_relay = if config.batch_market_enabled {
-                    should_relay_batch(
-                        web3,
-                        &oldest_signed_batch,
-                        cost.get_total(),
-                        our_ethereum_address,
-                    )
-                    .await
-                } else {
-                    true
-                };
+                let should_relay = should_relay_batch(
+                    web3,
+                    &oldest_signed_batch,
+                    cost.get_total(),
+                    our_ethereum_address,
+                    &config.batch_relaying_mode,
+                )
+                .await;
 
                 if should_relay {
                     let res = send_eth_transaction_batch(

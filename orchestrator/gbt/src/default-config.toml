@@ -4,14 +4,34 @@
 relayer_enabled = false
 
 # Relayer configuration options
+
+# requests for batches sent on the Gravity Bridge side, consumes bridge chain
+# tx fees
 [relayer]
-# If we check profitability before relaying
-valset_market_enabled = false
-batch_market_enabled = true
-logic_call_market_enabled = true
-# If we relay every possible valset, only applicable when not checking
-# for profitability
-relay_every_valset = false
+batch_request_mode = "ProfitableOnly"
+
+[relayer.valset_relaying_mode]
+mode = "Altruistic"
+
+# [relayer.valset_relaying_mode]
+# mode = "ProfitableOnly"
+# margin = 1.5
+
+[relayer.batch_relaying_mode]
+mode = "ProfitableOnly"
+margin = 1.1
+
+# Use whitelist mode to relay tokens which may not be listed
+# in Uniswap, or if you want to relay a specific type for free
+# you can set the amount to "0"
+#
+# [relayer.batch_relaying_mode]
+# mode = "ProfitableWithWhitelist"
+# margin = 1.5
+# [[relayer.batch_relaying_mode.whitelist]]
+# token = "0x6Bd41fCdF129297c3524395d669c0865b3CA85B2"
+# amount = "50000"
+
 
 [metrics]
 metrics_enabled = false

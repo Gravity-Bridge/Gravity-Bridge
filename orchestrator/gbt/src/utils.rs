@@ -7,8 +7,8 @@ pub const TIMEOUT: Duration = Duration::from_secs(60);
 pub fn print_relaying_explanation(input: &RelayerConfig, batch_requests: bool) {
     info!("Relaying from Cosmos => Ethereum is enabled, this will cost ETH");
     match input.valset_relaying_mode {
-        ValsetRelayingMode::ProfitableOnly => info!(
-            "This relayer will only relay validator set updates if they have a profitable reward"
+        ValsetRelayingMode::ProfitableOnly {margin} => info!(
+            "This relayer will only relay validator set updates if they have a profitable reward with at least {} margin", margin
         ),
         ValsetRelayingMode::Altruistic => info!(
             "This relayer will relay validator set updates altruistically if required by the network"
@@ -31,8 +31,12 @@ pub fn print_relaying_explanation(input: &RelayerConfig, batch_requests: bool) {
             "This relayer will automatically spend Graviton tx fees to request a batch when any tx are available",
         ),
     }
-    match input.batch_market_enabled {
-        true => info!("This relayer will only relay batches to Ethereum if the rewards have a greater value in weth than the gas cost"),
-        false => warn!("This relayer will relay any batch. This will cost a lof of ETH!")
+    match &input.batch_relaying_mode {
+        gravity_utils::types::BatchRelayingMode::EveryBatch => {
+            info!("This relayer will relay every batch. This will cost a lot of ETH!")
+        },
+        gravity_utils::types::BatchRelayingMode::ProfitableOnly { margin } => info!("This relayer will only relay batches if they have a profitable reward with at least {} margin", margin),
+        gravity_utils::types::BatchRelayingMode::ProfitableWithWhitelist { margin, whitelist } =>
+            info!("This relayer will relay profitable matches with {} margin, and the following tokens with the provided amounts {:?}", margin, whitelist)
     }
 }
