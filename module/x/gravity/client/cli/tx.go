@@ -80,6 +80,15 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 			if err != nil {
 				return sdkerrors.Wrap(err, "proposal json file is not valid json")
 			}
+			if proposal.IbcDenom == "" ||
+				proposal.Title == "" ||
+				proposal.Description == "" ||
+				proposal.Metadata.Base == "" ||
+				proposal.Metadata.Name == "" ||
+				proposal.Metadata.Display == "" ||
+				proposal.Metadata.Symbol == "" {
+				return fmt.Errorf("proposal json file is not valid, please check example json in docs")
+			}
 
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
