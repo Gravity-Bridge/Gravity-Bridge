@@ -72,7 +72,7 @@ This is identical to Ethereum -> Cosmos for Ethereum based assets. Please see th
 
 Validator set rewards are an optional chain [parameter](/docs/design/parameters.md). By default no reward is issued, it's important to maintain this behavior as the [Gravity.sol](/solidity/contracts/Gravity.sol) is not deployed containing any assets.
 
-At some point in the future a governance vote may select some Cosmos originated asset to use as a reward for submitting `valsetUpdate` transactions. From that point onward the specified amount of ERC20 tokens representing a Cosmos asset will be sent to `msg.sender` when submitting the `valsetUpdate` transaction to [Gravity.sol](/solidity/contracts/Gravity.sol) (see [incentives](/design/incentives.md##relaying-rewards) documentation for reasoning).
+At some point in the future a governance vote may select some Cosmos originated asset to use as a reward for submitting `valsetUpdate` transactions. From that point onward the specified amount of ERC20 tokens representing a Cosmos asset will be sent to `msg.sender` when submitting the `valsetUpdate` transaction to [Gravity.sol](/solidity/contracts/Gravity.sol) (see [incentives](https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/docs/design/incentives.md#relaying-rewards) documentation for reasoning).
 
 Only Cosmos originated assets are allowed. So the ERC20 deployment process described in [Cosmos -> Ethereum](<(/docs/design/mint-lock.md##cosmos-based-assets)>) must occur first.
 
@@ -84,7 +84,7 @@ This is why we do not allow Ethereum originated assets to be used in this way. M
 
 ### Transaction Batch rewards
 
-Transaction batch rewards are the sum of all `MsgSendToEth` fees for the transactions in a given batch. These fees are paid out directly to `msg.sender` on the Ethereum chain (see [incentives](/docs/design/incentives.md##relaying-rewards) documentation for reasoning).
+Transaction batch rewards are the sum of all `MsgSendToEth` fees for the transactions in a given batch. These fees are paid out directly to `msg.sender` on the Ethereum chain (see [incentives](https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/docs/design/incentives.md#relaying-rewards) documentation for reasoning).
 
 Currently [Gravity.sol](/solidity/contracts/Gravity.sol) is hardcoded to only accept batches with a single token type and only pay rewards in that same token type. This is logically very simple.
 
