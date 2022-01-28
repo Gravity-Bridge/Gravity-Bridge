@@ -271,7 +271,7 @@ func (k Keeper) IterateUnbatchedTransactions(ctx sdk.Context, prefixKey []byte, 
 // when to request batches and also used by the batch creation process to decide not to create
 // a new batch (fees must be increasing)
 func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, tokenContractAddr types.EthAddress, maxElements uint) *types.BatchFees {
-	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress(), TotalFees: sdk.NewInt(0)}
+	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress(), TotalFees: sdk.NewInt(0), TxCount: 0}
 
 	k.IterateUnbatchedTransactions(ctx, []byte(types.GetOutgoingTxPoolContractPrefix(tokenContractAddr)), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		fee := tx.Erc20Fee
@@ -317,6 +317,9 @@ func (k Keeper) createBatchFees(ctx sdk.Context, maxElements uint) map[string]ty
 				fees.TotalFees = batchFeesMap[feeAddrStr].TotalFees.Add(tx.Erc20Fee.Amount)
 				fees.TxCount = fees.TxCount + 1
 				batchFeesMap[feeAddrStr] = fees
+			} else {
+				// We've reached the max number of txs, stop iterating through txs.
+				return true
 			}
 		} else {
 			batchFeesMap[feeAddrStr] = types.BatchFees{
