@@ -271,8 +271,7 @@ func (k Keeper) IterateUnbatchedTransactions(ctx sdk.Context, prefixKey []byte, 
 // when to request batches and also used by the batch creation process to decide not to create
 // a new batch (fees must be increasing)
 func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, tokenContractAddr types.EthAddress, maxElements uint) *types.BatchFees {
-	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress(), TotalFees: sdk.NewInt(0)}
-	txCount := 0
+	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress(), TotalFees: sdk.NewInt(0), TxCount: 0}
 
 	k.IterateUnbatchedTransactions(ctx, []byte(types.GetOutgoingTxPoolContractPrefix(tokenContractAddr)), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		fee := tx.Erc20Fee
@@ -280,8 +279,8 @@ func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, tokenContractAddr types.
 			panic(fmt.Errorf("unexpected fee contract %s when getting batch fees for contract %s", fee.Contract, tokenContractAddr))
 		}
 		batchFee.TotalFees = batchFee.TotalFees.Add(fee.Amount)
-		txCount += 1
-		return txCount == int(maxElements)
+		batchFee.TxCount += 1
+		return batchFee.TxCount == uint64(maxElements)
 	})
 	return &batchFee
 }
@@ -309,33 +308,28 @@ func (k Keeper) GetAllBatchFees(ctx sdk.Context, maxElements uint) (batchFees []
 // fee contract address -> fee amount -> transaction nonce
 func (k Keeper) createBatchFees(ctx sdk.Context, maxElements uint) map[string]types.BatchFees {
 	batchFeesMap := make(map[string]types.BatchFees)
-	txCountMap := make(map[string]int)
 
 	k.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
-		if txCountMap[tx.Erc20Fee.Contract.GetAddress()] < int(maxElements) {
-			addFeeToMap(tx.Erc20Fee, batchFeesMap, txCountMap)
+		feeAddrStr := tx.Erc20Fee.Contract.GetAddress()
+
+		if fees, ok := batchFeesMap[feeAddrStr]; ok {
+			if fees.TxCount < uint64(maxElements) {
+				fees.TotalFees = batchFeesMap[feeAddrStr].TotalFees.Add(tx.Erc20Fee.Amount)
+				fees.TxCount = fees.TxCount + 1
+				batchFeesMap[feeAddrStr] = fees
+			}
+		} else {
+			batchFeesMap[feeAddrStr] = types.BatchFees{
+				Token:     feeAddrStr,
+				TotalFees: tx.Erc20Fee.Amount,
+				TxCount:   1,
+			}
 		}
+
 		return false
 	})
 
 	return batchFeesMap
-}
-
-// Helper method for creating batch fees
-func addFeeToMap(fee *types.InternalERC20Token, batchFeesMap map[string]types.BatchFees, txCountMap map[string]int) {
-	feeAddrStr := fee.Contract.GetAddress()
-	txCountMap[feeAddrStr] = txCountMap[feeAddrStr] + 1
-
-	// add fee amount
-	if _, ok := batchFeesMap[feeAddrStr]; ok {
-		val := batchFeesMap[feeAddrStr]
-		val.TotalFees = batchFeesMap[feeAddrStr].TotalFees.Add(fee.Amount)
-		batchFeesMap[feeAddrStr] = val
-	} else {
-		batchFeesMap[feeAddrStr] = types.BatchFees{
-			Token:     feeAddrStr,
-			TotalFees: fee.Amount}
-	}
 }
 
 // a specialized function used for iterating store counters, handling

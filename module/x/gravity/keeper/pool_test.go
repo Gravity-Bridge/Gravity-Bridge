@@ -255,7 +255,9 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 		map[0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5:8 0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0:500]
 		**/
 	assert.Equal(t, batchFees[0].TotalFees.BigInt(), big.NewInt(int64(8)))
+	assert.Equal(t, batchFees[0].TxCount, uint64(4))
 	assert.Equal(t, batchFees[1].TotalFees.BigInt(), big.NewInt(int64(500)))
+	assert.Equal(t, batchFees[1].TxCount, uint64(100))
 
 }
 
@@ -362,12 +364,15 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 	batchFee1 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, *tokenContract1, 100)
 	require.Equal(t, batchFee1.Token, myTokenContractAddr1)
 	require.Equal(t, batchFee1.TotalFees.Uint64(), uint64(totalFee1), fmt.Errorf("expected total fees %d but got %d", batchFee1.TotalFees.Uint64(), uint64(totalFee1)))
+	require.Equal(t, batchFee1.TxCount, uint64(100), fmt.Errorf("expected tx count %d but got %d", batchFee1.TxCount, uint64(100)))
 	batchFee2 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, *tokenContract2, 100)
 	require.Equal(t, batchFee2.Token, myTokenContractAddr2)
 	require.Equal(t, batchFee2.TotalFees.Uint64(), uint64(totalFee2), fmt.Errorf("expected total fees %d but got %d", batchFee2.TotalFees.Uint64(), uint64(totalFee2)))
+	require.Equal(t, batchFee2.TxCount, uint64(100), fmt.Errorf("expected tx count %d but got %d", batchFee2.TxCount, uint64(100)))
 	batchFee3 := input.GravityKeeper.GetBatchFeeByTokenType(ctx, *tokenContract3, 100)
 	require.Equal(t, batchFee3.Token, myTokenContractAddr3)
 	require.Equal(t, batchFee3.TotalFees.Uint64(), uint64(totalFee3), fmt.Errorf("expected total fees %d but got %d", batchFee3.TotalFees.Uint64(), uint64(totalFee3)))
+	require.Equal(t, batchFee3.TxCount, uint64(100), fmt.Errorf("expected tx count %d but got %d", batchFee3.TxCount, uint64(100)))
 
 }
 
