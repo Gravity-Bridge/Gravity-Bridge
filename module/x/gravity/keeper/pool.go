@@ -317,9 +317,6 @@ func (k Keeper) createBatchFees(ctx sdk.Context, maxElements uint) map[string]ty
 				fees.TotalFees = batchFeesMap[feeAddrStr].TotalFees.Add(tx.Erc20Fee.Amount)
 				fees.TxCount = fees.TxCount + 1
 				batchFeesMap[feeAddrStr] = fees
-			} else {
-				// We've reached the max number of txs, stop iterating through txs.
-				return true
 			}
 		} else {
 			batchFeesMap[feeAddrStr] = types.BatchFees{
