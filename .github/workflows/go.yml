@@ -20,10 +20,24 @@ jobs:
       - name: Build
         run: cd module && make
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: Build
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Build
+        run: cd module && golangci-lint run && go mod verify
+
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: build
+    needs: Build
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
