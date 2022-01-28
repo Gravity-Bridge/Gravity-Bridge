@@ -31,7 +31,8 @@ func TestGetMostRecentAttestations(t *testing.T) {
 		}
 		msgs = append(msgs, msg)
 
-		any, _ := codectypes.NewAnyWithValue(&msg)
+		any, err := codectypes.NewAnyWithValue(&msg)
+		require.NoError(t, err)
 		anys = append(anys, *any)
 		att := &types.Attestation{
 			Observed: false,

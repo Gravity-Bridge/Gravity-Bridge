@@ -113,7 +113,10 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 }
 
 func printCreate(cmd *cobra.Command, keyOutput EthereumKeyOutput) error {
-	output, _ := cmd.Flags().GetString(cli.OutputFlag)
+	output, err := cmd.Flags().GetString(cli.OutputFlag)
+	if err != nil {
+		return err
+	}
 
 	switch output {
 	case keys.OutputFormatText:

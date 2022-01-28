@@ -69,6 +69,9 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		// and not accessible to anyone
 		if errTokenAddress != nil {
 			hash, err := claim.ClaimHash()
+			if err != nil {
+				panic(err)
+			}
 			a.keeper.logger(ctx).Error("Invalid token contract",
 				"cause", errTokenAddress.Error(),
 				"claim type", claim.GetType(),
@@ -78,7 +81,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 			return sdkerrors.Wrap(errTokenAddress, "invalid token contract on claim")
 		}
 		if errEthereumSender != nil {
-			hash, _ := claim.ClaimHash()
+			hash, err := claim.ClaimHash()
+			if err != nil {
+				panic(err)
+			}
 			a.keeper.logger(ctx).Error("Invalid ethereum sender",
 				"cause", errEthereumSender.Error(),
 				"claim type", claim.GetType(),
@@ -123,7 +129,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				// in this case we have lost tokens! They are in the bridge, but not
 				// in the community pool our out in some users balance, every instance of this
 				// error needs to be detected and resolved
-				hash, _ := claim.ClaimHash()
+				hash, err := claim.ClaimHash()
+				if err != nil {
+					panic(err)
+				}
 				a.keeper.logger(ctx).Error("Failed minting",
 					"cause", err.Error(),
 					"claim type", claim.GetType(),
@@ -137,7 +146,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		if !invalidAddress { // valid address so far, try to lock up the coins in the requested cosmos address
 			if err := a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, nativeReceiver, coins); err != nil {
 				// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
-				hash, _ := claim.ClaimHash()
+				hash, err := claim.ClaimHash()
+				if err != nil {
+					panic(err)
+				}
 				a.keeper.logger(ctx).Error("Blacklisted deposit",
 					"cause", err.Error(),
 					"claim type", claim.GetType(),
@@ -154,7 +166,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		// so we deposit the tokens into the community pool for later use
 		if invalidAddress {
 			if err = a.SendToCommunityPool(ctx, coins); err != nil {
-				hash, _ := claim.ClaimHash()
+				hash, err := claim.ClaimHash()
+				if err != nil {
+					panic(err)
+				}
 				a.keeper.logger(ctx).Error("Failed community pool send",
 					"cause", err.Error(),
 					"claim type", claim.GetType(),
