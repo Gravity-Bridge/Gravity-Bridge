@@ -110,15 +110,15 @@ func addDenomToERC20Relation(tv *testingVars) {
 
 func lockCoinsInModule(tv *testingVars) {
 	var (
-		userCosmosAddr, err = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
-		denom               = "ugraviton"
-		startingCoinAmount  = sdk.NewIntFromUint64(150)
-		sendAmount          = sdk.NewIntFromUint64(50)
-		feeAmount           = sdk.NewIntFromUint64(5)
-		startingCoins       = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
-		sendingCoin         = sdk.NewCoin(denom, sendAmount)
-		feeCoin             = sdk.NewCoin(denom, feeAmount)
-		ethDestination      = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
+		userCosmosAddr, _  = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
+		denom              = "ugraviton"
+		startingCoinAmount = sdk.NewIntFromUint64(150)
+		sendAmount         = sdk.NewIntFromUint64(50)
+		feeAmount          = sdk.NewIntFromUint64(5)
+		startingCoins      = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
+		sendingCoin        = sdk.NewCoin(denom, sendAmount)
+		feeCoin            = sdk.NewCoin(denom, feeAmount)
+		ethDestination     = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
 	)
 
 	// we start by depositing some funds into the users balance to send
@@ -135,7 +135,7 @@ func lockCoinsInModule(tv *testingVars) {
 		BridgeFee: feeCoin,
 	}
 
-	_, err = tv.h(tv.ctx, msg)
+	_, err := tv.h(tv.ctx, msg)
 	require.NoError(tv.t, err)
 
 	// Check that user balance has gone down
