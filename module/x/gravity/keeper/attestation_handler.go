@@ -2,9 +2,10 @@ package keeper
 
 import (
 	"fmt"
-	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	"math/big"
 	"strconv"
+
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -27,9 +28,15 @@ type AttestationHandler struct {
 
 // Check for nil members
 func (a AttestationHandler) ValidateMembers() {
-	if a.keeper     == nil { panic("Nil keeper!") }
-	if a.bankKeeper == nil { panic("Nil bankKeeper!") }
-	if a.distKeeper == nil { panic("Nil distKeeper!") }
+	if a.keeper == nil {
+		panic("Nil keeper!")
+	}
+	if a.bankKeeper == nil {
+		panic("Nil bankKeeper!")
+	}
+	if a.distKeeper == nil {
+		panic("Nil distKeeper!")
+	}
 }
 
 // SendToCommunityPool handles sending incorrect deposits to the community pool, since the deposits
@@ -61,7 +68,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		// a bogus event, this would create lost tokens stuck in the bridge
 		// and not accessible to anyone
 		if errTokenAddress != nil {
-			hash, _ := claim.ClaimHash()
+			hash, err := claim.ClaimHash()
 			a.keeper.logger(ctx).Error("Invalid token contract",
 				"cause", errTokenAddress.Error(),
 				"claim type", claim.GetType(),

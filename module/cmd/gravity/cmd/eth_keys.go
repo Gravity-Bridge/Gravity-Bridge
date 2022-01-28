@@ -91,7 +91,10 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		Address:    crypto.PubkeyToAddress(*publicKeyECDSA).Hex(),
 	}
 
-	if dryRun, _ := cmd.Flags().GetBool(flags.FlagDryRun); !dryRun {
+	if dryRun, err := cmd.Flags().GetBool(flags.FlagDryRun); !dryRun {
+		if err != nil {
+			return err
+		}
 		clientCtx, err := client.GetClientQueryContext(cmd)
 		if err != nil {
 			return err

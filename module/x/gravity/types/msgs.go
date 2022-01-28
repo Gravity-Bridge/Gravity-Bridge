@@ -437,7 +437,11 @@ func (msg MsgBatchSendToEthClaim) GetClaimer() sdk.AccAddress {
 	if err != nil {
 		panic("MsgBatchSendToEthClaim failed ValidateBasic! Should have been handled earlier")
 	}
-	val, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	val, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		panic("MsgBatchSendToEthClaim failed ValidateBasic! Should have been handled earlier")
+	}
+
 	return val
 }
 
@@ -494,7 +498,11 @@ func (msg MsgERC20DeployedClaim) GetClaimer() sdk.AccAddress {
 		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
 	}
 
-	val, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	val, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
+	}
+
 	return val
 }
 
@@ -554,7 +562,11 @@ func (msg MsgLogicCallExecutedClaim) GetClaimer() sdk.AccAddress {
 		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
 	}
 
-	val, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	val, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
+	}
+
 	return val
 }
 
@@ -627,7 +639,11 @@ func (msg MsgValsetUpdatedClaim) GetClaimer() sdk.AccAddress {
 		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
 	}
 
-	val, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	val, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
+	}
+
 	return val
 }
 

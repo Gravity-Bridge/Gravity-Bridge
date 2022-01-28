@@ -141,9 +141,11 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	input.Context = ctx.WithBlockHeight(valUnbondingHeight)
 	sh := staking.NewHandler(input.StakingKeeper)
 	undelegateMsg1 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[0], keeper.StakingAmount)
-	sh(input.Context, undelegateMsg1)
+	_, err := sh(input.Context, undelegateMsg1)
+	require.NoError(t, err)
 	undelegateMsg2 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[1], keeper.StakingAmount)
-	sh(input.Context, undelegateMsg2)
+	_, err = sh(input.Context, undelegateMsg2)
+	require.NoError(t, err)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
@@ -200,7 +202,8 @@ func TestBatchSlashing(t *testing.T) {
 		if i == 1 {
 			// don't sign with 2nd validator. set val bond height > batch block height
 			validator := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[i])
-			valConsAddr, _ := validator.GetConsAddr()
+			valConsAddr, err := validator.GetConsAddr()
+			require.NoError(t, err)
 			valSigningInfo := slashingtypes.ValidatorSigningInfo{
 				Address:             "",
 				StartHeight:         int64(batch.Block + 1),

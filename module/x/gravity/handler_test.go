@@ -38,7 +38,8 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	ctx := input.Context
 	h := NewHandler(input.GravityKeeper)
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, startingCoins))
-	input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, userCosmosAddr, startingCoins)
+	err := input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, userCosmosAddr, startingCoins)
+	require.NoError(t, err)
 	balance1 := input.BankKeeper.GetAllBalances(ctx, userCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}, balance1)
 
@@ -49,7 +50,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 		Amount:    sendingCoin,
 		BridgeFee: feeCoin}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
-	_, err := h(ctx, msg)
+	_, err = h(ctx, msg)
 	require.NoError(t, err)
 	balance2 := input.BankKeeper.GetAllBalances(ctx, userCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin(denom, startingCoinAmount.Sub(sendAmount).Sub(feeAmount))}, balance2)
@@ -490,7 +491,8 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 		Contract: tokenETHAddr,
 	}
 
-	myTokenAddress, _ := types.NewEthAddress(myErc20.Contract)
+	myTokenAddress, err := types.NewEthAddress(myErc20.Contract)
+	require.NoError(t, err)
 	_, erc20Denom := k.ERC20ToDenomLookup(ctx, *myTokenAddress)
 
 	foreignEthClaim := types.MsgSendToCosmosClaim{
