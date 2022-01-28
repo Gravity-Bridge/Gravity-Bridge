@@ -61,6 +61,8 @@ pub struct BatchFees {
     pub token: ::prost::alloc::string::String,
     #[prost(string, tag="2")]
     pub total_fees: ::prost::alloc::string::String,
+    #[prost(uint64, tag="3")]
+    pub tx_count: u64,
 }
 /// OutgoingTxBatch represents a batch of transactions going from gravity to ETH
 #[derive(Clone, PartialEq, ::prost::Message)]
