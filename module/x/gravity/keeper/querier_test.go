@@ -63,7 +63,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 			expResp: types.QueryValsetConfirmResponse{Confirm: nil},
 		},
 		"invalid address": {
-			src:    types.QueryValsetConfirmRequest{1, "not a valid addr"},
+			src:    types.QueryValsetConfirmRequest{Nonce: 1, Address: "not a valid addr"},
 			expErr: true,
 		},
 	}
@@ -281,7 +281,7 @@ func TestLastValsetRequests(t *testing.T) {
 		expResp types.QueryLastValsetRequestsResponse
 	}{ // Expect only maxValsetRequestsReturns back
 		"limit at 5": {
-			expResp: types.QueryLastValsetRequestsResponse{*valArray},
+			expResp: types.QueryLastValsetRequestsResponse{Valsets: *valArray},
 		},
 	}
 	// any lower than this and a validator won't be created
@@ -624,7 +624,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedRes := types.QueryBatchConfirmsResponse{
-		[]types.MsgConfirmBatch{
+		Confirms: []types.MsgConfirmBatch{
 			{
 				Nonce:         1,
 				TokenContract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
@@ -781,7 +781,7 @@ func TestQueryBatch(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedRes := types.QueryBatchRequestByNonceResponse{
-		types.OutgoingTxBatch{
+		Batch: types.OutgoingTxBatch{
 			BatchTimeout: 0,
 			Transactions: []types.OutgoingTransferTx{
 				{
@@ -836,7 +836,7 @@ func TestLastBatchesRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedRes := types.QueryOutgoingTxBatchesResponse{
-		[]types.OutgoingTxBatch{
+		Batches: []types.OutgoingTxBatch{
 			{
 				BatchTimeout: 0,
 				Transactions: []types.OutgoingTransferTx{
@@ -987,7 +987,7 @@ func TestQueryERC20ToDenom(t *testing.T) {
 	k := input.GravityKeeper
 	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
 
-	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{erc20.GetAddress()})
+	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{Erc20: erc20.GetAddress()})
 	require.NoError(t, err)
 
 	assert.Equal(t, &response, queriedDenom)
@@ -1012,7 +1012,7 @@ func TestQueryDenomToERC20(t *testing.T) {
 	k := input.GravityKeeper
 	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
 
-	queriedERC20, err := k.DenomToERC20(ctx, &types.QueryDenomToERC20Request{denom})
+	queriedERC20, err := k.DenomToERC20(ctx, &types.QueryDenomToERC20Request{Denom: denom})
 	require.NoError(t, err)
 
 	assert.Equal(t, &response, queriedERC20)
@@ -1076,7 +1076,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 	require.NoError(t, err)
 
 	// Should receive 1 and 4 unbatched, 2 and 3 batched in response
-	response, err := k.GetPendingSendToEth(ctx, &types.QueryPendingSendToEth{mySender.String()})
+	response, err := k.GetPendingSendToEth(ctx, &types.QueryPendingSendToEth{SenderAddress: mySender.String()})
 	require.NoError(t, err)
 	expectedRes := types.QueryPendingSendToEthResponse{TransfersInBatches: []types.OutgoingTransferTx{
 		{
