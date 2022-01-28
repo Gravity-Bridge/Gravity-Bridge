@@ -97,20 +97,20 @@ func (k Keeper) AddToOutgoingPool(
 // - checks that the provided tx actually exists
 // - deletes the unbatched tx from the pool
 // - issues the tokens back to the sender
-func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, sender sdk.AccAddress) error {
-	if ctx.IsZero() || txId < 1 || sdk.VerifyAddressFormat(sender) != nil {
+func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txID uint64, sender sdk.AccAddress) error {
+	if ctx.IsZero() || txID < 1 || sdk.VerifyAddressFormat(sender) != nil {
 		return sdkerrors.Wrap(types.ErrInvalid, "arguments")
 	}
 	// check that we actually have a tx with that id and what it's details are
-	tx, err := k.GetUnbatchedTxById(ctx, txId)
+	tx, err := k.GetUnbatchedTxByID(ctx, txID)
 	if err != nil {
-		return sdkerrors.Wrapf(err, "unknown transaction with id %d from sender %s", txId, sender.String())
+		return sdkerrors.Wrapf(err, "unknown transaction with id %d from sender %s", txID, sender.String())
 	}
 
 	// Check that this user actually sent the transaction, this prevents someone from refunding someone
 	// elses transaction to themselves.
 	if !tx.Sender.Equals(sender) {
-		return sdkerrors.Wrapf(types.ErrInvalid, "Sender %s did not send Id %d", sender, txId)
+		return sdkerrors.Wrapf(types.ErrInvalid, "Sender %s did not send Id %d", sender, txID)
 	}
 
 	// An inconsistent entry should never enter the store, but this is the ideal place to exploit
@@ -120,14 +120,14 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 	}
 
 	// delete this tx from the pool
-	err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, txId)
+	err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, txID)
 	if err != nil {
-		return sdkerrors.Wrapf(types.ErrInvalid, "txId %d not in unbatched index! Must be in a batch!", txId)
+		return sdkerrors.Wrapf(types.ErrInvalid, "txId %d not in unbatched index! Must be in a batch!", txID)
 	}
 	// Make sure the tx was removed
-	oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
+	oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndID(ctx, *tx.Erc20Fee, tx.ID)
 	if oldTx != nil || oldTxErr == nil {
-		return sdkerrors.Wrapf(types.ErrInvalid, "tx with id %d was not fully removed from the pool, a duplicate must exist", txId)
+		return sdkerrors.Wrapf(types.ErrInvalid, "tx with id %d was not fully removed from the pool, a duplicate must exist", txID)
 	}
 
 	// Calculate refund
@@ -155,7 +155,7 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 // WARNING: Do not make this function public
 func (k Keeper) addUnbatchedTX(ctx sdk.Context, val *types.InternalOutgoingTransferTx) error {
 	store := ctx.KVStore(k.storeKey)
-	idxKey := []byte(types.GetOutgoingTxPoolKey(*val.Erc20Fee, val.Id))
+	idxKey := []byte(types.GetOutgoingTxPoolKey(*val.Erc20Fee, val.ID))
 	if store.Has(idxKey) {
 		return sdkerrors.Wrap(types.ErrDuplicate, "transaction already in pool")
 	}
@@ -183,8 +183,8 @@ func (k Keeper) removeUnbatchedTX(ctx sdk.Context, fee types.InternalERC20Token,
 	return nil
 }
 
-// GetUnbatchedTxByFeeAndId grabs a tx from the pool given its fee and txID
-func (k Keeper) GetUnbatchedTxByFeeAndId(ctx sdk.Context, fee types.InternalERC20Token, txID uint64) (*types.InternalOutgoingTransferTx, error) {
+// GetUnbatchedTxByFeeAndID grabs a tx from the pool given its fee and txID
+func (k Keeper) GetUnbatchedTxByFeeAndID(ctx sdk.Context, fee types.InternalERC20Token, txID uint64) (*types.InternalOutgoingTransferTx, error) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(types.GetOutgoingTxPoolKey(fee, txID)))
 	if bz == nil {
@@ -202,12 +202,12 @@ func (k Keeper) GetUnbatchedTxByFeeAndId(ctx sdk.Context, fee types.InternalERC2
 	return intR, nil
 }
 
-// GetUnbatchedTxById grabs a tx from the pool given only the txID
+// GetUnbatchedTxByID grabs a tx from the pool given only the txID
 // note that due to the way unbatched txs are indexed, the GetUnbatchedTxByFeeAndId method is much faster
-func (k Keeper) GetUnbatchedTxById(ctx sdk.Context, txID uint64) (*types.InternalOutgoingTransferTx, error) {
+func (k Keeper) GetUnbatchedTxByID(ctx sdk.Context, txID uint64) (*types.InternalOutgoingTransferTx, error) {
 	var r *types.InternalOutgoingTransferTx = nil
 	k.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
-		if tx.Id == txID {
+		if tx.ID == txID {
 			r = tx
 			return true
 		}

@@ -321,7 +321,7 @@ func CmdCancelSendToEth() *cobra.Command {
 			}
 			cosmosAddr := cliCtx.GetFromAddress()
 
-			txId, err := strconv.ParseUint(args[0], 0, 64)
+			txID, err := strconv.ParseUint(args[0], 0, 64)
 			if err != nil {
 				return sdkerrors.Wrap(err, "failed to parse transaction id")
 			}
@@ -329,7 +329,7 @@ func CmdCancelSendToEth() *cobra.Command {
 			// Make the message
 			msg := types.MsgCancelSendToEth{
 				Sender:        cosmosAddr.String(),
-				TransactionId: txId,
+				TransactionId: txID,
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err

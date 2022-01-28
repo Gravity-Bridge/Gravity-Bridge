@@ -107,14 +107,14 @@ func TestBatches(t *testing.T) {
 	oneHundredThreeTok, _ := types.NewInternalERC20Token(sdk.NewInt(103), myTokenContractAddr.GetAddress())
 	expUnbatchedTx := []*types.InternalOutgoingTransferTx{
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twoFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
 			Erc20Token:  oneHundredTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    oneFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
@@ -198,28 +198,28 @@ func TestBatches(t *testing.T) {
 	oneHundredTwoTok, _ := types.NewInternalERC20Token(sdk.NewInt(102), myTokenContractAddr.GetAddress())
 	expUnbatchedTx = []*types.InternalOutgoingTransferTx{
 		{
-			Id:          2,
+			ID:          2,
 			Erc20Fee:    threeFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
 			Erc20Token:  oneHundredOneTok,
 		},
 		{
-			Id:          3,
+			ID:          3,
 			Erc20Fee:    twoFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
 			Erc20Token:  oneHundredTwoTok,
 		},
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twoFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
 			Erc20Token:  oneHundredTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    oneFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
@@ -320,14 +320,14 @@ func TestBatchesFullCoins(t *testing.T) {
 	tenTok, _ := types.NewInternalERC20Token(oneEth.Mul(sdk.NewIntFromUint64(10)), myTokenContractAddr)
 	expUnbatchedTx := []*types.InternalOutgoingTransferTx{
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twentyTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  twentyTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    tenTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
@@ -409,28 +409,28 @@ func TestBatchesFullCoins(t *testing.T) {
 	fourTok, _ := types.NewInternalERC20Token(oneEth.Mul(sdk.NewIntFromUint64(4)), myTokenContractAddr)
 	expUnbatchedTx = []*types.InternalOutgoingTransferTx{
 		{
-			Id:          2,
+			ID:          2,
 			Erc20Fee:    threeHundredTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  threeHundredTok,
 		},
 		{
-			Id:          3,
+			ID:          3,
 			Erc20Fee:    twentyFiveTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  twentyFiveTok,
 		},
 		{
-			Id:          6,
+			ID:          6,
 			Erc20Fee:    fiveTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  fiveTok,
 		},
 		{
-			Id:          5,
+			ID:          5,
 			Erc20Fee:    fourTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
@@ -761,12 +761,12 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 	assert.Equal(t, 4, len(gotFirstBatch.Transactions))
 	// should not contain id 5
 	for i := 0; i < len(gotFirstBatch.Transactions); i++ {
-		assert.NotEqual(t, gotFirstBatch.Transactions[i].Id, 5)
+		assert.NotEqual(t, gotFirstBatch.Transactions[i].ID, 5)
 	}
 
 	// and verify remaining available Tx in the pool
 	// should only be 5
 	gotUnbatchedTx := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *myTokenContractAddr)
-	assert.Equal(t, gotUnbatchedTx[0].Id, uint64(5))
+	assert.Equal(t, gotUnbatchedTx[0].ID, uint64(5))
 
 }

@@ -58,7 +58,7 @@ func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 func TestOutgoingLogicCallCheckpointGold1(t *testing.T) {
 	payload, err := hex.DecodeString("0x74657374696e675061796c6f6164000000000000000000000000000000000000"[2:])
 	require.NoError(t, err)
-	invalidationId, err := hex.DecodeString("0x696e76616c69646174696f6e4964000000000000000000000000000000000000"[2:])
+	invalidationID, err := hex.DecodeString("0x696e76616c69646174696f6e4964000000000000000000000000000000000000"[2:])
 	require.NoError(t, err)
 
 	token := []ERC20Token{{
@@ -71,7 +71,7 @@ func TestOutgoingLogicCallCheckpointGold1(t *testing.T) {
 		LogicContractAddress: "0x17c1736CcF692F653c433d7aa2aB45148C016F68",
 		Payload:              payload,
 		Timeout:              4766922941000,
-		InvalidationId:       invalidationId,
+		InvalidationId:       invalidationID,
 		InvalidationNonce:    1,
 	}
 

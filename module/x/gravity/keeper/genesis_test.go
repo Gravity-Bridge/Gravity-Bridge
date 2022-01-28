@@ -148,14 +148,14 @@ func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, txs
 	require.Equal(t, len(txs), len(gotTxs))
 	// Sort both arrays for simple searching
 	sort.Slice(gotTxs, func(i, j int) bool {
-		return gotTxs[i].Id < gotTxs[j].Id
+		return gotTxs[i].ID < gotTxs[j].ID
 	})
 	sort.Slice(txs, func(i, j int) bool {
-		return txs[i].Id < txs[j].Id
+		return txs[i].ID < txs[j].ID
 	})
 	// Actually check that the txs all exist, iterate on txs in case some got lost in the import/export step
 	for i, exp := range txs {
-		require.Equal(t, exp.Id, gotTxs[i].Id)
+		require.Equal(t, exp.ID, gotTxs[i].ID)
 		require.Equal(t, exp.Erc20Fee, gotTxs[i].Erc20Fee)
 		require.Equal(t, exp.Erc20Token, gotTxs[i].Erc20Token)
 		require.Equal(t, exp.DestAddress.GetAddress(), gotTxs[i].DestAddress.GetAddress())

@@ -217,30 +217,68 @@ type Gravity struct {
 }
 
 // ValidateMembers checks for nil members
-func (g Gravity) ValidateMembers() {
-	if g.legacyAmino == nil { panic("Nil legacyAmino!") }
+func (app Gravity) ValidateMembers() {
+	if app.legacyAmino == nil {
+		panic("Nil legacyAmino!")
+	}
 
 	// keepers
-	if g.accountKeeper    == nil { panic("Nil accountKeeper!") }
-	if g.bankKeeper       == nil { panic("Nil bankKeeper!") }
-	if g.capabilityKeeper == nil { panic("Nil capabilityKeeper!") }
-	if g.stakingKeeper    == nil { panic("Nil stakingKeeper!") }
-	if g.slashingKeeper   == nil { panic("Nil slashingKeeper!") }
-	if g.mintKeeper       == nil { panic("Nil mintKeeper!") }
-	if g.distrKeeper      == nil { panic("Nil distrKeeper!") }
-	if g.govKeeper        == nil { panic("Nil govKeeper!") }
-	if g.crisisKeeper     == nil { panic("Nil crisisKeeper!") }
-	if g.upgradeKeeper    == nil { panic("Nil upgradeKeeper!") }
-	if g.paramsKeeper     == nil { panic("Nil paramsKeeper!") }
-	if g.ibcKeeper        == nil { panic("Nil ibcKeeper!") }
-	if g.evidenceKeeper   == nil { panic("Nil evidenceKeeper!") }
-	if g.transferKeeper   == nil { panic("Nil transferKeeper!") }
-	if g.authzKeeper      == nil { panic("Nil authzKeeper!") }
-	if g.gravityKeeper    == nil { panic("Nil gravityKeeper!") }
+	if app.accountKeeper == nil {
+		panic("Nil accountKeeper!")
+	}
+	if app.bankKeeper == nil {
+		panic("Nil bankKeeper!")
+	}
+	if app.capabilityKeeper == nil {
+		panic("Nil capabilityKeeper!")
+	}
+	if app.stakingKeeper == nil {
+		panic("Nil stakingKeeper!")
+	}
+	if app.slashingKeeper == nil {
+		panic("Nil slashingKeeper!")
+	}
+	if app.mintKeeper == nil {
+		panic("Nil mintKeeper!")
+	}
+	if app.distrKeeper == nil {
+		panic("Nil distrKeeper!")
+	}
+	if app.govKeeper == nil {
+		panic("Nil govKeeper!")
+	}
+	if app.crisisKeeper == nil {
+		panic("Nil crisisKeeper!")
+	}
+	if app.upgradeKeeper == nil {
+		panic("Nil upgradeKeeper!")
+	}
+	if app.paramsKeeper == nil {
+		panic("Nil paramsKeeper!")
+	}
+	if app.ibcKeeper == nil {
+		panic("Nil ibcKeeper!")
+	}
+	if app.evidenceKeeper == nil {
+		panic("Nil evidenceKeeper!")
+	}
+	if app.transferKeeper == nil {
+		panic("Nil transferKeeper!")
+	}
+	if app.authzKeeper == nil {
+		panic("Nil authzKeeper!")
+	}
+	if app.gravityKeeper == nil {
+		panic("Nil gravityKeeper!")
+	}
 
 	// scoped keepers
-	if g.ScopedIBCKeeper      == nil { panic("Nil ScopedIBCKeeper!") }
-	if g.ScopedTransferKeeper == nil { panic("Nil ScopedTransferKeeper!") }
+	if app.ScopedIBCKeeper == nil {
+		panic("Nil ScopedIBCKeeper!")
+	}
+	if app.ScopedTransferKeeper == nil {
+		panic("Nil ScopedTransferKeeper!")
+	}
 }
 
 func init() {
@@ -360,7 +398,7 @@ func NewGravityApp(
 	)
 	app.slashingKeeper = &slashingKeeper
 
-	var gravityKeeper keeper.Keeper = keeper.NewKeeper(
+	var gravityKeeper = keeper.NewKeeper(
 		keys[gravitytypes.StoreKey],
 		app.GetSubspace(gravitytypes.ModuleName),
 		appCodec,

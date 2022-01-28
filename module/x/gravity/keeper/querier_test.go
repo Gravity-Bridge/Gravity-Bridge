@@ -636,7 +636,7 @@ func TestQueryLogicCalls(t *testing.T) {
 		logicContract            = "0x510ab76899430424d209a6c9a5b9951fb8a6f47d"
 		payload                  = []byte("fake bytes")
 		tokenContract            = "0x7580bfe88dd3d07947908fae12d95872a260f2d8"
-		invalidationId           = []byte("GravityTesting")
+		invalidationID           = []byte("GravityTesting")
 		invalidationNonce uint64 = 1
 	)
 
@@ -666,12 +666,12 @@ func TestQueryLogicCalls(t *testing.T) {
 		LogicContractAddress: logicContract,
 		Payload:              payload,
 		Timeout:              10000,
-		InvalidationId:       invalidationId,
+		InvalidationId:       invalidationID,
 		InvalidationNonce:    uint64(invalidationNonce),
 	}
 	k.SetOutgoingLogicCall(sdkCtx, call)
 
-	res := k.GetOutgoingLogicCall(sdkCtx, invalidationId, invalidationNonce)
+	res := k.GetOutgoingLogicCall(sdkCtx, invalidationID, invalidationNonce)
 
 	require.Equal(t, call, *res)
 
@@ -694,7 +694,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 		logicContract            = "0x510ab76899430424d209a6c9a5b9951fb8a6f47d"
 		payload                  = []byte("fake bytes")
 		tokenContract            = "0x7580bfe88dd3d07947908fae12d95872a260f2d8"
-		invalidationId           = []byte("GravityTesting")
+		invalidationID           = []byte("GravityTesting")
 		invalidationNonce uint64 = 1
 	)
 
@@ -724,7 +724,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 		LogicContractAddress: logicContract,
 		Payload:              payload,
 		Timeout:              10000,
-		InvalidationId:       invalidationId,
+		InvalidationId:       invalidationID,
 		InvalidationNonce:    uint64(invalidationNonce),
 	}
 	k.SetOutgoingLogicCall(sdkCtx, call)
@@ -732,7 +732,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 
 	confirm := types.MsgConfirmLogicCall{
-		InvalidationId:    hex.EncodeToString(invalidationId),
+		InvalidationId:    hex.EncodeToString(invalidationID),
 		InvalidationNonce: 1,
 		EthSigner:         "test",
 		Orchestrator:      valAddr.String(),
@@ -741,7 +741,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 
 	k.SetLogicCallConfirm(sdkCtx, &confirm)
 
-	res := k.GetLogicConfirmByInvalidationIDAndNonce(sdkCtx, invalidationId, 1)
+	res := k.GetLogicConfirmByInvalidationIDAndNonce(sdkCtx, invalidationID, 1)
 	assert.Equal(t, len(res), 1)
 }
 

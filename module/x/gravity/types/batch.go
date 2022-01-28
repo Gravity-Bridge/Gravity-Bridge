@@ -19,7 +19,7 @@ func (o OutgoingTransferTx) ToInternal() (*InternalOutgoingTransferTx, error) {
 
 // InternalOutgoingTransferTx is an internal duplicate of OutgoingTransferTx with validation
 type InternalOutgoingTransferTx struct {
-	Id          uint64
+	ID          uint64
 	Sender      sdk.AccAddress
 	DestAddress *EthAddress
 	Erc20Token  *InternalERC20Token
@@ -51,7 +51,7 @@ func NewInternalOutgoingTransferTx(
 	}
 
 	return &InternalOutgoingTransferTx{
-		Id:          id,
+		ID:          id,
 		Sender:      send,
 		DestAddress: dest,
 		Erc20Token:  token,
@@ -61,7 +61,7 @@ func NewInternalOutgoingTransferTx(
 
 func (i InternalOutgoingTransferTx) ToExternal() OutgoingTransferTx {
 	return OutgoingTransferTx{
-		Id:          i.Id,
+		Id:          i.ID,
 		Sender:      i.Sender.String(),
 		DestAddress: i.DestAddress.GetAddress(),
 		Erc20Token:  i.Erc20Token.ToExternal(),
@@ -298,8 +298,8 @@ func (c OutgoingLogicCall) GetCheckpoint(gravityIDstring string) []byte {
 	}
 	payload := make([]byte, len(c.Payload))
 	copy(payload, c.Payload)
-	var invalidationId [32]byte
-	copy(invalidationId[:], c.InvalidationId[:])
+	var invalidationID [32]byte
+	copy(invalidationID[:], c.InvalidationId[:])
 
 	// the methodName needs to be the same as the 'name' above in the checkpointAbiJson
 	// but other than that it's a constant that has no impact on the output. This is because
@@ -314,7 +314,7 @@ func (c OutgoingLogicCall) GetCheckpoint(gravityIDstring string) []byte {
 		gethcommon.HexToAddress(c.LogicContractAddress),
 		payload,
 		big.NewInt(int64(c.Timeout)),
-		invalidationId,
+		invalidationID,
 		big.NewInt(int64(c.InvalidationNonce)),
 	)
 

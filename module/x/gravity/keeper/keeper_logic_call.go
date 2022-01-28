@@ -77,8 +77,8 @@ func (k Keeper) GetOutgoingLogicCalls(ctx sdk.Context) (out []types.OutgoingLogi
 }
 
 // CancelOutgoingLogicCalls releases all TX in the batch and deletes the batch
-func (k Keeper) CancelOutgoingLogicCall(ctx sdk.Context, invalidationId []byte, invalidationNonce uint64) error {
-	call := k.GetOutgoingLogicCall(ctx, invalidationId, invalidationNonce)
+func (k Keeper) CancelOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, invalidationNonce uint64) error {
+	call := k.GetOutgoingLogicCall(ctx, invalidationID, invalidationNonce)
 	if call == nil {
 		return types.ErrUnknown
 	}
@@ -117,13 +117,13 @@ func (k Keeper) SetLogicCallConfirm(ctx sdk.Context, msg *types.MsgConfirmLogicC
 }
 
 // GetLogicCallConfirm gets a logic confirm from the store
-func (k Keeper) GetLogicCallConfirm(ctx sdk.Context, invalidationId []byte, invalidationNonce uint64, val sdk.AccAddress) *types.MsgConfirmLogicCall {
+func (k Keeper) GetLogicCallConfirm(ctx sdk.Context, invalidationID []byte, invalidationNonce uint64, val sdk.AccAddress) *types.MsgConfirmLogicCall {
 	if err := sdk.VerifyAddressFormat(val); err != nil {
 		ctx.Logger().Error("invalid val address")
 		return nil
 	}
 	store := ctx.KVStore(k.storeKey)
-	data := store.Get([]byte(types.GetLogicConfirmKey(invalidationId, invalidationNonce, val)))
+	data := store.Get([]byte(types.GetLogicConfirmKey(invalidationID, invalidationNonce, val)))
 	if data == nil {
 		return nil
 	}
@@ -174,8 +174,8 @@ func (k Keeper) IterateLogicConfirmByInvalidationIDAndNonce(
 }
 
 // GetLogicConfirmsByInvalidationIdAndNonce returns the logic call confirms
-func (k Keeper) GetLogicConfirmByInvalidationIDAndNonce(ctx sdk.Context, invalidationId []byte, invalidationNonce uint64) (out []types.MsgConfirmLogicCall) {
-	k.IterateLogicConfirmByInvalidationIDAndNonce(ctx, invalidationId, invalidationNonce, func(_ []byte, msg *types.MsgConfirmLogicCall) bool {
+func (k Keeper) GetLogicConfirmByInvalidationIDAndNonce(ctx sdk.Context, invalidationID []byte, invalidationNonce uint64) (out []types.MsgConfirmLogicCall) {
+	k.IterateLogicConfirmByInvalidationIDAndNonce(ctx, invalidationID, invalidationNonce, func(_ []byte, msg *types.MsgConfirmLogicCall) bool {
 		out = append(out, *msg)
 		return false
 	})

@@ -22,7 +22,7 @@ var _ types.QueryServer = Keeper{
 	AttestationHandler: nil,
 }
 
-const QUERY_ATTESTATIONS_LIMIT uint64 = 1000
+const QueryAttestationsLimit uint64 = 1000
 
 // Params queries the params of the gravity module
 func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
@@ -313,8 +313,8 @@ func (k Keeper) GetAttestations(
 	req *types.QueryAttestationsRequest) (*types.QueryAttestationsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	limit := req.Limit
-	if limit > QUERY_ATTESTATIONS_LIMIT {
-		limit = QUERY_ATTESTATIONS_LIMIT
+	if limit > QueryAttestationsLimit {
+		limit = QueryAttestationsLimit
 	}
 	attestations := k.GetMostRecentAttestations(ctx, limit)
 
@@ -392,21 +392,21 @@ func (k Keeper) GetPendingSendToEth(
 	req *types.QueryPendingSendToEth) (*types.QueryPendingSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	batches := k.GetOutgoingTxBatches(ctx)
-	unbatched_tx := k.GetUnbatchedTransactions(ctx)
-	sender_address := req.GetSenderAddress()
+	unbatchedTx := k.GetUnbatchedTransactions(ctx)
+	senderAddress := req.GetSenderAddress()
 	res := types.QueryPendingSendToEthResponse{
 		TransfersInBatches: []types.OutgoingTransferTx{},
 		UnbatchedTransfers: []types.OutgoingTransferTx{},
 	}
 	for _, batch := range batches {
 		for _, tx := range batch.Transactions {
-			if tx.Sender.String() == sender_address {
+			if tx.Sender.String() == senderAddress {
 				res.TransfersInBatches = append(res.TransfersInBatches, tx.ToExternal())
 			}
 		}
 	}
-	for _, tx := range unbatched_tx {
-		if tx.Sender.String() == sender_address {
+	for _, tx := range unbatchedTx {
+		if tx.Sender.String() == senderAddress {
 			res.UnbatchedTransfers = append(res.UnbatchedTransfers, tx.ToExternal())
 		}
 	}

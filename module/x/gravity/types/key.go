@@ -283,16 +283,16 @@ func GetERC20ToDenomKey(erc20 EthAddress) string {
 	return ERC20ToDenomKey + erc20.GetAddress()
 }
 
-func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) string {
-	a := KeyOutgoingLogicCall + string(invalidationId)
+func GetOutgoingLogicCallKey(invalidationID []byte, invalidationNonce uint64) string {
+	a := KeyOutgoingLogicCall + string(invalidationID)
 	return a + string(UInt64Bytes(invalidationNonce))
 }
 
-func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) string {
+func GetLogicConfirmKey(invalidationID []byte, invalidationNonce uint64, validator sdk.AccAddress) string {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	interm := KeyOutgoingLogicConfirm + string(invalidationId)
+	interm := KeyOutgoingLogicConfirm + string(invalidationID)
 	interm = interm + string(UInt64Bytes(invalidationNonce))
 	return interm + string(validator.Bytes())
 }

@@ -69,28 +69,28 @@ func TestAddToOutgoingPool(t *testing.T) {
 	oneHundredThreeTok, _ := types.NewInternalERC20Token(sdk.NewInt(103), myTokenContractAddr)
 	exp := []*types.InternalOutgoingTransferTx{
 		{
-			Id:          2,
+			ID:          2,
 			Erc20Fee:    threeTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredOneTok,
 		},
 		{
-			Id:          3,
+			ID:          3,
 			Erc20Fee:    twoTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredTwoTok,
 		},
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twoTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    oneTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
@@ -454,7 +454,7 @@ func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, f
 	expectedKey := myTokenContractAddr + fmt.Sprint(fee) + fmt.Sprint(id)
 	input.GravityKeeper.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotEqual(t, []byte(expectedKey), key)
-		found := id == tx.Id &&
+		found := id == tx.ID &&
 			fee == tx.Erc20Fee.Amount.Uint64() &&
 			amount == tx.Erc20Token.Amount.Uint64()
 		require.False(t, found)
@@ -487,7 +487,7 @@ func TestRefundInconsistentTx(t *testing.T) {
 	require.Error(t, err)
 	// But this unsafe override won't fail
 	err = input.GravityKeeper.addUnbatchedTX(ctx, &types.InternalOutgoingTransferTx{
-		Id:          uint64(5),
+		ID:          uint64(5),
 		Sender:      mySender,
 		DestAddress: myReceiver,
 		Erc20Token:  amountToken,
@@ -548,17 +548,17 @@ func TestRefundTwice(t *testing.T) {
 	require.NoError(t, err)
 	origBalances := input.BankKeeper.GetAllBalances(ctx, mySender)
 
-	txId, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amountToken.GravityCoin(), feeToken.GravityCoin())
+	txID, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amountToken.GravityCoin(), feeToken.GravityCoin())
 	require.NoError(t, err)
 	afterAddBalances := input.BankKeeper.GetAllBalances(ctx, mySender)
 
 	// First refund goes through
-	err = input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, txId, mySender)
+	err = input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, txID, mySender)
 	require.NoError(t, err)
 	afterRefundBalances := input.BankKeeper.GetAllBalances(ctx, mySender)
 
 	// Second fails
-	err = input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, txId, mySender)
+	err = input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, txID, mySender)
 	require.Error(t, err)
 	afterSecondRefundBalances := input.BankKeeper.GetAllBalances(ctx, mySender)
 
@@ -655,7 +655,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	token1Amount, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(amounts[0]), myTokenContractAddr1)
 	require.NoError(t, err)
 	token1Id := ids1[0]
-	tx1, err1 := input.GravityKeeper.GetUnbatchedTxByFeeAndId(ctx, *token1Fee, token1Id)
+	tx1, err1 := input.GravityKeeper.GetUnbatchedTxByFeeAndID(ctx, *token1Fee, token1Id)
 	require.NoError(t, err1)
 	expTx1, err1 := types.NewInternalOutgoingTransferTx(token1Id, mySender1.String(), myReceiver, token1Amount.ToExternal(), token1Fee.ToExternal())
 	require.NoError(t, err1)
@@ -667,25 +667,25 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	require.NoError(t, err)
 
 	token2Id := ids2[3]
-	tx2, err2 := input.GravityKeeper.GetUnbatchedTxByFeeAndId(ctx, *token2Fee, token2Id)
+	tx2, err2 := input.GravityKeeper.GetUnbatchedTxByFeeAndID(ctx, *token2Fee, token2Id)
 	require.NoError(t, err2)
 	expTx2, err2 := types.NewInternalOutgoingTransferTx(token2Id, mySender2.String(), myReceiver, token2Amount.ToExternal(), token2Fee.ToExternal())
 	require.NoError(t, err2)
 	require.Equal(t, *expTx2, *tx2)
 
 	// GetUnbatchedTxById
-	tx1, err1 = input.GravityKeeper.GetUnbatchedTxById(ctx, token1Id)
+	tx1, err1 = input.GravityKeeper.GetUnbatchedTxByID(ctx, token1Id)
 	require.NoError(t, err1)
 	require.Equal(t, *expTx1, *tx1)
 
-	tx2, err2 = input.GravityKeeper.GetUnbatchedTxById(ctx, token2Id)
+	tx2, err2 = input.GravityKeeper.GetUnbatchedTxByID(ctx, token2Id)
 	require.NoError(t, err2)
 	require.Equal(t, *expTx2, *tx2)
 
 	// GetUnbatchedTransactionsByContract
 	token1Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract1)
 	for _, v := range token1Txs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, myTokenContractAddr1, v.Erc20Fee.Contract.GetAddress())
 		require.Equal(t, myTokenContractAddr1, v.Erc20Token.Contract.GetAddress())
@@ -694,7 +694,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	}
 	token2Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract2)
 	for _, v := range token2Txs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, myTokenContractAddr2, v.Erc20Fee.Contract.GetAddress())
 		require.Equal(t, myTokenContractAddr2, v.Erc20Token.Contract.GetAddress())
@@ -704,7 +704,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	// GetUnbatchedTransactions
 	allTxs := input.GravityKeeper.GetUnbatchedTransactions(ctx)
 	for _, v := range allTxs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress())
 		require.Equal(t, expTx.Sender, v.Sender.String())
@@ -793,7 +793,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	foundMap := make(map[uint64]bool)
 	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, *tokenContract1, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.Erc20Fee.Contract, myTokenContractAddr1)
 		require.Equal(t, fTx.Erc20Token.Contract, myTokenContractAddr1)
@@ -804,7 +804,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	})
 	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, *tokenContract2, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.Erc20Fee.Contract, myTokenContractAddr2)
 		require.Equal(t, fTx.Erc20Token.Contract, myTokenContractAddr2)
@@ -821,7 +821,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	anotherFoundMap := make(map[uint64]bool)
 	input.GravityKeeper.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.DestAddress, tx.DestAddress.GetAddress())
 

@@ -224,13 +224,13 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 // ConfirmLogicCall handles MsgConfirmLogicCall
 func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogicCall) (*types.MsgConfirmLogicCallResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	invalidationIdBytes, err := hex.DecodeString(msg.InvalidationId)
+	invalidationIDBytes, err := hex.DecodeString(msg.InvalidationId)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "invalidation id encoding")
 	}
 
 	// fetch the outgoing logic given the nonce
-	logic := k.GetOutgoingLogicCall(ctx, invalidationIdBytes, msg.InvalidationNonce)
+	logic := k.GetOutgoingLogicCall(ctx, invalidationIDBytes, msg.InvalidationNonce)
 	if logic == nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find logic")
 	}
@@ -247,7 +247,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 	}
 
 	// check if we already have this confirm
-	if k.GetLogicCallConfirm(ctx, invalidationIdBytes, msg.InvalidationNonce, orchaddr) != nil {
+	if k.GetLogicCallConfirm(ctx, invalidationIDBytes, msg.InvalidationNonce, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
 
