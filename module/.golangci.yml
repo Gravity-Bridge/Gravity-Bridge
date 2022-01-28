@@ -4,44 +4,38 @@ linters:
     - deadcode
     - depguard
     - dogsled
-    # - dupl
+    - dupl
     - errcheck
     - exhaustivestruct
-    # - funlen
-    # - gochecknoglobals
-    # - gochecknoinits
+    - gochecknoinits
     - goconst
     - gocritic
-    # - gocyclo
-    # - godox
+    - gocyclo
+    - godox
     - gofmt
     - goimports
-    - golint
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - lll
     - misspell
-    # - maligned
     - nakedret
     - prealloc
-    - scopelint
     - staticcheck
     - structcheck
     - stylecheck
     - typecheck
     - unconvert
-    # - unparam
+    - unparam
     - unused
     - varcheck
-    # - whitespace
-    # - wsl
-    # - gocognit
+    - whitespace
+    - gocognit
 
 linters-settings:
   govet:
-    check-shadowing: true
+    check-shadowing: false
+    field-alignment: true
   errcheck:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
     # default is false: such cases aren't reported by default.
