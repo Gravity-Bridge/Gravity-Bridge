@@ -232,14 +232,40 @@ async function getLatestValset(): Promise<Valset> {
     exit(1);
   }
   let request_string = args["cosmos-node"] + "/abci_query"
-  let response = await axios.get(request_string, {
+  let params = {
     params: {
       path: "\"/custom/gravity/currentValset/\"",
       height: block_height,
       prove: "false",
     }
-  });
+  };
+  let response = await axios.get(request_string, params);
   let valsets: ABCIWrapper = await response.data;
+
+
+  // if in test mode retry the request as needed in some cases
+  // the cosmos nodes do not start in time
+  var startTime = new Date();
+  if (args["test-mode"] == "True" || args["test-mode"] == "true") {
+    var success = false;
+    while (valsets.result.response.value == null) {
+      var present = new Date();
+      var timeDiff: number = present.getTime() - startTime.getTime();
+      timeDiff = timeDiff / 1000
+
+      response = await axios.get(request_string,
+        params);
+      valsets = await response.data;
+
+      if (timeDiff > 600) {
+        console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
+        exit(1)
+      }
+      await sleep(1000);
+    }
+  }
+
+
   console.log(decode(valsets.result.response.value));
   let valset: ValsetTypeWrapper = JSON.parse(decode(valsets.result.response.value))
   return valset.value;
@@ -254,14 +280,40 @@ async function getGravityId(): Promise<string> {
     exit(1);
   }
   let request_string = args["cosmos-node"] + "/abci_query"
-  let response = await axios.get(request_string, {
+  let params = {
     params: {
       path: "\"/custom/gravity/gravityID/\"",
       height: block_height,
       prove: "false",
     }
-  });
+  };
+
+  let response = await axios.get(request_string,
+    params);
   let gravityIDABCIResponse: ABCIWrapper = await response.data;
+
+  // if in test mode retry the request as needed in some cases
+  // the cosmos nodes do not start in time
+  var startTime = new Date();
+  if (args["test-mode"] == "True" || args["test-mode"] == "true") {
+    var success = false;
+    while (gravityIDABCIResponse.result.response.value == null) {
+      var present = new Date();
+      var timeDiff: number = present.getTime() - startTime.getTime();
+      timeDiff = timeDiff / 1000
+
+      response = await axios.get(request_string,
+        params);
+      gravityIDABCIResponse = await response.data;
+
+      if (timeDiff > 600) {
+        console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
+        exit(1)
+      }
+      await sleep(1000);
+    }
+  }
+
   let gravityID: string = JSON.parse(decode(gravityIDABCIResponse.result.response.value))
   return gravityID;
 
