@@ -161,7 +161,7 @@ async fn should_relay_batch(
             // we need to see how much WETH we can get for the reward token amount,
             // and compare that value to the gas cost times the margin
             match (price, get_whitelist_amount(batch.token_contract, whitelist)) {
-                (_, Some(amount)) => amount > batch.total_fee.amount,
+                (_, Some(amount)) => amount <= batch.total_fee.amount,
                 (Ok(price), None) => price > cost_with_margin,
                 (Err(e), None) => {
                     info!(
