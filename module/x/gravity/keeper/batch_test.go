@@ -98,6 +98,26 @@ func TestBatches(t *testing.T) {
 		assert.Equal(t, expFirstBatch.Transactions[i], gotFirstBatch.Transactions[i].ToExternal())
 	}
 
+	// persist confirmations for first batch
+	for i, orch := range OrchAddrs {
+		ethAddr, err := types.NewEthAddress(EthAddrs[i].String())
+		require.NoError(t, err)
+
+		conf := &types.MsgConfirmBatch{
+			Nonce:         firstBatch.BatchNonce,
+			TokenContract: firstBatch.TokenContract.GetAddress(),
+			EthSigner:     ethAddr.GetAddress(),
+			Orchestrator:  orch.String(),
+			Signature:     "dummysig",
+		}
+
+		input.GravityKeeper.SetBatchConfirm(ctx, conf)
+	}
+
+	// verify that confirms are persisted
+	firstBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, firstBatch.BatchNonce, firstBatch.TokenContract)
+	require.Equal(t, len(OrchAddrs), len(firstBatchConfirms))
+
 	// and verify remaining available Tx in the pool
 	// Should still have 1: and 4: above
 	gotUnbatchedTx := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *myTokenContractAddr)
@@ -181,6 +201,26 @@ func TestBatches(t *testing.T) {
 		assert.Equal(t, expSecondBatch.Transactions[i], secondBatch.Transactions[i].ToExternal())
 	}
 
+	// persist confirmations for second batch
+	for i, orch := range OrchAddrs {
+		ethAddr, err := types.NewEthAddress(EthAddrs[i].String())
+		require.NoError(t, err)
+
+		conf := &types.MsgConfirmBatch{
+			Nonce:         secondBatch.BatchNonce,
+			TokenContract: secondBatch.TokenContract.GetAddress(),
+			EthSigner:     ethAddr.GetAddress(),
+			Orchestrator:  orch.String(),
+			Signature:     "dummysig",
+		}
+
+		input.GravityKeeper.SetBatchConfirm(ctx, conf)
+	}
+
+	// verify that confirms are persisted
+	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, secondBatch.BatchNonce, secondBatch.TokenContract)
+	require.Equal(t, len(OrchAddrs), len(secondBatchConfirms))
+
 	// EXECUTE THE MORE PROFITABLE BATCH
 	// =================================
 
@@ -190,6 +230,9 @@ func TestBatches(t *testing.T) {
 	// check batch has been deleted
 	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
 	require.Nil(t, gotSecondBatch)
+	// check batch confirmations have been deleted
+	secondBatchConfirms = input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, secondBatch.BatchNonce, secondBatch.TokenContract)
+	require.Equal(t, 0, len(secondBatchConfirms))
 
 	// check that txs from first batch have been freed
 	gotUnbatchedTx = input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *myTokenContractAddr)
@@ -227,6 +270,13 @@ func TestBatches(t *testing.T) {
 		},
 	}
 	assert.Equal(t, expUnbatchedTx, gotUnbatchedTx)
+
+	// check that first batch has been deleted
+	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, firstBatch.TokenContract, firstBatch.BatchNonce)
+	require.Nil(t, gotFirstBatch)
+	// check that first batch confirmations have been deleted
+	firstBatchConfirms = input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, firstBatch.BatchNonce, firstBatch.TokenContract)
+	require.Equal(t, 0, len(firstBatchConfirms))
 }
 
 // tests that batches work with large token amounts, mostly a duplicate of the above

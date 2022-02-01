@@ -412,3 +412,17 @@ func (k Keeper) IterateValsetConfirmByNonce(ctx sdk.Context, nonce uint64, cb fu
 		}
 	}
 }
+
+// DeleteValsetConfirms deletes the valset confirmations for the valset at a given nonce from state
+func (k Keeper) DeleteValsetConfirms(ctx sdk.Context, nonce uint64) {
+	store := ctx.KVStore(k.storeKey)
+	for _, confirm := range k.GetValsetConfirms(ctx, nonce) {
+		orchestrator, err := sdk.AccAddressFromBech32(confirm.Orchestrator)
+		if err == nil {
+			confirmKey := []byte(types.GetValsetConfirmKey(nonce, orchestrator))
+			if store.Has(confirmKey) {
+				store.Delete(confirmKey)
+			}
+		}
+	}
+}

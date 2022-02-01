@@ -81,6 +81,7 @@ func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 		for _, set := range sets {
 			if set.Nonce < lastObserved.Nonce && set.Height < earliestToPrune {
 				k.DeleteValset(ctx, set.Nonce)
+				k.DeleteValsetConfirms(ctx, set.Nonce)
 			}
 		}
 	}
