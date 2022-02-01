@@ -274,13 +274,19 @@ func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, tokenContractAddr types.
 	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress(), TotalFees: sdk.NewInt(0), TxCount: 0}
 
 	k.IterateUnbatchedTransactions(ctx, []byte(types.GetOutgoingTxPoolContractPrefix(tokenContractAddr)), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
-		fee := tx.Erc20Fee
-		if fee.Contract.GetAddress() != tokenContractAddr.GetAddress() {
-			panic(fmt.Errorf("unexpected fee contract %s when getting batch fees for contract %s", fee.Contract, tokenContractAddr))
+		if !k.IsOnBlacklist(ctx, *tx.DestAddress) {
+			fee := tx.Erc20Fee
+			if fee.Contract.GetAddress() != tokenContractAddr.GetAddress() {
+				panic(fmt.Errorf("unexpected fee contract %s when getting batch fees for contract %s", fee.Contract, tokenContractAddr))
+			}
+			batchFee.TotalFees = batchFee.TotalFees.Add(fee.Amount)
+			batchFee.TxCount += 1
+			return batchFee.TxCount == uint64(maxElements)
+		} else {
+			// if the tx was on the blacklist we return false
+			// to continue to the next loop iteration
+			return false
 		}
-		batchFee.TotalFees = batchFee.TotalFees.Add(fee.Amount)
-		batchFee.TxCount += 1
-		return batchFee.TxCount == uint64(maxElements)
 	})
 	return &batchFee
 }
