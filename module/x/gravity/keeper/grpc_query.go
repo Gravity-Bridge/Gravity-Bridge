@@ -64,11 +64,8 @@ func (k Keeper) ValsetConfirm(
 func (k Keeper) ValsetConfirmsByNonce(
 	c context.Context,
 	req *types.QueryValsetConfirmsByNonceRequest) (*types.QueryValsetConfirmsByNonceResponse, error) {
-	var confirms []types.MsgValsetConfirm
-	k.IterateValsetConfirmByNonce(sdk.UnwrapSDKContext(c), req.Nonce, func(_ []byte, c types.MsgValsetConfirm) bool {
-		confirms = append(confirms, c)
-		return false
-	})
+	confirms := k.GetValsetConfirms(sdk.UnwrapSDKContext(c), req.Nonce)
+
 	return &types.QueryValsetConfirmsByNonceResponse{Confirms: confirms}, nil
 }
 
