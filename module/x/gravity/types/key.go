@@ -168,7 +168,7 @@ func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) string {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return ValsetConfirmKey + convertByteArrToString(UInt64Bytes(nonce)) + string(validator.Bytes())
+	return ValsetConfirmKey + ConvertByteArrToString(UInt64Bytes(nonce)) + string(validator.Bytes())
 }
 
 // GetClaimKey returns the following key format
@@ -202,7 +202,7 @@ func GetClaimKey(details EthereumClaim) string {
 	copy(key[len(OracleClaimKey)+claimTypeLen:], details.GetClaimer())
 	copy(key[len(OracleClaimKey)+claimTypeLen+addrLen:], nonceBz)
 	copy(key[len(OracleClaimKey)+claimTypeLen+addrLen+len(nonceBz):], detailsHash)
-	return convertByteArrToString(key)
+	return ConvertByteArrToString(key)
 }
 
 // GetAttestationKey returns the following key format
@@ -217,7 +217,7 @@ func GetAttestationKey(eventNonce uint64, claimHash []byte) string {
 	copy(key[0:], OracleAttestationKey)
 	copy(key[len(OracleAttestationKey):], UInt64Bytes(eventNonce))
 	copy(key[len(OracleAttestationKey)+len(UInt64Bytes(0)):], claimHash)
-	return convertByteArrToString(key)
+	return ConvertByteArrToString(key)
 }
 
 // GetOutgoingTxPoolContractPrefix returns the following key format
@@ -240,7 +240,7 @@ func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) string {
 	a := append(amount, UInt64Bytes(id)...)
 	b := append([]byte(fee.Contract.GetAddress()), a...)
 	r := append([]byte(OutgoingTXPoolKey), b...)
-	return convertByteArrToString(r)
+	return ConvertByteArrToString(r)
 }
 
 // GetOutgoingTxBatchKey returns the following key format
@@ -301,10 +301,10 @@ func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validat
 // prefix    checkpoint
 // [0x0][ checkpoint bytes ]
 func GetPastEthSignatureCheckpointKey(checkpoint []byte) string {
-	return PastEthSignatureCheckpointKey + convertByteArrToString(checkpoint)
+	return PastEthSignatureCheckpointKey + ConvertByteArrToString(checkpoint)
 }
 
-func convertByteArrToString(value []byte) string {
+func ConvertByteArrToString(value []byte) string {
 	var ret strings.Builder
 	for i := 0; i < len(value); i++ {
 		ret.WriteString(string(value[i]))
