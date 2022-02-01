@@ -45,7 +45,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 		}
 
 		lastFees := lastBatch.ToExternal().GetFees()
-		if lastFees.GT(currentFees.TotalFees) {
+		if lastFees.GTE(currentFees.TotalFees) {
 			return nil, sdkerrors.Wrap(types.ErrInvalid, "new batch would not be more profitable")
 		}
 	}
@@ -292,9 +292,9 @@ func (k Keeper) GetLastOutgoingBatchByTokenType(ctx sdk.Context, token types.Eth
 	batches := k.GetOutgoingTxBatches(ctx)
 	var lastBatch *types.InternalOutgoingTxBatch = nil
 	lastNonce := uint64(0)
-	for _, batch := range batches {
+	for i, batch := range batches {
 		if batch.TokenContract.GetAddress() == token.GetAddress() && batch.BatchNonce > lastNonce {
-			lastBatch = &batch
+			lastBatch = &batches[i]
 			lastNonce = batch.BatchNonce
 		}
 	}
