@@ -17,6 +17,7 @@ jobs:
       matrix:
         node-version: [14.x]
     steps:
+        
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
@@ -33,6 +34,39 @@ jobs:
       - name: Set ENV var for GOPATH
         run: |
           echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+
+      - name: Build GBT Mac 
+        run: |
+          apt install \
+                clang \
+                gcc \
+                g++ \
+                zlib1g-dev \
+                libmpc-dev \
+                libmpfr-dev \
+                libgmp-dev \
+                libssl-dev \
+                xz-utils \
+                libxml2-dev
+          rustup target add x86_64-apple-darwin
+          pushd /tmp/
+          git clone https://github.com/tpoechtrager/osxcross
+          cd osxcross
+          wget -nc https://s3.dockerproject.org/darwin/v2/MacOSX10.10.sdk.tar.xz
+          mv MacOSX10.10.sdk.tar.xz tarballs/
+          UNATTENDED=yes OSX_VERSION_MIN=10.7 ./build.sh
+          popd
+          cd orchestrator
+          PATH="$(pwd)/osxcross/target/bin:$PATH" \
+          CC=o64-clang \
+          CXX=o64-clang++ \
+          LIBZ_SYS_STATIC=1 \
+          cargo build --target x86_64-apple-darwin --release
+
+
+
+
+          
 
       # build the code before creating the release, GO and Solidity first for faster failures
       - name: Build Gravity Bridge Blockchain
