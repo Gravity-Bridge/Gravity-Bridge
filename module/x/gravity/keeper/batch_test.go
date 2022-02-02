@@ -220,6 +220,11 @@ func TestBatches(t *testing.T) {
 	// verify that confirms are persisted
 	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, secondBatch.BatchNonce, secondBatch.TokenContract)
 	require.Equal(t, len(OrchAddrs), len(secondBatchConfirms))
+  
+	//check that last added batch is the one with the biggest nonce
+	lastOutgoingBatch := input.GravityKeeper.GetLastOutgoingBatchByTokenType(ctx, *myTokenContractAddr)
+	require.NotNil(t, lastOutgoingBatch)
+	assert.Equal(t, lastOutgoingBatch.BatchNonce, secondBatch.BatchNonce)
 
 	// EXECUTE THE MORE PROFITABLE BATCH
 	// =================================
@@ -390,7 +395,7 @@ func TestBatchesFullCoins(t *testing.T) {
 	// ====================================
 
 	// add some more TX to the pool to create a more profitable batch
-	for _, v := range []uint64{4, 5} {
+	for _, v := range []uint64{200, 150} {
 		vAsSDKInt := sdk.NewIntFromUint64(v)
 		amountToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
 		require.NoError(t, err)
@@ -414,18 +419,18 @@ func TestBatchesFullCoins(t *testing.T) {
 		BatchNonce: 2,
 		Transactions: []types.OutgoingTransferTx{
 			{
-				Id:          1,
-				Erc20Fee:    types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(20)), myTokenContractAddr),
+				Id:          5,
+				Erc20Fee:    types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(200)), myTokenContractAddr),
 				Sender:      mySender.String(),
 				DestAddress: myReceiver,
-				Erc20Token:  types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(20)), myTokenContractAddr),
+				Erc20Token:  types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(200)), myTokenContractAddr),
 			},
 			{
-				Id:          4,
-				Erc20Fee:    types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(10)), myTokenContractAddr),
+				Id:          6,
+				Erc20Fee:    types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(150)), myTokenContractAddr),
 				Sender:      mySender.String(),
 				DestAddress: myReceiver,
-				Erc20Token:  types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(10)), myTokenContractAddr),
+				Erc20Token:  types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(150)), myTokenContractAddr),
 			},
 		},
 		TokenContract: myTokenContractAddr,
@@ -455,8 +460,6 @@ func TestBatchesFullCoins(t *testing.T) {
 	gotUnbatchedTx = input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract)
 	threeHundredTok, _ := types.NewInternalERC20Token(oneEth.Mul(sdk.NewIntFromUint64(300)), myTokenContractAddr)
 	twentyFiveTok, _ := types.NewInternalERC20Token(oneEth.Mul(sdk.NewIntFromUint64(25)), myTokenContractAddr)
-	fiveTok, _ := types.NewInternalERC20Token(oneEth.Mul(sdk.NewIntFromUint64(5)), myTokenContractAddr)
-	fourTok, _ := types.NewInternalERC20Token(oneEth.Mul(sdk.NewIntFromUint64(4)), myTokenContractAddr)
 	expUnbatchedTx = []*types.InternalOutgoingTransferTx{
 		{
 			Id:          2,
@@ -473,18 +476,18 @@ func TestBatchesFullCoins(t *testing.T) {
 			Erc20Token:  twentyFiveTok,
 		},
 		{
-			Id:          6,
-			Erc20Fee:    fiveTok,
+			Id:          1,
+			Erc20Fee:    twentyTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
-			Erc20Token:  fiveTok,
+			Erc20Token:  twentyTok,
 		},
 		{
-			Id:          5,
-			Erc20Fee:    fourTok,
+			Id:          4,
+			Erc20Fee:    tenTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
-			Erc20Token:  fourTok,
+			Erc20Token:  tenTok,
 		},
 	}
 	assert.Equal(t, expUnbatchedTx, gotUnbatchedTx)
@@ -535,7 +538,13 @@ func TestManyBatches(t *testing.T) {
 
 	tokens := [4]string{tokenContractAddr1, tokenContractAddr2, tokenContractAddr3, tokenContractAddr4}
 
+	// when
+	ctx = ctx.WithBlockTime(now)
+	var batches []types.OutgoingTxBatch
+
 	for _, contract := range tokens {
+		contractAddr, err := types.NewEthAddress(contract)
+		require.NoError(t, err)
 		for v := 1; v < 500; v++ {
 			vAsSDKInt := sdk.NewIntFromUint64(uint64(v))
 			amountToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), contract)
@@ -547,22 +556,15 @@ func TestManyBatches(t *testing.T) {
 
 			_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 			require.NoError(t, err)
+			//create batch after every 100 txs to be able to create more profitable batches
+			if (v+1)%100 == 0 {
+				batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *contractAddr, 100)
+				require.NoError(t, err)
+				batches = append(batches, batch.ToExternal())
+			}
 		}
 	}
 
-	// when
-	ctx = ctx.WithBlockTime(now)
-
-	var batches []types.OutgoingTxBatch
-	for _, contract := range tokens {
-		contractAddr, err := types.NewEthAddress(contract)
-		require.NoError(t, err)
-		for v := 1; v < 5; v++ {
-			batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *contractAddr, 100)
-			batches = append(batches, batch.ToExternal())
-			require.NoError(t, err)
-		}
-	}
 	for _, batch := range batches {
 		// then batch is persisted
 		contractAddr, err := types.NewEthAddress(batch.TokenContract)
@@ -794,6 +796,11 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 		// 5: tx amount is 104, fee is 5, id is 5
 	}
 
+	//check that blacklisted tx fee is not insluded in profitability calculation
+	currentFees := input.GravityKeeper.GetBatchFeeByTokenType(ctx, *myTokenContractAddr, 10)
+	assert.NotNil(t, currentFees)
+	assert.True(t, currentFees.TotalFees.Equal(sdk.NewInt(8)))
+
 	// when
 	ctx = ctx.WithBlockTime(now)
 
@@ -819,4 +826,40 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 	gotUnbatchedTx := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *myTokenContractAddr)
 	assert.Equal(t, gotUnbatchedTx[0].Id, uint64(5))
 
+}
+
+//tests total batch fee collected from all of the txs in the batch
+func TestGetFees(t *testing.T) {
+
+	txs := []types.OutgoingTransferTx{
+		{Erc20Fee: types.ERC20Token{Amount: sdk.NewInt(1)}},
+		{Erc20Fee: types.ERC20Token{Amount: sdk.NewInt(2)}},
+		{Erc20Fee: types.ERC20Token{Amount: sdk.NewInt(3)}},
+	}
+
+	type batchFeesTuple struct {
+		batch        types.OutgoingTxBatch
+		expectedFees sdk.Int
+	}
+
+	batches := []batchFeesTuple{
+		{types.OutgoingTxBatch{
+			Transactions: []types.OutgoingTransferTx{}},
+			sdk.NewInt(0),
+		},
+		{types.OutgoingTxBatch{
+			Transactions: []types.OutgoingTransferTx{txs[0]}},
+			sdk.NewInt(1),
+		},
+		{types.OutgoingTxBatch{
+			Transactions: []types.OutgoingTransferTx{txs[0], txs[1], txs[2]}},
+			sdk.NewInt(6),
+		},
+	}
+
+	for _, val := range batches {
+		if !val.batch.GetFees().Equal(val.expectedFees) {
+			t.Errorf("Invalid total batch fees!")
+		}
+	}
 }

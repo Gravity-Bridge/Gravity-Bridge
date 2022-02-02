@@ -525,7 +525,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
 	ctx := sdk.WrapSDKContext(input.Context)
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
-	createTestBatch(t, input)
+	createTestBatch(t, input, 2)
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			req := new(types.QueryLastPendingBatchRequestByAddrRequest)
@@ -538,7 +538,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 }
 
 //nolint: exhaustivestruct
-func createTestBatch(t *testing.T, input TestInput) {
+func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 	var (
 		mySender            = bytes.Repeat([]byte{1}, 20)
 		myReceiver          = "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934"
@@ -581,7 +581,7 @@ func createTestBatch(t *testing.T, input TestInput) {
 	input.Context = input.Context.WithBlockTime(now)
 
 	// tx batch size is 2, so that some of them stay behind
-	_, err = input.GravityKeeper.BuildOutgoingTXBatch(input.Context, *tokenContract, 2)
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(input.Context, *tokenContract, maxTxElements)
 	require.NoError(t, err)
 	// Should have 2 and 3 from above
 	// 1 and 4 should be unbatched
@@ -757,7 +757,7 @@ func TestQueryBatch(t *testing.T) {
 		tokenContract = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 	)
 
-	createTestBatch(t, input)
+	createTestBatch(t, input, 2)
 
 	batch, err := k.BatchRequestByNonce(ctx, &types.QueryBatchRequestByNonceRequest{Nonce: 1, ContractAddress: tokenContract})
 	require.NoError(t, err)
@@ -809,8 +809,8 @@ func TestLastBatchesRequest(t *testing.T) {
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 
-	createTestBatch(t, input)
-	createTestBatch(t, input)
+	createTestBatch(t, input, 2)
+	createTestBatch(t, input, 3)
 
 	lastBatches, err := k.OutgoingTxBatches(ctx, &types.QueryOutgoingTxBatchesRequest{})
 	require.NoError(t, err)
@@ -845,6 +845,19 @@ func TestLastBatchesRequest(t *testing.T) {
 						},
 						Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 						Id:     7,
+					},
+					{
+						Erc20Fee: types.ERC20Token{
+							Amount:   sdk.NewInt(2),
+							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+						},
+						DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
+						Erc20Token: types.ERC20Token{
+							Amount:   sdk.NewInt(100),
+							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+						},
+						Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
+						Id:     5,
 					},
 				},
 				BatchNonce:    2,

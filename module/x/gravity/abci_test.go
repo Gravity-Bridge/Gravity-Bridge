@@ -296,7 +296,7 @@ func TestBatchTimeout(t *testing.T) {
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers))
 
 	// add some TX to the pool
-	for i, v := range []uint64{2, 3, 2, 1, 5, 6} {
+	for i, v := range []uint64{4, 3, 3, 4, 5, 6} {
 		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
 		amount := amountToken.GravityCoin()
@@ -313,12 +313,13 @@ func TestBatchTimeout(t *testing.T) {
 	ctx = ctx.WithBlockHeight(250)
 
 	// check that we can make a batch without first setting an ethereum block height
-	b1, err1 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
+	b1, err1 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 1)
 	require.NoError(t, err1)
 	require.Equal(t, b1.BatchTimeout, uint64(0))
 
 	pk.SetLastObservedEthereumBlockHeight(ctx, 500)
 
+	//increase number of max txs to create more profitable batch
 	b2, err2 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
 	require.NoError(t, err2)
 	// this is exactly block 500 plus twelve hours
@@ -354,7 +355,7 @@ func TestBatchTimeout(t *testing.T) {
 	ctx = ctx.WithBlockTime(now)
 	ctx = ctx.WithBlockHeight(9)
 
-	b3, err2 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
+	b3, err2 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 3)
 	require.NoError(t, err2)
 
 	EndBlocker(ctx, pk)

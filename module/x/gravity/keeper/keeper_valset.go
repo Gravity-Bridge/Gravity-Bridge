@@ -373,7 +373,7 @@ func (k Keeper) SetValsetConfirm(ctx sdk.Context, valsetConf types.MsgValsetConf
 // GetValsetConfirms returns all validator set confirmations by nonce
 func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []types.MsgValsetConfirm) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.ValsetConfirmKey))
-	start, end := prefixRange(types.UInt64Bytes(nonce))
+	start, end := prefixRange([]byte(types.ConvertByteArrToString(types.UInt64Bytes(nonce))))
 	iterator := prefixStore.Iterator(start, end)
 
 	defer iterator.Close()
@@ -390,27 +390,6 @@ func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []typ
 	}
 
 	return confirms
-}
-
-// IterateValsetConfirmByNonce iterates through all valset confirms by validator set nonce in ASC order
-func (k Keeper) IterateValsetConfirmByNonce(ctx sdk.Context, nonce uint64, cb func([]byte, types.MsgValsetConfirm) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.ValsetConfirmKey))
-	iter := prefixStore.Iterator(prefixRange(types.UInt64Bytes(nonce)))
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		confirm := types.MsgValsetConfirm{
-			Nonce:        nonce,
-			Orchestrator: "",
-			EthAddress:   "",
-			Signature:    "",
-		}
-		k.cdc.MustUnmarshal(iter.Value(), &confirm)
-		// cb returns true to stop early
-		if cb(iter.Key(), confirm) {
-			break
-		}
-	}
 }
 
 // DeleteValsetConfirms deletes the valset confirmations for the valset at a given nonce from state
