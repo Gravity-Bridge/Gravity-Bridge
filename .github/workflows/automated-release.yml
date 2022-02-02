@@ -187,3 +187,42 @@ jobs:
           asset_path: ./orchestrator/target/x86_64-pc-windows-gnu/release/gbt.exe
           asset_name: gbt.exe
           asset_content_type: application/bin
+
+      - name: Build GBT Mac 
+        run: |
+          sudo apt install \
+                clang \
+                gcc \
+                g++ \
+                zlib1g-dev \
+                libmpc-dev \
+                libmpfr-dev \
+                libgmp-dev \
+                libssl-dev \
+                xz-utils \
+                libxml2-dev
+          rustup target add x86_64-apple-darwin
+          pushd /tmp/
+          git clone https://github.com/tpoechtrager/osxcross
+          cd osxcross
+          wget -nc https://s3.dockerproject.org/darwin/v2/MacOSX10.10.sdk.tar.xz
+          mv MacOSX10.10.sdk.tar.xz tarballs/
+          UNATTENDED=yes OSX_VERSION_MIN=10.7 ./build.sh
+          popd
+          cd orchestrator
+          PATH="/tmp/osxcross/target/bin:$PATH" \
+          CC=o64-clang \
+          CXX=o64-clang++ \
+          LIBZ_SYS_STATIC=1 \
+          cargo build --target x86_64-apple-darwin --release
+
+      - name: Upload Gravity Bridge Tools Mac
+        id: upload-gbt-mac
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./orchestrator/target/x86_64-apple-darwin/release/gbt
+          asset_name: gbt-mac-amd64
+          asset_content_type: application/bin
