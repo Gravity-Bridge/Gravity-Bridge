@@ -11,7 +11,9 @@ geth --identity "GravityTestnet" \
 geth --identity "GravityTestnet" --nodiscover \
 --networkid 15 \
 --mine \
---http "0.0.0.0" \
+--http \
+--http.addr="0.0.0.0" \
+--http.vhosts="*" \
 --http.corsdomain="*" \
 --miner.threads=1 \
 --nousb \
