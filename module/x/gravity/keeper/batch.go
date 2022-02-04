@@ -142,6 +142,8 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 
 	// Delete batch since it is finished
 	k.DeleteBatch(ctx, *b)
+	// Delete it's confirmations as well
+	k.DeleteBatchConfirms(ctx, *b)
 }
 
 // StoreBatch stores a transaction batch, it will refuse to overwrite an existing
@@ -246,6 +248,8 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 
 	// Delete batch since it is finished
 	k.DeleteBatch(ctx, *batch)
+	// Delete it's confirmations as well
+	k.DeleteBatchConfirms(ctx, *batch)
 
 	batchEvent := sdk.NewEvent(
 		types.EventTypeOutgoingBatchCanceled,

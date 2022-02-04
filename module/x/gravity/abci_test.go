@@ -331,6 +331,26 @@ func TestBatchTimeout(t *testing.T) {
 	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract, b2.BatchNonce)
 	require.NotNil(t, gotSecondBatch)
 
+	// persist confirmations for second batch to test their deletion on batch timeout
+	for i, orch := range keeper.OrchAddrs {
+		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
+		require.NoError(t, err)
+
+		conf := &types.MsgConfirmBatch{
+			Nonce:         b2.BatchNonce,
+			TokenContract: b2.TokenContract.GetAddress(),
+			EthSigner:     ethAddr.GetAddress(),
+			Orchestrator:  orch.String(),
+			Signature:     "dummysig",
+		}
+
+		input.GravityKeeper.SetBatchConfirm(ctx, conf)
+	}
+
+	// verify that confirms are persisted
+	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, b2.BatchNonce, b2.TokenContract)
+	require.Equal(t, len(keeper.OrchAddrs), len(secondBatchConfirms))
+
 	// when, way into the future
 	ctx = ctx.WithBlockTime(now)
 	ctx = ctx.WithBlockHeight(9)
@@ -360,4 +380,49 @@ func TestBatchTimeout(t *testing.T) {
 	require.Nil(t, gotSecondBatch)
 	gotThirdBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b3.TokenContract, b3.BatchNonce)
 	require.NotNil(t, gotThirdBatch)
+
+	// verify that second batch confirms are deleted
+	secondBatchConfirms = input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, b2.BatchNonce, b2.TokenContract)
+	require.Equal(t, 0, len(secondBatchConfirms))
+}
+
+func TestValsetPruning(t *testing.T) {
+	input, ctx := keeper.SetupFiveValChain(t)
+	pk := input.GravityKeeper
+	params := pk.GetParams(ctx)
+
+	// Create new validator set with nonce 1
+	pk.SetValsetRequest(ctx)
+	firstValsetNonce := pk.GetLatestValsetNonce(ctx)
+	require.NotNil(t, pk.GetValset(ctx, firstValsetNonce))
+	require.True(t, len(pk.GetValsets(ctx)) == 1)
+
+	// Create validator set confirmations
+	for i, orch := range keeper.OrchAddrs {
+		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
+		require.NoError(t, err)
+
+		conf := types.NewMsgValsetConfirm(firstValsetNonce, *ethAddr, orch, "dummysig")
+		pk.SetValsetConfirm(ctx, *conf)
+	}
+
+	require.True(t, len(pk.GetValsetConfirms(ctx, firstValsetNonce)) == len(keeper.OrchAddrs))
+
+	// Create new validator set with nonce 2
+	pk.SetValsetRequest(ctx)
+	require.True(t, len(pk.GetValsets(ctx)) == 2)
+	valset := pk.GetValset(ctx, pk.GetLatestValsetNonce(ctx))
+	require.NotNil(t, valset)
+
+	// Set validator set with nonce 2 as last observed
+	pk.SetLastObservedValset(ctx, *valset)
+	require.Equal(t, valset.Nonce, pk.GetLastObservedValset(ctx).Nonce)
+
+	// Advance enough blocks so that old validator set gets removed in EndBlocker
+	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow+1)).WithBlockTime(time.Now().UTC())
+
+	// EndBlocker should cleanup validator set with nonce 1 and it's confirmations
+	EndBlocker(ctx, pk)
+	require.Nil(t, pk.GetValset(ctx, firstValsetNonce))
+	require.Equal(t, 0, len(pk.GetValsetConfirms(ctx, firstValsetNonce)))
 }
