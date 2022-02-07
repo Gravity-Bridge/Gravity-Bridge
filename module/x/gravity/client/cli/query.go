@@ -121,8 +121,8 @@ func CmdGetValsetConfirm() *cobra.Command {
 func CmdGetPendingValsetRequest() *cobra.Command {
 	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
-		Use:   "pending-valset-request [bech32 validator address]",
-		Short: "Get the latest valset request which has not been signed by a particular validator",
+		Use:   "pending-valset-request [bech32 orchestrator address]",
+		Short: "Get the latest valset request which has not been signed by a particular orchestrator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
@@ -147,8 +147,8 @@ func CmdGetPendingValsetRequest() *cobra.Command {
 func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
 	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
-		Use:   "pending-batch-request [bech32 validator address]",
-		Short: "Get the latest outgoing TX batch request which has not been signed by a particular validator",
+		Use:   "pending-batch-request [bech32 orchestrator address]",
+		Short: "Get the latest outgoing TX batch request which has not been signed by a particular orchestrator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
