@@ -304,7 +304,7 @@ pub async fn eth_signer_main_loop(
                     trace!("No validator sets to sign, node is caught up!")
                 } else {
                     info!(
-                        "Sending {} valset confirms starting with {}",
+                        "Sending {} valset confirms starting with nonce {}",
                         valsets.len(),
                         valsets[0].nonce
                     );
@@ -340,7 +340,7 @@ pub async fn eth_signer_main_loop(
                     trace!("No unsigned batch sets to sign, node is caught up!")
                 } else {
                     info!(
-                        "Sending {} valset confirms starting with {}",
+                        "Sending {} batch confirms starting with nonce {}",
                         last_unsigned_batches.len(),
                         last_unsigned_batches[0].nonce
                     );
@@ -376,7 +376,7 @@ pub async fn eth_signer_main_loop(
                     trace!("No unsigned call sets to sign, node is caught up!")
                 } else {
                     info!(
-                        "Sending {} valset confirms starting with {}",
+                        "Sending {} logic call confirms starting with nonce {}",
                         last_unsigned_calls.len(),
                         last_unsigned_calls[0].invalidation_nonce
                     );
