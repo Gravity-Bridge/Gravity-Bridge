@@ -62,12 +62,27 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 
 			return false // continue iterating
 		})
-
 		for _, actual := range actualBals {
-			if expected, ok := expectedBals[actual.GetDenom()]; !ok {
-				return fmt.Sprint("Could not find contract matching module balance of ", actual), true
-			} else if !expected.Equal(actual.Amount) {
-				return fmt.Sprint("Mismatched balance of ", actual.Denom, " actual balance ", actual.Amount, " expected balance ", expected), true
+			denom := actual.GetDenom()
+			cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, denom)
+			if err != nil {
+				// Here we do not return because a user could halt the chain by gifting gravity a cosmos asset with no erc20 repr
+				ctx.Logger().Error("Unexpected gravity module balance of cosmos-originated asset with no erc20 representation", "asset", denom)
+				continue
+			}
+			expected, ok := expectedBals[denom]
+			if !ok {
+				return fmt.Sprint("Could not find expected balance for actual module balance of ", actual), true
+			}
+
+			if cosmosOriginated {
+				// Cosmos originated tokens stick around in the gravity account while they are bridged since we don't burn them
+				// So the module's balance should always be >= sum(unbatched txs) + sum(outgoing batches)
+				if actual.Amount.LT(*expected) {
+					return fmt.Sprint("Low balance of cosmos-originated ", denom, " actual balance ", actual.Amount, " < expected balance ", expected), true
+				}
+			} else if !actual.Amount.Equal(*expected) {
+				return fmt.Sprint("Mismatched balance of eth-originated ", denom, ": actual balance ", actual.Amount, " != expected balance ", expected), true
 			}
 		}
 		return "", false
