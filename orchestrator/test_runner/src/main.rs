@@ -334,4 +334,10 @@ pub async fn main() {
         false,
     )
     .await;
+
+    // this checks that the chain is continuing at the end of each test.
+    contact
+        .wait_for_next_block(TOTAL_TIMEOUT)
+        .await
+        .expect("Error chain has halted unexpectedly!");
 }
