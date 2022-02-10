@@ -24,41 +24,43 @@ pub async fn query_airdrops(opts: AirdropQueryOpts, prefix: String) {
         Ok(proposals) => {
             for proposal in proposals.proposals {
                 if let Some(content) = proposal.content {
-                    let mut buf = BytesMut::with_capacity(content.value.len());
-                    buf.extend_from_slice(&content.value);
-                    let res = AirdropProposal::decode(buf);
-                    if let Ok(airdrop) = res {
-                        found = true;
+                    if content.type_url.contains("Airdrop") {
+                        let mut buf = BytesMut::with_capacity(content.value.len());
+                        buf.extend_from_slice(&content.value);
+                        let res = AirdropProposal::decode(buf);
+                        if let Ok(airdrop) = res {
+                            found = true;
 
-                        info!("Found Airdrop proposal");
-                        info!("Title: {}", airdrop.title);
-                        info!("Description: {}", airdrop.description);
-                        info!("Number of Participants: {}", airdrop.amounts.len());
-                        let mut sum = 0;
-                        for amount in airdrop.amounts.iter() {
-                            sum += amount;
-                        }
-                        info!("Total value: {}{}", sum, airdrop.denom);
-
-                        if airdrop.amounts.len() < 100 || opts.full_list {
-                            info!("Participants list");
-
-                            let mut unpacked = Vec::new();
-                            // each address is 20 bytes
-                            assert_eq!(airdrop.recipients.len() / 20, airdrop.amounts.len());
-                            for i in 0..(airdrop.recipients.len() / 20) {
-                                let mut buf = [0; 20];
-                                let addr_bytes = &airdrop.recipients[(i * 20)..((i * 20) + 20)];
-                                buf.copy_from_slice(addr_bytes);
-                                let addr = Address::from_bytes(buf, prefix.clone()).unwrap();
-                                unpacked.push(addr);
+                            info!("Found Airdrop proposal");
+                            info!("Title: {}", airdrop.title);
+                            info!("Description: {}", airdrop.description);
+                            info!("Number of Participants: {}", airdrop.amounts.len());
+                            let mut sum = 0;
+                            for amount in airdrop.amounts.iter() {
+                                sum += amount;
                             }
-                            assert_eq!(unpacked.len(), airdrop.amounts.len());
-                            for (i, _) in unpacked.iter().enumerate() {
-                                info!("{} {}{}", unpacked[i], airdrop.amounts[i], airdrop.denom)
+                            info!("Total value: {}{}", sum, airdrop.denom);
+
+                            if airdrop.amounts.len() < 100 || opts.full_list {
+                                info!("Participants list");
+
+                                let mut unpacked = Vec::new();
+                                // each address is 20 bytes
+                                assert_eq!(airdrop.recipients.len() / 20, airdrop.amounts.len());
+                                for i in 0..(airdrop.recipients.len() / 20) {
+                                    let mut buf = [0; 20];
+                                    let addr_bytes = &airdrop.recipients[(i * 20)..((i * 20) + 20)];
+                                    buf.copy_from_slice(addr_bytes);
+                                    let addr = Address::from_bytes(buf, prefix.clone()).unwrap();
+                                    unpacked.push(addr);
+                                }
+                                assert_eq!(unpacked.len(), airdrop.amounts.len());
+                                for (i, _) in unpacked.iter().enumerate() {
+                                    info!("{} {}{}", unpacked[i], airdrop.amounts[i], airdrop.denom)
+                                }
+                            } else {
+                                info!("Participants list is greater than 100 addresses, use --full-list to display it");
                             }
-                        } else {
-                            info!("Participants list is greater than 100 addresses, use --full-list to display it");
                         }
                     }
                 }
