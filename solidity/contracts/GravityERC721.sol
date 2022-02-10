@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./CosmosToken.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 
 contract GravityERC721 is ReentrancyGuard {
@@ -28,20 +29,18 @@ contract GravityERC721 is ReentrancyGuard {
 
 	function sendERC721ToCosmos(
 		address _tokenContract,
-		string calldata _destination,
+		address _receiver,
 		uint256 _tokenId
 	) external nonReentrant {
 
-		///
-		/// check is owner erc 721 goes here
-		///
 
+		ERC721(_tokenContract).safeTransferFrom(msg.sender, address(this), _tokenId);
 		state_lastERC721EventNonce = state_lastERC721EventNonce + 1;
 
 		emit SendERC721ToCosmosEvent(
 			_tokenContract,
 			msg.sender,
-			_destination,
+			_receiver,
 			_tokenId, 
 			state_lastERC721EventNonce
 		);
@@ -50,7 +49,6 @@ contract GravityERC721 is ReentrancyGuard {
 
 contract Gravity {
 	bytes32 public state_lastValsetCheckpoint;
-	uint256 public state_lastValsetNonce = 0;
-	uint256 public state_lastEventNonce = 1;
+	uint256 public state_lastEventNonce;
 	bytes32 public immutable state_gravityId;
 }
