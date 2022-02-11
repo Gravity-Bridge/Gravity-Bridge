@@ -120,6 +120,7 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, k Keeper, nonceCutoff uint64) 
 // Allows governance to deploy an airdrop to a provided list of addresses
 func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal) error {
 	ctx.Logger().Info("Gov vote passed: Performing airdrop")
+	startingSupply := k.bankKeeper.GetSupply(ctx, p.Denom)
 
 	validateDenom := sdk.ValidateDenom(p.Denom)
 	if validateDenom != nil {
@@ -192,6 +193,11 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	}
 	feePool.CommunityPool = newCoins
 	k.DistKeeper.SetFeePool(ctx, feePool)
+
+	endingSupply := k.bankKeeper.GetSupply(ctx, p.Denom)
+	if !startingSupply.Equal(endingSupply) {
+		return sdkerrors.Wrap(types.ErrInvalid, "total chain supply has changed!")
+	}
 
 	return nil
 }
