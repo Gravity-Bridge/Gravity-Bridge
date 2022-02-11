@@ -29,9 +29,9 @@ jq '.app_state.gov.voting_params.voting_period = "60s"' /metadata-genesis.json >
 
 # Add some funds to the community pool to test Airdrops, note that the gravity address here is the first 20 bytes
 # of the sha256 hash of 'distribution' to create the address of the module
-jq '.app_state.distribution.fee_pool.community_pool = [{"denom": "stake", "amount": "10000000000.0"}]' /community-pool-genesis.json > /community-pool2-genesis.json
+jq '.app_state.distribution.fee_pool.community_pool = [{"denom": "stake", "amount": "1000000000000000000000000.0"}]' /community-pool-genesis.json > /community-pool2-genesis.json
 jq '.app_state.auth.accounts += [{"@type": "/cosmos.auth.v1beta1.ModuleAccount", "base_account": { "account_number": "0", "address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh","pub_key": null,"sequence": "0"},"name": "distribution","permissions": ["basic"]}]' /community-pool2-genesis.json > /community-pool3-genesis.json
-jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"amount": "10000000000", "denom": "stake"}]}]' /community-pool3-genesis.json > /edited-genesis.json
+jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"amount": "1000000000000000000000000", "denom": "stake"}]}]' /community-pool3-genesis.json > /edited-genesis.json
 
 mv /edited-genesis.json /genesis.json
 
