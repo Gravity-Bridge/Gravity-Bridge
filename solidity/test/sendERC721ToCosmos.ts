@@ -14,9 +14,17 @@ import {
 chai.use(solidity);
 const { expect } = chai;
 
+// event SendERC721ToCosmosEvent(
+//     address indexed _tokenContract,
+//     address indexed _sender,
+//     string _destination,
+//     uint256 _tokenId,
+//     uint256 _eventNonce
+// );
 
 async function runTest(opts: {}) {
 
+    console.log("in test");
 
   // Prep and deploy contract
   // ========================
@@ -35,23 +43,23 @@ async function runTest(opts: {}) {
 
   // Transfer out to Cosmos, locking coins
   // =====================================
-  await testERC721.functions.approve(gravity.address, 190);
-//   await expect(gravity.functions.sendToCosmos(
-//     testERC20.address,
-//     ethers.utils.formatBytes32String("myCosmosAddress"),
-//     1000
-//   )).to.emit(gravity, 'SendToCosmosEvent').withArgs(
-//       testERC20.address,
-//       await signers[0].getAddress(),
-//       ethers.utils.formatBytes32String("myCosmosAddress"),
-//       1000, 
-//       2
-//     );
+  await testERC721.functions.approve(gravityERC721.address, 190);
+  await expect(gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
+    testERC721.address,
+    ethers.utils.formatBytes32String("myCosmosAddress"),
+    190
+  )).to.emit(gravityERC721, 'SendERC721ToCosmosEvent').withArgs(
+      testERC721.address,
+      await signers[0].getAddress(),
+      ethers.utils.formatBytes32String("myCosmosAddress"),
+      190, 
+      2
+    );
 
 }
 
 describe("sendERC721ToCosmos tests", function () {
-  it("works right", async function () {
+  it.only("works right", async function () {
     await runTest({})
   });
 });

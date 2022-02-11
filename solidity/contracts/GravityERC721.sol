@@ -7,9 +7,11 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./CosmosToken.sol";
 import "./Gravity.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 
-contract GravityERC721 is ReentrancyGuard {
+contract GravityERC721 is ERC721Holder, ReentrancyGuard {
+
 	uint256 public state_lastERC721EventNonce = 1;
 	address public state_gravitySolAddress;
 
