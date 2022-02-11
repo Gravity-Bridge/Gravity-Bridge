@@ -481,23 +481,23 @@ func CreateTestEnv(t *testing.T) TestInput {
 	// set genesis items required for distribution
 	distKeeper.SetFeePool(ctx, distrtypes.InitialFeePool())
 
-	// total supply to track this
-	totalSupply := sdk.NewCoins(sdk.NewInt64Coin("stake", 100000000))
-
 	// set up initial accounts
 	for name, perms := range maccPerms {
 		mod := authtypes.NewEmptyModuleAccount(name, perms...)
-		if name == stakingtypes.NotBondedPoolName {
-			err = bankKeeper.MintCoins(ctx, types.ModuleName, totalSupply)
-			require.NoError(t, err)
-			err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mod.Name, totalSupply)
-			require.NoError(t, err)
-		} else if name == distrtypes.ModuleName {
+		if name == distrtypes.ModuleName {
 			// some big pot to pay out
 			amt := sdk.NewCoins(sdk.NewInt64Coin("stake", 500000))
 			err = bankKeeper.MintCoins(ctx, types.ModuleName, amt)
 			require.NoError(t, err)
 			err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mod.Name, amt)
+
+			// distribution module balance must be outstanding rewards + community pool in order to pass
+			// invariants checks, therefore we must add any amount we add to the module balance to the fee pool
+			feePool := distKeeper.GetFeePool(ctx)
+			newCoins := feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(amt...)...)
+			feePool.CommunityPool = newCoins
+			distKeeper.SetFeePool(ctx, feePool)
+
 			require.NoError(t, err)
 		}
 		accountKeeper.SetModuleAccount(ctx, mod)
@@ -564,7 +564,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 
 	fmt.Println(params)
 
-	return TestInput{
+	testInput := TestInput{
 		GravityKeeper:  k,
 		AccountKeeper:  accountKeeper,
 		BankKeeper:     bankKeeper,
@@ -576,6 +576,42 @@ func CreateTestEnv(t *testing.T) TestInput {
 		Marshaler:      marshaler,
 		LegacyAmino:    cdc,
 	}
+	// check invariants before starting
+	testInput.AssertInvariants()
+	return testInput
+}
+
+// AssertInvariants tests each modules invariants individually, this is easier than
+// dealing with all the init required to get the crisis keeper working properly by
+// running appModuleBasic for every module and allowing them to register their invariants
+func (t TestInput) AssertInvariants() {
+	distrInvariantFunc := distrkeeper.AllInvariants(t.DistKeeper)
+	bankInvariantFunc := bankkeeper.AllInvariants(t.BankKeeper)
+	govInvariantFunc := govkeeper.AllInvariants(t.GovKeeper, t.BankKeeper)
+	stakeInvariantFunc := stakingkeeper.AllInvariants(t.StakingKeeper)
+	gravInvariantFunc := AllInvariants(t.GravityKeeper)
+
+	invariantStr, invariantViolated := distrInvariantFunc(t.Context)
+	if invariantViolated {
+		panic(invariantStr)
+	}
+	invariantStr, invariantViolated = bankInvariantFunc(t.Context)
+	if invariantViolated {
+		panic(invariantStr)
+	}
+	invariantStr, invariantViolated = govInvariantFunc(t.Context)
+	if invariantViolated {
+		panic(invariantStr)
+	}
+	invariantStr, invariantViolated = stakeInvariantFunc(t.Context)
+	if invariantViolated {
+		panic(invariantStr)
+	}
+	invariantStr, invariantViolated = gravInvariantFunc(t.Context)
+	if invariantViolated {
+		panic(invariantStr)
+	}
+
 }
 
 // getSubspace returns a param subspace for a given module name.

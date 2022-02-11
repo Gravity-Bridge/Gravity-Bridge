@@ -202,6 +202,7 @@ func TestEthereumBlacklist(t *testing.T) {
 		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		anyETHSender    = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
 		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		denom           = "gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
 		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		amountA, _      = sdk.NewIntFromString("50000000000000000000") // 50 ETH
 	)
@@ -256,14 +257,14 @@ func TestEthereumBlacklist(t *testing.T) {
 
 	// and vouchers added to the account
 	balance := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.NotEqual(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountA)}, balance)
+	assert.NotEqual(t, sdk.Coins{sdk.NewCoin(denom, amountA)}, balance)
 
 	// Make sure that the balance is empty since funds should be sent to the community pool
 	assert.Equal(t, balance, sdk.Coins{})
 
 	//Check community pool has received the money instead of the address
 	community_pool_balance := input.DistKeeper.GetFeePool(ctx).CommunityPool
-	assert.Equal(t, sdk.NewDecCoinsFromCoins(sdk.NewCoin("gravity0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", amountA)), community_pool_balance)
+	assert.Equal(t, sdk.NewDecFromInt(amountA), community_pool_balance.AmountOf(denom))
 
 }
 
