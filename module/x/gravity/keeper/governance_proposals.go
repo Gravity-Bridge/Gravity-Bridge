@@ -130,12 +130,12 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	feePool := k.DistKeeper.GetFeePool(ctx)
 	feePoolAmount := feePool.CommunityPool.AmountOf(p.Denom)
 
-	var airdropTotal uint64
+	airdropTotal := sdk.NewInt(0)
 	for _, v := range p.Amounts {
-		airdropTotal += v
+		airdropTotal = airdropTotal.Add(sdk.NewIntFromUint64(v))
 	}
 
-	totalRequiredDecCoin := sdk.NewDecCoinFromCoin(sdk.NewCoin(p.Denom, sdk.NewIntFromUint64(airdropTotal)))
+	totalRequiredDecCoin := sdk.NewDecCoinFromCoin(sdk.NewCoin(p.Denom, airdropTotal))
 
 	// check that we have enough tokens in the community pool to actually execute
 	// this airdrop with the provided recipients list
@@ -177,6 +177,11 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 			ctx.Logger().Info("invalid address in airdrop! not executing", "address", addr)
 			return err
 		}
+	}
+
+	if !totalRequiredDecCoin.Amount.Equal(totalSent) {
+		ctx.Logger().Info("Airdrop failed to excute Invalid amount sent", "sent", totalRequiredDecCoin.Amount, "expected", totalSent)
+		return sdkerrors.Wrap(types.ErrInvalid, "Invalid amount sent")
 	}
 
 	newCoins, InvalidModuleBalance := feePool.CommunityPool.SafeSub(sdk.NewDecCoins(totalRequiredDecCoin))
