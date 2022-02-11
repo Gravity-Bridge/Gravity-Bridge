@@ -4,27 +4,14 @@ import { solidity } from "ethereum-waffle";
 
 import { deployContracts } from "../test-utils/deployERC721";
 import {
-  getSignerAddresses,
-  makeCheckpoint,
-  signHash,
-  makeTxBatchHash,
   examplePowers
 } from "../test-utils/pure";
+import { GravityERC721 } from "../typechain";
 
 chai.use(solidity);
 const { expect } = chai;
 
-// event SendERC721ToCosmosEvent(
-//     address indexed _tokenContract,
-//     address indexed _sender,
-//     string _destination,
-//     uint256 _tokenId,
-//     uint256 _eventNonce
-// );
-
 async function runTest(opts: {}) {
-
-    console.log("in test");
 
   // Prep and deploy contract
   // ========================
@@ -55,7 +42,25 @@ async function runTest(opts: {}) {
       190, 
       2
     );
+    expect((await testERC721.functions["ownerOf(uint256)"](190))[0]).to.equal(gravityERC721.address);
+    expect((await gravity.functions.state_lastEventNonce())[0]).to.equal(1);
+    expect((await gravityERC721.functions.state_lastERC721EventNonce())[0]).to.equal(2);
 
+    await testERC721.functions.approve(gravityERC721.address, 191);
+    await expect(gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
+      testERC721.address,
+      ethers.utils.formatBytes32String("myCosmosAddress"),
+      191
+    )).to.emit(gravityERC721, 'SendERC721ToCosmosEvent').withArgs(
+        testERC721.address,
+        await signers[0].getAddress(),
+        ethers.utils.formatBytes32String("myCosmosAddress"),
+        191, 
+        3
+      );
+      expect((await testERC721.functions["ownerOf(uint256)"](191))[0]).to.equal(gravityERC721.address);
+      expect((await gravity.functions.state_lastEventNonce())[0]).to.equal(1);
+      expect((await gravityERC721.functions.state_lastERC721EventNonce())[0]).to.equal(3);
 }
 
 describe("sendERC721ToCosmos tests", function () {

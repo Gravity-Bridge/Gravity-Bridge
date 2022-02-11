@@ -8,6 +8,7 @@ import "./CosmosToken.sol";
 import "./Gravity.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "hardhat/console.sol"; 
 
 
 contract GravityERC721 is ERC721Holder, ReentrancyGuard {
@@ -35,9 +36,9 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 		string calldata _destination,
 		uint256 _tokenId
 	) external nonReentrant {
-		
 
 		ERC721(_tokenContract).safeTransferFrom(msg.sender, address(this), _tokenId);
+		
 		state_lastERC721EventNonce = state_lastERC721EventNonce + 1;
 
 		emit SendERC721ToCosmosEvent(
