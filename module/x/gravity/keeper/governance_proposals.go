@@ -162,6 +162,12 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 		parsedRecipients[i] = addr
 	}
 
+	// check again, just in case the above modulo math is somehow wrong or spoofed
+	if len(parsedRecipients) != len(p.Amounts) {
+		ctx.Logger().Info("Airdrop failed to excute invalid recipients")
+		return sdkerrors.Wrap(types.ErrInvalid, "Invalid recipients")
+	}
+
 	// the total amount actually sent in dec coins
 	totalSent := sdk.NewDec(0)
 	for i, addr := range parsedRecipients {
