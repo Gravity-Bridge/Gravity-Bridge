@@ -86,13 +86,14 @@ func (k Keeper) CancelOutgoingLogicCall(ctx sdk.Context, invalidationId []byte, 
 	k.DeleteOutgoingLogicCall(ctx, call.InvalidationId, call.InvalidationNonce)
 
 	// a consuming application will have to watch for this event and act on it
-	batchEvent := sdk.NewEvent(
-		types.EventTypeOutgoingLogicCallCanceled,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyInvalidationID, fmt.Sprint(call.InvalidationId)),
-		sdk.NewAttribute(types.AttributeKeyInvalidationNonce, fmt.Sprint(call.InvalidationNonce)),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventOutgoingLogicCallCanceled{
+			Module:                     types.ModuleName,
+			LogicCallInvalidationId:    fmt.Sprint(call.InvalidationId),
+			LogicCallInvalidationNonce: fmt.Sprint(call.InvalidationNonce),
+		},
 	)
-	ctx.EventManager().EmitEvent(batchEvent)
+
 	return nil
 }
 

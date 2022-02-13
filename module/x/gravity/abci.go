@@ -241,11 +241,11 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					val = updateValidator(ctx, k, val.GetOperator())
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
-						ctx.EventManager().EmitEvent(
-							sdk.NewEvent(
-								sdk.EventTypeMessage,
-								sdk.NewAttribute("ValsetSignatureSlashing", consAddr.String()),
-							),
+						ctx.EventManager().EmitTypedEvent(
+							&types.EventSignatureSlashing{
+								Type:    types.AttributeKeyValsetSignatureSlashing,
+								Address: consAddr.String(),
+							},
 						)
 
 						k.StakingKeeper.Jail(ctx, consAddr)
@@ -286,11 +286,11 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					validator = updateValidator(ctx, k, validator.GetOperator())
 					if !validator.IsJailed() {
 						k.StakingKeeper.Slash(ctx, valConsAddr, ctx.BlockHeight(), validator.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
-						ctx.EventManager().EmitEvent(
-							sdk.NewEvent(
-								sdk.EventTypeMessage,
-								sdk.NewAttribute("ValsetSignatureSlashing", valConsAddr.String()),
-							),
+						ctx.EventManager().EmitTypedEvent(
+							&types.EventSignatureSlashing{
+								Type:    types.AttributeKeyValsetSignatureSlashing,
+								Address: valConsAddr.String(),
+							},
 						)
 						k.StakingKeeper.Jail(ctx, valConsAddr)
 					}
@@ -392,11 +392,11 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					val = updateValidator(ctx, k, val.GetOperator())
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBatch)
-						ctx.EventManager().EmitEvent(
-							sdk.NewEvent(
-								sdk.EventTypeMessage,
-								sdk.NewAttribute("BatchSignatureSlashing", consAddr.String()),
-							),
+						ctx.EventManager().EmitTypedEvent(
+							&types.EventSignatureSlashing{
+								Type:    types.AttributeKeyBatchSignatureSlashing,
+								Address: consAddr.String(),
+							},
 						)
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}
@@ -468,11 +468,11 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					val = updateValidator(ctx, k, val.GetOperator())
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionLogicCall)
-						ctx.EventManager().EmitEvent(
-							sdk.NewEvent(
-								sdk.EventTypeMessage,
-								sdk.NewAttribute("LogicCallSignatureSlashing", consAddr.String()),
-							),
+						ctx.EventManager().EmitTypedEvent(
+							&types.EventSignatureSlashing{
+								Type:    types.AttributeKeyLogicCallSignatureSlashing,
+								Address: consAddr.String(),
+							},
 						)
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}

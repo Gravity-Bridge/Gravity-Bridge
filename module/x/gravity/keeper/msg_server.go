@@ -67,12 +67,11 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 	// set the ethereum address
 	k.SetEthAddressForValidator(ctx, val, *addr)
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, msg.Type()),
-			sdk.NewAttribute(types.AttributeKeySetOperatorAddr, orch.String()),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventSetOperatorAddress{
+			Module:  msg.Type(),
+			Address: orch.String(),
+		},
 	)
 
 	return &types.MsgSetOrchestratorAddressResponse{}, nil
@@ -104,12 +103,11 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 	}
 	key := k.SetValsetConfirm(ctx, *msg)
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, msg.Type()),
-			sdk.NewAttribute(types.AttributeKeyValsetConfirmKey, string(key)),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventValsetConfirmKey{
+			Module: msg.Type(),
+			Key:    string(key),
+		},
 	)
 
 	return &types.MsgValsetConfirmResponse{}, nil
@@ -140,12 +138,11 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, sdkerrors.Wrap(err, "Could not add to outgoing pool")
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, msg.Type()),
-			sdk.NewAttribute(types.AttributeKeyOutgoingTXID, fmt.Sprint(txID)),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventOutgoingTxId{
+			Module: msg.Type(),
+			TxId:   fmt.Sprint(txID),
+		},
 	)
 
 	return &types.MsgSendToEthResponse{}, nil
@@ -167,12 +164,11 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 		return nil, sdkerrors.Wrap(err, "Could not build outgoing tx batch")
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, msg.Type()),
-			sdk.NewAttribute(types.AttributeKeyBatchNonce, fmt.Sprint(batch.BatchNonce)),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventBatchNonce{
+			Module:     msg.Type(),
+			BatchNonce: fmt.Sprint(batch.BatchNonce),
+		},
 	)
 
 	return &types.MsgRequestBatchResponse{}, nil
@@ -210,12 +206,11 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	}
 	key := k.SetBatchConfirm(ctx, msg)
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, msg.Type()),
-			sdk.NewAttribute(types.AttributeKeyBatchConfirmKey, string(key)),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventBatchConfirmKey{
+			Module:          msg.Type(),
+			BatchConfirmKey: string(key),
+		},
 	)
 
 	return nil, nil
@@ -253,11 +248,10 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 
 	k.SetLogicCallConfirm(ctx, msg)
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, msg.Type()),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventModule{
+			Module: msg.Type(),
+		},
 	)
 
 	return nil, nil
@@ -298,13 +292,12 @@ func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, m
 	}
 
 	// Emit the handle message event
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, string(msg.GetType())),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventClaim{
+			Module: string(msg.GetType()),
 			// TODO: maybe return something better here? is this the right string representation?
-			sdk.NewAttribute(types.AttributeKeyAttestationID, string(types.GetAttestationKey(msg.GetEventNonce(), hash))),
-		),
+			AttestationId: string(types.GetAttestationKey(msg.GetEventNonce(), hash)),
+		},
 	)
 
 	return nil
@@ -468,12 +461,11 @@ func (k msgServer) CancelSendToEth(c context.Context, msg *types.MsgCancelSendTo
 		return nil, err
 	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, msg.Type()),
-			sdk.NewAttribute(types.AttributeKeyOutgoingTXID, fmt.Sprint(msg.TransactionId)),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventOutgoingTxId{
+			Module: msg.Type(),
+			TxId:   fmt.Sprint(msg.TransactionId),
+		},
 	)
 
 	return &types.MsgCancelSendToEthResponse{}, nil
@@ -484,13 +476,12 @@ func (k msgServer) SubmitBadSignatureEvidence(c context.Context, msg *types.MsgS
 
 	err := k.CheckBadSignatureEvidence(ctx, msg)
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, msg.Type()),
-			sdk.NewAttribute(types.AttributeKeyBadEthSignature, fmt.Sprint(msg.Signature)),
-			sdk.NewAttribute(types.AttributeKeyBadEthSignatureSubject, fmt.Sprint(msg.Subject)),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventBadSignatureEvidence{
+			Module:                 msg.Type(),
+			BadEthSignature:        fmt.Sprint(msg.Signature),
+			BadEthSignatureSubject: fmt.Sprint(msg.Subject),
+		},
 	)
 
 	return &types.MsgSubmitBadSignatureEvidenceResponse{}, err
