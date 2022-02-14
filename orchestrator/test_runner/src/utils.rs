@@ -448,25 +448,51 @@ pub async fn vote_yes_on_proposals(
         .await
         .unwrap();
     trace!("Found proposals: {:?}", proposals.proposals);
+    let mut futs = Vec::new();
     for proposal in proposals.proposals {
         for key in keys.iter() {
-            let res = contact
-                .vote_on_gov_proposal(
-                    proposal.proposal_id,
-                    VoteOption::Yes,
-                    get_fee(),
-                    key.validator_key,
-                    Some(duration),
-                )
-                .await
-                .unwrap();
-            let res = contact.wait_for_tx(res, TOTAL_TIMEOUT).await.unwrap();
-            info!(
-                "Voting yes on governance proposal costing {} gas",
-                res.gas_used
-            );
+            let res =
+                vote_yes_with_retry(contact, proposal.proposal_id, key.validator_key, duration);
+            futs.push(res);
         }
     }
+    // vote on the proposal in parallel, reducing the number of blocks we wait for all
+    // the tx's to get in.
+    join_all(futs).await;
+}
+
+/// this utility function repeatedly attempts to vote yes on a governance
+/// proposal up to MAX_VOTES times before failing
+pub async fn vote_yes_with_retry(
+    contact: &Contact,
+    proposal_id: u64,
+    key: CosmosPrivateKey,
+    timeout: Duration,
+) {
+    const MAX_VOTES: u64 = 5;
+    let mut counter = 0;
+    let mut res = contact
+        .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(), key, Some(timeout))
+        .await;
+    while let Err(e) = res {
+        contact.wait_for_next_block(timeout).await.unwrap();
+        res = contact
+            .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(), key, Some(timeout))
+            .await;
+        counter += 1;
+        if counter > MAX_VOTES {
+            error!(
+                "Vote for proposal has failed more than {} times, error {:?}",
+                MAX_VOTES, e
+            );
+            panic!("failed to vote{}", e);
+        }
+    }
+    let res = res.unwrap();
+    info!(
+        "Voting yes on governance proposal costing {} gas",
+        res.gas_used
+    );
 }
 
 // Checks that cosmos_account has each balance specified in expected_cosmos_coins.
