@@ -168,7 +168,7 @@ pub async fn pause_bridge_test(
     vote_yes_on_proposals(contact, &keys, None).await;
 
     // wait for the voting period to pass
-    sleep(Duration::from_secs(65)).await;
+    wait_for_proposals_to_execute(contact).await;
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
     assert!(params.bridge_active);
 
