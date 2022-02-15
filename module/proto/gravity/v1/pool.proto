@@ -13,3 +13,17 @@ message BatchFees {
   string total_fees = 2 [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.nullable) = false];
   uint64 tx_count   = 3;
 }
+
+message EventWithdrawalReceived {
+  string module = 1;
+  string bridge_contract = 2;
+  string bridge_chain_id = 3;
+  string outgoing_tx_id = 4;
+  string nonce = 5;
+}
+
+message EventWithdrawCanceled {
+  string module = 1;
+  string bridge_contract = 2;
+  string bridge_chain_id = 3;
+}

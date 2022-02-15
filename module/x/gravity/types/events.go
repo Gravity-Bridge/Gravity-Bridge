@@ -28,4 +28,13 @@ const (
 	AttributeKeyInvalidationNonce      = "logic_call_invalidation_nonce"
 	AttributeKeyBadEthSignature        = "bad_eth_signature"
 	AttributeKeyBadEthSignatureSubject = "bad_eth_signature_subject"
+
+	AttributeKeySendToCosmosAmount = "msg_send_to_cosmsos_amount"
+	AttributeKeySendToCosmosNonce  = "msg_send_to_cosmsos_nonce"
+	AttributeKeySendToCosmosToken  = "msg_send_to_cosmsos_token"
+	AttributeKeySendToCosmosSender = "msg_send_to_cosmsos_sender"
+
+	AttributeKeyValsetSignatureSlashing    = "valset_signature_slashing"
+	AttributeKeyBatchSignatureSlashing     = "batch_signature_slashing"
+	AttributeKeyLogicCallSignatureSlashing = "logic_call_signature_slashing"
 )

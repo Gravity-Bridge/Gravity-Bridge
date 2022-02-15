@@ -2,9 +2,10 @@ package keeper
 
 import (
 	"fmt"
-	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	"math/big"
 	"strconv"
+
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -27,9 +28,15 @@ type AttestationHandler struct {
 
 // Check for nil members
 func (a AttestationHandler) ValidateMembers() {
-	if a.keeper     == nil { panic("Nil keeper!") }
-	if a.bankKeeper == nil { panic("Nil bankKeeper!") }
-	if a.distKeeper == nil { panic("Nil distKeeper!") }
+	if a.keeper == nil {
+		panic("Nil keeper!")
+	}
+	if a.bankKeeper == nil {
+		panic("Nil bankKeeper!")
+	}
+	if a.distKeeper == nil {
+		panic("Nil distKeeper!")
+	}
 }
 
 // SendToCommunityPool handles sending incorrect deposits to the community pool, since the deposits
@@ -156,23 +163,23 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				)
 				return sdkerrors.Wrap(err, "failed to send to Community pool")
 			}
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(
-					types.EventTypeInvalidSendToCosmosReceiver,
-					sdk.NewAttribute("MsgSendToCosmosAmount", claim.Amount.String()),
-					sdk.NewAttribute("MsgSendToCosmosNonce", strconv.Itoa(int(claim.GetEventNonce()))),
-					sdk.NewAttribute("MsgSendToCosmosToken", tokenAddress.GetAddress()),
-					sdk.NewAttribute("MsgSendToCosmosSender", claim.EthereumSender),
-				),
+
+			ctx.EventManager().EmitTypedEvent(
+				&types.EventInvalidSendToCosmosReceiver{
+					Amount: claim.Amount.String(),
+					Nonce:  strconv.Itoa(int(claim.GetEventNonce())),
+					Token:  tokenAddress.GetAddress(),
+					Sender: claim.EthereumSender,
+				},
 			)
+
 		} else {
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(
-					sdk.EventTypeMessage,
-					sdk.NewAttribute("MsgSendToCosmosAmount", claim.Amount.String()),
-					sdk.NewAttribute("MsgSendToCosmosNonce", strconv.Itoa(int(claim.GetEventNonce()))),
-					sdk.NewAttribute("MsgSendToCosmosToken", tokenAddress.GetAddress()),
-				),
+			ctx.EventManager().EmitTypedEvent(
+				&types.EventSendToCosmos{
+					Amount: claim.Amount.String(),
+					Nonce:  strconv.Itoa(int(claim.GetEventNonce())),
+					Token:  tokenAddress.GetAddress(),
+				},
 			)
 		}
 	// withdraw in this context means a withdraw from the Ethereum side of the bridge
@@ -182,12 +189,13 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 			return sdkerrors.Wrap(err, "invalid token contract on batch")
 		}
 		a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim.BatchNonce)
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				sdk.EventTypeMessage,
-				sdk.NewAttribute("MsgBatchSendToEthClaim", strconv.Itoa(int(claim.BatchNonce))),
-			),
+
+		ctx.EventManager().EmitTypedEvent(
+			&types.EventBatchSendToEthClaim{
+				Nonce: strconv.Itoa(int(claim.BatchNonce)),
+			},
 		)
+
 		return nil
 	case *types.MsgERC20DeployedClaim:
 		tokenAddress, err := types.NewEthAddress(claim.TokenContract)
@@ -251,13 +259,13 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		// Add to denom-erc20 mapping
 		a.keeper.setCosmosOriginatedDenomToERC20(ctx, claim.CosmosDenom, *tokenAddress)
 
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				sdk.EventTypeMessage,
-				sdk.NewAttribute("MsgERC20DeployedClaimToken", tokenAddress.GetAddress()),
-				sdk.NewAttribute("MsgERC20DeployedClaim", strconv.Itoa(int(claim.GetEventNonce()))),
-			),
+		ctx.EventManager().EmitTypedEvent(
+			&types.EventERC20DeployedClaim{
+				Token: tokenAddress.GetAddress(),
+				Nonce: strconv.Itoa(int(claim.GetEventNonce())),
+			},
 		)
+
 	case *types.MsgValsetUpdatedClaim:
 		rewardAddress, err := types.NewEthAddress(claim.RewardToken)
 		if err != nil {
@@ -297,11 +305,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				// could change between when this event occurred and the present
 				coins := sdk.Coins{sdk.NewCoin(denom, claim.RewardAmount)}
 				if err := a.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
-					ctx.EventManager().EmitEvent(
-						sdk.NewEvent(
-							sdk.EventTypeMessage,
-							sdk.NewAttribute("MsgValsetUpdatedClaim", strconv.Itoa(int(claim.GetEventNonce()))),
-						),
+					ctx.EventManager().EmitTypedEvent(
+						&types.EventValsetUpdatedClaim{
+							Nonce: strconv.Itoa(int(claim.GetEventNonce())),
+						},
 					)
 					return sdkerrors.Wrapf(err, "unable to mint cosmos originated coins %v", coins)
 				}
@@ -317,11 +324,10 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				panic("Can not use Ethereum originated token as reward!")
 			}
 		}
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				sdk.EventTypeMessage,
-				sdk.NewAttribute("MsgValsetUpdatedClaim", strconv.Itoa(int(claim.GetEventNonce()))),
-			),
+		ctx.EventManager().EmitTypedEvent(
+			&types.EventValsetUpdatedClaim{
+				Nonce: strconv.Itoa(int(claim.GetEventNonce())),
+			},
 		)
 
 	default:

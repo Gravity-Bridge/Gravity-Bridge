@@ -39,16 +39,14 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 	checkpoint := valset.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
 
-	bridgeAddr := k.GetBridgeContractAddress(ctx)
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			types.EventTypeMultisigUpdateRequest,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyContract, bridgeAddr.GetAddress()),
-			sdk.NewAttribute(types.AttributeKeyBridgeChainID, strconv.Itoa(int(k.GetBridgeChainID(ctx)))),
-			sdk.NewAttribute(types.AttributeKeyMultisigID, fmt.Sprint(valset.Nonce)),
-			sdk.NewAttribute(types.AttributeKeyNonce, fmt.Sprint(valset.Nonce)),
-		),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventMultisigUpdateRequest{
+			Module:         types.ModuleName,
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			MultisigId:     fmt.Sprint(valset.Nonce),
+			Nonce:          fmt.Sprint(valset.Nonce),
+		},
 	)
 
 	return valset

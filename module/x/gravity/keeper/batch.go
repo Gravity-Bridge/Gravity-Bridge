@@ -70,15 +70,15 @@ func (k Keeper) BuildOutgoingTXBatch(
 	checkpoint := batch.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
 
-	batchEvent := sdk.NewEvent(
-		types.EventTypeOutgoingBatch,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyContract, k.GetBridgeContractAddress(ctx).GetAddress()),
-		sdk.NewAttribute(types.AttributeKeyBridgeChainID, strconv.Itoa(int(k.GetBridgeChainID(ctx)))),
-		sdk.NewAttribute(types.AttributeKeyOutgoingBatchID, fmt.Sprint(nextID)),
-		sdk.NewAttribute(types.AttributeKeyNonce, fmt.Sprint(nextID)),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventOutgoingBatch{
+			Module:         types.ModuleName,
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			BatchId:        fmt.Sprint(nextID),
+			Nonce:          fmt.Sprint(nextID),
+		},
 	)
-	ctx.EventManager().EmitEvent(batchEvent)
 	return batch, nil
 }
 
@@ -251,15 +251,15 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 	// Delete it's confirmations as well
 	k.DeleteBatchConfirms(ctx, *batch)
 
-	batchEvent := sdk.NewEvent(
-		types.EventTypeOutgoingBatchCanceled,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyContract, k.GetBridgeContractAddress(ctx).GetAddress()),
-		sdk.NewAttribute(types.AttributeKeyBridgeChainID, strconv.Itoa(int(k.GetBridgeChainID(ctx)))),
-		sdk.NewAttribute(types.AttributeKeyOutgoingBatchID, fmt.Sprint(nonce)),
-		sdk.NewAttribute(types.AttributeKeyNonce, fmt.Sprint(nonce)),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventOutgoingBatchCanceled{
+			Module:         types.ModuleName,
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			BatchId:        fmt.Sprint(nonce),
+			Nonce:          fmt.Sprint(nonce),
+		},
 	)
-	ctx.EventManager().EmitEvent(batchEvent)
 	return nil
 }
 
