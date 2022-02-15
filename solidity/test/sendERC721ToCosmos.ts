@@ -64,7 +64,7 @@ async function runTest(opts: {}) {
 }
 
 describe("sendERC721ToCosmos tests", function () {
-  it.only("works right", async function () {
+  it("works right", async function () {
     await runTest({})
   });
 });

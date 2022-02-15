@@ -38,31 +38,32 @@ async function runTest(opts: {
   // This is the power distribution on the Cosmos hub as of 7/14/2020
   let powers = examplePowers();
   let validators = signers.slice(0, powers.length);
+
   const {
     gravity,
-    testERC20,
-    checkpoint: deployCheckpoint,
+    gravityERC721,
+    testERC721,
+    checkpoint: deployCheckpoint
   } = await deployContracts(gravityId, validators, powers);
 
-  // Transfer out to Cosmos, locking coins
-  // =====================================
-  await testERC20.functions.approve(gravity.address, 1000);
-  await gravity.functions.sendToCosmos(
-    testERC20.address,
-    ethers.utils.formatBytes32String("myCosmosAddress"),
-    1000
-  );
 
   // Prepare batch
   // ===============================
   const numTxs = 100;
   const txDestinationsInt = new Array(numTxs);
   const txFees = new Array(numTxs);
-
-  const txAmounts = new Array(numTxs);
+  
+  let erc721counter = 1;
+  const txIds = new Array(numTxs);
   for (let i = 0; i < numTxs; i++) {
+    await testERC721.functions.approve(gravityERC721.address, erc721counter+i);
+    await gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
+      testERC721.address,
+      ethers.utils.formatBytes32String("myCosmosAddress"),
+      erc721counter+i
+    )
     txFees[i] = 1;
-    txAmounts[i] = 1;
+    txIds[i] = erc721counter+i;
     txDestinationsInt[i] = signers[i + 5];
   }
   const txDestinations = await getSignerAddresses(txDestinationsInt);
@@ -97,11 +98,11 @@ async function runTest(opts: {
     [
       gravityId,
       methodName,
-      txAmounts,
+      txIds,
       txDestinations,
       txFees,
       batchNonce,
-      testERC20.address,
+      testERC721.address,
       batchTimeout,
     ]
   );
@@ -162,171 +163,23 @@ async function runTest(opts: {
     rewardToken: ZeroAddress
   }
 
-  let batchSubmitTx = await gravity.submitBatch(
+  let batchSubmitTx = await gravityERC721.submitERC721Batch(
     valset,
-
     sigs,
-
-    txAmounts,
+    txIds,
     txDestinations,
     txFees,
     batchNonce,
-    testERC20.address,
+    testERC721.address,
     batchTimeout
   );
 }
 
 describe("submitBatch tests", function () {
-  it("throws on malformed current valset", async function () {
-    await expect(runTest({ malformedCurrentValset: true })).to.be.revertedWith(
-      "MalformedCurrentValidatorSet()"
-    );
-  });
+    it.only("throws on batch nonce not incremented", async function () {
+        await expect(runTest({ batchNonceNotHigher: true })).to.be.revertedWith(
+          "InvalidBatchNonce(0, 0)"
+        );
+      });
 
-  it("throws on malformed txbatch", async function () {
-    await expect(runTest({ malformedTxBatch: true })).to.be.revertedWith(
-      "MalformedBatch()"
-    );
-  });
-
-  it("throws on batch nonce not incremented", async function () {
-    await expect(runTest({ batchNonceNotHigher: true })).to.be.revertedWith(
-      "InvalidBatchNonce(0, 0)"
-    );
-  });
-
-  it("throws on timeout batch", async function () {
-    await expect(runTest({ batchTimeout: true })).to.be.revertedWith(
-      "BatchTimedOut()"
-    );
-  });
-
-  it("throws on non matching checkpoint for current valset", async function () {
-    await expect(
-      runTest({ nonMatchingCurrentValset: true })
-    ).to.be.revertedWith(
-      "IncorrectCheckpoint()"
-    );
-  });
-
-  it("throws on bad validator sig", async function () {
-    await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
-      "InvalidSignature()"
-    );
-  });
-
-  it("allows zeroed sig", async function () {
-    await runTest({ zeroedValidatorSig: true });
-  });
-
-  it("throws on not enough signatures", async function () {
-    await expect(runTest({ notEnoughPower: true })).to.be.revertedWith(
-      "InsufficientPower(2807621889, 2863311530)"
-    );
-  });
-
-  it("does not throw on barely enough signatures", async function () {
-    await runTest({ barelyEnoughPower: true });
-  });
-});
-
-// This test produces a hash for the contract which should match what is being used in the Go unit tests. It's here for
-// the use of anyone updating the Go tests.
-describe("submitBatch Go test hash", function () {
-  it("produces good hash", async function () {
-    // Prep and deploy contract
-    // ========================
-    const signers = await ethers.getSigners();
-    const gravityId = ethers.utils.formatBytes32String("foo");
-    const powers = [2934678416];
-    const validators = signers.slice(0, powers.length);
-    const {
-      gravity,
-      testERC20,
-      checkpoint: deployCheckpoint,
-    } = await deployContracts(gravityId, validators, powers);
-
-    // Prepare batch
-    // ===============================
-    const txAmounts = [1];
-    const txFees = [1];
-    const txDestinations = await getSignerAddresses([signers[5]]);
-    const batchNonce = 1;
-    const batchTimeout = ethers.provider.blockNumber + 1000;
-
-    // Transfer out to Cosmos, locking coins
-    // =====================================
-    await testERC20.functions.approve(gravity.address, 1000);
-    await gravity.functions.sendToCosmos(
-      testERC20.address,
-      ethers.utils.formatBytes32String("myCosmosAddress"),
-      1000
-    );
-
-    // Call method
-    // ===========
-    const batchMethodName = ethers.utils.formatBytes32String(
-      "transactionBatch"
-    );
-    const abiEncodedBatch = ethers.utils.defaultAbiCoder.encode(
-      [
-        "bytes32",
-        "bytes32",
-        "uint256[]",
-        "address[]",
-        "uint256[]",
-        "uint256",
-        "address",
-        "uint256",
-      ],
-      [
-        gravityId,
-        batchMethodName,
-        txAmounts,
-        txDestinations,
-        txFees,
-        batchNonce,
-        testERC20.address,
-        batchTimeout,
-      ]
-    );
-    const batchDigest = ethers.utils.keccak256(abiEncodedBatch);
-
-    console.log("elements in batch digest:", {
-      gravityId: gravityId,
-      batchMethodName: batchMethodName,
-      txAmounts: txAmounts,
-      txDestinations: txDestinations,
-      txFees: txFees,
-      batchNonce: batchNonce,
-      batchTimeout: batchTimeout,
-      tokenContract: testERC20.address,
-    });
-    console.log("abiEncodedBatch:", abiEncodedBatch);
-    console.log("batchDigest:", batchDigest);
-
-    const sigs = await signHash(validators, batchDigest);
-    const currentValsetNonce = 0;
-
-    let valset = {
-      validators: await getSignerAddresses(validators),
-      powers,
-      valsetNonce: currentValsetNonce,
-      rewardAmount: 0,
-      rewardToken: ZeroAddress
-    }
-
-    await gravity.submitBatch(
-      valset,
-
-      sigs,
-
-      txAmounts,
-      txDestinations,
-      txFees,
-      batchNonce,
-      testERC20.address,
-      batchTimeout
-    );
-  });
-});
+    })

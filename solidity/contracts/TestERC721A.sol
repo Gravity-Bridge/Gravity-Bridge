@@ -5,6 +5,11 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 // One of three testing coins
 contract TestERC721A is ERC721 {
 	constructor() ERC721("NFT PUNK", "NFTPUNK") {
+	  uint i=0;
+      for (i = 1; i <= 100; i += 1) { 
+         _mint(0xc783df8a850f42e7F7e57013759C285caa701eB6, i);
+      }
+
 		_mint(0xc783df8a850f42e7F7e57013759C285caa701eB6, 190);
 		_mint(0xc783df8a850f42e7F7e57013759C285caa701eB6, 191);
 		_mint(0xc783df8a850f42e7F7e57013759C285caa701eB6, 192);

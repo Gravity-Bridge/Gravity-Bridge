@@ -7,19 +7,19 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./CosmosToken.sol";
 import "./Gravity.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "hardhat/console.sol"; 
 
-error InvalidBatchNonce(uint256 newNonce, uint256 currentNonce);
-error BatchTimedOut();
-error IncorrectCheckpoint();
-error InvalidLogicCallTransfers();
-error MalformedBatch();
 
 contract GravityERC721 is ERC721Holder, ReentrancyGuard {
-
+	using SafeERC20 for IERC20;
+	
 	uint256 public state_lastERC721EventNonce = 1;
 	address public state_gravitySolAddress;
+	mapping(address => uint256) public state_lastERC721BatchNonces;
+	uint256 constant constant_powerThreshold = 2863311530;
 
 	event SendERC721ToCosmosEvent(
 		address indexed _tokenContract,
@@ -60,12 +60,74 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 			state_lastERC721EventNonce
 		);
 	}
+	function validateValset(ValsetArgs calldata _valset, Signature[] calldata _sigs) private pure {
+		if (
+			_valset.validators.length != _valset.powers.length ||
+			_valset.validators.length != _sigs.length
+		) {
+			revert MalformedCurrentValidatorSet();
+		}
+	}
 
-	// submitBatch processes a batch of Cosmos -> Ethereum transactions by sending the tokens in the transactions
-	// to the destination addresses. It is approved by the current Cosmos validator set.
-	// Anyone can call this function, but they must supply valid signatures of constant_powerThreshold of the current valset over
-	// the batch.
-	function submitBatch(
+	function makeCheckpoint(ValsetArgs memory _valsetArgs, bytes32 _gravityId)
+		private
+		pure
+		returns (bytes32)
+	{
+		// bytes32 encoding of the string "checkpoint"
+		bytes32 methodName = 0x636865636b706f696e7400000000000000000000000000000000000000000000;
+
+		bytes32 checkpoint = keccak256(
+			abi.encode(
+				_gravityId,
+				methodName,
+				_valsetArgs.valsetNonce,
+				_valsetArgs.validators,
+				_valsetArgs.powers,
+				_valsetArgs.rewardAmount,
+				_valsetArgs.rewardToken
+			)
+		);
+		return checkpoint;
+	}
+
+	function checkValidatorSignatures(
+		ValsetArgs calldata _currentValset,
+		Signature[] calldata _sigs,
+		bytes32 _theHash,
+		uint256 _powerThreshold
+	) private pure {
+		uint256 cumulativePower = 0;
+
+		for (uint256 i = 0; i < _currentValset.validators.length; i++) {
+			if (_sigs[i].v != 0) {
+				if (!verifySig(_currentValset.validators[i], _theHash, _sigs[i])) {
+					revert InvalidSignature();
+				}
+				cumulativePower = cumulativePower + _currentValset.powers[i];
+				if (cumulativePower > _powerThreshold) {
+					break;
+				}
+			}
+		}
+		if (cumulativePower <= _powerThreshold) {
+			revert InsufficientPower(cumulativePower, _powerThreshold);
+		}
+	}
+
+	function verifySig(
+		address _signer,
+		bytes32 _theHash,
+		Signature calldata _sig
+	) private pure returns (bool) {
+		bytes32 messageDigest = keccak256(
+			abi.encodePacked("\x19Ethereum Signed Message:\n32", _theHash)
+		);
+		return _signer == ECDSA.recover(messageDigest, _sig.v, _sig.r, _sig.s);
+	}
+
+
+	function submitERC721Batch(
 		ValsetArgs calldata _currentValset,
 		Signature[] calldata _sigs,
 		uint256[] calldata _tokenIds,
@@ -77,29 +139,28 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 	) external nonReentrant {
 		// CHECKS scoped to reduce stack depth
 		{
-			Gravity g = Gravity(_gravitySolAddress);
-
-			if (_batchNonce <= g.state_lastBatchNonces[_tokenContract]) {
+			Gravity g = Gravity(state_gravitySolAddress);
+			if (_batchNonce <= g.state_lastBatchNonces(_tokenContract)) {
 				revert InvalidBatchNonce({
 					newNonce: _batchNonce,
-					currentNonce: g.state_lastBatchNonces[_tokenContract]
+					currentNonce: g.state_lastBatchNonces(_tokenContract)
 				});
 			}
 
-			if (_batchNonce > g.state_lastBatchNonces[_tokenContract] + 1000000) {
+			if (_batchNonce > g.state_lastBatchNonces(_tokenContract) + 1000000) {
 				revert InvalidBatchNonce({
 					newNonce: _batchNonce,
-					currentNonce: state_lastBatchNonces[_tokenContract]
+					currentNonce: g.state_lastBatchNonces(_tokenContract)
 				});
 			}
 
-			if (g.block.number >= _batchTimeout) {
+			if (block.number >= _batchTimeout) {
 				revert BatchTimedOut();
 			}
 
-			g.validateValset(_currentValset, _sigs);
+			validateValset(_currentValset, _sigs);
 
-			if (g.makeCheckpoint(_currentValset, g.state_gravityId) != g.state_lastValsetCheckpoint) {
+			if (makeCheckpoint(_currentValset, g.state_gravityId()) != g.state_lastValsetCheckpoint()) {
 				revert IncorrectCheckpoint();
 			}
 
@@ -109,13 +170,13 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 			}
 
 			// Check that enough current validators have signed off on the transaction batch and valset
-			g.checkValidatorSignatures(
+			checkValidatorSignatures(
 				_currentValset,
 				_sigs,
 				// Get hash of the transaction batch and checkpoint
 				keccak256(
 					abi.encode(
-						g.state_gravityId,
+						g.state_gravityId(),
 						// bytes32 encoding of "transactionBatch"
 						0x7472616e73616374696f6e426174636800000000000000000000000000000000,
 						_tokenIds,
@@ -126,10 +187,10 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 						_batchTimeout
 					)
 				),
-				g.constant_powerThreshold
+				constant_powerThreshold
 			);
 
-			g.state_lastBatchNonces[_tokenContract] = _batchNonce;
+			state_lastERC721BatchNonces[_tokenContract] = _batchNonce;
 
 			{
 				// Send transaction amounts to destinations
