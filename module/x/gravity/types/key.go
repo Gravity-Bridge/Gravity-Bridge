@@ -292,11 +292,11 @@ func GetOutgoingTxBatchKey(tokenContract EthAddress, nonce uint64) string {
 	return GetOutgoingTxBatchContractPrefix(tokenContract) + ConvertByteArrToString(UInt64Bytes(nonce))
 }
 
-// GetBatchConfirmContractPrefix returns
-// prefix           eth-contract-address
-// [0xe1][0xc783df8a850f42e7F7e57013759C285caa701eB6]
-func GetBatchConfirmContractPrefix(tokenContract EthAddress) string {
-	return BatchConfirmKey + tokenContract.GetAddress()
+// GetBatchConfirmNonceContractPrefix returns
+// prefix           eth-contract-address                BatchNonce
+// [0xe1][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
+func GetBatchConfirmNonceContractPrefix(tokenContract EthAddress, batchNonce uint64) string {
+	return BatchConfirmKey + tokenContract.GetAddress() + ConvertByteArrToString(UInt64Bytes(batchNonce))
 }
 
 // GetBatchConfirmKey returns the following key format
@@ -307,9 +307,7 @@ func GetBatchConfirmKey(tokenContract EthAddress, batchNonce uint64, validator s
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	a := append(UInt64Bytes(batchNonce), validator.Bytes()...)
-	b := append([]byte(GetBatchConfirmContractPrefix(tokenContract)), a...)
-	return ConvertByteArrToString(b)
+	return GetBatchConfirmNonceContractPrefix(tokenContract, batchNonce) + string(validator.Bytes())
 }
 
 // GetLastEventNonceByValidatorPrefix returns
