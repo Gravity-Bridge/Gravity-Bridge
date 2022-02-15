@@ -49,7 +49,7 @@ async function runTest(opts: {
 
   // Prepare batch
   // ===============================
-  const numTxs = 100;
+  const numTxs = 10;
   const txDestinationsInt = new Array(numTxs);
   const txFees = new Array(numTxs);
   
@@ -176,10 +176,56 @@ async function runTest(opts: {
 }
 
 describe("submitBatch tests", function () {
-    it.only("throws on batch nonce not incremented", async function () {
-        await expect(runTest({ batchNonceNotHigher: true })).to.be.revertedWith(
-          "InvalidBatchNonce(0, 0)"
-        );
-      });
+  it.only("throws on batch nonce not incremented", async function () {
+      await expect(runTest({ batchNonceNotHigher: true })).to.be.revertedWith(
+        "InvalidBatchNonce(0, 0)"
+      );
+    });
+    
+  it.only("throws on malformed current valset", async function () {
+    await expect(runTest({ malformedCurrentValset: true })).to.be.revertedWith(
+      "MalformedCurrentValidatorSet()"
+    );
+  });
+  
+  it.only("throws on malformed txbatch", async function () {
+  await expect(runTest({ malformedTxBatch: true })).to.be.revertedWith(
+    "MalformedBatch()"
+    );
+  });
+    
+  it.only("throws on timeout batch", async function () {
+  await expect(runTest({ batchTimeout: true })).to.be.revertedWith(
+    "BatchTimedOut()"
+    );
+  });
 
-    })
+  it.only("throws on non matching checkpoint for current valset", async function () {
+  await expect(
+    runTest({ nonMatchingCurrentValset: true })
+    ).to.be.revertedWith(
+    "IncorrectCheckpoint()"
+    );
+  });
+
+  it.only("throws on bad validator sig", async function () {
+    await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
+      "InvalidSignature()"
+    );
+  });
+
+  it.only("allows zeroed sig", async function () {
+    await runTest({ zeroedValidatorSig: true });
+  });
+
+  it.only("throws on not enough signatures", async function () {
+    await expect(runTest({ notEnoughPower: true })).to.be.revertedWith(
+      "InsufficientPower(2807621889, 2863311530)"
+    );
+  });
+
+  it.only("does not throw on barely enough signatures", async function () {
+    await runTest({ barelyEnoughPower: true });
+  });
+})
+
