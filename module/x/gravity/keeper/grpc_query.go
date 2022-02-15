@@ -241,12 +241,7 @@ func (k Keeper) BatchConfirms(
 func (k Keeper) LogicConfirms(
 	c context.Context,
 	req *types.QueryLogicConfirmsRequest) (*types.QueryLogicConfirmsResponse, error) {
-	var confirms []types.MsgConfirmLogicCall
-	k.IterateLogicConfirmByInvalidationIDAndNonce(sdk.UnwrapSDKContext(c), req.InvalidationId,
-		req.InvalidationNonce, func(_ []byte, c *types.MsgConfirmLogicCall) bool {
-			confirms = append(confirms, *c)
-			return false
-		})
+	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(sdk.UnwrapSDKContext(c), req.InvalidationId, req.InvalidationNonce)
 
 	return &types.QueryLogicConfirmsResponse{Confirms: confirms}, nil
 }
