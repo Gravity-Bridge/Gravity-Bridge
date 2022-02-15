@@ -341,13 +341,15 @@ func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) st
 	return a + string(UInt64Bytes(invalidationNonce))
 }
 
+func GetLogicConfirmNonceInvalidationIdPrefix(invalidationId []byte, invalidationNonce uint64) string {
+	return KeyOutgoingLogicConfirm + string(invalidationId) + ConvertByteArrToString(UInt64Bytes(invalidationNonce))
+}
+
 func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) string {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	interm := KeyOutgoingLogicConfirm + string(invalidationId)
-	interm = interm + string(UInt64Bytes(invalidationNonce))
-	return interm + string(validator.Bytes())
+	return GetLogicConfirmNonceInvalidationIdPrefix(invalidationId, invalidationNonce) + string(validator.Bytes())
 }
 
 // GetPastEthSignatureCheckpointKey returns the following key format
