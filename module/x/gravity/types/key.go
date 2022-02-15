@@ -278,10 +278,10 @@ func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) string {
 	return ConvertByteArrToString(r)
 }
 
-// GetOutgoingTxBatchNoncePrefix returns the following format
-// prefix     nonce
-// [0xa][0 0 0 0 0 0 0 1]
-func GetOutgoingTxBatchNoncePrefix(tokenContract EthAddress) string {
+// GetOutgoingTxBatchContractPrefix returns the following format
+// prefix     eth-contract-address
+// [0xa][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+func GetOutgoingTxBatchContractPrefix(tokenContract EthAddress) string {
 	return OutgoingTXBatchKey + tokenContract.GetAddress()
 }
 
@@ -289,7 +289,7 @@ func GetOutgoingTxBatchNoncePrefix(tokenContract EthAddress) string {
 // prefix     eth-contract-address                     nonce
 // [0xa][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
 func GetOutgoingTxBatchKey(tokenContract EthAddress, nonce uint64) string {
-	return GetOutgoingTxBatchNoncePrefix(tokenContract) + ConvertByteArrToString(UInt64Bytes(nonce))
+	return GetOutgoingTxBatchContractPrefix(tokenContract) + ConvertByteArrToString(UInt64Bytes(nonce))
 }
 
 // GetBatchConfirmContractPrefix returns
