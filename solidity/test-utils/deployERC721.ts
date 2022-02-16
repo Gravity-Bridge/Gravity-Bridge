@@ -1,4 +1,5 @@
 import { Gravity } from "../typechain/Gravity";
+import { TestERC20A } from "../typechain/TestERC20A";
 import { GravityERC721} from "../typechain/GravityERC721";
 import { TestERC721A } from "../typechain/TestERC721A";
 import { ethers } from "hardhat";
@@ -43,5 +44,8 @@ export async function deployContracts(
     gravity.address
   )) as GravityERC721;
 
-  return { gravity, gravityERC721, testERC721, checkpoint };
+  const TestERC20 = await ethers.getContractFactory("TestERC20A");
+  const testERC20 = (await TestERC20.deploy()) as TestERC20A;
+
+  return { gravity, gravityERC721, testERC721,  testERC20, checkpoint };
 }

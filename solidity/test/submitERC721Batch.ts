@@ -96,6 +96,7 @@ async function runTest(opts: {
   // Call method
   // ===========
   const methodName = ethers.utils.formatBytes32String("transactionBatch");
+  
   let abiEncoded = ethers.utils.defaultAbiCoder.encode(
     [
       "bytes32",
@@ -175,6 +176,11 @@ async function runTest(opts: {
     rewardToken: ZeroAddress
   }
 
+  let tokenContracts = {
+    tokenContractERC721: testERC721.address, 
+    tokenContractERC20: testERC20.address
+  }
+
   let batchSubmitTx = await gravityERC721.submitERC721Batch(
     valset,
     sigs,
@@ -182,63 +188,62 @@ async function runTest(opts: {
     txDestinations,
     txFees,
     batchNonce,
-    testERC721.address,
-    testERC20.address,
+    tokenContracts,
     batchTimeout
   );
 }
 
 describe("submitBatch tests", function () {
-  // it.only("throws on batch nonce not incremented", async function () {
-  //     await expect(runTest({ batchNonceNotHigher: true })).to.be.revertedWith(
-  //       "InvalidBatchNonce(0, 0)"
-  //     );
-  //   });
+  it.only("throws on batch nonce not incremented", async function () {
+      await expect(runTest({ batchNonceNotHigher: true })).to.be.revertedWith(
+        "InvalidBatchNonce(0, 0)"
+      );
+    });
     
-  // it.only("throws on malformed current valset", async function () {
-  //   await expect(runTest({ malformedCurrentValset: true })).to.be.revertedWith(
-  //     "MalformedCurrentValidatorSet()"
-  //   );
-  // });
+  it.only("throws on malformed current valset", async function () {
+    await expect(runTest({ malformedCurrentValset: true })).to.be.revertedWith(
+      "MalformedCurrentValidatorSet()"
+    );
+  });
   
-  // it.only("throws on malformed txbatch", async function () {
-  // await expect(runTest({ malformedTxBatch: true })).to.be.revertedWith(
-  //   "MalformedBatch()"
-  //   );
-  // });
+  it.only("throws on malformed txbatch", async function () {
+  await expect(runTest({ malformedTxBatch: true })).to.be.revertedWith(
+    "MalformedBatch()"
+    );
+  });
     
-  // it.only("throws on timeout batch", async function () {
-  // await expect(runTest({ batchTimeout: true })).to.be.revertedWith(
-  //   "BatchTimedOut()"
-  //   );
-  // });
+  it.only("throws on timeout batch", async function () {
+  await expect(runTest({ batchTimeout: true })).to.be.revertedWith(
+    "BatchTimedOut()"
+    );
+  });
 
-  // it.only("throws on non matching checkpoint for current valset", async function () {
-  // await expect(
-  //   runTest({ nonMatchingCurrentValset: true })
-  //   ).to.be.revertedWith(
-  //   "IncorrectCheckpoint()"
-  //   );
-  // });
+  it.only("throws on non matching checkpoint for current valset", async function () {
+  await expect(
+    runTest({ nonMatchingCurrentValset: true })
+    ).to.be.revertedWith(
+    "IncorrectCheckpoint()"
+    );
+  });
 
-  // it.only("throws on bad validator sig", async function () {
-  //   await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
-  //     "InvalidSignature()"
-  //   );
-  // });
+  it.only("throws on bad validator sig", async function () {
+    await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
+      "InvalidSignature()"
+    );
+  });
 
   it.only("allows zeroed sig", async function () {
     await runTest({ zeroedValidatorSig: true });
   });
 
-  // it.only("throws on not enough signatures", async function () {
-  //   await expect(runTest({ notEnoughPower: true })).to.be.revertedWith(
-  //     "InsufficientPower(2807621889, 2863311530)"
-  //   );
-  // });
+  it.only("throws on not enough signatures", async function () {
+    await expect(runTest({ notEnoughPower: true })).to.be.revertedWith(
+      "InsufficientPower(2807621889, 2863311530)"
+    );
+  });
 
-  // it.only("does not throw on barely enough signatures", async function () {
-  //   await runTest({ barelyEnoughPower: true });
-  // });
+  it.only("does not throw on barely enough signatures", async function () {
+    await runTest({ barelyEnoughPower: true });
+  });
 })
 

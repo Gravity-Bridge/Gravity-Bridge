@@ -140,7 +140,7 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 		uint256 _batchNonce,
 		address _tokenContractERC721,
 		uint256 _batchTimeout
-	) private nonReentrant {
+	) private  {
 		Gravity g = Gravity(state_gravitySolAddress);
 		if (_batchNonce <= g.state_lastBatchNonces(_tokenContractERC721)) {
 				revert InvalidBatchNonce({
@@ -198,7 +198,7 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 		uint256[] calldata _tokenIds,
 		address[] calldata _destinations,
 		uint256[] calldata _fees
-	) private nonReentrant {
+	) private  {
 		
 		// Send transaction amounts to destinations
 		uint256 totalFee;
