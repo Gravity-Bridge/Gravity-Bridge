@@ -662,7 +662,7 @@ func NewGravityApp(
 		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 	}
 
-	ah, err := newAnteHandler(options, ibcKeeper.ChannelKeeper)
+	ah, err := newAnteHandler(options, ibcKeeper.ChannelKeeper, appCodec)
 	if err != nil {
 		panic("invalid antehandler created")
 	}
