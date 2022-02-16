@@ -15,15 +15,15 @@ message BatchFees {
 }
 
 message EventWithdrawalReceived {
-  string module = 1;
-  string bridge_contract = 2;
-  string bridge_chain_id = 3;
-  string outgoing_tx_id = 4;
-  string nonce = 5;
+  string bridge_contract = 1;
+  string bridge_chain_id = 2;
+  string outgoing_tx_id = 3;
+  string nonce = 4;
 }
 
 message EventWithdrawCanceled {
-  string module = 1;
-  string bridge_contract = 2;
-  string bridge_chain_id = 3;
+  string sender = 1;
+  string tx_id = 2;
+  string bridge_contract = 3;
+  string bridge_chain_id = 4;
 }

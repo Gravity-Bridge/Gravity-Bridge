@@ -69,7 +69,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventSetOperatorAddress{
-			Module:  msg.Type(),
+			Message: msg.Type(),
 			Address: orch.String(),
 		},
 	)
@@ -105,8 +105,8 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventValsetConfirmKey{
-			Module: msg.Type(),
-			Key:    string(key),
+			Message: msg.Type(),
+			Key:     string(key),
 		},
 	)
 
@@ -140,8 +140,8 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingTxId{
-			Module: msg.Type(),
-			TxId:   fmt.Sprint(txID),
+			Message: msg.Type(),
+			TxId:    fmt.Sprint(txID),
 		},
 	)
 
@@ -165,8 +165,8 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 	}
 
 	ctx.EventManager().EmitTypedEvent(
-		&types.EventBatchNonce{
-			Module:     msg.Type(),
+		&types.EventBatchCreated{
+			Message:    msg.Type(),
 			BatchNonce: fmt.Sprint(batch.BatchNonce),
 		},
 	)
@@ -208,7 +208,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventBatchConfirmKey{
-			Module:          msg.Type(),
+			Message:         msg.Type(),
 			BatchConfirmKey: string(key),
 		},
 	)
@@ -247,12 +247,6 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 	}
 
 	k.SetLogicCallConfirm(ctx, msg)
-
-	ctx.EventManager().EmitTypedEvent(
-		&types.EventModule{
-			Module: msg.Type(),
-		},
-	)
 
 	return nil, nil
 }
@@ -294,8 +288,8 @@ func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, m
 	// Emit the handle message event
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventClaim{
-			Module: string(msg.GetType()),
-			// TODO: maybe return something better here? is this the right string representation?
+			Message:       string(msg.GetType()),
+			ClaimHash:     string(hash),
 			AttestationId: string(types.GetAttestationKey(msg.GetEventNonce(), hash)),
 		},
 	)
@@ -461,13 +455,6 @@ func (k msgServer) CancelSendToEth(c context.Context, msg *types.MsgCancelSendTo
 		return nil, err
 	}
 
-	ctx.EventManager().EmitTypedEvent(
-		&types.EventOutgoingTxId{
-			Module: msg.Type(),
-			TxId:   fmt.Sprint(msg.TransactionId),
-		},
-	)
-
 	return &types.MsgCancelSendToEthResponse{}, nil
 }
 
@@ -478,7 +465,7 @@ func (k msgServer) SubmitBadSignatureEvidence(c context.Context, msg *types.MsgS
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventBadSignatureEvidence{
-			Module:                 msg.Type(),
+			Message:                fmt.Sprint(msg.Type()),
 			BadEthSignature:        fmt.Sprint(msg.Signature),
 			BadEthSignatureSubject: fmt.Sprint(msg.Subject),
 		},

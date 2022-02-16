@@ -41,7 +41,6 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventMultisigUpdateRequest{
-			Module:         types.ModuleName,
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
 			MultisigId:     fmt.Sprint(valset.Nonce),
