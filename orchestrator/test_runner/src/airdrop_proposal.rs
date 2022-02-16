@@ -52,14 +52,12 @@ pub async fn airdrop_proposal_test(contact: &Contact, keys: Vec<ValidatorKeys>) 
     .await
     .unwrap();
 
-    // submit five more airdrops each with a random number of recipients
+    // submit one more airdrop with a random number of recipients
     let mut rng = rand::thread_rng();
-    for _ in 0..3 {
-        let recipients: u16 = rng.gen_range(1..NUM_AIRDROP_RECIPIENTS);
-        submit_and_pass_airdrop_proposal(STAKING_TOKEN.clone(), recipients, &keys, contact)
-            .await
-            .unwrap();
-    }
+    let recipients: u16 = rng.gen_range(1..NUM_AIRDROP_RECIPIENTS);
+    submit_and_pass_airdrop_proposal(STAKING_TOKEN.clone(), recipients, &keys, contact)
+        .await
+        .unwrap();
 
     // submit an airdrop that contains more tokens than are in the community pool
     submit_and_fail_airdrop_proposal(STAKING_TOKEN.clone(), &keys, contact, false, true).await;

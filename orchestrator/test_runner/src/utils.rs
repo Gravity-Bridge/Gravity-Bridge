@@ -475,7 +475,7 @@ pub async fn vote_yes_with_retry(
         .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(), key, Some(timeout))
         .await;
     while let Err(e) = res {
-        contact.wait_for_next_block(timeout).await.unwrap();
+        contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
         res = contact
             .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(), key, Some(timeout))
             .await;
