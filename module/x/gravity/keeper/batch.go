@@ -72,10 +72,9 @@ func (k Keeper) BuildOutgoingTXBatch(
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatch{
-			Module:         types.ModuleName,
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
-			BatchId:        fmt.Sprint(nextID),
+			BatchId:        types.GetOutgoingTxBatchKey(contract, nextID),
 			Nonce:          fmt.Sprint(nextID),
 		},
 	)
@@ -253,10 +252,9 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatchCanceled{
-			Module:         types.ModuleName,
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
-			BatchId:        fmt.Sprint(nonce),
+			BatchId:        types.GetOutgoingTxBatchKey(tokenContract, nonce),
 			Nonce:          fmt.Sprint(nonce),
 		},
 	)

@@ -57,12 +57,11 @@ message ERC20Token {
 }
 
 message EventObservation {
-  string module           = 1;
-  string attestation_type = 2;
-  string bridge_contract  = 3;
-  string bridge_chain_id  = 4;
-  string attestation_id   = 5;
-  string nonce            = 6;
+  string attestation_type = 1;
+  string bridge_contract  = 2;
+  string bridge_chain_id  = 3;
+  string attestation_id   = 4;
+  string nonce            = 5;
 }
 
 message EventInvalidSendToCosmosReceiver {

@@ -82,7 +82,6 @@ func (k Keeper) AddToOutgoingPool(
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventWithdrawalReceived{
-			Module:         types.ModuleName,
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
 			OutgoingTxId:   strconv.Itoa(int(nextID)),
@@ -141,7 +140,8 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventWithdrawCanceled{
-			Module:         types.ModuleName,
+			Sender:         sender.String(),
+			TxId:           fmt.Sprint(txId),
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
 		},
