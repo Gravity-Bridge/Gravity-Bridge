@@ -56,17 +56,10 @@ async function runTest(opts: {
   
   let erc721counter = 1;
   const txIds = new Array(numTxs); 
-  console.log("before transfer");
+  
   testERC20.functions.approve(gravityERC721.address, 1000);
   testERC20.functions.transfer(gravityERC721.address, 1000);
-  console.log("after transfer");
 
-  // await testERC20.functions.approve(gravity.address, 1000);
-  // await gravity.functions.sendToCosmos(
-  //   testERC20.address,
-  //   ethers.utils.formatBytes32String("myCosmosAddress"),
-  //   1000
-  // );
   for (let i = 0; i < numTxs; i++) {
     await testERC721.functions.approve(gravityERC721.address, erc721counter+i);
     await gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
@@ -247,3 +240,110 @@ describe("submitBatch tests", function () {
   });
 })
 
+describe("submitBatch Go test hash", function () {
+  it.only("produces good hash", async function () {
+    // Prep and deploy contract
+    // ========================
+    const signers = await ethers.getSigners();
+    const gravityId = ethers.utils.formatBytes32String("foo");
+    const powers = [2934678416];
+    const validators = signers.slice(0, powers.length);
+    const {
+      gravity,
+      gravityERC721,
+      testERC721,
+      testERC20,
+      checkpoint: deployCheckpoint
+    } = await deployContracts(gravityId, validators, powers);
+
+    // Prepare batch
+    // ===============================
+    const txIds = [1];
+    const txFees = [1];
+    const txDestinations = await getSignerAddresses([signers[5]]);
+    const batchNonce = 1;
+    const batchTimeout = ethers.provider.blockNumber + 1000;
+
+    // Transfer out to Cosmos, locking coins
+    // =====================================
+    testERC20.functions.approve(gravityERC721.address, 1000);
+    testERC20.functions.transfer(gravityERC721.address, 1000);
+
+    await testERC721.functions.approve(gravityERC721.address, 1);
+    await gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
+      testERC721.address,
+      ethers.utils.formatBytes32String("myCosmosAddress"),
+      1
+    )
+
+    // Call method
+    // ===========
+    const batchMethodName = ethers.utils.formatBytes32String(
+      "transactionBatch"
+    );
+    const abiEncodedBatch = ethers.utils.defaultAbiCoder.encode(
+      [
+        "bytes32",
+        "bytes32",
+        "uint256[]",
+        "address[]",
+        "uint256[]",
+        "uint256",
+        "address",
+        "uint256",
+      ],
+      [
+        gravityId,
+        batchMethodName,
+        txIds,
+        txDestinations,
+        txFees,
+        batchNonce,
+        testERC721.address,
+        batchTimeout,
+      ]
+    );
+    const batchDigest = ethers.utils.keccak256(abiEncodedBatch);
+
+    console.log("elements in batch digest:", {
+      gravityId: gravityId,
+      batchMethodName: batchMethodName,
+      txIds: txIds,
+      txDestinations: txDestinations,
+      txFees: txFees,
+      batchNonce: batchNonce,
+      batchTimeout: batchTimeout,
+      tokenContract: testERC721.address,
+    });
+    console.log("abiEncodedBatch:", abiEncodedBatch);
+    console.log("batchDigest:", batchDigest);
+
+    const sigs = await signHash(validators, batchDigest);
+    const currentValsetNonce = 0;
+
+    let valset = {
+      validators: await getSignerAddresses(validators),
+      powers,
+      valsetNonce: currentValsetNonce,
+      rewardAmount: 0,
+      rewardToken: ZeroAddress
+    }
+
+
+    let tokenContracts = {
+      tokenContractERC721: testERC721.address, 
+      tokenContractERC20: testERC20.address
+    }
+    
+    let batchSubmitTx = await gravityERC721.submitERC721Batch(
+      valset,
+      sigs,
+      txIds,
+      txDestinations,
+      txFees,
+      batchNonce,
+      tokenContracts,
+      batchTimeout
+    );
+  });
+});
