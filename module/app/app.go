@@ -653,6 +653,7 @@ func NewGravityApp(
 
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
+
 	options := ante.HandlerOptions{
 		AccountKeeper:   accountKeeper,
 		BankKeeper:      bankKeeper,
@@ -660,11 +661,13 @@ func NewGravityApp(
 		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
 		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 	}
-	ah, err := ante.NewAnteHandler(options)
+
+	ah, err := newAnteHandler(options, ibcKeeper.ChannelKeeper)
 	if err != nil {
 		panic("invalid antehandler created")
 	}
-	app.SetAnteHandler(ah)
+	app.SetAnteHandler(*ah)
+
 	app.SetEndBlocker(app.EndBlocker)
 
 	if loadLatest {
