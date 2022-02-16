@@ -13,6 +13,11 @@ import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721H
 import "hardhat/console.sol"; 
 
 
+struct tokenContractBatchAddrs {
+	address tokenContractERC721;
+	address tokenContractERC20;
+}
+
 contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 	using SafeERC20 for IERC20;
 	
@@ -126,31 +131,28 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 		return _signer == ECDSA.recover(messageDigest, _sig.v, _sig.r, _sig.s);
 	}
 
-
-	function submitERC721Batch(
+	function checkBatchValidation(
 		ValsetArgs calldata _currentValset,
 		Signature[] calldata _sigs,
 		uint256[] calldata _tokenIds,
 		address[] calldata _destinations,
 		uint256[] calldata _fees,
 		uint256 _batchNonce,
-		address _tokenContract,
+		address _tokenContractERC721,
 		uint256 _batchTimeout
-	) external nonReentrant {
-		// CHECKS scoped to reduce stack depth
-		{
-			Gravity g = Gravity(state_gravitySolAddress);
-			if (_batchNonce <= g.state_lastBatchNonces(_tokenContract)) {
+	) private nonReentrant {
+		Gravity g = Gravity(state_gravitySolAddress);
+		if (_batchNonce <= g.state_lastBatchNonces(_tokenContractERC721)) {
 				revert InvalidBatchNonce({
 					newNonce: _batchNonce,
-					currentNonce: g.state_lastBatchNonces(_tokenContract)
+					currentNonce: g.state_lastBatchNonces(_tokenContractERC721)
 				});
 			}
 
-			if (_batchNonce > g.state_lastBatchNonces(_tokenContract) + 1000000) {
+			if (_batchNonce > g.state_lastBatchNonces(_tokenContractERC721) + 1000000) {
 				revert InvalidBatchNonce({
 					newNonce: _batchNonce,
-					currentNonce: g.state_lastBatchNonces(_tokenContract)
+					currentNonce: g.state_lastBatchNonces(_tokenContractERC721)
 				});
 			}
 
@@ -169,7 +171,6 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 				revert MalformedBatch();
 			}
 
-			// Check that enough current validators have signed off on the transaction batch and valset
 			checkValidatorSignatures(
 				_currentValset,
 				_sigs,
@@ -183,31 +184,62 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 						_destinations,
 						_fees,
 						_batchNonce,
-						_tokenContract,
+						_tokenContractERC721,
 						_batchTimeout
 					)
 				),
 				constant_powerThreshold
 			);
+	}
 
-			state_lastERC721BatchNonces[_tokenContract] = _batchNonce;
+	function executeERC721Batch (
+		address _tokenContractERC721,
+		address _tokenContractERC20,
+		uint256[] calldata _tokenIds,
+		address[] calldata _destinations,
+		uint256[] calldata _fees
+	) private nonReentrant {
+		
+		// Send transaction amounts to destinations
+		uint256 totalFee;
+		for (uint256 i = 0; i < _tokenIds.length; i++) {
+			ERC721(_tokenContractERC721).safeTransferFrom(address(this), _destinations[i], _tokenIds[i]);
+			totalFee = totalFee + _fees[i];
+		}
+		// Send transaction fees to msg.sender
+		IERC20(_tokenContractERC20).safeTransfer(msg.sender, totalFee);
+		
+	}
 
-			{
-				// Send transaction amounts to destinations
-				uint256 totalFee;
-				for (uint256 i = 0; i < _tokenIds.length; i++) {
-					ERC721(_tokenContract).safeTransferFrom(address(this), _destinations[i], _tokenIds[i]);
-					totalFee = totalFee + _fees[i];
-				}
+	function submitERC721Batch(
+		ValsetArgs calldata _currentValset,
+		Signature[] calldata _sigs,
+		uint256[] calldata _tokenIds,
+		address[] calldata _destinations,
+		uint256[] calldata _fees,
+		uint256 _batchNonce,
+		tokenContractBatchAddrs memory _tokenContracts,
+		uint256 _batchTimeout
+	) external nonReentrant {
+		// CHECKS scoped to reduce stack depth
+		{
+			address _tokenContractERC721 = _tokenContracts.tokenContractERC721;
+			address _tokenContractERC20 = _tokenContracts.tokenContractERC20;
 
-				// Send transaction fees to msg.sender
-				IERC20(_tokenContract).safeTransfer(msg.sender, totalFee);
-			}
+			checkBatchValidation(_currentValset, _sigs, _tokenIds, _destinations, 
+			_fees, _batchNonce, _tokenContractERC721, _batchTimeout);
+			// Gravity g = Gravity(state_gravitySolAddress);
+
+			// Check that enough current validators have signed off on the transaction batch and valset
+
+			state_lastERC721BatchNonces[_tokenContractERC721] = _batchNonce;
+			executeERC721Batch(_tokenContractERC721, _tokenContractERC20, _tokenIds, _destinations, _fees); 
 		}
 
 		{
+			address _tokenContractERC721 = _tokenContracts.tokenContractERC721;
 			state_lastERC721EventNonce = state_lastERC721EventNonce + 1;
-			emit TxnERC721BatchExecutedEvent(_batchNonce, _tokenContract, state_lastERC721EventNonce);
+			emit TxnERC721BatchExecutedEvent(_batchNonce, _tokenContractERC721, state_lastERC721EventNonce);
 		}
 	}
 }
