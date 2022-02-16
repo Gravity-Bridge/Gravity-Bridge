@@ -370,9 +370,9 @@ func (k Keeper) SetValsetConfirm(ctx sdk.Context, valsetConf types.MsgValsetConf
 
 // GetValsetConfirms returns all validator set confirmations by nonce
 func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []types.MsgValsetConfirm) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.ValsetConfirmKey))
-	start, end := prefixRange([]byte(types.ConvertByteArrToString(types.UInt64Bytes(nonce))))
-	iterator := prefixStore.Iterator(start, end)
+	store := ctx.KVStore(k.storeKey)
+	prefix := types.GetValsetConfirmNoncePrefix(nonce)
+	iterator := store.Iterator(prefixRange([]byte(prefix)))
 
 	defer iterator.Close()
 

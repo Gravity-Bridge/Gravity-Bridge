@@ -154,8 +154,10 @@ func (k Keeper) IterateLogicConfirmByInvalidationIDAndNonce(
 	invalidationID []byte,
 	invalidationNonce uint64,
 	cb func([]byte, *types.MsgConfirmLogicCall) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyOutgoingLogicConfirm))
-	iter := prefixStore.Iterator(prefixRange(append(invalidationID, types.UInt64Bytes(invalidationNonce)...)))
+	store := ctx.KVStore(k.storeKey)
+	prefix := types.GetLogicConfirmNonceInvalidationIdPrefix(invalidationID, invalidationNonce)
+	iter := store.Iterator(prefixRange([]byte(prefix)))
+
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
