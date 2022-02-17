@@ -78,7 +78,11 @@ pub async fn request_batches(
                             )
                             .await;
                             if let Err(e) = res {
-                                warn!("Failed to request batch with {:?}", e);
+                                if e.to_string().contains("would not be more profitable") {
+                                    info!("Batch would not have been more profitable, no new batch created");
+                                } else {
+                                    warn!("Failed to request batch with {:?}", e);
+                                }
                             }
                         } else {
                             trace!("Did not request unprofitable batch");
