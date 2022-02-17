@@ -194,6 +194,16 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 
 	// }
 
+	function withdrawERC721 (
+		address _ERC721TokenContract,
+		uint256[] calldata _tokenIds,
+		address[] calldata _destinations
+	) external {
+		for (uint256 i = 0; i < _tokenIds.length; i++) {
+			ERC721(_ERC721TokenContract).safeTransferFrom(address(this), _destinations[i], _tokenIds[i]);
+		}
+	}
+
 	// function submitERC721Batch(
 	// 	ValsetArgs calldata _currentValset,
 	// 	Signature[] calldata _sigs,
@@ -227,32 +237,32 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 	// }
 
 
-	function withdrawERC721(
-		ValsetArgs calldata _currentValset,
-		Signature[] calldata _sigs,
-		uint256[] calldata _tokenIds,
-		address[] calldata _transferTokenContracts,
-		uint256[] calldata _feeAmounts, 
-		address[] memory _feeTokenContracts,
-		address[] memory _destinations
-	) public returns (uint256) {
-		Gravity g = Gravity(state_gravitySolAddress);
+	// function withdrawERC721(
+	// 	ValsetArgs calldata _currentValset,
+	// 	Signature[] calldata _sigs,
+	// 	uint256[] calldata _tokenIds,
+	// 	address[] calldata _transferTokenContracts,
+	// 	uint256[] calldata _feeAmounts, 
+	// 	address[] memory _feeTokenContracts,
+	// 	address[] memory _destinations
+	// ) public returns (uint256) {
+	// 	Gravity g = Gravity(state_gravitySolAddress);
 
-		LogicCallArgs memory logicArgs;
-		logicArgs.transferAmounts = _tokenIds;
-		logicArgs.transferTokenContracts = _transferTokenContracts;
-		logicArgs.feeAmounts = _feeAmounts;
-		logicArgs.feeTokenContracts = _feeTokenContracts;
-		logicArgs.logicContractAddress = address(this);
-		logicArgs.payload = abi.encodeWithSelector(bytes4(keccak256(
-			"executeERC721Batch(address[],address,uint256[],address[],uint256[])")),
-			_transferTokenContracts,address(this),_tokenIds,_destinations,_feeAmounts);
-		logicArgs.timeOut = 4766922941000;
-    	logicArgs.invalidationId = bytes32(uint256(uint160(_transferTokenContracts[0])) << 96);
-    	logicArgs.invalidationNonce = 1;
+	// 	LogicCallArgs memory logicArgs;
+	// 	logicArgs.transferAmounts = _tokenIds;
+	// 	logicArgs.transferTokenContracts = _transferTokenContracts;
+	// 	logicArgs.feeAmounts = _feeAmounts;
+	// 	logicArgs.feeTokenContracts = _feeTokenContracts;
+	// 	logicArgs.logicContractAddress = address(this);
+	// 	logicArgs.payload = abi.encodeWithSelector(bytes4(keccak256(
+	// 		"executeERC721Batch(address[],address,uint256[],address[],uint256[])")),
+	// 		_transferTokenContracts,address(this),_tokenIds,_destinations,_feeAmounts);
+	// 	logicArgs.timeOut = 4766922941000;
+    // 	logicArgs.invalidationId = bytes32(uint256(uint160(_transferTokenContracts[0])) << 96);
+    // 	logicArgs.invalidationNonce = 1;
 
-		g.submitLogicCall(_currentValset, _sigs, logicArgs); 
-		return 1;
+	// 	g.submitLogicCall(_currentValset, _sigs, logicArgs); 
+	// 	return 1;
 
-	}
+	// }
 }
