@@ -86,13 +86,14 @@ func (k Keeper) CancelOutgoingLogicCall(ctx sdk.Context, invalidationId []byte, 
 	k.DeleteOutgoingLogicCall(ctx, call.InvalidationId, call.InvalidationNonce)
 
 	// a consuming application will have to watch for this event and act on it
-	batchEvent := sdk.NewEvent(
-		types.EventTypeOutgoingLogicCallCanceled,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyInvalidationID, fmt.Sprint(call.InvalidationId)),
-		sdk.NewAttribute(types.AttributeKeyInvalidationNonce, fmt.Sprint(call.InvalidationNonce)),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventOutgoingLogicCallCanceled{
+			Module:                     types.ModuleName,
+			LogicCallInvalidationId:    fmt.Sprint(call.InvalidationId),
+			LogicCallInvalidationNonce: fmt.Sprint(call.InvalidationNonce),
+		},
 	)
-	ctx.EventManager().EmitEvent(batchEvent)
+
 	return nil
 }
 
@@ -153,8 +154,10 @@ func (k Keeper) IterateLogicConfirmByInvalidationIDAndNonce(
 	invalidationID []byte,
 	invalidationNonce uint64,
 	cb func([]byte, *types.MsgConfirmLogicCall) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyOutgoingLogicConfirm))
-	iter := prefixStore.Iterator(prefixRange(append(invalidationID, types.UInt64Bytes(invalidationNonce)...)))
+	store := ctx.KVStore(k.storeKey)
+	prefix := types.GetLogicConfirmNonceInvalidationIdPrefix(invalidationID, invalidationNonce)
+	iter := store.Iterator(prefixRange([]byte(prefix)))
+
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

@@ -80,16 +80,15 @@ func (k Keeper) AddToOutgoingPool(
 	// todo: add second index for sender so that we can easily query: give pending Tx by sender
 	// todo: what about a second index for receiver?
 
-	poolEvent := sdk.NewEvent(
-		types.EventTypeBridgeWithdrawalReceived,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyContract, k.GetBridgeContractAddress(ctx).GetAddress()),
-		sdk.NewAttribute(types.AttributeKeyBridgeChainID, strconv.Itoa(int(k.GetBridgeChainID(ctx)))),
-		sdk.NewAttribute(types.AttributeKeyOutgoingTXID, strconv.Itoa(int(nextID))),
-		sdk.NewAttribute(types.AttributeKeyNonce, fmt.Sprint(nextID)),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventWithdrawalReceived{
+			Module:         types.ModuleName,
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			OutgoingTxId:   strconv.Itoa(int(nextID)),
+			Nonce:          fmt.Sprint(nextID),
+		},
 	)
-	ctx.EventManager().EmitEvent(poolEvent)
-
 	return nextID, nil
 }
 
@@ -140,14 +139,13 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 		return sdkerrors.Wrap(err, "transfer vouchers")
 	}
 
-	poolEvent := sdk.NewEvent(
-		types.EventTypeBridgeWithdrawCanceled,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyContract, k.GetBridgeContractAddress(ctx).GetAddress()),
-		sdk.NewAttribute(types.AttributeKeyBridgeChainID, strconv.Itoa(int(k.GetBridgeChainID(ctx)))),
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventWithdrawCanceled{
+			Module:         types.ModuleName,
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+		},
 	)
-	ctx.EventManager().EmitEvent(poolEvent)
-
 	return nil
 }
 

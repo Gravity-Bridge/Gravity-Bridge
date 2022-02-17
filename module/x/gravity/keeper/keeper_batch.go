@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -68,9 +67,10 @@ func (k Keeper) DeleteBatchConfirms(ctx sdk.Context, batch types.InternalOutgoin
 // MARK finish-batches: this is where the key is iterated in the old (presumed working) code
 // TODO: specify which nonce this is
 func (k Keeper) IterateBatchConfirmByNonceAndTokenContract(ctx sdk.Context, nonce uint64, tokenContract types.EthAddress, cb func([]byte, types.MsgConfirmBatch) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.BatchConfirmKey))
-	prefix := append([]byte(tokenContract.GetAddress()), types.UInt64Bytes(nonce)...)
-	iter := prefixStore.Iterator(prefixRange(prefix))
+	store := ctx.KVStore(k.storeKey)
+	prefix := types.GetBatchConfirmNonceContractPrefix(tokenContract, nonce)
+	iter := store.Iterator(prefixRange([]byte(prefix)))
+
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

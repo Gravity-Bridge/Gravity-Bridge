@@ -147,19 +147,17 @@ func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
 	}
-	observationEvent := sdk.NewEvent(
-		types.EventTypeObservation,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(types.AttributeKeyAttestationType, string(claim.GetType())),
-		sdk.NewAttribute(types.AttributeKeyContract, k.GetBridgeContractAddress(ctx).GetAddress()),
-		sdk.NewAttribute(types.AttributeKeyBridgeChainID, strconv.Itoa(int(k.GetBridgeChainID(ctx)))),
-		// todo: serialize with hex/ base64 ?
-		sdk.NewAttribute(types.AttributeKeyAttestationID,
-			string(types.GetAttestationKey(claim.GetEventNonce(), hash))),
-		sdk.NewAttribute(types.AttributeKeyNonce, fmt.Sprint(claim.GetEventNonce())),
-		// TODO: do we want to emit more information?
+
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventObservation{
+			Module:          types.ModuleName,
+			AttestationType: string(claim.GetType()),
+			BridgeContract:  k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeChainId:   strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			AttestationId:   string(types.GetAttestationKey(claim.GetEventNonce(), hash)),
+			Nonce:           fmt.Sprint(claim.GetEventNonce()),
+		},
 	)
-	ctx.EventManager().EmitEvent(observationEvent)
 }
 
 // SetAttestation sets the attestation in the store

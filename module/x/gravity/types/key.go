@@ -126,14 +126,28 @@ var (
 	PastEthSignatureCheckpointKey = "PastEthSignatureCheckpointKey"
 )
 
-// GetOrchestratorAddressKey returns the following key format
+// GetOrchestratorAddressPrefix returns
 // prefix
+// [0xe8]
+func GetOrchestratorAddressPrefix() string {
+	return KeyOrchestratorAddress
+}
+
+// GetOrchestratorAddressKey returns the following key format
+// prefix address
 // [0xe8][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
 func GetOrchestratorAddressKey(orc sdk.AccAddress) string {
 	if err := sdk.VerifyAddressFormat(orc); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid orchestrator address"))
 	}
-	return KeyOrchestratorAddress + string(orc.Bytes())
+	return GetOrchestratorAddressPrefix() + string(orc.Bytes())
+}
+
+// GetEthAddressByValidatorPrefix returns
+// prefix
+// [0x0]
+func GetEthAddressByValidatorPrefix() string {
+	return EthAddressByValidatorKey
 }
 
 // GetEthAddressByValidatorKey returns the following key format
@@ -143,21 +157,42 @@ func GetEthAddressByValidatorKey(validator sdk.ValAddress) string {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return EthAddressByValidatorKey + string(validator.Bytes())
+	return GetEthAddressByValidatorPrefix() + string(validator.Bytes())
+}
+
+// GetValidatorByEthAddressPrefix returns
+// prefix
+// [0xf9]
+func GetValidatorByEthAddressPrefix() string {
+	return ValidatorByEthAddressKey
 }
 
 // GetValidatorByEthAddressKey returns the following key format
 // prefix              cosmos-validator
 // [0xf9][0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B]
 func GetValidatorByEthAddressKey(ethAddress EthAddress) string {
-	return ValidatorByEthAddressKey + string([]byte(ethAddress.GetAddress()))
+	return GetValidatorByEthAddressPrefix() + string([]byte(ethAddress.GetAddress()))
+}
+
+// GetValsetKey returns
+// prefix
+// [0x0]
+func GetValsetPrefix() string {
+	return ValsetRequestKey
 }
 
 // GetValsetKey returns the following key format
 // prefix    nonce
 // [0x0][0 0 0 0 0 0 0 1]
 func GetValsetKey(nonce uint64) string {
-	return ValsetRequestKey + string(UInt64Bytes(nonce))
+	return GetValsetPrefix() + string(UInt64Bytes(nonce))
+}
+
+// GetValsetConfirmNoncePrefix returns the following format
+// prefix   nonce
+// [0x0][0 0 0 0 0 0 0 1]
+func GetValsetConfirmNoncePrefix(nonce uint64) string {
+	return ValsetConfirmKey + ConvertByteArrToString(UInt64Bytes(nonce))
 }
 
 // GetValsetConfirmKey returns the following key format
@@ -168,7 +203,7 @@ func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) string {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return ValsetConfirmKey + ConvertByteArrToString(UInt64Bytes(nonce)) + string(validator.Bytes())
+	return GetValsetConfirmNoncePrefix(nonce) + string(validator.Bytes())
 }
 
 // GetClaimKey returns the following key format
@@ -220,7 +255,7 @@ func GetAttestationKey(eventNonce uint64, claimHash []byte) string {
 	return ConvertByteArrToString(key)
 }
 
-// GetOutgoingTxPoolContractPrefix returns the following key format
+// GetOutgoingTxPoolContractPrefix returns
 // prefix	feeContract
 // [0x6][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 // This prefix is used for iterating over unbatched transactions for a given contract
@@ -243,11 +278,25 @@ func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) string {
 	return ConvertByteArrToString(r)
 }
 
+// GetOutgoingTxBatchContractPrefix returns the following format
+// prefix     eth-contract-address
+// [0xa][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+func GetOutgoingTxBatchContractPrefix(tokenContract EthAddress) string {
+	return OutgoingTXBatchKey + tokenContract.GetAddress()
+}
+
 // GetOutgoingTxBatchKey returns the following key format
-// prefix     nonce                     eth-contract-address
-// [0xa][0 0 0 0 0 0 0 1][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+// prefix     eth-contract-address                     nonce
+// [0xa][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
 func GetOutgoingTxBatchKey(tokenContract EthAddress, nonce uint64) string {
-	return OutgoingTXBatchKey + tokenContract.GetAddress() + string(UInt64Bytes(nonce))
+	return GetOutgoingTxBatchContractPrefix(tokenContract) + ConvertByteArrToString(UInt64Bytes(nonce))
+}
+
+// GetBatchConfirmNonceContractPrefix returns
+// prefix           eth-contract-address                BatchNonce
+// [0xe1][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
+func GetBatchConfirmNonceContractPrefix(tokenContract EthAddress, batchNonce uint64) string {
+	return BatchConfirmKey + tokenContract.GetAddress() + ConvertByteArrToString(UInt64Bytes(batchNonce))
 }
 
 // GetBatchConfirmKey returns the following key format
@@ -258,10 +307,14 @@ func GetBatchConfirmKey(tokenContract EthAddress, batchNonce uint64, validator s
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	a := append(UInt64Bytes(batchNonce), validator.Bytes()...)
-	b := append([]byte(tokenContract.GetAddress()), a...)
-	c := BatchConfirmKey + string(b)
-	return c
+	return GetBatchConfirmNonceContractPrefix(tokenContract, batchNonce) + string(validator.Bytes())
+}
+
+// GetLastEventNonceByValidatorPrefix returns
+// prefix
+// [0x0]
+func GetLastEventNonceByValidatorPrefix() string {
+	return LastEventNonceByValidatorKey
 }
 
 // GetLastEventNonceByValidatorKey indexes lateset event nonce by validator
@@ -272,7 +325,7 @@ func GetLastEventNonceByValidatorKey(validator sdk.ValAddress) string {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return LastEventNonceByValidatorKey + string(validator.Bytes())
+	return GetLastEventNonceByValidatorPrefix() + string(validator.Bytes())
 }
 
 func GetDenomToERC20Key(denom string) string {
@@ -288,13 +341,15 @@ func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) st
 	return a + string(UInt64Bytes(invalidationNonce))
 }
 
+func GetLogicConfirmNonceInvalidationIdPrefix(invalidationId []byte, invalidationNonce uint64) string {
+	return KeyOutgoingLogicConfirm + string(invalidationId) + ConvertByteArrToString(UInt64Bytes(invalidationNonce))
+}
+
 func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) string {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	interm := KeyOutgoingLogicConfirm + string(invalidationId)
-	interm = interm + string(UInt64Bytes(invalidationNonce))
-	return interm + string(validator.Bytes())
+	return GetLogicConfirmNonceInvalidationIdPrefix(invalidationId, invalidationNonce) + string(validator.Bytes())
 }
 
 // GetPastEthSignatureCheckpointKey returns the following key format

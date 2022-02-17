@@ -274,3 +274,75 @@ message MsgSubmitBadSignatureEvidence {
 }
 
 message MsgSubmitBadSignatureEvidenceResponse {}
+
+message EventSetOperatorAddress {
+  string module = 1;
+  string address = 2;
+}
+
+message EventValsetConfirmKey {
+  string module = 1;
+  string key = 2;
+}
+
+message EventOutgoingTxId {
+  string module = 1;
+  string tx_id = 2;
+}
+
+message EventBatchNonce {
+  string module = 1;
+  string batch_nonce = 2;
+}
+
+message EventBatchConfirmKey {
+  string module = 1;
+  string batch_confirm_key = 2;
+}
+
+message EventBatchSendToEthClaim {
+  string nonce = 1;
+}
+
+message EventModule {
+  string module = 1;
+}
+
+message EventClaim {
+  string module = 1;
+  string attestation_id = 2;
+}
+
+message EventBadSignatureEvidence {
+  string module = 1;
+  string bad_eth_signature = 2;
+  string bad_eth_signature_subject = 3;
+}
+
+message EventERC20DeployedClaim {
+  string token =1;
+  string nonce = 2;
+}
+
+message EventValsetUpdatedClaim {
+  string nonce = 1;
+}
+
+message EventMultisigUpdateRequest {
+  string module = 1;
+  string bridge_contract = 2;
+  string bridge_chain_id = 3;
+  string multisig_id = 4;
+  string nonce = 5;
+}
+
+message EventOutgoingLogicCallCanceled {
+  string module = 1;
+  string logic_call_invalidation_id = 2;
+  string logic_call_invalidation_nonce = 3;
+}
+
+message EventSignatureSlashing {
+  string type = 1;
+  string address =2;
+}
