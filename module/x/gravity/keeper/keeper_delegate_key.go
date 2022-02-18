@@ -30,13 +30,13 @@ func (k Keeper) SetOrchestratorValidator(ctx sdk.Context, val sdk.ValAddress, or
 
 // GetOrchestratorValidator returns the validator key associated with an orchestrator key
 func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (validator stakingtypes.Validator, found bool) {
+	valAddr, foundValAddr := k.GetOrchestratorValidatorAddr(ctx, orch)
 	if err := sdk.VerifyAddressFormat(orch); err != nil {
 		ctx.Logger().Error("invalid orch address")
 		return validator, false
 	}
-	store := ctx.KVStore(k.storeKey)
-	valAddr := store.Get([]byte(types.GetOrchestratorAddressKey(orch)))
-	if valAddr == nil {
+
+	if !foundValAddr && valAddr == nil {
 		return stakingtypes.Validator{
 			OperatorAddress: "",
 			ConsensusPubkey: &codectypes.Any{

@@ -5,14 +5,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 func TestValsetCreationIfNotAvailable(t *testing.T) {
@@ -115,6 +119,95 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 
 }
 
+func TestNonValidatorValsetConfirm(t *testing.T) {
+	//	Test if a non-validator confirm won't panic
+
+	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	pk := input.GravityKeeper
+	params := input.GravityKeeper.GetParams(ctx)
+
+	// Create not nice guy with very little stake
+	consPrivKey := ed25519.GenPrivKey()
+	consPubKey := consPrivKey.PubKey()
+	valPrivKey := secp256k1.GenPrivKey()
+	valPubKey := valPrivKey.PubKey()
+	valAddr := sdk.ValAddress(valPubKey.Address())
+	accAddr := sdk.AccAddress(valPubKey.Address())
+
+	// Initialize the account for the key
+	acc := input.AccountKeeper.NewAccount(
+		input.Context,
+		authtypes.NewBaseAccount(accAddr, valPubKey, 0, 0),
+	)
+
+	require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, keeper.InitCoins))
+	input.BankKeeper.SendCoinsFromModuleToAccount(
+		input.Context,
+		types.ModuleName,
+		accAddr,
+		keeper.InitCoins,
+	)
+
+	// Set the account in state
+	input.AccountKeeper.SetAccount(input.Context, acc)
+
+	sh := staking.NewHandler(input.StakingKeeper)
+	_, err := sh(
+		input.Context,
+		keeper.NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(1)),
+	)
+	require.NoError(t, err)
+	// Run the staking endblocker to ensure valset is correct in state
+	staking.EndBlocker(input.Context, input.StakingKeeper)
+
+	ethAddr, err := types.NewEthAddress("0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B")
+	if err != nil {
+		panic("found invalid address in EthAddr")
+	}
+	input.GravityKeeper.SetEthAddressForValidator(input.Context, valAddr, *ethAddr)
+	input.GravityKeeper.SetOrchestratorValidator(input.Context, valAddr, accAddr)
+
+	notNiceVal, found := pk.GetOrchestratorValidator(ctx, accAddr)
+	require.True(t, found)
+	require.Equal(t, notNiceVal.Status, stakingtypes.Unbonded)
+
+	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
+	vs, err := pk.GetCurrentValset(ctx)
+	require.NoError(t, err)
+	height := uint64(ctx.BlockHeight()) - (params.SignedValsetsWindow + 1)
+	vs.Height = height
+
+	vs.Nonce = pk.GetLatestValsetNonce(ctx) + 1
+	pk.StoreValset(ctx, vs)
+	pk.SetLatestValsetNonce(ctx, vs.Nonce)
+
+	for i, orch := range keeper.OrchAddrs {
+		if i == 0 {
+			// don't sign with first validator
+			continue
+		}
+		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
+		require.NoError(t, err)
+
+		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
+		pk.SetValsetConfirm(ctx, *conf)
+	}
+
+	conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, accAddr, "dummysig")
+	pk.SetValsetConfirm(ctx, *conf)
+
+	// Now remove all the stake
+	_, err = sh(
+		input.Context,
+		keeper.NewTestMsgUnDelegateValidator(valAddr, sdk.NewIntFromUint64(1)),
+	)
+	require.NoError(t, err)
+
+	EndBlocker(ctx, pk)
+}
+
 func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T) {
 	//	Slashing Conditions for Unbonding Validator
 
@@ -181,6 +274,106 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	// check if tokens shouldn't be slashed for val2.
 }
 
+func TestNonValidatorBatchConfirm(t *testing.T) {
+	//	Test if a non-validator confirm won't panic
+
+	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	pk := input.GravityKeeper
+	params := pk.GetParams(ctx)
+
+	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
+
+	// Create not nice guy with very little stake
+	consPrivKey := ed25519.GenPrivKey()
+	consPubKey := consPrivKey.PubKey()
+	valPrivKey := secp256k1.GenPrivKey()
+	valPubKey := valPrivKey.PubKey()
+	valAddr := sdk.ValAddress(valPubKey.Address())
+	accAddr := sdk.AccAddress(valPubKey.Address())
+
+	// Initialize the account for the key
+	acc := input.AccountKeeper.NewAccount(
+		input.Context,
+		authtypes.NewBaseAccount(accAddr, valPubKey, 0, 0),
+	)
+
+	require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, keeper.InitCoins))
+	input.BankKeeper.SendCoinsFromModuleToAccount(
+		input.Context,
+		types.ModuleName,
+		accAddr,
+		keeper.InitCoins,
+	)
+
+	// Set the account in state
+	input.AccountKeeper.SetAccount(input.Context, acc)
+
+	sh := staking.NewHandler(input.StakingKeeper)
+	_, err := sh(
+		input.Context,
+		keeper.NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(1)),
+	)
+	require.NoError(t, err)
+	// Run the staking endblocker to ensure valset is correct in state
+	staking.EndBlocker(input.Context, input.StakingKeeper)
+
+	ethAddr, err := types.NewEthAddress("0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B")
+	if err != nil {
+		panic("found invalid address in EthAddr")
+	}
+	input.GravityKeeper.SetEthAddressForValidator(input.Context, valAddr, *ethAddr)
+	input.GravityKeeper.SetOrchestratorValidator(input.Context, valAddr, accAddr)
+
+	notNiceVal, found := pk.GetOrchestratorValidator(ctx, accAddr)
+	require.True(t, found)
+	require.Equal(t, notNiceVal.Status, stakingtypes.Unbonded)
+
+	// First store a batch
+
+	batch, err := types.NewInternalOutgingTxBatchFromExternalBatch(types.OutgoingTxBatch{
+		BatchNonce:    1,
+		BatchTimeout:  0,
+		Transactions:  []types.OutgoingTransferTx{},
+		TokenContract: keeper.TokenContractAddrs[0],
+		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
+	})
+	require.NoError(t, err)
+	pk.StoreBatch(ctx, *batch)
+	unslashedBatches := pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))
+	assert.True(t, len(unslashedBatches) == 1 && unslashedBatches[0].BatchNonce == 1)
+
+	for i, orch := range keeper.OrchAddrs {
+		pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
+			Nonce:         batch.BatchNonce,
+			TokenContract: keeper.TokenContractAddrs[0],
+			EthSigner:     keeper.EthAddrs[i].String(),
+			Orchestrator:  orch.String(),
+			Signature:     "",
+		})
+	}
+
+	// Sign using our not nice validator
+	// This is not really possible if we use confirmHandlerCommon
+	pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
+		Nonce:         batch.BatchNonce,
+		TokenContract: keeper.TokenContractAddrs[0],
+		EthSigner:     ethAddr.GetAddress(),
+		Orchestrator:  accAddr.String(),
+		Signature:     "",
+	})
+
+	// Now remove all the stake
+	_, err = sh(
+		input.Context,
+		keeper.NewTestMsgUnDelegateValidator(valAddr, sdk.NewIntFromUint64(1)),
+	)
+	require.NoError(t, err)
+
+	EndBlocker(ctx, pk)
+}
+
 func TestBatchSlashing(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -224,6 +417,7 @@ func TestBatchSlashing(t *testing.T) {
 			input.SlashingKeeper.SetValidatorSigningInfo(ctx, valConsAddr, valSigningInfo)
 			continue
 		}
+
 		pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
 			Nonce:         batch.BatchNonce,
 			TokenContract: keeper.TokenContractAddrs[0],
