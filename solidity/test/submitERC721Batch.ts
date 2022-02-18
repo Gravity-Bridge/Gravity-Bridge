@@ -187,31 +187,31 @@ async function runTest(opts: {
 }
 
 describe("submitBatch tests", function () {
-  it.only("throws on batch nonce not incremented", async function () {
+  it("throws on batch nonce not incremented", async function () {
       await expect(runTest({ batchNonceNotHigher: true })).to.be.revertedWith(
         "InvalidBatchNonce(0, 0)"
       );
     });
     
-  it.only("throws on malformed current valset", async function () {
+  it("throws on malformed current valset", async function () {
     await expect(runTest({ malformedCurrentValset: true })).to.be.revertedWith(
       "MalformedCurrentValidatorSet()"
     );
   });
   
-  it.only("throws on malformed txbatch", async function () {
+  it("throws on malformed txbatch", async function () {
   await expect(runTest({ malformedTxBatch: true })).to.be.revertedWith(
     "MalformedBatch()"
     );
   });
     
-  it.only("throws on timeout batch", async function () {
+  it("throws on timeout batch", async function () {
   await expect(runTest({ batchTimeout: true })).to.be.revertedWith(
     "BatchTimedOut()"
     );
   });
 
-  it.only("throws on non matching checkpoint for current valset", async function () {
+  it("throws on non matching checkpoint for current valset", async function () {
   await expect(
     runTest({ nonMatchingCurrentValset: true })
     ).to.be.revertedWith(
@@ -219,29 +219,29 @@ describe("submitBatch tests", function () {
     );
   });
 
-  it.only("throws on bad validator sig", async function () {
+  it("throws on bad validator sig", async function () {
     await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
       "InvalidSignature()"
     );
   });
 
-  it.only("allows zeroed sig", async function () {
+  it("allows zeroed sig", async function () {
     await runTest({ zeroedValidatorSig: true });
   });
 
-  it.only("throws on not enough signatures", async function () {
+  it("throws on not enough signatures", async function () {
     await expect(runTest({ notEnoughPower: true })).to.be.revertedWith(
       "InsufficientPower(2807621889, 2863311530)"
     );
   });
 
-  it.only("does not throw on barely enough signatures", async function () {
+  it("does not throw on barely enough signatures", async function () {
     await runTest({ barelyEnoughPower: true });
   });
 })
 
 describe("submitBatch Go test hash", function () {
-  it.only("produces good hash", async function () {
+  it("produces good hash", async function () {
     // Prep and deploy contract
     // ========================
     const signers = await ethers.getSigners();
