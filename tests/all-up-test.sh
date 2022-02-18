@@ -33,4 +33,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 # Run new test container instance
+if [[ -z ${ALCHEMY_ID} ]] && [[ $TEST_TYPE == *"RELAY_MARKET"* ]] ; then
+echo "Skip $TEST_TYPE"
+elif [[ -z ${ALCHEMY_ID} ]] && [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* ]] ; then
+echo "Skip $TEST_TYPE"
+else 
 docker run --name gravity_all_up_test_instance $PLATFORM_CMD --cap-add=NET_ADMIN -t gravity-base /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh $NODES $TEST_TYPE $ALCHEMY_ID
+fi
