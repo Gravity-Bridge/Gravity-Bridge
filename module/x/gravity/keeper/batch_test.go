@@ -16,6 +16,8 @@ import (
 //nolint: exhaustivestruct
 func TestBatches(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		now                    = time.Now().UTC()
@@ -220,7 +222,7 @@ func TestBatches(t *testing.T) {
 	// verify that confirms are persisted
 	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, secondBatch.BatchNonce, secondBatch.TokenContract)
 	require.Equal(t, len(OrchAddrs), len(secondBatchConfirms))
-  
+
 	//check that last added batch is the one with the biggest nonce
 	lastOutgoingBatch := input.GravityKeeper.GetLastOutgoingBatchByTokenType(ctx, *myTokenContractAddr)
 	require.NotNil(t, lastOutgoingBatch)
@@ -289,6 +291,8 @@ func TestBatches(t *testing.T) {
 //nolint: exhaustivestruct
 func TestBatchesFullCoins(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		now                 = time.Now().UTC()
@@ -498,6 +502,8 @@ func TestBatchesFullCoins(t *testing.T) {
 //nolint: exhaustivestruct
 func TestManyBatches(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		now                = time.Now().UTC()
@@ -595,6 +601,8 @@ func TestManyBatches(t *testing.T) {
 //nolint: exhaustivestruct
 func TestPoolTxRefund(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		now                 = time.Now().UTC()
@@ -669,6 +677,8 @@ func TestPoolTxRefund(t *testing.T) {
 //nolint: exhaustivestruct
 func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 
 	// pause the bridge
@@ -745,6 +755,8 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 // test that tokens on the blacklist do not enter batches
 func TestEthereumBlacklistBatches(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		now                    = time.Now().UTC()

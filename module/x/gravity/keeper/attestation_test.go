@@ -12,6 +12,8 @@ import (
 // Sets up 10 attestations and checks that they are returned in the correct order
 func TestGetMostRecentAttestations(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	k := input.GravityKeeper
 	ctx := input.Context
 

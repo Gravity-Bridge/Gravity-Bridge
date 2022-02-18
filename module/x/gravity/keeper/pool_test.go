@@ -15,6 +15,8 @@ import (
 // Tests that the pool is populated with the created transactions before any batch is created
 func TestAddToOutgoingPool(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -103,6 +105,8 @@ func TestAddToOutgoingPool(t *testing.T) {
 // Checks some common edge cases like invalid inputs, user doesn't have enough tokens, token doesn't exist, inconsistent entry
 func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -181,6 +185,8 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 
 func TestTotalBatchFeeInPool(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 
 	// token1
@@ -263,6 +269,8 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 
 func TestGetBatchFeeByTokenType(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 
 	// token1
@@ -378,6 +386,8 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 
 func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -467,6 +477,8 @@ func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, f
 // Checks some common edge cases like invalid inputs, user didn't submit the transaction, tx doesn't exist, inconsistent entry
 func TestRefundInconsistentTx(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		mySender, _            = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -503,6 +515,8 @@ func TestRefundInconsistentTx(t *testing.T) {
 
 func TestRefundNonexistentTx(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		mySender, _ = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -518,6 +532,8 @@ func TestRefundNonexistentTx(t *testing.T) {
 
 func TestRefundTwice(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -570,6 +586,8 @@ func TestRefundTwice(t *testing.T) {
 // Check the various getter methods for the pool
 func TestGetUnbatchedTransactions(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 
 	// token1
@@ -716,6 +734,8 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 // Check the various iteration methods for the pool
 func TestIterateUnbatchedTransactions(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 
 	// token1
@@ -837,6 +857,8 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 // Ensures that any unbatched tx will make its way into the exported data from ExportGenesis
 func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	k := input.GravityKeeper
 	var (

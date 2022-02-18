@@ -27,6 +27,8 @@ func TestQueryValsetConfirm(t *testing.T) {
 	require.NoError(t, err1)
 	require.NoError(t, err2)
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -101,6 +103,8 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 	)
 
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -283,6 +287,8 @@ func TestLastValsetRequests(t *testing.T) {
 	// any lower than this and a validator won't be created
 	const minStake = 1000000
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := sdk.WrapSDKContext(input.Context)
 
 	// one more valset request
@@ -449,6 +455,8 @@ func TestPendingValsetRequests(t *testing.T) {
 	// any lower than this and a validator won't be created
 	const minStake = 1000000
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := sdk.WrapSDKContext(input.Context)
 
 	// one more valset request
@@ -523,6 +531,8 @@ func TestLastPendingBatchRequest(t *testing.T) {
 	// any lower than this and a validator won't be created
 	const minStake = 1000000
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := sdk.WrapSDKContext(input.Context)
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 	createTestBatch(t, input, 2)
@@ -590,6 +600,8 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 //nolint: exhaustivestruct
 func TestQueryAllBatchConfirms(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -629,6 +641,8 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 //nolint: exhaustivestruct
 func TestQueryLogicCalls(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -688,6 +702,8 @@ func TestQueryLogicCalls(t *testing.T) {
 //nolint: exhaustivestruct
 func TestQueryLogicCallsConfirms(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 	k := input.GravityKeeper
 	var (
@@ -750,6 +766,8 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 // Check with multiple nonces and tokenContracts
 func TestQueryBatch(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 
@@ -806,6 +824,8 @@ func TestQueryBatch(t *testing.T) {
 //nolint: exhaustivestruct
 func TestLastBatchesRequest(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 
@@ -938,6 +958,8 @@ func TestQueryCurrentValset(t *testing.T) {
 		}
 	)
 	input, _ := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 
 	currentValset, err := input.GravityKeeper.GetCurrentValset(sdkCtx)
@@ -958,6 +980,8 @@ func TestQueryERC20ToDenom(t *testing.T) {
 		CosmosOriginated: true,
 	}
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -981,6 +1005,8 @@ func TestQueryDenomToERC20(t *testing.T) {
 		CosmosOriginated: true,
 	}
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
@@ -995,6 +1021,8 @@ func TestQueryDenomToERC20(t *testing.T) {
 //nolint: exhaustivestruct
 func TestQueryPendingSendToEth(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper

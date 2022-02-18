@@ -104,6 +104,8 @@ func TestCurrentValsetNormalization(t *testing.T) {
 //nolint: exhaustivestruct
 func TestAttestationIterator(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	// add some attestations to the store
 
@@ -151,6 +153,8 @@ func TestAttestationIterator(t *testing.T) {
 //nolint: exhaustivestruct
 func TestDelegateKeys(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	k := input.GravityKeeper
 	var (
@@ -193,6 +197,8 @@ func TestDelegateKeys(t *testing.T) {
 //nolint: exhaustivestruct
 func TestLastSlashedValsetNonce(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	k := input.GravityKeeper
 
 	vs, err := k.GetCurrentValset(ctx)

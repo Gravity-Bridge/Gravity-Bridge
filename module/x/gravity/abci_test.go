@@ -17,6 +17,7 @@ import (
 
 func TestValsetCreationIfNotAvailable(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 	pk := input.GravityKeeper
 
 	// EndBlocker should set a new validator set if not available
@@ -28,6 +29,7 @@ func TestValsetCreationIfNotAvailable(t *testing.T) {
 
 func TestValsetCreationUponUnbonding(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 	pk := input.GravityKeeper
 
 	currentValsetNonce := pk.GetLatestValsetNonce(ctx)
@@ -51,6 +53,8 @@ func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
 	//	Don't slash validators if valset is created before he is bonded.
 
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	pk := input.GravityKeeper
 	params := input.GravityKeeper.GetParams(ctx)
 
@@ -72,6 +76,8 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	//	Slashing Conditions for Bonded Validator
 
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	pk := input.GravityKeeper
 	params := input.GravityKeeper.GetParams(ctx)
 
@@ -114,6 +120,8 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 
 	//  Create 5 validators
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	val := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
 	fmt.Println("val1  tokens", val.GetTokens().ToDec())
 
@@ -175,6 +183,8 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 
 func TestBatchSlashing(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	pk := input.GravityKeeper
 	params := pk.GetParams(ctx)
 
@@ -239,6 +249,8 @@ func TestBatchSlashing(t *testing.T) {
 
 func TestValsetEmission(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	pk := input.GravityKeeper
 
 	// Store a validator set with a power change as the most recent validator set
@@ -261,6 +273,8 @@ func TestValsetEmission(t *testing.T) {
 
 func TestValsetSetting(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	pk := input.GravityKeeper
 	pk.SetValsetRequest(ctx)
 	valsets := pk.GetValsets(ctx)
@@ -270,6 +284,8 @@ func TestValsetSetting(t *testing.T) {
 /// Test batch timeout
 func TestBatchTimeout(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	pk := input.GravityKeeper
 	params := pk.GetParams(ctx)
 	var (
@@ -388,6 +404,8 @@ func TestBatchTimeout(t *testing.T) {
 
 func TestValsetPruning(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	pk := input.GravityKeeper
 	params := pk.GetParams(ctx)
 
