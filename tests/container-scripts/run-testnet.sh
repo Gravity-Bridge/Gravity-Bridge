@@ -54,12 +54,12 @@ set +u
 # to do with a Geth backend, simply becuase reproducting that state on our testnet would be far too complex to consider
 # The tradeoff here is that hardhat is an ETH dev environment and not an actual ETH implementation, as such the outputs
 # may be different. These two tests have different fork block heights they rely on
-if [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* ]]; then
+if [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* ]] && [[ ! -z ${ALCHEMY_ID} ]]; then
     export ALCHEMY_ID=$ALCHEMY_ID
     pushd /gravity/solidity
     npm run solidity_test_fork &
     popd
-elif [[ $TEST_TYPE == *"RELAY_MARKET"* ]]; then
+elif [[ $TEST_TYPE == *"RELAY_MARKET"* ]] && [[ ! -z ${ALCHEMY_ID} ]]; then
     export ALCHEMY_ID=$ALCHEMY_ID
     pushd /gravity/solidity
     npm run evm_fork &

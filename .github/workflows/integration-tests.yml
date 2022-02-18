@@ -72,9 +72,10 @@ jobs:
       - uses: satackey/action-docker-layer-caching@v0.0.11
         continue-on-error: true
       - name: Run all up relay market test
-        run: tests/all-up-test.sh RELAY_MARKET $ALCHEMY_ID
         env:
           ALCHEMY_ID: ${{ secrets.ALCHEMY_ID }}
+        if: ${{ env.ALCHEMY_ID != '' }}
+        run: tests/all-up-test.sh RELAY_MARKET $ALCHEMY_ID
   orchestrator-keys:
     runs-on: ubuntu-latest
     needs: happy-path-geth
