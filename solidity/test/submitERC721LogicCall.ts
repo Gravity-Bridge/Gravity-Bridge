@@ -75,7 +75,6 @@ async function runTest(opts: {
       1+i);
     tokenIds[i] = 1+i;
     destinations[i] = signers[i + 5].address;
-  
     txAmounts[i] = 0;
   }
 
@@ -110,7 +109,6 @@ async function runTest(opts: {
     invalidationId: ethers.utils.hexZeroPad(testERC20.address, 32), // invalidationId
     invalidationNonce: invalidationNonce // invalidationNonce
   }
-
 
   const digest = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
     [
@@ -233,7 +231,6 @@ async function runTest(opts: {
   expect(
     (await testERC20.functions.balanceOf(await signers[0].getAddress()))[0].toNumber()
   ).to.equal(9010);
-  console.log("in the end of test");
 }
 
 describe("submitLogicCall tests", function () {
@@ -289,7 +286,7 @@ describe("submitLogicCall tests", function () {
 // This test produces a hash for the contract which should match what is being used in the Go unit tests. It's here for
 // the use of anyone updating the Go tests.
 describe("logicCall Go test hash", function () {
-  it("produces good hash", async function () {
+  it.only("produces good hash", async function () {
 
 
     // Prep and deploy contract
@@ -316,28 +313,54 @@ describe("logicCall Go test hash", function () {
       1000
     );
 
-
+    const numTxs = 10;
+    const txPayloads = new Array(numTxs);
+    const txAmounts = new Array(numTxs);
+    const tokenIds = new Array(numTxs);
+    const destinations = new Array(numTxs);
+  
+    for (let i = 0; i < numTxs; i++) {
+      await testERC721.functions.approve(gravityERC721.address, 1+i);
+      await gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
+        testERC721.address,
+        ethers.utils.formatBytes32String("myCosmosAddress"),
+        1+i);
+      tokenIds[i] = 1+i;
+      destinations[i] = signers[i + 5].address;
+      txAmounts[i] = 0;
+    }
+  
 
     // Call method
     // ===========
     const methodName = ethers.utils.formatBytes32String(
       "logicCall"
     );
-    const numTxs = 10;
-
     let invalidationNonce = 1
 
     let timeOut = 4766922941000
 
+    // let logicCallArgs = {
+    //   transferAmounts: [1], // transferAmounts
+    //   transferTokenContracts: [testERC20.address], // transferTokenContracts
+    //   feeAmounts: [1], // feeAmounts
+    //   feeTokenContracts: [testERC20.address], // feeTokenContracts
+    //   logicContractAddress: "0x17c1736CcF692F653c433d7aa2aB45148C016F68", // logicContractAddress
+    //   payload: ethers.utils.formatBytes32String("testingPayload"), // payloads
+    //   timeOut,
+    //   invalidationId: ethers.utils.formatBytes32String("invalidationId"), // invalidationId
+    //   invalidationNonce: invalidationNonce // invalidationNonce
+    // }
+
     let logicCallArgs = {
-      transferAmounts: [1], // transferAmounts
+      transferAmounts: [0], // transferAmounts
       transferTokenContracts: [testERC20.address], // transferTokenContracts
-      feeAmounts: [1], // feeAmounts
+      feeAmounts: [numTxs], // feeAmounts
       feeTokenContracts: [testERC20.address], // feeTokenContracts
-      logicContractAddress: "0x17c1736CcF692F653c433d7aa2aB45148C016F68", // logicContractAddress
-      payload: ethers.utils.formatBytes32String("testingPayload"), // payloads
+      logicContractAddress: gravityERC721.address, // logicContractAddress
+      payload: gravityERC721.interface.encodeFunctionData("withdrawERC721", [testERC721.address, tokenIds, destinations]), // payloads
       timeOut,
-      invalidationId: ethers.utils.formatBytes32String("invalidationId"), // invalidationId
+      invalidationId: ethers.utils.hexZeroPad(testERC20.address, 32), // invalidationId
       invalidationNonce: invalidationNonce // invalidationNonce
     }
 
@@ -417,6 +440,13 @@ describe("logicCall Go test hash", function () {
       "sigs": sigs,
     })
     console.log("Function call bytes:", res.data)
+
+  //check ownership of ERC721 tokens now transferred to signers
+  for (let i = 0; i < numTxs; i++) {
+    expect(
+      (await testERC721.ownerOf(tokenIds[i]))
+    ).to.equal(signers[i + 5].address);
+  }
 
   })
 });
