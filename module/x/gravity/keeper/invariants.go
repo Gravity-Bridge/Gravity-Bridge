@@ -46,8 +46,13 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			contract := batch.TokenContract
 			_, denom := k.ERC20ToDenomLookup(ctx, contract)
 			// Add the batch total to the contract counter
-			denomTotal := expectedBals[denom].Add(batchTotal)
-			expectedBals[denom] = &denomTotal
+			_, ok := expectedBals[denom]
+			if !ok {
+				zero := sdk.ZeroInt()
+				expectedBals[denom] = &zero
+			}
+
+			*expectedBals[denom] = expectedBals[denom].Add(batchTotal)
 
 			return false // continue iterating
 		})
@@ -58,10 +63,16 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 
 			// Collect the send amount + fee amount for each tx
 			txTotal := tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount)
+			_, ok := expectedBals[denom]
+			if !ok {
+				zero := sdk.ZeroInt()
+				expectedBals[denom] = &zero
+			}
 			*expectedBals[denom] = expectedBals[denom].Add(txTotal)
 
 			return false // continue iterating
 		})
+
 		for _, actual := range actualBals {
 			denom := actual.GetDenom()
 			cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, denom)
