@@ -2,23 +2,14 @@
 pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "./CosmosToken.sol";
 import "./Gravity.sol";
-import "./GravityERC721Withdraw.sol"; 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "hardhat/console.sol";
 
-struct tokenContractBatchAddrs {
-	address tokenContractERC721;
-	address tokenContractERC20;
-}
-
-
-contract GravityERC721 is ERC721Holder, ReentrancyGuard {
+contract GravityERC721 is ERC721Holder, ReentrancyGuard, Ownable{
 	
 	uint256 public state_lastERC721EventNonce = 1;
 	address public state_gravitySolAddress;
@@ -199,12 +190,20 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 		uint256[] calldata _tokenIds,
 		address[] calldata _destinations
 	) external {
+		console.log("in the withdraw function");
+		console.log("current contract");
+		console.log(_ERC721TokenContract);
 		for (uint256 i = 0; i < _tokenIds.length; i++) {
+			console.log("owner of token");
+			console.log(ERC721(_ERC721TokenContract).ownerOf(_tokenIds[i]));
+
 			ERC721(_ERC721TokenContract).safeTransferFrom(address(this), _destinations[i], _tokenIds[i]);
 		}
+
 	}
 
-	// function submitERC721Batch(
+
+ 	// function submitERC721Batch(
 	// 	ValsetArgs calldata _currentValset,
 	// 	Signature[] calldata _sigs,
 	// 	uint256[] calldata _tokenIds,
