@@ -109,6 +109,23 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 	return validator, true
 }
 
+// GetOrchestratorValidatorAddr returns the validator address associated with an orchestrator key.
+// Getting a result from this function means that the validator existed at some point and sent a SetOrchestratorAddress
+// message. It does not mean that the validator is in the current validator set, for that use GetOrchestratorValidator.
+// This will hold true as long as we never delete any delegate keys.
+func (k Keeper) GetOrchestratorValidatorAddr(ctx sdk.Context, orch sdk.AccAddress) (validator sdk.ValAddress, found bool) {
+	if err := sdk.VerifyAddressFormat(orch); err != nil {
+		ctx.Logger().Error("invalid orch address")
+		return validator, false
+	}
+	store := ctx.KVStore(k.storeKey)
+	valAddr := store.Get([]byte(types.GetOrchestratorAddressKey(orch)))
+	if valAddr == nil {
+		return sdk.ValAddress{}, false
+	}
+	return valAddr, true
+}
+
 /////////////////////////////
 //       ETH ADDRESS       //
 /////////////////////////////
