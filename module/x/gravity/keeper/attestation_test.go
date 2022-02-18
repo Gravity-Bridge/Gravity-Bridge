@@ -108,13 +108,12 @@ func TestGetSetLastObservedEthereumBlockHeight(t *testing.T) {
 	k := input.GravityKeeper
 	ctx := input.Context
 
-	cosmosHeight := uint64(1234567)
 	ethereumHeight := uint64(7654321)
 
 	require.NotPanics(t, func() { k.SetLastObservedEthereumBlockHeight(ctx, ethereumHeight) })
 
 	ethHeight := k.GetLastObservedEthereumBlockHeight(ctx)
-	require.Equal(t, cosmosHeight, ethHeight.CosmosBlockHeight)
+	require.Equal(t, uint64(ctx.BlockHeight()), ethHeight.CosmosBlockHeight)
 	require.Equal(t, ethereumHeight, ethHeight.EthereumBlockHeight)
 }
 
