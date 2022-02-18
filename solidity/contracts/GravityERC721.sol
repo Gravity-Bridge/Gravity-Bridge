@@ -53,10 +53,12 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard, Ownable{
 		address _ERC721TokenContract,
 		uint256[] calldata _tokenIds,
 		address[] calldata _destinations
-	) external {
+	) external  onlyOwner {
 		for (uint256 i = 0; i < _tokenIds.length; i++) {
 			ERC721(_ERC721TokenContract).safeTransferFrom(address(this), _destinations[i], _tokenIds[i]);
 		}
+
 		state_lastERC721EventNonce = state_lastERC721EventNonce + 1;
+
 	}
 }

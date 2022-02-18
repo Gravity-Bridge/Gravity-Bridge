@@ -10,7 +10,7 @@ import {
   examplePowers,
   ZeroAddress
 } from "../test-utils/pure";
-import { ERC721 } from "../typechain";
+import { ERC721, TestERC20A } from "../typechain";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -29,6 +29,7 @@ async function runTest(opts: {
   barelyEnoughPower?: boolean;
   malformedCurrentValset?: boolean;
   timedOut?: boolean;
+  wrongOwner?: boolean;
 }) {
 
   // Prep and deploy contract
@@ -50,8 +51,20 @@ async function runTest(opts: {
   const TestGravityERC721Contract = await ethers.getContractFactory("GravityERC721");
   const ERC721LogicContract = (await TestGravityERC721Contract.deploy(gravity.address)) as GravityERC721;
   // We set its owner to the batch contract. 
-  await ERC721LogicContract.transferOwnership(gravity.address);
+  await gravityERC721.transferOwnership(gravity.address);
 
+  // console.log("ERC721LogicContract is");
+  // console.log(ERC721LogicContract.address);
+  // console.log("gravityERC721 is");
+  // console.log(gravityERC721.address);
+  // console.log("gravity address is");
+  // console.log(gravity.address);
+  // console.log("testerc721 address");
+  // console.log(testERC721.address);
+  // console.log("test erc20 address");
+  // console.log(testERC20.address);
+  // console.log("owner is");
+  // console.log(await ERC721LogicContract.owner());
   // Transfer out to Cosmos, locking coins
   // =====================================
   await testERC20.functions.approve(gravity.address, 1000);
@@ -109,6 +122,7 @@ async function runTest(opts: {
     invalidationId: ethers.utils.hexZeroPad(testERC20.address, 32), // invalidationId
     invalidationNonce: invalidationNonce // invalidationNonce
   }
+
 
   const digest = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
     [
@@ -187,6 +201,10 @@ async function runTest(opts: {
     sigs[9].v = 0;
     sigs[11].v = 0;
   }
+  if (opts.wrongOwner) {
+    // Wrong owner
+    await gravityERC721.transferOwnership(testERC721.address);
+  }
 
   let valset = {
     validators: await getSignerAddresses(validators),
@@ -240,6 +258,12 @@ describe("submitLogicCall tests", function () {
     );
   });
 
+  it.only("throws on wrong ownerOf", async function () {
+    await expect(runTest({ wrongOwner: true })).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+  });
+
   it.only("throws on invalidation nonce not incremented", async function () {
     await expect(runTest({ invalidationNonceNotHigher: true })).to.be.revertedWith(
       "InvalidLogicCallNonce(0, 0)"
@@ -253,7 +277,6 @@ describe("submitLogicCall tests", function () {
       "IncorrectCheckpoint()"
     );
   });
-
 
   it.only("throws on bad validator sig", async function () {
     await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
@@ -303,7 +326,11 @@ describe("logicCall Go test hash", function () {
       checkpoint: deployCheckpoint
     } = await deployContracts(gravityId, validators, powers);
 
-
+    const TestGravityERC721Contract = await ethers.getContractFactory("GravityERC721");
+    const ERC721LogicContract = (await TestGravityERC721Contract.deploy(gravity.address)) as GravityERC721;
+    // We set its owner to the batch contract. 
+    await gravityERC721.transferOwnership(gravity.address);
+    
     // Transfer out to Cosmos, locking coins
     // =====================================
     await testERC20.functions.approve(gravity.address, 1000);
@@ -339,18 +366,6 @@ describe("logicCall Go test hash", function () {
     let invalidationNonce = 1
 
     let timeOut = 4766922941000
-
-    // let logicCallArgs = {
-    //   transferAmounts: [1], // transferAmounts
-    //   transferTokenContracts: [testERC20.address], // transferTokenContracts
-    //   feeAmounts: [1], // feeAmounts
-    //   feeTokenContracts: [testERC20.address], // feeTokenContracts
-    //   logicContractAddress: "0x17c1736CcF692F653c433d7aa2aB45148C016F68", // logicContractAddress
-    //   payload: ethers.utils.formatBytes32String("testingPayload"), // payloads
-    //   timeOut,
-    //   invalidationId: ethers.utils.formatBytes32String("invalidationId"), // invalidationId
-    //   invalidationNonce: invalidationNonce // invalidationNonce
-    // }
 
     let logicCallArgs = {
       transferAmounts: [0], // transferAmounts
@@ -440,13 +455,6 @@ describe("logicCall Go test hash", function () {
       "sigs": sigs,
     })
     console.log("Function call bytes:", res.data)
-
-  //check ownership of ERC721 tokens now transferred to signers
-  for (let i = 0; i < numTxs; i++) {
-    expect(
-      (await testERC721.ownerOf(tokenIds[i]))
-    ).to.equal(signers[i + 5].address);
-  }
 
   })
 });
