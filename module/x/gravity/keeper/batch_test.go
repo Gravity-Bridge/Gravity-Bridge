@@ -38,6 +38,11 @@ func TestBatches(t *testing.T) {
 	// CREATE FIRST BATCH
 	// ==================
 
+	// batch should not be created if there is no txs of the given token type in tx pool
+	noBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
+	require.Nil(t, noBatch)
+	require.Error(t, err)
+
 	// add some TX to the pool
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr.GetAddress())
@@ -59,6 +64,11 @@ func TestBatches(t *testing.T) {
 
 	// when
 	ctx = ctx.WithBlockTime(now)
+
+	// maxElements must be greater then 0, otherwise the batch would not be created
+	noBatch, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 0)
+	require.Nil(t, noBatch)
+	require.Error(t, err)
 
 	// tx batch size is 2, so that some of them stay behind
 	firstBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
@@ -147,6 +157,11 @@ func TestBatches(t *testing.T) {
 
 	// CREATE SECOND, MORE PROFITABLE BATCH
 	// ====================================
+
+	//first check that less profitable batch cannot be created
+	noBatch, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
+	require.Nil(t, noBatch)
+	require.Error(t, err)
 
 	// add some more TX to the pool to create a more profitable batch
 	for i, v := range []uint64{4, 5} {
@@ -874,4 +889,113 @@ func TestGetFees(t *testing.T) {
 			t.Errorf("Invalid total batch fees!")
 		}
 	}
+}
+
+func TestBatchConfirms(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+	var (
+		now                    = time.Now().UTC()
+		mySender, _            = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
+		myReceiver, _          = types.NewEthAddress("0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7")
+		myTokenContractAddr, _ = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5") // Pickle
+		token, err             = types.NewInternalERC20Token(sdk.NewInt(1000000), myTokenContractAddr.GetAddress())
+		allVouchers            = sdk.NewCoins(token.GravityCoin())
+	)
+	require.NoError(t, err)
+
+	// mint some voucher first
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
+	// set senders balance
+	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers))
+
+	// when
+	ctx = ctx.WithBlockTime(now)
+
+	// add batches with 1 tx to the pool
+	for i := 1; i < 200; i++ {
+		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr.GetAddress())
+		require.NoError(t, err)
+		amount := amountToken.GravityCoin()
+		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(uint64(i+10)), myTokenContractAddr.GetAddress())
+		require.NoError(t, err)
+		fee := feeToken.GravityCoin()
+
+		//add tx to the pool
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amount, fee)
+		require.NoError(t, err)
+		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v", i, amount, fee))
+
+		//create batch
+		_, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 1)
+		require.NoError(t, err)
+	}
+
+	outogoingBatches := input.GravityKeeper.GetOutgoingTxBatches(ctx)
+
+	// persist confirmations
+	for i, orch := range OrchAddrs {
+		for _, batch := range outogoingBatches {
+			ethAddr, err := types.NewEthAddress(EthAddrs[i].String())
+			require.NoError(t, err)
+
+			conf := &types.MsgConfirmBatch{
+				Nonce:         batch.BatchNonce,
+				TokenContract: batch.TokenContract.GetAddress(),
+				EthSigner:     ethAddr.GetAddress(),
+				Orchestrator:  orch.String(),
+				Signature:     "dummysig",
+			}
+
+			input.GravityKeeper.SetBatchConfirm(ctx, conf)
+		}
+	}
+
+	//try to set connfirm with invalid address
+	conf := &types.MsgConfirmBatch{
+		Nonce:         outogoingBatches[0].BatchNonce,
+		TokenContract: outogoingBatches[0].TokenContract.GetAddress(),
+		EthSigner:     EthAddrs[0].String(),
+		Orchestrator:  "invalid address",
+		Signature:     "dummysig",
+	}
+	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, conf) })
+
+	//try to set connfirm with invalid token contract
+	conf = &types.MsgConfirmBatch{
+		Nonce:         outogoingBatches[0].BatchNonce,
+		TokenContract: "invalid token",
+		EthSigner:     EthAddrs[0].String(),
+		Orchestrator:  OrchAddrs[0].String(),
+		Signature:     "dummysig",
+	}
+	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, conf) })
+
+	// verify that confirms are persisted for each orchestrator address
+	var batchConfirm *types.MsgConfirmBatch
+	for _, batch := range outogoingBatches {
+		for i, addr := range OrchAddrs {
+			batchConfirm = input.GravityKeeper.GetBatchConfirm(ctx, batch.BatchNonce, batch.TokenContract, addr)
+			require.Equal(t, batch.BatchNonce, batchConfirm.Nonce)
+			require.Equal(t, batch.TokenContract.GetAddress(), batchConfirm.TokenContract)
+			require.Equal(t, EthAddrs[i].String(), batchConfirm.EthSigner)
+			require.Equal(t, addr.String(), batchConfirm.Orchestrator)
+			require.Equal(t, "dummysig", batchConfirm.Signature)
+		}
+	}
+}
+
+func TestLastSlashedBatchBlock(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+
+	assert.Equal(t, uint64(0), input.GravityKeeper.GetLastSlashedBatchBlock(ctx))
+	assert.NotPanics(t, func() { input.GravityKeeper.SetLastSlashedBatchBlock(ctx, 2) })
+	assert.Equal(t, uint64(2), input.GravityKeeper.GetLastSlashedBatchBlock(ctx))
+	//LastSlashedBatchBlock cannot be set to lower than the current LastSlashedBatchBlock value
+	assert.Panics(t, func() { input.GravityKeeper.SetLastSlashedBatchBlock(ctx, 1) })
+	assert.Equal(t, uint64(2), input.GravityKeeper.GetLastSlashedBatchBlock(ctx))
+	assert.NotPanics(t, func() { input.GravityKeeper.SetLastSlashedBatchBlock(ctx, 129) })
+	assert.Equal(t, uint64(129), input.GravityKeeper.GetLastSlashedBatchBlock(ctx))
 }

@@ -215,6 +215,9 @@ func TestLastSlashedValsetNonce(t *testing.T) {
 	latestValsetNonce := k.GetLatestValsetNonce(ctx)
 	assert.Equal(t, latestValsetNonce, uint64(i-1))
 
+	latestValset := k.GetLatestValset(ctx)
+	assert.Equal(t, uint64(i-1), latestValset.Nonce)
+
 	//  lastSlashedValsetNonce should be zero initially.
 	lastSlashedValsetNonce := k.GetLastSlashedValsetNonce(ctx)
 	assert.Equal(t, lastSlashedValsetNonce, uint64(0))

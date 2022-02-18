@@ -18,9 +18,6 @@ func (k Keeper) Attest(
 	claim types.EthereumClaim,
 	anyClaim *codectypes.Any,
 ) (*types.Attestation, error) {
-	if err := sdk.VerifyAddressFormat(claim.GetClaimer()); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid claimer address")
-	}
 	val, found := k.GetOrchestratorValidator(ctx, claim.GetClaimer())
 	if !found {
 		panic("Could not find ValAddr for delegate key, should be checked by now")

@@ -201,6 +201,8 @@ func TestBatchSlashing(t *testing.T) {
 	})
 	require.NoError(t, err)
 	pk.StoreBatch(ctx, *batch)
+	unslashedBatches := pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))
+	assert.True(t, len(unslashedBatches) == 1 && unslashedBatches[0].BatchNonce == 1)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
@@ -244,6 +246,7 @@ func TestBatchSlashing(t *testing.T) {
 	// Ensure that the last slashed valset nonce is set properly
 	lastSlashedBatchBlock := input.GravityKeeper.GetLastSlashedBatchBlock(ctx)
 	assert.Equal(t, lastSlashedBatchBlock, batch.Block)
+	assert.True(t, len(pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))) == 0)
 
 }
 
