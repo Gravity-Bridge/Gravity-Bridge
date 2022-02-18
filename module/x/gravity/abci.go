@@ -196,11 +196,12 @@ func prepValsetConfirms(ctx sdk.Context, k keeper.Keeper, nonce uint64) map[stri
 		if err != nil {
 			panic("Invalid confirm in store")
 		}
-		val, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
+		val, foundValidator := k.GetOrchestratorValidatorAddr(ctx, confVal)
 		if !foundValidator {
+			// This means that the validator never sent a SetOrchestratorAddress message.
 			panic("Confirm from validator we can't identify?")
 		}
-		ret[val.GetOperator().String()] = confirm
+		ret[val.String()] = confirm
 	}
 	return ret
 }
@@ -344,11 +345,12 @@ func prepBatchConfirms(ctx sdk.Context, k keeper.Keeper, batch types.InternalOut
 		if err != nil {
 			panic(err)
 		}
-		val, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
+		val, foundValidator := k.GetOrchestratorValidatorAddr(ctx, confVal)
 		if !foundValidator {
+			// This means that the validator never sent a SetOrchestratorAddress message.
 			panic("Confirm from validator we can't identify?")
 		}
-		ret[val.GetOperator().String()] = confirm
+		ret[val.String()] = confirm
 	}
 	return ret
 }
@@ -421,11 +423,12 @@ func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call types.Outgoing
 		if err != nil {
 			panic(err)
 		}
-		val, foundValidator := k.GetOrchestratorValidator(ctx, confVal)
+		val, foundValidator := k.GetOrchestratorValidatorAddr(ctx, confVal)
 		if !foundValidator {
+			// This means that the validator never sent a SetOrchestratorAddress message.
 			panic("Confirm from validator we can't identify?")
 		}
-		ret[val.GetOperator().String()] = &confirm
+		ret[val.String()] = &confirm
 	}
 	return ret
 }
