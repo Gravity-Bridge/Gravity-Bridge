@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -35,34 +34,10 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			expectedBals[v.Denom] = &newInt
 		}
 
-		// The module is given the balance of all unobserved batches
-		k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
-			batchTotal := sdk.NewInt(0)
-			// Collect the send amount + fee amount for each tx
-			for _, tx := range batch.Transactions {
-				newTotal := batchTotal.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
-				batchTotal = newTotal
-			}
-			contract := batch.TokenContract
-			_, denom := k.ERC20ToDenomLookup(ctx, contract)
-			// Add the batch total to the contract counter
-			denomTotal := expectedBals[denom].Add(batchTotal)
-			expectedBals[denom] = &denomTotal
+		expectedBals = sumUnconfirmedBatchModuleBalances(ctx, k, expectedBals)
+		expectedBals = sumUnbatchedTxModuleBalances(ctx, k, expectedBals)
 
-			return false // continue iterating
-		})
-		// It is also given the balance of all unbatched txs in the pool
-		k.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
-			contract := tx.Erc20Token.Contract
-			_, denom := k.ERC20ToDenomLookup(ctx, contract)
-
-			// Collect the send amount + fee amount for each tx
-			txTotal := tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount)
-			*expectedBals[denom] = expectedBals[denom].Add(txTotal)
-
-			return false // continue iterating
-		})
-
+		// Compare actual vs expected balances
 		for _, actual := range actualBals {
 			if expected, ok := expectedBals[actual.GetDenom()]; !ok {
 				return fmt.Sprint("Could not find contract matching module balance of ", actual), true
@@ -72,4 +47,52 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 		}
 		return "", false
 	}
+}
+
+// Calculate the value the module should have stored due to unconfirmed batches
+func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+	k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+		batchTotal := sdk.NewInt(0)
+		// Collect the send amount + fee amount for each tx
+		for _, tx := range batch.Transactions {
+			newTotal := batchTotal.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
+			batchTotal = newTotal
+		}
+		contract := batch.TokenContract
+		_, denom := k.ERC20ToDenomLookup(ctx, contract)
+		// Add the batch total to the contract counter
+		_, ok := expectedBals[denom]
+		if !ok {
+			zero := sdk.ZeroInt()
+			expectedBals[denom] = &zero
+		}
+
+		*expectedBals[denom] = expectedBals[denom].Add(batchTotal)
+
+		return false // continue iterating
+	})
+
+	return expectedBals
+}
+
+// Calculate the value the module should have stored due to unbatched txs
+func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+	// It is also given the balance of all unbatched txs in the pool
+	k.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
+		contract := tx.Erc20Token.Contract
+		_, denom := k.ERC20ToDenomLookup(ctx, contract)
+
+		// Collect the send amount + fee amount for each tx
+		txTotal := tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount)
+		_, ok := expectedBals[denom]
+		if !ok {
+			zero := sdk.ZeroInt()
+			expectedBals[denom] = &zero
+		}
+		*expectedBals[denom] = expectedBals[denom].Add(txTotal)
+
+		return false // continue iterating
+	})
+
+	return expectedBals
 }
