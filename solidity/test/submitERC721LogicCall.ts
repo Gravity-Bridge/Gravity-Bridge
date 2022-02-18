@@ -53,18 +53,6 @@ async function runTest(opts: {
   // We set its owner to the batch contract. 
   await gravityERC721.transferOwnership(gravity.address);
 
-  // console.log("ERC721LogicContract is");
-  // console.log(ERC721LogicContract.address);
-  // console.log("gravityERC721 is");
-  // console.log(gravityERC721.address);
-  // console.log("gravity address is");
-  // console.log(gravity.address);
-  // console.log("testerc721 address");
-  // console.log(testERC721.address);
-  // console.log("test erc20 address");
-  // console.log(testERC20.address);
-  // console.log("owner is");
-  // console.log(await ERC721LogicContract.owner());
   // Transfer out to Cosmos, locking coins
   // =====================================
   await testERC20.functions.approve(gravity.address, 1000);
@@ -330,7 +318,7 @@ describe("logicCall Go test hash", function () {
     const ERC721LogicContract = (await TestGravityERC721Contract.deploy(gravity.address)) as GravityERC721;
     // We set its owner to the batch contract. 
     await gravityERC721.transferOwnership(gravity.address);
-    
+
     // Transfer out to Cosmos, locking coins
     // =====================================
     await testERC20.functions.approve(gravity.address, 1000);
