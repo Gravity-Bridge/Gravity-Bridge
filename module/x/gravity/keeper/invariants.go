@@ -33,7 +33,6 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			newInt := sdk.NewInt(0)
 			expectedBals[v.Denom] = &newInt
 		}
-
 		expectedBals = sumUnconfirmedBatchModuleBalances(ctx, k, expectedBals)
 		expectedBals = sumUnbatchedTxModuleBalances(ctx, k, expectedBals)
 
@@ -51,13 +50,10 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 				return fmt.Sprint("Could not find expected balance for actual module balance of ", actual), true
 			}
 
-			if cosmosOriginated {
-				// Cosmos originated tokens stick around in the gravity account while they are bridged since we don't burn them
-				// So the module's balance should always be >= sum(unbatched txs) + sum(outgoing batches)
-				if actual.Amount.LT(*expected) {
-					return fmt.Sprint("Low balance of cosmos-originated ", denom, " actual balance ", actual.Amount, " < expected balance ", expected), true
-				}
-			} else if !actual.Amount.Equal(*expected) {
+			if cosmosOriginated { // Cosmos originated mismatched balance
+				// We cannot make any assertions about cosmosOriginated assets because we do not have enough information.
+				// There is no index of denom => amount bridged, which would force us to parse all logs in existence
+			} else if !actual.Amount.Equal(*expected) { // Eth originated mismatched balance
 				return fmt.Sprint("Mismatched balance of eth-originated ", denom, ": actual balance ", actual.Amount, " != expected balance ", expected), true
 			}
 		}
