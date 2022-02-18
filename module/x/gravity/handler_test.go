@@ -35,6 +35,8 @@ func TestHandleMsgSendToEth(t *testing.T) {
 
 	// we start by depositing some funds into the users balance to send
 	input := keeper.CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	h := NewHandler(input.GravityKeeper)
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, startingCoins))
@@ -106,6 +108,8 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 		amountB, _      = sdk.NewIntFromString("100000000000000000000") // 100 ETH
 	)
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	h := NewHandler(input.GravityKeeper)
 
 	myErc20 := types.ERC20Token{
@@ -207,6 +211,8 @@ func TestEthereumBlacklist(t *testing.T) {
 		amountA, _      = sdk.NewIntFromString("50000000000000000000") // 50 ETH
 	)
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	h := NewHandler(input.GravityKeeper)
 
 	myErc20 := types.ERC20Token{
@@ -347,6 +353,8 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	}
 	// Setup
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	h := NewHandler(input.GravityKeeper)
 
 	// Require that no tokens were bridged previously
@@ -398,6 +406,8 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 	)
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	h := NewHandler(input.GravityKeeper)
 
 	myErc20 := types.ERC20Token{
@@ -482,6 +492,8 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 	require.NoError(t, err0)
 	require.NoError(t, err1)
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	k := input.GravityKeeper
 
 	h := NewHandler(k)
@@ -543,6 +555,8 @@ func TestMsgSetOrchestratorAddresses(t *testing.T) {
 		blockHeight2   int64          = 210
 	)
 	input, ctx := keeper.SetupTestChain(t, []uint64{1000000000}, false)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	wctx := sdk.WrapSDKContext(ctx)
 	k := input.GravityKeeper
 	h := NewHandler(input.GravityKeeper)
@@ -603,6 +617,8 @@ func TestMsgValsetConfirm(t *testing.T) {
 	require.NoError(t, err)
 
 	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	k := input.GravityKeeper
 	h := NewHandler(input.GravityKeeper)
 

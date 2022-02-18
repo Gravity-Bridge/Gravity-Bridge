@@ -15,6 +15,8 @@ import (
 func TestModuleBalanceUnbatchedTxs(t *testing.T) {
 	////////////////// SETUP //////////////////
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -65,14 +67,15 @@ func TestModuleBalanceUnbatchedTxs(t *testing.T) {
 
 	// Ensure an error is returned for a mismatched balance
 	oneVoucher, _ := types.NewInternalERC20Token(sdk.NewInt(1), myTokenContractAddr)
-	input.BankKeeper.SendCoinsFromAccountToModule(ctx, mySender, types.ModuleName, sdk.NewCoins(oneVoucher.GravityCoin()))
-	checkInvariant(t, ctx, input.GravityKeeper, false)
+	checkImbalancedModule(t, ctx, input.GravityKeeper, input.BankKeeper, mySender, sdk.NewCoins(oneVoucher.GravityCoin()))
 }
 
 // Tests that the gravity module's balance is accounted for with batches of txs, including unbatched txs and tx cancellation
 func TestModuleBalanceBatchedTxs(t *testing.T) {
 	////////////////// SETUP //////////////////
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	var (
 		now                     = time.Now().UTC()
@@ -182,5 +185,4 @@ func checkImbalancedModule(t *testing.T, ctx sdk.Context, gravityKeeper Keeper, 
 	checkInvariant(t, ctx, gravityKeeper, false)
 	// Rebalance the module
 	bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, coins)
-
 }

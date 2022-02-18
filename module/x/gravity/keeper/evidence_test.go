@@ -15,6 +15,8 @@ import (
 //nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 
 	var (
@@ -74,6 +76,8 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	//input := CreateTestEnv(t)
 	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	//ctx := input.Context
 
 	valset := input.GravityKeeper.SetValsetRequest(ctx)
@@ -92,6 +96,8 @@ func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 //nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 
 	logicCall := types.OutgoingLogicCall{
@@ -114,6 +120,7 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 //nolint: exhaustivestruct
 func TestSubmitBadSignatureEvidenceSlash(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	batch := types.OutgoingTxBatch{
 		TokenContract: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",

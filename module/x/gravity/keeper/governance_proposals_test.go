@@ -14,6 +14,8 @@ import (
 //nolint: exhaustivestruct
 func TestAirdropProposal(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 
 	testAddr := []string{"gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm", "gravity1n38caqg63jf9hefycw3yp95fpkpk669nvekqy2", "gravity1qz4zm5s0vwfuu46lg3q0vmnwsukd8e9yfmcgjj"}
@@ -105,6 +107,8 @@ func TestAirdropProposal(t *testing.T) {
 //nolint: exhaustivestruct
 func TestIBCMetadataProposal(t *testing.T) {
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
 	goodProposal := types.IBCMetadataProposal{

@@ -16,6 +16,8 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	// SETUP ENV + DATA
 	// ==================
 	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
 	ctx := input.Context
 	batchSize := 100
 	accAddresses := []string{ // Warning: this must match the length of ctrAddresses

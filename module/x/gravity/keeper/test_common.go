@@ -577,6 +577,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 		LegacyAmino:    cdc,
 	}
 	// check invariants before starting
+	testInput.Context.Logger().Info("Asserting invariants on new test env")
 	testInput.AssertInvariants()
 	return testInput
 }
@@ -612,6 +613,7 @@ func (t TestInput) AssertInvariants() {
 		panic(invariantStr)
 	}
 
+	t.Context.Logger().Info("All invariants successful")
 }
 
 // getSubspace returns a param subspace for a given module name.

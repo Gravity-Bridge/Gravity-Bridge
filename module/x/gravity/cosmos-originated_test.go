@@ -20,6 +20,10 @@ import (
 
 func TestCosmosOriginated(t *testing.T) {
 	tv := initializeTestingVars(t)
+	defer func() {
+		tv.input.Context.Logger().Info("Asserting invariants at test end")
+		tv.input.AssertInvariants()
+	}()
 	addDenomToERC20Relation(tv)
 	// we only create a relation here, we don't perform
 	// the other tests with the IBC representation as the
