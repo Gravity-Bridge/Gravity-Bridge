@@ -152,7 +152,6 @@ func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddre
 		return nil, false
 	}
 
-	// TODO: Migrate this!
 	addr, err := types.NewEthAddressFromBytes(ethAddr)
 	if err != nil {
 		return nil, false
