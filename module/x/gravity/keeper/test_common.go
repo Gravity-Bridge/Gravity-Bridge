@@ -229,16 +229,17 @@ var (
 
 // TestInput stores the various keepers required to test gravity
 type TestInput struct {
-	GravityKeeper  Keeper
-	AccountKeeper  authkeeper.AccountKeeper
-	StakingKeeper  stakingkeeper.Keeper
-	SlashingKeeper slashingkeeper.Keeper
-	DistKeeper     distrkeeper.Keeper
-	BankKeeper     bankkeeper.BaseKeeper
-	GovKeeper      govkeeper.Keeper
-	Context        sdk.Context
-	Marshaler      codec.Codec
-	LegacyAmino    *codec.LegacyAmino
+	GravityKeeper   Keeper
+	AccountKeeper   authkeeper.AccountKeeper
+	StakingKeeper   stakingkeeper.Keeper
+	SlashingKeeper  slashingkeeper.Keeper
+	DistKeeper      distrkeeper.Keeper
+	BankKeeper      bankkeeper.BaseKeeper
+	GovKeeper       govkeeper.Keeper
+	Context         sdk.Context
+	Marshaler       codec.Codec
+	LegacyAmino     *codec.LegacyAmino
+	GravityStoreKey *sdk.KVStoreKey
 }
 
 // SetupFiveValChain does all the initialization for a 5 Validator chain using the keys here
@@ -565,16 +566,17 @@ func CreateTestEnv(t *testing.T) TestInput {
 	fmt.Println(params)
 
 	testInput := TestInput{
-		GravityKeeper:  k,
-		AccountKeeper:  accountKeeper,
-		BankKeeper:     bankKeeper,
-		StakingKeeper:  stakingKeeper,
-		SlashingKeeper: slashingKeeper,
-		DistKeeper:     distKeeper,
-		GovKeeper:      govKeeper,
-		Context:        ctx,
-		Marshaler:      marshaler,
-		LegacyAmino:    cdc,
+		GravityKeeper:   k,
+		AccountKeeper:   accountKeeper,
+		BankKeeper:      bankKeeper,
+		StakingKeeper:   stakingKeeper,
+		SlashingKeeper:  slashingKeeper,
+		DistKeeper:      distKeeper,
+		GovKeeper:       govKeeper,
+		Context:         ctx,
+		Marshaler:       marshaler,
+		LegacyAmino:     cdc,
+		GravityStoreKey: gravityKey,
 	}
 	// check invariants before starting
 	testInput.Context.Logger().Info("Asserting invariants on new test env")
