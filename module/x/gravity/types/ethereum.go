@@ -2,12 +2,13 @@ package types
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
-	"regexp"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -29,11 +30,11 @@ const (
 
 // Regular EthAddress
 type EthAddress struct {
-	address string
+	address gethcommon.Address
 }
 
 // Returns the contained address as a string
-func (ea EthAddress) GetAddress() string {
+func (ea EthAddress) GetAddress() gethcommon.Address {
 	return ea.address
 }
 
@@ -42,8 +43,17 @@ func (ea EthAddress) SetAddress(address string) error {
 	if err := ValidateEthAddress(address); err != nil {
 		return err
 	}
-	ea.address = address
+	ea.address = gethcommon.HexToAddress(address)
 	return nil
+}
+
+func NewEthAddressFromBytes(address []byte) (*EthAddress, error) {
+	if err := ValidateEthAddress(hex.EncodeToString(address)); err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid input address")
+	}
+
+	addr := EthAddress{gethcommon.BytesToAddress(address)}
+	return &addr, nil
 }
 
 // Creates a new EthAddress from a string, performing validation and returning any validation errors
@@ -51,13 +61,14 @@ func NewEthAddress(address string) (*EthAddress, error) {
 	if err := ValidateEthAddress(address); err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid input address")
 	}
-	addr := EthAddress{address}
+
+	addr := EthAddress{gethcommon.HexToAddress(address)}
 	return &addr, nil
 }
 
 // Returns a new EthAddress with 0x0000000000000000000000000000000000000000 as the wrapped address
 func ZeroAddress() EthAddress {
-	return EthAddress{ZeroAddressString}
+	return EthAddress{gethcommon.HexToAddress(ZeroAddressString)}
 }
 
 // Validates the input string as an Ethereum Address
@@ -66,11 +77,19 @@ func ValidateEthAddress(address string) error {
 	if address == "" {
 		return fmt.Errorf("empty")
 	}
-	if len(address) != ETHContractAddressLen {
-		return fmt.Errorf("address(%s) of the wrong length exp(%d) actual(%d)", address, ETHContractAddressLen, len(address))
+
+	// An auditor recommended we should check the error of hex.DecodeString, given that geth's HexToAddress ignores it
+
+	if has0xPrefix(address) {
+		address = address[2:]
 	}
-	if !regexp.MustCompile("^0x[0-9a-fA-F]{40}$").MatchString(address) {
-		return fmt.Errorf("address(%s) doesn't pass regex", address)
+
+	if _, err := hex.DecodeString(address); err != nil {
+		return fmt.Errorf("invalid hex with error: %s", err)
+	}
+
+	if !gethcommon.IsHexAddress(address) {
+		return fmt.Errorf("address(%s) doesn't pass format validation", address)
 	}
 
 	return nil
@@ -78,12 +97,12 @@ func ValidateEthAddress(address string) error {
 
 // Performs validation on the wrapped string
 func (ea EthAddress) ValidateBasic() error {
-	return ValidateEthAddress(ea.address)
+	return ValidateEthAddress(ea.address.Hex())
 }
 
 // EthAddrLessThan migrates the Ethereum address less than function
 func EthAddrLessThan(e EthAddress, o EthAddress) bool {
-	return bytes.Compare([]byte(e.GetAddress())[:], []byte(o.GetAddress())[:]) == -1
+	return bytes.Compare([]byte(e.GetAddress().Hex()), []byte(o.GetAddress().Hex())) == -1
 }
 
 /////////////////////////
@@ -144,7 +163,7 @@ func (i *InternalERC20Token) ValidateBasic() error {
 func (i *InternalERC20Token) ToExternal() ERC20Token {
 	return ERC20Token{
 		Amount:   i.Amount,
-		Contract: i.Contract.GetAddress(),
+		Contract: i.Contract.GetAddress().Hex(),
 	}
 }
 
@@ -155,7 +174,7 @@ func (i *InternalERC20Token) GravityCoin() sdk.Coin {
 
 // GravityDenom converts an EthAddress to a gravity cosmos denom
 func GravityDenom(tokenContract EthAddress) string {
-	return fmt.Sprintf("%s%s%s", GravityDenomPrefix, GravityDenomSeparator, tokenContract.GetAddress())
+	return fmt.Sprintf("%s%s%s", GravityDenomPrefix, GravityDenomSeparator, tokenContract.GetAddress().Hex())
 }
 
 // ValidateBasic permforms stateless validation
@@ -174,7 +193,7 @@ func (i *InternalERC20Token) Add(o *InternalERC20Token) (*InternalERC20Token, er
 		return nil, sdkerrors.Wrap(ErrMismatched, "cannot add two different tokens")
 	}
 	sum := i.Amount.Add(o.Amount) // validation happens in NewInternalERC20Token()
-	return NewInternalERC20Token(sum, i.Contract.GetAddress())
+	return NewInternalERC20Token(sum, i.Contract.GetAddress().Hex())
 }
 
 // GravityDenomToERC20 converts a gravity cosmos denom to an EthAddress
@@ -193,4 +212,8 @@ func GravityDenomToERC20(denom string) (*EthAddress, error) {
 	default:
 		return ethAddr, nil
 	}
+}
+
+func has0xPrefix(str string) bool {
+	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
 }

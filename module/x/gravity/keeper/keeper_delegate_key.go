@@ -136,7 +136,8 @@ func (k Keeper) SetEthAddressForValidator(ctx sdk.Context, validator sdk.ValAddr
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.GetEthAddressByValidatorKey(validator)), []byte(ethAddr.GetAddress()))
+
+	store.Set([]byte(types.GetEthAddressByValidatorKey(validator)), ethAddr.GetAddress().Bytes())
 	store.Set([]byte(types.GetValidatorByEthAddressKey(ethAddr)), []byte(validator))
 }
 
@@ -151,7 +152,8 @@ func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddre
 		return nil, false
 	}
 
-	addr, err := types.NewEthAddress(string(ethAddr))
+	// TODO: Migrate this!
+	addr, err := types.NewEthAddressFromBytes(ethAddr)
 	if err != nil {
 		return nil, false
 	}

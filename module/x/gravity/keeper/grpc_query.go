@@ -284,7 +284,7 @@ func (k Keeper) DenomToERC20(
 	ctx := sdk.UnwrapSDKContext(c)
 	cosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, req.Denom)
 	var ret types.QueryDenomToERC20Response
-	ret.Erc20 = erc20.GetAddress()
+	ret.Erc20 = erc20.GetAddress().Hex()
 	ret.CosmosOriginated = cosmosOriginated
 
 	return &ret, err

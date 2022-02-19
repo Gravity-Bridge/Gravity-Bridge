@@ -24,7 +24,7 @@ func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (*types.
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(types.GetDenomToERC20Key(denom)))
 	if bz != nil {
-		ethAddr, err := types.NewEthAddress(string(bz))
+		ethAddr, err := types.NewEthAddressFromBytes(bz)
 		if err != nil {
 			panic(fmt.Errorf("discovered invalid ERC20 address under key %v", string(bz)))
 		}
@@ -36,7 +36,7 @@ func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (*types.
 
 func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, tokenContract types.EthAddress) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.GetDenomToERC20Key(denom)), []byte(tokenContract.GetAddress()))
+	store.Set([]byte(types.GetDenomToERC20Key(denom)), tokenContract.GetAddress().Bytes())
 	store.Set([]byte(types.GetERC20ToDenomKey(tokenContract)), []byte(denom))
 }
 

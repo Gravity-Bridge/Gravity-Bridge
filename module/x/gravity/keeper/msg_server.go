@@ -54,7 +54,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 	// check that neither key is a duplicate
 	delegateKeys := k.GetDelegateKeys(ctx)
 	for i := range delegateKeys {
-		if delegateKeys[i].EthAddress == addr.GetAddress() {
+		if delegateKeys[i].EthAddress == addr.GetAddress().Hex() {
 			return nil, sdkerrors.Wrap(err, "Duplicate Ethereum Key")
 		}
 		if delegateKeys[i].Orchestrator == orch.String() {

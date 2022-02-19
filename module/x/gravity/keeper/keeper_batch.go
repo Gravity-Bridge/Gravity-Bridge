@@ -24,7 +24,7 @@ func (k Keeper) GetBatchConfirm(ctx sdk.Context, nonce uint64, tokenContract typ
 	}
 	confirm := types.MsgConfirmBatch{
 		Nonce:         nonce,
-		TokenContract: tokenContract.GetAddress(),
+		TokenContract: tokenContract.GetAddress().Hex(),
 		EthSigner:     "",
 		Orchestrator:  "",
 		Signature:     "",
@@ -76,7 +76,7 @@ func (k Keeper) IterateBatchConfirmByNonceAndTokenContract(ctx sdk.Context, nonc
 	for ; iter.Valid(); iter.Next() {
 		confirm := types.MsgConfirmBatch{
 			Nonce:         nonce,
-			TokenContract: tokenContract.GetAddress(),
+			TokenContract: tokenContract.GetAddress().Hex(),
 			EthSigner:     "",
 			Orchestrator:  "",
 			Signature:     "",

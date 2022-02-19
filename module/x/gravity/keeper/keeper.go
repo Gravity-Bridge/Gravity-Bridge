@@ -6,6 +6,7 @@ import (
 
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
+	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -198,7 +199,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 	iter := store.Iterator(prefixRange(prefix))
 	defer iter.Close()
 
-	ethAddresses := make(map[string]string)
+	ethAddresses := make(map[string]gethcommon.Address)
 
 	for ; iter.Valid(); iter.Next() {
 		// the 'key' contains both the prefix and the value, so we need
@@ -207,7 +208,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 		// of the actual key
 		key := iter.Key()[len(types.GetEthAddressByValidatorPrefix()):]
 		value := iter.Value()
-		ethAddress, err := types.NewEthAddress(string(value))
+		ethAddress, err := types.NewEthAddressFromBytes(value)
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "found invalid ethAddress %v under key %v", string(value), key))
 		}
@@ -252,7 +253,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 		result = append(result, types.MsgSetOrchestratorAddress{
 			Orchestrator: orch,
 			Validator:    valAddr,
-			EthAddress:   ethAddr,
+			EthAddress:   ethAddr.Hex(),
 		})
 
 	}

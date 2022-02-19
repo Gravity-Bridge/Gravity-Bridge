@@ -47,12 +47,12 @@ func (k Keeper) AddToOutgoingPool(
 	// get next tx id from keeper
 	nextID := k.autoIncrementID(ctx, []byte(types.KeyLastTXPoolID))
 
-	erc20Fee, err := types.NewInternalERC20Token(fee.Amount, tokenContract.GetAddress())
+	erc20Fee, err := types.NewInternalERC20Token(fee.Amount, tokenContract.GetAddress().Hex())
 	if err != nil {
 		return 0, sdkerrors.Wrapf(err, "invalid Erc20Fee from amount %d and contract %v",
 			fee.Amount, tokenContract)
 	}
-	erc20Token, err := types.NewInternalERC20Token(amount.Amount, tokenContract.GetAddress())
+	erc20Token, err := types.NewInternalERC20Token(amount.Amount, tokenContract.GetAddress().Hex())
 	if err != nil {
 		return 0, sdkerrors.Wrapf(err, "invalid ERC20Token from amount %d and contract %v",
 			amount.Amount, tokenContract)
@@ -63,7 +63,7 @@ func (k Keeper) AddToOutgoingPool(
 	outgoing, err := types.OutgoingTransferTx{
 		Id:          nextID,
 		Sender:      sender.String(),
-		DestAddress: counterpartReceiver.GetAddress(),
+		DestAddress: counterpartReceiver.GetAddress().Hex(),
 		Erc20Token:  erc20Token.ToExternal(),
 		Erc20Fee:    erc20Fee.ToExternal(),
 	}.ToInternal()
@@ -82,7 +82,7 @@ func (k Keeper) AddToOutgoingPool(
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventWithdrawalReceived{
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
 			OutgoingTxId:   strconv.Itoa(int(nextID)),
 			Nonce:          fmt.Sprint(nextID),
@@ -114,7 +114,7 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 	// An inconsistent entry should never enter the store, but this is the ideal place to exploit
 	// it such a bug if it did ever occur, so we should double check to be really sure
 	if tx.Erc20Fee.Contract != tx.Erc20Token.Contract {
-		return sdkerrors.Wrapf(types.ErrInvalid, "Inconsistent tokens to cancel!: %s %s", tx.Erc20Fee.Contract, tx.Erc20Token.Contract)
+		return sdkerrors.Wrapf(types.ErrInvalid, "Inconsistent tokens to cancel!: %s %s", tx.Erc20Fee.Contract.GetAddress().Hex(), tx.Erc20Token.Contract.GetAddress().Hex())
 	}
 
 	// delete this tx from the pool
@@ -142,7 +142,7 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 		&types.EventWithdrawCanceled{
 			Sender:         sender.String(),
 			TxId:           fmt.Sprint(txId),
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
 		},
 	)
@@ -269,13 +269,13 @@ func (k Keeper) IterateUnbatchedTransactions(ctx sdk.Context, prefixKey []byte, 
 // when to request batches and also used by the batch creation process to decide not to create
 // a new batch (fees must be increasing)
 func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, tokenContractAddr types.EthAddress, maxElements uint) *types.BatchFees {
-	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress(), TotalFees: sdk.NewInt(0), TxCount: 0}
+	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress().Hex(), TotalFees: sdk.NewInt(0), TxCount: 0}
 
 	k.IterateUnbatchedTransactions(ctx, []byte(types.GetOutgoingTxPoolContractPrefix(tokenContractAddr)), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		if !k.IsOnBlacklist(ctx, *tx.DestAddress) {
 			fee := tx.Erc20Fee
 			if fee.Contract.GetAddress() != tokenContractAddr.GetAddress() {
-				panic(fmt.Errorf("unexpected fee contract %s when getting batch fees for contract %s", fee.Contract, tokenContractAddr))
+				panic(fmt.Errorf("unexpected fee contract %s when getting batch fees for contract %s", fee.Contract.GetAddress().Hex(), tokenContractAddr.GetAddress().Hex()))
 			}
 			batchFee.TotalFees = batchFee.TotalFees.Add(fee.Amount)
 			batchFee.TxCount += 1
@@ -316,15 +316,15 @@ func (k Keeper) createBatchFees(ctx sdk.Context, maxElements uint) map[string]ty
 	k.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		feeAddrStr := tx.Erc20Fee.Contract.GetAddress()
 
-		if fees, ok := batchFeesMap[feeAddrStr]; ok {
+		if fees, ok := batchFeesMap[feeAddrStr.Hex()]; ok {
 			if fees.TxCount < uint64(maxElements) {
-				fees.TotalFees = batchFeesMap[feeAddrStr].TotalFees.Add(tx.Erc20Fee.Amount)
+				fees.TotalFees = batchFeesMap[feeAddrStr.Hex()].TotalFees.Add(tx.Erc20Fee.Amount)
 				fees.TxCount = fees.TxCount + 1
-				batchFeesMap[feeAddrStr] = fees
+				batchFeesMap[feeAddrStr.Hex()] = fees
 			}
 		} else {
-			batchFeesMap[feeAddrStr] = types.BatchFees{
-				Token:     feeAddrStr,
+			batchFeesMap[feeAddrStr.Hex()] = types.BatchFees{
+				Token:     feeAddrStr.Hex(),
 				TotalFees: tx.Erc20Fee.Amount,
 				TxCount:   1,
 			}

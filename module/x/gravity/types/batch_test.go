@@ -29,18 +29,18 @@ func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 			{
 				Id:          0x1,
 				Sender:      senderAddr.String(),
-				DestAddress: destAddress.GetAddress(),
+				DestAddress: destAddress.GetAddress().Hex(),
 				Erc20Token: ERC20Token{
 					Amount:   sdk.NewInt(0x1),
-					Contract: erc20Address.GetAddress(),
+					Contract: erc20Address.GetAddress().Hex(),
 				},
 				Erc20Fee: ERC20Token{
 					Amount:   sdk.NewInt(0x1),
-					Contract: erc20Address.GetAddress(),
+					Contract: erc20Address.GetAddress().Hex(),
 				},
 			},
 		},
-		TokenContract: erc20Address.GetAddress(),
+		TokenContract: erc20Address.GetAddress().Hex(),
 	}
 
 	// TODO: get from params

@@ -31,7 +31,7 @@ func NewMsgSetOrchestratorAddress(val sdk.ValAddress, oper sdk.AccAddress, eth E
 	return &MsgSetOrchestratorAddress{
 		Validator:    val.String(),
 		Orchestrator: oper.String(),
-		EthAddress:   eth.GetAddress(),
+		EthAddress:   eth.GetAddress().Hex(),
 	}
 }
 
@@ -79,7 +79,7 @@ func NewMsgValsetConfirm(
 	return &MsgValsetConfirm{
 		Nonce:        nonce,
 		Orchestrator: validator.String(),
-		EthAddress:   ethAddress.GetAddress(),
+		EthAddress:   ethAddress.GetAddress().Hex(),
 		Signature:    signature,
 	}
 }
@@ -120,7 +120,7 @@ func (msg *MsgValsetConfirm) GetSigners() []sdk.AccAddress {
 func NewMsgSendToEth(sender sdk.AccAddress, destAddress EthAddress, send sdk.Coin, bridgeFee sdk.Coin) *MsgSendToEth {
 	return &MsgSendToEth{
 		Sender:    sender.String(),
-		EthDest:   destAddress.GetAddress(),
+		EthDest:   destAddress.GetAddress().Hex(),
 		Amount:    send,
 		BridgeFee: bridgeFee,
 	}

@@ -168,7 +168,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				&types.EventInvalidSendToCosmosReceiver{
 					Amount: claim.Amount.String(),
 					Nonce:  strconv.Itoa(int(claim.GetEventNonce())),
-					Token:  tokenAddress.GetAddress(),
+					Token:  tokenAddress.GetAddress().Hex(),
 					Sender: claim.EthereumSender,
 				},
 			)
@@ -178,7 +178,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 				&types.EventSendToCosmos{
 					Amount: claim.Amount.String(),
 					Nonce:  strconv.Itoa(int(claim.GetEventNonce())),
-					Token:  tokenAddress.GetAddress(),
+					Token:  tokenAddress.GetAddress().Hex(),
 				},
 			)
 		}
@@ -207,7 +207,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		if exists {
 			return sdkerrors.Wrap(
 				types.ErrInvalid,
-				fmt.Sprintf("ERC20 %s already exists for denom %s", existingERC20, claim.CosmosDenom))
+				fmt.Sprintf("ERC20 %s already exists for denom %s", existingERC20.GetAddress().Hex(), claim.CosmosDenom))
 		}
 
 		// Check if denom exists
@@ -261,7 +261,7 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 
 		ctx.EventManager().EmitTypedEvent(
 			&types.EventERC20DeployedClaim{
-				Token: tokenAddress.GetAddress(),
+				Token: tokenAddress.GetAddress().Hex(),
 				Nonce: strconv.Itoa(int(claim.GetEventNonce())),
 			},
 		)

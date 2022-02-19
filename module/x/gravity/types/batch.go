@@ -63,7 +63,7 @@ func (i InternalOutgoingTransferTx) ToExternal() OutgoingTransferTx {
 	return OutgoingTransferTx{
 		Id:          i.Id,
 		Sender:      i.Sender.String(),
-		DestAddress: i.DestAddress.GetAddress(),
+		DestAddress: i.DestAddress.GetAddress().Hex(),
 		Erc20Token:  i.Erc20Token.ToExternal(),
 		Erc20Fee:    i.Erc20Fee.ToExternal(),
 	}
@@ -155,7 +155,7 @@ func (i *InternalOutgoingTxBatch) ToExternal() OutgoingTxBatch {
 		BatchNonce:    i.BatchNonce,
 		BatchTimeout:  i.BatchTimeout,
 		Transactions:  txs,
-		TokenContract: i.TokenContract.GetAddress(),
+		TokenContract: i.TokenContract.GetAddress().Hex(),
 		Block:         i.Block,
 	}
 }
@@ -173,7 +173,7 @@ func (i *InternalOutgoingTxBatches) ToExternalArray() []OutgoingTxBatch {
 			BatchNonce:    val.BatchNonce,
 			BatchTimeout:  val.BatchTimeout,
 			Transactions:  txs,
-			TokenContract: val.TokenContract.GetAddress(),
+			TokenContract: val.TokenContract.GetAddress().Hex(),
 			Block:         val.Block,
 		})
 	}
@@ -231,7 +231,7 @@ func (i InternalOutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 	txFees := make([]*big.Int, len(i.Transactions))
 	for j, tx := range i.Transactions {
 		txAmounts[j] = tx.Erc20Token.Amount.BigInt()
-		txDestinations[j] = gethcommon.HexToAddress(tx.DestAddress.GetAddress())
+		txDestinations[j] = tx.DestAddress.GetAddress()
 		txFees[j] = tx.Erc20Fee.Amount.BigInt()
 	}
 
@@ -245,7 +245,7 @@ func (i InternalOutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 		txDestinations,
 		txFees,
 		big.NewInt(int64(i.BatchNonce)),
-		gethcommon.HexToAddress(i.TokenContract.GetAddress()),
+		i.TokenContract.GetAddress(),
 		big.NewInt(int64(i.BatchTimeout)),
 	)
 
