@@ -37,7 +37,7 @@ service Query {
     option (google.api.http).get = "/gravity/v1beta/valset/last";
   }
   rpc LastPendingBatchRequestByAddr(QueryLastPendingBatchRequestByAddrRequest) returns (QueryLastPendingBatchRequestByAddrResponse) {
-    option (google.api.http).get = "/gravity/v1beta/batch/{address}";
+    option (google.api.http).get = "/gravity/v1beta/batch/last_pending_request_by_addr";
   }
   rpc LastPendingLogicCallByAddr(QueryLastPendingLogicCallByAddrRequest) returns (QueryLastPendingLogicCallByAddrResponse) {
     option (google.api.http).get = "/gravity/v1beta/logic/{address}";
@@ -55,7 +55,7 @@ service Query {
     option (google.api.http).get = "/gravity/v1beta/batch/outgoinglogic";
   }
   rpc BatchRequestByNonce(QueryBatchRequestByNonceRequest) returns (QueryBatchRequestByNonceResponse) {
-    option (google.api.http).get = "/gravity/v1beta/batch/{nonce}";
+    option (google.api.http).get = "/gravity/v1beta/batch/request_by_nonce";
   }
   rpc BatchConfirms(QueryBatchConfirmsRequest) returns (QueryBatchConfirmsResponse) {
     option (google.api.http).get = "/gravity/v1beta/batch/confirms";
