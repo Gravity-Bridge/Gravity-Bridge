@@ -35,7 +35,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 	input.GravityKeeper.SetValsetConfirm(sdkCtx, types.MsgValsetConfirm{
 		Nonce:        nonce,
 		Orchestrator: myValidatorCosmosAddr.String(),
-		EthAddress:   myValidatorEthereumAddr.GetAddress(),
+		EthAddress:   myValidatorEthereumAddr.GetAddress().Hex(),
 		Signature:    "alksdjhflkasjdfoiasjdfiasjdfoiasdj",
 	})
 
@@ -987,7 +987,7 @@ func TestQueryERC20ToDenom(t *testing.T) {
 	k := input.GravityKeeper
 	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
 
-	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{Erc20: erc20.GetAddress()})
+	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{Erc20: erc20.GetAddress().Hex()})
 	require.NoError(t, err)
 
 	assert.Equal(t, &response, queriedDenom)
@@ -1001,7 +1001,7 @@ func TestQueryDenomToERC20(t *testing.T) {
 	)
 	require.NoError(t, err)
 	response := types.QueryDenomToERC20Response{
-		Erc20:            erc20.GetAddress(),
+		Erc20:            erc20.GetAddress().Hex(),
 		CosmosOriginated: true,
 	}
 	input := CreateTestEnv(t)

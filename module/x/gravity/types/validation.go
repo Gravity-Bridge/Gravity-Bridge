@@ -45,9 +45,14 @@ type InternalBridgeValidator struct {
 }
 
 func NewInternalBridgeValidator(bridgeValidator BridgeValidator) (*InternalBridgeValidator, error) {
+	ethAddr, err := NewEthAddress(bridgeValidator.EthereumAddress)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "invalid bridge validator eth address")
+	}
+
 	i := &InternalBridgeValidator{
 		Power:           bridgeValidator.Power,
-		EthereumAddress: EthAddress{bridgeValidator.EthereumAddress},
+		EthereumAddress: *ethAddr,
 	}
 	if err := i.ValidateBasic(); err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid bridge validator")
@@ -68,7 +73,7 @@ func (i InternalBridgeValidator) ValidateBasic() error {
 func (i InternalBridgeValidator) ToExternal() BridgeValidator {
 	return BridgeValidator{
 		Power:           i.Power,
-		EthereumAddress: i.EthereumAddress.GetAddress(),
+		EthereumAddress: i.EthereumAddress.GetAddress().Hex(),
 	}
 }
 
@@ -113,16 +118,16 @@ func (b InternalBridgeValidators) PowerDiff(c InternalBridgeValidators) float64 
 	powers := map[string]int64{}
 	// loop over b and initialize the map with their powers
 	for _, bv := range b {
-		powers[bv.EthereumAddress.GetAddress()] = int64(bv.Power)
+		powers[bv.EthereumAddress.GetAddress().Hex()] = int64(bv.Power)
 	}
 
 	// subtract c powers from powers in the map, initializing
 	// uninitialized keys with negative numbers
 	for _, bv := range c {
-		if val, ok := powers[bv.EthereumAddress.GetAddress()]; ok {
-			powers[bv.EthereumAddress.GetAddress()] = val - int64(bv.Power)
+		if val, ok := powers[bv.EthereumAddress.GetAddress().Hex()]; ok {
+			powers[bv.EthereumAddress.GetAddress().Hex()] = val - int64(bv.Power)
 		} else {
-			powers[bv.EthereumAddress.GetAddress()] = -int64(bv.Power)
+			powers[bv.EthereumAddress.GetAddress().Hex()] = -int64(bv.Power)
 		}
 	}
 
@@ -149,7 +154,7 @@ func (b InternalBridgeValidators) HasDuplicates() bool {
 	// creates a hashmap then ensures that the hashmap and the array
 	// have the same length, this acts as an O(n) duplicates check
 	for i := range b {
-		m[b[i].EthereumAddress.GetAddress()] = struct{}{}
+		m[b[i].EthereumAddress.GetAddress().Hex()] = struct{}{}
 	}
 	return len(m) != len(b)
 }
@@ -193,7 +198,7 @@ func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmo
 	for _, val := range members {
 		mem = append(mem, val.ToExternal())
 	}
-	vs := Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress()}
+	vs := Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress().Hex()}
 	return &vs,
 		nil
 }

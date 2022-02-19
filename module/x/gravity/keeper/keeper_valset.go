@@ -41,7 +41,7 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventMultisigUpdateRequest{
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
 			MultisigId:     fmt.Sprint(valset.Nonce),
 			Nonce:          fmt.Sprint(valset.Nonce),
@@ -272,7 +272,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 		p := sdk.NewInt(k.StakingKeeper.GetLastValidatorPower(ctx, val))
 
 		if ethAddr, found := k.GetEthAddressByValidator(ctx, val); found {
-			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: ethAddr.GetAddress()}
+			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: ethAddr.GetAddress().Hex()}
 			ibv, err := types.NewInternalBridgeValidator(bv)
 			if err != nil {
 				return types.Valset{}, sdkerrors.Wrapf(err, types.ErrInvalidEthAddress.Error(), val)

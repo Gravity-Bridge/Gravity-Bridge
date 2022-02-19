@@ -171,7 +171,7 @@ func GetValidatorByEthAddressPrefix() string {
 // prefix              cosmos-validator
 // [0xf9][0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B]
 func GetValidatorByEthAddressKey(ethAddress EthAddress) string {
-	return GetValidatorByEthAddressPrefix() + string([]byte(ethAddress.GetAddress()))
+	return GetValidatorByEthAddressPrefix() + string(ethAddress.GetAddress().Bytes())
 }
 
 // GetValsetKey returns
@@ -260,7 +260,7 @@ func GetAttestationKey(eventNonce uint64, claimHash []byte) string {
 // [0x6][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 // This prefix is used for iterating over unbatched transactions for a given contract
 func GetOutgoingTxPoolContractPrefix(contractAddress EthAddress) string {
-	return OutgoingTXPoolKey + contractAddress.GetAddress()
+	return OutgoingTXPoolKey + string(contractAddress.GetAddress().Bytes())
 }
 
 // GetOutgoingTxPoolKey returns the following key format
@@ -271,18 +271,17 @@ func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) string {
 	// therefore this will never panic and is always safe
 	amount := make([]byte, 32)
 	amount = fee.Amount.BigInt().FillBytes(amount)
-
 	a := append(amount, UInt64Bytes(id)...)
-	b := append([]byte(fee.Contract.GetAddress()), a...)
+	b := append(fee.Contract.GetAddress().Bytes(), a...)
 	r := append([]byte(OutgoingTXPoolKey), b...)
-	return ConvertByteArrToString(r)
+	return string(r)
 }
 
 // GetOutgoingTxBatchContractPrefix returns the following format
 // prefix     eth-contract-address
 // [0xa][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 func GetOutgoingTxBatchContractPrefix(tokenContract EthAddress) string {
-	return OutgoingTXBatchKey + tokenContract.GetAddress()
+	return OutgoingTXBatchKey + string(tokenContract.GetAddress().Bytes())
 }
 
 // GetOutgoingTxBatchKey returns the following key format
@@ -296,7 +295,7 @@ func GetOutgoingTxBatchKey(tokenContract EthAddress, nonce uint64) string {
 // prefix           eth-contract-address                BatchNonce
 // [0xe1][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
 func GetBatchConfirmNonceContractPrefix(tokenContract EthAddress, batchNonce uint64) string {
-	return BatchConfirmKey + tokenContract.GetAddress() + ConvertByteArrToString(UInt64Bytes(batchNonce))
+	return BatchConfirmKey + string(tokenContract.GetAddress().Bytes()) + ConvertByteArrToString(UInt64Bytes(batchNonce))
 }
 
 // GetBatchConfirmKey returns the following key format
@@ -333,7 +332,7 @@ func GetDenomToERC20Key(denom string) string {
 }
 
 func GetERC20ToDenomKey(erc20 EthAddress) string {
-	return ERC20ToDenomKey + erc20.GetAddress()
+	return ERC20ToDenomKey + string(erc20.GetAddress().Bytes())
 }
 
 func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) string {

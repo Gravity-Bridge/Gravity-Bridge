@@ -47,7 +47,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 
 	tv.t = t
 
-	tv.erc20 = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+	tv.erc20 = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
 	tv.denom = "ugraviton"
 
 	tv.input, tv.ctx = keeper.SetupFiveValChain(t)
@@ -109,7 +109,7 @@ func addDenomToERC20Relation(tv *testingVars) {
 	assert.True(tv.t, isCosmosOriginated)
 
 	assert.Equal(tv.t, tv.denom, gotDenom)
-	assert.Equal(tv.t, tv.erc20, gotERC20.GetAddress())
+	assert.Equal(tv.t, tv.erc20, gotERC20.GetAddress().Hex())
 }
 
 func lockCoinsInModule(tv *testingVars) {
@@ -265,5 +265,5 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	assert.True(tv.t, isCosmosOriginated)
 
 	assert.Equal(tv.t, tv.denom, gotDenom)
-	assert.Equal(tv.t, tv.erc20, gotERC20.GetAddress())
+	assert.Equal(tv.t, tv.erc20, gotERC20.GetAddress().Hex())
 }

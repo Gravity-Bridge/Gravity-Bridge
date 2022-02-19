@@ -39,8 +39,8 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	}
 	ctrAddresses := []string{ // Warning: this must match the length of accAddresses
 		"0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-		"0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6",
-		"0x429881672B9AE42b8EbA0E26cD9C73711b891Ca7",
+		"0x429881672b9AE42b8eBA0e26cd9c73711b891ca6",
+		"0x429881672b9aE42b8eba0e26cD9c73711B891Ca7",
 		"0x429881672B9AE42b8EbA0E26cD9C73711b891Ca8",
 		"0x429881672B9AE42b8EbA0E26cD9C73711b891Ca9",
 	}
@@ -68,7 +68,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	tokens := make([]*types.InternalERC20Token, len(contracts))
 	vouchers := make([]*sdk.Coins, len(contracts))
 	for i, v := range contracts {
-		token, err := types.NewInternalERC20Token(sdk.NewInt(99999999), v.GetAddress())
+		token, err := types.NewInternalERC20Token(sdk.NewInt(99999999), v.GetAddress().Hex())
 		tokens[i] = token
 		allVouchers := sdk.NewCoins(token.GravityCoin())
 		vouchers[i] = &allVouchers
@@ -99,9 +99,9 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		sender := senders[i%len(senders)]
 		receiver := receivers[i%len(receivers)]
 		contract := contracts[i%len(contracts)]
-		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(amount)), contract.GetAddress())
+		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(amount)), contract.GetAddress().Hex())
 		require.NoError(t, err)
-		feeToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(fee)), contract.GetAddress())
+		feeToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(fee)), contract.GetAddress().Hex())
 		require.NoError(t, err)
 
 		// add transaction to the pool
@@ -110,7 +110,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v of contract %v from %v to %v", i, amount, fee, contract, sender, receiver))
 
 		// Record the transaction for later testing
-		tx, err := types.NewInternalOutgoingTransferTx(id, sender.String(), receiver.GetAddress(), amountToken.ToExternal(), feeToken.ToExternal())
+		tx, err := types.NewInternalOutgoingTransferTx(id, sender.String(), receiver.GetAddress().Hex(), amountToken.ToExternal(), feeToken.ToExternal())
 		require.NoError(t, err)
 		txs[i] = tx
 	}

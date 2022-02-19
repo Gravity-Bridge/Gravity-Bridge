@@ -72,7 +72,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatch{
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
 			BatchId:        types.GetOutgoingTxBatchKey(contract, nextID),
 			Nonce:          fmt.Sprint(nextID),
@@ -107,7 +107,7 @@ func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context) uint64 {
 func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.EthAddress, nonce uint64) {
 	b := k.GetOutgoingTXBatch(ctx, tokenContract, nonce)
 	if b == nil {
-		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract, nonce))
+		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract.GetAddress().Hex(), nonce))
 	}
 	contract := b.TokenContract
 	// Burn tokens if they're Ethereum originated
@@ -117,7 +117,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 			totalToBurn = totalToBurn.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
 		}
 		// burn vouchers to send them back to ETH
-		erc20, err := types.NewInternalERC20Token(totalToBurn, contract.GetAddress())
+		erc20, err := types.NewInternalERC20Token(totalToBurn, contract.GetAddress().Hex())
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "invalid ERC20 address in executed batch"))
 		}
@@ -133,7 +133,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 		if iter_batch.BatchNonce < b.BatchNonce && iter_batch.TokenContract.GetAddress() == tokenContract.GetAddress() {
 			err := k.CancelOutgoingTXBatch(ctx, tokenContract, iter_batch.BatchNonce)
 			if err != nil {
-				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s", tokenContract, iter_batch.BatchNonce, tokenContract, nonce, err))
+				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s", tokenContract.GetAddress().Hex(), iter_batch.BatchNonce, tokenContract.GetAddress().Hex(), nonce, err))
 			}
 		}
 		return false
@@ -222,8 +222,8 @@ func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAddre
 	var b types.OutgoingTxBatch
 	k.cdc.MustUnmarshal(bz, &b)
 	for _, tx := range b.Transactions {
-		tx.Erc20Token.Contract = tokenContract.GetAddress()
-		tx.Erc20Fee.Contract = tokenContract.GetAddress()
+		tx.Erc20Token.Contract = tokenContract.GetAddress().Hex()
+		tx.Erc20Fee.Contract = tokenContract.GetAddress().Hex()
 	}
 	ret, err := b.ToInternal()
 	if err != nil {
@@ -252,7 +252,7 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatchCanceled{
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress(),
+			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
 			BatchId:        types.GetOutgoingTxBatchKey(tokenContract, nonce),
 			Nonce:          fmt.Sprint(nonce),

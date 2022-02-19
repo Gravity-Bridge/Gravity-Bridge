@@ -293,7 +293,7 @@ func CmdSendToEth() *cobra.Command {
 			// Make the message
 			msg := types.MsgSendToEth{
 				Sender:    cosmosAddr.String(),
-				EthDest:   ethAddr.GetAddress(),
+				EthDest:   ethAddr.GetAddress().Hex(),
 				Amount:    amount[0],
 				BridgeFee: bridgeFee[0],
 			}

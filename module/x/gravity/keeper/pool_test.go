@@ -174,7 +174,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	require.Zero(t, r)
 
 	//////// Inconsistent Entry ////////
-	badFeeContractAddr := "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
+	badFeeContractAddr := "0x429881672b9AE42b8eBA0e26cd9c73711b891ca6"
 	badFeeToken, err = types.NewInternalERC20Token(sdk.NewInt(100), badFeeContractAddr)
 	require.NoError(t, err)
 	badFee = badFeeToken.GravityCoin()
@@ -280,8 +280,8 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 		mySender3            sdk.AccAddress = []byte("gravity1ahx7f8wyertut")
 		myReceiver                          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr1                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
-		myTokenContractAddr2                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
-		myTokenContractAddr3                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca7"
+		myTokenContractAddr2                = "0x429881672b9AE42b8eBA0e26cd9c73711b891ca6"
+		myTokenContractAddr3                = "0x429881672b9aE42b8eba0e26cD9c73711B891Ca7"
 	)
 	receiver, err := types.NewEthAddress(myReceiver)
 	require.NoError(t, err)
@@ -487,10 +487,10 @@ func TestRefundInconsistentTx(t *testing.T) {
 	)
 
 	//////// Refund an inconsistent tx ////////
-	amountToken, err := types.NewInternalERC20Token(sdk.NewInt(100), myTokenContractAddr.GetAddress())
+	amountToken, err := types.NewInternalERC20Token(sdk.NewInt(100), myTokenContractAddr.GetAddress().Hex())
 	require.NoError(t, err)
-	badTokenContractAddr, _ := types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6") // different last char
-	badFeeToken, err := types.NewInternalERC20Token(sdk.NewInt(2), badTokenContractAddr.GetAddress())
+	badTokenContractAddr, _ := types.NewEthAddress("0x429881672b9AE42b8eBA0e26cd9c73711b891ca6") // different last char
+	badFeeToken, err := types.NewInternalERC20Token(sdk.NewInt(2), badTokenContractAddr.GetAddress().Hex())
 	require.NoError(t, err)
 
 	// This way should fail
@@ -596,7 +596,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 		mySender2            sdk.AccAddress = []byte("gravity1ahx7f8wyertus")
 		myReceiver                          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr1                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
-		myTokenContractAddr2                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
+		myTokenContractAddr2                = "0x429881672b9AE42b8eBA0e26cd9c73711b891ca6"
 	)
 	receiver, err := types.NewEthAddress(myReceiver)
 	require.NoError(t, err)
@@ -705,18 +705,18 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	for _, v := range token1Txs {
 		expTx := idToTxMap[v.Id]
 		require.NotNil(t, expTx)
-		require.Equal(t, myTokenContractAddr1, v.Erc20Fee.Contract.GetAddress())
-		require.Equal(t, myTokenContractAddr1, v.Erc20Token.Contract.GetAddress())
-		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress())
+		require.Equal(t, myTokenContractAddr1, v.Erc20Fee.Contract.GetAddress().Hex())
+		require.Equal(t, myTokenContractAddr1, v.Erc20Token.Contract.GetAddress().Hex())
+		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress().Hex())
 		require.Equal(t, expTx.Sender, v.Sender.String())
 	}
 	token2Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract2)
 	for _, v := range token2Txs {
 		expTx := idToTxMap[v.Id]
 		require.NotNil(t, expTx)
-		require.Equal(t, myTokenContractAddr2, v.Erc20Fee.Contract.GetAddress())
-		require.Equal(t, myTokenContractAddr2, v.Erc20Token.Contract.GetAddress())
-		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress())
+		require.Equal(t, myTokenContractAddr2, v.Erc20Fee.Contract.GetAddress().Hex())
+		require.Equal(t, myTokenContractAddr2, v.Erc20Token.Contract.GetAddress().Hex())
+		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress().Hex())
 		require.Equal(t, expTx.Sender, v.Sender.String())
 	}
 	// GetUnbatchedTransactions
@@ -724,10 +724,10 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	for _, v := range allTxs {
 		expTx := idToTxMap[v.Id]
 		require.NotNil(t, expTx)
-		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress())
+		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress().Hex())
 		require.Equal(t, expTx.Sender, v.Sender.String())
-		require.Equal(t, expTx.Erc20Fee.Contract, v.Erc20Fee.Contract.GetAddress())
-		require.Equal(t, expTx.Erc20Token.Contract, v.Erc20Token.Contract.GetAddress())
+		require.Equal(t, expTx.Erc20Fee.Contract, v.Erc20Fee.Contract.GetAddress().Hex())
+		require.Equal(t, expTx.Erc20Token.Contract, v.Erc20Token.Contract.GetAddress().Hex())
 	}
 }
 
@@ -744,7 +744,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 		mySender2            sdk.AccAddress = []byte("gravity1ahx7f8wyertus")
 		myReceiver                          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr1                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
-		myTokenContractAddr2                = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca6"
+		myTokenContractAddr2                = "0x429881672b9AE42b8eBA0e26cd9c73711b891ca6"
 	)
 	receiver, err := types.NewEthAddress(myReceiver)
 	require.NoError(t, err)
@@ -843,7 +843,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 		require.NotNil(t, tx)
 		fTx := idToTxMap[tx.Id]
 		require.NotNil(t, fTx)
-		require.Equal(t, fTx.DestAddress, tx.DestAddress.GetAddress())
+		require.Equal(t, fTx.DestAddress, tx.DestAddress.GetAddress().Hex())
 
 		anotherFoundMap[fTx.Id] = true
 		return false

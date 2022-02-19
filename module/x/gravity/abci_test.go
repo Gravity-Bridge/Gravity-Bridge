@@ -359,7 +359,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
 		Nonce:         batch.BatchNonce,
 		TokenContract: keeper.TokenContractAddrs[0],
-		EthSigner:     ethAddr.GetAddress(),
+		EthSigner:     ethAddr.GetAddress().Hex(),
 		Orchestrator:  accAddr.String(),
 		Signature:     "",
 	})
@@ -551,8 +551,8 @@ func TestBatchTimeout(t *testing.T) {
 
 		conf := &types.MsgConfirmBatch{
 			Nonce:         b2.BatchNonce,
-			TokenContract: b2.TokenContract.GetAddress(),
-			EthSigner:     ethAddr.GetAddress(),
+			TokenContract: b2.TokenContract.GetAddress().Hex(),
+			EthSigner:     ethAddr.GetAddress().Hex(),
 			Orchestrator:  orch.String(),
 			Signature:     "dummysig",
 		}
