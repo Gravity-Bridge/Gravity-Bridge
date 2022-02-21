@@ -122,33 +122,38 @@ func (k Keeper) BatchFees(
 	return &types.QueryBatchFeeResponse{BatchFees: k.GetAllBatchFees(sdk.UnwrapSDKContext(c), OutgoingTxBatchSize)}, nil
 }
 
-// LastPendingBatchRequestByAddr queries the LastPendingBatchRequestByAddr of the gravity module
+// LastPendingBatchRequestByAddr queries the LastPendingBatchRequestByAddr of
+// the gravity module.
 func (k Keeper) LastPendingBatchRequestByAddr(
 	c context.Context,
-	req *types.QueryLastPendingBatchRequestByAddrRequest) (*types.QueryLastPendingBatchRequestByAddrResponse, error) {
+	req *types.QueryLastPendingBatchRequestByAddrRequest,
+) (*types.QueryLastPendingBatchRequestByAddrResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(req.Address)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
 	}
 
 	var pendingBatchReq types.InternalOutgoingTxBatches
+
 	found := false
 	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
 			pendingBatchReq = append(pendingBatchReq, batch)
 			found = true
+
 			return true
 		}
+
 		return false
 	})
 
 	if found {
 		ref := pendingBatchReq.ToExternalArray()
 		return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: ref}, nil
-	} else {
-		return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: nil}, nil
 	}
+
+	return &types.QueryLastPendingBatchRequestByAddrResponse{Batch: nil}, nil
 }
 
 func (k Keeper) LastPendingLogicCallByAddr(
@@ -205,18 +210,21 @@ func (k Keeper) OutgoingLogicCalls(
 	return &types.QueryOutgoingLogicCallsResponse{Calls: calls}, nil
 }
 
-// BatchRequestByNonce queries the BatchRequestByNonce of the gravity module
+// BatchRequestByNonce queries the BatchRequestByNonce of the gravity module.
 func (k Keeper) BatchRequestByNonce(
 	c context.Context,
-	req *types.QueryBatchRequestByNonceRequest) (*types.QueryBatchRequestByNonceResponse, error) {
+	req *types.QueryBatchRequestByNonceRequest,
+) (*types.QueryBatchRequestByNonceResponse, error) {
 	addr, err := types.NewEthAddress(req.ContractAddress)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, err.Error())
 	}
+
 	foundBatch := k.GetOutgoingTXBatch(sdk.UnwrapSDKContext(c), *addr, req.Nonce)
 	if foundBatch == nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Can not find tx batch")
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "cannot find tx batch")
 	}
+
 	return &types.QueryBatchRequestByNonceResponse{Batch: foundBatch.ToExternal()}, nil
 }
 
