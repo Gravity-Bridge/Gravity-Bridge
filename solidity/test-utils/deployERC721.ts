@@ -1,9 +1,7 @@
-import { Gravity } from "../typechain/Gravity";
-import { TestERC20A } from "../typechain/TestERC20A";
 import { GravityERC721} from "../typechain/GravityERC721";
 import { TestERC721A } from "../typechain/TestERC721A";
 import { ethers } from "hardhat";
-import { makeCheckpoint, getSignerAddresses, ZeroAddress } from "./pure";
+import { getSignerAddresses, ZeroAddress } from "./pure";
 import { Signer } from "ethers";
 import { TestFakeGravity } from "../typechain/TestFakeGravity";
 import { deployContracts } from "./index";
