@@ -1,4 +1,5 @@
 import { Gravity } from "./typechain/Gravity";
+import { GravityERC721 } from "./typechain/GravityERC721";
 import { TestERC20A } from "./typechain/TestERC20A";
 import { TestERC20B } from "./typechain/TestERC20B";
 import { TestERC20C } from "./typechain/TestERC20C";
@@ -234,6 +235,13 @@ async function deploy() {
   await gravity.deployed();
   console.log("Gravity deployed at Address - ", gravity.address);
   await submitGravityAddress(gravity.address);
+
+  const gravityERC721 = (await factory.deploy(
+    gravity.address
+  ) as GravityERC721);
+
+  await gravityERC721.deployed();
+  console.log("GravityERC721 deployed at Address - ", gravityERC721.address);
 }
 
 function getContractArtifacts(path: string): { bytecode: string; abi: string } {

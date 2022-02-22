@@ -27,16 +27,14 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard, Ownable{
 		address _gravitySolAddress
 	) {
 		state_gravitySolAddress = _gravitySolAddress;
-	}
+		}
 
 	function sendERC721ToCosmos(
 		address _tokenContract,
 		string calldata _destination,
 		uint256 _tokenId
 	) external nonReentrant {
-
 		ERC721(_tokenContract).safeTransferFrom(msg.sender, address(this), _tokenId);
-		
 		state_lastERC721EventNonce = state_lastERC721EventNonce + 1;
 
 		emit SendERC721ToCosmosEvent(

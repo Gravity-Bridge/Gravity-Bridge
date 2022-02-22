@@ -8,7 +8,6 @@ import { Signer } from "ethers";
 import { TestFakeGravity } from "../typechain/TestFakeGravity";
 import { deployContracts } from "./index";
 
-
 export async function deployContractsERC721(
   gravityId: string = "foo",
   validators: Signer[],
@@ -23,20 +22,6 @@ export async function deployContractsERC721(
 
   const TestERC721 = await ethers.getContractFactory("TestERC721A");
   const testERC721= (await TestERC721.deploy()) as TestERC721A;
-
-  // const Gravity = await ethers.getContractFactory("Gravity");
-
-  // const valAddresses = await getSignerAddresses(validators);
-
-  // const checkpoint = makeCheckpoint(valAddresses, powers, 0, 0, ZeroAddress, gravityId);
-
-  // const gravity = (await Gravity.deploy(
-  //   gravityId,
-  //   await getSignerAddresses(validators),
-  //   powers,
-  // )) as Gravity;
-
-  // await gravity.deployed();
 
   const GravityERC721 = await ethers.getContractFactory("GravityERC721");
   const gravityERC721 = (await GravityERC721.deploy(
