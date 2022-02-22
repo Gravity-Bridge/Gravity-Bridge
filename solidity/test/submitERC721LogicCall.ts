@@ -3,14 +3,15 @@ import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
 import { TestERC721A } from "../typechain/TestERC721A";
 import { GravityERC721 } from "../typechain/GravityERC721";
-import { deployContracts } from "../test-utils/deployERC721";
+import { deployContractsERC721 } from "../test-utils/deployERC721";
 import {
   getSignerAddresses,
   signHash,
   examplePowers,
   ZeroAddress
 } from "../test-utils/pure";
-import { ERC721, TestERC20A } from "../typechain";
+import { ERC721, TestERC20A} from "../typechain";
+
 
 chai.use(solidity);
 const { expect } = chai;
@@ -29,7 +30,7 @@ async function runTest(opts: {
   barelyEnoughPower?: boolean;
   malformedCurrentValset?: boolean;
   timedOut?: boolean;
-  wrongOwner?: boolean;
+  wrongCaller?: boolean;
 }) {
 
   // Prep and deploy contract
@@ -42,16 +43,14 @@ async function runTest(opts: {
   const {
     gravity,
     gravityERC721,
+    fakeGravity,
     testERC721,
     testERC20,
-    checkpoint: deployCheckpoint
-  } = await deployContracts(gravityId, validators, powers);
-
+    checkpoint
+  } = await deployContractsERC721(gravityId, validators, powers);
 
   const TestGravityERC721Contract = await ethers.getContractFactory("GravityERC721");
   const ERC721LogicContract = (await TestGravityERC721Contract.deploy(gravity.address)) as GravityERC721;
-  // We set its owner to the batch contract. 
-  await gravityERC721.transferOwnership(gravity.address);
 
   // Transfer out to Cosmos, locking coins
   // =====================================
@@ -189,10 +188,6 @@ async function runTest(opts: {
     sigs[9].v = 0;
     sigs[11].v = 0;
   }
-  if (opts.wrongOwner) {
-    // Wrong owner
-    await gravityERC721.transferOwnership(testERC721.address);
-  }
 
   let valset = {
     validators: await getSignerAddresses(validators),
@@ -202,11 +197,23 @@ async function runTest(opts: {
     rewardToken: ZeroAddress
   }
 
-  let logicCallSubmitResult = await gravity.submitLogicCall(
-    valset,
-    sigs,
-    logicCallArgs
-  );
+  let logicCallSubmitResult; 
+
+  if (opts.wrongCaller) {
+    logicCallSubmitResult = await fakeGravity.submitLogicCall(
+      valset,
+      sigs,
+      logicCallArgs
+    );
+  }
+  else {
+    logicCallSubmitResult = await gravity.submitLogicCall(
+      valset,
+      sigs,
+      logicCallArgs
+    );
+  }
+
 
   //check ownership of ERC721 tokens now transferred to signers
   for (let i = 0; i < numTxs; i++) {
@@ -246,9 +253,9 @@ describe("submitLogicCall tests", function () {
     );
   });
 
-  it.only("throws on wrong ownerOf", async function () {
-    await expect(runTest({ wrongOwner: true })).to.be.revertedWith(
-      "Ownable: caller is not the owner"
+  it.only("throws on wrong caller", async function () {
+    await expect(runTest({ wrongCaller: true })).to.be.revertedWith(
+      "Can only call from Gravity.sol"
     );
   });
 
@@ -294,8 +301,8 @@ describe("submitLogicCall tests", function () {
 
 });
 
-// This test produces a hash for the contract which should match what is being used in the Go unit tests. It's here for
-// the use of anyone updating the Go tests.
+// // This test produces a hash for the contract which should match what is being used in the Go unit tests. It's here for
+// // the use of anyone updating the Go tests.
 describe("logicCall Go test hash", function () {
   it.only("produces good hash", async function () {
 
@@ -311,8 +318,8 @@ describe("logicCall Go test hash", function () {
       gravityERC721,
       testERC721,
       testERC20,
-      checkpoint: deployCheckpoint
-    } = await deployContracts(gravityId, validators, powers);
+      checkpoint
+    } = await deployContractsERC721(gravityId, validators, powers);
 
     const TestGravityERC721Contract = await ethers.getContractFactory("GravityERC721");
     const ERC721LogicContract = (await TestGravityERC721Contract.deploy(gravity.address)) as GravityERC721;

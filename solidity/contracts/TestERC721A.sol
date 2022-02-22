@@ -2,7 +2,7 @@
 pragma solidity 0.8.10;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-// One of three testing coins
+// Generate NFTs with token ids 1-10 and 190-195
 contract TestERC721A is ERC721 {
 	constructor() ERC721("NFT PUNK", "NFTPUNK") {
 	  uint i=0;

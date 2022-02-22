@@ -2,7 +2,7 @@ import chai from "chai";
 import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
 
-import { deployContracts } from "../test-utils/deployERC721";
+import { deployContractsERC721 } from "../test-utils/deployERC721";
 import {
   examplePowers
 } from "../test-utils/pure";
@@ -24,8 +24,9 @@ async function runTest(opts: {}) {
     gravity,
     gravityERC721,
     testERC721,
-    checkpoint: deployCheckpoint
-  } = await deployContracts(gravityId, validators, powers);
+    fakeGravity,
+    checkpoint
+  } = await deployContractsERC721(gravityId, validators, powers);
 
 
   // Transfer out to Cosmos, locking coins
@@ -64,7 +65,7 @@ async function runTest(opts: {}) {
 }
 
 describe("sendERC721ToCosmos tests", function () {
-  it("works right", async function () {
+  it.only("works right", async function () {
     await runTest({})
   });
 });

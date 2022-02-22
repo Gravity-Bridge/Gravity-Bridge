@@ -13,7 +13,6 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard, Ownable{
 	
 	uint256 public state_lastERC721EventNonce = 1;
 	address public state_gravitySolAddress;
-	uint256 constant constant_powerThreshold = 2863311530;
 
 	event SendERC721ToCosmosEvent(
 		address indexed _tokenContract,
@@ -53,11 +52,11 @@ contract GravityERC721 is ERC721Holder, ReentrancyGuard, Ownable{
 		address _ERC721TokenContract,
 		uint256[] calldata _tokenIds,
 		address[] calldata _destinations
-	) external  onlyOwner {
+	) external {
 		for (uint256 i = 0; i < _tokenIds.length; i++) {
 			ERC721(_ERC721TokenContract).safeTransferFrom(address(this), _destinations[i], _tokenIds[i]);
 		}
-
+		require(msg.sender == state_gravitySolAddress, "Can only call from Gravity.sol");
 		state_lastERC721EventNonce = state_lastERC721EventNonce + 1;
 
 	}
