@@ -16,6 +16,7 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
+	// Cosmos SDK
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -79,6 +80,8 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	// Cosmos IBC-Go
 	transfer "github.com/cosmos/ibc-go/v2/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v2/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
@@ -89,6 +92,11 @@ import (
 	porttypes "github.com/cosmos/ibc-go/v2/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/v2/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
+
+	// Osmosis-Labs Bech32-IBC
+	"github.com/osmosis-labs/bech32-ibc/x/bech32ibc"
+	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
+	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
@@ -134,6 +142,7 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		gravity.AppModuleBasic{},
+		bech32ibc.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -203,6 +212,7 @@ type Gravity struct {
 	evidenceKeeper    *evidencekeeper.Keeper
 	ibcTransferKeeper *ibctransferkeeper.Keeper
 	gravityKeeper     *keeper.Keeper
+	bech32IbcKeeper   *bech32ibckeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
@@ -271,6 +281,9 @@ func (app Gravity) ValidateMembers() {
 	if app.gravityKeeper == nil {
 		panic("Nil gravityKeeper!")
 	}
+	if app.bech32IbcKeeper == nil {
+		panic("Nil bech32IbcKeeper!")
+	}
 
 	// scoped keepers
 	if app.ScopedIBCKeeper == nil {
@@ -318,7 +331,7 @@ func NewGravityApp(
 		slashingtypes.StoreKey, govtypes.StoreKey, paramstypes.StoreKey,
 		ibchost.StoreKey, upgradetypes.StoreKey, evidencetypes.StoreKey,
 		ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		gravitytypes.StoreKey,
+		gravitytypes.StoreKey, bech32ibctypes.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -470,13 +483,27 @@ func NewGravityApp(
 	)
 	app.ibcKeeper = &ibcKeeper
 
+	ibctransferKeeper := ibctransferkeeper.NewKeeper(
+		appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
+		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
+		accountKeeper, bankKeeper, scopedTransferKeeper,
+	)
+	app.ibcTransferKeeper = &ibctransferKeeper
+
+	bech32IbcKeeper := *bech32ibckeeper.NewKeeper(
+		ibcKeeper.ChannelKeeper, appCodec, keys[bech32ibctypes.StoreKey],
+		ibctransferKeeper,
+	)
+	app.bech32IbcKeeper = &bech32IbcKeeper
+
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
 		AddRoute(paramsproposal.RouterKey, params.NewParamChangeProposalHandler(paramsKeeper)).
 		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(distrKeeper)).
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(upgradeKeeper)).
 		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(ibcKeeper.ClientKeeper)).
-		AddRoute(gravitytypes.RouterKey, keeper.NewGravityProposalHandler(gravityKeeper))
+		AddRoute(gravitytypes.RouterKey, keeper.NewGravityProposalHandler(gravityKeeper)).
+		AddRoute(bech32ibctypes.RouterKey, bech32ibc.NewBech32IBCProposalHandler(*app.bech32IbcKeeper))
 
 	govKeeper := govkeeper.NewKeeper(
 		appCodec,
@@ -488,13 +515,6 @@ func NewGravityApp(
 		govRouter,
 	)
 	app.govKeeper = &govKeeper
-
-	ibctransferKeeper := ibctransferkeeper.NewKeeper(
-		appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
-		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
-		accountKeeper, bankKeeper, scopedTransferKeeper,
-	)
-	app.ibcTransferKeeper = &ibctransferKeeper
 
 	ibcTransferModule := transfer.NewAppModule(ibctransferKeeper)
 
@@ -587,6 +607,10 @@ func NewGravityApp(
 			gravityKeeper,
 			bankKeeper,
 		),
+		bech32ibc.NewAppModule(
+			appCodec,
+			bech32IbcKeeper,
+		),
 	)
 	app.mm = &mm
 
@@ -622,6 +646,7 @@ func NewGravityApp(
 		ibctransfertypes.ModuleName,
 		authz.ModuleName,
 		gravitytypes.ModuleName,
+		bech32ibctypes.ModuleName,
 		crisistypes.ModuleName,
 	)
 
