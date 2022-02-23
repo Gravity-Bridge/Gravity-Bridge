@@ -26,6 +26,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetPendingValsetRequest(),
 		CmdGetPendingOutgoingTXBatchRequest(),
 		CmdGetPendingSendToEth(),
+		GetCmdQueryParams(),
 	}...)
 
 	return gravityQueryCmd
@@ -192,6 +193,31 @@ func CmdGetPendingSendToEth() *cobra.Command {
 			return clientCtx.PrintProto(res)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func GetCmdQueryParams() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "params",
+		Args:  cobra.NoArgs,
+		Short: "Query gravity params",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.Params(cmd.Context(), &types.QueryParamsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(&res.Params)
+		},
+	}
+
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
