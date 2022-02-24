@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "hardhat/console.sol";
 
-contract GravityERC721 is ERC721Holder, ReentrancyGuard, Ownable{
+contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 	
 	uint256 public state_lastERC721EventNonce = 1;
 	address public state_gravitySolAddress;

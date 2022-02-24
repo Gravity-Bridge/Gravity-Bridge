@@ -68,12 +68,18 @@ async function runTest(opts: {
     txAmounts[i] = 0;
   }
 
+  // TestERC721A contract currently owns tokenIds 190-199
+  // Therefore if we try to send these tokenIds from GravityERC721
+  // Then we will get a wrong owner error
   if (opts.wrongERC721Owner) {
     const nftTokenOffset = 190; 
     for (let i = nftTokenOffset; i < nftTokenOffset+numTxs; i++) {
       tokenIds[i-nftTokenOffset] = i;
     }
    }
+    // TokenIds 1000-1009 were never minted in the test contracts
+    // Therefore we will get a does not exist error if we try to 
+    // transfer them
     else if (opts.ERC721NotExist) {
     const nftTokenOffset = 1000; 
       for (let i = nftTokenOffset; i < nftTokenOffset+numTxs; i++) {

@@ -48,6 +48,8 @@ async function runTest(opts: {
     await secondCall(gravityERC721, testERC721, signers, gravity, secondERC721);
 }
 
+// this will get the tokenId of the second ERC721 token to send to Cosmos
+// branches on the different test conditions
 async function getSecondERC721(testERC721: TestERC721A, gravityERC721: GravityERC721,
    ERC721NotExist?: boolean, ERC721NotInContract?: boolean) {
 let secondERC721 = 191;
