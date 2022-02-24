@@ -5,9 +5,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Gravity.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "hardhat/console.sol";
+
 
 contract GravityERC721 is ERC721Holder, ReentrancyGuard {
 	
