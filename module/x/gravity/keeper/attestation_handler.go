@@ -7,11 +7,9 @@ import (
 
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	distypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
@@ -21,9 +19,7 @@ var _ types.DistributionKeeper = (*distrkeeper.Keeper)(nil)
 // AttestationHandler processes `observed` Attestations
 type AttestationHandler struct {
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
-	keeper     *Keeper
-	bankKeeper *bankkeeper.BaseKeeper
-	distKeeper *distrkeeper.Keeper
+	keeper *Keeper
 }
 
 // Check for nil members
@@ -31,24 +27,18 @@ func (a AttestationHandler) ValidateMembers() {
 	if a.keeper == nil {
 		panic("Nil keeper!")
 	}
-	if a.bankKeeper == nil {
-		panic("Nil bankKeeper!")
-	}
-	if a.distKeeper == nil {
-		panic("Nil distKeeper!")
-	}
 }
 
 // SendToCommunityPool handles sending incorrect deposits to the community pool, since the deposits
 // have already been made on Ethereum there's nothing we can do to reverse them, and we should at least
 // make use of the tokens which would otherwise be lost
 func (a AttestationHandler) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
-	if err := a.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distypes.ModuleName, coins); err != nil {
+	if err := a.keeper.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distypes.ModuleName, coins); err != nil {
 		return sdkerrors.Wrap(err, "transfer to community pool failed")
 	}
-	feePool := (*a.distKeeper).GetFeePool(ctx)
+	feePool := (*a.keeper.DistKeeper).GetFeePool(ctx)
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
-	(*a.distKeeper).SetFeePool(ctx, feePool)
+	(*a.keeper.DistKeeper).SetFeePool(ctx, feePool)
 	return nil
 }
 
@@ -127,7 +117,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	if !isCosmosOriginated {
 		// We need to mint eth-originated coins (aka vouchers)
 		// Make sure that users are not bridging an impossible amount
-		prevSupply := a.bankKeeper.GetSupply(ctx, denom)
+		prevSupply := a.keeper.bankKeeper.GetSupply(ctx, denom)
 		newSupply := new(big.Int).Add(prevSupply.Amount.BigInt(), claim.Amount.BigInt())
 		if newSupply.BitLen() > 256 { // new supply overflows uint256
 			a.keeper.logger(ctx).Error("Deposit Overflow",
@@ -137,7 +127,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 			return sdkerrors.Wrap(types.ErrIntOverflowAttestation, "invalid supply after SendToCosmos attestation")
 		}
 
-		if err := a.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
+		if err := a.keeper.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
 			// in this case we have lost tokens! They are in the bridge, but not
 			// in the community pool our out in some users balance, every instance of this
 			// error needs to be detected and resolved
@@ -153,7 +143,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	}
 
 	if !invalidAddress { // valid address so far, try to lock up the coins in the requested cosmos address
-		if err := a.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, nativeReceiver, coins); err != nil {
+		if err := a.keeper.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, nativeReceiver, coins); err != nil {
 			// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
 			hash, _ := claim.ClaimHash()
 			a.keeper.logger(ctx).Error("Blacklisted deposit",
@@ -329,7 +319,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 			// Note we are minting based on the claim! This is important as the reward value
 			// could change between when this event occurred and the present
 			coins := sdk.Coins{sdk.NewCoin(denom, claim.RewardAmount)}
-			if err := a.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
+			if err := a.keeper.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
 				ctx.EventManager().EmitTypedEvent(
 					&types.EventValsetUpdatedClaim{
 						Nonce: strconv.Itoa(int(claim.GetEventNonce())),
