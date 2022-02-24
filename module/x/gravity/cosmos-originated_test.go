@@ -124,6 +124,7 @@ func lockCoinsInModule(tv *testingVars) {
 		feeCoin             sdk.Coin  = sdk.NewCoin(denom, feeAmount)
 		ethDestination                = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
 	)
+	assert.Nil(tv.t, err)
 
 	// we start by depositing some funds into the users balance to send
 	require.NoError(tv.t, tv.input.BankKeeper.MintCoins(tv.ctx, types.ModuleName, startingCoins))
