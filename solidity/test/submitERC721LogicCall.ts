@@ -1,7 +1,6 @@
 import chai from "chai";
 import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
-import { TestERC721A } from "../typechain/TestERC721A";
 import { GravityERC721 } from "../typechain/GravityERC721";
 import { deployContractsERC721 } from "../test-utils/deployERC721";
 import {
@@ -10,27 +9,14 @@ import {
   examplePowers,
   ZeroAddress
 } from "../test-utils/pure";
-import { ERC721, TestERC20A} from "../typechain";
-
 
 chai.use(solidity);
 const { expect } = chai;
 
 
 async function runTest(opts: {
-  // Issues with the tx batch
-  invalidationNonceNotHigher?: boolean;
-  malformedTxBatch?: boolean;
-
-  // Issues with the current valset and signatures
-  nonMatchingCurrentValset?: boolean;
-  badValidatorSig?: boolean;
-  zeroedValidatorSig?: boolean;
-  notEnoughPower?: boolean;
-  barelyEnoughPower?: boolean;
-  malformedCurrentValset?: boolean;
-  timedOut?: boolean;
   wrongCaller?: boolean;
+  wrongERC721Owner?: boolean;
 }) {
 
   // Prep and deploy contract
@@ -78,16 +64,15 @@ async function runTest(opts: {
     txAmounts[i] = 0;
   }
 
+  if (opts.wrongERC721Owner) {
+    const nftTokenOffset = 190; 
+    for (let i = nftTokenOffset; i < nftTokenOffset+numTxs; i++) {
+      tokenIds[i-nftTokenOffset] = i;
+    }
+  }
+
   let invalidationNonce = 1
-  if (opts.invalidationNonceNotHigher) {
-    invalidationNonce = 0
-  }
-
   let timeOut = 4766922941000
-  if (opts.timedOut) {
-    timeOut = 0
-  }
-
 
   // // // Call method
   // // // ===========
@@ -141,51 +126,6 @@ async function runTest(opts: {
   const sigs = await signHash(validators, digest);
 
   let currentValsetNonce = 0;
-  if (opts.nonMatchingCurrentValset) {
-    // Wrong nonce
-    currentValsetNonce = 420;
-  }
-  if (opts.malformedCurrentValset) {
-    // Remove one of the powers to make the length not match
-    powers.pop();
-  }
-  if (opts.badValidatorSig) {
-    // Switch the first sig for the second sig to screw things up
-    sigs[1].v = sigs[0].v;
-    sigs[1].r = sigs[0].r;
-    sigs[1].s = sigs[0].s;
-  }
-  if (opts.zeroedValidatorSig) {
-    // Switch the first sig for the second sig to screw things up
-    sigs[1].v = sigs[0].v;
-    sigs[1].r = sigs[0].r;
-    sigs[1].s = sigs[0].s;
-    // Then zero it out to skip evaluation
-    sigs[1].v = 0;
-  }
-  if (opts.notEnoughPower) {
-    // zero out enough signatures that we dip below the threshold
-    sigs[1].v = 0;
-    sigs[2].v = 0;
-    sigs[3].v = 0;
-    sigs[5].v = 0;
-    sigs[6].v = 0;
-    sigs[7].v = 0;
-    sigs[9].v = 0;
-    sigs[11].v = 0;
-    sigs[13].v = 0;
-  }
-  if (opts.barelyEnoughPower) {
-    // Stay just above the threshold
-    sigs[1].v = 0;
-    sigs[2].v = 0;
-    sigs[3].v = 0;
-    sigs[5].v = 0;
-    sigs[6].v = 0;
-    sigs[7].v = 0;
-    sigs[9].v = 0;
-    sigs[11].v = 0;
-  }
 
   let valset = {
     validators: await getSignerAddresses(validators),
@@ -196,7 +136,6 @@ async function runTest(opts: {
   }
 
   let logicCallSubmitResult; 
-
   if (opts.wrongCaller) {
     logicCallSubmitResult = await fakeGravity.submitLogicCall(
       valset,
@@ -211,7 +150,6 @@ async function runTest(opts: {
       logicCallArgs
     );
   }
-
 
   //check ownership of ERC721 tokens now transferred to signers
   for (let i = 0; i < numTxs; i++) {
@@ -245,56 +183,19 @@ async function runTest(opts: {
 }
 
 describe("submitLogicCall tests", function () {
-  it.only("throws on malformed current valset", async function () {
-    await expect(runTest({ malformedCurrentValset: true })).to.be.revertedWith(
-      "MalformedCurrentValidatorSet()"
-    );
+  it("Happy Path", async function () {
+    await runTest({})
   });
 
-  it.only("throws on wrong caller", async function () {
+  it("throws on wrong caller", async function () {
     await expect(runTest({ wrongCaller: true })).to.be.revertedWith(
       "Can only call from Gravity.sol"
     );
   });
 
-  it.only("throws on invalidation nonce not incremented", async function () {
-    await expect(runTest({ invalidationNonceNotHigher: true })).to.be.revertedWith(
-      "InvalidLogicCallNonce(0, 0)"
+  it("throws on Wrong NFT owner", async function () {
+    await expect(runTest({ wrongERC721Owner: true })).to.be.revertedWith(
+      "ERC721: transfer caller is not owner nor approved"
     );
   });
-
-  it.only("throws on non matching checkpoint for current valset", async function () {
-    await expect(
-      runTest({ nonMatchingCurrentValset: true })
-    ).to.be.revertedWith(
-      "IncorrectCheckpoint()"
-    );
-  });
-
-  it.only("throws on bad validator sig", async function () {
-    await expect(runTest({ badValidatorSig: true })).to.be.revertedWith(
-      "InvalidSignature()"
-    );
-  });
-
-  it.only("allows zeroed sig", async function () {
-    await runTest({ zeroedValidatorSig: true });
-  });
-
-  it.only("throws on not enough signatures", async function () {
-    await expect(runTest({ notEnoughPower: true })).to.be.revertedWith(
-      "InsufficientPower(2807621889, 2863311530)"
-    );
-  });
-
-  it.only("does not throw on barely enough signatures", async function () {
-    await runTest({ barelyEnoughPower: true });
-  });
-
-  it.only("throws on timeout", async function () {
-    await expect(runTest({ timedOut: true })).to.be.revertedWith(
-      "LogicCallTimedOut()"
-    );
-  });
-
 });
