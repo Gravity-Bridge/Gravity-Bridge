@@ -16,8 +16,8 @@ linters:
     # - goimports
     # - gosec
     # - gosimple
-    - govet
-    # - ineffassign
+    # - govet
+    - ineffassign
     # - misspell
     # - nakedret
     # - prealloc
