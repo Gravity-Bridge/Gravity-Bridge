@@ -3,6 +3,11 @@ package keeper
 import (
 	"bytes"
 	"fmt"
+	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
+	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	ibchost "github.com/cosmos/ibc-go/v2/modules/core/24-host"
 	"testing"
 	"time"
 
@@ -25,6 +30,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/capability"
+	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
@@ -55,6 +61,13 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	dbm "github.com/tendermint/tm-db"
+
+	ibctransferkeeper "github.com/cosmos/ibc-go/v2/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
+	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
+
+	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
+	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -229,17 +242,18 @@ var (
 
 // TestInput stores the various keepers required to test gravity
 type TestInput struct {
-	GravityKeeper   Keeper
-	AccountKeeper   authkeeper.AccountKeeper
-	StakingKeeper   stakingkeeper.Keeper
-	SlashingKeeper  slashingkeeper.Keeper
-	DistKeeper      distrkeeper.Keeper
-	BankKeeper      bankkeeper.BaseKeeper
-	GovKeeper       govkeeper.Keeper
-	Context         sdk.Context
-	Marshaler       codec.Codec
-	LegacyAmino     *codec.LegacyAmino
-	GravityStoreKey *sdk.KVStoreKey
+	GravityKeeper     Keeper
+	AccountKeeper     authkeeper.AccountKeeper
+	StakingKeeper     stakingkeeper.Keeper
+	SlashingKeeper    slashingkeeper.Keeper
+	DistKeeper        distrkeeper.Keeper
+	BankKeeper        bankkeeper.BaseKeeper
+	GovKeeper         govkeeper.Keeper
+	IbcTransferKeeper ibctransferkeeper.Keeper
+	Context           sdk.Context
+	Marshaler         codec.Codec
+	LegacyAmino       *codec.LegacyAmino
+	GravityStoreKey   *sdk.KVStoreKey
 }
 
 // SetupFiveValChain does all the initialization for a 5 Validator chain using the keys here
@@ -384,6 +398,11 @@ func CreateTestEnv(t *testing.T) TestInput {
 	tkeyParams := sdk.NewTransientStoreKey(paramstypes.TStoreKey)
 	keyGov := sdk.NewKVStoreKey(govtypes.StoreKey)
 	keySlashing := sdk.NewKVStoreKey(slashingtypes.StoreKey)
+	keyCapability := sdk.NewKVStoreKey(capabilitytypes.StoreKey)
+	keyUpgrade := sdk.NewKVStoreKey(upgradetypes.StoreKey)
+	keyIbc := sdk.NewKVStoreKey(ibchost.StoreKey)
+	keyIbcTransfer := sdk.NewKVStoreKey(ibctransfertypes.StoreKey)
+	keyBech32Ibc := sdk.NewKVStoreKey(bech32ibctypes.StoreKey)
 
 	// Initialize memory database and mount stores on it
 	db := dbm.NewMemDB()
@@ -397,6 +416,11 @@ func CreateTestEnv(t *testing.T) TestInput {
 	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
 	ms.MountStoreWithDB(keyGov, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keySlashing, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyCapability, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyUpgrade, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyIbc, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyIbcTransfer, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyBech32Ibc, sdk.StoreTypeIAVL, db)
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
@@ -438,6 +462,9 @@ func CreateTestEnv(t *testing.T) TestInput {
 	paramsKeeper.Subspace(govtypes.ModuleName)
 	paramsKeeper.Subspace(types.DefaultParamspace)
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
+	paramsKeeper.Subspace(ibchost.ModuleName)
+	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
+	paramsKeeper.Subspace(bech32ibctypes.ModuleName)
 
 	// this is also used to initialize module accounts for all the map keys
 	maccPerms := map[string][]string{
@@ -447,6 +474,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
 		types.ModuleName:               {authtypes.Minter, authtypes.Burner},
+		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 	}
 
 	accountKeeper := authkeeper.NewAccountKeeper(
@@ -541,7 +569,51 @@ func CreateTestEnv(t *testing.T) TestInput {
 		getSubspace(paramsKeeper, slashingtypes.ModuleName).WithKeyTable(slashingtypes.ParamKeyTable()),
 	)
 
-	k := NewKeeper(gravityKey, getSubspace(paramsKeeper, types.DefaultParamspace), marshaler, &bankKeeper, &stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper)
+	bApp := *baseapp.NewBaseApp("test", log.TestingLogger(), db, MakeTestEncodingConfig().TxConfig.TxDecoder())
+	upgradeKeeper := upgradekeeper.NewKeeper(
+		make(map[int64]bool, 0),
+		keyUpgrade,
+		marshaler,
+		"",
+		&bApp,
+	)
+
+	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+	capabilityKeeper := *capabilitykeeper.NewKeeper(
+		marshaler,
+		keyCapability,
+		memKeys[capabilitytypes.MemStoreKey],
+	)
+
+	scopedIbcKeeper := capabilityKeeper.ScopeToModule(ibchost.ModuleName)
+	ibcKeeper := *ibckeeper.NewKeeper(
+		marshaler,
+		keyIbc,
+		getSubspace(paramsKeeper, ibchost.ModuleName),
+		stakingKeeper,
+		upgradeKeeper,
+		scopedIbcKeeper,
+	)
+
+	scopedTransferKeeper := capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+	ibcTransferKeeper := ibctransferkeeper.NewKeeper(
+		marshaler, keyIbcTransfer, getSubspace(paramsKeeper, ibctransfertypes.ModuleName),
+		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
+		accountKeeper, bankKeeper, scopedTransferKeeper,
+	)
+
+	bech32IbcKeeper := *bech32ibckeeper.NewKeeper(
+		ibcKeeper.ChannelKeeper, marshaler, keyBech32Ibc,
+		ibcTransferKeeper,
+	)
+	// Set the native prefix to the "gravity" value we like in module/config/config.go
+	err = bech32IbcKeeper.SetNativeHrp(ctx, sdk.GetConfig().GetBech32AccountAddrPrefix())
+	if err != nil {
+		panic("Test Env Creation failure, could not set native hrp")
+	}
+
+	k := NewKeeper(gravityKey, getSubspace(paramsKeeper, types.DefaultParamspace), marshaler, &bankKeeper,
+		&stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper, &ibcTransferKeeper, &bech32IbcKeeper)
 
 	stakingKeeper = *stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(
@@ -645,6 +717,15 @@ func MakeTestMarshaler() codec.Codec {
 	ModuleBasics.RegisterInterfaces(interfaceRegistry)
 	types.RegisterInterfaces(interfaceRegistry)
 	return codec.NewProtoCodec(interfaceRegistry)
+}
+
+func MakeTestEncodingConfig() gravityparams.EncodingConfig {
+	encodingConfig := gravityparams.MakeEncodingConfig()
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
 }
 
 // MintVouchersFromAir creates new gravity vouchers given erc20tokens

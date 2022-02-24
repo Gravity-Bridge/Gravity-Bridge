@@ -76,3 +76,18 @@ message EventSendToCosmos {
   string nonce  = 2;
   string token  = 3;
 }
+
+message EventSendToCosmosLocal {
+  string nonce = 1;
+  string receiver = 2;
+  string token = 3;
+  string amount = 4;
+}
+
+message EventSendToCosmosIbc {
+  string nonce = 1;
+  string receiver = 2;
+  string token = 3;
+  string amount = 4;
+  string channel = 5;
+}

@@ -9,6 +9,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 )
 
 // UInt64FromBytes create uint from binary big endian representation
@@ -28,9 +30,6 @@ func UInt64FromString(s string) (uint64, error) {
 
 // IBCAddressFromBech32 decodes an IBC-compatible Address from a Bech32
 // encoded string
-// TODO: This is very similar to the sdk's GetFromBech32 method, but makes no
-// assertions about the bech32 prefix (aka "human readable part"), when Gravity
-// IBC Forwarding is completed, this function should return invalid prefix errors
 func IBCAddressFromBech32(bech32str string) ([]byte, error) {
 	if len(bech32str) == 0 {
 		return nil, ErrEmpty
@@ -67,13 +66,16 @@ func GetPrefixFromBech32(bech32str string) (string, error) {
 
 // GetNativePrefixedAccAddressString treats the input as an AccAddress and re-prefixes the string
 // with this chain's configured Bech32AccountAddrPrefix
-// Returns an error when input is not a bech32 string or the original string it is already natively prefixed
-func GetNativePrefixedAccAddressString(foreignStr string) (string, error) {
+// Returns an error when input is not a bech32 string
+func GetNativePrefixedAccAddressString(ctx sdk.Context, bech32IbcKeeper bech32ibckeeper.Keeper, foreignStr string) (string, error) {
 	prefix, err := GetPrefixFromBech32(foreignStr)
 	if err != nil {
 		return "", sdkerrors.Wrap(err, "invalid bech32 string")
 	}
-	nativePrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
+	nativePrefix, err := bech32IbcKeeper.GetNativeHrp(ctx)
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "bech32ibc NativePrefix has not been registered!"))
+	}
 	if prefix == nativePrefix {
 		return foreignStr, nil
 	}
@@ -81,9 +83,9 @@ func GetNativePrefixedAccAddressString(foreignStr string) (string, error) {
 	return nativePrefix + foreignStr[len(prefix):], nil
 }
 
-// GetNativePrefixedAccAddress re-prefixes the input AccAddress with this chain's configured Bech32AccountAddrPrefix
-func GetNativePrefixedAccAddress(foreignAddr sdk.AccAddress) (sdk.AccAddress, error) {
-	nativeStr, err := GetNativePrefixedAccAddressString(foreignAddr.String())
+// GetNativePrefixedAccAddress re-prefixes the input AccAddress with the registered bech32ibc NativeHrp
+func GetNativePrefixedAccAddress(ctx sdk.Context, bech32IbcKeeper bech32ibckeeper.Keeper, foreignAddr sdk.AccAddress) (sdk.AccAddress, error) {
+	nativeStr, err := GetNativePrefixedAccAddressString(ctx, bech32IbcKeeper, foreignAddr.String())
 	if err != nil {
 		return nil, err
 	}

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
-	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,10 +11,15 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v2/modules/apps/transfer/keeper"
 	"github.com/tendermint/tendermint/libs/log"
+
+	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -33,12 +36,14 @@ type Keeper struct {
 	paramSpace paramtypes.Subspace
 
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
-	cdc            codec.BinaryCodec // The wire codec for binary encoding/decoding.
-	bankKeeper     *bankkeeper.BaseKeeper
-	StakingKeeper  *stakingkeeper.Keeper
-	SlashingKeeper *slashingkeeper.Keeper
-	DistKeeper     *distrkeeper.Keeper
-	accountKeeper  *authkeeper.AccountKeeper
+	cdc               codec.BinaryCodec // The wire codec for binary encoding/decoding.
+	bankKeeper        *bankkeeper.BaseKeeper
+	StakingKeeper     *stakingkeeper.Keeper
+	SlashingKeeper    *slashingkeeper.Keeper
+	DistKeeper        *distrkeeper.Keeper
+	accountKeeper     *authkeeper.AccountKeeper
+	ibcTransferKeeper *ibctransferkeeper.Keeper
+	bech32IbcKeeper   *bech32ibckeeper.Keeper
 
 	AttestationHandler interface {
 		Handle(sdk.Context, types.Attestation, types.EthereumClaim) error
@@ -62,6 +67,12 @@ func (k Keeper) ValidateMembers() {
 	if k.accountKeeper == nil {
 		panic("Nil accountKeeper!")
 	}
+	if k.ibcTransferKeeper == nil {
+		panic("Nil ibcTransferKeeper!")
+	}
+	if k.bech32IbcKeeper == nil {
+		panic("Nil bech32IbcKeeper!")
+	}
 }
 
 // NewKeeper returns a new instance of the gravity keeper
@@ -74,6 +85,8 @@ func NewKeeper(
 	slashingKeeper *slashingkeeper.Keeper,
 	distKeeper *distrkeeper.Keeper,
 	accKeeper *authkeeper.AccountKeeper,
+	ibcTransferKeeper *ibctransferkeeper.Keeper,
+	bech32IbcKeeper *bech32ibckeeper.Keeper,
 ) Keeper {
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
@@ -90,13 +103,11 @@ func NewKeeper(
 		SlashingKeeper:     slashingKeeper,
 		DistKeeper:         distKeeper,
 		accountKeeper:      accKeeper,
+		ibcTransferKeeper:  ibcTransferKeeper,
+		bech32IbcKeeper:    bech32IbcKeeper,
 		AttestationHandler: nil,
 	}
-	attestationHandler := AttestationHandler{
-		keeper:     &k,
-		bankKeeper: bankKeeper,
-		distKeeper: distKeeper,
-	}
+	attestationHandler := AttestationHandler{keeper: &k}
 	attestationHandler.ValidateMembers()
 	k.AttestationHandler = attestationHandler
 

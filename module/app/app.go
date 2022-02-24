@@ -424,6 +424,38 @@ func NewGravityApp(
 	)
 	app.slashingKeeper = &slashingKeeper
 
+	upgradeKeeper := upgradekeeper.NewKeeper(
+		skipUpgradeHeights,
+		keys[upgradetypes.StoreKey],
+		appCodec,
+		homePath,
+		&bApp,
+	)
+	app.upgradeKeeper = &upgradeKeeper
+
+	ibcKeeper := *ibckeeper.NewKeeper(
+		appCodec,
+		keys[ibchost.StoreKey],
+		app.GetSubspace(ibchost.ModuleName),
+		stakingKeeper,
+		upgradeKeeper,
+		scopedIBCKeeper,
+	)
+	app.ibcKeeper = &ibcKeeper
+
+	ibcTransferKeeper := ibctransferkeeper.NewKeeper(
+		appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
+		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
+		accountKeeper, bankKeeper, scopedTransferKeeper,
+	)
+	app.ibcTransferKeeper = &ibcTransferKeeper
+
+	bech32IbcKeeper := *bech32ibckeeper.NewKeeper(
+		ibcKeeper.ChannelKeeper, appCodec, keys[bech32ibctypes.StoreKey],
+		ibcTransferKeeper,
+	)
+	app.bech32IbcKeeper = &bech32IbcKeeper
+
 	gravityKeeper := keeper.NewKeeper(
 		keys[gravitytypes.StoreKey],
 		app.GetSubspace(gravitytypes.ModuleName),
@@ -433,6 +465,8 @@ func NewGravityApp(
 		&slashingKeeper,
 		&distrKeeper,
 		&accountKeeper,
+		&ibcTransferKeeper,
+		&bech32IbcKeeper,
 	)
 	app.gravityKeeper = &gravityKeeper
 
@@ -464,38 +498,6 @@ func NewGravityApp(
 	)
 	app.crisisKeeper = &crisisKeeper
 
-	upgradeKeeper := upgradekeeper.NewKeeper(
-		skipUpgradeHeights,
-		keys[upgradetypes.StoreKey],
-		appCodec,
-		homePath,
-		&bApp,
-	)
-	app.upgradeKeeper = &upgradeKeeper
-
-	ibcKeeper := *ibckeeper.NewKeeper(
-		appCodec,
-		keys[ibchost.StoreKey],
-		app.GetSubspace(ibchost.ModuleName),
-		stakingKeeper,
-		upgradeKeeper,
-		scopedIBCKeeper,
-	)
-	app.ibcKeeper = &ibcKeeper
-
-	ibctransferKeeper := ibctransferkeeper.NewKeeper(
-		appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
-		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
-		accountKeeper, bankKeeper, scopedTransferKeeper,
-	)
-	app.ibcTransferKeeper = &ibctransferKeeper
-
-	bech32IbcKeeper := *bech32ibckeeper.NewKeeper(
-		ibcKeeper.ChannelKeeper, appCodec, keys[bech32ibctypes.StoreKey],
-		ibctransferKeeper,
-	)
-	app.bech32IbcKeeper = &bech32IbcKeeper
-
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
 		AddRoute(paramsproposal.RouterKey, params.NewParamChangeProposalHandler(paramsKeeper)).
@@ -516,7 +518,7 @@ func NewGravityApp(
 	)
 	app.govKeeper = &govKeeper
 
-	ibcTransferModule := transfer.NewAppModule(ibctransferKeeper)
+	ibcTransferModule := transfer.NewAppModule(ibcTransferKeeper)
 
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibcTransferModule)
