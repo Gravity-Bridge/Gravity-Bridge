@@ -1,7 +1,9 @@
 import { Gravity } from "./typechain/Gravity";
+import { GravityERC721 } from "./typechain/GravityERC721";
 import { TestERC20A } from "./typechain/TestERC20A";
 import { TestERC20B } from "./typechain/TestERC20B";
 import { TestERC20C } from "./typechain/TestERC20C";
+import { TestERC721A } from "./typechain/TestERC721A";
 import { ethers } from "ethers";
 import fs from "fs";
 import commandLineArgs from "command-line-args";
@@ -120,27 +122,37 @@ async function deploy() {
     var erc20_a_path: string
     var erc20_b_path: string
     var erc20_c_path: string
+    var erc721_a_path: string
     const main_location_a = "/gravity/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json"
     const main_location_b = "/gravity/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json"
     const main_location_c = "/gravity/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json"
+    const main_location_721_a = "/gravity/solidity/artifacts/contracts/TestERC721A.sol/TestERC721A.json"
+    
     const alt_location_1_a = "/solidity/TestERC20A.json"
     const alt_location_1_b = "/solidity/TestERC20B.json"
     const alt_location_1_c = "/solidity/TestERC20C.json"
+    const alt_location_1_721a = "/solidity/TestERC721A.json"
+
     const alt_location_2_a = "TestERC20A.json"
     const alt_location_2_b = "TestERC20B.json"
     const alt_location_2_c = "TestERC20C.json"
+    const alt_location_2_721a = "TestERC721A.json"
+
     if (fs.existsSync(main_location_a)) {
       erc20_a_path = main_location_a
       erc20_b_path = main_location_b
       erc20_c_path = main_location_c
+      erc721_a_path = main_location_721_a
     } else if (fs.existsSync(alt_location_1_a)) {
       erc20_a_path = alt_location_1_a
       erc20_b_path = alt_location_1_b
       erc20_c_path = alt_location_1_c
+      erc721_a_path = alt_location_1_721a
     } else if (fs.existsSync(alt_location_2_a)) {
       erc20_a_path = alt_location_2_a
       erc20_b_path = alt_location_2_b
       erc20_c_path = alt_location_2_c
+      erc721_a_path = alt_location_2_721a
     } else {
       console.log("Test mode was enabled but the ERC20 contracts can't be found!")
       exit(1)
@@ -153,18 +165,27 @@ async function deploy() {
     await testERC20.deployed();
     const erc20TestAddress = testERC20.address;
     console.log("ERC20 deployed at Address - ", erc20TestAddress);
+
     const { abi: abi1, bytecode: bytecode1 } = getContractArtifacts(erc20_b_path);
     const erc20Factory1 = new ethers.ContractFactory(abi1, bytecode1, wallet);
     const testERC201 = (await erc20Factory1.deploy(overrides)) as TestERC20B;
     await testERC201.deployed();
     const erc20TestAddress1 = testERC201.address;
     console.log("ERC20 deployed at Address - ", erc20TestAddress1);
+
     const { abi: abi2, bytecode: bytecode2 } = getContractArtifacts(erc20_c_path);
     const erc20Factory2 = new ethers.ContractFactory(abi2, bytecode2, wallet);
     const testERC202 = (await erc20Factory2.deploy(overrides)) as TestERC20C;
     await testERC202.deployed();
     const erc20TestAddress2 = testERC202.address;
     console.log("ERC20 deployed at Address - ", erc20TestAddress2);
+    
+    const { abi: abi3, bytecode: bytecode3 } = getContractArtifacts(erc721_a_path);
+    const erc721Factory1 = new ethers.ContractFactory(abi3, bytecode2, wallet);
+    const testERC721 = (await erc721Factory1.deploy(overrides)) as TestERC721A;
+    await testERC721.deployed();
+    const erc721TestAddress = testERC721.address;
+    console.log("ERC721 deployed at Address - ", erc721TestAddress);
   }
   const gravityIdString = await getGravityId();
   const gravityId = ethers.utils.formatBytes32String(gravityIdString);
@@ -214,6 +235,13 @@ async function deploy() {
   await gravity.deployed();
   console.log("Gravity deployed at Address - ", gravity.address);
   await submitGravityAddress(gravity.address);
+
+  const gravityERC721 = (await factory.deploy(
+    gravity.address
+  ) as GravityERC721);
+
+  await gravityERC721.deployed();
+  console.log("GravityERC721 deployed at Address - ", gravityERC721.address);
 }
 
 function getContractArtifacts(path: string): { bytecode: string; abi: string } {
