@@ -17,6 +17,8 @@ const { expect } = chai;
 async function runTest(opts: {
   wrongCaller?: boolean;
   wrongERC721Owner?: boolean;
+  ERC721NotExist?: boolean;
+  ERC721NotInContract?: boolean;
 }) {
 
   // Prep and deploy contract
@@ -55,10 +57,12 @@ async function runTest(opts: {
 
   for (let i = 0; i < numTxs; i++) {
     await testERC721.functions.approve(gravityERC721.address, 1+i);
-    await gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
-      testERC721.address,
-      ethers.utils.formatBytes32String("myCosmosAddress"),
-      1+i);
+    if (!opts.ERC721NotInContract) {
+      await gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
+        testERC721.address,
+        ethers.utils.formatBytes32String("myCosmosAddress"),
+        1+i);
+    }
     tokenIds[i] = 1+i;
     destinations[i] = signers[i + 5].address;
     txAmounts[i] = 0;
@@ -69,7 +73,13 @@ async function runTest(opts: {
     for (let i = nftTokenOffset; i < nftTokenOffset+numTxs; i++) {
       tokenIds[i-nftTokenOffset] = i;
     }
-  }
+   }
+    else if (opts.ERC721NotExist) {
+    const nftTokenOffset = 1000; 
+      for (let i = nftTokenOffset; i < nftTokenOffset+numTxs; i++) {
+        tokenIds[i-nftTokenOffset] = i;
+      }
+    }
 
   let invalidationNonce = 1
   let timeOut = 4766922941000
@@ -198,4 +208,18 @@ describe("submitLogicCall tests", function () {
       "ERC721: transfer caller is not owner nor approved"
     );
   });
+
+  it("throws on NFT not in contract", async function () {
+    await expect(runTest({ ERC721NotInContract: true })).to.be.revertedWith(
+      "ERC721: transfer of token that is not own"
+    );
+  });
+
+  it("throws on nonexistent token", async function () {
+    await expect(runTest({ ERC721NotExist: true })).to.be.revertedWith(
+      "ERC721: operator query for nonexistent token"
+    );
+  });
+
+  
 });
