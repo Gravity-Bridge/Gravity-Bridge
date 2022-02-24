@@ -226,6 +226,5 @@ describe("submitLogicCall tests", function () {
       "ERC721: operator query for nonexistent token"
     );
   });
-
   
 });
