@@ -11,7 +11,9 @@ import { GravityERC721 } from "../typechain";
 chai.use(solidity);
 const { expect } = chai;
 
-async function runTest(opts: {}) {
+async function runTest(opts: {
+  wrongERC721Owner?: boolean;
+}) {
 
   // Prep and deploy contract
   // ========================
@@ -28,10 +30,13 @@ async function runTest(opts: {}) {
     checkpoint
   } = await deployContractsERC721(gravityId, validators, powers);
 
-
+  
   // Transfer out to Cosmos, locking coins
   // =====================================
-  await testERC721.functions.approve(gravityERC721.address, 190);
+  if (!opts.wrongERC721Owner){
+    await testERC721.functions.approve(gravityERC721.address, 190);
+  }
+
   await expect(gravityERC721.functions["sendERC721ToCosmos(address,string,uint256)"](
     testERC721.address,
     ethers.utils.formatBytes32String("myCosmosAddress"),
@@ -67,5 +72,11 @@ async function runTest(opts: {}) {
 describe("sendERC721ToCosmos tests", function () {
   it("works right", async function () {
     await runTest({})
+  });
+
+  it("throws on Wrong NFT owner", async function () {
+    await expect(runTest({ wrongERC721Owner: true })).to.be.revertedWith(
+      "ERC721: transfer caller is not owner nor approved"
+    );
   });
 });

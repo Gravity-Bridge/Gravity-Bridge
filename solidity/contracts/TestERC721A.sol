@@ -15,6 +15,6 @@ contract TestERC721A is ERC721 {
          _mint(0xc783df8a850f42e7F7e57013759C285caa701eB6, i);
 	  }
 	  // mint group 3 of nfts token id 200
-		_mint(0xBf660843528035a5A4921534E156a27e64B231fE, 200);
+	  _mint(0xBf660843528035a5A4921534E156a27e64B231fE, 200);
 	}
 }
