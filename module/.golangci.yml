@@ -1,7 +1,7 @@
 linters:
   enable:
     # - bodyclose
-    # - deadcode
+    - deadcode
     # - depguard
     # - dogsled
     # - dupl
@@ -16,7 +16,7 @@ linters:
     # - goimports
     # - gosec
     # - gosimple
-    # - govet
+    - govet
     - ineffassign
     # - misspell
     # - nakedret
