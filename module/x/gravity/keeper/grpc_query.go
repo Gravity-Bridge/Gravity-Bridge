@@ -376,10 +376,10 @@ func (k Keeper) GetAttestations(
 		claimI, _ := k.UnpackAttestationClaim(&attestations[i])
 		claimJ, _ := k.UnpackAttestationClaim(&attestations[j])
 
-		if strings.EqualFold(req.OrderBy, "desc") {
-			return claimI.GetEventNonce() > claimJ.GetEventNonce()
-		} else {
+		if req.OrderBy == "" || strings.EqualFold(req.OrderBy, "asc") {
 			return claimI.GetEventNonce() < claimJ.GetEventNonce()
+		} else {
+			return claimI.GetEventNonce() > claimJ.GetEventNonce()
 		}
 	})
 
