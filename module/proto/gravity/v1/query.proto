@@ -208,11 +208,11 @@ message QueryDenomToERC20Response {
 }
 
 message QueryAttestationsRequest {
-  uint64 limit    = 1;
-  string order_by = 2;
-  bool   observed = 3;
-  uint64 nonce    = 4;
-  uint64 height   = 5;
+  uint64 limit      = 1;
+  string order_by   = 2;
+  string claim_type = 3;
+  uint64 nonce      = 4;
+  uint64 height     = 5;
 }
 
 message QueryAttestationsResponse {
