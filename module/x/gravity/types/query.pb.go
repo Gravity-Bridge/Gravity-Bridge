@@ -1634,11 +1634,18 @@ func (m *QueryDenomToERC20Response) GetCosmosOriginated() bool {
 }
 
 type QueryAttestationsRequest struct {
-	Limit     uint64 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	OrderBy   string `protobuf:"bytes,2,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	// limit defines how many attestations to limit in the response.
+	Limit uint64 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	// order_by provides ordering of atteststions by nonce in the response. Either
+	// 'asc' or 'desc' can be provided. If no value is provided, it defaults to
+	// 'asc'.
+	OrderBy string `protobuf:"bytes,2,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	// claim_type allows filtering attestations by Ethereum claim type.
 	ClaimType string `protobuf:"bytes,3,opt,name=claim_type,json=claimType,proto3" json:"claim_type,omitempty"`
-	Nonce     uint64 `protobuf:"varint,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	Height    uint64 `protobuf:"varint,5,opt,name=height,proto3" json:"height,omitempty"`
+	// nonce allows filtering attestations by Ethereum claim nonce.
+	Nonce uint64 `protobuf:"varint,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// height allows filtering attestations by Ethereum claim height.
+	Height uint64 `protobuf:"varint,5,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (m *QueryAttestationsRequest) Reset()         { *m = QueryAttestationsRequest{} }
