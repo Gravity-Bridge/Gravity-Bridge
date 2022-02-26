@@ -378,9 +378,9 @@ func (k Keeper) GetAttestations(
 
 		if req.OrderBy == "" || strings.EqualFold(req.OrderBy, "asc") {
 			return claimI.GetEventNonce() < claimJ.GetEventNonce()
-		} else {
-			return claimI.GetEventNonce() > claimJ.GetEventNonce()
 		}
+
+		return claimI.GetEventNonce() > claimJ.GetEventNonce()
 	})
 
 	return &types.QueryAttestationsResponse{Attestations: attestations}, nil
