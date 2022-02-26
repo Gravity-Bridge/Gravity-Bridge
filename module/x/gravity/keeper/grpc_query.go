@@ -373,9 +373,6 @@ func (k Keeper) GetAttestations(
 	// apply nonce ordering (asc or desc)
 	sort.Slice(attestations, func(i, j int) bool {
 		// we can ignore errors as we've successfully retrieved the attestations
-		//
-		// XXX: This is inefficient as we're unpacking repeated claims multiple times.
-		// See if we can memoize the claims by height?
 		claimI, _ := k.UnpackAttestationClaim(&attestations[i])
 		claimJ, _ := k.UnpackAttestationClaim(&attestations[j])
 
