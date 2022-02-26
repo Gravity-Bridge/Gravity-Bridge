@@ -208,11 +208,18 @@ message QueryDenomToERC20Response {
 }
 
 message QueryAttestationsRequest {
-  uint64 limit      = 1;
-  string order_by   = 2;
+  // limit defines how many attestations to limit in the response.
+  uint64 limit = 1;
+  // order_by provides ordering of atteststions by nonce in the response. Either
+  // 'asc' or 'desc' can be provided. If no value is provided, it defaults to
+  // 'asc'.
+  string order_by = 2;
+  // claim_type allows filtering attestations by Ethereum claim type.
   string claim_type = 3;
-  uint64 nonce      = 4;
-  uint64 height     = 5;
+  // nonce allows filtering attestations by Ethereum claim nonce.
+  uint64 nonce = 4;
+  // height allows filtering attestations by Ethereum claim height.
+  uint64 height = 5;
 }
 
 message QueryAttestationsResponse {

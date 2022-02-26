@@ -333,7 +333,7 @@ func (k Keeper) GetAttestations(
 		k.IterateAttestations(ctx, func(_ []byte, att types.Attestation) (abort bool) {
 			claim, err := k.UnpackAttestationClaim(&att)
 			if err != nil {
-				err = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal claim")
+				err = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
 				return true
 			}
 
