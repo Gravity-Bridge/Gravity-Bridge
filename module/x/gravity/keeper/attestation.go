@@ -200,7 +200,7 @@ func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 // if you are iterating this map at all.
 func (k Keeper) GetAttestationMapping(ctx sdk.Context) (attestationMapping map[uint64][]types.Attestation, orderedKeys []uint64) {
 	attestationMapping = make(map[uint64][]types.Attestation)
-	k.IterateAttestaions(ctx, func(_ []byte, att types.Attestation) bool {
+	k.IterateAttestations(ctx, func(_ []byte, att types.Attestation) bool {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
 			panic("couldn't cast to claim")
@@ -222,8 +222,8 @@ func (k Keeper) GetAttestationMapping(ctx sdk.Context) (attestationMapping map[u
 	return
 }
 
-// IterateAttestaions iterates through all attestations
-func (k Keeper) IterateAttestaions(ctx sdk.Context, cb func([]byte, types.Attestation) bool) {
+// IterateAttestations iterates through all attestations
+func (k Keeper) IterateAttestations(ctx sdk.Context, cb func([]byte, types.Attestation) bool) {
 	store := ctx.KVStore(k.storeKey)
 	prefix := types.OracleAttestationKey
 	iter := store.Iterator(prefixRange([]byte(prefix)))

@@ -142,7 +142,7 @@ func TestAttestationIterator(t *testing.T) {
 	input.GravityKeeper.SetAttestation(ctx, dep2.EventNonce, hash2, att2)
 
 	atts := []types.Attestation{}
-	input.GravityKeeper.IterateAttestaions(ctx, func(_ []byte, att types.Attestation) bool {
+	input.GravityKeeper.IterateAttestations(ctx, func(_ []byte, att types.Attestation) bool {
 		atts = append(atts, att)
 		return false
 	})
