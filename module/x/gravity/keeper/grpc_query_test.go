@@ -78,6 +78,26 @@ func TestQueryGetAttestations(t *testing.T) {
 			nonces:    []uint64{7},
 			expectErr: false,
 		},
+		{
+			name: "filter by missing nonce",
+			req: &types.QueryAttestationsRequest{
+				Nonce: 100000,
+				Limit: 5,
+			},
+			numResult: 0,
+			nonces:    []uint64{},
+			expectErr: false,
+		},
+		{
+			name: "filter by invalid claim type",
+			req: &types.QueryAttestationsRequest{
+				ClaimType: "foo",
+				Limit:     5,
+			},
+			numResult: 0,
+			nonces:    []uint64{},
+			expectErr: false,
+		},
 	}
 
 	for i, tc := range testCases {
