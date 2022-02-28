@@ -323,7 +323,7 @@ func (k Keeper) GetAttestations(
 	var (
 		attestations []types.Attestation
 		count        uint64
-		err          error
+		iterErr      error
 	)
 
 	reverse := strings.EqualFold(req.OrderBy, "desc")
@@ -332,7 +332,7 @@ func (k Keeper) GetAttestations(
 	k.IterateAttestations(ctx, reverse, func(_ []byte, att types.Attestation) (abort bool) {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
-			err = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
+			iterErr = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
 			return true
 		}
 
@@ -366,8 +366,8 @@ func (k Keeper) GetAttestations(
 
 		return false
 	})
-	if err != nil {
-		return nil, err
+	if iterErr != nil {
+		return nil, iterErr
 	}
 
 	return &types.QueryAttestationsResponse{Attestations: attestations}, nil
