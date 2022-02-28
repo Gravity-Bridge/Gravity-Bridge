@@ -351,6 +351,8 @@ func (k Keeper) GetAttestations(
 			match = true
 
 		case !filter:
+			// No filter provided, so we include the attestation. This is equivalent
+			// to providing no query params or just limit and/or order_by.
 			attestations = append(attestations, att)
 			match = true
 		}
