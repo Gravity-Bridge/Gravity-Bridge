@@ -1633,6 +1633,13 @@ func (m *QueryDenomToERC20Response) GetCosmosOriginated() bool {
 	return false
 }
 
+// QueryAttestationsRequest defines the request structure for getting recent
+// attestations with optional query parameters. By default, a limited set of
+// recent attestations will be returned, defined by 'limit'. These attestations
+// can be ordered ascending or descending by nonce, that defaults to ascending.
+// Filtering criteria may also be provided, including nonce, claim type, and
+// height. Note, that an attestation will be returned if it matches ANY of the
+// filter query parameters provided.
 type QueryAttestationsRequest struct {
 	// limit defines how many attestations to limit in the response.
 	Limit uint64 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`

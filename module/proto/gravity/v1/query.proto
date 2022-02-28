@@ -207,6 +207,13 @@ message QueryDenomToERC20Response {
   bool   cosmos_originated = 2;
 }
 
+// QueryAttestationsRequest defines the request structure for getting recent
+// attestations with optional query parameters. By default, a limited set of
+// recent attestations will be returned, defined by 'limit'. These attestations
+// can be ordered ascending or descending by nonce, that defaults to ascending.
+// Filtering criteria may also be provided, including nonce, claim type, and
+// height. Note, that an attestation will be returned if it matches ANY of the
+// filter query parameters provided.
 message QueryAttestationsRequest {
   // limit defines how many attestations to limit in the response.
   uint64 limit = 1;
