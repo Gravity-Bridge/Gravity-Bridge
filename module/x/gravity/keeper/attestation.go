@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -200,7 +201,7 @@ func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 // if you are iterating this map at all.
 func (k Keeper) GetAttestationMapping(ctx sdk.Context) (attestationMapping map[uint64][]types.Attestation, orderedKeys []uint64) {
 	attestationMapping = make(map[uint64][]types.Attestation)
-	k.IterateAttestations(ctx, func(_ []byte, att types.Attestation) bool {
+	k.IterateAttestations(ctx, false, func(_ []byte, att types.Attestation) bool {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
 			panic("couldn't cast to claim")
@@ -223,10 +224,16 @@ func (k Keeper) GetAttestationMapping(ctx sdk.Context) (attestationMapping map[u
 }
 
 // IterateAttestations iterates through all attestations
-func (k Keeper) IterateAttestations(ctx sdk.Context, cb func([]byte, types.Attestation) bool) {
+func (k Keeper) IterateAttestations(ctx sdk.Context, reverse bool, cb func([]byte, types.Attestation) bool) {
 	store := ctx.KVStore(k.storeKey)
 	prefix := types.OracleAttestationKey
-	iter := store.Iterator(prefixRange([]byte(prefix)))
+
+	var iter storetypes.Iterator
+	if reverse {
+		iter = store.ReverseIterator(prefixRange([]byte(prefix)))
+	} else {
+		iter = store.Iterator(prefixRange([]byte(prefix)))
+	}
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

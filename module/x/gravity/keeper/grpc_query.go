@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"sort"
 	"strings"
 
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -317,71 +316,57 @@ func (k Keeper) GetAttestations(
 	ctx := sdk.UnwrapSDKContext(c)
 
 	limit := req.Limit
-	if limit > QUERY_ATTESTATIONS_LIMIT {
+	if limit == 0 || limit > QUERY_ATTESTATIONS_LIMIT {
 		limit = QUERY_ATTESTATIONS_LIMIT
 	}
 
 	var (
 		attestations []types.Attestation
+		count        uint64
 		err          error
 	)
 
-	// filter if a user supplied filtering criteria
-	if req.Height > 0 || req.Nonce > 0 || req.ClaimType != "" {
-		var count uint64
+	reverse := strings.EqualFold(req.OrderBy, "desc")
+	filter := req.Height > 0 || req.Nonce > 0 || req.ClaimType != ""
 
-		k.IterateAttestations(ctx, func(_ []byte, att types.Attestation) (abort bool) {
-			claim, err := k.UnpackAttestationClaim(&att)
-			if err != nil {
-				err = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
+	k.IterateAttestations(ctx, reverse, func(_ []byte, att types.Attestation) (abort bool) {
+		claim, err := k.UnpackAttestationClaim(&att)
+		if err != nil {
+			err = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
+			return true
+		}
+
+		var match bool
+		switch {
+		case filter && claim.GetBlockHeight() == req.Height:
+			attestations = append(attestations, att)
+			match = true
+
+		case filter && claim.GetEventNonce() == req.Nonce:
+			attestations = append(attestations, att)
+			match = true
+
+		case filter && claim.GetType().String() == req.ClaimType:
+			attestations = append(attestations, att)
+			match = true
+
+		case !filter:
+			attestations = append(attestations, att)
+			match = true
+		}
+
+		if match {
+			count++
+			if count >= limit {
 				return true
 			}
+		}
 
-			var match bool
-			switch {
-			case claim.GetBlockHeight() == req.Height:
-				attestations = append(attestations, att)
-				match = true
-
-			case claim.GetEventNonce() == req.Nonce:
-				attestations = append(attestations, att)
-				match = true
-
-			case claim.GetType().String() == req.ClaimType:
-				attestations = append(attestations, att)
-				match = true
-			}
-
-			if match {
-				count++
-				if count >= limit {
-					return true
-				}
-			}
-
-			return false
-		})
-	} else {
-		// otherwise fetch the latest attestations by nonce
-		attestations = k.GetMostRecentAttestations(ctx, limit)
-	}
-
+		return false
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	// apply nonce ordering (asc or desc)
-	sort.Slice(attestations, func(i, j int) bool {
-		// we can ignore errors as we've successfully retrieved the attestations
-		claimI, _ := k.UnpackAttestationClaim(&attestations[i])
-		claimJ, _ := k.UnpackAttestationClaim(&attestations[j])
-
-		if req.OrderBy == "" || strings.EqualFold(req.OrderBy, "asc") {
-			return claimI.GetEventNonce() < claimJ.GetEventNonce()
-		}
-
-		return claimI.GetEventNonce() > claimJ.GetEventNonce()
-	})
 
 	return &types.QueryAttestationsResponse{Attestations: attestations}, nil
 }
