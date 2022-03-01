@@ -449,6 +449,78 @@ func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 	require.Empty(t, input.GravityKeeper.GetUnbatchedTransactions(ctx))
 }
 
+func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
+	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	ctx := input.Context
+
+	var (
+		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
+		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenDenom        = "grav"
+	)
+	receiver, err := types.NewEthAddress(myReceiver)
+	require.NoError(t, err)
+	// mint some voucher first
+	originalBal := uint64(99999)
+
+	tokenAddr, err := types.NewEthAddress(myTokenContractAddr)
+	require.NoError(t, err)
+
+	// add it to the ERC20 registry
+	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, myTokenDenom, *tokenAddr)
+
+	isCosmosOriginated, addr, err := input.GravityKeeper.DenomToERC20Lookup(ctx, myTokenDenom)
+	require.True(t, isCosmosOriginated)
+	require.NoError(t, err)
+	require.Equal(t, tokenAddr.GetAddress().Hex(), myTokenContractAddr)
+	require.Equal(t, tokenAddr, addr)
+
+	allVouchers := sdk.Coins{sdk.NewCoin(myTokenDenom, sdk.NewIntFromUint64(originalBal))}
+	err = input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers)
+	require.NoError(t, err)
+
+	// set senders balance
+	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers)
+	require.NoError(t, err)
+
+	// Create unbatched transactions
+	require.Empty(t, input.GravityKeeper.GetUnbatchedTransactions(ctx))
+	feesAndAmounts := uint64(0)
+	ids := make([]uint64, 4)
+	fees := []uint64{2, 3, 2, 1}
+	amounts := []uint64{100, 101, 102, 103}
+	for i, v := range fees {
+		amount := sdk.NewCoin(myTokenDenom, sdk.NewIntFromUint64(amounts[i]))
+		fee := sdk.NewCoin(myTokenDenom, sdk.NewIntFromUint64(v))
+
+		feesAndAmounts += v + amounts[i]
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
+		require.NoError(t, err)
+		t.Logf("___ response: %#v", r)
+		ids[i] = r
+		// Should create:
+		// 1: amount 100, fee 2
+		// 2: amount 101, fee 3
+		// 3: amount 102, fee 2
+		// 4: amount 103, fee 1
+
+	}
+	// Check balance
+	currentBal := input.BankKeeper.GetBalance(ctx, mySender, myTokenDenom).Amount.Uint64()
+	require.Equal(t, currentBal, originalBal-feesAndAmounts)
+
+	// Check that removing a transaction refunds the costs and the tx no longer exists in the pool
+	checkRemovedTx(t, input, ctx, ids[2], fees[2], amounts[2], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[3], fees[3], amounts[3], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[1], fees[1], amounts[1], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[0], fees[0], amounts[0], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
+	require.Empty(t, input.GravityKeeper.GetUnbatchedTransactions(ctx))
+}
+
 // Helper method to:
 // 1. Remove the transaction specified by `id`, `myTokenContractAddr` and `fee`
 // 2. Update the feesAndAmounts tracker by subtracting the refunded `fee` and `amount`
