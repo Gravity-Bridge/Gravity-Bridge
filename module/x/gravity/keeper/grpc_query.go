@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"strings"
 
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 
@@ -310,13 +311,64 @@ func (k Keeper) ERC20ToDenom(
 // GetAttestations queries the attestation map
 func (k Keeper) GetAttestations(
 	c context.Context,
-	req *types.QueryAttestationsRequest) (*types.QueryAttestationsResponse, error) {
+	req *types.QueryAttestationsRequest,
+) (*types.QueryAttestationsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
 	limit := req.Limit
-	if limit > QUERY_ATTESTATIONS_LIMIT {
+	if limit == 0 || limit > QUERY_ATTESTATIONS_LIMIT {
 		limit = QUERY_ATTESTATIONS_LIMIT
 	}
-	attestations := k.GetMostRecentAttestations(ctx, limit)
+
+	var (
+		attestations []types.Attestation
+		count        uint64
+		iterErr      error
+	)
+
+	reverse := strings.EqualFold(req.OrderBy, "desc")
+	filter := req.Height > 0 || req.Nonce > 0 || req.ClaimType != ""
+
+	k.IterateAttestations(ctx, reverse, func(_ []byte, att types.Attestation) (abort bool) {
+		claim, err := k.UnpackAttestationClaim(&att)
+		if err != nil {
+			iterErr = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
+			return true
+		}
+
+		var match bool
+		switch {
+		case filter && claim.GetBlockHeight() == req.Height:
+			attestations = append(attestations, att)
+			match = true
+
+		case filter && claim.GetEventNonce() == req.Nonce:
+			attestations = append(attestations, att)
+			match = true
+
+		case filter && claim.GetType().String() == req.ClaimType:
+			attestations = append(attestations, att)
+			match = true
+
+		case !filter:
+			// No filter provided, so we include the attestation. This is equivalent
+			// to providing no query params or just limit and/or order_by.
+			attestations = append(attestations, att)
+			match = true
+		}
+
+		if match {
+			count++
+			if count >= limit {
+				return true
+			}
+		}
+
+		return false
+	})
+	if iterErr != nil {
+		return nil, iterErr
+	}
 
 	return &types.QueryAttestationsResponse{Attestations: attestations}, nil
 }
