@@ -33,13 +33,16 @@ service Query {
   rpc LastValsetRequests(QueryLastValsetRequestsRequest) returns (QueryLastValsetRequestsResponse) {
     option (google.api.http).get = "/gravity/v1beta/valset/requests";
   }
-  rpc LastPendingValsetRequestByAddr(QueryLastPendingValsetRequestByAddrRequest) returns (QueryLastPendingValsetRequestByAddrResponse) {
+  rpc LastPendingValsetRequestByAddr(QueryLastPendingValsetRequestByAddrRequest)
+      returns (QueryLastPendingValsetRequestByAddrResponse) {
     option (google.api.http).get = "/gravity/v1beta/valset/last";
   }
-  rpc LastPendingBatchRequestByAddr(QueryLastPendingBatchRequestByAddrRequest) returns (QueryLastPendingBatchRequestByAddrResponse) {
+  rpc LastPendingBatchRequestByAddr(QueryLastPendingBatchRequestByAddrRequest)
+      returns (QueryLastPendingBatchRequestByAddrResponse) {
     option (google.api.http).get = "/gravity/v1beta/batch/last_pending_request_by_addr";
   }
-  rpc LastPendingLogicCallByAddr(QueryLastPendingLogicCallByAddrRequest) returns (QueryLastPendingLogicCallByAddrResponse) {
+  rpc LastPendingLogicCallByAddr(QueryLastPendingLogicCallByAddrRequest)
+      returns (QueryLastPendingLogicCallByAddrResponse) {
     option (google.api.http).get = "/gravity/v1beta/logic/{address}";
   }
   rpc LastEventNonceByAddr(QueryLastEventNonceByAddrRequest) returns (QueryLastEventNonceByAddrResponse) {
@@ -72,13 +75,15 @@ service Query {
   rpc GetAttestations(QueryAttestationsRequest) returns (QueryAttestationsResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_attestations";
   }
-  rpc GetDelegateKeyByValidator(QueryDelegateKeysByValidatorAddress) returns (QueryDelegateKeysByValidatorAddressResponse) {
+  rpc GetDelegateKeyByValidator(QueryDelegateKeysByValidatorAddress)
+      returns (QueryDelegateKeysByValidatorAddressResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_delegate_keys_by_validator";
   }
   rpc GetDelegateKeyByEth(QueryDelegateKeysByEthAddress) returns (QueryDelegateKeysByEthAddressResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_delegate_keys_by_eth";
   }
-  rpc GetDelegateKeyByOrchestrator(QueryDelegateKeysByOrchestratorAddress) returns (QueryDelegateKeysByOrchestratorAddressResponse) {
+  rpc GetDelegateKeyByOrchestrator(QueryDelegateKeysByOrchestratorAddress)
+      returns (QueryDelegateKeysByOrchestratorAddressResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_delegate_keys_by_orchestrator";
   }
 
@@ -202,9 +207,28 @@ message QueryDenomToERC20Response {
   bool   cosmos_originated = 2;
 }
 
+// QueryAttestationsRequest defines the request structure for getting recent
+// attestations with optional query parameters. By default, a limited set of
+// recent attestations will be returned, defined by 'limit'. These attestations
+// can be ordered ascending or descending by nonce, that defaults to ascending.
+// Filtering criteria may also be provided, including nonce, claim type, and
+// height. Note, that an attestation will be returned if it matches ANY of the
+// filter query parameters provided.
 message QueryAttestationsRequest {
+  // limit defines how many attestations to limit in the response.
   uint64 limit = 1;
+  // order_by provides ordering of atteststions by nonce in the response. Either
+  // 'asc' or 'desc' can be provided. If no value is provided, it defaults to
+  // 'asc'.
+  string order_by = 2;
+  // claim_type allows filtering attestations by Ethereum claim type.
+  string claim_type = 3;
+  // nonce allows filtering attestations by Ethereum claim nonce.
+  uint64 nonce = 4;
+  // height allows filtering attestations by Ethereum claim height.
+  uint64 height = 5;
 }
+
 message QueryAttestationsResponse {
   repeated Attestation attestations = 1 [(gogoproto.nullable) = false];
 }
