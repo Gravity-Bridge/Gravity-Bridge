@@ -306,16 +306,35 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 	if err != nil {
 		return sdkerrors.Wrap(err, "invalid reward token on claim")
 	}
-	// TODO here we should check the contents of the validator set against
-	// the store, if they differ we should take some action to indicate to the
-	// user that bridge highjacking has occurred
-	a.keeper.SetLastObservedValset(ctx, types.Valset{
+
+	claimSet := types.Valset{
 		Nonce:        claim.ValsetNonce,
 		Members:      claim.Members,
-		Height:       0,
+		Height:       0, // Fill out later when used
 		RewardAmount: claim.RewardAmount,
 		RewardToken:  claim.RewardToken,
-	})
+	}
+	// check the contents of the validator set against the store, if they differ we know that the bridge has been
+	// highjacked
+	if claim.ValsetNonce != 0 { // Handle regular valsets
+		trustedValset := a.keeper.GetValset(ctx, claim.ValsetNonce)
+		if trustedValset == nil {
+			ctx.Logger().Error("Received attestation for a valset which does not exist in store", "nonce", claim.ValsetNonce, "claim", claim)
+			return sdkerrors.Wrapf(types.ErrInvalidValset, "attested valset (%v) does not exist in store", claim.ValsetNonce)
+		}
+		observedValset := claimSet
+		observedValset.Height = trustedValset.Height // overwrite the height, since it's not part of the claim
+
+		if _, err := trustedValset.Equal(observedValset); err != nil {
+			panic(fmt.Sprintf("Potential bridge highjacking: observed valset (%+v) does not match stored valset (%+v)! %s", observedValset, trustedValset, err.Error()))
+		}
+
+		a.keeper.SetLastObservedValset(ctx, observedValset)
+	} else { // The 0th valset is not stored on chain init, but we need to set it as the last one
+		// Do not update Height, it's the first valset
+		a.keeper.SetLastObservedValset(ctx, claimSet)
+	}
+
 	// if the reward is greater than zero and the reward token
 	// is valid then some reward was issued by this validator set
 	// and we need to either add to the total tokens for a Cosmos native

@@ -38,7 +38,23 @@ func (b BridgeValidators) ToInternal() (*InternalBridgeValidators, error) {
 	return &ret, nil
 }
 
-// Bridge Validator but with validated EthereumAddress
+// Equal checks that slice contents and order are equal
+func (b BridgeValidators) Equal(o BridgeValidators) bool {
+	if len(b) != len(o) {
+		return false
+	}
+
+	for i, bv := range b {
+		ov := o[i]
+		if bv != ov {
+			return false
+		}
+	}
+
+	return true
+}
+
+// InternalBridgeValidator is a BridgeValidator but with validated EthereumAddress
 type InternalBridgeValidator struct {
 	Power           uint64
 	EthereumAddress EthAddress
@@ -280,6 +296,33 @@ func (v *Valset) WithoutEmptyMembers() *Valset {
 		}
 	}
 	return &r
+}
+
+// Equal compares all of the valset members, additionally returning an error explaining the problem
+func (v Valset) Equal(o Valset) (bool, error) {
+	if v.Height != o.Height {
+		return false, sdkerrors.Wrap(ErrInvalid, "valset heights mismatch")
+	}
+
+	if v.Nonce != o.Nonce {
+		return false, sdkerrors.Wrap(ErrInvalid, "valset nonces mismatch")
+	}
+
+	if !v.RewardAmount.Equal(o.RewardAmount) {
+		return false, sdkerrors.Wrap(ErrInvalid, "valset reward amounts mismatch")
+	}
+
+	if v.RewardToken != o.RewardToken {
+		return false, sdkerrors.Wrap(ErrInvalid, "valset reward tokens mismatch")
+	}
+
+	var bvs BridgeValidators = v.Members
+	var ovs BridgeValidators = o.Members
+	if !bvs.Equal(ovs) {
+		return false, sdkerrors.Wrap(ErrInvalid, "valset members mismatch")
+	}
+
+	return true, nil
 }
 
 // Valsets is a collection of valset
