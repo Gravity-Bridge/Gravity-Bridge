@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/gorilla/mux"
@@ -166,6 +167,9 @@ var (
 	// verify app interface at compile time
 	_ simapp.App              = (*Gravity)(nil)
 	_ servertypes.Application = (*Gravity)(nil)
+
+	// enable checks that run on the first BeginBlocker execution after an upgrade/genesis init/node restart
+	firstBlock sync.Once
 )
 
 // MakeCodec creates the application codec. The codec is sealed before it is
@@ -723,7 +727,16 @@ func (app *Gravity) Name() string { return app.BaseApp.Name() }
 
 // BeginBlocker application updates every begin block
 func (app *Gravity) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	firstBlock.Do(func() { // Run the startup firstBeginBlocker assertions only once
+		app.firstBeginBlocker(ctx)
+	})
 	return app.mm.BeginBlock(ctx, req)
+}
+
+// Perform necessary checks at the start of this node's first BeginBlocker execution
+// Note: This should ONLY be called once, it should be called at the top of BeginBlocker guarded by firstBlock
+func (app *Gravity) firstBeginBlocker(ctx sdk.Context) {
+	app.assertBech32PrefixMatches(ctx)
 }
 
 // EndBlocker application updates every end block
