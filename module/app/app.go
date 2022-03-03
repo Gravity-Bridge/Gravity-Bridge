@@ -214,6 +214,9 @@ type Gravity struct {
 
 	// simulation manager
 	sm *module.SimulationManager
+
+	//configurator
+	configurator module.Configurator
 }
 
 // ValidateMembers checks for nil members
@@ -627,7 +630,8 @@ func NewGravityApp(
 
 	mm.RegisterInvariants(&crisisKeeper)
 	mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
-	mm.RegisterServices(module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter()))
+	app.configurator = module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
+	mm.RegisterServices(app.configurator)
 
 	sm := *module.NewSimulationManager(
 		auth.NewAppModule(appCodec, accountKeeper, authsims.RandomGenesisAccounts),
@@ -670,6 +674,8 @@ func NewGravityApp(
 
 	app.SetEndBlocker(app.EndBlocker)
 
+	app.registerUpgradeHandlers()
+
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
 			tmos.Exit(err.Error())
@@ -710,6 +716,9 @@ func (app *Gravity) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
+
+	app.upgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
@@ -855,4 +864,20 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(ibchost.ModuleName)
 
 	return paramsKeeper
+}
+
+func (app *Gravity) registerUpgradeHandlers() {
+	app.upgradeKeeper.SetUpgradeHandler("v2", func(ctx sdk.Context, plan upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
+		// 1st-time running in-store migrations, using last version as fromVersion to
+		// avoid running InitGenesis.
+		fromVM := make(map[string]uint64)
+		for moduleName, module := range app.mm.Modules {
+			fromVM[moduleName] = module.ConsensusVersion()
+		}
+
+		//set gravity version to 1 in order to execute migration scripts from 1 to 2
+		fromVM[gravitytypes.StoreKey] = 1
+
+		return app.mm.RunMigrations(ctx, app.configurator, fromVM)
+	})
 }
