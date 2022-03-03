@@ -19,8 +19,8 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	k.SetLastSlashedValsetNonce(ctx, data.GravityNonces.LastSlashedValsetNonce)
 	k.SetLastSlashedBatchBlock(ctx, data.GravityNonces.LastSlashedBatchBlock)
 	k.SetLastSlashedLogicCallBlock(ctx, data.GravityNonces.LastSlashedLogicCallBlock)
-	k.setID(ctx, data.GravityNonces.LastTxPoolId, []byte(types.KeyLastTXPoolID))
-	k.setID(ctx, data.GravityNonces.LastBatchId, []byte(types.KeyLastOutgoingBatchID))
+	k.setID(ctx, data.GravityNonces.LastTxPoolId, types.KeyLastTXPoolID)
+	k.setID(ctx, data.GravityNonces.LastBatchId, types.KeyLastOutgoingBatchID)
 
 	// reset valsets in state
 	highest := uint64(0)
@@ -248,8 +248,8 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 			LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx),
 			LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx),
 			LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx),
-			LastTxPoolId:              k.getID(ctx, []byte(types.KeyLastTXPoolID)),
-			LastBatchId:               k.getID(ctx, []byte(types.KeyLastOutgoingBatchID)),
+			LastTxPoolId:              k.getID(ctx, types.KeyLastTXPoolID),
+			LastBatchId:               k.getID(ctx, types.KeyLastOutgoingBatchID),
 		},
 		Valsets:            valsets,
 		ValsetConfirms:     vsconfs,

@@ -57,7 +57,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "no transactions of this type to batch")
 	}
 
-	nextID := k.autoIncrementID(ctx, []byte(types.KeyLastOutgoingBatchID))
+	nextID := k.autoIncrementID(ctx, types.KeyLastOutgoingBatchID)
 	batch, err := types.NewInternalOutgingTxBatch(nextID, k.getBatchTimeoutHeight(ctx), selectedTx, contract, 0)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "unable to create batch"))
@@ -74,7 +74,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 		&types.EventOutgoingBatch{
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
-			BatchId:        types.GetOutgoingTxBatchKey(contract, nextID),
+			BatchId:        string(types.GetOutgoingTxBatchKey(contract, nextID)),
 			Nonce:          fmt.Sprint(nextID),
 		},
 	)
@@ -154,7 +154,7 @@ func (k Keeper) StoreBatch(ctx sdk.Context, batch types.InternalOutgoingTxBatch)
 	}
 	externalBatch := batch.ToExternal()
 	store := ctx.KVStore(k.storeKey)
-	key := []byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce))
+	key := types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce)
 	if store.Has(key) {
 		panic(sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Should never overwrite batch!"))
 	}
@@ -167,7 +167,7 @@ func (k Keeper) DeleteBatch(ctx sdk.Context, batch types.InternalOutgoingTxBatch
 		panic(sdkerrors.Wrap(err, "attempted to delete invalid batch"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	store.Delete([]byte(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce)))
+	store.Delete(types.GetOutgoingTxBatchKey(batch.TokenContract, batch.BatchNonce))
 }
 
 // pickUnbatchedTX find TX in pool and remove from "available" second index
@@ -215,7 +215,7 @@ func (k Keeper) pickUnbatchedTX(
 func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAddress, nonce uint64) *types.InternalOutgoingTxBatch {
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetOutgoingTxBatchKey(tokenContract, nonce)
-	bz := store.Get([]byte(key))
+	bz := store.Get(key)
 	if len(bz) == 0 {
 		return nil
 	}
@@ -254,7 +254,7 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 		&types.EventOutgoingBatchCanceled{
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
-			BatchId:        types.GetOutgoingTxBatchKey(tokenContract, nonce),
+			BatchId:        string(types.GetOutgoingTxBatchKey(tokenContract, nonce)),
 			Nonce:          fmt.Sprint(nonce),
 		},
 	)
@@ -263,7 +263,7 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 
 // IterateOutgoingTXBatches iterates through all outgoing batches in DESC order.
 func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, batch types.InternalOutgoingTxBatch) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.OutgoingTXBatchKey))
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.OutgoingTXBatchKey)
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -306,7 +306,7 @@ func (k Keeper) GetLastOutgoingBatchByTokenType(ctx sdk.Context, token types.Eth
 // HasLastSlashedBatchBlock returns true if the last slashed batch block has been set in the store
 func (k Keeper) HasLastSlashedBatchBlock(ctx sdk.Context) bool {
 	store := ctx.KVStore(k.storeKey)
-	return store.Has([]byte(types.LastSlashedBatchBlock))
+	return store.Has(types.LastSlashedBatchBlock)
 }
 
 // SetLastSlashedBatchBlock sets the latest slashed Batch block height this is done by
@@ -319,13 +319,13 @@ func (k Keeper) SetLastSlashedBatchBlock(ctx sdk.Context, blockHeight uint64) {
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.LastSlashedBatchBlock), types.UInt64Bytes(blockHeight))
+	store.Set(types.LastSlashedBatchBlock, types.UInt64Bytes(blockHeight))
 }
 
 // GetLastSlashedBatchBlock returns the latest slashed Batch block
 func (k Keeper) GetLastSlashedBatchBlock(ctx sdk.Context) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get([]byte(types.LastSlashedBatchBlock))
+	bytes := store.Get(types.LastSlashedBatchBlock)
 
 	if len(bytes) == 0 {
 		panic("Last slashed batch block not initialized from genesis")

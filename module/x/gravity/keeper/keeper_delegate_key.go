@@ -25,7 +25,7 @@ func (k Keeper) SetOrchestratorValidator(ctx sdk.Context, val sdk.ValAddress, or
 		panic(sdkerrors.Wrap(err, "invalid orch address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.GetOrchestratorAddressKey(orch)), val.Bytes())
+	store.Set(types.GetOrchestratorAddressKey(orch), val.Bytes())
 }
 
 // GetOrchestratorValidator returns the validator key associated with an orchestrator key
@@ -136,9 +136,8 @@ func (k Keeper) SetEthAddressForValidator(ctx sdk.Context, validator sdk.ValAddr
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-
-	store.Set([]byte(types.GetEthAddressByValidatorKey(validator)), ethAddr.GetAddress().Bytes())
-	store.Set([]byte(types.GetValidatorByEthAddressKey(ethAddr)), []byte(validator))
+	store.Set(types.GetEthAddressByValidatorKey(validator), ethAddr.GetAddress().Bytes())
+	store.Set(types.GetValidatorByEthAddressKey(ethAddr), []byte(validator))
 }
 
 // GetEthAddressByValidator returns the eth address for a given gravity validator
@@ -147,7 +146,7 @@ func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddre
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	ethAddr := store.Get([]byte(types.GetEthAddressByValidatorKey(validator)))
+	ethAddr := store.Get(types.GetEthAddressByValidatorKey(validator))
 	if ethAddr == nil {
 		return nil, false
 	}

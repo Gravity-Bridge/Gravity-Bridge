@@ -18,7 +18,7 @@ func (k Keeper) GetBatchConfirm(ctx sdk.Context, nonce uint64, tokenContract typ
 		ctx.Logger().Error("invalid validator address")
 		return nil
 	}
-	entity := store.Get([]byte(types.GetBatchConfirmKey(tokenContract, nonce, validator)))
+	entity := store.Get(types.GetBatchConfirmKey(tokenContract, nonce, validator))
 	if entity == nil {
 		return nil
 	}
@@ -44,7 +44,7 @@ func (k Keeper) SetBatchConfirm(ctx sdk.Context, batch *types.MsgConfirmBatch) [
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "invalid TokenContract"))
 	}
-	key := []byte(types.GetBatchConfirmKey(*contract, batch.Nonce, acc))
+	key := types.GetBatchConfirmKey(*contract, batch.Nonce, acc)
 	store.Set(key, k.cdc.MustMarshal(batch))
 	return key
 }
@@ -55,7 +55,7 @@ func (k Keeper) DeleteBatchConfirms(ctx sdk.Context, batch types.InternalOutgoin
 	for _, confirm := range k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract) {
 		orchestrator, err := sdk.AccAddressFromBech32(confirm.Orchestrator)
 		if err == nil {
-			confirmKey := []byte(types.GetBatchConfirmKey(batch.TokenContract, batch.BatchNonce, orchestrator))
+			confirmKey := types.GetBatchConfirmKey(batch.TokenContract, batch.BatchNonce, orchestrator)
 			if store.Has(confirmKey) {
 				store.Delete(confirmKey)
 			}

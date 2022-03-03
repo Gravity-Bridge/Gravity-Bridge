@@ -1,6 +1,7 @@
 package types
 
 import (
+	"crypto/md5"
 	"encoding/binary"
 	fmt "fmt"
 	"strconv"
@@ -88,4 +89,29 @@ func GetNativePrefixedAccAddress(foreignAddr sdk.AccAddress) (sdk.AccAddress, er
 		return nil, err
 	}
 	return sdk.AccAddressFromBech32(nativeStr)
+}
+
+// Hashing string using cryptographic MD5 function
+// returns 128bit(16byte) value
+func HashString(input string) []byte {
+	md5 := md5.New()
+	md5.Write([]byte(input))
+	return md5.Sum(nil)
+}
+
+func AppendBytes(args ...[]byte) []byte {
+	length := 0
+	for _, v := range args {
+		length += len(v)
+	}
+
+	res := make([]byte, length)
+
+	length = 0
+	for _, v := range args {
+		copy(res[length:length+len(v)], v)
+		length += len(v)
+	}
+
+	return res
 }
