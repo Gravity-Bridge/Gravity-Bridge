@@ -57,7 +57,7 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 // historical valsets can not possibly be correct, as it would invalidate the signatures. The only
 // valid operation on the same index is store followed by delete when it is time to prune state
 func (k Keeper) StoreValset(ctx sdk.Context, valset types.Valset) {
-	key := []byte(types.GetValsetKey(valset.Nonce))
+	key := types.GetValsetKey(valset.Nonce)
 	store := ctx.KVStore(k.storeKey)
 
 	if store.Has(key) {
@@ -70,19 +70,19 @@ func (k Keeper) StoreValset(ctx sdk.Context, valset types.Valset) {
 // HasValsetRequest returns true if a valset defined by a nonce exists
 func (k Keeper) HasValsetRequest(ctx sdk.Context, nonce uint64) bool {
 	store := ctx.KVStore(k.storeKey)
-	return store.Has([]byte(types.GetValsetKey(nonce)))
+	return store.Has(types.GetValsetKey(nonce))
 }
 
 // DeleteValset deletes the valset at a given nonce from state
 func (k Keeper) DeleteValset(ctx sdk.Context, nonce uint64) {
-	ctx.KVStore(k.storeKey).Delete([]byte(types.GetValsetKey(nonce)))
+	ctx.KVStore(k.storeKey).Delete(types.GetValsetKey(nonce))
 }
 
 // CheckLatestValsetNonce returns true if the latest valset nonce
 // is declared in the store and false if it has not been initialized
 func (k Keeper) CheckLatestValsetNonce(ctx sdk.Context) bool {
 	store := ctx.KVStore(k.storeKey)
-	has := store.Has([]byte(types.LatestValsetNonce))
+	has := store.Has(types.LatestValsetNonce)
 	return has
 }
 
@@ -93,7 +93,7 @@ func (k Keeper) GetLatestValsetNonce(ctx sdk.Context) uint64 {
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get([]byte(types.LatestValsetNonce))
+	bytes := store.Get(types.LatestValsetNonce)
 	return types.UInt64FromBytes(bytes)
 }
 
@@ -107,13 +107,13 @@ func (k Keeper) SetLatestValsetNonce(ctx sdk.Context, nonce uint64) {
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.LatestValsetNonce), types.UInt64Bytes(nonce))
+	store.Set(types.LatestValsetNonce, types.UInt64Bytes(nonce))
 }
 
 // GetValset returns a valset by nonce
 func (k Keeper) GetValset(ctx sdk.Context, nonce uint64) *types.Valset {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get([]byte(types.GetValsetKey(nonce)))
+	bz := store.Get(types.GetValsetKey(nonce))
 	if bz == nil {
 		return nil
 	}
@@ -124,7 +124,7 @@ func (k Keeper) GetValset(ctx sdk.Context, nonce uint64) *types.Valset {
 
 // IterateValsets retruns all valsetRequests
 func (k Keeper) IterateValsets(ctx sdk.Context, cb func(key []byte, val *types.Valset) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.ValsetRequestKey))
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ValsetRequestKey)
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -160,13 +160,13 @@ func (k Keeper) GetLatestValset(ctx sdk.Context) (out *types.Valset) {
 // setLastSlashedValsetNonce sets the latest slashed valset nonce
 func (k Keeper) SetLastSlashedValsetNonce(ctx sdk.Context, nonce uint64) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.LastSlashedValsetNonce), types.UInt64Bytes(nonce))
+	store.Set(types.LastSlashedValsetNonce, types.UInt64Bytes(nonce))
 }
 
 // GetLastSlashedValsetNonce returns the latest slashed valset nonce
 func (k Keeper) GetLastSlashedValsetNonce(ctx sdk.Context) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get([]byte(types.LastSlashedValsetNonce))
+	bytes := store.Get(types.LastSlashedValsetNonce)
 
 	if len(bytes) == 0 {
 		return 0
@@ -178,14 +178,14 @@ func (k Keeper) GetLastSlashedValsetNonce(ctx sdk.Context) uint64 {
 // and is reset to zero on chain upgrade.
 func (k Keeper) SetLastUnBondingBlockHeight(ctx sdk.Context, unbondingBlockHeight uint64) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(types.LastUnBondingBlockHeight), types.UInt64Bytes(unbondingBlockHeight))
+	store.Set(types.LastUnBondingBlockHeight, types.UInt64Bytes(unbondingBlockHeight))
 }
 
 // GetLastUnBondingBlockHeight returns the last unbonding block height, returns zero if not set, this is not
 // saved or loaded ing enesis and is reset to zero on chain upgrade
 func (k Keeper) GetLastUnBondingBlockHeight(ctx sdk.Context) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get([]byte(types.LastUnBondingBlockHeight))
+	bytes := store.Get(types.LastUnBondingBlockHeight)
 
 	if len(bytes) == 0 {
 		return 0
@@ -210,7 +210,7 @@ func (k Keeper) GetUnSlashedValsets(ctx sdk.Context, signedValsetsWindow uint64)
 
 // IterateValsetBySlashedValsetNonce iterates through all valset by last slashed valset nonce in ASC order
 func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedValsetNonce uint64, cb func([]byte, *types.Valset) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.ValsetRequestKey))
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ValsetRequestKey)
 	// Consider all valsets, including the most recent one
 	cutoffNonce := k.GetLatestValsetNonce(ctx) + 1
 	iter := prefixStore.Iterator(types.UInt64Bytes(lastSlashedValsetNonce), types.UInt64Bytes(cutoffNonce))
@@ -341,7 +341,7 @@ func (k Keeper) GetValsetConfirm(ctx sdk.Context, nonce uint64, validator sdk.Ac
 		ctx.Logger().Error("invalid validator address")
 		return nil
 	}
-	entity := store.Get([]byte(types.GetValsetConfirmKey(nonce, validator)))
+	entity := store.Get(types.GetValsetConfirmKey(nonce, validator))
 	if entity == nil {
 		return nil
 	}
@@ -362,7 +362,7 @@ func (k Keeper) SetValsetConfirm(ctx sdk.Context, valsetConf types.MsgValsetConf
 	if err != nil {
 		panic(err)
 	}
-	key := []byte(types.GetValsetConfirmKey(valsetConf.Nonce, addr))
+	key := types.GetValsetConfirmKey(valsetConf.Nonce, addr)
 	store.Set(key, k.cdc.MustMarshal(&valsetConf))
 	return key
 }
@@ -395,7 +395,7 @@ func (k Keeper) DeleteValsetConfirms(ctx sdk.Context, nonce uint64) {
 	for _, confirm := range k.GetValsetConfirms(ctx, nonce) {
 		orchestrator, err := sdk.AccAddressFromBech32(confirm.Orchestrator)
 		if err == nil {
-			confirmKey := []byte(types.GetValsetConfirmKey(nonce, orchestrator))
+			confirmKey := types.GetValsetConfirmKey(nonce, orchestrator)
 			if store.Has(confirmKey) {
 				store.Delete(confirmKey)
 			}
