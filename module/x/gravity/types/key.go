@@ -24,18 +24,22 @@ const (
 var (
 	// EthAddressByValidatorKey indexes cosmos validator account addresses
 	// i.e. gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
-	EthAddressByValidatorKey = "EthAddressValidatorKey"
+	// [0x1248a4405201cc3a00ab515ce9c4dd47]
+	EthAddressByValidatorKey = HashString("EthAddressValidatorKey")
 
 	// ValidatorByEthAddressKey indexes ethereum addresses
 	// i.e. 0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B
-	ValidatorByEthAddressKey = "ValidatorByEthAddressKey"
+	// [0xbfe41763f372108317ed982a4cd1b4a8]
+	ValidatorByEthAddressKey = HashString("ValidatorByEthAddressKey")
 
 	// ValsetRequestKey indexes valset requests by nonce
-	ValsetRequestKey = "ValsetRequestKey"
+	// [0xa318dca6c74494c2fac1841c9e2454fe]
+	ValsetRequestKey = HashString("ValsetRequestKey")
 
 	// ValsetConfirmKey indexes valset confirmations by nonce and the validator account address
 	// i.e gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
-	ValsetConfirmKey = "ValsetConfirmKey"
+	// [0x2f522701d7f28af84632f8228fbe1750]
+	ValsetConfirmKey = HashString("ValsetConfirmKey")
 
 	// OracleClaimKey Claim details by nonce and validator address
 	// i.e. gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
@@ -43,7 +47,8 @@ var (
 	// a validator making a claim to have seen something happen. Claims are
 	// attached to attestations which can be thought of as 'the event' that
 	// will eventually be executed.
-	OracleClaimKey = "OracleClaimKey"
+	// [0x15968a4f1cb06e26ab155d6e59eccc85]
+	OracleClaimKey = HashString("OracleClaimKey")
 
 	// OracleAttestationKey attestation details by nonce and validator address
 	// i.e. gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
@@ -51,314 +56,252 @@ var (
 	// the Claims are an individual validator saying that they saw an event
 	// occur the Attestation is 'the event' that multiple claims vote on and
 	// eventually executes
-	OracleAttestationKey = "OracleAttestationKey"
+	// [0x0bfa165ff4ef558b3d0b62ea4d4a46c5]
+	OracleAttestationKey = HashString("OracleAttestationKey")
 
 	// OutgoingTXPoolKey indexes the last nonce for the outgoing tx pool
-	OutgoingTXPoolKey = "OutgoingTXPoolKey"
-
-	// DenomiatorPrefix indexes token contract addresses from ETH on gravity
-	DenomiatorPrefix = "DenomiatorPrefix"
+	// [0x44f7816ec23d990ee39d9ed4609bbd4d]
+	OutgoingTXPoolKey = HashString("OutgoingTXPoolKey")
 
 	// OutgoingTXBatchKey indexes outgoing tx batches under a nonce and token address
-	OutgoingTXBatchKey = "OutgoingTXBatchKey"
+	// [0x54e2db44755d8865b1ff4227402e204f]
+	OutgoingTXBatchKey = HashString("OutgoingTXBatchKey")
 
 	// BatchConfirmKey indexes validator confirmations by token contract address
-	BatchConfirmKey = "BatchConfirmKey"
-
-	// SecondIndexNonceByClaimKey indexes latest nonce for a given claim type
-	SecondIndexNonceByClaimKey = "SecondIndexNonceByClaimKey"
+	// [0x75b935a854d50880236724b9c4822daf]
+	BatchConfirmKey = HashString("BatchConfirmKey")
 
 	// LastEventNonceByValidatorKey indexes lateset event nonce by validator
-	LastEventNonceByValidatorKey = "LastEventNonceByValidatorKey"
+	// [0xeefcb999cc3d7b80b052b55106a6ba5e]
+	LastEventNonceByValidatorKey = HashString("LastEventNonceByValidatorKey")
 
 	// LastObservedEventNonceKey indexes the latest event nonce
-	LastObservedEventNonceKey = "LastObservedEventNonceKey"
+	// [0xa34e56ab6fab9ee91e82ba216bfeb759]
+	LastObservedEventNonceKey = HashString("LastObservedEventNonceKey")
 
 	// SequenceKeyPrefix indexes different txids
-	SequenceKeyPrefix = "SequenceKeyPrefix"
+	// [0x33887862fa4fba9c592d6fb84d8dd755]
+	SequenceKeyPrefix = HashString("SequenceKeyPrefix")
 
 	// KeyLastTXPoolID indexes the lastTxPoolID
-	KeyLastTXPoolID = SequenceKeyPrefix + "lastTxPoolId"
+	// [0xfd87a616141bfbd26fd2938d6e1cf099]
+	KeyLastTXPoolID = HashString("SequenceKeyPrefix" + "lastTxPoolId")
 
 	// KeyLastOutgoingBatchID indexes the lastBatchID
-	KeyLastOutgoingBatchID = SequenceKeyPrefix + "lastBatchId"
+	// [0x4f9c42e30316353cb1e0ed74200abbbb]
+	KeyLastOutgoingBatchID = HashString("SequenceKeyPrefix" + "lastBatchId")
 
 	// KeyOrchestratorAddress indexes the validator keys for an orchestrator
-	KeyOrchestratorAddress = "KeyOrchestratorAddress"
+	// [0x391e8708521fb085676169e8fb232cda]
+	KeyOrchestratorAddress = HashString("KeyOrchestratorAddress")
 
 	// KeyOutgoingLogicCall indexes the outgoing logic calls
-	KeyOutgoingLogicCall = "KeyOutgoingLogicCall"
+	// [0x98dfff23346c13a1747fbbed5b23d248]
+	KeyOutgoingLogicCall = HashString("KeyOutgoingLogicCall")
 
 	// KeyOutgoingLogicConfirm indexes the outgoing logic confirms
-	KeyOutgoingLogicConfirm = "KeyOutgoingLogicConfirm"
+	// [0xd244ded2fa29e95a7719ec40696221e4]
+	KeyOutgoingLogicConfirm = HashString("KeyOutgoingLogicConfirm")
 
 	// LastObservedEthereumBlockHeightKey indexes the latest Ethereum block height
-	LastObservedEthereumBlockHeightKey = "LastObservedEthereumBlockHeightKey"
+	// [0x83a283a6c3390f1526250df45e9ef8c6]
+	LastObservedEthereumBlockHeightKey = HashString("LastObservedEthereumBlockHeightKey")
 
 	// DenomToERC20Key prefixes the index of Cosmos originated asset denoms to ERC20s
-	DenomToERC20Key = "DenomToERC20Key"
+	// [0x19fb4f512868744eea13f3eac3672c12]
+	DenomToERC20Key = HashString("DenomToERC20Key")
 
 	// ERC20ToDenomKey prefixes the index of Cosmos originated assets ERC20s to denoms
-	ERC20ToDenomKey = "ERC20ToDenomKey"
+	// [0x877b20a916c830ad4db23d22f7b2cde0]
+	ERC20ToDenomKey = HashString("ERC20ToDenomKey")
 
 	// LastSlashedValsetNonce indexes the latest slashed valset nonce
-	LastSlashedValsetNonce = "LastSlashedValsetNonce"
+	// [0x3adee74534260faaea6ac8e31826b09e]
+	LastSlashedValsetNonce = HashString("LastSlashedValsetNonce")
 
 	// LatestValsetNonce indexes the latest valset nonce
-	LatestValsetNonce = "LatestValsetNonce"
+	// [0xba0fa05da166611b656bac7739a6e7d3]
+	LatestValsetNonce = HashString("LatestValsetNonce")
 
 	// LastSlashedBatchBlock indexes the latest slashed batch block height
-	LastSlashedBatchBlock = "LastSlashedBatchBlock"
+	// [0xcbaedf5dd1e068d9e2223281f693358c]
+	LastSlashedBatchBlock = HashString("LastSlashedBatchBlock")
 
 	// LastSlashedLogicCallBlock indexes the latest slashed logic call block height
-	LastSlashedLogicCallBlock = "LastSlashedLogicCallBlock"
+	// [0x3df72087ae3f58d49c6d0b1737c8da0c]
+	LastSlashedLogicCallBlock = HashString("LastSlashedLogicCallBlock")
 
 	// LastUnBondingBlockHeight indexes the last validator unbonding block height
-	LastUnBondingBlockHeight = "LastUnBondingBlockHeight"
+	// [0x06a6b30651341e80276e0d2e19449250]
+	LastUnBondingBlockHeight = HashString("LastUnBondingBlockHeight")
 
 	// LastObservedValsetNonceKey indexes the latest observed valset nonce
 	// HERE THERE BE DRAGONS, do not use this value as an up to date validator set
 	// on Ethereum it will always lag significantly and may be totally wrong at some
 	// times.
-	LastObservedValsetKey = "LastObservedValsetKey"
+	// [0x2418e9d990ce88e9b844b0bb723d4d7a]
+	LastObservedValsetKey = HashString("LastObservedValsetKey")
 
 	// PastEthSignatureCheckpointKey indexes eth signature checkpoints that have existed
-	PastEthSignatureCheckpointKey = "PastEthSignatureCheckpointKey"
+	// [0x1cbe0be407a979331b98e599eeedd09f]
+	PastEthSignatureCheckpointKey = HashString("PastEthSignatureCheckpointKey")
 )
 
-// GetOrchestratorAddressPrefix returns
-// prefix
-// [0xe8]
-func GetOrchestratorAddressPrefix() string {
-	return KeyOrchestratorAddress
-}
-
 // GetOrchestratorAddressKey returns the following key format
-// prefix address
-// [0xe8][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
-func GetOrchestratorAddressKey(orc sdk.AccAddress) string {
+// prefix 				orchestrator address
+// [0x0][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
+func GetOrchestratorAddressKey(orc sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(orc); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid orchestrator address"))
 	}
-	return GetOrchestratorAddressPrefix() + string(orc.Bytes())
-}
-
-// GetEthAddressByValidatorPrefix returns
-// prefix
-// [0x0]
-func GetEthAddressByValidatorPrefix() string {
-	return EthAddressByValidatorKey
+	return AppendBytes(KeyOrchestratorAddress, orc.Bytes())
 }
 
 // GetEthAddressByValidatorKey returns the following key format
 // prefix              cosmos-validator
 // [0x0][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
-func GetEthAddressByValidatorKey(validator sdk.ValAddress) string {
+func GetEthAddressByValidatorKey(validator sdk.ValAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return GetEthAddressByValidatorPrefix() + string(validator.Bytes())
-}
-
-// GetValidatorByEthAddressPrefix returns
-// prefix
-// [0xf9]
-func GetValidatorByEthAddressPrefix() string {
-	return ValidatorByEthAddressKey
+	return AppendBytes(EthAddressByValidatorKey, validator.Bytes())
 }
 
 // GetValidatorByEthAddressKey returns the following key format
 // prefix              cosmos-validator
-// [0xf9][0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B]
-func GetValidatorByEthAddressKey(ethAddress EthAddress) string {
-	return GetValidatorByEthAddressPrefix() + string(ethAddress.GetAddress().Bytes())
-}
-
-// GetValsetKey returns
-// prefix
-// [0x0]
-func GetValsetPrefix() string {
-	return ValsetRequestKey
+// [0x0][0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B]
+func GetValidatorByEthAddressKey(ethAddress EthAddress) []byte {
+	return AppendBytes(ValidatorByEthAddressKey, ethAddress.GetAddress().Bytes())
 }
 
 // GetValsetKey returns the following key format
 // prefix    nonce
 // [0x0][0 0 0 0 0 0 0 1]
-func GetValsetKey(nonce uint64) string {
-	return GetValsetPrefix() + string(UInt64Bytes(nonce))
+func GetValsetKey(nonce uint64) []byte {
+	return AppendBytes(ValsetRequestKey, UInt64Bytes(nonce))
 }
 
 // GetValsetConfirmNoncePrefix returns the following format
 // prefix   nonce
 // [0x0][0 0 0 0 0 0 0 1]
-func GetValsetConfirmNoncePrefix(nonce uint64) string {
-	return ValsetConfirmKey + ConvertByteArrToString(UInt64Bytes(nonce))
+func GetValsetConfirmNoncePrefix(nonce uint64) []byte {
+	return AppendBytes(ValsetConfirmKey, UInt64Bytes(nonce))
 }
 
 // GetValsetConfirmKey returns the following key format
 // prefix   nonce                    validator-address
 // [0x0][0 0 0 0 0 0 0 1][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
 // MARK finish-batches: this is where the key is created in the old (presumed working) code
-func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) string {
+func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return GetValsetConfirmNoncePrefix(nonce) + string(validator.Bytes())
-}
-
-// GetClaimKey returns the following key format
-// prefix type               cosmos-validator-address                       nonce                             attestation-details-hash
-// [0x0][0 0 0 1][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm][0 0 0 0 0 0 0 1][fd1af8cec6c67fcf156f1b61fdf91ebc04d05484d007436e75342fc05bbff35a]
-// The Claim hash identifies a unique event, for example it would have a event nonce, a sender and a receiver. Or an event nonce and a batch nonce. But
-// the Claim is stored indexed with the claimer key to make sure that it is unique.
-func GetClaimKey(details EthereumClaim) string {
-	var detailsHash []byte
-	if details != nil {
-		var err error
-		detailsHash, err = details.ClaimHash()
-		if err != nil {
-			panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
-		}
-	} else {
-		panic("No claim without details!")
-	}
-	claimTypeLen := len([]byte{byte(details.GetType())})
-	nonceBz := UInt64Bytes(details.GetEventNonce())
-	if err := sdk.VerifyAddressFormat(details.GetClaimer()); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid claimer address"))
-	}
-
-	addrLen := len(details.GetClaimer())
-
-	key := make([]byte, len(OracleClaimKey)+claimTypeLen+addrLen+len(nonceBz)+len(detailsHash))
-	copy(key[0:], OracleClaimKey)
-	copy(key[len(OracleClaimKey):], []byte{byte(details.GetType())})
-	// TODO this is the delegate address, should be stored by the valaddress
-	copy(key[len(OracleClaimKey)+claimTypeLen:], details.GetClaimer())
-	copy(key[len(OracleClaimKey)+claimTypeLen+addrLen:], nonceBz)
-	copy(key[len(OracleClaimKey)+claimTypeLen+addrLen+len(nonceBz):], detailsHash)
-	return ConvertByteArrToString(key)
+	return AppendBytes(GetValsetConfirmNoncePrefix(nonce), validator.Bytes())
 }
 
 // GetAttestationKey returns the following key format
 // prefix     nonce                             claim-details-hash
-// [0x5][0 0 0 0 0 0 0 1][fd1af8cec6c67fcf156f1b61fdf91ebc04d05484d007436e75342fc05bbff35a]
+// [0x0][0 0 0 0 0 0 0 1][fd1af8cec6c67fcf156f1b61fdf91ebc04d05484d007436e75342fc05bbff35a]
 // An attestation is an event multiple people are voting on, this function needs the claim
 // details because each Attestation is aggregating all claims of a specific event, lets say
 // validator X and validator y where making different claims about the same event nonce
 // Note that the claim hash does NOT include the claimer address and only identifies an event
-func GetAttestationKey(eventNonce uint64, claimHash []byte) string {
-	key := make([]byte, len(OracleAttestationKey)+len(UInt64Bytes(0))+len(claimHash))
-	copy(key[0:], OracleAttestationKey)
-	copy(key[len(OracleAttestationKey):], UInt64Bytes(eventNonce))
-	copy(key[len(OracleAttestationKey)+len(UInt64Bytes(0)):], claimHash)
-	return ConvertByteArrToString(key)
+func GetAttestationKey(eventNonce uint64, claimHash []byte) []byte {
+	return AppendBytes(OracleAttestationKey, UInt64Bytes(eventNonce), claimHash)
 }
 
 // GetOutgoingTxPoolContractPrefix returns
-// prefix	feeContract
-// [0x6][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+// prefix			feeContract
+// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 // This prefix is used for iterating over unbatched transactions for a given contract
-func GetOutgoingTxPoolContractPrefix(contractAddress EthAddress) string {
-	return OutgoingTXPoolKey + string(contractAddress.GetAddress().Bytes())
+func GetOutgoingTxPoolContractPrefix(contractAddress EthAddress) []byte {
+	return AppendBytes(OutgoingTXPoolKey, contractAddress.GetAddress().Bytes())
 }
 
 // GetOutgoingTxPoolKey returns the following key format
-// prefix	feeContract		feeAmount     id
-// [0x6][0xc783df8a850f42e7F7e57013759C285caa701eB6][1000000000][0 0 0 0 0 0 0 1]
-func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) string {
-	// sdkInts have a size limit of 255 bits or 32 bytes
-	// therefore this will never panic and is always safe
+// prefix				feeContract					 feeAmount			id
+// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6][1000000000][0 0 0 0 0 0 0 1]
+func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) []byte {
 	amount := make([]byte, 32)
 	amount = fee.Amount.BigInt().FillBytes(amount)
-	a := append(amount, UInt64Bytes(id)...)
-	b := append(fee.Contract.GetAddress().Bytes(), a...)
-	r := append([]byte(OutgoingTXPoolKey), b...)
-	return string(r)
+	return AppendBytes(OutgoingTXPoolKey, fee.Contract.GetAddress().Bytes(), amount, UInt64Bytes(id))
 }
 
 // GetOutgoingTxBatchContractPrefix returns the following format
 // prefix     eth-contract-address
-// [0xa][0xc783df8a850f42e7F7e57013759C285caa701eB6]
-func GetOutgoingTxBatchContractPrefix(tokenContract EthAddress) string {
-	return OutgoingTXBatchKey + string(tokenContract.GetAddress().Bytes())
+// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+func GetOutgoingTxBatchContractPrefix(tokenContract EthAddress) []byte {
+	return AppendBytes(OutgoingTXBatchKey, tokenContract.GetAddress().Bytes())
 }
 
 // GetOutgoingTxBatchKey returns the following key format
 // prefix     eth-contract-address                     nonce
-// [0xa][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
-func GetOutgoingTxBatchKey(tokenContract EthAddress, nonce uint64) string {
-	return GetOutgoingTxBatchContractPrefix(tokenContract) + ConvertByteArrToString(UInt64Bytes(nonce))
+// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
+func GetOutgoingTxBatchKey(tokenContract EthAddress, nonce uint64) []byte {
+	return AppendBytes(GetOutgoingTxBatchContractPrefix(tokenContract), UInt64Bytes(nonce))
 }
 
 // GetBatchConfirmNonceContractPrefix returns
 // prefix           eth-contract-address                BatchNonce
-// [0xe1][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
-func GetBatchConfirmNonceContractPrefix(tokenContract EthAddress, batchNonce uint64) string {
-	return BatchConfirmKey + string(tokenContract.GetAddress().Bytes()) + ConvertByteArrToString(UInt64Bytes(batchNonce))
+// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
+func GetBatchConfirmNonceContractPrefix(tokenContract EthAddress, batchNonce uint64) []byte {
+	return AppendBytes(BatchConfirmKey, tokenContract.GetAddress().Bytes(), UInt64Bytes(batchNonce))
 }
 
 // GetBatchConfirmKey returns the following key format
 // prefix           eth-contract-address                BatchNonce                       Validator-address
-// [0xe1][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
+// [0x0		][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
 // TODO this should be a sdk.ValAddress
-func GetBatchConfirmKey(tokenContract EthAddress, batchNonce uint64, validator sdk.AccAddress) string {
+func GetBatchConfirmKey(tokenContract EthAddress, batchNonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return GetBatchConfirmNonceContractPrefix(tokenContract, batchNonce) + string(validator.Bytes())
-}
-
-// GetLastEventNonceByValidatorPrefix returns
-// prefix
-// [0x0]
-func GetLastEventNonceByValidatorPrefix() string {
-	return LastEventNonceByValidatorKey
+	return AppendBytes(GetBatchConfirmNonceContractPrefix(tokenContract, batchNonce), validator.Bytes())
 }
 
 // GetLastEventNonceByValidatorKey indexes lateset event nonce by validator
 // GetLastEventNonceByValidatorKey returns the following key format
 // prefix              cosmos-validator
 // [0x0][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
-func GetLastEventNonceByValidatorKey(validator sdk.ValAddress) string {
+func GetLastEventNonceByValidatorKey(validator sdk.ValAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return GetLastEventNonceByValidatorPrefix() + string(validator.Bytes())
+	return AppendBytes(LastEventNonceByValidatorKey, validator.Bytes())
 }
 
-func GetDenomToERC20Key(denom string) string {
-	return DenomToERC20Key + denom
+func GetDenomToERC20Key(denom string) []byte {
+	return AppendBytes(DenomToERC20Key, []byte(denom))
 }
 
-func GetERC20ToDenomKey(erc20 EthAddress) string {
-	return ERC20ToDenomKey + string(erc20.GetAddress().Bytes())
+func GetERC20ToDenomKey(erc20 EthAddress) []byte {
+	return AppendBytes(ERC20ToDenomKey, erc20.GetAddress().Bytes())
 }
 
-func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) string {
-	a := KeyOutgoingLogicCall + string(invalidationId)
-	return a + string(UInt64Bytes(invalidationNonce))
+func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) []byte {
+	return AppendBytes(KeyOutgoingLogicCall, invalidationId, UInt64Bytes(invalidationNonce))
 }
 
-func GetLogicConfirmNonceInvalidationIdPrefix(invalidationId []byte, invalidationNonce uint64) string {
-	return KeyOutgoingLogicConfirm + string(invalidationId) + ConvertByteArrToString(UInt64Bytes(invalidationNonce))
+func GetLogicConfirmNonceInvalidationIdPrefix(invalidationId []byte, invalidationNonce uint64) []byte {
+	return AppendBytes(KeyOutgoingLogicConfirm, invalidationId, UInt64Bytes(invalidationNonce))
 }
 
-func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) string {
+func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return GetLogicConfirmNonceInvalidationIdPrefix(invalidationId, invalidationNonce) + string(validator.Bytes())
+	return AppendBytes(GetLogicConfirmNonceInvalidationIdPrefix(invalidationId, invalidationNonce), validator.Bytes())
 }
 
 // GetPastEthSignatureCheckpointKey returns the following key format
 // prefix    checkpoint
 // [0x0][ checkpoint bytes ]
-func GetPastEthSignatureCheckpointKey(checkpoint []byte) string {
-	return PastEthSignatureCheckpointKey + ConvertByteArrToString(checkpoint)
+func GetPastEthSignatureCheckpointKey(checkpoint []byte) []byte {
+	return AppendBytes(PastEthSignatureCheckpointKey, []byte(convertByteArrToString(checkpoint)))
 }
 
-func ConvertByteArrToString(value []byte) string {
+//This function is broken and it should not be used in other places except in GetPastEthSignatureCheckpointKey
+func convertByteArrToString(value []byte) string {
 	var ret strings.Builder
 	for i := 0; i < len(value); i++ {
 		ret.WriteString(string(value[i]))
