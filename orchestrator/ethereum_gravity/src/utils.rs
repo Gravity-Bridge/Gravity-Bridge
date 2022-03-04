@@ -157,7 +157,7 @@ pub fn encode_valset_struct(valset: &Valset) -> Token {
     // so that it's easy to identify if this validator set has a reward or not. Now that we're
     // going to encode it for the contract call we need return it to the magic value the contract
     // expects.
-    let reward_token = valset.reward_token.unwrap_or_else(|| *ZERO_ADDRESS);
+    let reward_token = valset.reward_token.unwrap_or(*ZERO_ADDRESS);
     let struct_tokens = &[
         addresses.into(),
         powers.into(),
