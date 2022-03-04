@@ -658,6 +658,7 @@ func TestQueryLogicCalls(t *testing.T) {
 	// that we will later use to lookup calls to be signed
 	for i := 0; i < 6; i++ {
 		var validators []sdk.ValAddress
+		fmt.Printf("%v", validators)
 		for j := 0; j <= i; j++ {
 			// add an validator each block
 			// TODO: replace with real SDK addresses
@@ -718,6 +719,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 	// that we will later use to lookup calls to be signed
 	for i := 0; i < 6; i++ {
 		var validators []sdk.ValAddress
+		fmt.Printf("%v", validators)
 		for j := 0; j <= i; j++ {
 			// add an validator each block
 			// TODO: replace with real SDK addresses
