@@ -1,7 +1,7 @@
 linters:
   enable:
     # - bodyclose
-    - deadcode
+      - deadcode
     # - depguard
     # - dogsled
     # - dupl
@@ -15,20 +15,20 @@ linters:
     # - gofmt
     # - goimports
     # - gosec
-    # - gosimple
-    - govet
-    - ineffassign
+      - gosimple
+      - govet
+      - ineffassign
     # - misspell
     # - nakedret
     # - prealloc
-    # - staticcheck
-    # - structcheck
+      - staticcheck
+      - structcheck
     # - stylecheck
-    # - typecheck
+      - typecheck
     # - unconvert
     # - unparam
-    # - unused
-    # - varcheck
+      - unused
+      - varcheck
     # - whitespace
     # - gocognit
 
