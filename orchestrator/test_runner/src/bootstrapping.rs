@@ -104,7 +104,11 @@ pub async fn deploy_contracts(contact: &Contact) {
     // both files are just in the PWD
     const A: [&str; 3] = ["contract-deployer", "Gravity.json", "GravityERC721.json"];
     // files are placed in a root /solidity/ folder
-    const B: [&str; 3] = ["/solidity/contract-deployer", "/solidity/Gravity.json", "/solidity/GravityERC721.json"];
+    const B: [&str; 3] = [
+        "/solidity/contract-deployer",
+        "/solidity/Gravity.json",
+        "/solidity/GravityERC721.json",
+    ];
     // the default unmoved locations for the Gravity repo
     const C: [&str; 4] = [
         "/gravity/solidity/contract-deployer.ts",
