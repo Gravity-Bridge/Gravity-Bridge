@@ -102,13 +102,18 @@ pub async fn deploy_contracts(contact: &Contact) {
     // deployments more straightforward.
 
     // both files are just in the PWD
-    const A: [&str; 2] = ["contract-deployer", "Gravity.json"];
+    const A: [&str; 3] = ["contract-deployer", "Gravity.json", "GravityERC721.json"];
     // files are placed in a root /solidity/ folder
-    const B: [&str; 2] = ["/solidity/contract-deployer", "/solidity/Gravity.json"];
+    const B: [&str; 3] = [
+        "/solidity/contract-deployer",
+        "/solidity/Gravity.json",
+        "/solidity/GravityERC721.json",
+    ];
     // the default unmoved locations for the Gravity repo
-    const C: [&str; 3] = [
+    const C: [&str; 4] = [
         "/gravity/solidity/contract-deployer.ts",
         "/gravity/solidity/artifacts/contracts/Gravity.sol/Gravity.json",
+        "/gravity/solidity/artifacts/contracts/GravityERC721.sol/GravityERC721.json",
         "/gravity/solidity/",
     ];
     let output = if all_paths_exist(&A) || all_paths_exist(&B) {
@@ -119,6 +124,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", paths[1]),
+                &format!("--contractERC721={}", paths[2]),
                 "--test-mode=true",
             ])
             .output()
@@ -132,9 +138,10 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", C[1]),
+                &format!("--contractERC721={}", C[2]),
                 "--test-mode=true",
             ])
-            .current_dir(C[2])
+            .current_dir(C[3])
             .output()
             .expect("Failed to deploy contracts!")
     } else {
@@ -195,7 +202,7 @@ fn all_paths_exist(input: &[&str]) -> bool {
     true
 }
 
-fn return_existing<'a>(a: [&'a str; 2], b: [&'a str; 2]) -> [&'a str; 2] {
+fn return_existing<'a>(a: [&'a str; 3], b: [&'a str; 3]) -> [&'a str; 3] {
     if all_paths_exist(&a) {
         a
     } else if all_paths_exist(&b) {

@@ -19,6 +19,8 @@ const args = commandLineArgs([
   { name: "eth-privkey", type: String },
   // the gravity contract .json file
   { name: "contract", type: String },
+  // the gravityERC721 contract .json file
+  { name: "contractERC721", type: String },
   // test mode, if enabled this script deploys three ERC20 contracts for testing
   { name: "test-mode", type: String },
 ]);
@@ -235,8 +237,12 @@ async function deploy() {
   await gravity.deployed();
   console.log("Gravity deployed at Address - ", gravity.address);
   await submitGravityAddress(gravity.address);
+  
+  console.log("Starting Gravity ERC721 contract deploy");
+  const { abi: abiERC721, bytecode: bytecodeERC721 } = getContractArtifacts(args["contractERC721"]);
+  const factoryERC721 = new ethers.ContractFactory(abiERC721, bytecodeERC721, wallet);
 
-  const gravityERC721 = (await factory.deploy(
+  const gravityERC721 = (await factoryERC721.deploy(
     gravity.address
   ) as GravityERC721);
 
