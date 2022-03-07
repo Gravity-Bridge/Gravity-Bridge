@@ -208,10 +208,10 @@ func GetOutgoingTxPoolKey(fee types.InternalERC20Token, id uint64) string {
 	amount := make([]byte, 32)
 	amount = fee.Amount.BigInt().FillBytes(amount)
 
-	a := append(amount, types.UInt64Bytes(id)...)
-	b := append([]byte(fee.Contract.GetAddress().String()), a...)
-	r := append([]byte(OutgoingTXPoolKey), b...)
-	return ConvertByteArrToString(r)
+	amount = append(amount, types.UInt64Bytes(id)...)
+	amount = append([]byte(fee.Contract.GetAddress().String()), amount...)
+	amount = append([]byte(OutgoingTXPoolKey), amount...)
+	return ConvertByteArrToString(amount)
 }
 
 func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) string {

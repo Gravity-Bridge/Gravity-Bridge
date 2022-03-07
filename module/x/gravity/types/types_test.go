@@ -125,32 +125,37 @@ func TestValsetPowerDiff(t *testing.T) {
 }
 
 func TestValsetSort(t *testing.T) {
+	address1 := gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(1)}, 20)).String()
+	address2 := gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(2)}, 20)).String()
+	address3 := gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(3)}, 20)).String()
+
 	specs := map[string]struct {
 		src BridgeValidators
 		exp BridgeValidators
 	}{
+
 		"by power desc": {
 			src: BridgeValidators{
-				{Power: 1, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(3)}, 20)).String()},
-				{Power: 2, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(1)}, 20)).String()},
-				{Power: 3, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(2)}, 20)).String()},
+				{Power: 1, EthereumAddress: address3},
+				{Power: 2, EthereumAddress: address1},
+				{Power: 3, EthereumAddress: address2},
 			},
 			exp: BridgeValidators{
-				{Power: 3, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(2)}, 20)).String()},
-				{Power: 2, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(1)}, 20)).String()},
-				{Power: 1, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(3)}, 20)).String()},
+				{Power: 3, EthereumAddress: address2},
+				{Power: 2, EthereumAddress: address1},
+				{Power: 1, EthereumAddress: address3},
 			},
 		},
 		"by eth addr on same power": {
 			src: BridgeValidators{
-				{Power: 1, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(2)}, 20)).String()},
-				{Power: 1, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(1)}, 20)).String()},
-				{Power: 1, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(3)}, 20)).String()},
+				{Power: 1, EthereumAddress: address2},
+				{Power: 1, EthereumAddress: address1},
+				{Power: 1, EthereumAddress: address3},
 			},
 			exp: BridgeValidators{
-				{Power: 1, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(1)}, 20)).String()},
-				{Power: 1, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(2)}, 20)).String()},
-				{Power: 1, EthereumAddress: gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(3)}, 20)).String()},
+				{Power: 1, EthereumAddress: address1},
+				{Power: 1, EthereumAddress: address2},
+				{Power: 1, EthereumAddress: address3},
 			},
 		},
 		// if you're thinking about changing this due to a change in the sorting algorithm

@@ -229,7 +229,7 @@ type Gravity struct {
 	// simulation manager
 	sm *module.SimulationManager
 
-	//configurator
+	// configurator
 	configurator module.Configurator
 }
 
@@ -915,7 +915,7 @@ func (app *Gravity) registerUpgradeHandlers() {
 			fromVM[moduleName] = module.ConsensusVersion()
 		}
 
-		//set gravity version to 1 in order to execute migration scripts from 1 to 2
+		// set gravity version to 1 in order to execute migration scripts from 1 to 2
 		fromVM[gravitytypes.StoreKey] = 1
 
 		return app.mm.RunMigrations(ctx, app.configurator, fromVM)

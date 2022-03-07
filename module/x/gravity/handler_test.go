@@ -268,7 +268,7 @@ func TestEthereumBlacklist(t *testing.T) {
 	// Make sure that the balance is empty since funds should be sent to the community pool
 	assert.Equal(t, balance, sdk.Coins{})
 
-	//Check community pool has received the money instead of the address
+	// Check community pool has received the money instead of the address
 	community_pool_balance := input.DistKeeper.GetFeePool(ctx).CommunityPool
 	assert.Equal(t, sdk.NewDecFromInt(amountA), community_pool_balance.AmountOf(denom))
 

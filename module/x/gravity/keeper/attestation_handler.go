@@ -2,11 +2,12 @@ package keeper
 
 import (
 	"fmt"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
 	"math/big"
 	"strconv"
 	"strings"
+
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
 
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
@@ -39,9 +40,9 @@ func (a AttestationHandler) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins
 	if err := a.keeper.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distypes.ModuleName, coins); err != nil {
 		return sdkerrors.Wrap(err, "transfer to community pool failed")
 	}
-	feePool := (*a.keeper.DistKeeper).GetFeePool(ctx)
+	feePool := a.keeper.DistKeeper.GetFeePool(ctx)
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
-	(*a.keeper.DistKeeper).SetFeePool(ctx, feePool)
+	a.keeper.DistKeeper.SetFeePool(ctx, feePool)
 	return nil
 }
 

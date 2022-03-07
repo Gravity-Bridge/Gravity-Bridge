@@ -223,7 +223,7 @@ func (i InternalOutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 	// Create the methodName argument which salts the signature
 	methodNameBytes := []uint8("transactionBatch")
 	var batchMethodName [32]uint8
-	copy(batchMethodName[:], methodNameBytes[:])
+	copy(batchMethodName[:], methodNameBytes)
 
 	// Run through the elements of the batch and serialize them
 	txAmounts := make([]*big.Int, len(i.Transactions))
@@ -272,7 +272,7 @@ func (c OutgoingLogicCall) GetCheckpoint(gravityIDstring string) []byte {
 	// Create the methodName argument which salts the signature
 	methodNameBytes := []uint8("logicCall")
 	var logicCallMethodName [32]uint8
-	copy(logicCallMethodName[:], methodNameBytes[:])
+	copy(logicCallMethodName[:], methodNameBytes)
 
 	// the contract argument is not a arbitrary length array but a fixed length 32 byte
 	// array, therefore we have to utf8 encode the string (the default in this case) and
@@ -299,7 +299,7 @@ func (c OutgoingLogicCall) GetCheckpoint(gravityIDstring string) []byte {
 	payload := make([]byte, len(c.Payload))
 	copy(payload, c.Payload)
 	var invalidationId [32]byte
-	copy(invalidationId[:], c.InvalidationId[:])
+	copy(invalidationId[:], c.InvalidationId)
 
 	// the methodName needs to be the same as the 'name' above in the checkpointAbiJson
 	// but other than that it's a constant that has no impact on the output. This is because

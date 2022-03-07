@@ -320,7 +320,7 @@ func (k Keeper) createBatchFees(ctx sdk.Context, maxElements uint) map[string]ty
 		if fees, ok := batchFeesMap[feeAddrStr.Hex()]; ok {
 			if fees.TxCount < uint64(maxElements) {
 				fees.TotalFees = batchFeesMap[feeAddrStr.Hex()].TotalFees.Add(tx.Erc20Fee.Amount)
-				fees.TxCount = fees.TxCount + 1
+				fees.TxCount++
 				batchFeesMap[feeAddrStr.Hex()] = fees
 			}
 		} else {

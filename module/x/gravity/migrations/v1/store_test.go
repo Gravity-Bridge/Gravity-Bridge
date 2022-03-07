@@ -19,6 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const denom string = "graviton"
+const tokenContract string = "0x2a24af0501a534fca004ee1bd667b783f205a546"
+const ethAddr string = "0x2a24af0501a534fca004ee1bd667b783f205a546"
+
 // denomToERC20Key hasn't changed
 func oldGetDenomToERC20Key(denom string) string {
 	return v1.DenomToERC20Key + denom
@@ -46,10 +50,10 @@ func oldGetOutgoingTxPoolKey(fee types.InternalERC20Token, id uint64) string {
 	amount := make([]byte, 32)
 	amount = fee.Amount.BigInt().FillBytes(amount)
 
-	a := append(amount, types.UInt64Bytes(id)...)
-	b := append([]byte(fee.Contract.GetAddress().Hex()), a...)
-	r := append([]byte(v1.OutgoingTXPoolKey), b...)
-	return v1.ConvertByteArrToString(r)
+	amount = append(amount, types.UInt64Bytes(id)...)
+	amount = append([]byte(fee.Contract.GetAddress().Hex()), amount...)
+	amount = append([]byte(v1.OutgoingTXPoolKey), amount...)
+	return v1.ConvertByteArrToString(amount)
 }
 
 func oldGetOutgoingTxBatchKey(tokenContract string, nonce uint64) string {
@@ -60,8 +64,6 @@ func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	denom := "graviton"
-	tokenContract := "0x2a24af0501a534fca004ee1bd667b783f205a546"
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldGetDenomToERC20Key(denom)), []byte(tokenContract))
 
 	err := v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
@@ -79,8 +81,6 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	denom := "graviton"
-	tokenContract := "0x2a24af0501a534fca004ee1bd667b783f205a546"
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldGetERC20ToDenomKey(tokenContract)), []byte(denom))
 
 	err := v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
@@ -101,7 +101,7 @@ func TestMigrateEthAddressByValidator(t *testing.T) {
 
 	validator, err := sdk.ValAddressFromBech32("gravityvaloper1jpz0ahls2chajf78nkqczdwwuqcu97w6j77vg6")
 	assert.NoError(t, err)
-	ethAddr := "0x2a24af0501a534fca004ee1bd667b783f205a546"
+
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldEthAddressByValidatorKey(validator)), []byte(ethAddr))
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldEthAddressByValidatorKey(validator)), []byte(ethAddr))
 
@@ -398,7 +398,6 @@ func TestMigrateStoreKeysFromKeys(t *testing.T) {
 	marshaler := keeper.MakeTestMarshaler()
 	dummyValue := []byte("dummy")
 
-	denom := "graviton"
 	nonce := uint64(1234)
 
 	accAddr, _ := sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")

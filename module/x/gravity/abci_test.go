@@ -532,7 +532,7 @@ func TestBatchTimeout(t *testing.T) {
 
 	pk.SetLastObservedEthereumBlockHeight(ctx, 500)
 
-	//increase number of max txs to create more profitable batch
+	// increase number of max txs to create more profitable batch
 	b2, err2 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
 	require.NoError(t, err2)
 	// this is exactly block 500 plus twelve hours

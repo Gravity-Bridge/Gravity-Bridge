@@ -252,7 +252,7 @@ func (v Valset) GetCheckpoint(gravityIDstring string) []byte {
 
 	checkpointBytes := []uint8("checkpoint")
 	var checkpoint [32]uint8
-	copy(checkpoint[:], checkpointBytes[:])
+	copy(checkpoint[:], checkpointBytes)
 
 	memberAddresses := make([]gethcommon.Address, len(v.Members))
 	convertedPowers := make([]*big.Int, len(v.Members))

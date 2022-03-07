@@ -249,7 +249,7 @@ func migrateKeys(store sdk.KVStore, cdc codec.BinaryCodec) error {
 	return nil
 }
 
-//key conversion functions
+// key conversion functions
 func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix string, getNewKey func([]byte, codec.BinaryCodec) ([]byte, error)) error {
 	oldStore := prefix.NewStore(store, []byte(keyPrefix))
 	oldStoreIter := oldStore.Iterator(nil, nil)
@@ -282,9 +282,10 @@ func migrateKeysFromKeys(store sdk.KVStore, oldKeyPrefix string, newKeyPrefix []
 	oldStoreIter := oldStore.Iterator(nil, nil)
 	defer oldStoreIter.Close()
 	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
-		newKey := append(newKeyPrefix, oldStoreIter.Key()...)
+		newKeyCopy := newKeyPrefix
+		newKeyCopy = append(newKeyCopy, oldStoreIter.Key()...)
 		// Set new key on store. Values don't change.
-		store.Set(newKey, oldStoreIter.Value())
+		store.Set(newKeyCopy, oldStoreIter.Value())
 		oldStore.Delete(oldStoreIter.Key())
 	}
 	return nil
@@ -392,7 +393,7 @@ func convertLogicCallConfirmKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte,
 	return types.GetLogicConfirmKey(invalidationIdBytes, outgoingLogicConfirm.InvalidationNonce, orchAddr), nil
 }
 
-//helper functions
+// helper functions
 func unpackAttestationClaim(att *types.Attestation, cdc codec.BinaryCodec) (types.EthereumClaim, error) {
 	var msg types.EthereumClaim
 	err := cdc.UnpackAny(att.Claim, &msg)

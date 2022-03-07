@@ -158,7 +158,7 @@ func TestBatches(t *testing.T) {
 	// CREATE SECOND, MORE PROFITABLE BATCH
 	// ====================================
 
-	//first check that less profitable batch cannot be created
+	// first check that less profitable batch cannot be created
 	noBatch, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
 	require.Nil(t, noBatch)
 	require.Error(t, err)
@@ -238,7 +238,7 @@ func TestBatches(t *testing.T) {
 	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, secondBatch.BatchNonce, secondBatch.TokenContract)
 	require.Equal(t, len(OrchAddrs), len(secondBatchConfirms))
 
-	//check that last added batch is the one with the biggest nonce
+	// check that last added batch is the one with the biggest nonce
 	lastOutgoingBatch := input.GravityKeeper.GetLastOutgoingBatchByTokenType(ctx, *myTokenContractAddr)
 	require.NotNil(t, lastOutgoingBatch)
 	assert.Equal(t, lastOutgoingBatch.BatchNonce, secondBatch.BatchNonce)
@@ -577,7 +577,7 @@ func TestManyBatches(t *testing.T) {
 
 			_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 			require.NoError(t, err)
-			//create batch after every 100 txs to be able to create more profitable batches
+			// create batch after every 100 txs to be able to create more profitable batches
 			if (v+1)%100 == 0 {
 				batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *contractAddr, 100)
 				require.NoError(t, err)
@@ -823,7 +823,7 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 		// 5: tx amount is 104, fee is 5, id is 5
 	}
 
-	//check that blacklisted tx fee is not insluded in profitability calculation
+	// check that blacklisted tx fee is not insluded in profitability calculation
 	currentFees := input.GravityKeeper.GetBatchFeeByTokenType(ctx, *myTokenContractAddr, 10)
 	assert.NotNil(t, currentFees)
 	assert.True(t, currentFees.TotalFees.Equal(sdk.NewInt(8)))
@@ -855,7 +855,7 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 
 }
 
-//tests total batch fee collected from all of the txs in the batch
+// tests total batch fee collected from all of the txs in the batch
 func TestGetFees(t *testing.T) {
 
 	txs := []types.OutgoingTransferTx{
@@ -922,12 +922,12 @@ func TestBatchConfirms(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		//add tx to the pool
+		// add tx to the pool
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amount, fee)
 		require.NoError(t, err)
 		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v", i, amount, fee))
 
-		//create batch
+		// create batch
 		_, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 1)
 		require.NoError(t, err)
 	}
@@ -952,7 +952,7 @@ func TestBatchConfirms(t *testing.T) {
 		}
 	}
 
-	//try to set connfirm with invalid address
+	// try to set connfirm with invalid address
 	conf := &types.MsgConfirmBatch{
 		Nonce:         outogoingBatches[0].BatchNonce,
 		TokenContract: outogoingBatches[0].TokenContract.GetAddress().Hex(),
@@ -962,7 +962,7 @@ func TestBatchConfirms(t *testing.T) {
 	}
 	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, conf) })
 
-	//try to set connfirm with invalid token contract
+	// try to set connfirm with invalid token contract
 	conf = &types.MsgConfirmBatch{
 		Nonce:         outogoingBatches[0].BatchNonce,
 		TokenContract: "invalid token",
@@ -993,7 +993,7 @@ func TestLastSlashedBatchBlock(t *testing.T) {
 	assert.Equal(t, uint64(0), input.GravityKeeper.GetLastSlashedBatchBlock(ctx))
 	assert.NotPanics(t, func() { input.GravityKeeper.SetLastSlashedBatchBlock(ctx, 2) })
 	assert.Equal(t, uint64(2), input.GravityKeeper.GetLastSlashedBatchBlock(ctx))
-	//LastSlashedBatchBlock cannot be set to lower than the current LastSlashedBatchBlock value
+	// LastSlashedBatchBlock cannot be set to lower than the current LastSlashedBatchBlock value
 	assert.Panics(t, func() { input.GravityKeeper.SetLastSlashedBatchBlock(ctx, 1) })
 	assert.Equal(t, uint64(2), input.GravityKeeper.GetLastSlashedBatchBlock(ctx))
 	assert.NotPanics(t, func() { input.GravityKeeper.SetLastSlashedBatchBlock(ctx, 129) })

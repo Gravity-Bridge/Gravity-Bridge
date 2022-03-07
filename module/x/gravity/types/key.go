@@ -300,7 +300,7 @@ func GetPastEthSignatureCheckpointKey(checkpoint []byte) []byte {
 	return AppendBytes(PastEthSignatureCheckpointKey, []byte(convertByteArrToString(checkpoint)))
 }
 
-//This function is broken and it should not be used in other places except in GetPastEthSignatureCheckpointKey
+// This function is broken and it should not be used in other places except in GetPastEthSignatureCheckpointKey
 func convertByteArrToString(value []byte) string {
 	var ret strings.Builder
 	for i := 0; i < len(value); i++ {

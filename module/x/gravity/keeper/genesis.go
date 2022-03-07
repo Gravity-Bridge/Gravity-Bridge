@@ -9,19 +9,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-// InitGenesis starts a chain from a genesis state
-func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
-	k.SetParams(ctx, *data.Params)
-
-	// restore various nonces, this MUST match GravityNonces in genesis
-	k.SetLatestValsetNonce(ctx, data.GravityNonces.LatestValsetNonce)
-	k.setLastObservedEventNonce(ctx, data.GravityNonces.LastObservedNonce)
-	k.SetLastSlashedValsetNonce(ctx, data.GravityNonces.LastSlashedValsetNonce)
-	k.SetLastSlashedBatchBlock(ctx, data.GravityNonces.LastSlashedBatchBlock)
-	k.SetLastSlashedLogicCallBlock(ctx, data.GravityNonces.LastSlashedLogicCallBlock)
-	k.setID(ctx, data.GravityNonces.LastTxPoolId, types.KeyLastTXPoolID)
-	k.setID(ctx, data.GravityNonces.LastBatchId, types.KeyLastOutgoingBatchID)
-
+func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	// reset valsets in state
 	highest := uint64(0)
 	for _, vs := range data.Valsets {
@@ -63,6 +51,22 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		conf := conf
 		k.SetLogicCallConfirm(ctx, &conf)
 	}
+}
+
+// InitGenesis starts a chain from a genesis state
+func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
+	k.SetParams(ctx, *data.Params)
+
+	// restore various nonces, this MUST match GravityNonces in genesis
+	k.SetLatestValsetNonce(ctx, data.GravityNonces.LatestValsetNonce)
+	k.setLastObservedEventNonce(ctx, data.GravityNonces.LastObservedNonce)
+	k.SetLastSlashedValsetNonce(ctx, data.GravityNonces.LastSlashedValsetNonce)
+	k.SetLastSlashedBatchBlock(ctx, data.GravityNonces.LastSlashedBatchBlock)
+	k.SetLastSlashedLogicCallBlock(ctx, data.GravityNonces.LastSlashedLogicCallBlock)
+	k.setID(ctx, data.GravityNonces.LastTxPoolId, []byte(types.KeyLastTXPoolID))
+	k.setID(ctx, data.GravityNonces.LastBatchId, []byte(types.KeyLastOutgoingBatchID))
+
+	initBridgeDataFromGenesis(ctx, k, data)
 
 	// reset pool transactions in state
 	for _, tx := range data.UnbatchedTransfers {

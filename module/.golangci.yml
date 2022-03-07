@@ -1,36 +1,28 @@
 linters:
   enable:
-    # - bodyclose
+      - bodyclose
       - deadcode
-    # - depguard
-    # - dogsled
-    # - dupl
-    # - errcheck
-    # - exhaustivestruct
-    # - gochecknoinits
-    # - goconst
-    # - gocritic
-    # - gocyclo
-    # - godox
-    # - gofmt
-    # - goimports
-    # - gosec
+      - depguard
+      - dogsled
+      - dupl
+      - goconst
+      - gocritic
+      - gocyclo
+      - gofmt
       - gosimple
       - govet
       - ineffassign
-    # - misspell
-    # - nakedret
-    # - prealloc
       - staticcheck
       - structcheck
-    # - stylecheck
       - typecheck
-    # - unconvert
-    # - unparam
       - unused
       - varcheck
-    # - whitespace
-    # - gocognit
+
+    # - exhaustivestruct
+    # - errcheck
+    # - gosec
+    # - goimports
+
 
 linters-settings:
   govet:
@@ -46,6 +38,13 @@ linters-settings:
     # The matching patterns can use matching syntax from https://pkg.go.dev/path#Match
     # If this list is empty, all structs are tested.
     struct-patterns:
+
+issues:
+  exclude-rules:
+    - path: x/gravity/abci.go
+      linters:
+        - dupl
+
   golint:
     # minimal confidence for issues, default is 0.8
     min-confidence: 0

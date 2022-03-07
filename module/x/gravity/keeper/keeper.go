@@ -272,7 +272,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 	// we iterated over a map, so now we have to sort to ensure the
 	// output here is deterministic, eth address chosen for no particular
 	// reason
-	sort.Slice(result[:], func(i, j int) bool {
+	sort.Slice(result, func(i, j int) bool {
 		return result[i].EthAddress < result[j].EthAddress
 	})
 

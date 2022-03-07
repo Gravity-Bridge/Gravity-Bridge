@@ -490,7 +490,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 	}{
 		"find batch": {
 			expResp: types.QueryLastPendingBatchRequestByAddrResponse{Batch: []types.OutgoingTxBatch{
-				types.OutgoingTxBatch{
+				{
 					BatchNonce:   1,
 					BatchTimeout: 0,
 					Transactions: []types.OutgoingTransferTx{

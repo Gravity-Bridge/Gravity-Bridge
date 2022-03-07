@@ -96,7 +96,7 @@ func (b AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry
 	types.RegisterInterfaces(registry)
 }
 
-//____________________________________________________________________________
+// ___________________________________________________________________________
 
 // AppModule object for module implementation
 type AppModule struct {
@@ -177,7 +177,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.Val
 	return []abci.ValidatorUpdate{}
 }
 
-//____________________________________________________________________________
+// ___________________________________________________________________________
 
 // AppModuleSimulation functions
 
