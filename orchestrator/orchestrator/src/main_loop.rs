@@ -13,6 +13,7 @@ use cosmos_gravity::{
         get_oldest_unsigned_valsets,
     },
     send::{send_batch_confirm, send_logic_call_confirm, send_valset_confirms},
+    utils::{get_last_event_nonce_with_retry},
 };
 use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
@@ -175,6 +176,28 @@ pub async fn eth_oracle_main_loop(
             }
         }
 
+        let last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
+            &mut grpc_client,
+            our_cosmos_address.clone(),
+            contact.get_prefix().clone(),
+        )
+        .await
+        .into();
+
+        if last_event_nonce < last_checked_event {
+            // validator went back in history
+            info!("Governance unhalt vote must have happened, resetting the block to check!");
+            last_checked_event = last_event_nonce;
+            last_checked_block = get_last_checked_block(
+                grpc_client.clone(),
+                our_cosmos_address,
+                contact.get_prefix(),
+                gravity_contract_address,
+                &web3,
+            )
+            .await;
+        }
+
         // Relays events from Ethereum -> Cosmos
         match check_for_events(
             &web3,
@@ -191,21 +214,9 @@ pub async fn eth_oracle_main_loop(
             Ok(nonces) => {
                 // this output CheckedNonces is accurate unless a governance vote happens
                 last_checked_block = nonces.block_number;
-                if last_checked_event > nonces.event_nonce {
-                    // validator went back in history
-                    info!(
-                        "Governance unhalt vote must have happened, resetting the block to check!"
-                    );
-                    last_checked_block = get_last_checked_block(
-                        grpc_client.clone(),
-                        our_cosmos_address,
-                        contact.get_prefix(),
-                        gravity_contract_address,
-                        &web3,
-                    )
-                    .await;
+                if nonces.event_nonce > last_checked_event {
+                    last_checked_event = nonces.event_nonce;
                 }
-                last_checked_event = nonces.event_nonce;
                 metrics_latest(last_checked_event.to_u64_digits()[0], "last_checked_event");
             }
             Err(e) => {
