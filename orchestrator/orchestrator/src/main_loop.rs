@@ -13,7 +13,7 @@ use cosmos_gravity::{
         get_oldest_unsigned_valsets,
     },
     send::{send_batch_confirm, send_logic_call_confirm, send_valset_confirms},
-    utils::{get_last_event_nonce_with_retry},
+    utils::get_last_event_nonce_with_retry,
 };
 use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
@@ -176,9 +176,12 @@ pub async fn eth_oracle_main_loop(
             }
         }
 
+        // if the governance vote reset last event nonce sent by validator to some lower value, we can detect this
+        // by comparing last_event_nonce retrieved from the chain with last_checked_event saved by the orchestrator
+        // in order to reset last_checked_block and last_checked_event and continue from that point
         let last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
             &mut grpc_client,
-            our_cosmos_address.clone(),
+            our_cosmos_address,
             contact.get_prefix().clone(),
         )
         .await
@@ -212,7 +215,10 @@ pub async fn eth_oracle_main_loop(
         .await
         {
             Ok(nonces) => {
-                // this output CheckedNonces is accurate unless a governance vote happens
+                // If the governance happened while check_for_events() was executing and there were no new event nonces,
+                // nonces.event_nonce would return lower value than last_checked_event. We want to keep last_checked_event
+                // value so it could be used in the next iteration to check if we should return to the
+                // earlier block and continue from that point. CheckedNonces is accurate unless a governance vote happens.
                 last_checked_block = nonces.block_number;
                 if nonces.event_nonce > last_checked_event {
                     last_checked_event = nonces.event_nonce;

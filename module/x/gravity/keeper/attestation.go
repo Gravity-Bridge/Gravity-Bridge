@@ -35,7 +35,7 @@ func (k Keeper) Attest(
 	// in the endBlocker.
 	lastEventNonce := k.GetLastEventNonceByValidator(ctx, valAddr)
 	if claim.GetEventNonce() != lastEventNonce+1 {
-		return nil, types.ErrNonContiguousEventNonce
+		return nil, fmt.Errorf(types.ErrNonContiguousEventNonce.Error(), lastEventNonce+1, claim.GetEventNonce())
 	}
 
 	// Tries to get an attestation with the same eventNonce and claim as the claim that was submitted.
