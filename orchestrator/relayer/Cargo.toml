@@ -31,4 +31,4 @@ openssl-probe = "0.1"
 
 
 [dev-dependencies]
-actix = "0.12"
+actix = "0.13"

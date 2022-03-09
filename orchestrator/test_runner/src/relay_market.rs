@@ -92,7 +92,7 @@ async fn setup_batch_test(
         )
         .await;
     assert!(
-        !weth_acquired.is_err(),
+        weth_acquired.is_ok(),
         "Unable to wrap eth via web30.wrap_eth() {:?}",
         weth_acquired
     );
@@ -122,7 +122,7 @@ async fn setup_batch_test(
     }
     info!("Swap result is {:?}", token_acquired);
     assert!(
-        !token_acquired.is_err(),
+        token_acquired.is_ok(),
         "Unable to give the miner 1000 WETH worth of {}",
         erc20_contract
     );
