@@ -286,10 +286,7 @@ pub async fn send_ethereum_claims(
             block_height: downcast_uint256(valset.block_height).unwrap(),
             members: valset.members.iter().map(|v| v.into()).collect(),
             reward_amount: valset.reward_amount.to_string(),
-            reward_token: valset
-                .reward_token
-                .unwrap_or_else(|| *ZERO_ADDRESS)
-                .to_string(),
+            reward_token: valset.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),
             orchestrator: our_address.to_string(),
         };
         let msg = Msg::new("/gravity.v1.MsgValsetUpdatedClaim", claim);
