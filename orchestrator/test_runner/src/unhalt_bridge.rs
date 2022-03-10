@@ -6,6 +6,7 @@ use bytes::BytesMut;
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::proposals::submit_unhalt_bridge_proposal;
 use cosmos_gravity::query::{get_attestations, get_last_event_nonce_for_validator};
+use deep_space::address::Address as CosmosAddress;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::{Contact, Fee};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -168,6 +169,19 @@ pub async fn unhalt_bridge_test(
         initial_valid_nonce
     );
 
+    //checking the balance before the bridge is unhalted
+    let balance_after_halt = contact
+        .get_balance(
+            bridge_user.cosmos_address,
+            format!("gravity{}", erc20_address),
+        )
+        .await
+        .unwrap()
+        .unwrap()
+        .amount;
+
+    info!("Balance after halting bridge {}", balance_after_halt);
+
     info!("Preparing governance proposal!!");
     // Unhalt the bridge
     submit_and_pass_unhalt_bridge_proposal(initial_valid_nonce, contact, &keys).await;
@@ -183,17 +197,23 @@ pub async fn unhalt_bridge_test(
     );
 
     // After the governance proposal the resync will happen on the next loop.
-    info!("Sleeping so that resync can start!");
-    sleep(Duration::from_secs(10)).await;
+    info!("Wait until resync is started and amount sent in the meantime is bridged!");
+    wait_for_balance_increase(
+        contact,
+        bridge_user.cosmos_address,
+        erc20_address,
+        balance_after_halt + halted_bridge_amt,
+    )
+    .await;
 
     info!("Observing attestations before bridging asset to cosmos!");
     print_sends_to_cosmos(&grpc_client, true).await;
 
     let fixed_bridge_amt = Uint256::from_str("50_000_000_000_000_000").unwrap();
     info!("Attempting to resend now that the bridge should be fixed");
-    // After the reset, our earlier halted_bridge_amt tx on the halted bridge will go through while our new
-    // fixed_bridge_amt tx goes through, we need to pass in the expected amount so the function knows what to watch for
-    let expected_increase = Some(halted_bridge_amt.clone() + fixed_bridge_amt.clone());
+    // After the reset, we checked that the deposit submitted during the period when the bridge
+    // was halted has been bridged after the chain was unhalted. Increase for the new deposit call
+    // will be equal to the new fixed_bridge_amt.
     let res = test_erc20_deposit_result(
         web30,
         contact,
@@ -203,7 +223,7 @@ pub async fn unhalt_bridge_test(
         erc20_address,
         fixed_bridge_amt.clone(),
         None,
-        expected_increase,
+        None,
     )
     .await;
     match res.is_ok() {
@@ -281,4 +301,27 @@ async fn print_sends_to_cosmos(grpc_client: &GravityQueryClient<Channel>, print_
             i, &attestation.votes, decoded
         );
     }
+}
+
+async fn wait_for_balance_increase(
+    contact: &Contact,
+    destination: CosmosAddress,
+    erc20_address: EthAddress,
+    expected_balance: Uint256,
+) {
+    let start = Instant::now();
+    while Instant::now() - start < TOTAL_TIMEOUT {
+        if let Some(new_balance) = contact
+            .get_balance(destination, format!("gravity{}", erc20_address))
+            .await
+            .unwrap()
+        {
+            if expected_balance == new_balance.amount {
+                info!("Balance increased.");
+                return;
+            }
+        }
+    }
+
+    panic!("Balance is not increased after timeout period.");
 }
