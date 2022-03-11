@@ -251,6 +251,10 @@ pub async fn get_attestations(
     let request = client
         .get_attestations(QueryAttestationsRequest {
             limit: limit.or(Some(1000u64)).unwrap(),
+            order_by: String::new(),
+            claim_type: String::new(),
+            nonce: 0,
+            height: 0,
         })
         .await?;
     let attestations = request.into_inner().attestations;

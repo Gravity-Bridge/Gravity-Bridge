@@ -36,6 +36,63 @@ pub struct Erc20Token {
     #[prost(string, tag="2")]
     pub amount: ::prost::alloc::string::String,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventObservation {
+    #[prost(string, tag="1")]
+    pub attestation_type: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub attestation_id: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventInvalidSendToCosmosReceiver {
+    #[prost(string, tag="1")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub sender: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSendToCosmos {
+    #[prost(string, tag="1")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSendToCosmosLocal {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub receiver: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub amount: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSendToCosmosIbc {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub receiver: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub channel: ::prost::alloc::string::String,
+}
 // ClaimType is the cosmos type of an event from the counterpart chain that can
 // be handled
 
@@ -63,6 +120,28 @@ pub struct BatchFees {
     pub total_fees: ::prost::alloc::string::String,
     #[prost(uint64, tag="3")]
     pub tx_count: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventWithdrawalReceived {
+    #[prost(string, tag="1")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub outgoing_tx_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventWithdrawCanceled {
+    #[prost(string, tag="1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub tx_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
 }
 /// OutgoingTxBatch represents a batch of transactions going from gravity to ETH
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -111,6 +190,28 @@ pub struct OutgoingLogicCall {
     pub invalidation_nonce: u64,
     #[prost(uint64, tag="8")]
     pub block: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventOutgoingBatchCanceled {
+    #[prost(string, tag="1")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub batch_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventOutgoingBatch {
+    #[prost(string, tag="1")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub batch_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub nonce: ::prost::alloc::string::String,
 }
 /// SignType defines messages that have been signed by an orchestrator
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -502,6 +603,101 @@ pub struct MsgSubmitBadSignatureEvidence {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgSubmitBadSignatureEvidenceResponse {
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSetOperatorAddress {
+    #[prost(string, tag="1")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub address: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventValsetConfirmKey {
+    #[prost(string, tag="1")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub key: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventBatchCreated {
+    #[prost(string, tag="1")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub batch_nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventBatchConfirmKey {
+    #[prost(string, tag="1")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub batch_confirm_key: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventBatchSendToEthClaim {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventClaim {
+    #[prost(string, tag="1")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub claim_hash: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub attestation_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventBadSignatureEvidence {
+    #[prost(string, tag="1")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bad_eth_signature: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub bad_eth_signature_subject: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventErc20DeployedClaim {
+    #[prost(string, tag="1")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventValsetUpdatedClaim {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventMultisigUpdateRequest {
+    #[prost(string, tag="1")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub multisig_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventOutgoingLogicCallCanceled {
+    #[prost(string, tag="1")]
+    pub logic_call_invalidation_id: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub logic_call_invalidation_nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSignatureSlashing {
+    #[prost(string, tag="1")]
+    pub r#type: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub address: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventOutgoingTxId {
+    #[prost(string, tag="1")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub tx_id: ::prost::alloc::string::String,
+}
 # [doc = r" Generated client implementations."] pub mod msg_client { # ! [allow (unused_variables , dead_code , missing_docs , clippy :: let_unit_value ,)] use tonic :: codegen :: * ; # [doc = " Msg defines the state transitions possible within gravity"] # [derive (Debug , Clone)] pub struct MsgClient < T > { inner : tonic :: client :: Grpc < T > , } impl MsgClient < tonic :: transport :: Channel > { # [doc = r" Attempt to create a new client by connecting to a given endpoint."] pub async fn connect < D > (dst : D) -> Result < Self , tonic :: transport :: Error > where D : std :: convert :: TryInto < tonic :: transport :: Endpoint > , D :: Error : Into < StdError > , { let conn = tonic :: transport :: Endpoint :: new (dst) ? . connect () . await ? ; Ok (Self :: new (conn)) } } impl < T > MsgClient < T > where T : tonic :: client :: GrpcService < tonic :: body :: BoxBody > , T :: ResponseBody : Body + Send + 'static , T :: Error : Into < StdError > , < T :: ResponseBody as Body > :: Error : Into < StdError > + Send , { pub fn new (inner : T) -> Self { let inner = tonic :: client :: Grpc :: new (inner) ; Self { inner } } pub fn with_interceptor < F > (inner : T , interceptor : F) -> MsgClient < InterceptedService < T , F >> where F : tonic :: service :: Interceptor , T : tonic :: codegen :: Service < http :: Request < tonic :: body :: BoxBody > , Response = http :: Response << T as tonic :: client :: GrpcService < tonic :: body :: BoxBody >> :: ResponseBody > > , < T as tonic :: codegen :: Service < http :: Request < tonic :: body :: BoxBody >> > :: Error : Into < StdError > + Send + Sync , { MsgClient :: new (InterceptedService :: new (inner , interceptor)) } # [doc = r" Compress requests with `gzip`."] # [doc = r""] # [doc = r" This requires the server to support it otherwise it might respond with an"] # [doc = r" error."] pub fn send_gzip (mut self) -> Self { self . inner = self . inner . send_gzip () ; self } # [doc = r" Enable decompressing responses with `gzip`."] pub fn accept_gzip (mut self) -> Self { self . inner = self . inner . accept_gzip () ; self } pub async fn valset_confirm (& mut self , request : impl tonic :: IntoRequest < super :: MsgValsetConfirm > ,) -> Result < tonic :: Response < super :: MsgValsetConfirmResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/ValsetConfirm") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn send_to_eth (& mut self , request : impl tonic :: IntoRequest < super :: MsgSendToEth > ,) -> Result < tonic :: Response < super :: MsgSendToEthResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/SendToEth") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn request_batch (& mut self , request : impl tonic :: IntoRequest < super :: MsgRequestBatch > ,) -> Result < tonic :: Response < super :: MsgRequestBatchResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/RequestBatch") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn confirm_batch (& mut self , request : impl tonic :: IntoRequest < super :: MsgConfirmBatch > ,) -> Result < tonic :: Response < super :: MsgConfirmBatchResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/ConfirmBatch") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn confirm_logic_call (& mut self , request : impl tonic :: IntoRequest < super :: MsgConfirmLogicCall > ,) -> Result < tonic :: Response < super :: MsgConfirmLogicCallResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/ConfirmLogicCall") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn send_to_cosmos_claim (& mut self , request : impl tonic :: IntoRequest < super :: MsgSendToCosmosClaim > ,) -> Result < tonic :: Response < super :: MsgSendToCosmosClaimResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/SendToCosmosClaim") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn batch_send_to_eth_claim (& mut self , request : impl tonic :: IntoRequest < super :: MsgBatchSendToEthClaim > ,) -> Result < tonic :: Response < super :: MsgBatchSendToEthClaimResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/BatchSendToEthClaim") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn valset_update_claim (& mut self , request : impl tonic :: IntoRequest < super :: MsgValsetUpdatedClaim > ,) -> Result < tonic :: Response < super :: MsgValsetUpdatedClaimResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/ValsetUpdateClaim") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn erc20_deployed_claim (& mut self , request : impl tonic :: IntoRequest < super :: MsgErc20DeployedClaim > ,) -> Result < tonic :: Response < super :: MsgErc20DeployedClaimResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/ERC20DeployedClaim") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn logic_call_executed_claim (& mut self , request : impl tonic :: IntoRequest < super :: MsgLogicCallExecutedClaim > ,) -> Result < tonic :: Response < super :: MsgLogicCallExecutedClaimResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/LogicCallExecutedClaim") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn set_orchestrator_address (& mut self , request : impl tonic :: IntoRequest < super :: MsgSetOrchestratorAddress > ,) -> Result < tonic :: Response < super :: MsgSetOrchestratorAddressResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/SetOrchestratorAddress") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn cancel_send_to_eth (& mut self , request : impl tonic :: IntoRequest < super :: MsgCancelSendToEth > ,) -> Result < tonic :: Response < super :: MsgCancelSendToEthResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/CancelSendToEth") ; self . inner . unary (request . into_request () , path , codec) . await } pub async fn submit_bad_signature_evidence (& mut self , request : impl tonic :: IntoRequest < super :: MsgSubmitBadSignatureEvidence > ,) -> Result < tonic :: Response < super :: MsgSubmitBadSignatureEvidenceResponse > , tonic :: Status > { self . inner . ready () . await . map_err (| e | { tonic :: Status :: new (tonic :: Code :: Unknown , format ! ("Service was not ready: {}" , e . into ())) }) ? ; let codec = tonic :: codec :: ProstCodec :: default () ; let path = http :: uri :: PathAndQuery :: from_static ("/gravity.v1.Msg/SubmitBadSignatureEvidence") ; self . inner . unary (request . into_request () , path , codec) . await } } }// Params represent the Gravity genesis and store parameters
 // gravity_id:
 // a random 32 byte value to prevent signature reuse, for example if the
@@ -869,10 +1065,32 @@ pub struct QueryDenomToErc20Response {
     #[prost(bool, tag="2")]
     pub cosmos_originated: bool,
 }
+/// QueryAttestationsRequest defines the request structure for getting recent
+/// attestations with optional query parameters. By default, a limited set of
+/// recent attestations will be returned, defined by 'limit'. These attestations
+/// can be ordered ascending or descending by nonce, that defaults to ascending.
+/// Filtering criteria may also be provided, including nonce, claim type, and
+/// height. Note, that an attestation will be returned if it matches ANY of the
+/// filter query parameters provided.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryAttestationsRequest {
+    /// limit defines how many attestations to limit in the response.
     #[prost(uint64, tag="1")]
     pub limit: u64,
+    /// order_by provides ordering of atteststions by nonce in the response. Either
+    /// 'asc' or 'desc' can be provided. If no value is provided, it defaults to
+    /// 'asc'.
+    #[prost(string, tag="2")]
+    pub order_by: ::prost::alloc::string::String,
+    /// claim_type allows filtering attestations by Ethereum claim type.
+    #[prost(string, tag="3")]
+    pub claim_type: ::prost::alloc::string::String,
+    /// nonce allows filtering attestations by Ethereum claim nonce.
+    #[prost(uint64, tag="4")]
+    pub nonce: u64,
+    /// height allows filtering attestations by Ethereum claim height.
+    #[prost(uint64, tag="5")]
+    pub height: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryAttestationsResponse {
