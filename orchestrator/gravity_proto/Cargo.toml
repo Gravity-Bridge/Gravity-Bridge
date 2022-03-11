@@ -9,5 +9,5 @@ edition = "2018"
 [dependencies]
 prost = "0.9"
 prost-types = "0.9"
-cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "^0.9.1"}
+cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.10"}
 tonic = "0.6"
