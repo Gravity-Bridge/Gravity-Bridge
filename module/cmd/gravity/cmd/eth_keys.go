@@ -91,7 +91,10 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		Address:    crypto.PubkeyToAddress(*publicKeyECDSA).Hex(),
 	}
 
-	if dryRun, _ := cmd.Flags().GetBool(flags.FlagDryRun); !dryRun {
+	if dryRun, errDryRun := cmd.Flags().GetBool(flags.FlagDryRun); !dryRun {
+		if errDryRun != nil {
+			fmt.Printf("ErrDryRun issue: %v", errDryRun)
+		}
 		clientCtx, err := client.GetClientQueryContext(cmd)
 		if err != nil {
 			return err
@@ -110,7 +113,10 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 }
 
 func printCreate(cmd *cobra.Command, keyOutput EthereumKeyOutput) error {
-	output, _ := cmd.Flags().GetString(cli.OutputFlag)
+	output, errPrintCreate := cmd.Flags().GetString(cli.OutputFlag)
+	if errPrintCreate != nil {
+		panic(fmt.Sprintf("Out of bounds access for slice. Index passed: %v", errPrintCreate))
+	}
 
 	switch output {
 	case keys.OutputFormatText:

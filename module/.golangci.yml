@@ -18,8 +18,8 @@ linters:
       - unused
       - varcheck
 
-    # - exhaustivestruct
-    # - errcheck
+      - exhaustivestruct
+      - errcheck
     # - gosec
     # - goimports
 
@@ -44,6 +44,26 @@ issues:
     - path: x/gravity/abci.go
       linters:
         - dupl
+    - path: config/
+      linters:
+        - exhaustivestruct
+        - errcheck
+    - path: contrib/
+      linters:
+        - exhaustivestruct
+        - errcheck
+    - path: proto/
+      linters:
+        - exhaustivestruct
+        - errcheck
+    - path: third_party/
+      linters:
+        - exhaustivestruct
+        - errcheck
+    - path: x/
+      linters:
+        - exhaustivestruct
+        - errcheck
 
   golint:
     # minimal confidence for issues, default is 0.8

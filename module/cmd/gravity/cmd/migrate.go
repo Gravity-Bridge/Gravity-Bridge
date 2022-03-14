@@ -3,9 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	v100 "github.com/cosmos/ibc-go/v2/modules/core/legacy/v100"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -26,6 +27,7 @@ const flagGenesisTime = "genesis-time"
 // MigrateGenesisCmd returns a command to execute genesis state migration.
 // This is a copy of the genutil migrate cmd, with minimal changes to call the ibc v1->v2 genesis migration code
 func MigrateGravityGenesisCmd() *cobra.Command {
+	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
 		Use:   "ibc-migrate [genesis-file]",
 		Short: "Migrate gravity genesis to ibc v2",
@@ -70,7 +72,10 @@ $ %s ibc-migrate /path/to/genesis.json --chain-id=gravity-bridge-2 --genesis-tim
 				return errors.Wrap(err, "failed to JSON marshal migrated genesis state")
 			}
 
-			genesisTime, _ := cmd.Flags().GetString(flagGenesisTime)
+			genesisTime, errGenesisTime := cmd.Flags().GetString(flagGenesisTime)
+			if errGenesisTime != nil {
+				fmt.Printf("Genesis time has an error with string")
+			}
 			if genesisTime != "" {
 				var t time.Time
 
@@ -82,7 +87,10 @@ $ %s ibc-migrate /path/to/genesis.json --chain-id=gravity-bridge-2 --genesis-tim
 				genDoc.GenesisTime = t
 			}
 
-			chainID, _ := cmd.Flags().GetString(flags.FlagChainID)
+			chainID, errChainID := cmd.Flags().GetString(flags.FlagChainID)
+			if errChainID != nil {
+				fmt.Printf("chainID has an error")
+			}
 			if chainID != "" {
 				genDoc.ChainID = chainID
 			}
