@@ -45,7 +45,10 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			config := serverCtx.Config
 
-			homeFlag, _ := cmd.Flags().GetString(flags.FlagHome)
+			homeFlag, errHomeFlag := cmd.Flags().GetString(flags.FlagHome)
+			if errHomeFlag != nil {
+				fmt.Printf("Homeflag has an error %v", errHomeFlag)
+			}
 			if len(homeFlag) > 0 {
 				config = config.SetRoot(homeFlag)
 			} else {
@@ -54,7 +57,10 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				inBuf := bufio.NewReader(cmd.InOrStdin())
-				keyringBackend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
+				keyringBackend, errKeyringBackend := cmd.Flags().GetString(flags.FlagKeyringBackend)
+				if errKeyringBackend != nil {
+					fmt.Printf("KeyringBackend has an issue: %v", errKeyringBackend)
+				}
 
 				// attempt to lookup address from Keybase if no address was provided
 				kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, clientCtx.HomeDir, inBuf)
@@ -75,9 +81,18 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 				return fmt.Errorf("failed to parse coins: %w", err)
 			}
 
-			vestingStart, _ := cmd.Flags().GetInt64(flagVestingStart)
-			vestingEnd, _ := cmd.Flags().GetInt64(flagVestingEnd)
-			vestingAmtStr, _ := cmd.Flags().GetString(flagVestingAmt)
+			vestingStart, errVestingStart := cmd.Flags().GetInt64(flagVestingStart)
+			if errVestingStart != nil {
+				fmt.Printf("errVestingStart %v", errVestingStart)
+			}
+			vestingEnd, errVestingEnd := cmd.Flags().GetInt64(flagVestingEnd)
+			if errVestingEnd != nil {
+				fmt.Printf("errVestingEnd %v", errVestingEnd)
+			}
+			vestingAmtStr, errVestingAmtStr := cmd.Flags().GetString(flagVestingAmt)
+			if errVestingStart != nil {
+				fmt.Printf("errVestingAmtStr %v", errVestingAmtStr)
+			}
 
 			vestingAmt, err := sdk.ParseCoinsNormalized(vestingAmtStr)
 			if err != nil {

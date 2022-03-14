@@ -39,8 +39,12 @@ import (
 )
 
 // GenTxCmd builds the application's gentx command.
+//nolint:gocyclo
 func GenTxCmd(mbm module.BasicManager, txEncCfg client.TxEncodingConfig, genBalIterator types.GenesisBalancesIterator, defaultNodeHome string) *cobra.Command {
-	ipDefault, _ := server.ExternalIP()
+	ipDefault, errIpDefault := server.ExternalIP()
+	if errIpDefault != nil {
+		fmt.Printf("errIpDefault %v", errIpDefault)
+	}
 	fsCreateValidator, defaultsDesc := cli.CreateValidatorMsgFlagSet(ipDefault)
 
 	//nolint: exhaustivestruct
@@ -74,7 +78,11 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			cdc := clientCtx.Codec
 
 			config := serverCtx.Config
-			homeFlag, _ := cmd.Flags().GetString(flags.FlagHome)
+			homeFlag, errHomeFlag := cmd.Flags().GetString(flags.FlagHome)
+			if errHomeFlag != nil {
+				fmt.Printf("errHomeFlag %v", errHomeFlag)
+			}
+
 			if len(homeFlag) > 0 {
 				config = config.SetRoot(homeFlag)
 			} else {
@@ -86,12 +94,18 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			}
 
 			// read --nodeID, if empty take it from priv_validator.json
-			if nodeIDString, _ := cmd.Flags().GetString(cli.FlagNodeID); nodeIDString != "" {
+			if nodeIDString, errNodeIDString := cmd.Flags().GetString(cli.FlagNodeID); nodeIDString != "" {
+				if errNodeIDString != nil {
+					fmt.Printf("errNodeIDString %v", errNodeIDString)
+				}
 				nodeID = nodeIDString
 			}
 
 			// read --pubkey, if empty take it from priv_validator.json
-			if valPubKeyString, _ := cmd.Flags().GetString(cli.FlagPubKey); valPubKeyString != "" {
+			if valPubKeyString, errValPubKeyString := cmd.Flags().GetString(cli.FlagPubKey); valPubKeyString != "" {
+				if errValPubKeyString != nil {
+					fmt.Printf("errValPubKeyString %v", errValPubKeyString)
+				}
 				var valPubKey crypto.PubKey
 				err := clientCtx.Codec.UnmarshalInterfaceJSON([]byte(valPubKeyString), &valPubKey)
 				if err != nil {
@@ -133,7 +147,10 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			}
 
 			moniker := config.Moniker
-			if m, _ := cmd.Flags().GetString(cli.FlagMoniker); m != "" {
+			if m, errFlagGetString := cmd.Flags().GetString(cli.FlagMoniker); m != "" {
+				if errFlagGetString != nil {
+					fmt.Printf("FlagGetString has an error")
+				}
 				moniker = m
 			}
 
@@ -218,7 +235,10 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 				return errors.Wrap(err, "failed to sign std tx")
 			}
 
-			outputDocument, _ := cmd.Flags().GetString(flags.FlagOutputDocument)
+			outputDocument, errOutputDocument := cmd.Flags().GetString(flags.FlagOutputDocument)
+			if errOutputDocument != nil {
+				fmt.Printf("OutputDocument has an error")
+			}
 			if outputDocument == "" {
 				outputDocument, err = makeOutputFilepath(config.RootDir, nodeID)
 				if err != nil {
@@ -299,7 +319,10 @@ func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeH
 			clientCtx := client.GetClientContextFromCmd(cmd)
 			cdc := clientCtx.Codec
 
-			homeFlag, _ := cmd.Flags().GetString(flags.FlagHome)
+			homeFlag, errHomeFlag := cmd.Flags().GetString(flags.FlagHome)
+			if errHomeFlag != nil {
+				fmt.Printf("Homeflag has an error")
+			}
 			if len(homeFlag) > 0 {
 				config = config.SetRoot(homeFlag)
 			} else {
@@ -316,7 +339,10 @@ func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeH
 				return errors.Wrap(err, "failed to read genesis doc from file")
 			}
 
-			genTxDir, _ := cmd.Flags().GetString(flagGenTxDir)
+			genTxDir, errGenTxDir := cmd.Flags().GetString(flagGenTxDir)
+			if errGenTxDir != nil {
+				fmt.Printf("genTxDir has an error with string")
+			}
 			genTxsDir := genTxDir
 			if genTxsDir == "" {
 				genTxsDir = filepath.Join(config.RootDir, "config", "gentx")
