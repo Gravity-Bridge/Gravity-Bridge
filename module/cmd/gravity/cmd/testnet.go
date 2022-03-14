@@ -64,15 +64,42 @@ Example:
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			config := serverCtx.Config
 
-			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
-			keyringBackend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
-			chainID, _ := cmd.Flags().GetString(flags.FlagChainID)
-			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
-			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
-			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
-			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
-			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
-			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			outputDir, erroutputDir := cmd.Flags().GetString(flagOutputDir)
+			if erroutputDir != nil {
+				fmt.Printf("outputDir has an error")
+			}
+			keyringBackend, errkeyringBackend := cmd.Flags().GetString(flags.FlagKeyringBackend)
+			if errkeyringBackend != nil {
+				fmt.Printf("keyringBackend has an error")
+			}
+			chainID, errchainID := cmd.Flags().GetString(flags.FlagChainID)
+			if errchainID != nil {
+				fmt.Printf("chainID has an error")
+			}
+			minGasPrices, errminGasPrices := cmd.Flags().GetString(server.FlagMinGasPrices)
+			if errminGasPrices != nil {
+				fmt.Printf("minGasPrices has an error")
+			}
+			nodeDirPrefix, errnodeDirPrefix := cmd.Flags().GetString(flagNodeDirPrefix)
+			if errnodeDirPrefix != nil {
+				fmt.Printf("nodeDirPrefix has an error")
+			}
+			nodeDaemonHome, errnodeDaemonHome := cmd.Flags().GetString(flagNodeDaemonHome)
+			if errnodeDaemonHome != nil {
+				fmt.Printf("nodeDaemonHome has an error")
+			}
+			startingIPAddress, errstartingIPAddress := cmd.Flags().GetString(flagStartingIPAddress)
+			if errstartingIPAddress != nil {
+				fmt.Printf("startingIPAddress has an error")
+			}
+			numValidators, errnumValidators := cmd.Flags().GetInt(flagNumValidators)
+			if errnumValidators != nil {
+				fmt.Printf("numValidators has an error")
+			}
+			algo, erralgo := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			if erralgo != nil {
+				fmt.Printf("algo has an error")
+			}
 
 			return InitTestnet(
 				clientCtx, cmd, config, mbm, genBalIterator, outputDir, chainID, minGasPrices,
