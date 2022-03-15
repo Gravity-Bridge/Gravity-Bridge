@@ -10,7 +10,7 @@ use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
 use clarity::{Address as EthAddress, Uint256};
 use clarity::{PrivateKey as EthPrivateKey, Transaction};
-use cosmos_gravity::proposals::submit_parameter_change_proposal;
+use cosmos_gravity::proposals::{submit_parameter_change_proposal, submit_upgrade_proposal};
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
@@ -25,6 +25,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
     ParamChange, ParameterChangeProposal,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
+use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::{Plan, SoftwareUpgradeProposal};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
 use gravity_utils::types::BatchRelayingMode;
@@ -430,6 +431,53 @@ pub async fn print_validator_stake(contact: &Contact) {
             validator.operator_address, validator.tokens
         );
     }
+}
+
+// Simple arguments to create a proposal with
+pub struct UpgradeProposalParams {
+    pub upgrade_height: i64,
+    pub plan_name: String,
+    pub plan_info: String,
+    pub proposal_title: String,
+    pub proposal_desc: String,
+}
+
+// Creates and submits a SoftwareUpgradeProposal to the chain, then votes yes with all validators
+pub async fn execute_upgrade_proposal(
+    contact: &Contact,
+    keys: &[ValidatorKeys],
+    timeout: Option<Duration>,
+    upgrade_params: UpgradeProposalParams,
+) {
+    let duration = match timeout {
+        Some(dur) => dur,
+        None => OPERATION_TIMEOUT,
+    };
+
+    let plan = Plan {
+        name: upgrade_params.plan_name,
+        time: None,
+        height: upgrade_params.upgrade_height,
+        info: upgrade_params.plan_info,
+    };
+    let proposal = SoftwareUpgradeProposal {
+        title: upgrade_params.proposal_title,
+        description: upgrade_params.proposal_desc,
+        plan: Some(plan),
+    };
+    let res = submit_upgrade_proposal(
+        proposal,
+        get_deposit(),
+        get_fee(),
+        contact,
+        keys[0].validator_key,
+        Some(duration)
+    )
+    .await
+    .unwrap();
+    info!("Gov proposal executed with {:?}", res);
+
+    vote_yes_on_proposals(contact, keys, None).await;
 }
 
 // votes yes on every proposal available

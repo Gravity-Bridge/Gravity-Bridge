@@ -19,11 +19,14 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::convert::TryFrom;
 use std::time::Duration;
+use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
 
 pub const AIRDROP_PROPOSAL_TYPE_URL: &str = "/gravity.v1.AirdropProposal";
 pub const UNHALT_BRIDGE_PROPOSAL_TYPE_URL: &str = "/gravity.v1.UnhaltBridgeProposal";
 pub const PARAMETER_CHANGE_PROPOSAL_TYPE_URL: &str =
     "/cosmos.params.v1beta1.ParameterChangeProposal";
+pub const SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL: &str =
+    "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal";
 pub const IBC_METADATA_PROPOSAL_TYPE_URL: &str = "/gravity.v1.IBCMetadataProposal";
 
 /// The proposal.json representation for the airdrop proposal
@@ -171,6 +174,22 @@ pub async fn submit_parameter_change_proposal(
 ) -> Result<TxResponse, CosmosGrpcError> {
     // encode as a generic proposal
     let any = encode_any(proposal, PARAMETER_CHANGE_PROPOSAL_TYPE_URL.to_string());
+    contact
+        .create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .await
+}
+
+/// Encodes and submits a proposal to upgrade chain software, should maybe be in deep_space (sorry)
+pub async fn submit_upgrade_proposal(
+    proposal: SoftwareUpgradeProposal,
+    deposit: Coin,
+    fee: Coin,
+    contact: &Contact,
+    key: PrivateKey,
+    wait_timeout: Option<Duration>,
+) -> Result<TxResponse, CosmosGrpcError> {
+    // encode as a generic proposal
+    let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
     contact
         .create_gov_proposal(any, deposit, fee, key, wait_timeout)
         .await
