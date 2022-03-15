@@ -21,9 +21,9 @@ func RegisterUpgradeHandlers(
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper, upgradeKeeper *upgradekeeper.Keeper,
 ) {
-	// v1->v2 UPGRADE HANDLER SETUP
+	// Mercury aka v1->v2 UPGRADE HANDLER SETUP
 	upgradeKeeper.SetUpgradeHandler(
-		v2.V1Tov2PlanName,
+		v2.V1ToV2PlanName, // Codename Mercury
 		v2.GetV2UpgradeHandler(mm, configurator, accountKeeper, bankKeeper, bech32IbcKeeper, distrKeeper, mintKeeper, stakingKeeper),
 	)
 }

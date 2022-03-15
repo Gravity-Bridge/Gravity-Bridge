@@ -937,7 +937,7 @@ func (app *Gravity) registerStoreLoaders() {
 
 	// v1->v2 STORE LOADER SETUP
 	// Register the new v2 modules and the special StoreLoader to add them
-	if upgradeInfo.Name == v2.V1Tov2PlanName {
+	if upgradeInfo.Name == v2.V1ToV2PlanName {
 		if !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) { // Recognized the plan, need to skip this one though
 			storeUpgrades := storetypes.StoreUpgrades{
 				Added: []string{bech32ibctypes.ModuleName}, // We are adding these modules
