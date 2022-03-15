@@ -88,7 +88,7 @@ async fn submit_and_pass_airdrop_proposal(
     let res = submit_airdrop_proposal(
         proposal_content,
         get_deposit(),
-        get_fee(),
+        get_fee(None),
         contact,
         keys[0].validator_key,
         Some(TOTAL_TIMEOUT),
@@ -215,7 +215,7 @@ async fn submit_and_fail_airdrop_proposal(
         .create_gov_proposal(
             any,
             get_deposit(),
-            get_fee(),
+            get_fee(None),
             keys[0].validator_key,
             Some(TOTAL_TIMEOUT),
         )

@@ -45,7 +45,7 @@ pub async fn unhalt_bridge_test(
     )
     .await;
     let fee = Fee {
-        amount: vec![get_fee()],
+        amount: vec![get_fee(None)],
         gas_limit: 500_000_000u64,
         granter: None,
         payer: None,
@@ -247,7 +247,7 @@ async fn submit_and_pass_unhalt_bridge_proposal(
     let res = submit_unhalt_bridge_proposal(
         proposal_content,
         get_deposit(),
-        get_fee(),
+        get_fee(None),
         contact,
         keys[0].validator_key,
         Some(TOTAL_TIMEOUT),

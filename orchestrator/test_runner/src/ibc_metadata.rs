@@ -123,7 +123,7 @@ pub async fn ibc_metadata_proposal_test(
     .await;
 }
 
-async fn submit_and_pass_ibc_metadata_proposal(
+pub async fn submit_and_pass_ibc_metadata_proposal(
     denom: String,
     metadata: Metadata,
     contact: &Contact,
@@ -138,7 +138,7 @@ async fn submit_and_pass_ibc_metadata_proposal(
     let res = submit_ibc_metadata_proposal(
         proposal_content,
         get_deposit(),
-        get_fee(),
+        get_fee(None),
         contact,
         keys[0].validator_key,
         Some(TOTAL_TIMEOUT),
@@ -164,7 +164,7 @@ async fn submit_and_fail_ibc_metadata_proposal(
     let res = submit_ibc_metadata_proposal(
         proposal_content,
         get_deposit(),
-        get_fee(),
+        get_fee(None),
         contact,
         keys[0].validator_key,
         Some(TOTAL_TIMEOUT),

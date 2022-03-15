@@ -326,7 +326,7 @@ pub async fn start_orchestrators(
                 grpc_client,
                 gravity_address,
                 params.gravity_id,
-                get_fee(),
+                get_fee(None),
                 config,
             );
             let system = System::new();
@@ -401,7 +401,7 @@ pub async fn create_parameter_change_proposal(
     let res = submit_parameter_change_proposal(
         proposal,
         get_deposit(),
-        get_fee(),
+        get_fee(None),
         contact,
         key,
         Some(TOTAL_TIMEOUT),
@@ -468,7 +468,7 @@ pub async fn execute_upgrade_proposal(
     let res = submit_upgrade_proposal(
         proposal,
         get_deposit(),
-        get_fee(),
+        get_fee(None),
         contact,
         keys[0].validator_key,
         Some(duration)
@@ -520,12 +520,12 @@ pub async fn vote_yes_with_retry(
     const MAX_VOTES: u64 = 5;
     let mut counter = 0;
     let mut res = contact
-        .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(), key, Some(timeout))
+        .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(None), key, Some(timeout))
         .await;
     while let Err(e) = res {
         contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
         res = contact
-            .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(), key, Some(timeout))
+            .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(None), key, Some(timeout))
             .await;
         counter += 1;
         if counter > MAX_VOTES {

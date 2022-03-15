@@ -32,7 +32,7 @@ pub async fn slashing_delegation_test(
         denom: STAKING_TOKEN.clone(),
         amount: 50_000_000u32.into(),
     };
-    let mut fee_send = get_fee();
+    let mut fee_send = get_fee(None);
     fee_send.amount *= 1000u16.into();
 
     // create a user and send them some coins to delegate
@@ -60,7 +60,7 @@ pub async fn slashing_delegation_test(
             contact
                 .send_coins(
                     coin.clone(),
-                    Some(get_fee()),
+                    Some(get_fee(None)),
                     dest.cosmos_address,
                     Some(TOTAL_TIMEOUT),
                     keys[0].validator_key,
@@ -91,7 +91,7 @@ pub async fn slashing_delegation_test(
             .delegate_to_validator(
                 get_operator_address(slashed_validator.validator_key),
                 amount_to_delegate.clone(),
-                get_fee(),
+                get_fee(None),
                 user.cosmos_key,
                 Some(TOTAL_TIMEOUT),
             )
@@ -112,7 +112,7 @@ pub async fn slashing_delegation_test(
             .delegate_to_validator(
                 get_operator_address(slashed_validator.validator_key),
                 amount_to_delegate.clone(),
-                get_fee(),
+                get_fee(None),
                 user.cosmos_key,
                 Some(TOTAL_TIMEOUT),
             )
@@ -129,7 +129,7 @@ pub async fn slashing_delegation_test(
         let res = contact
             .withdraw_delegator_rewards(
                 get_operator_address(slashed_validator.validator_key),
-                get_fee(),
+                get_fee(None),
                 user.cosmos_key,
                 Some(TOTAL_TIMEOUT),
             )
@@ -144,7 +144,7 @@ pub async fn slashing_delegation_test(
         let res = contact
             .withdraw_delegator_rewards(
                 get_operator_address(slashed_validator.validator_key),
-                get_fee(),
+                get_fee(None),
                 user.cosmos_key,
                 Some(TOTAL_TIMEOUT),
             )
@@ -162,7 +162,7 @@ pub async fn slashing_delegation_test(
             .undelegate(
                 get_operator_address(slashed_validator.validator_key),
                 amount_to_unbond.clone(),
-                get_fee(),
+                get_fee(None),
                 user.cosmos_key,
                 Some(TOTAL_TIMEOUT),
             )
@@ -177,7 +177,7 @@ pub async fn slashing_delegation_test(
                 get_operator_address(slashed_validator.validator_key),
                 get_operator_address(redelegation_target.validator_key),
                 amount_to_unbond.clone(),
-                get_fee(),
+                get_fee(None),
                 user.cosmos_key,
                 Some(TOTAL_TIMEOUT),
             )
@@ -188,7 +188,7 @@ pub async fn slashing_delegation_test(
     let res = contact
         .withdraw_validator_commission(
             get_operator_address(slashed_validator.validator_key),
-            get_fee(),
+            get_fee(None),
             slashed_validator.validator_key,
             Some(TOTAL_TIMEOUT),
         )
