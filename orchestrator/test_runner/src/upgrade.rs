@@ -37,10 +37,10 @@ pub async fn v2_upgrade_part_1(
     let upgrade_height = (curr_height + 50) as i64;
     execute_upgrade_proposal(contact, &keys, None, UpgradeProposalParams {
         upgrade_height,
-        plan_name: "v2".to_string(),
-        plan_info: "v2 upgrade info here".to_string(),
-        proposal_title: "v2 upgrade proposal title here".to_string(),
-        proposal_desc: "v2 upgrade proposal description here".to_string()
+        plan_name: "mercury".to_string(),
+        plan_info: "mercury upgrade info here".to_string(),
+        proposal_title: "mercury upgrade proposal title here".to_string(),
+        proposal_desc: "mercury upgrade proposal description here".to_string()
     }).await;
 
     info!("Ready to run the new binary, waiting for chain panic at upgrade height of {}!", upgrade_height)
