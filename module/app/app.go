@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -18,6 +19,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	// Cosmos SDK
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -28,6 +30,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -103,6 +106,8 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
+	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -117,6 +122,7 @@ var (
 	// ModuleBasics The module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration
 	// and genesis verification.
+
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		authzmodule.AppModuleBasic{},
@@ -230,7 +236,7 @@ type Gravity struct {
 	sm *module.SimulationManager
 
 	// configurator
-	configurator module.Configurator
+	configurator *module.Configurator
 }
 
 // ValidateMembers checks for nil members
@@ -541,6 +547,8 @@ func NewGravityApp(
 
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
+	app.registerStoreLoaders()
+
 	mm := *module.NewManager(
 		genutil.NewAppModule(
 			accountKeeper,
@@ -639,6 +647,7 @@ func NewGravityApp(
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		gravitytypes.ModuleName,
+		upgradetypes.ModuleName,
 	)
 	mm.SetOrderInitGenesis(
 		capabilitytypes.ModuleName,
@@ -649,6 +658,7 @@ func NewGravityApp(
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
+		upgradetypes.ModuleName,
 		ibchost.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
@@ -661,8 +671,9 @@ func NewGravityApp(
 
 	mm.RegisterInvariants(&crisisKeeper)
 	mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
-	app.configurator = module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
-	mm.RegisterServices(app.configurator)
+	configurator := module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
+	app.configurator = &configurator
+	mm.RegisterServices(*app.configurator)
 
 	sm := *module.NewSimulationManager(
 		auth.NewAppModule(appCodec, accountKeeper, authsims.RandomGenesisAccounts),
@@ -733,10 +744,12 @@ func (app *Gravity) Name() string { return app.BaseApp.Name() }
 
 // BeginBlocker application updates every begin block
 func (app *Gravity) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	out := app.mm.BeginBlock(ctx, req)
 	firstBlock.Do(func() { // Run the startup firstBeginBlocker assertions only once
 		app.firstBeginBlocker(ctx)
 	})
-	return app.mm.BeginBlock(ctx, req)
+
+	return out
 }
 
 // Perform necessary checks at the start of this node's first BeginBlocker execution
@@ -906,18 +919,35 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	return paramsKeeper
 }
 
+// Registers handlers for all our upgrades
 func (app *Gravity) registerUpgradeHandlers() {
-	app.upgradeKeeper.SetUpgradeHandler("v2", func(ctx sdk.Context, plan upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
-		// 1st-time running in-store migrations, using last version as fromVersion to
-		// avoid running InitGenesis.
-		fromVM := make(map[string]uint64)
-		for moduleName, module := range app.mm.Modules {
-			fromVM[moduleName] = module.ConsensusVersion()
+	upgrades.RegisterUpgradeHandlers(
+		app.mm, app.configurator, app.accountKeeper, app.bankKeeper, app.bech32IbcKeeper, app.distrKeeper,
+		app.mintKeeper, app.stakingKeeper, app.upgradeKeeper,
+	)
+}
+
+// Sets up the StoreLoader for new, deleted, or renamed modules
+func (app *Gravity) registerStoreLoaders() {
+	// Read the upgrade height and name from previous execution
+	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
+	}
+
+	// v1->v2 STORE LOADER SETUP
+	// Register the new v2 modules and the special StoreLoader to add them
+	if upgradeInfo.Name == v2.V1Tov2PlanName {
+		if !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) { // Recognized the plan, need to skip this one though
+			storeUpgrades := storetypes.StoreUpgrades{
+				Added: []string{bech32ibctypes.ModuleName}, // We are adding these modules
+				// Check upgrade docs to see which type of store loader is necessary for deletes/renames
+				// Renamed: []storetypes.StoreRename{{"foo", "bar"}}, example foo to bar rename
+				// Deleted: []string{"bazmodule"}, example deleted bazmodule
+			}
+
+			// configure store loader that checks if version == upgradeHeight and applies store upgrades
+			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 		}
-
-		// set gravity version to 1 in order to execute migration scripts from 1 to 2
-		fromVM[gravitytypes.StoreKey] = 1
-
-		return app.mm.RunMigrations(ctx, app.configurator, fromVM)
-	})
+	}
 }
