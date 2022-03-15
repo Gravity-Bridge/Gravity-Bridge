@@ -146,5 +146,26 @@ func fixDistributionPoolBalance(
 // The MinCommissionDecorator enforces new validators must be created with a minimum commission rate of 5%,
 // but existing validators are unaffected, here we automatically bump them all to 5% if they are lower
 func bumpMinValidatorCommissions(stakingKeeper *stakingkeeper.Keeper, ctx sdk.Context) {
-	// TODO: Implement me!
+	// This logic was originally included in the Juno project at github.com/CosmosContracts/juno/blob/main/app/app.go
+	// This version was added to Juno by github user the-frey https://github.com/the-frey
+	validators := stakingKeeper.GetAllValidators(ctx)
+	// hard code this because we don't want
+	// a) a fork or
+	// b) immediate reaction with additional gov props
+	minCommissionRate := sdk.NewDecWithPrec(5, 2)
+	for _, v := range validators {
+		if v.Commission.Rate.LT(minCommissionRate) {
+			if v.Commission.MaxRate.LT(minCommissionRate) {
+				v.Commission.MaxRate = minCommissionRate
+			}
+
+			v.Commission.Rate = minCommissionRate
+			v.Commission.UpdateTime = ctx.BlockHeader().Time
+
+			// call the before-modification hook since we're about to update the commission
+			stakingKeeper.BeforeValidatorModified(ctx, v.GetOperator())
+
+			stakingKeeper.SetValidator(ctx, v)
+		}
+	}
 }
