@@ -2,6 +2,10 @@
 TEST_TYPE=$1
 set -eu
 
+if [[ -z "${TEST_TYPE}" ]]; then
+  echo "No TEST_TYPE provided, HAPPY_PATH should run"
+fi
+
 set +u
 OPTIONAL_KEY=""
 if [ ! -z $2 ];

@@ -54,6 +54,7 @@ mod slashing_delegation;
 mod transaction_stress_test;
 mod tx_cancel;
 mod unhalt_bridge;
+mod upgrade;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
@@ -345,6 +346,24 @@ pub async fn main() {
             )
             .await;
             return;
+        } else if test_type == "V2_UPGRADE_PART_1" {
+            info!("Starting Gravity v2 Upgrade Part 1");
+            let contact = Contact::new(
+                COSMOS_NODE_GRPC.as_str(),
+                TOTAL_TIMEOUT,
+                ADDRESS_PREFIX.as_str(),
+            )
+            .unwrap();
+            v2_upgrade_part_1(&web30, &contact, grpc_client, keys, gravity_address, erc20_addresses).await;
+        } else if test_type == "V2_UPGRADE_PART_2" {
+            info!("Starting Gravity v2 Upgrade Part 1");
+            let contact = Contact::new(
+                COSMOS_NODE_GRPC.as_str(),
+                TOTAL_TIMEOUT,
+                ADDRESS_PREFIX.as_str(),
+            )
+                .unwrap();
+            v2_upgrade_part_2(&web30, &contact, grpc_client, keys, gravity_address, erc20_addresses).await;
         } else if !test_type.is_empty() {
             panic!("Err Unknown test type")
         }
