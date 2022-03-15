@@ -9,5 +9,11 @@ set -eux
 # Note: This is very similar to run-solidity-test-fork but has hardhat running on a higher (more recent) block height
 # in order to interact with Uniswap's v3 contracts
 export ALCHEMY_ID=$1
+
+if [[ -z "${ALCHEMY_ID}" ]]; then
+  echo "No ALCHEMY_ID provided! Cancelling test."
+  exit 1
+fi
+
 pushd /gravity/solidity
 npm run evm_fork

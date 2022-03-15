@@ -213,7 +213,7 @@ pub async fn test_valset_update(
         .delegate_to_validator(
             delegate_address,
             amount,
-            get_fee(),
+            get_fee(None),
             keys[1].validator_key,
             Some(TOTAL_TIMEOUT),
         )
@@ -615,7 +615,7 @@ async fn submit_duplicate_erc20_send(
             vec![],
             vec![],
             vec![],
-            get_fee(),
+            get_fee(None),
         )
         .await;
         info!("Submitted duplicate sendToCosmos event: {:?}", res);

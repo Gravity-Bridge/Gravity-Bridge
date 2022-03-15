@@ -8,5 +8,11 @@ set -eux
 
 # Note: This is very similar to run-eth-fork but has hardhat running at a lower (older) block height
 export ALCHEMY_ID=$1
+
+if [[ -z "${ALCHEMY_ID}" ]]; then
+  echo "No ALCHEMY_ID provided! Cancelling test."
+  exit 1
+fi
+
 pushd /gravity/solidity
 npm run solidity_test_fork

@@ -58,7 +58,7 @@ pub async fn deposit_overflow_test(
     let max_amount = Uint256::max_value(); // 2^256 - 1 (max amount possible to send)
     let normal_amount = Uint256::from(30_000_000u64); // an amount we would expect to easily transfer
     let fee = Fee {
-        amount: vec![get_fee()],
+        amount: vec![get_fee(None)],
         gas_limit: 500_000_000u64,
         granter: None,
         payer: None,

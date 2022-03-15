@@ -7,7 +7,7 @@ CHAIN_ID="gravity-test"
 
 NODES=$1
 
-ALLOCATION="10000000000stake,10000000000footoken,10000000000ibc/nometadatatoken"
+ALLOCATION="10000000000stake,10000000000footoken,10000000000footoken2,10000000000ibc/nometadatatoken"
 
 # first we start a genesis.json with validator 1
 # validator 1 will also collect the gentx's once gnerated
@@ -22,7 +22,8 @@ $BIN init $STARTING_VALIDATOR_HOME --chain-id=$CHAIN_ID validator1
 ## testing the generated one with the default values provided by the module.
 
 # add in denom metadata for both native tokens
-jq '.app_state.bank.denom_metadata += [{"name": "Foo Token", "symbol": "FOO", "base": "footoken", display: "mfootoken", "description": "A non-staking test token", "denom_units": [{"denom": "footoken", "exponent": 0}, {"denom": "mfootoken", "exponent": 6}]},{"name": "Stake Token", "symbol": "STEAK", "base": "stake", display: "mstake", "description": "A staking test token", "denom_units": [{"denom": "stake", "exponent": 0}, {"denom": "mstake", "exponent": 6}]}]' /validator$STARTING_VALIDATOR/config/genesis.json > /bech32ibc-genesis.json
+jq '.app_state.bank.denom_metadata += [{"name": "Foo Token", "symbol": "FOO", "base": "footoken", display: "mfootoken", "description": "A non-staking test token", "denom_units": [{"denom": "footoken", "exponent": 0}, {"denom": "mfootoken", "exponent": 6}]},{"name": "Stake Token", "symbol": "STEAK", "base": "stake", display: "mstake", "description": "A staking test token", "denom_units": [{"denom": "stake", "exponent": 0}, {"denom": "mstake", "exponent": 6}]}]' /validator$STARTING_VALIDATOR/config/genesis.json > /footoken2-genesis.json
+jq '.app_state.bank.denom_metadata += [{"name": "Foo Token2", "symbol": "F20", "base": "footoken2", display: "mfootoken2", "description": "A second non-staking test token", "denom_units": [{"denom": "footoken2", "exponent": 0}, {"denom": "mfootoken2", "exponent": 6}]}]' /footoken2-genesis.json > /bech32ibc-genesis.json
 
 # Set the chain's native bech32 prefix
 jq '.app_state.bech32ibc.nativeHRP = "gravity"' /bech32ibc-genesis.json > /gov-genesis.json

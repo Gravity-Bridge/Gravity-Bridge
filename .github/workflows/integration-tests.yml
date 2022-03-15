@@ -304,3 +304,17 @@ jobs:
         run: tests/all-up-test.sh ERC721_HAPPY_PATH
         env:
           NO_IMAGE_BUILD: True
+  upgrade_test:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        with:
+          key: integration-test-cache-{hash}
+          restore-keys: |
+            integration-test-cache-
+      - name: Test Mercury state upgrade
+        run: tests/run-upgrade-test.sh v1.4.3-beta
+        env:
+          NO_IMAGE_BUILD: True

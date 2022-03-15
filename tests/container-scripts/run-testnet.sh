@@ -7,6 +7,10 @@ NODES=$1
 set +u
 TEST_TYPE=$2
 ALCHEMY_ID=$3
+
+if [[ ! -z ${OLD_BINARY_LOCATION} ]]; then
+    BIN=$OLD_BINARY_LOCATION
+fi
 set -u
 
 for i in $(seq 1 $NODES);
@@ -76,6 +80,8 @@ elif [[ ! -z "$HARDHAT" ]]; then
 # the right number of cpu cores and Geth goes crazy consuming all the processing power, on the other hand
 # hardhat doesn't work for some tests that depend on transactions waiting for blocks, so Geth is the default
 else
-    bash /gravity/tests/container-scripts/run-eth.sh &
+    if [[ -z "$(ps -e | grep geth)" ]]; then # Only run-eth if it's not running, which it would be with upgrade tests
+      bash /gravity/tests/container-scripts/run-eth.sh &
+    fi
 fi
 sleep 10

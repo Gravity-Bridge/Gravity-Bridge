@@ -249,7 +249,7 @@ pub async fn transaction_stress_test(
 
     for denom in denoms {
         info!("Requesting batch for {}", denom);
-        let res = send_request_batch(keys[0].validator_key, denom, Some(get_fee()), contact)
+        let res = send_request_batch(keys[0].validator_key, denom, Some(get_fee(None)), contact)
             .await
             .unwrap();
         info!("batch request response is {:?}", res);

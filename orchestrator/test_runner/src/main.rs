@@ -16,6 +16,7 @@ use crate::pause_bridge::pause_bridge_test;
 use crate::signature_slashing::signature_slashing_test;
 use crate::slashing_delegation::slashing_delegation_test;
 use crate::tx_cancel::send_to_eth_and_cancel;
+use crate::upgrade::{upgrade_part_1, upgrade_part_2};
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
 use clarity::PrivateKey as EthPrivateKey;
@@ -53,6 +54,7 @@ mod slashing_delegation;
 mod transaction_stress_test;
 mod tx_cancel;
 mod unhalt_bridge;
+mod upgrade;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
@@ -98,10 +100,16 @@ lazy_static! {
 /// and FOOTOKEN balances by default, one footoken is sufficient for any Cosmos tx fee except
 /// fees for send_to_eth messages which have to be of the same bridged denom so that the relayers
 /// on the Ethereum side can be paid in that token.
-pub fn get_fee() -> Coin {
-    Coin {
-        denom: get_test_token_name(),
-        amount: 1u32.into(),
+pub fn get_fee(denom: Option<String>) -> Coin {
+    match denom {
+        None => Coin {
+            denom: get_test_token_name(),
+            amount: 1u32.into(),
+        },
+        Some(denom) => Coin {
+            denom,
+            amount: 1u32.into(),
+        },
     }
 }
 
@@ -168,9 +176,9 @@ pub async fn main() {
     // the address of the deployed GravityERC721 contract
     let gravity_erc721_address = contracts.gravity_erc721_contract;
     // addresses of deployed ERC20 token contracts to be used for testing
-    let erc20_addresses = contracts.erc20_addresses;
+    let erc20_addresses = contracts.erc20_addresses.clone();
     // addresses of deployed ERC721 token contracts to be used for testing
-    let erc721_addresses = contracts.erc721_addresses;
+    let erc721_addresses = contracts.erc721_addresses.clone();
     // before we start the orchestrators send them some funds so they can pay
     // for things
     send_eth_to_orchestrators(&keys, &web30).await;
@@ -238,7 +246,16 @@ pub async fn main() {
             return;
         } else if test_type == "V2_HAPPY_PATH" || test_type == "HAPPY_PATH_V2" {
             info!("Starting happy path for Gravity v2");
-            happy_path_test_v2(&web30, grpc_client, &contact, keys, gravity_address, false).await;
+            happy_path_test_v2(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                gravity_address,
+                false,
+                None,
+            )
+            .await;
             return;
         } else if test_type == "RELAY_MARKET" {
             info!("Starting relay market tests!");
@@ -337,10 +354,52 @@ pub async fn main() {
             )
             .await;
             return;
+        } else if test_type == "UPGRADE_PART_1" {
+            info!("Starting Gravity Upgrade test Part 1");
+            let contact = Contact::new(
+                COSMOS_NODE_GRPC.as_str(),
+                TOTAL_TIMEOUT,
+                ADDRESS_PREFIX.as_str(),
+            )
+            .unwrap();
+            upgrade_part_1(
+                &web30,
+                &contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
+            return;
+        } else if test_type == "UPGRADE_PART_2" {
+            info!("Starting Gravity Upgrade test Part 2");
+            let contact = Contact::new(
+                COSMOS_NODE_GRPC.as_str(),
+                TOTAL_TIMEOUT,
+                ADDRESS_PREFIX.as_str(),
+            )
+            .unwrap();
+            upgrade_part_2(
+                &web30,
+                &contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
+            return;
         } else if !test_type.is_empty() {
             panic!("Err Unknown test type")
         }
     }
+    let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+        .await
+        .unwrap();
+    let keys = get_keys();
+    let erc20_addresses = contracts.erc20_addresses;
+
     info!("Starting Happy path test");
     happy_path_test(
         &web30,

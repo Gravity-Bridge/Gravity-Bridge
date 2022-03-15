@@ -1,3 +1,4 @@
+use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::get_deposit;
 use crate::get_fee;
 use crate::ADDRESS_PREFIX;
@@ -10,9 +11,10 @@ use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
 use clarity::{Address as EthAddress, Uint256};
 use clarity::{PrivateKey as EthPrivateKey, Transaction};
-use cosmos_gravity::proposals::submit_parameter_change_proposal;
+use cosmos_gravity::proposals::{submit_parameter_change_proposal, submit_upgrade_proposal};
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
+use deep_space::client::ChainStatus;
 use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
@@ -25,6 +27,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
     ParamChange, ParameterChangeProposal,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
+use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::{Plan, SoftwareUpgradeProposal};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
 use gravity_utils::types::BatchRelayingMode;
@@ -325,7 +328,7 @@ pub async fn start_orchestrators(
                 grpc_client,
                 gravity_address,
                 params.gravity_id,
-                get_fee(),
+                get_fee(None),
                 config,
             );
             let system = System::new();
@@ -400,7 +403,7 @@ pub async fn create_parameter_change_proposal(
     let res = submit_parameter_change_proposal(
         proposal,
         get_deposit(),
-        get_fee(),
+        get_fee(None),
         contact,
         key,
         Some(TOTAL_TIMEOUT),
@@ -430,6 +433,54 @@ pub async fn print_validator_stake(contact: &Contact) {
             validator.operator_address, validator.tokens
         );
     }
+}
+
+// Simple arguments to create a proposal with
+pub struct UpgradeProposalParams {
+    pub upgrade_height: i64,
+    pub plan_name: String,
+    pub plan_info: String,
+    pub proposal_title: String,
+    pub proposal_desc: String,
+}
+
+// Creates and submits a SoftwareUpgradeProposal to the chain, then votes yes with all validators
+pub async fn execute_upgrade_proposal(
+    contact: &Contact,
+    keys: &[ValidatorKeys],
+    timeout: Option<Duration>,
+    upgrade_params: UpgradeProposalParams,
+) {
+    let duration = match timeout {
+        Some(dur) => dur,
+        None => OPERATION_TIMEOUT,
+    };
+
+    let plan = Plan {
+        name: upgrade_params.plan_name,
+        time: None,
+        height: upgrade_params.upgrade_height,
+        info: upgrade_params.plan_info,
+    };
+    let proposal = SoftwareUpgradeProposal {
+        title: upgrade_params.proposal_title,
+        description: upgrade_params.proposal_desc,
+        plan: Some(plan),
+    };
+    let res = submit_upgrade_proposal(
+        proposal,
+        get_deposit(),
+        get_fee(None),
+        contact,
+        keys[0].validator_key,
+        Some(duration),
+    )
+    .await
+    .unwrap();
+    info!("Gov proposal executed with {:?}", res);
+
+    vote_yes_on_proposals(contact, keys, None).await;
+    wait_for_proposals_to_execute(contact).await;
 }
 
 // votes yes on every proposal available
@@ -472,12 +523,24 @@ pub async fn vote_yes_with_retry(
     const MAX_VOTES: u64 = 5;
     let mut counter = 0;
     let mut res = contact
-        .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(), key, Some(timeout))
+        .vote_on_gov_proposal(
+            proposal_id,
+            VoteOption::Yes,
+            get_fee(None),
+            key,
+            Some(timeout),
+        )
         .await;
     while let Err(e) = res {
         contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
         res = contact
-            .vote_on_gov_proposal(proposal_id, VoteOption::Yes, get_fee(), key, Some(timeout))
+            .vote_on_gov_proposal(
+                proposal_id,
+                VoteOption::Yes,
+                get_fee(None),
+                key,
+                Some(timeout),
+            )
             .await;
         counter += 1;
         if counter > MAX_VOTES {
@@ -621,4 +684,40 @@ pub async fn get_validator_to_delegate_to(contact: &Contact) -> (CosmosAddress, 
     };
 
     (has_the_least.unwrap(), five_percent)
+}
+
+/// Waits for a particular block to be created
+/// Returns an error if the chain fails to progress in a timely manner or the chain is not running
+/// Panics if the block has already been surpassed
+pub async fn wait_for_block(contact: &Contact, height: u64) -> Result<(), CosmosGrpcError> {
+    let status = contact.get_chain_status().await?;
+    let mut curr_height = match status {
+        // Check the current height
+        ChainStatus::Syncing => return Err(CosmosGrpcError::NodeNotSynced),
+        ChainStatus::WaitingToStart => return Err(CosmosGrpcError::ChainNotRunning),
+        ChainStatus::Moving { block_height } => {
+            if block_height > height {
+                panic!(
+                    "Block height {} surpassed, current height is {}",
+                    height, block_height
+                );
+            }
+            block_height
+        }
+    };
+    while curr_height < height {
+        // Wait for the desired height
+        contact.wait_for_next_block(OPERATION_TIMEOUT).await?; // Err if any block takes 30s+
+        let new_status = contact.get_chain_status().await?;
+        if let ChainStatus::Moving { block_height } = new_status {
+            curr_height = block_height
+        } else {
+            // wait_for_next_block checks every second, so it's not likely the chain could halt for
+            // an upgrade before we find the desired height
+            return Err(CosmosGrpcError::BadResponse(
+                "Wait for block: Chain was running and now it's not?".to_string(),
+            ));
+        }
+    }
+    Ok(())
 }

@@ -1,7 +1,7 @@
 FROM fedora:34
 ENV GOPATH=/go
 ENV PATH=$PATH:/go/bin
-RUN dnf install -y git make gcc gcc-c++ which iproute iputils procps-ng vim-minimal tmux net-tools htop tar jq npm openssl-devel perl rust cargo golang
+RUN dnf install -y git make gcc gcc-c++ which iproute iputils procps-ng vim-minimal tmux net-tools htop tar jq npm openssl-devel perl rust cargo golang wget
 # only required for deployment script
 RUN npm install -g ts-node && npm install -g typescript
 ADD https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.10.10-bb74230f.tar.gz /geth/

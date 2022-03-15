@@ -3,6 +3,14 @@ TEST_TYPE=$1
 ALCHEMY_ID=$2
 set -eux
 
+if [[ -z "${TEST_TYPE}" ]]; then
+  echo "No TEST_TYPE provided, HAPPY_PATH should run"
+fi
+
+if [[ -z "${ALCHEMY_ID}" ]]; then
+  echo "No ALCHEMY_ID provided, will not run any hardhat based tests (e.g. ARBITRARY_LOGIC, RELAY_MARKET)"
+fi
+
 # the directory of this script, useful for allowing this script
 # to be run with any PWD
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

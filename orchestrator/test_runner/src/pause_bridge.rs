@@ -131,7 +131,7 @@ pub async fn pause_bridge_test(
     let res = send_request_batch(
         keys[0].orch_key,
         token_name.clone(),
-        Some(get_fee()),
+        Some(get_fee(None)),
         contact,
     )
     .await;
@@ -194,7 +194,7 @@ pub async fn pause_bridge_test(
     send_request_batch(
         keys[0].orch_key,
         token_name.clone(),
-        Some(get_fee()),
+        Some(get_fee(None)),
         contact,
     )
     .await

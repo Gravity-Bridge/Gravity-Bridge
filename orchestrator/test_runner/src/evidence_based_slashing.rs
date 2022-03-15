@@ -74,7 +74,7 @@ pub async fn evidence_based_slashing(
     // submit the evidence
     let res = submit_bad_signature_evidence(
         submitter_private_key,
-        get_fee(),
+        get_fee(None),
         contact,
         BadSignatureEvidence::Valset(false_valset),
         eth_signature,
@@ -129,7 +129,7 @@ async fn delegate_to_validator(keys: &[ValidatorKeys], to: PrivateKey, contact: 
         .delegate_to_validator(
             delegate_address,
             amount,
-            get_fee(),
+            get_fee(None),
             keys[1].validator_key,
             Some(TOTAL_TIMEOUT),
         )

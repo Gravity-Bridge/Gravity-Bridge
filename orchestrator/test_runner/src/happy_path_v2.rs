@@ -36,8 +36,14 @@ pub async fn happy_path_test_v2(
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
     validator_out: bool,
+    ibc_metadata: Option<Metadata>,
 ) {
     let mut grpc_client = grpc_client;
+
+    let ibc_metadata = match ibc_metadata {
+        Some(metadata) => metadata,
+        None => footoken_metadata(contact).await,
+    };
 
     let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
@@ -45,11 +51,11 @@ pub async fn happy_path_test_v2(
         Some(keys.clone()),
         &mut grpc_client,
         validator_out,
-        footoken_metadata(contact).await,
+        ibc_metadata.clone(),
     )
     .await;
 
-    let token_to_send_to_eth = footoken_metadata(contact).await.base;
+    let token_to_send_to_eth = ibc_metadata.base.clone();
 
     // one foo token
     let amount_to_bridge: Uint256 = 1_000_000u64.into();
@@ -67,7 +73,7 @@ pub async fn happy_path_test_v2(
     contact
         .send_coins(
             send_to_user_coin.clone(),
-            Some(get_fee()),
+            Some(get_fee(None)),
             user.cosmos_address,
             Some(TOTAL_TIMEOUT),
             keys[0].validator_key,
@@ -102,8 +108,8 @@ pub async fn happy_path_test_v2(
         user.cosmos_key,
         user.eth_address,
         send_to_eth_coin,
-        get_fee(),
-        get_fee(),
+        get_fee(Some(ibc_metadata.base.clone())),
+        get_fee(Some(ibc_metadata.base.clone())),
         contact,
     )
     .await
