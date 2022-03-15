@@ -1,3 +1,3 @@
 package v2
 
-var V1Tov2PlanName = "v2"
+var V1ToV2PlanName = "mercury"
