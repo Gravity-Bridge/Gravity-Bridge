@@ -3,7 +3,7 @@ module github.com/Gravity-Bridge/Gravity-Bridge/module
 go 1.16
 
 require (
-	github.com/cosmos/cosmos-sdk v0.44.5
+	github.com/cosmos/cosmos-sdk v0.44.6
 	github.com/cosmos/ibc-go/v2 v2.0.2
 	github.com/ethereum/go-ethereum v1.10.10
 	github.com/gogo/protobuf v1.3.3
