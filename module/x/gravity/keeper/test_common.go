@@ -571,7 +571,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 
 	bApp := *baseapp.NewBaseApp("test", log.TestingLogger(), db, MakeTestEncodingConfig().TxConfig.TxDecoder())
 	upgradeKeeper := upgradekeeper.NewKeeper(
-		make(map[int64]bool, 0),
+		make(map[int64]bool),
 		keyUpgrade,
 		marshaler,
 		"",
