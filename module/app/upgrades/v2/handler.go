@@ -170,7 +170,7 @@ func fixDistributionPoolBalance(
 	// Check the invariants after our modifications
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance(): Running distribution module invariants!")
 	issueMsg, issue := distrkeeper.AllInvariants(*distrKeeper)(ctx)
-	if issue != false {
+	if issue {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, issueMsg)
 	}
 
