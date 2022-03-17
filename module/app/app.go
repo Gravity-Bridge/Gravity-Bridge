@@ -179,8 +179,9 @@ var (
 	firstBlock sync.Once
 
 	// executes a configurable upgrade as part of `gravity start`
-	upgradeHeight   uint64 = 0
-	upgradePlanName string = ""
+	upgradeHeight   uint64            = 0
+	upgradePlanName string            = ""
+	scheduledPlan   upgradetypes.Plan = upgradetypes.Plan{}
 )
 
 // MakeCodec creates the application codec. The codec is sealed before it is
@@ -752,13 +753,46 @@ func (app *Gravity) Name() string { return app.BaseApp.Name() }
 // BeginBlocker application updates every begin block
 func (app *Gravity) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	ctx.Logger().Info("Running first begin blocker to schedule the upgrade!")
-	firstBlock.Do(func() {
+	// TODO: Restore the runtime bech32ibc NativeHrp == sdk.GetConfig().Bech32AccountAddrPrefix assertion
+	firstBlock.Do(func() { // Schedule the upgrade only once
 		app.firstBeginBlocker(ctx)
 	})
+	k := app.upgradeKeeper
+	if scheduledPlan.Height == ctx.BlockHeight() {
+		ctx.Logger().Info("Manually running the upgrade in BeginBlocker")
+		// Taken from x/upgrade's abci.go
+		if !k.HasHandler(scheduledPlan.Name) {
+			// We're **NOT** on the binary that can run the upgrade, we need to panic!
+
+			ctx.Logger().Info("This binary has no handler registered", "plan", scheduledPlan.Name)
+			// Write the upgrade info to disk. The UpgradeStoreLoader uses this info to perform or skip
+			// store migrations.
+			err := k.DumpUpgradeInfoWithInfoToDisk(ctx.BlockHeight(), scheduledPlan.Name, scheduledPlan.Info)
+			if err != nil {
+				panic(fmt.Errorf("unable to write upgrade info to filesystem: %s", err.Error()))
+			}
+
+			upgradeMsg := upgrade.BuildUpgradeNeededMsg(scheduledPlan)
+			// We don't have an upgrade handler for this upgrade name, meaning this software is out of date so shutdown
+			ctx.Logger().Error(upgradeMsg)
+
+			panic(upgradeMsg)
+		}
+
+		// We're on the binary that can run the upgrade! Run it!
+
+		ctx.Logger().Info(fmt.Sprintf("applying upgrade \"%s\" at %s", scheduledPlan.Name, scheduledPlan.DueAt()))
+		cachedMeter := ctx.GasMeter()                          // Avoid overwriting the actual mainnet gas meter
+		ctx = ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter()) // Ensure gas isn't a problem for the upgrade
+		k.ApplyUpgrade(ctx, scheduledPlan)
+		ctx = ctx.WithBlockGasMeter(cachedMeter) // Restore the gas meter
+
+		ctx.Logger().Info("Mercury Upgrade applied!")
+		app.crisisKeeper.AssertInvariants(ctx)
+		ctx.Logger().Info("Ran the invariants! Returning the output of begin blocker")
+	}
+
 	out := app.mm.BeginBlock(ctx, req)
-	ctx.Logger().Info("Ran the upgrade!")
-	app.crisisKeeper.AssertInvariants(ctx)
-	ctx.Logger().Info("Ran the invariants! Returning the output of begin blocker")
 	return out
 }
 
@@ -774,7 +808,7 @@ func (app *Gravity) firstBeginBlocker(ctx sdk.Context) {
 			Info:                "CLI Upgrade",
 			UpgradedClientState: nil,
 		}
-		app.upgradeKeeper.ScheduleUpgrade(ctx, plan)
+		app.schedulePlanManually(ctx, plan)
 		ctx.Logger().Info("Scheduled upgrade plan from CLI args", "plan-name", upgradePlanName, "upgrade-height", ctx.BlockHeight())
 	} else if upgradePlanName != "" {
 		plan := upgradetypes.Plan{
@@ -784,10 +818,19 @@ func (app *Gravity) firstBeginBlocker(ctx sdk.Context) {
 			Info:                "CLI Upgrade",
 			UpgradedClientState: nil,
 		}
-		app.upgradeKeeper.ScheduleUpgrade(ctx, plan)
+		app.schedulePlanManually(ctx, plan)
 		ctx.Logger().Info("Scheduled upgrade plan from CLI args", "plan-name", upgradePlanName, "upgrade-height", upgradeHeight)
 	} else {
 		ctx.Logger().Info("No upgrade instructions in CLI args - will not perform upgrade automatically")
+	}
+}
+
+func (app *Gravity) schedulePlanManually(ctx sdk.Context, plan upgradetypes.Plan) {
+	currHeight := ctx.BlockHeight()
+	if plan.Height < currHeight {
+		panic("Unable to execute upgrade in the past!")
+	} else { // store the plan here, it will be checked every BeginBlocker
+		scheduledPlan = plan
 	}
 }
 
