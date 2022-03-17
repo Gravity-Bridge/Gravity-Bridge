@@ -1,6 +1,7 @@
 package upgrades
 
 import (
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -21,6 +22,11 @@ func RegisterUpgradeHandlers(
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper, upgradeKeeper *upgradekeeper.Keeper,
 ) {
+	fmt.Println("Enter RegisterUpgradeHandlers")
+	if mm == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
+		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil || upgradeKeeper == nil {
+		panic("Nil argument to RegisterUpgradeHandlers()!")
+	}
 	// Mercury aka v1->v2 UPGRADE HANDLER SETUP
 	upgradeKeeper.SetUpgradeHandler(
 		v2.V1ToV2PlanName, // Codename Mercury
