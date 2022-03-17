@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -17,6 +18,7 @@ import (
 // - Change all Cosmos orginated ERC20 mappings from (HEX) string to bytes.
 // - Change all validator Ethereum keys from (HEX) string to bytes.
 func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.BinaryCodec) error {
+	ctx.Logger().Info("Mercury Upgrade: Enter MigrateStore")
 	store := ctx.KVStore(storeKey)
 
 	// Denoms
@@ -50,6 +52,7 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 		return err
 	}
 
+	ctx.Logger().Info("Mercury Upgrade: Almost done migrating, just the keys left")
 	return migrateKeys(store, cdc)
 }
 
@@ -185,6 +188,7 @@ func migrateOutgoingTxBatches(store storetypes.KVStore) error {
 // into format:
 // hash(string_prefix) | key_part1 | key_part2 ...
 func migrateKeys(store sdk.KVStore, cdc codec.BinaryCodec) error {
+	fmt.Println("Mercury Upgrade: Enter migrateKeys")
 	if err := migrateKeysFromValues(store, cdc, OutgoingTXBatchKey, convertBatchKey); err != nil {
 		return err
 	}
@@ -246,6 +250,7 @@ func migrateKeys(store sdk.KVStore, cdc codec.BinaryCodec) error {
 	deleteUnusedKeys(store, DenomiatorPrefix)
 	deleteUnusedKeys(store, SecondIndexNonceByClaimKey)
 
+	fmt.Println("Mercury Upgrade: migrateKeys succss! Returning nil")
 	return nil
 }
 
