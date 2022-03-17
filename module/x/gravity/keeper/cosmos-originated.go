@@ -107,8 +107,12 @@ func (k Keeper) IterateERC20ToDenom(ctx sdk.Context, cb func([]byte, *types.ERC2
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
+		Erc20, err := types.NewEthAddressFromBytes(iter.Key())
+		if err != nil {
+			panic("Invalid ERC20 to Denom mapping in store!")
+		}
 		erc20ToDenom := types.ERC20ToDenom{
-			Erc20: string(iter.Key()),
+			Erc20: Erc20.GetAddress().String(),
 			Denom: string(iter.Value()),
 		}
 		// cb returns true to stop early

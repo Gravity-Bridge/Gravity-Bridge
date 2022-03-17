@@ -93,6 +93,15 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	assert.True(t, found)
 	assert.Equal(t, denom, storedDenom)
 
+	var erc20ToDenoms = []types.ERC20ToDenom{}
+	input.GravityKeeper.IterateERC20ToDenom(input.Context, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
+		erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
+		return false
+	})
+	fromStoreTokenAddr, err := types.NewEthAddress(erc20ToDenoms[0].Erc20)
+	assert.NoError(t, err)
+	assert.Equal(t, denom, erc20ToDenoms[0].Denom)
+	assert.Equal(t, fromStoreTokenAddr, tokenAddr)
 }
 
 func TestMigrateEthAddressByValidator(t *testing.T) {
