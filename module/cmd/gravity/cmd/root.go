@@ -142,6 +142,8 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 func addModuleInitFlags(startCmd *cobra.Command) {
 	crisis.AddModuleInitFlags(startCmd)
+	startCmd.Flags().Uint("upgrade-height", 0, "Block height to execute the upgrade at [does nothing without upgrade-plan-name]")
+	startCmd.Flags().String("upgrade-plan-name", "", "Upgrade plan name to execute at upgrade-height [does nothing without upgrade-height]")
 }
 
 func queryCommand() *cobra.Command {

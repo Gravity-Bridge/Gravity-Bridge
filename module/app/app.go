@@ -1,10 +1,13 @@
 package app
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/gorilla/mux"
@@ -157,6 +160,14 @@ var (
 	// verify app interface at compile time
 	_ simapp.App              = (*Gravity)(nil)
 	_ servertypes.Application = (*Gravity)(nil)
+
+	// enable checks that run on the first BeginBlocker execution after an upgrade/genesis init/node restart
+	firstBlock sync.Once
+
+	// executes a configurable upgrade as part of `gravity start`
+	upgradeHeight   uint64            = 0
+	upgradePlanName string            = ""
+	scheduledPlan   upgradetypes.Plan = upgradetypes.Plan{}
 )
 
 // MakeCodec creates the application codec. The codec is sealed before it is
@@ -218,33 +229,75 @@ type Gravity struct {
 
 // ValidateMembers checks for nil members
 func (app Gravity) ValidateMembers() {
-	if app.legacyAmino == nil { panic("Nil legacyAmino!") }
+	if app.legacyAmino == nil {
+		panic("Nil legacyAmino!")
+	}
 
 	// keepers
-	if app.accountKeeper     == nil { panic("Nil accountKeeper!") }
-	if app.authzKeeper       == nil { panic("Nil authzKeeper!") }
-	if app.bankKeeper        == nil { panic("Nil bankKeeper!") }
-	if app.capabilityKeeper  == nil { panic("Nil capabilityKeeper!") }
-	if app.stakingKeeper     == nil { panic("Nil stakingKeeper!") }
-	if app.slashingKeeper    == nil { panic("Nil slashingKeeper!") }
-	if app.mintKeeper        == nil { panic("Nil mintKeeper!") }
-	if app.distrKeeper       == nil { panic("Nil distrKeeper!") }
-	if app.govKeeper         == nil { panic("Nil govKeeper!") }
-	if app.crisisKeeper      == nil { panic("Nil crisisKeeper!") }
-	if app.upgradeKeeper     == nil { panic("Nil upgradeKeeper!") }
-	if app.paramsKeeper      == nil { panic("Nil paramsKeeper!") }
-	if app.ibcKeeper         == nil { panic("Nil ibcKeeper!") }
-	if app.evidenceKeeper    == nil { panic("Nil evidenceKeeper!") }
-	if app.ibcTransferKeeper == nil { panic("Nil ibcTransferKeeper!") }
-	if app.gravityKeeper     == nil { panic("Nil gravityKeeper!") }
+	if app.accountKeeper == nil {
+		panic("Nil accountKeeper!")
+	}
+	if app.authzKeeper == nil {
+		panic("Nil authzKeeper!")
+	}
+	if app.bankKeeper == nil {
+		panic("Nil bankKeeper!")
+	}
+	if app.capabilityKeeper == nil {
+		panic("Nil capabilityKeeper!")
+	}
+	if app.stakingKeeper == nil {
+		panic("Nil stakingKeeper!")
+	}
+	if app.slashingKeeper == nil {
+		panic("Nil slashingKeeper!")
+	}
+	if app.mintKeeper == nil {
+		panic("Nil mintKeeper!")
+	}
+	if app.distrKeeper == nil {
+		panic("Nil distrKeeper!")
+	}
+	if app.govKeeper == nil {
+		panic("Nil govKeeper!")
+	}
+	if app.crisisKeeper == nil {
+		panic("Nil crisisKeeper!")
+	}
+	if app.upgradeKeeper == nil {
+		panic("Nil upgradeKeeper!")
+	}
+	if app.paramsKeeper == nil {
+		panic("Nil paramsKeeper!")
+	}
+	if app.ibcKeeper == nil {
+		panic("Nil ibcKeeper!")
+	}
+	if app.evidenceKeeper == nil {
+		panic("Nil evidenceKeeper!")
+	}
+	if app.ibcTransferKeeper == nil {
+		panic("Nil ibcTransferKeeper!")
+	}
+	if app.gravityKeeper == nil {
+		panic("Nil gravityKeeper!")
+	}
 
 	// scoped keepers
-	if app.ScopedIBCKeeper      == nil { panic("Nil ScopedIBCKeeper!") }
-	if app.ScopedTransferKeeper == nil { panic("Nil ScopedTransferKeeper!") }
+	if app.ScopedIBCKeeper == nil {
+		panic("Nil ScopedIBCKeeper!")
+	}
+	if app.ScopedTransferKeeper == nil {
+		panic("Nil ScopedTransferKeeper!")
+	}
 
 	// managers
-	if app.mm == nil { panic("Nil ModuleManager!") }
-	if app.sm == nil { panic("Nil ModuleManager!") }
+	if app.mm == nil {
+		panic("Nil ModuleManager!")
+	}
+	if app.sm == nil {
+		panic("Nil ModuleManager!")
+	}
 }
 
 func init() {
@@ -469,6 +522,8 @@ func NewGravityApp(
 	app.evidenceKeeper = &evidenceKeeper
 
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	upgradeHeight = cast.ToUint64(appOpts.Get("upgrade-height"))
+	upgradePlanName = cast.ToString(appOpts.Get("upgrade-plan-name"))
 
 	mm := *module.NewManager(
 		genutil.NewAppModule(
@@ -651,7 +706,86 @@ func (app *Gravity) Name() string { return app.BaseApp.Name() }
 
 // BeginBlocker application updates every begin block
 func (app *Gravity) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	return app.mm.BeginBlock(ctx, req)
+	ctx.Logger().Info("Running first begin blocker to schedule the upgrade!")
+	// TODO: Restore the runtime bech32ibc NativeHrp == sdk.GetConfig().Bech32AccountAddrPrefix assertion
+	firstBlock.Do(func() { // Schedule the upgrade only once
+		app.firstBeginBlocker(ctx)
+	})
+	k := app.upgradeKeeper
+	if scheduledPlan.Height == ctx.BlockHeight() {
+		ctx.Logger().Info("Manually running the upgrade in BeginBlocker")
+		// Taken from x/upgrade's abci.go
+		if !k.HasHandler(scheduledPlan.Name) {
+			// We're **NOT** on the binary that can run the upgrade, we need to panic!
+
+			ctx.Logger().Info("This binary has no handler registered", "plan", scheduledPlan.Name)
+			// Write the upgrade info to disk. The UpgradeStoreLoader uses this info to perform or skip
+			// store migrations.
+			err := k.DumpUpgradeInfoWithInfoToDisk(ctx.BlockHeight(), scheduledPlan.Name, scheduledPlan.Info)
+			if err != nil {
+				panic(fmt.Errorf("unable to write upgrade info to filesystem: %s", err.Error()))
+			}
+
+			upgradeMsg := upgrade.BuildUpgradeNeededMsg(scheduledPlan)
+			// We don't have an upgrade handler for this upgrade name, meaning this software is out of date so shutdown
+			ctx.Logger().Error(upgradeMsg)
+
+			panic(upgradeMsg)
+		}
+
+		// We're on the binary that can run the upgrade! Run it!
+
+		ctx.Logger().Info(fmt.Sprintf("applying upgrade \"%s\" at %s", scheduledPlan.Name, scheduledPlan.DueAt()))
+		cachedMeter := ctx.GasMeter()                          // Avoid overwriting the actual mainnet gas meter
+		ctx = ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter()) // Ensure gas isn't a problem for the upgrade
+		k.ApplyUpgrade(ctx, scheduledPlan)
+		ctx = ctx.WithBlockGasMeter(cachedMeter) // Restore the gas meter
+
+		ctx.Logger().Info("Mercury Upgrade applied!")
+	}
+
+	out := app.mm.BeginBlock(ctx, req)
+	app.crisisKeeper.AssertInvariants(ctx)
+	ctx.Logger().Info("Ran the invariants! Returning the output of begin blocker")
+	return out
+}
+
+// Perform necessary checks at the start of this node's first BeginBlocker execution
+// Note: This should ONLY be called once, it should be called at the top of BeginBlocker guarded by firstBlock
+func (app *Gravity) firstBeginBlocker(ctx sdk.Context) {
+	// Schedule a provided upgrade plan at the provided height
+	if upgradeHeight == 0 && upgradePlanName != "" {
+		plan := upgradetypes.Plan{
+			Name:                upgradePlanName,
+			Time:                time.Time{},
+			Height:              ctx.BlockHeight(),
+			Info:                "CLI Upgrade",
+			UpgradedClientState: nil,
+		}
+		app.schedulePlanManually(ctx, plan)
+		ctx.Logger().Info("Scheduled upgrade plan from CLI args", "plan-name", upgradePlanName, "upgrade-height", ctx.BlockHeight())
+	} else if upgradePlanName != "" {
+		plan := upgradetypes.Plan{
+			Name:                upgradePlanName,
+			Time:                time.Time{},
+			Height:              int64(upgradeHeight),
+			Info:                "CLI Upgrade",
+			UpgradedClientState: nil,
+		}
+		app.schedulePlanManually(ctx, plan)
+		ctx.Logger().Info("Scheduled upgrade plan from CLI args", "plan-name", upgradePlanName, "upgrade-height", upgradeHeight)
+	} else {
+		ctx.Logger().Info("No upgrade instructions in CLI args - will not perform upgrade automatically")
+	}
+}
+
+func (app *Gravity) schedulePlanManually(ctx sdk.Context, plan upgradetypes.Plan) {
+	currHeight := ctx.BlockHeight()
+	if plan.Height < currHeight {
+		panic("Unable to execute upgrade in the past!")
+	} else { // store the plan here, it will be checked every BeginBlocker
+		scheduledPlan = plan
+	}
 }
 
 // EndBlocker application updates every end block
