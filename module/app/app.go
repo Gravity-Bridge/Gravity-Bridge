@@ -944,6 +944,8 @@ func (app *Gravity) registerStoreLoaders() {
 				// Check upgrade docs to see which type of store loader is necessary for deletes/renames
 				// Renamed: []storetypes.StoreRename{{"foo", "bar"}}, example foo to bar rename
 				// Deleted: []string{"bazmodule"}, example deleted bazmodule
+				Renamed: nil,
+				Deleted: nil,
 			}
 
 			// configure store loader that checks if version == upgradeHeight and applies store upgrades
