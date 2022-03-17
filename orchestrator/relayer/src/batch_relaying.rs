@@ -232,24 +232,24 @@ async fn submit_batches(
     // do that though.
     let mut submit_possible_batch_features = Vec::new();
     for (token_type, possible_batches) in possible_batches {
-        submit_possible_batch_features.push(
-            submit_possible_batches(
-                possible_batches,
-                token_type,
-                our_ethereum_address,
-                ethereum_block_height.clone(),
-                current_valset.clone(),
-                ethereum_key,
-                web3,
-                gravity_contract_address,
-                gravity_id.clone(),
-                timeout,
-                config.clone(),
-            ));
+        submit_possible_batch_features.push(submit_possible_batches(
+            possible_batches,
+            token_type,
+            our_ethereum_address,
+            ethereum_block_height.clone(),
+            current_valset.clone(),
+            ethereum_key,
+            web3,
+            gravity_contract_address,
+            gravity_id.clone(),
+            timeout,
+            config.clone(),
+        ));
     }
     join_all(submit_possible_batch_features).await;
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn submit_possible_batches(
     possible_batches: Vec<SubmittableBatch>,
     erc20_contract: clarity::Address,
@@ -280,7 +280,7 @@ async fn submit_possible_batches(
     let latest_ethereum_batch = latest_ethereum_batch.unwrap();
 
     for batch in possible_batches {
-        submit_batch (
+        submit_batch(
             batch,
             latest_ethereum_batch,
             our_ethereum_address,
@@ -292,7 +292,8 @@ async fn submit_possible_batches(
             gravity_id.clone(),
             timeout,
             config.clone(),
-        ).await;
+        )
+        .await;
     }
 }
 
@@ -320,7 +321,9 @@ async fn submit_batch(
         return;
     }
 
-    if oldest_signed_batch.nonce <= latest_ethereum_batch { return; }
+    if oldest_signed_batch.nonce <= latest_ethereum_batch {
+        return;
+    }
 
     let oldest_signatures = batch.sigs;
     let cost = ethereum_gravity::submit_batch::estimate_tx_batch_cost(
@@ -344,7 +347,7 @@ async fn submit_batch(
         cost.gas.clone(),
         print_gwei(cost.gas_price.clone()),
         print_eth(cost.get_total())
-    );                
+    );
     oldest_signed_batch
         .display_with_eth_info(our_ethereum_address, web3)
         .await;
