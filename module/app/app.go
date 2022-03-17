@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/gorilla/mux"
@@ -176,6 +177,10 @@ var (
 
 	// enable checks that run on the first BeginBlocker execution after an upgrade/genesis init/node restart
 	firstBlock sync.Once
+
+	// executes a configurable upgrade as part of `gravity start`
+	upgradeHeight   uint64 = 0
+	upgradePlanName string = ""
 )
 
 // MakeCodec creates the application codec. The codec is sealed before it is
@@ -546,6 +551,8 @@ func NewGravityApp(
 	app.evidenceKeeper = &evidenceKeeper
 
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	upgradeHeight = cast.ToUint64(appOpts.Get("upgrade-height"))
+	upgradePlanName = cast.ToString(appOpts.Get("upgrade-plan-name"))
 
 	app.registerStoreLoaders()
 
@@ -744,18 +751,44 @@ func (app *Gravity) Name() string { return app.BaseApp.Name() }
 
 // BeginBlocker application updates every begin block
 func (app *Gravity) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	out := app.mm.BeginBlock(ctx, req)
-	firstBlock.Do(func() { // Run the startup firstBeginBlocker assertions only once
+	ctx.Logger().Info("Running first begin blocker to schedule the upgrade!")
+	firstBlock.Do(func() {
 		app.firstBeginBlocker(ctx)
 	})
-
+	out := app.mm.BeginBlock(ctx, req)
+	ctx.Logger().Info("Ran the upgrade!")
+	app.crisisKeeper.AssertInvariants(ctx)
+	ctx.Logger().Info("Ran the invariants! Returning the output of begin blocker")
 	return out
 }
 
 // Perform necessary checks at the start of this node's first BeginBlocker execution
 // Note: This should ONLY be called once, it should be called at the top of BeginBlocker guarded by firstBlock
 func (app *Gravity) firstBeginBlocker(ctx sdk.Context) {
-	app.assertBech32PrefixMatches(ctx)
+	// Schedule a provided upgrade plan at the provided height
+	if upgradeHeight == 0 && upgradePlanName != "" {
+		plan := upgradetypes.Plan{
+			Name:                upgradePlanName,
+			Time:                time.Time{},
+			Height:              ctx.BlockHeight(),
+			Info:                "CLI Upgrade",
+			UpgradedClientState: nil,
+		}
+		app.upgradeKeeper.ScheduleUpgrade(ctx, plan)
+		ctx.Logger().Info("Scheduled upgrade plan from CLI args", "plan-name", upgradePlanName, "upgrade-height", ctx.BlockHeight())
+	} else if upgradePlanName != "" {
+		plan := upgradetypes.Plan{
+			Name:                upgradePlanName,
+			Time:                time.Time{},
+			Height:              int64(upgradeHeight),
+			Info:                "CLI Upgrade",
+			UpgradedClientState: nil,
+		}
+		app.upgradeKeeper.ScheduleUpgrade(ctx, plan)
+		ctx.Logger().Info("Scheduled upgrade plan from CLI args", "plan-name", upgradePlanName, "upgrade-height", upgradeHeight)
+	} else {
+		ctx.Logger().Info("No upgrade instructions in CLI args - will not perform upgrade automatically")
+	}
 }
 
 // EndBlocker application updates every end block
