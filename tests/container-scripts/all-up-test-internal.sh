@@ -5,11 +5,6 @@ TEST_TYPE=$2
 ALCHEMY_ID=$3
 set -eux
 
-# Prepare the contracts for later deployment
-pushd /gravity/solidity/
-HUSKY_SKIP_INSTALL=1 npm install
-npm run typechain
-
 bash /gravity/tests/container-scripts/setup-validators.sh $NODES
 
 bash /gravity/tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE $ALCHEMY_ID &
