@@ -6,12 +6,15 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # builds the container containing various system deps
 # also builds Gravity once in order to cache Go deps, this container
-# must be rebuilt every time you run this test if you want a faster
-# solution use start chains and then run tests
-# note, this container does not need to be rebuilt to test the same code
-# twice, docker will automatically detect and cache this case, no need
-# for that logic here
+# must be rebuilt every time you run this test because it pulls in the
+# current repo state by reading the latest git commit during image creation
+# if you want a faster solution use start chains and then run tests
+# if you are running many tests on the same code set the NO_IMAGE_BUILD=1 env var
+set +u
+if [[ -z ${NO_IMAGE_BUILD} ]]; then
 bash $DIR/build-container.sh
+fi
+set -u
 
 # Remove existing container instance
 set +e
