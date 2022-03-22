@@ -5,15 +5,13 @@ BIN=gravity
 
 NODES=$1
 set +u
-BINARY=$2
-TEST_TYPE=$3
-ALCHEMY_ID=$4
-set -u
+TEST_TYPE=$2
+ALCHEMY_ID=$3
 
-if [[ ! -z ${BINARY} ]]; then
-  echo "Running an old binary ($BINARY) for an upgrade test"
-  BIN=$BINARY
+if [[ ! -z ${OLD_BINARY_LOCATION} ]]; then
+    BIN=$OLD_BINARY_LOCATION
 fi
+set -u
 
 for i in $(seq 1 $NODES);
 do

@@ -5,6 +5,7 @@ tests/test-runner/Cargo.lock
 tests/dockerfile/gravity.tar.gz
 solidity/dist
 orchestrator/bins
+oldgravity
 
 # IDE files
 .idea/

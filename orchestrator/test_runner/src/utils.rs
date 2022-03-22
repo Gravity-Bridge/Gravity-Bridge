@@ -36,9 +36,11 @@ use orchestrator::main_loop::orchestrator_main_loop;
 use rand::Rng;
 use std::thread;
 use std::time::{Duration, Instant};
+use deep_space::client::ChainStatus;
 use tokio::time::sleep;
 use web30::jsonrpc::error::Web3Error;
 use web30::{client::Web3, types::SendTxOption};
+use crate::airdrop_proposal::wait_for_proposals_to_execute;
 
 /// returns the required denom metadata for deployed the Footoken
 /// token defined in our test environment
@@ -478,6 +480,7 @@ pub async fn execute_upgrade_proposal(
     info!("Gov proposal executed with {:?}", res);
 
     vote_yes_on_proposals(contact, keys, None).await;
+    wait_for_proposals_to_execute(contact).await;
 }
 
 // votes yes on every proposal available
@@ -669,4 +672,34 @@ pub async fn get_validator_to_delegate_to(contact: &Contact) -> (CosmosAddress, 
     };
 
     (has_the_least.unwrap(), five_percent)
+}
+
+/// Waits for a particular block to be created
+/// Returns an error if the chain fails to progress in a timely manner or the chain is not running
+/// Panics if the block has already been surpassed
+pub async fn wait_for_block(contact: &Contact, height: u64) -> Result<(), CosmosGrpcError> {
+    let status = contact.get_chain_status().await?;
+    let mut curr_height: u64;
+    match status { // Check the current height
+        ChainStatus::Syncing => { return Err(CosmosGrpcError::NodeNotSynced) }
+        ChainStatus::WaitingToStart => { return Err(CosmosGrpcError::ChainNotRunning) }
+        ChainStatus::Moving { block_height } => {
+            if block_height > height {
+                panic!("Block height {} surpassed, current height is {}", height, block_height);
+            }
+            curr_height = block_height;
+        }
+    };
+    while curr_height < height { // Wait for the desired height
+        contact.wait_for_next_block(OPERATION_TIMEOUT).await?; // Err if any block takes 30s+
+        let new_status = contact.get_chain_status().await?;
+        if let ChainStatus::Moving { block_height } = new_status {
+            curr_height = block_height
+        } else {
+            // wait_for_next_block checks every second, so it's not likely the chain could halt for
+            // an upgrade before we find the desired height
+            return Err(CosmosGrpcError::BadResponse("Wait for block: Chain was running and now it's not?".to_string()));
+        }
+    }
+    Ok(())
 }

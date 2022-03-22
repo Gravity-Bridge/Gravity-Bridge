@@ -16,7 +16,7 @@ use crate::pause_bridge::pause_bridge_test;
 use crate::signature_slashing::signature_slashing_test;
 use crate::slashing_delegation::slashing_delegation_test;
 use crate::tx_cancel::send_to_eth_and_cancel;
-use crate::upgrade::{v2_upgrade_part_1, v2_upgrade_part_2};
+use crate::upgrade::{upgrade_part_1, upgrade_part_2};
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
 use clarity::PrivateKey as EthPrivateKey;
@@ -107,11 +107,10 @@ pub fn get_fee(denom: Option<String>) -> Coin {
             amount: 1u32.into(),
         },
         Some(denom) => Coin {
-            denom: denom,
+            denom,
             amount: 1u32.into(),
-        }
+        },
     }
-
 }
 
 pub fn get_deposit() -> Coin {
@@ -173,9 +172,9 @@ pub async fn main() {
 
     let contracts = parse_contract_addresses();
     // the address of the deployed Gravity contract
-    let gravity_address = contracts.gravity_contract.clone();
+    let gravity_address = contracts.gravity_contract;
     // the address of the deployed GravityERC721 contract
-    let gravity_erc721_address = contracts.gravity_erc721_contract.clone();
+    let gravity_erc721_address = contracts.gravity_erc721_contract;
     // addresses of deployed ERC20 token contracts to be used for testing
     let erc20_addresses = contracts.erc20_addresses.clone();
     // addresses of deployed ERC721 token contracts to be used for testing
@@ -247,7 +246,16 @@ pub async fn main() {
             return;
         } else if test_type == "V2_HAPPY_PATH" || test_type == "HAPPY_PATH_V2" {
             info!("Starting happy path for Gravity v2");
-            happy_path_test_v2(&web30, grpc_client, &contact, keys, gravity_address, false, None).await;
+            happy_path_test_v2(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                gravity_address,
+                false,
+                None,
+            )
+            .await;
             return;
         } else if test_type == "RELAY_MARKET" {
             info!("Starting relay market tests!");
@@ -346,24 +354,42 @@ pub async fn main() {
             )
             .await;
             return;
-        } else if test_type == "V2_UPGRADE_PART_1" {
-            info!("Starting Gravity v2 Upgrade Part 1");
+        } else if test_type == "UPGRADE_PART_1" {
+            info!("Starting Gravity Upgrade test Part 1");
             let contact = Contact::new(
                 COSMOS_NODE_GRPC.as_str(),
                 TOTAL_TIMEOUT,
                 ADDRESS_PREFIX.as_str(),
             )
             .unwrap();
-            v2_upgrade_part_1(&web30, &contact, grpc_client, keys, gravity_address, erc20_addresses).await;
-        } else if test_type == "V2_UPGRADE_PART_2" {
-            info!("Starting Gravity v2 Upgrade Part 1");
+            upgrade_part_1(
+                &web30,
+                &contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
+            return;
+        } else if test_type == "UPGRADE_PART_2" {
+            info!("Starting Gravity Upgrade test Part 2");
             let contact = Contact::new(
                 COSMOS_NODE_GRPC.as_str(),
                 TOTAL_TIMEOUT,
                 ADDRESS_PREFIX.as_str(),
             )
-                .unwrap();
-            v2_upgrade_part_2(&web30, &contact, grpc_client, keys, gravity_address, erc20_addresses).await;
+            .unwrap();
+            upgrade_part_2(
+                &web30,
+                &contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
+            return;
         } else if !test_type.is_empty() {
             panic!("Err Unknown test type")
         }
