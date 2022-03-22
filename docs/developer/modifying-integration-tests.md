@@ -27,6 +27,13 @@ Both Ethereum backends are configured to deposit tokens into a hardcoded address
 
 The test runner module contains some logic for running the contract deployer and parsing the resulting ERC20 and Gravity.sol contract addresses. This is all done before we get into starting the actual tests logic.
 
+### Chain Upgrades
+It is possible to simulate the Gravity Bridge chain going through an upgrade by using [run-upgrade-test.sh](/tests/run-upgrade-test.sh).
+Pass a version like *v1.4.3-beta* and the test will download the given version of gravity from the
+[Gravity-Bridge releases page](https://github.com/Gravity-Bridge/Gravity-Bridge/releases/),
+execute several of the integration tests to generate data. Then an upgrade gov proposal will execute and halt the chain,
+followed by the current chain code executing the same set of tests on the new binary.
+
 ## Adding tests
 
 In order to add a new test define a new test_type environmental variable in the test runners `main.rs` file from there you can create a new file containing the test logic templated off of the various existing examples.
