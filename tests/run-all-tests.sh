@@ -5,6 +5,7 @@ set -eux
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 bash all-up-test.sh
+export NO_IMAGE_BUILD=1
 bash all-up-test.sh VALSET_STRESS
 bash all-up-test.sh VALSET_REWARDS
 bash all-up-test.sh VALIDATOR_OUT
