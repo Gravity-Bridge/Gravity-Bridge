@@ -176,10 +176,18 @@ async fn submit_and_fail_airdrop_proposal(
         get_coins(&*STAKING_TOKEN, &community_pool_contents_start).unwrap();
 
     let (recipients, amounts) = if make_too_many {
-        generate_invalid_accounts_and_amounts(
+        let res = generate_invalid_accounts_and_amounts(
             NUM_AIRDROP_RECIPIENTS,
             starting_amount_in_pool.amount.clone(),
-        )
+        );
+        match res {
+            Some(res) => res,
+            None => {
+                warn!("Amount remaining in the community pool is too large to create an airdrop that sends too much");
+                warn!("Will skip this test for now");
+                return;
+            }
+        }
     } else {
         generate_valid_accounts_and_amounts(
             NUM_AIRDROP_RECIPIENTS,
@@ -288,8 +296,14 @@ fn generate_valid_accounts_and_amounts(
 fn generate_invalid_accounts_and_amounts(
     num_recipients: u16,
     max: Uint256,
-) -> (Vec<CosmosAddress>, Vec<u64>) {
+) -> Option<(Vec<CosmosAddress>, Vec<u64>)> {
     info!("Started invalid accounts + amounts generation");
+    // there's no way to generate an airdrop that is too large
+    // within these parameters
+    if Uint256::from(num_recipients as u128 * u64::MAX as u128) < max {
+        return None;
+    }
+
     let mut rng = rand::thread_rng();
     let (user_addresses, mut amounts) = generate_accounts_and_amounts(num_recipients, &mut rng);
     while total_array(&amounts) < max {
@@ -298,7 +312,7 @@ fn generate_invalid_accounts_and_amounts(
         amounts[random_idx] = new_val;
     }
     info!("Finished invalid accounts + amounts generation");
-    (user_addresses, amounts)
+    Some((user_addresses, amounts))
 }
 
 fn total_array(input: &[u64]) -> Uint256 {
@@ -334,4 +348,36 @@ pub async fn disable_inflation(contact: &Contact, keys: &[ValidatorKeys]) {
     create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    /// the number of times we generate valid and invalid amounts
+    /// in the unit tests to spot check that they actually finish
+    /// running in a reasonable amount of time
+    const NUM_GENERATIONS: usize = 10;
+    #[test]
+    /// This tests if the valid accounts and amounts generation converges by trying it
+    /// from several random amounts and recipients starting points.
+    fn ensure_valid_generation_convergence() {
+        let mut rng = rand::thread_rng();
+        for _ in 0..NUM_GENERATIONS {
+            let recipients = rng.gen();
+            let max: u128 = rng.gen();
+            generate_valid_accounts_and_amounts(recipients, max.into());
+        }
+    }
+
+    #[test]
+    /// This tests if the invalid accounts and amounts generation converges by trying it
+    /// from several random amounts and recipients starting points.
+    fn ensure_invalid_generation_convergence() {
+        let mut rng = rand::thread_rng();
+        for _ in 0..NUM_GENERATIONS {
+            let recipients = rng.gen();
+            let max: u128 = rng.gen();
+            generate_invalid_accounts_and_amounts(recipients, max.into());
+        }
+    }
 }
