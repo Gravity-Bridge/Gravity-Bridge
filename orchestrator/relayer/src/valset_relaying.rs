@@ -1,6 +1,5 @@
 //! This module contains code for the validator update lifecycle. Functioning as a way for this validator to observe
 //! the state of both chains and perform the required operations.
-use std::time::Duration;
 
 use clarity::address::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
@@ -20,6 +19,7 @@ use tonic::transport::Channel;
 use web30::client::Web3;
 
 use crate::batch_relaying::get_cost_with_margin;
+use crate::main_loop::ETH_SUBMIT_WAIT_TIME;
 
 #[allow(clippy::too_many_arguments)]
 /// High level entry point for valset relaying, this function starts by finding
@@ -34,7 +34,6 @@ pub async fn relay_valsets(
     grpc_client: &mut GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
     gravity_id: String,
-    timeout: Duration,
     config: RelayerConfig,
 ) {
     // we have to start with the current valset, we need to know what's currently
@@ -79,7 +78,6 @@ pub async fn relay_valsets(
         gravity_contract_address,
         gravity_id,
         ethereum_key,
-        timeout,
         config,
     )
     .await;
@@ -96,7 +94,6 @@ async fn relay_valid_valset(
     gravity_contract_address: EthAddress,
     gravity_id: String,
     ethereum_key: EthPrivateKey,
-    timeout: Duration,
     config: RelayerConfig,
 ) {
     let cost = ethereum_gravity::valset_update::estimate_valset_cost(
@@ -147,7 +144,7 @@ async fn relay_valid_valset(
             current_valset,
             &conformations,
             web3,
-            timeout,
+            ETH_SUBMIT_WAIT_TIME,
             gravity_contract_address,
             gravity_id,
             ethereum_key,

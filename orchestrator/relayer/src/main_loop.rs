@@ -13,7 +13,10 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
+/// The general network request and operation timeout
 pub const TIMEOUT: Duration = Duration::from_secs(10);
+/// The Amount of time to wait for an Ethereum transaction submission to enter the chain
+pub const ETH_SUBMIT_WAIT_TIME: Duration = Duration::from_secs(600);
 
 /// This function contains the orchestrator primary loop, it is broken out of the main loop so that
 /// it can be called in the test runner for easier orchestration of multi-node tests
@@ -48,7 +51,6 @@ pub async fn relayer_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             gravity_id.clone(),
-            TIMEOUT,
             relayer_config.clone(),
         )
         .await;
@@ -60,7 +62,6 @@ pub async fn relayer_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             gravity_id.clone(),
-            TIMEOUT,
             relayer_config.clone(),
         )
         .await;
@@ -72,7 +73,6 @@ pub async fn relayer_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             gravity_id.clone(),
-            TIMEOUT,
             relayer_config.clone(),
         )
         .await;

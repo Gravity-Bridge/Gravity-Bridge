@@ -1,3 +1,4 @@
+use crate::main_loop::ETH_SUBMIT_WAIT_TIME;
 use clarity::address::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::Uint256;
@@ -14,7 +15,6 @@ use gravity_utils::types::BatchRelayingMode;
 use gravity_utils::types::WhitelistToken;
 use gravity_utils::types::{BatchConfirmResponse, RelayerConfig, TransactionBatch, Valset};
 use std::collections::HashMap;
-use std::time::Duration;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -40,7 +40,6 @@ pub async fn relay_batches(
     grpc_client: &mut GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
     gravity_id: String,
-    timeout: Duration,
     config: RelayerConfig,
 ) {
     let possible_batches =
@@ -54,7 +53,6 @@ pub async fn relay_batches(
         web3,
         gravity_contract_address,
         gravity_id,
-        timeout,
         possible_batches,
         config,
     )
@@ -213,7 +211,6 @@ async fn submit_batches(
     web3: &Web3,
     gravity_contract_address: EthAddress,
     gravity_id: String,
-    timeout: Duration,
     possible_batches: HashMap<EthAddress, Vec<SubmittableBatch>>,
     config: RelayerConfig,
 ) {
@@ -303,7 +300,7 @@ async fn submit_batches(
                         oldest_signed_batch,
                         &oldest_signatures,
                         web3,
-                        timeout,
+                        ETH_SUBMIT_WAIT_TIME,
                         gravity_contract_address,
                         gravity_id.clone(),
                         ethereum_key,

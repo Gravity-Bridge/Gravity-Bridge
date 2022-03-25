@@ -1,3 +1,4 @@
+use crate::main_loop::ETH_SUBMIT_WAIT_TIME;
 use clarity::{address::Address as EthAddress, utils::bytes_to_hex_str};
 use clarity::{PrivateKey as EthPrivateKey, Uint256};
 use cosmos_gravity::query::{get_latest_logic_calls, get_logic_call_signatures};
@@ -8,7 +9,6 @@ use gravity_utils::num_conversion::{print_eth, print_gwei};
 use gravity_utils::types::{LogicCall, RelayerConfig};
 use gravity_utils::types::{LogicCallConfirmResponse, Valset};
 use std::collections::HashMap;
-use std::time::Duration;
 use tonic::transport::Channel;
 use web30::amm::WETH_CONTRACT_ADDRESS;
 use web30::client::Web3;
@@ -75,7 +75,6 @@ pub async fn relay_logic_calls(
     grpc_client: &mut GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
     gravity_id: String,
-    timeout: Duration,
     config: RelayerConfig,
 ) {
     let our_ethereum_address = ethereum_key.to_address();
@@ -184,7 +183,7 @@ pub async fn relay_logic_calls(
                 oldest_signed_call,
                 &oldest_signatures,
                 web3,
-                timeout,
+                ETH_SUBMIT_WAIT_TIME,
                 gravity_contract_address,
                 gravity_id.clone(),
                 ethereum_key,
