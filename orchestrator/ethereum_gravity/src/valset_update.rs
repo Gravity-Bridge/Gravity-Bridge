@@ -77,9 +77,8 @@ pub async fn estimate_valset_cost(
     web3: &Web3,
     gravity_contract_address: EthAddress,
     gravity_id: String,
-    our_eth_key: EthPrivateKey,
+    our_eth_address: EthAddress,
 ) -> Result<GasCost, GravityError> {
-    let our_eth_address = our_eth_key.to_address();
     let our_balance = web3.eth_get_balance(our_eth_address).await?;
     let our_nonce = web3.eth_get_transaction_count(our_eth_address).await?;
     let gas_limit = min((u64::MAX - 1).into(), our_balance.clone());

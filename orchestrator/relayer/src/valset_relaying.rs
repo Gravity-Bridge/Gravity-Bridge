@@ -103,7 +103,7 @@ async fn relay_valid_valset(
         web3,
         gravity_contract_address,
         gravity_id.clone(),
-        ethereum_key,
+        ethereum_key.to_address(),
     )
     .await;
     if cost.is_err() {
