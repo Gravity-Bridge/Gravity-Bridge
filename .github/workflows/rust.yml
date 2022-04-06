@@ -65,4 +65,4 @@ jobs:
         with:
           working-directory: orchestrator/
       - name: Cross compile tests
-        run: cargo install cross && cd orchestrator && cross test --all --release --target aarch64-unknown-linux-gnu
+        run: cargo install cross && cd orchestrator && cross test --all --exclude proto_build --release --target aarch64-unknown-linux-gnu
