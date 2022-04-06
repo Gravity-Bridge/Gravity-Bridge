@@ -303,9 +303,9 @@ pub async fn send_ethereum_claims(
         msgs.push(unordered_msgs.remove_entry(&i).unwrap().1);
     }
 
-    Ok(contact
+    contact
         .send_message(&msgs, None, &[fee], Some(TIMEOUT), private_key)
-        .await?)
+        .await
 }
 
 /// Sends tokens from Cosmos to Ethereum. These tokens will not be sent immediately instead

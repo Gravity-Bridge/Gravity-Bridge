@@ -250,7 +250,7 @@ pub async fn get_attestations(
 ) -> Result<Vec<Attestation>, GravityError> {
     let request = client
         .get_attestations(QueryAttestationsRequest {
-            limit: limit.or(Some(1000u64)).unwrap(),
+            limit: limit.unwrap_or(1000u64),
             order_by: String::new(),
             claim_type: String::new(),
             nonce: 0,
