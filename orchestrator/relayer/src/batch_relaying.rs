@@ -133,7 +133,14 @@ async fn should_relay_batch(
 
     let batch_reward_amount = batch.total_fee.amount.clone();
     let batch_reward_token = batch.total_fee.token_contract_address;
-    let price = get_weth_price(batch_reward_token, batch_reward_amount, pubkey, web3).await;
+    // gets the price of the provided amount of the provided token in weth
+    let price = get_weth_price(
+        batch_reward_token,
+        batch_reward_amount.clone(),
+        pubkey,
+        web3,
+    )
+    .await;
 
     match config {
         BatchRelayingMode::EveryBatch | BatchRelayingMode::Altruistic => true,
@@ -158,10 +165,17 @@ async fn should_relay_batch(
             let cost_with_margin = get_cost_with_margin(cost, *margin);
             // we need to see how much WETH we can get for the reward token amount,
             // and compare that value to the gas cost times the margin
-            match (price, get_whitelist_amount(batch.token_contract, whitelist)) {
-                (_, Some(amount)) => amount <= batch.total_fee.amount,
+            match (price, get_whitelist_price(batch.token_contract, whitelist)) {
+                // config specifies this tokens price
+                (_, Some((whitelist_price, decimals))) => {
+                    let one = Uint256::from(1u8);
+                    let one = one.pow(decimals as u32).to_string().parse().unwrap();
+                    let reward_amount_in_weth = (whitelist_price / one) * batch_reward_amount;
+                    reward_amount_in_weth > cost_with_margin
+                }
+                // we got the price in uniswap
                 (Ok(price), None) => price > cost_with_margin,
-                (Err(e), None) => {
+                (Err(e), _) => {
                     info!(
                         "Unable to determine swap price of token {} for WETH \n
                 it may just not be on Uniswap - Will not be relaying batch {:?}",
@@ -174,12 +188,11 @@ async fn should_relay_batch(
     }
 }
 
-/// Takes a token price whitelist, gets the amount of tokens for the specified
-/// ERC20, returns none if not whitelisted
-fn get_whitelist_amount(erc20: EthAddress, whitelist: &[WhitelistToken]) -> Option<Uint256> {
+/// Takes a token price whitelist, gets the amount of weth per token we have manually valued it at
+fn get_whitelist_price(erc20: EthAddress, whitelist: &[WhitelistToken]) -> Option<(Uint256, u8)> {
     for i in whitelist {
         if i.token == erc20 {
-            return Some(i.amount.clone());
+            return Some((i.price.clone(), i.decimals));
         }
     }
     None

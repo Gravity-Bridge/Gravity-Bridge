@@ -123,8 +123,10 @@ pub enum BatchRequestMode {
 /// provides at least amount of this specific token
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct WhitelistToken {
-    /// the amount which the batch must have to be relayed
-    pub amount: Uint256,
+    /// the price of this token, denominated in weth per coin
+    pub price: Uint256,
+    /// the number of decimals this token has between it's base unit and a single coin
+    pub decimals: u8,
     /// the token which the batch must have the specified amount
     /// of to be relayed
     pub token: EthAddress,
