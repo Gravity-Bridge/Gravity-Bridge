@@ -19,7 +19,7 @@ num256 = "0.3"
 log = "0.4"
 sha3 = "0.10"
 tokio = "1.4"
-web30 = "0.18.6"
+web30 = "0.18"
 tonic = "0.6"
 prost-types = "0.9"
 

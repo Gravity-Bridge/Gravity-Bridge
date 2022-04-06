@@ -32,9 +32,8 @@ pub fn print_relaying_explanation(input: &RelayerConfig, batch_requests: bool) {
         ),
     }
     match &input.batch_relaying_mode {
-        gravity_utils::types::BatchRelayingMode::EveryBatch => {
-            info!("This relayer will relay every batch. This will cost a lot of ETH!")
-        },
+        gravity_utils::types::BatchRelayingMode::EveryBatch => info!("This relayer will relay every batch. This will cost a lot of ETH!"),
+        gravity_utils::types::BatchRelayingMode::Altruistic => info!("This relayer will relay batches during the lowest 5% of daily gas prices"),
         gravity_utils::types::BatchRelayingMode::ProfitableOnly { margin } => info!("This relayer will only relay batches if they have a profitable reward with at least {} margin", margin),
         gravity_utils::types::BatchRelayingMode::ProfitableWithWhitelist { margin, whitelist } =>
             info!("This relayer will relay profitable matches with {} margin, and the following tokens with the provided amounts {:?}", margin, whitelist)

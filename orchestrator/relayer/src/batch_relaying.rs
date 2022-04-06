@@ -136,7 +136,7 @@ async fn should_relay_batch(
     let price = get_weth_price(batch_reward_token, batch_reward_amount, pubkey, web3).await;
 
     match config {
-        BatchRelayingMode::EveryBatch => true,
+        BatchRelayingMode::EveryBatch | BatchRelayingMode::Altruistic => true,
         BatchRelayingMode::ProfitableOnly { margin } => {
             let cost_with_margin = get_cost_with_margin(cost, *margin);
 

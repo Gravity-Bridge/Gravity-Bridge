@@ -133,7 +133,10 @@ pub struct WhitelistToken {
 /// The various possible modes for batch relaying
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum BatchRelayingMode {
-    /// Every possible tach is relayed, mostly for developers
+    /// Submits batches at times of minimum gas fees to provide maximum
+    /// utility with donated funds
+    Altruistic,
+    /// Every possible batch is relayed, mostly for developers
     EveryBatch,
     /// Only consider batches that are profitable as defined by
     /// the given token being listed in Uniswap for a WETH value
@@ -161,6 +164,7 @@ pub struct TomlBatchRelayingMode {
 impl From<TomlBatchRelayingMode> for BatchRelayingMode {
     fn from(input: TomlBatchRelayingMode) -> Self {
         match input.mode.as_str() {
+            "Altruistic" | "altruistic" | "ALTRUISTIC" => BatchRelayingMode::Altruistic,
             "EveryBatch" | "everybatch" | "EVERYBATCH" => BatchRelayingMode::EveryBatch,
             "ProfitableOnly" | "profitableonly" | "PROFITABLEONLY" => {
                 BatchRelayingMode::ProfitableOnly {
