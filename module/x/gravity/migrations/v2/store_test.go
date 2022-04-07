@@ -1,4 +1,4 @@
-package v1_test
+package v2_test
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
+	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -50,14 +51,14 @@ func oldGetOutgoingTxPoolKey(fee types.InternalERC20Token, id uint64) string {
 	amount := make([]byte, 32)
 	amount = fee.Amount.BigInt().FillBytes(amount)
 
-	amount = append(amount, types.UInt64Bytes(id)...)
+	amount = append(amount, v2.UInt64Bytes(id)...)
 	amount = append([]byte(fee.Contract.GetAddress().Hex()), amount...)
 	amount = append([]byte(v1.OutgoingTXPoolKey), amount...)
 	return v1.ConvertByteArrToString(amount)
 }
 
 func oldGetOutgoingTxBatchKey(tokenContract string, nonce uint64) string {
-	return v1.OutgoingTXBatchKey + tokenContract + v1.ConvertByteArrToString(types.UInt64Bytes(nonce))
+	return v1.OutgoingTXBatchKey + tokenContract + v1.ConvertByteArrToString(v2.UInt64Bytes(nonce))
 }
 
 func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
@@ -66,7 +67,7 @@ func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
 
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldGetDenomToERC20Key(denom)), []byte(tokenContract))
 
-	err := v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
+	err := v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
 	addr, found := input.GravityKeeper.GetCosmosOriginatedERC20(input.Context, denom)
@@ -83,7 +84,7 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldGetERC20ToDenomKey(tokenContract)), []byte(denom))
 
-	err := v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
+	err := v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
 	tokenAddr, err := types.NewEthAddress(tokenContract)
@@ -114,7 +115,7 @@ func TestMigrateEthAddressByValidator(t *testing.T) {
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldEthAddressByValidatorKey(validator)), []byte(ethAddr))
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldEthAddressByValidatorKey(validator)), []byte(ethAddr))
 
-	err = v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
+	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
 	valEthAddr, found := input.GravityKeeper.GetEthAddressByValidator(input.Context, validator)
@@ -138,7 +139,7 @@ func TestMigrateValidatorByEthAddressKey(t *testing.T) {
 	input.Context.KVStore(input.GravityStoreKey).
 		Set([]byte(oldGetValidatorByEthAddressKey(ethAddr)), []byte(validator))
 
-	err = v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
+	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
 	addr, err := types.NewEthAddress(ethAddr)
@@ -162,7 +163,7 @@ func TestMigrateBatchConfirms(t *testing.T) {
 	assert.NoError(t, err)
 	ethAddr := "0x2a24af0501a534fca004ee1bd667b783f205a546"
 
-	key := v1.BatchConfirmKey + ethAddr + v1.ConvertByteArrToString(types.UInt64Bytes(123)) + string(orch.Bytes())
+	key := v1.BatchConfirmKey + ethAddr + v1.ConvertByteArrToString(v2.UInt64Bytes(123)) + string(orch.Bytes())
 
 	confirm := &types.MsgConfirmBatch{
 		Nonce:         123,
@@ -175,7 +176,7 @@ func TestMigrateBatchConfirms(t *testing.T) {
 	input.Context.KVStore(input.GravityStoreKey).
 		Set([]byte(key), confirmBytes)
 
-	err = v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
+	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
 	addr, err := types.NewEthAddress(ethAddr)
@@ -209,7 +210,7 @@ func TestMigrateOutgoingTxs(t *testing.T) {
 	inputBytes := input.Marshaler.MustMarshal(outtx)
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldKey), inputBytes)
 
-	err = v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
+	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
 	key := types.GetOutgoingTxPoolKey(*internalTx, outtx.Id)
@@ -238,7 +239,7 @@ func TestMigrateOutgoingTxBatches(t *testing.T) {
 	inputBytes := input.Marshaler.MustMarshal(&batch)
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldKey), inputBytes)
 
-	err = v1.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
+	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
 	key := types.GetOutgoingTxBatchKey(*addr, batch.BatchNonce)
@@ -285,7 +286,7 @@ func TestMigrateStoreForUnusedKeys(t *testing.T) {
 	}
 
 	// Run migrations
-	err := v1.MigrateStore(ctx, gravityKey, marshaler)
+	err := v2.MigrateStore(ctx, gravityKey, marshaler)
 	require.NoError(t, err)
 
 	// checks results of migration: nothing in store with old key prefix format - new prefix key format is not defined!
@@ -321,61 +322,61 @@ func TestMigrateStoreKeys(t *testing.T) {
 		{
 			"LastObservedEventNonceKey",
 			v1.LastObservedEventNonceKey,
-			types.LastObservedEventNonceKey,
+			v2.LastObservedEventNonceKey,
 			dummyValue,
 		},
 		{
 			"KeyLastTXPoolID",
 			v1.KeyLastTXPoolID,
-			types.KeyLastTXPoolID,
+			v2.KeyLastTXPoolID,
 			dummyValue,
 		},
 		{
 			"KeyLastOutgoingBatchID",
 			v1.KeyLastOutgoingBatchID,
-			types.KeyLastOutgoingBatchID,
+			v2.KeyLastOutgoingBatchID,
 			dummyValue,
 		},
 		{
 			"LastObservedEthereumBlockHeightKey",
 			v1.LastObservedEthereumBlockHeightKey,
-			types.LastObservedEthereumBlockHeightKey,
+			v2.LastObservedEthereumBlockHeightKey,
 			dummyValue,
 		},
 		{
 			"LastSlashedValsetNonce",
 			v1.LastSlashedValsetNonce,
-			types.LastSlashedValsetNonce,
+			v2.LastSlashedValsetNonce,
 			dummyValue,
 		},
 		{
 			"LatestValsetNonce",
 			v1.LatestValsetNonce,
-			types.LatestValsetNonce,
+			v2.LatestValsetNonce,
 			dummyValue,
 		},
 		{
 			"LastSlashedBatchBlock",
 			v1.LastSlashedBatchBlock,
-			types.LastSlashedBatchBlock,
+			v2.LastSlashedBatchBlock,
 			dummyValue,
 		},
 		{
 			"LastSlashedLogicCallBlock",
 			v1.LastSlashedLogicCallBlock,
-			types.LastSlashedLogicCallBlock,
+			v2.LastSlashedLogicCallBlock,
 			dummyValue,
 		},
 		{
 			"LastUnBondingBlockHeight",
 			v1.LastUnBondingBlockHeight,
-			types.LastUnBondingBlockHeight,
+			v2.LastUnBondingBlockHeight,
 			dummyValue,
 		},
 		{
 			"LastObservedValsetKey",
 			v1.LastObservedValsetKey,
-			types.LastObservedValsetKey,
+			v2.LastObservedValsetKey,
 			dummyValue,
 		},
 	}
@@ -386,7 +387,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 	}
 
 	// Run migrations
-	err := v1.MigrateStore(ctx, gravityKey, marshaler)
+	err := v2.MigrateStore(ctx, gravityKey, marshaler)
 	require.NoError(t, err)
 
 	// checks results of migration
@@ -427,31 +428,31 @@ func TestMigrateStoreKeysFromKeys(t *testing.T) {
 		{
 			"ValidatorByEthAddressKey",
 			v1.GetValidatorByEthAddressKey(*ethAddr),
-			types.GetValidatorByEthAddressKey(*ethAddr),
+			v2.GetValidatorByEthAddressKey(*ethAddr),
 			valAddr.Bytes(),
 		},
 		{
 			"LastEventNonceByValidatorKey",
 			v1.GetLastEventNonceByValidatorKey(valAddr),
-			types.GetLastEventNonceByValidatorKey(valAddr),
-			types.UInt64Bytes(nonce),
+			v2.GetLastEventNonceByValidatorKey(valAddr),
+			v2.UInt64Bytes(nonce),
 		},
 		{
 			"KeyOrchestratorAddress",
 			v1.GetOrchestratorAddressKey(accAddr),
-			types.GetOrchestratorAddressKey(accAddr),
+			v2.GetOrchestratorAddressKey(accAddr),
 			valAddr.Bytes(),
 		},
 		{
 			"ERC20ToDenomKey",
 			v1.GetERC20ToDenomKey(*ethAddr),
-			types.GetERC20ToDenomKey(*ethAddr),
+			v2.GetERC20ToDenomKey(*ethAddr),
 			[]byte(denom),
 		},
 		{
 			"PastEthSignatureCheckpointKey",
 			v1.GetPastEthSignatureCheckpointKey([]byte(dummyCheckpoint)),
-			types.GetPastEthSignatureCheckpointKey([]byte(dummyCheckpoint)),
+			v2.GetPastEthSignatureCheckpointKey([]byte(dummyCheckpoint)),
 			dummyValue,
 		},
 	}
@@ -466,13 +467,13 @@ func TestMigrateStoreKeysFromKeys(t *testing.T) {
 		{
 			"EthAddressByValidatorKey",
 			v1.GetEthAddressByValidatorKey(valAddr),
-			types.GetEthAddressByValidatorKey(valAddr),
+			v2.GetEthAddressByValidatorKey(valAddr),
 			[]byte(ethAddrStr),
 		},
 		{
 			"DenomToERC20Key",
 			v1.GetDenomToERC20Key(denom),
-			types.GetDenomToERC20Key(denom),
+			v2.GetDenomToERC20Key(denom),
 			[]byte(ethAddrStr),
 		},
 	}
@@ -486,7 +487,7 @@ func TestMigrateStoreKeysFromKeys(t *testing.T) {
 	}
 
 	// Run migrations
-	err := v1.MigrateStore(ctx, gravityKey, marshaler)
+	err := v2.MigrateStore(ctx, gravityKey, marshaler)
 	require.NoError(t, err)
 
 	// checks results of migration
@@ -641,55 +642,55 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 		{
 			"OutgoingTXBatchKey",
 			v1.GetOutgoingTxBatchKey(*ethAddr, dummyOutgoingTxBatch.BatchNonce),
-			types.GetOutgoingTxBatchKey(*ethAddr, dummyOutgoingTxBatch.BatchNonce),
+			v2.GetOutgoingTxBatchKey(*ethAddr, dummyOutgoingTxBatch.BatchNonce),
 			marshaler.MustMarshal(&dummyOutgoingTxBatch),
 		},
 		{
 			"OutgoingTXBatchKey - Bytes Corner case",
 			v1.GetOutgoingTxBatchKey(*ethAddr, dummyCornerCaseBatch.BatchNonce),
-			types.GetOutgoingTxBatchKey(*ethAddr, dummyCornerCaseBatch.BatchNonce),
+			v2.GetOutgoingTxBatchKey(*ethAddr, dummyCornerCaseBatch.BatchNonce),
 			marshaler.MustMarshal(&dummyCornerCaseBatch),
 		},
 		{
 			"ValsetRequestKey",
 			v1.GetValsetKey(dummyValset.Nonce),
-			types.GetValsetKey(dummyValset.Nonce),
+			v2.GetValsetKey(dummyValset.Nonce),
 			marshaler.MustMarshal(&dummyValset),
 		},
 		{
 			"ValsetConfirmKey",
 			v1.GetValsetConfirmKey(dummyValsetConfirm.Nonce, accAddr),
-			types.GetValsetConfirmKey(dummyValsetConfirm.Nonce, accAddr),
+			v2.GetValsetConfirmKey(dummyValsetConfirm.Nonce, accAddr),
 			marshaler.MustMarshal(&dummyValsetConfirm),
 		},
 		{
 			"OracleAttestationKey",
 			v1.GetAttestationKey(nonce, hash),
-			types.GetAttestationKey(nonce, hash),
+			v2.GetAttestationKey(nonce, hash),
 			marshaler.MustMarshal(dummyAttestation),
 		},
 		{
 			"OutgoingTXPoolKey",
 			v1.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.Id),
-			types.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.Id),
+			v2.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.Id),
 			bz,
 		},
 		{
 			"BatchConfirmKey",
 			v1.GetBatchConfirmKey(*tokenContract, dummyBatchConfirm.Nonce, accAddr),
-			types.GetBatchConfirmKey(*tokenContract, dummyBatchConfirm.Nonce, accAddr),
+			v2.GetBatchConfirmKey(*tokenContract, dummyBatchConfirm.Nonce, accAddr),
 			marshaler.MustMarshal(&dummyBatchConfirm),
 		},
 		{
 			"KeyOutgoingLogicCall",
 			v1.GetOutgoingLogicCallKey(call.InvalidationId, call.InvalidationNonce),
-			types.GetOutgoingLogicCallKey(call.InvalidationId, call.InvalidationNonce),
+			v2.GetOutgoingLogicCallKey(call.InvalidationId, call.InvalidationNonce),
 			marshaler.MustMarshal(&call),
 		},
 		{
 			"KeyOutgoingLogicConfirm",
 			v1.GetLogicConfirmKey(decInvalidationId, confirm.InvalidationNonce, valAccAdd),
-			types.GetLogicConfirmKey(decInvalidationId, confirm.InvalidationNonce, valAccAdd),
+			v2.GetLogicConfirmKey(decInvalidationId, confirm.InvalidationNonce, valAccAdd),
 			marshaler.MustMarshal(&confirm),
 		},
 	}
@@ -700,7 +701,7 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 	}
 
 	// Run migrations
-	err = v1.MigrateStore(ctx, gravityKey, marshaler)
+	err = v2.MigrateStore(ctx, gravityKey, marshaler)
 	require.NoError(t, err)
 
 	// Check migration results:
@@ -747,12 +748,12 @@ func TestMigrateInvalidStore(t *testing.T) {
 	}{
 		{
 			"OutgoingTXBatchKey - Invalid Ethereum address",
-			v1.OutgoingTXBatchKey + invalidEthAddress + v1.ConvertByteArrToString(types.UInt64Bytes(dummyOutgoingTxBatch.BatchNonce)),
+			v1.OutgoingTXBatchKey + invalidEthAddress + v1.ConvertByteArrToString(v2.UInt64Bytes(dummyOutgoingTxBatch.BatchNonce)),
 			marshaler.MustMarshal(&dummyOutgoingTxBatch),
 		},
 		{
 			"ValsetConfirmKey - Invalid Orchestrator address",
-			v1.ValsetConfirmKey + v1.ConvertByteArrToString(types.UInt64Bytes(dummyValsetConfirm.Nonce)) + invalidAccAddress,
+			v1.ValsetConfirmKey + v1.ConvertByteArrToString(v2.UInt64Bytes(dummyValsetConfirm.Nonce)) + invalidAccAddress,
 			marshaler.MustMarshal(&dummyValsetConfirm),
 		},
 	}
@@ -764,7 +765,7 @@ func TestMigrateInvalidStore(t *testing.T) {
 		store := ctx.KVStore(gravityKey)
 		store.Set([]byte(tc.oldPrefixKey), tc.value)
 
-		err := v1.MigrateStore(ctx, gravityKey, marshaler)
+		err := v2.MigrateStore(ctx, gravityKey, marshaler)
 
 		t.Run(tc.name, func(t *testing.T) {
 			require.Error(t, err)
