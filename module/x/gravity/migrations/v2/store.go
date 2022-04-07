@@ -1,9 +1,10 @@
-package v1
+package v2
 
 import (
 	"encoding/hex"
 	"fmt"
 
+	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -57,7 +58,7 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 }
 
 func migrateCosmosOriginatedDenomToERC20(store storetypes.KVStore) error {
-	prefixStore := prefix.NewStore(store, []byte(DenomToERC20Key))
+	prefixStore := prefix.NewStore(store, []byte(v1.DenomToERC20Key))
 	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
@@ -72,7 +73,7 @@ func migrateCosmosOriginatedDenomToERC20(store storetypes.KVStore) error {
 }
 
 func migrateCosmosOriginatedERC20ToDenom(store storetypes.KVStore) error {
-	prefixStore := prefix.NewStore(store, []byte(ERC20ToDenomKey))
+	prefixStore := prefix.NewStore(store, []byte(v1.ERC20ToDenomKey))
 	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
@@ -89,7 +90,7 @@ func migrateCosmosOriginatedERC20ToDenom(store storetypes.KVStore) error {
 }
 
 func migrateEthAddressByValidator(store storetypes.KVStore) error {
-	prefixStore := prefix.NewStore(store, []byte(EthAddressByValidatorKey))
+	prefixStore := prefix.NewStore(store, []byte(v1.EthAddressByValidatorKey))
 	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
@@ -107,7 +108,7 @@ func migrateValidatorByEthAddressKey(store storetypes.KVStore) error {
 	// keep only the well encoded key and discard the other. This is possible
 	// given that the all lower case keys were never accepted and no confirms
 	// made.
-	prefixStore := prefix.NewStore(store, []byte(ValidatorByEthAddressKey))
+	prefixStore := prefix.NewStore(store, []byte(v1.ValidatorByEthAddressKey))
 	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
@@ -131,7 +132,7 @@ func migrateValidatorByEthAddressKey(store storetypes.KVStore) error {
 func migrateBatchConfirms(store storetypes.KVStore) error {
 	// previously:  BatchConfirmKey + tokenContract.GetAddress() + ConvertByteArrToString(UInt64Bytes(batchNonce)) + string(validator.Bytes())
 
-	prefixStore := prefix.NewStore(store, []byte(BatchConfirmKey))
+	prefixStore := prefix.NewStore(store, []byte(v1.BatchConfirmKey))
 	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
@@ -148,7 +149,7 @@ func migrateBatchConfirms(store storetypes.KVStore) error {
 }
 
 func migrateOutgoingTxs(store storetypes.KVStore) error {
-	prefixStore := prefix.NewStore(store, []byte(OutgoingTXPoolKey))
+	prefixStore := prefix.NewStore(store, []byte(v1.OutgoingTXPoolKey))
 	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
@@ -167,7 +168,7 @@ func migrateOutgoingTxs(store storetypes.KVStore) error {
 func migrateOutgoingTxBatches(store storetypes.KVStore) error {
 	// OutgoingTXBatchKey + tokenContract.GetAddress() + ConvertByteArrToString(UInt64Bytes(nonce))
 	// OutgoingTXBatchKey + string(tokenContract.GetAddress().Bytes()) + ConvertByteArrToString(UInt64Bytes(nonce))
-	prefixStore := prefix.NewStore(store, []byte(OutgoingTXBatchKey))
+	prefixStore := prefix.NewStore(store, []byte(v1.OutgoingTXBatchKey))
 	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
@@ -189,66 +190,66 @@ func migrateOutgoingTxBatches(store storetypes.KVStore) error {
 // hash(string_prefix) | key_part1 | key_part2 ...
 func migrateKeys(store sdk.KVStore, cdc codec.BinaryCodec) error {
 	fmt.Println("Mercury Upgrade: Enter migrateKeys")
-	if err := migrateKeysFromValues(store, cdc, OutgoingTXBatchKey, convertBatchKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.OutgoingTXBatchKey, convertBatchKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromValues(store, cdc, ValsetRequestKey, convertValsetKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.ValsetRequestKey, convertValsetKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromValues(store, cdc, ValsetConfirmKey, convertValsetConfirmKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.ValsetConfirmKey, convertValsetConfirmKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromValues(store, cdc, OracleAttestationKey, convertAttestationKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.OracleAttestationKey, convertAttestationKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromValues(store, cdc, OutgoingTXPoolKey, convertOutgoingTxKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.OutgoingTXPoolKey, convertOutgoingTxKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromValues(store, cdc, BatchConfirmKey, convertBatchConfirmKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.BatchConfirmKey, convertBatchConfirmKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromValues(store, cdc, KeyOutgoingLogicCall, convertLogicCallKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.KeyOutgoingLogicCall, convertLogicCallKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromValues(store, cdc, KeyOutgoingLogicConfirm, convertLogicCallConfirmKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.KeyOutgoingLogicConfirm, convertLogicCallConfirmKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromKeys(store, EthAddressByValidatorKey, types.EthAddressByValidatorKey); err != nil {
+	if err := migrateKeysFromKeys(store, v1.EthAddressByValidatorKey, EthAddressByValidatorKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromKeys(store, ValidatorByEthAddressKey, types.ValidatorByEthAddressKey); err != nil {
+	if err := migrateKeysFromKeys(store, v1.ValidatorByEthAddressKey, ValidatorByEthAddressKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromKeys(store, LastEventNonceByValidatorKey, types.LastEventNonceByValidatorKey); err != nil {
+	if err := migrateKeysFromKeys(store, v1.LastEventNonceByValidatorKey, LastEventNonceByValidatorKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromKeys(store, KeyOrchestratorAddress, types.KeyOrchestratorAddress); err != nil {
+	if err := migrateKeysFromKeys(store, v1.KeyOrchestratorAddress, KeyOrchestratorAddress); err != nil {
 		return err
 	}
-	if err := migrateKeysFromKeys(store, DenomToERC20Key, types.DenomToERC20Key); err != nil {
+	if err := migrateKeysFromKeys(store, v1.DenomToERC20Key, DenomToERC20Key); err != nil {
 		return err
 	}
-	if err := migrateKeysFromKeys(store, ERC20ToDenomKey, types.ERC20ToDenomKey); err != nil {
+	if err := migrateKeysFromKeys(store, v1.ERC20ToDenomKey, ERC20ToDenomKey); err != nil {
 		return err
 	}
-	if err := migrateKeysFromKeys(store, PastEthSignatureCheckpointKey, types.PastEthSignatureCheckpointKey); err != nil {
+	if err := migrateKeysFromKeys(store, v1.PastEthSignatureCheckpointKey, PastEthSignatureCheckpointKey); err != nil {
 		return err
 	}
 
-	migrateKey(store, LastObservedEventNonceKey, types.LastObservedEventNonceKey)
-	migrateKey(store, KeyLastTXPoolID, types.KeyLastTXPoolID)
-	migrateKey(store, KeyLastOutgoingBatchID, types.KeyLastOutgoingBatchID)
-	migrateKey(store, LastObservedEthereumBlockHeightKey, types.LastObservedEthereumBlockHeightKey)
-	migrateKey(store, LastSlashedValsetNonce, types.LastSlashedValsetNonce)
-	migrateKey(store, LatestValsetNonce, types.LatestValsetNonce)
-	migrateKey(store, LastSlashedBatchBlock, types.LastSlashedBatchBlock)
-	migrateKey(store, LastSlashedLogicCallBlock, types.LastSlashedLogicCallBlock)
-	migrateKey(store, LastUnBondingBlockHeight, types.LastUnBondingBlockHeight)
-	migrateKey(store, LastObservedValsetKey, types.LastObservedValsetKey)
+	migrateKey(store, v1.LastObservedEventNonceKey, LastObservedEventNonceKey)
+	migrateKey(store, v1.KeyLastTXPoolID, KeyLastTXPoolID)
+	migrateKey(store, v1.KeyLastOutgoingBatchID, KeyLastOutgoingBatchID)
+	migrateKey(store, v1.LastObservedEthereumBlockHeightKey, LastObservedEthereumBlockHeightKey)
+	migrateKey(store, v1.LastSlashedValsetNonce, LastSlashedValsetNonce)
+	migrateKey(store, v1.LatestValsetNonce, LatestValsetNonce)
+	migrateKey(store, v1.LastSlashedBatchBlock, LastSlashedBatchBlock)
+	migrateKey(store, v1.LastSlashedLogicCallBlock, LastSlashedLogicCallBlock)
+	migrateKey(store, v1.LastUnBondingBlockHeight, LastUnBondingBlockHeight)
+	migrateKey(store, v1.LastObservedValsetKey, LastObservedValsetKey)
 
-	deleteUnusedKeys(store, OracleClaimKey)
-	deleteUnusedKeys(store, DenomiatorPrefix)
-	deleteUnusedKeys(store, SecondIndexNonceByClaimKey)
+	deleteUnusedKeys(store, v1.OracleClaimKey)
+	deleteUnusedKeys(store, v1.DenomiatorPrefix)
+	deleteUnusedKeys(store, v1.SecondIndexNonceByClaimKey)
 
 	fmt.Println("Mercury Upgrade: migrateKeys succss! Returning nil")
 	return nil
@@ -310,7 +311,7 @@ func convertValsetKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
 	var valset types.Valset
 	cdc.MustUnmarshal(oldValue, &valset)
 
-	return types.GetValsetKey(valset.Nonce), nil
+	return GetValsetKey(valset.Nonce), nil
 }
 
 func convertValsetConfirmKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
@@ -321,7 +322,7 @@ func convertValsetConfirmKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, er
 		return nil, err
 	}
 
-	return types.GetValsetConfirmKey(valsetConfirm.Nonce, orchAddr), nil
+	return GetValsetConfirmKey(valsetConfirm.Nonce, orchAddr), nil
 }
 
 func convertAttestationKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
@@ -336,7 +337,7 @@ func convertAttestationKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, erro
 		return nil, err
 	}
 
-	return types.GetAttestationKey(claim.GetEventNonce(), hash), nil
+	return GetAttestationKey(claim.GetEventNonce(), hash), nil
 }
 
 func convertOutgoingTxKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
@@ -347,7 +348,7 @@ func convertOutgoingTxKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error
 		return nil, err
 	}
 
-	return types.GetOutgoingTxPoolKey(*fee, tx.Id), nil
+	return GetOutgoingTxPoolKey(*fee, tx.Id), nil
 }
 
 func convertBatchKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
@@ -358,7 +359,7 @@ func convertBatchKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
 		return nil, err
 	}
 
-	return types.GetOutgoingTxBatchKey(*tokenAddr, batch.BatchNonce), nil
+	return GetOutgoingTxBatchKey(*tokenAddr, batch.BatchNonce), nil
 }
 
 func convertBatchConfirmKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
@@ -373,14 +374,14 @@ func convertBatchConfirmKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, err
 		return nil, err
 	}
 
-	return types.GetBatchConfirmKey(*tokenAddr, batchConfirm.Nonce, orchAddr), nil
+	return GetBatchConfirmKey(*tokenAddr, batchConfirm.Nonce, orchAddr), nil
 }
 
 func convertLogicCallKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
 	var outgoingLogicCall types.OutgoingLogicCall
 	cdc.MustUnmarshal(oldValue, &outgoingLogicCall)
 
-	return types.GetOutgoingLogicCallKey(outgoingLogicCall.InvalidationId, outgoingLogicCall.InvalidationNonce), nil
+	return GetOutgoingLogicCallKey(outgoingLogicCall.InvalidationId, outgoingLogicCall.InvalidationNonce), nil
 }
 
 func convertLogicCallConfirmKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte, error) {
@@ -395,7 +396,7 @@ func convertLogicCallConfirmKey(oldValue []byte, cdc codec.BinaryCodec) ([]byte,
 		return nil, err
 	}
 
-	return types.GetLogicConfirmKey(invalidationIdBytes, outgoingLogicConfirm.InvalidationNonce, orchAddr), nil
+	return GetLogicConfirmKey(invalidationIdBytes, outgoingLogicConfirm.InvalidationNonce, orchAddr), nil
 }
 
 // helper functions
