@@ -63,8 +63,8 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	k.SetLastSlashedValsetNonce(ctx, data.GravityNonces.LastSlashedValsetNonce)
 	k.SetLastSlashedBatchBlock(ctx, data.GravityNonces.LastSlashedBatchBlock)
 	k.SetLastSlashedLogicCallBlock(ctx, data.GravityNonces.LastSlashedLogicCallBlock)
-	k.setID(ctx, data.GravityNonces.LastTxPoolId, []byte(types.KeyLastTXPoolID))
-	k.setID(ctx, data.GravityNonces.LastBatchId, []byte(types.KeyLastOutgoingBatchID))
+	k.setID(ctx, data.GravityNonces.LastTxPoolId, types.KeyLastTXPoolID)       //TODO: EVM
+	k.setID(ctx, data.GravityNonces.LastBatchId, types.KeyLastOutgoingBatchID) //TODO: EVM
 
 	initBridgeDataFromGenesis(ctx, k, data)
 

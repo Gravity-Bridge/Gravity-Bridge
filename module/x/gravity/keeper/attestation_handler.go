@@ -68,7 +68,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 			"address", receiverAddress,
 			"cause", addressErr.Error(),
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+			"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 	}
@@ -82,7 +82,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		a.keeper.logger(ctx).Error("Invalid token contract",
 			"cause", errTokenAddress.Error(),
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+			"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 		return sdkerrors.Wrap(errTokenAddress, "invalid token contract on claim")
@@ -93,7 +93,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		a.keeper.logger(ctx).Error("Invalid ethereum sender",
 			"cause", errEthereumSender.Error(),
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+			"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 		return sdkerrors.Wrap(errTokenAddress, "invalid ethereum sender on claim")
@@ -106,7 +106,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		a.keeper.logger(ctx).Error("Invalid SendToCosmos: receiver is blacklisted",
 			"address", receiverAddress,
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+			"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 		invalidAddress = true
@@ -152,7 +152,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 			a.keeper.logger(ctx).Error("Failed community pool send",
 				"cause", err.Error(),
 				"claim type", claim.GetType(),
-				"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+				"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 				"nonce", fmt.Sprint(claim.GetEventNonce()),
 			)
 			return sdkerrors.Wrap(err, "failed to send to Community pool")
@@ -415,7 +415,7 @@ func (a AttestationHandler) mintEthereumOriginatedVouchers(
 		a.keeper.logger(ctx).Error("Failed minting",
 			"cause", err.Error(),
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+			"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 		return sdkerrors.Wrapf(err, "mint vouchers coins: %s", coins)
@@ -446,8 +446,8 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 		hash, _ := claim.ClaimHash()
 		a.keeper.logger(ctx).Error("Invalid bech32 CosmosReceiver",
 			"cause", err.Error(), "address", receiver,
-			"claimType", claim.GetType(),
-			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+			"claim type", claim.GetType(),
+			"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 		return false, err
@@ -469,7 +469,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 			a.keeper.logger(ctx).Error("Unregistered foreign prefix",
 				"cause", err.Error(), "address", receiver,
 				"claim type", claim.GetType(),
-				"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+				"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 				"nonce", fmt.Sprint(claim.GetEventNonce()),
 			)
 
@@ -512,7 +512,7 @@ func (a AttestationHandler) sendCoinToLocalAddress(
 		a.keeper.logger(ctx).Error("Blacklisted deposit",
 			"cause", err.Error(),
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
+			"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 	} else { // no error

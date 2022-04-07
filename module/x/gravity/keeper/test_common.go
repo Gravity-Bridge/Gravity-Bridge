@@ -3,13 +3,14 @@ package keeper
 import (
 	"bytes"
 	"fmt"
+	"testing"
+	"time"
+
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	ibchost "github.com/cosmos/ibc-go/v2/modules/core/24-host"
-	"testing"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -629,8 +630,8 @@ func CreateTestEnv(t *testing.T) TestInput {
 	k.SetLastSlashedValsetNonce(ctx, 0)
 	k.SetLastSlashedBatchBlock(ctx, 0)
 	k.SetLastSlashedLogicCallBlock(ctx, 0)
-	k.setID(ctx, 0, types.KeyLastTXPoolID)
-	k.setID(ctx, 0, types.KeyLastOutgoingBatchID)
+	k.setID(ctx, 0, types.KeyLastTXPoolID)        //TODO: EVM
+	k.setID(ctx, 0, types.KeyLastOutgoingBatchID) //TODO: EVM
 
 	k.SetParams(ctx, TestingGravityParams)
 	params := k.GetParams(ctx)

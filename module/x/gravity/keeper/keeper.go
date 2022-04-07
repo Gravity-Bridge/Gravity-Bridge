@@ -25,6 +25,12 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
+const (
+	// Hardcoded prefix used until full multiple evm chain support is finished
+	// TODO: Delete
+	EthChainPrefix = "gravity"
+)
+
 // Check that our expected keeper types are implemented
 var _ types.StakingKeeper = (*stakingkeeper.Keeper)(nil)
 var _ types.SlashingKeeper = (*slashingkeeper.Keeper)(nil)
@@ -249,14 +255,14 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 	}
 
 	store = ctx.KVStore(k.storeKey)
-	prefix = types.KeyOrchestratorAddress
+	prefix = types.AppendChainPrefix(types.KeyOrchestratorAddress, EthChainPrefix)
 	iter = store.Iterator(prefixRange(prefix))
 	defer iter.Close()
 
 	orchAddresses := make(map[string]string)
 
 	for ; iter.Valid(); iter.Next() {
-		key := iter.Key()[len(types.KeyOrchestratorAddress):]
+		key := iter.Key()[len(types.AppendChainPrefix(types.KeyOrchestratorAddress, EthChainPrefix)):]
 		value := iter.Value()
 		orchAddress := sdk.AccAddress(key)
 		if err := sdk.VerifyAddressFormat(orchAddress); err != nil {
@@ -305,7 +311,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 // has been set in the store
 func (k Keeper) HasLastSlashedLogicCallBlock(ctx sdk.Context) bool {
 	store := ctx.KVStore(k.storeKey)
-	return store.Has(types.LastSlashedLogicCallBlock)
+	return store.Has(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, EthChainPrefix))
 }
 
 // SetLastSlashedLogicCallBlock sets the latest slashed logic call block height
@@ -316,13 +322,13 @@ func (k Keeper) SetLastSlashedLogicCallBlock(ctx sdk.Context, blockHeight uint64
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.LastSlashedLogicCallBlock, types.UInt64Bytes(blockHeight))
+	store.Set(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, EthChainPrefix), types.UInt64Bytes(blockHeight))
 }
 
 // GetLastSlashedLogicCallBlock returns the latest slashed logic call block
 func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.LastSlashedLogicCallBlock)
+	bytes := store.Get(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, EthChainPrefix))
 
 	if len(bytes) == 0 {
 		panic("Last slashed logic call block not initialized in genesis")

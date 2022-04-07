@@ -145,7 +145,7 @@ func TestMigrateValidatorByEthAddressKey(t *testing.T) {
 	addr, err := types.NewEthAddress(ethAddr)
 	assert.NoError(t, err)
 
-	key := types.GetValidatorByEthAddressKey(*addr)
+	key := v2.GetValidatorByEthAddressKey(*addr)
 	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
 	assert.Equal(t, validator.Bytes(), res)
 
@@ -182,7 +182,7 @@ func TestMigrateBatchConfirms(t *testing.T) {
 	addr, err := types.NewEthAddress(ethAddr)
 	assert.NoError(t, err)
 
-	newKey := types.GetBatchConfirmKey(*addr, 123, orch)
+	newKey := v2.GetBatchConfirmKey(*addr, 123, orch)
 	entity := input.Context.KVStore(input.GravityStoreKey).Get(newKey)
 	assert.Equal(t, entity, confirmBytes)
 }
@@ -213,7 +213,7 @@ func TestMigrateOutgoingTxs(t *testing.T) {
 	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	key := types.GetOutgoingTxPoolKey(*internalTx, outtx.Id)
+	key := v2.GetOutgoingTxPoolKey(*internalTx, outtx.Id)
 	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
 	assert.Equal(t, inputBytes, res)
 }
@@ -242,7 +242,7 @@ func TestMigrateOutgoingTxBatches(t *testing.T) {
 	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	key := types.GetOutgoingTxBatchKey(*addr, batch.BatchNonce)
+	key := v2.GetOutgoingTxBatchKey(*addr, batch.BatchNonce)
 	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
 	assert.Equal(t, inputBytes, res)
 }

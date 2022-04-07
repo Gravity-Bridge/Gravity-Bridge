@@ -294,7 +294,7 @@ func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, m
 		&types.EventClaim{
 			Message:       string(msg.GetType()),
 			ClaimHash:     string(hash),
-			AttestationId: string(types.GetAttestationKey(msg.GetEventNonce(), hash)),
+			AttestationId: string(types.GetAttestationKey(EthChainPrefix, msg.GetEventNonce(), hash)),
 		},
 	)
 
