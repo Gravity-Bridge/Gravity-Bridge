@@ -9,20 +9,20 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
+func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.GenesisState, evmChainPrefix string) {
 	// reset valsets in state
 	highest := uint64(0)
 	for _, vs := range data.Valsets {
 		if vs.Nonce > highest {
 			highest = vs.Nonce
 		}
-		k.StoreValset(ctx, vs)
+		k.StoreValset(ctx, evmChainPrefix, vs)
 	}
-	k.SetLatestValsetNonce(ctx, highest)
+	k.SetLatestValsetNonce(ctx, evmChainPrefix, highest)
 
 	// reset valset confirmations in state
 	for _, conf := range data.ValsetConfirms {
-		k.SetValsetConfirm(ctx, conf)
+		k.SetValsetConfirm(ctx, evmChainPrefix, conf)
 	}
 
 	// reset batches in state
@@ -58,15 +58,15 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	k.SetParams(ctx, *data.Params)
 
 	// restore various nonces, this MUST match GravityNonces in genesis
-	k.SetLatestValsetNonce(ctx, data.GravityNonces.LatestValsetNonce)
+	k.SetLatestValsetNonce(ctx, EthChainPrefix, data.GravityNonces.LatestValsetNonce)
 	k.setLastObservedEventNonce(ctx, EthChainPrefix, data.GravityNonces.LastObservedNonce)
-	k.SetLastSlashedValsetNonce(ctx, data.GravityNonces.LastSlashedValsetNonce)
+	k.SetLastSlashedValsetNonce(ctx, EthChainPrefix, data.GravityNonces.LastSlashedValsetNonce)
 	k.SetLastSlashedBatchBlock(ctx, EthChainPrefix, data.GravityNonces.LastSlashedBatchBlock)
 	k.SetLastSlashedLogicCallBlock(ctx, EthChainPrefix, data.GravityNonces.LastSlashedLogicCallBlock)
-	k.setID(ctx, data.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix))       //TODO: EVM
-	k.setID(ctx, data.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix)) //TODO: EVM
+	k.setID(ctx, data.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix))
+	k.setID(ctx, data.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix))
 
-	initBridgeDataFromGenesis(ctx, k, data)
+	initBridgeDataFromGenesis(ctx, k, data, EthChainPrefix)
 
 	// reset pool transactions in state
 	for _, tx := range data.UnbatchedTransfers {
@@ -119,7 +119,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 			}
 			last := k.GetLastEventNonceByValidator(ctx, EthChainPrefix, val)
 			if claim.GetEventNonce() > last {
-				k.SetLastEventNonceByValidator(ctx, val, claim.GetEventNonce())
+				k.SetLastEventNonceByValidator(ctx, EthChainPrefix, val, claim.GetEventNonce())
 			}
 		}
 	}
@@ -159,7 +159,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err != nil {
 			panic(fmt.Errorf("invalid erc20 address in Erc20ToDenoms for item %d: %s", i, item.Erc20))
 		}
-		k.setCosmosOriginatedDenomToERC20(ctx, item.Denom, *ethAddr)
+		k.setCosmosOriginatedDenomToERC20(ctx, EthChainPrefix, item.Denom, *ethAddr)
 	}
 
 	// now that we have the denom-erc20 mapping we need to validate
@@ -167,7 +167,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	// this if you want a non-cosmos originated reward
 	valsetReward := k.GetParams(ctx).ValsetReward
 	if valsetReward.IsValid() && !valsetReward.IsZero() {
-		_, exists := k.GetCosmosOriginatedERC20(ctx, valsetReward.Denom)
+		_, exists := k.GetCosmosOriginatedERC20(ctx, EthChainPrefix, valsetReward.Denom)
 		if !exists {
 			panic("Invalid Cosmos originated denom for valset reward")
 		}
@@ -194,7 +194,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		p                  = k.GetParams(ctx)
 		calls              = k.GetOutgoingLogicCalls(ctx, EthChainPrefix)
 		batches            = k.GetOutgoingTxBatches(ctx, EthChainPrefix)
-		valsets            = k.GetValsets(ctx)
+		valsets            = k.GetValsets(ctx, EthChainPrefix)
 		attmap, attKeys    = k.GetAttestationMapping(ctx, EthChainPrefix)
 		vsconfs            = []types.MsgValsetConfirm{}
 		batchconfs         = []types.MsgConfirmBatch{}
@@ -208,7 +208,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	// export valset confirmations from state
 	for _, vs := range valsets {
 		// TODO: set height = 0?
-		vsconfs = append(vsconfs, k.GetValsetConfirms(ctx, vs.Nonce)...)
+		vsconfs = append(vsconfs, k.GetValsetConfirms(ctx, EthChainPrefix, vs.Nonce)...)
 	}
 
 	// export batch confirmations from state
@@ -247,9 +247,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	return types.GenesisState{
 		Params: &p,
 		GravityNonces: types.GravityNonces{
-			LatestValsetNonce:         k.GetLatestValsetNonce(ctx),
+			LatestValsetNonce:         k.GetLatestValsetNonce(ctx, EthChainPrefix),
 			LastObservedNonce:         k.GetLastObservedEventNonce(ctx, EthChainPrefix),
-			LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx),
+			LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx, EthChainPrefix),
 			LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx, EthChainPrefix),
 			LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx, EthChainPrefix),
 			LastTxPoolId:              k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix)),

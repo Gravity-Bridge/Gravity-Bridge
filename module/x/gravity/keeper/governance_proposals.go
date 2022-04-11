@@ -112,7 +112,7 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, evmChainPrefix string, k Keepe
 		valLastNonce := k.GetLastEventNonceByValidator(ctx, evmChainPrefix, val)
 		if valLastNonce > nonceCutoff {
 			ctx.Logger().Info("Resetting validator's last event nonce due to bridge unhalt", "validator", vote, "lastEventNonce", valLastNonce, "resetNonce", nonceCutoff)
-			k.SetLastEventNonceByValidator(ctx, val, nonceCutoff)
+			k.SetLastEventNonceByValidator(ctx, EthChainPrefix, val, nonceCutoff)
 		}
 	}
 }
@@ -238,11 +238,10 @@ func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataP
 	// if metadata already exists then changing it is only a good idea if we have not already deployed an ERC20
 	// for this denom if we have we can't change it
 	_, metadataExists := k.bankKeeper.GetDenomMetaData(ctx, p.IbcDenom)
-	_, erc20RepresentationExists := k.GetCosmosOriginatedERC20(ctx, p.IbcDenom)
+	_, erc20RepresentationExists := k.GetCosmosOriginatedERC20(ctx, EthChainPrefix, p.IbcDenom)
 	if metadataExists && erc20RepresentationExists {
 		ctx.Logger().Info("invalid trying to set metadata when ERC20 has already been deployed")
 		return sdkerrors.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
-
 	}
 
 	// write out metadata, this will update existing metadata if no erc20 has been deployed

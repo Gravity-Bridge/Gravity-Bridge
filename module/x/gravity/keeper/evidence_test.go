@@ -80,7 +80,7 @@ func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 
 	// ctx := input.Context
 
-	valset := input.GravityKeeper.SetValsetRequest(ctx)
+	valset := input.GravityKeeper.SetValsetRequest(ctx, EthChainPrefix)
 
 	any, _ := codectypes.NewAnyWithValue(&valset)
 

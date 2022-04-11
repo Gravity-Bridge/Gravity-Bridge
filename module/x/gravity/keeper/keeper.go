@@ -255,14 +255,14 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 	}
 
 	store = ctx.KVStore(k.storeKey)
-	prefix = types.AppendChainPrefix(types.KeyOrchestratorAddress, EthChainPrefix)
+	prefix = types.KeyOrchestratorAddress
 	iter = store.Iterator(prefixRange(prefix))
 	defer iter.Close()
 
 	orchAddresses := make(map[string]string)
 
 	for ; iter.Valid(); iter.Next() {
-		key := iter.Key()[len(types.AppendChainPrefix(types.KeyOrchestratorAddress, EthChainPrefix)):]
+		key := iter.Key()[len(types.KeyOrchestratorAddress):]
 		value := iter.Value()
 		orchAddress := sdk.AccAddress(key)
 		if err := sdk.VerifyAddressFormat(orchAddress); err != nil {

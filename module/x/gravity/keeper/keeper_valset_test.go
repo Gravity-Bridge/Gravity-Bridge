@@ -20,49 +20,49 @@ func TestValsets(t *testing.T) {
 	k := input.GravityKeeper
 
 	// verify that no valsets exist in the begining
-	assert.Equal(t, 0, len(k.GetValsets(ctx)))
+	assert.Equal(t, 0, len(k.GetValsets(ctx, EthChainPrefix)))
 
-	valset, err := k.GetCurrentValset(ctx)
+	valset, err := k.GetCurrentValset(ctx, EthChainPrefix)
 	require.NoError(t, err)
 
 	// insert N valsets into the store
 	for i := 1; i <= ValsetCount; i++ {
 		valset.Height = uint64(i)
 		valset.Nonce = uint64(i)
-		k.StoreValset(ctx, valset)
-		k.SetLatestValsetNonce(ctx, valset.Nonce)
+		k.StoreValset(ctx, EthChainPrefix, valset)
+		k.SetLatestValsetNonce(ctx, EthChainPrefix, valset.Nonce)
 	}
 
 	// verify that N valsets exist in the store
-	valsets := k.GetValsets(ctx)
+	valsets := k.GetValsets(ctx, EthChainPrefix)
 	assert.Equal(t, ValsetCount, len(valsets))
 
 	// verify that valset for each inserterd nonce can be read from the store
 	for i := 1; i <= ValsetCount; i++ {
-		require.Equal(t, true, k.HasValsetRequest(ctx, uint64(i)))
-		require.NotNil(t, k.GetValset(ctx, uint64(i)))
+		require.Equal(t, true, k.HasValsetRequest(ctx, EthChainPrefix, uint64(i)))
+		require.NotNil(t, k.GetValset(ctx, EthChainPrefix, uint64(i)))
 	}
 
 	// verify that latest valset nonce and latest valset are as expected
-	require.Equal(t, uint64(ValsetCount), k.GetLatestValsetNonce(ctx))
-	require.Equal(t, uint64(ValsetCount), k.GetLatestValset(ctx).Nonce)
+	require.Equal(t, uint64(ValsetCount), k.GetLatestValsetNonce(ctx, EthChainPrefix))
+	require.Equal(t, uint64(ValsetCount), k.GetLatestValset(ctx, EthChainPrefix).Nonce)
 
 	// verify that non exisiting valset retrieval is handled properly
-	require.Nil(t, k.GetValset(ctx, uint64(ValsetCount+1)))
+	require.Nil(t, k.GetValset(ctx, EthChainPrefix, uint64(ValsetCount+1)))
 
 	// verify that panic is triggered when tring to store valset with the same nonce
 	valset.Nonce = uint64(ValsetCount)
-	require.Panics(t, func() { k.StoreValset(ctx, valset) })
+	require.Panics(t, func() { k.StoreValset(ctx, EthChainPrefix, valset) })
 
 	// verify that last slashed valset nonce is stored/loaded as expected
-	require.Equal(t, uint64(0), k.GetLastSlashedValsetNonce((ctx)))
-	k.SetLastSlashedValsetNonce(ctx, LastSlashedNonce)
-	require.Equal(t, uint64(LastSlashedNonce), k.GetLastSlashedValsetNonce((ctx)))
+	require.Equal(t, uint64(0), k.GetLastSlashedValsetNonce(ctx, EthChainPrefix))
+	k.SetLastSlashedValsetNonce(ctx, EthChainPrefix, LastSlashedNonce)
+	require.Equal(t, uint64(LastSlashedNonce), k.GetLastSlashedValsetNonce(ctx, EthChainPrefix))
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 100)
 
 	// verify that only valsets with higher nonce than LastSlashedValsetNonce are returned by GetUnSlashedValsets()
-	unslashedValsets := k.GetUnSlashedValsets(ctx, 10)
+	unslashedValsets := k.GetUnSlashedValsets(ctx, EthChainPrefix, 10)
 	for _, vs := range unslashedValsets {
 		require.Greater(t, vs.Nonce, uint64(LastSlashedNonce),
 			fmt.Sprintf("got valset with nonce: %d, but expected only valsets with nonce higher than %d", vs.Nonce, LastSlashedNonce))
@@ -75,28 +75,28 @@ func TestValsets(t *testing.T) {
 			require.NoError(t, err)
 
 			conf := types.NewMsgValsetConfirm(uint64(i), *ethAddr, orch, "dummysig")
-			k.SetValsetConfirm(ctx, *conf)
+			k.SetValsetConfirm(ctx, EthChainPrefix, *conf)
 
 			// verify that valset confirm was stored successfully
-			require.NotNil(t, k.GetValsetConfirm(ctx, conf.Nonce, orch))
+			require.NotNil(t, k.GetValsetConfirm(ctx, EthChainPrefix, conf.Nonce, orch))
 		}
 	}
 
 	// verify that GetValsetConfirms() returns expected number of confirmations
 	for i := 1; i <= ValsetCount; i++ {
-		confirms := k.GetValsetConfirms(ctx, uint64(i))
+		confirms := k.GetValsetConfirms(ctx, EthChainPrefix, uint64(i))
 		require.Equal(t, len(OrchAddrs), len(confirms))
 	}
 
 	// delete all valsets and their confirmations
 	for i := 1; i <= ValsetCount; i++ {
-		k.DeleteValset(ctx, uint64(i))
-		k.DeleteValsetConfirms(ctx, uint64(i))
+		k.DeleteValset(ctx, EthChainPrefix, uint64(i))
+		k.DeleteValsetConfirms(ctx, EthChainPrefix, uint64(i))
 	}
 
 	// verify that no valset and confirmations exist in the store
-	require.Equal(t, 0, len(k.GetValsets(ctx)))
+	require.Equal(t, 0, len(k.GetValsets(ctx, EthChainPrefix)))
 	for i := 1; i <= ValsetCount; i++ {
-		require.Equal(t, 0, len(k.GetValsetConfirms(ctx, uint64(i))))
+		require.Equal(t, 0, len(k.GetValsetConfirms(ctx, EthChainPrefix, uint64(i))))
 	}
 }

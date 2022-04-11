@@ -9,7 +9,7 @@ import (
 
 func TestPrefixKeysSameLength(t *testing.T) {
 	allKeys := getAllKeys()
-	prefixKeys := allKeys[0:27]
+	prefixKeys := allKeys[0:26]
 	length := len(HashString("All keys should be same length when hashed"))
 
 	for _, key := range prefixKeys {
@@ -30,7 +30,7 @@ func getAllKeys() [][]byte {
 	i := 0
 	inc := func(i *int) *int { *i += 1; return i }
 
-	keys := make([][]byte, 47)
+	keys := make([][]byte, 46)
 
 	keys[i] = EthAddressByValidatorKey
 	keys[*inc(&i)] = ValidatorByEthAddressKey
@@ -89,12 +89,12 @@ func getAllKeys() [][]byte {
 	keys[*inc(&i)] = GetBatchConfirmNonceContractPrefix(dummyPrefix, dummyEthAddr, dummyNonce)
 	keys[*inc(&i)] = GetBatchConfirmKey(dummyPrefix, dummyEthAddr, dummyNonce, dummyAddr)
 	keys[*inc(&i)] = GetLastEventNonceByValidatorKey(dummyPrefix, dummyAddr)
-	keys[*inc(&i)] = GetDenomToERC20Key(dummyDenom)
-	keys[*inc(&i)] = GetERC20ToDenomKey(dummyEthAddr)
+	keys[*inc(&i)] = GetDenomToERC20Key(dummyPrefix, dummyDenom)
+	keys[*inc(&i)] = GetERC20ToDenomKey(dummyPrefix, dummyEthAddr)
 	keys[*inc(&i)] = GetOutgoingLogicCallKey(dummyPrefix, dummyBytes, dummyNonce)
 	keys[*inc(&i)] = GetLogicConfirmNonceInvalidationIdPrefix(dummyPrefix, dummyBytes, dummyNonce)
 	keys[*inc(&i)] = GetLogicConfirmKey(dummyPrefix, dummyBytes, dummyNonce, dummyAddr)
-	keys[*inc(&i)] = GetPastEthSignatureCheckpointKey(dummyBytes)
+	keys[*inc(&i)] = GetPastEvmSignatureCheckpointKey(dummyPrefix, dummyBytes)
 
 	return keys
 }

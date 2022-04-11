@@ -371,7 +371,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 			staking.EndBlocker(input.Context, input.StakingKeeper)
 
 			// set a request every time.
-			input.GravityKeeper.SetValsetRequest(input.Context)
+			input.GravityKeeper.SetValsetRequest(input.Context, EthChainPrefix)
 		}
 
 	}
@@ -625,13 +625,13 @@ func CreateTestEnv(t *testing.T) TestInput {
 	)
 
 	// set gravityIDs for batches and tx items, simulating genesis setup
-	k.SetLatestValsetNonce(ctx, 0)
+	k.SetLatestValsetNonce(ctx, EthChainPrefix, 0)
 	k.setLastObservedEventNonce(ctx, EthChainPrefix, 0)
-	k.SetLastSlashedValsetNonce(ctx, 0)
+	k.SetLastSlashedValsetNonce(ctx, EthChainPrefix, 0)
 	k.SetLastSlashedBatchBlock(ctx, EthChainPrefix, 0)
 	k.SetLastSlashedLogicCallBlock(ctx, EthChainPrefix, 0)
-	k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix))        //TODO: EVM
-	k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix)) //TODO: EVM
+	k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix))
+	k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix))
 
 	k.SetParams(ctx, TestingGravityParams)
 	params := k.GetParams(ctx)

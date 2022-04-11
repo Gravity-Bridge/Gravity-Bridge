@@ -81,7 +81,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 // ValsetConfirm handles MsgValsetConfirm
 func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm) (*types.MsgValsetConfirmResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	valset := k.GetValset(ctx, msg.Nonce)
+	valset := k.GetValset(ctx, EthChainPrefix, msg.Nonce)
 	if valset == nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find valset")
 	}
@@ -98,10 +98,10 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 	}
 
 	// persist signature
-	if k.GetValsetConfirm(ctx, msg.Nonce, orchaddr) != nil {
+	if k.GetValsetConfirm(ctx, EthChainPrefix, msg.Nonce, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "signature duplicate")
 	}
-	key := k.SetValsetConfirm(ctx, *msg)
+	key := k.SetValsetConfirm(ctx, EthChainPrefix, *msg)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventValsetConfirmKey{
@@ -124,7 +124,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid eth dest")
 	}
-	_, erc20, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
+	_, erc20, err := k.DenomToERC20Lookup(ctx, EthChainPrefix, msg.Amount.Denom)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid denom")
 	}
@@ -154,7 +154,7 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 
 	// Check if the denom is a gravity coin, if not, check if there is a deployed ERC20 representing it.
 	// If not, error out
-	_, tokenContract, err := k.DenomToERC20Lookup(ctx, msg.Denom)
+	_, tokenContract, err := k.DenomToERC20Lookup(ctx, EthChainPrefix, msg.Denom)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not look up erc 20 denominator")
 	}

@@ -34,7 +34,7 @@ func (k Keeper) Attest(
 	// and prevents validators from submitting two claims with the same nonce.
 	// This prevents there being two attestations with the same nonce that get 2/3s of the votes
 	// in the endBlocker.
-	lastEventNonce := k.GetLastEventNonceByValidator(ctx, evmChainPrefix, valAddr)
+	lastEventNonce := k.GetLastEventNonceByValidator(ctx, EthChainPrefix, valAddr)
 	if claim.GetEventNonce() != lastEventNonce+1 {
 		return nil, fmt.Errorf(types.ErrNonContiguousEventNonce.Error(), lastEventNonce+1, claim.GetEventNonce())
 	}
@@ -59,8 +59,8 @@ func (k Keeper) Attest(
 	// Add the validator's vote to this attestation
 	att.Votes = append(att.Votes, valAddr.String())
 
-	k.SetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash, att)
-	k.SetLastEventNonceByValidator(ctx, valAddr, claim.GetEventNonce())
+	k.SetAttestation(ctx, EthChainPrefix, claim.GetEventNonce(), hash, att)
+	k.SetLastEventNonceByValidator(ctx, EthChainPrefix, valAddr, claim.GetEventNonce())
 
 	return att, nil
 }
@@ -68,7 +68,7 @@ func (k Keeper) Attest(
 // TryAttestation checks if an attestation has enough votes to be applied to the consensus state
 // and has not already been marked Observed, then calls processAttestation to actually apply it to the state,
 // and then marks it Observed and emits an event.
-func (k Keeper) TryAttestation(ctx sdk.Context, evmChainPrefix string, att *types.Attestation) {
+func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 	claim, err := k.UnpackAttestationClaim(att)
 	if err != nil {
 		panic("could not cast to claim")
@@ -96,20 +96,20 @@ func (k Keeper) TryAttestation(ctx sdk.Context, evmChainPrefix string, att *type
 			// If the power of all the validators that have voted on the attestation is higher or equal to the threshold,
 			// process the attestation, set Observed to true, and break
 			if attestationPower.GTE(requiredPower) {
-				lastEventNonce := k.GetLastObservedEventNonce(ctx, evmChainPrefix)
+				lastEventNonce := k.GetLastObservedEventNonce(ctx, EthChainPrefix)
 				// this check is performed at the next level up so this should never panic
 				// outside of programmer error.
 				if claim.GetEventNonce() != lastEventNonce+1 {
 					panic("attempting to apply events to state out of order")
 				}
-				k.setLastObservedEventNonce(ctx, evmChainPrefix, claim.GetEventNonce())
-				k.SetLastObservedEthereumBlockHeight(ctx, claim.GetBlockHeight())
+				k.setLastObservedEventNonce(ctx, EthChainPrefix, claim.GetEventNonce())
+				k.SetLastObservedEthereumBlockHeight(ctx, EthChainPrefix, claim.GetBlockHeight())
 
 				att.Observed = true
-				k.SetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash, att)
+				k.SetAttestation(ctx, EthChainPrefix, claim.GetEventNonce(), hash, att)
 
-				k.processAttestation(ctx, evmChainPrefix, att, claim)
-				k.emitObservedEvent(ctx, evmChainPrefix, att, claim)
+				k.processAttestation(ctx, EthChainPrefix, att, claim)
+				k.emitObservedEvent(ctx, EthChainPrefix, att, claim)
 
 				break
 			}
@@ -296,9 +296,9 @@ func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context, evmChainPrefix string
 
 // GetLastObservedEthereumBlockHeight height gets the block height to of the last observed attestation from
 // the store
-func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastObservedEthereumBlockHeight {
+func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context, evmChainPrefix string) types.LastObservedEthereumBlockHeight {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, EthChainPrefix))
+	bytes := store.Get(types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, evmChainPrefix))
 
 	if len(bytes) == 0 {
 		return types.LastObservedEthereumBlockHeight{
@@ -315,22 +315,22 @@ func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastOb
 }
 
 // SetLastObservedEthereumBlockHeight sets the block height in the store.
-func (k Keeper) SetLastObservedEthereumBlockHeight(ctx sdk.Context, ethereumHeight uint64) {
+func (k Keeper) SetLastObservedEthereumBlockHeight(ctx sdk.Context, evmChainPrefix string, ethereumHeight uint64) {
 	store := ctx.KVStore(k.storeKey)
 	height := types.LastObservedEthereumBlockHeight{
 		EthereumBlockHeight: ethereumHeight,
 		CosmosBlockHeight:   uint64(ctx.BlockHeight()),
 	}
-	store.Set(types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, EthChainPrefix), k.cdc.MustMarshal(&height))
+	store.Set(types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, evmChainPrefix), k.cdc.MustMarshal(&height))
 }
 
 // GetLastObservedValset retrieves the last observed validator set from the store
 // WARNING: This value is not an up to date validator set on Ethereum, it is a validator set
 // that AT ONE POINT was the one in the Gravity bridge on Ethereum. If you assume that it's up
 // to date you may break the bridge
-func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
+func (k Keeper) GetLastObservedValset(ctx sdk.Context, evmChainPrefix string) *types.Valset {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.AppendChainPrefix(types.LastObservedValsetKey, EthChainPrefix))
+	bytes := store.Get(types.AppendChainPrefix(types.LastObservedValsetKey, evmChainPrefix))
 
 	if len(bytes) == 0 {
 		return nil
@@ -347,9 +347,9 @@ func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 }
 
 // SetLastObservedValset updates the last observed validator set in the store
-func (k Keeper) SetLastObservedValset(ctx sdk.Context, valset types.Valset) {
+func (k Keeper) SetLastObservedValset(ctx sdk.Context, evmChainPrefix string, valset types.Valset) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.AppendChainPrefix(types.LastObservedValsetKey, EthChainPrefix), k.cdc.MustMarshal(&valset))
+	store.Set(types.AppendChainPrefix(types.LastObservedValsetKey, evmChainPrefix), k.cdc.MustMarshal(&valset))
 }
 
 // setLastObservedEventNonce sets the latest observed event nonce
@@ -364,7 +364,7 @@ func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, evmChainPrefix str
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.GetLastEventNonceByValidatorKey(EthChainPrefix, validator))
+	bytes := store.Get(types.GetLastEventNonceByValidatorKey(evmChainPrefix, validator))
 
 	if len(bytes) == 0 {
 		// in the case that we have no existing value this is the first
@@ -382,10 +382,10 @@ func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, evmChainPrefix str
 }
 
 // setLastEventNonceByValidator sets the latest event nonce for a give validator
-func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress, nonce uint64) {
+func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, evmChainPrefix string, validator sdk.ValAddress, nonce uint64) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetLastEventNonceByValidatorKey(EthChainPrefix, validator), types.UInt64Bytes(nonce))
+	store.Set(types.GetLastEventNonceByValidatorKey(evmChainPrefix, validator), types.UInt64Bytes(nonce))
 }

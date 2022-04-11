@@ -41,7 +41,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 		// Compare actual vs expected balances
 		for _, actual := range actualBals {
 			denom := actual.GetDenom()
-			cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, denom)
+			cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, EthChainPrefix, denom)
 			if err != nil {
 				// Here we do not return because a user could halt the chain by gifting gravity a cosmos asset with no erc20 repr
 				ctx.Logger().Error("Unexpected gravity module balance of cosmos-originated asset with no erc20 representation", "asset", denom)
@@ -73,7 +73,7 @@ func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, evmChainPrefix string, k
 			batchTotal = newTotal
 		}
 		contract := batch.TokenContract
-		_, denom := k.ERC20ToDenomLookup(ctx, contract)
+		_, denom := k.ERC20ToDenomLookup(ctx, evmChainPrefix, contract)
 		// Add the batch total to the contract counter
 		_, ok := expectedBals[denom]
 		if !ok {
@@ -94,7 +94,7 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, evmChainPrefix string, k Keep
 	// It is also given the balance of all unbatched txs in the pool
 	k.IterateUnbatchedTransactions(ctx, types.AppendChainPrefix(types.OutgoingTXPoolKey, evmChainPrefix), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		contract := tx.Erc20Token.Contract
-		_, denom := k.ERC20ToDenomLookup(ctx, contract)
+		_, denom := k.ERC20ToDenomLookup(ctx, evmChainPrefix, contract)
 
 		// Collect the send amount + fee amount for each tx
 		txTotal := tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount)

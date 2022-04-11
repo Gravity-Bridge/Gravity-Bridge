@@ -504,7 +504,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 	}
 
 	myTokenAddress, _ := types.NewEthAddress(myErc20.Contract)
-	_, erc20Denom := k.ERC20ToDenomLookup(ctx, *myTokenAddress)
+	_, erc20Denom := k.ERC20ToDenomLookup(ctx, keeper.EthChainPrefix, *myTokenAddress)
 
 	foreignEthClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 0,
@@ -623,11 +623,11 @@ func TestMsgValsetConfirm(t *testing.T) {
 	h := NewHandler(input.GravityKeeper)
 
 	// set a validator set in the store
-	vs, err := k.GetCurrentValset(ctx)
+	vs, err := k.GetCurrentValset(ctx, keeper.EthChainPrefix)
 	require.NoError(t, err)
 	vs.Height = uint64(1)
 	vs.Nonce = uint64(1)
-	k.StoreValset(ctx, vs)
+	k.StoreValset(ctx, keeper.EthChainPrefix, vs)
 	k.SetEthAddressForValidator(input.Context, keeper.ValAddrs[0], *ethAddressParsed)
 
 	// try wrong eth address

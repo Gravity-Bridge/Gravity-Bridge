@@ -113,7 +113,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	}
 
 	// Check if coin is Cosmos-originated asset and get denom
-	isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *tokenAddress)
+	isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, EthChainPrefix, *tokenAddress)
 	coin := sdk.NewCoin(denom, claim.Amount)
 	coins := sdk.Coins{coin}
 
@@ -211,7 +211,7 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 		return sdkerrors.Wrap(err, "invalid token contract on claim")
 	}
 	// Disallow re-registration when a token already has a canonical representation
-	existingERC20, exists := a.keeper.GetCosmosOriginatedERC20(ctx, claim.CosmosDenom)
+	existingERC20, exists := a.keeper.GetCosmosOriginatedERC20(ctx, EthChainPrefix, claim.CosmosDenom)
 	if exists {
 		return sdkerrors.Wrap(
 			types.ErrInvalid,
@@ -265,7 +265,7 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	}
 
 	// Add to denom-erc20 mapping
-	a.keeper.setCosmosOriginatedDenomToERC20(ctx, claim.CosmosDenom, *tokenAddress)
+	a.keeper.setCosmosOriginatedDenomToERC20(ctx, EthChainPrefix, claim.CosmosDenom, *tokenAddress)
 
 	err = ctx.EventManager().EmitTypedEvent(
 		&types.EventERC20DeployedClaim{
@@ -294,7 +294,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 	// check the contents of the validator set against the store, if they differ we know that the bridge has been
 	// highjacked
 	if claim.ValsetNonce != 0 { // Handle regular valsets
-		trustedValset := a.keeper.GetValset(ctx, claim.ValsetNonce)
+		trustedValset := a.keeper.GetValset(ctx, EthChainPrefix, claim.ValsetNonce)
 		if trustedValset == nil {
 			ctx.Logger().Error("Received attestation for a valset which does not exist in store", "nonce", claim.ValsetNonce, "claim", claim)
 			return sdkerrors.Wrapf(types.ErrInvalidValset, "attested valset (%v) does not exist in store", claim.ValsetNonce)
@@ -306,10 +306,10 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 			panic(fmt.Sprintf("Potential bridge highjacking: observed valset (%+v) does not match stored valset (%+v)! %s", observedValset, trustedValset, err.Error()))
 		}
 
-		a.keeper.SetLastObservedValset(ctx, observedValset)
+		a.keeper.SetLastObservedValset(ctx, EthChainPrefix, observedValset)
 	} else { // The 0th valset is not stored on chain init, but we need to set it as the last one
 		// Do not update Height, it's the first valset
-		a.keeper.SetLastObservedValset(ctx, claimSet)
+		a.keeper.SetLastObservedValset(ctx, EthChainPrefix, claimSet)
 	}
 
 	// if the reward is greater than zero and the reward token
@@ -318,7 +318,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 	// token, or burn non cosmos native tokens
 	if claim.RewardAmount.GT(sdk.ZeroInt()) && claim.RewardToken != types.ZeroAddressString {
 		// Check if coin is Cosmos-originated asset and get denom
-		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *rewardAddress)
+		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, EthChainPrefix, *rewardAddress)
 		if isCosmosOriginated {
 			// If it is cosmos originated, mint some coins to account
 			// for coins that now exist on Ethereum and may eventually come

@@ -24,11 +24,11 @@ func TestCosmosOriginated(t *testing.T) {
 		tv.input.Context.Logger().Info("Asserting invariants at test end")
 		tv.input.AssertInvariants()
 	}()
-	addDenomToERC20Relation(tv)
+	addDenomToERC20Relation(tv, keeper.EthChainPrefix)
 	// we only create a relation here, we don't perform
 	// the other tests with the IBC representation as the
 	// results should be the same
-	addIbcDenomToERC20Relation(tv)
+	addIbcDenomToERC20Relation(tv, keeper.EthChainPrefix)
 	lockCoinsInModule(tv)
 	acceptDepositEvent(tv)
 }
@@ -56,7 +56,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 	return &tv
 }
 
-func addDenomToERC20Relation(tv *testingVars) {
+func addDenomToERC20Relation(tv *testingVars, evmChainPrefix string) {
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, banktypes.Metadata{
 		Description: "The native staking token of the Cosmos Gravity Bridge",
 		Name:        "Graviton",
@@ -99,13 +99,13 @@ func addDenomToERC20Relation(tv *testingVars) {
 	EndBlocker(tv.ctx, tv.input.GravityKeeper)
 
 	// check if erc20<>denom relation added to db
-	isCosmosOriginated, gotERC20, err := tv.input.GravityKeeper.DenomToERC20Lookup(tv.ctx, tv.denom)
+	isCosmosOriginated, gotERC20, err := tv.input.GravityKeeper.DenomToERC20Lookup(tv.ctx, evmChainPrefix, tv.denom)
 	require.NoError(tv.t, err)
 	assert.True(tv.t, isCosmosOriginated)
 
 	ethAddr, err := types.NewEthAddress(tv.erc20)
 	require.NoError(tv.t, err)
-	isCosmosOriginated, gotDenom := tv.input.GravityKeeper.ERC20ToDenomLookup(tv.ctx, *ethAddr)
+	isCosmosOriginated, gotDenom := tv.input.GravityKeeper.ERC20ToDenomLookup(tv.ctx, evmChainPrefix, *ethAddr)
 	assert.True(tv.t, isCosmosOriginated)
 
 	assert.Equal(tv.t, tv.denom, gotDenom)
@@ -204,7 +204,7 @@ func acceptDepositEvent(tv *testingVars) {
 	)
 }
 
-func addIbcDenomToERC20Relation(tv *testingVars) {
+func addIbcDenomToERC20Relation(tv *testingVars, evmChainPrefix string) {
 
 	tokenContract := "0xE486cC1a00aA806C3e40224EDAd5FdCA93dDdA62"
 	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
@@ -256,13 +256,13 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	EndBlocker(tv.ctx, tv.input.GravityKeeper)
 
 	// check if erc20<>denom relation added to db
-	isCosmosOriginated, gotERC20, err := tv.input.GravityKeeper.DenomToERC20Lookup(tv.ctx, tv.denom)
+	isCosmosOriginated, gotERC20, err := tv.input.GravityKeeper.DenomToERC20Lookup(tv.ctx, evmChainPrefix, tv.denom)
 	require.NoError(tv.t, err)
 	assert.True(tv.t, isCosmosOriginated)
 
 	ethAddr, err := types.NewEthAddress(tv.erc20)
 	require.NoError(tv.t, err)
-	isCosmosOriginated, gotDenom := tv.input.GravityKeeper.ERC20ToDenomLookup(tv.ctx, *ethAddr)
+	isCosmosOriginated, gotDenom := tv.input.GravityKeeper.ERC20ToDenomLookup(tv.ctx, evmChainPrefix, *ethAddr)
 	assert.True(tv.t, isCosmosOriginated)
 
 	assert.Equal(tv.t, tv.denom, gotDenom)

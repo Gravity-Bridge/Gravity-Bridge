@@ -442,10 +442,10 @@ func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 	require.Equal(t, currentBal, originalBal-feesAndAmounts)
 
 	// Check that removing a transaction refunds the costs and the tx no longer exists in the pool
-	checkRemovedTx(t, input, ctx, ids[2], fees[2], amounts[2], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
-	checkRemovedTx(t, input, ctx, ids[3], fees[3], amounts[3], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
-	checkRemovedTx(t, input, ctx, ids[1], fees[1], amounts[1], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
-	checkRemovedTx(t, input, ctx, ids[0], fees[0], amounts[0], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[2], fees[2], amounts[2], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, EthChainPrefix, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[3], fees[3], amounts[3], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, EthChainPrefix, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[1], fees[1], amounts[1], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, EthChainPrefix, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[0], fees[0], amounts[0], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, EthChainPrefix, myTokenDenom)
 	require.Empty(t, input.GravityKeeper.GetUnbatchedTransactions(ctx, EthChainPrefix))
 }
 
@@ -470,9 +470,9 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 	require.NoError(t, err)
 
 	// add it to the ERC20 registry
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, myTokenDenom, *tokenAddr)
+	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, EthChainPrefix, myTokenDenom, *tokenAddr)
 
-	isCosmosOriginated, addr, err := input.GravityKeeper.DenomToERC20Lookup(ctx, myTokenDenom)
+	isCosmosOriginated, addr, err := input.GravityKeeper.DenomToERC20Lookup(ctx, EthChainPrefix, myTokenDenom)
 	require.True(t, isCosmosOriginated)
 	require.NoError(t, err)
 	require.Equal(t, tokenAddr.GetAddress().Hex(), myTokenContractAddr)
@@ -514,10 +514,10 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 	require.Equal(t, currentBal, originalBal-feesAndAmounts)
 
 	// Check that removing a transaction refunds the costs and the tx no longer exists in the pool
-	checkRemovedTx(t, input, ctx, ids[2], fees[2], amounts[2], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
-	checkRemovedTx(t, input, ctx, ids[3], fees[3], amounts[3], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
-	checkRemovedTx(t, input, ctx, ids[1], fees[1], amounts[1], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
-	checkRemovedTx(t, input, ctx, ids[0], fees[0], amounts[0], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[2], fees[2], amounts[2], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, EthChainPrefix, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[3], fees[3], amounts[3], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, EthChainPrefix, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[1], fees[1], amounts[1], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, EthChainPrefix, myTokenDenom)
+	checkRemovedTx(t, input, ctx, ids[0], fees[0], amounts[0], &feesAndAmounts, originalBal, mySender, myTokenContractAddr, EthChainPrefix, myTokenDenom)
 	require.Empty(t, input.GravityKeeper.GetUnbatchedTransactions(ctx, EthChainPrefix))
 }
 
@@ -527,8 +527,8 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 // 3. Require that `mySender` has been refunded the correct amount for the cancelled transaction
 // 4. Require that the unbatched transaction pool does not contain the refunded transaction via iterating its elements
 func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, fee uint64, amount uint64,
-	feesAndAmounts *uint64, originalBal uint64, mySender sdk.AccAddress, myTokenContractAddr string, myTokenDenom string) {
-	err := input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, EthChainPrefix, id, mySender)
+	feesAndAmounts *uint64, originalBal uint64, mySender sdk.AccAddress, myTokenContractAddr string, evmChainPrefix string, myTokenDenom string) {
+	err := input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, evmChainPrefix, id, mySender)
 	require.NoError(t, err)
 	*feesAndAmounts -= fee + amount // user should have regained the locked amounts from tx
 	currentBal := input.BankKeeper.GetBalance(ctx, mySender, myTokenDenom).Amount.Uint64()

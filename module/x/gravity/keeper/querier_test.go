@@ -32,7 +32,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
-	input.GravityKeeper.SetValsetConfirm(sdkCtx, types.MsgValsetConfirm{
+	input.GravityKeeper.SetValsetConfirm(sdkCtx, EthChainPrefix, types.MsgValsetConfirm{
 		Nonce:        nonce,
 		Orchestrator: myValidatorCosmosAddr.String(),
 		EthAddress:   myValidatorEthereumAddr.GetAddress().Hex(),
@@ -117,7 +117,7 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		msg.Nonce = uint64(1)
 		msg.Orchestrator = addr.String()
 		msg.Signature = fmt.Sprintf("signature %d", i+1)
-		input.GravityKeeper.SetValsetConfirm(sdkCtx, msg)
+		input.GravityKeeper.SetValsetConfirm(sdkCtx, EthChainPrefix, msg)
 	}
 
 	specs := map[string]struct {
@@ -299,7 +299,7 @@ func TestLastValsetRequests(t *testing.T) {
 	// Run the staking endblocker to ensure valset is correct in state
 	staking.EndBlocker(input.Context, input.StakingKeeper)
 
-	input.GravityKeeper.SetValsetRequest(input.Context)
+	input.GravityKeeper.SetValsetRequest(input.Context, EthChainPrefix)
 
 	k := input.GravityKeeper
 	for msg, spec := range specs {
@@ -452,6 +452,7 @@ func TestPendingValsetRequests(t *testing.T) {
 			},
 		},
 	}
+
 	// any lower than this and a validator won't be created
 	const minStake = 1000000
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
@@ -467,7 +468,7 @@ func TestPendingValsetRequests(t *testing.T) {
 	// Run the staking endblocker to ensure valset is correct in state
 	staking.EndBlocker(input.Context, input.StakingKeeper)
 
-	input.GravityKeeper.SetValsetRequest(input.Context)
+	input.GravityKeeper.SetValsetRequest(input.Context, EthChainPrefix)
 
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 	for msg, spec := range specs {
@@ -964,7 +965,7 @@ func TestQueryCurrentValset(t *testing.T) {
 
 	sdkCtx := input.Context
 
-	currentValset, err := input.GravityKeeper.GetCurrentValset(sdkCtx)
+	currentValset, err := input.GravityKeeper.GetCurrentValset(sdkCtx, EthChainPrefix)
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedValset, currentValset)
@@ -987,7 +988,7 @@ func TestQueryERC20ToDenom(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
+	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, EthChainPrefix, denom, *erc20)
 
 	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{Erc20: erc20.GetAddress().Hex()})
 	require.NoError(t, err)
@@ -1012,7 +1013,7 @@ func TestQueryDenomToERC20(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
+	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, EthChainPrefix, denom, *erc20)
 
 	queriedERC20, err := k.DenomToERC20(ctx, &types.QueryDenomToERC20Request{Denom: denom})
 	require.NoError(t, err)

@@ -38,7 +38,7 @@ func (k Keeper) SetOutgoingLogicCall(ctx sdk.Context, evmChainPrefix string, cal
 
 	// Store checkpoint to prove that this logic call actually happened
 	checkpoint := call.GetCheckpoint(k.GetGravityID(ctx))
-	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
+	k.SetPastEthSignatureCheckpoint(ctx, evmChainPrefix, checkpoint)
 	key := types.GetOutgoingLogicCallKey(evmChainPrefix, call.InvalidationId, call.InvalidationNonce)
 	if store.Has(key) {
 		panic("Can not overwrite logic call")

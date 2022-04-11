@@ -112,9 +112,9 @@ func TestGetSetLastObservedEthereumBlockHeight(t *testing.T) {
 
 	ethereumHeight := uint64(7654321)
 
-	require.NotPanics(t, func() { k.SetLastObservedEthereumBlockHeight(ctx, ethereumHeight) })
+	require.NotPanics(t, func() { k.SetLastObservedEthereumBlockHeight(ctx, EthChainPrefix, ethereumHeight) })
 
-	ethHeight := k.GetLastObservedEthereumBlockHeight(ctx)
+	ethHeight := k.GetLastObservedEthereumBlockHeight(ctx, EthChainPrefix)
 	require.Equal(t, uint64(ctx.BlockHeight()), ethHeight.CosmosBlockHeight)
 	require.Equal(t, ethereumHeight, ethHeight.EthereumBlockHeight)
 }
@@ -145,9 +145,9 @@ func TestGetSetLastObservedValset(t *testing.T) {
 		RewardToken:  "footoken",
 	}
 
-	require.NotPanics(t, func() { k.SetLastObservedValset(ctx, setValset) })
+	require.NotPanics(t, func() { k.SetLastObservedValset(ctx, EthChainPrefix, setValset) })
 
-	getValset := k.GetLastObservedValset(ctx)
+	getValset := k.GetLastObservedValset(ctx, EthChainPrefix)
 	require.EqualValues(t, setValset, *getValset)
 }
 
@@ -169,7 +169,7 @@ func TestGetSetLastEventNonceByValidator(t *testing.T) {
 	getEventNonce := k.GetLastEventNonceByValidator(ctx, EthChainPrefix, addrInBytes)
 	require.Equal(t, nonce-1, getEventNonce)
 
-	require.NotPanics(t, func() { k.SetLastEventNonceByValidator(ctx, addrInBytes, nonce) })
+	require.NotPanics(t, func() { k.SetLastEventNonceByValidator(ctx, EthChainPrefix, addrInBytes, nonce) })
 
 	getEventNonce = k.GetLastEventNonceByValidator(ctx, EthChainPrefix, addrInBytes)
 	require.Equal(t, nonce, getEventNonce)

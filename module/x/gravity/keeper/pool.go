@@ -35,7 +35,7 @@ func (k Keeper) AddToOutgoingPool(
 	// If the coin is a gravity voucher, burn the coins. If not, check if there is a deployed ERC20 contract representing it.
 	// If there is, lock the coins.
 
-	_, tokenContract, err := k.DenomToERC20Lookup(ctx, totalAmount.Denom)
+	_, tokenContract, err := k.DenomToERC20Lookup(ctx, evmChainPrefix, totalAmount.Denom)
 	if err != nil {
 		return 0, err
 	}
@@ -130,7 +130,7 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, evmChainPrefix 
 	}
 
 	// Calculate refund
-	_, denom := k.ERC20ToDenomLookup(ctx, tx.Erc20Token.Contract)
+	_, denom := k.ERC20ToDenomLookup(ctx, evmChainPrefix, tx.Erc20Token.Contract)
 	totalToRefund := sdk.NewCoin(denom, tx.Erc20Token.Amount)
 	totalToRefund.Amount = totalToRefund.Amount.Add(tx.Erc20Fee.Amount)
 	totalToRefundCoins := sdk.NewCoins(totalToRefund)

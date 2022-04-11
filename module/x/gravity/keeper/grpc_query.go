@@ -35,7 +35,7 @@ func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types
 func (k Keeper) CurrentValset(
 	c context.Context,
 	req *types.QueryCurrentValsetRequest) (*types.QueryCurrentValsetResponse, error) {
-	vs, err := k.GetCurrentValset(sdk.UnwrapSDKContext(c))
+	vs, err := k.GetCurrentValset(sdk.UnwrapSDKContext(c), EthChainPrefix)
 	if err != nil {
 		return &types.QueryCurrentValsetResponse{}, err
 	}
@@ -46,7 +46,7 @@ func (k Keeper) CurrentValset(
 func (k Keeper) ValsetRequest(
 	c context.Context,
 	req *types.QueryValsetRequestRequest) (*types.QueryValsetRequestResponse, error) {
-	return &types.QueryValsetRequestResponse{Valset: k.GetValset(sdk.UnwrapSDKContext(c), req.Nonce)}, nil
+	return &types.QueryValsetRequestResponse{Valset: k.GetValset(sdk.UnwrapSDKContext(c), EthChainPrefix, req.Nonce)}, nil
 }
 
 // ValsetConfirm queries the ValsetConfirm of the gravity module
@@ -57,14 +57,14 @@ func (k Keeper) ValsetConfirm(
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
 	}
-	return &types.QueryValsetConfirmResponse{Confirm: k.GetValsetConfirm(sdk.UnwrapSDKContext(c), req.Nonce, addr)}, nil
+	return &types.QueryValsetConfirmResponse{Confirm: k.GetValsetConfirm(sdk.UnwrapSDKContext(c), EthChainPrefix, req.Nonce, addr)}, nil
 }
 
 // ValsetConfirmsByNonce queries the ValsetConfirmsByNonce of the gravity module
 func (k Keeper) ValsetConfirmsByNonce(
 	c context.Context,
 	req *types.QueryValsetConfirmsByNonceRequest) (*types.QueryValsetConfirmsByNonceResponse, error) {
-	confirms := k.GetValsetConfirms(sdk.UnwrapSDKContext(c), req.Nonce)
+	confirms := k.GetValsetConfirms(sdk.UnwrapSDKContext(c), EthChainPrefix, req.Nonce)
 
 	return &types.QueryValsetConfirmsByNonceResponse{Confirms: confirms}, nil
 }
@@ -75,7 +75,7 @@ const maxValsetRequestsReturned = 5
 func (k Keeper) LastValsetRequests(
 	c context.Context,
 	req *types.QueryLastValsetRequestsRequest) (*types.QueryLastValsetRequestsResponse, error) {
-	valReq := k.GetValsets(sdk.UnwrapSDKContext(c))
+	valReq := k.GetValsets(sdk.UnwrapSDKContext(c), EthChainPrefix)
 	valReqLen := len(valReq)
 	retLen := 0
 	if valReqLen < maxValsetRequestsReturned {
@@ -96,9 +96,9 @@ func (k Keeper) LastPendingValsetRequestByAddr(
 	}
 
 	var pendingValsetReq []types.Valset
-	k.IterateValsets(sdk.UnwrapSDKContext(c), func(_ []byte, val *types.Valset) bool {
+	k.IterateValsets(sdk.UnwrapSDKContext(c), EthChainPrefix, func(_ []byte, val *types.Valset) bool {
 		// foundConfirm is true if the operatorAddr has signed the valset we are currently looking at
-		foundConfirm := k.GetValsetConfirm(sdk.UnwrapSDKContext(c), val.Nonce, addr) != nil
+		foundConfirm := k.GetValsetConfirm(sdk.UnwrapSDKContext(c), EthChainPrefix, val.Nonce, addr) != nil
 		// if this valset has NOT been signed by operatorAddr, store it in pendingValsetReq
 		// and exit the loop
 		if !foundConfirm {
@@ -282,7 +282,7 @@ func (k Keeper) DenomToERC20(
 	c context.Context,
 	req *types.QueryDenomToERC20Request) (*types.QueryDenomToERC20Response, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	cosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, req.Denom)
+	cosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, EthChainPrefix, req.Denom)
 	var ret types.QueryDenomToERC20Response
 	ret.Erc20 = erc20.GetAddress().Hex()
 	ret.CosmosOriginated = cosmosOriginated
@@ -299,7 +299,7 @@ func (k Keeper) ERC20ToDenom(
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "invalid Erc20 in request: %s", req.Erc20)
 	}
-	cosmosOriginated, name := k.ERC20ToDenomLookup(ctx, *ethAddr)
+	cosmosOriginated, name := k.ERC20ToDenomLookup(ctx, EthChainPrefix, *ethAddr)
 	var ret types.QueryERC20ToDenomResponse
 	ret.Denom = name
 	ret.CosmosOriginated = cosmosOriginated

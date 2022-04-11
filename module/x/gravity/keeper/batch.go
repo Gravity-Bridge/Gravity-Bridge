@@ -59,7 +59,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 	}
 
 	nextID := k.autoIncrementID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, evmChainPrefix))
-	batch, err := types.NewInternalOutgingTxBatch(nextID, k.getBatchTimeoutHeight(ctx), selectedTx, contract, 0)
+	batch, err := types.NewInternalOutgingTxBatch(nextID, k.getBatchTimeoutHeight(ctx, evmChainPrefix), selectedTx, contract, 0)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "unable to create batch"))
 	}
@@ -69,7 +69,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 
 	// Get the checkpoint and store it as a legit past batch
 	checkpoint := batch.GetCheckpoint(k.GetGravityID(ctx))
-	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
+	k.SetPastEthSignatureCheckpoint(ctx, evmChainPrefix, checkpoint)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatch{
@@ -83,12 +83,12 @@ func (k Keeper) BuildOutgoingTXBatch(
 }
 
 // This gets the batch timeout height in Ethereum blocks.
-func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context) uint64 {
+func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) uint64 {
 	params := k.GetParams(ctx)
 	currentCosmosHeight := ctx.BlockHeight()
 	// we store the last observed Cosmos and Ethereum heights, we do not concern ourselves if these values are zero because
 	// no batch can be produced if the last Ethereum block height is not first populated by a deposit event.
-	heights := k.GetLastObservedEthereumBlockHeight(ctx)
+	heights := k.GetLastObservedEthereumBlockHeight(ctx, evmChainPrefix)
 	if heights.CosmosBlockHeight == 0 || heights.EthereumBlockHeight == 0 {
 		return 0
 	}
@@ -112,7 +112,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, 
 	}
 	contract := b.TokenContract
 	// Burn tokens if they're Ethereum originated
-	if isCosmosOriginated, _ := k.ERC20ToDenomLookup(ctx, contract); !isCosmosOriginated {
+	if isCosmosOriginated, _ := k.ERC20ToDenomLookup(ctx, evmChainPrefix, contract); !isCosmosOriginated {
 		totalToBurn := sdk.NewInt(0)
 		for _, tx := range b.Transactions {
 			totalToBurn = totalToBurn.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))

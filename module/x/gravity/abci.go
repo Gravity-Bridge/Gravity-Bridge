@@ -15,12 +15,12 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 	attestationTally(ctx, k, keeper.EthChainPrefix)
 	cleanupTimedOutBatches(ctx, k, keeper.EthChainPrefix)
 	cleanupTimedOutLogicCalls(ctx, k, keeper.EthChainPrefix)
-	createValsets(ctx, k)
-	pruneValsets(ctx, k, params)
+	createValsets(ctx, k, keeper.EthChainPrefix)
+	pruneValsets(ctx, k, params, keeper.EthChainPrefix)
 	pruneAttestations(ctx, k, keeper.EthChainPrefix)
 }
 
-func createValsets(ctx sdk.Context, k keeper.Keeper) {
+func createValsets(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	// Auto ValsetRequest Creation.
 	// WARNING: do not use k.GetLastObservedValset in this function, it *will* result in losing control of the bridge
 	// 1. If there are no valset requests, create a new one.
@@ -30,12 +30,12 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 	// 3. If power change between validators of CurrentValset and latest valset request is > 5%
 
 	// get the last valsets to compare against
-	latestValset := k.GetLatestValset(ctx)
+	latestValset := k.GetLatestValset(ctx, evmChainPrefix)
 	lastUnbondingHeight := k.GetLastUnBondingBlockHeight(ctx)
 
 	significantPowerDiff := false
 	if latestValset != nil {
-		vs, err := k.GetCurrentValset(ctx)
+		vs, err := k.GetCurrentValset(ctx, evmChainPrefix)
 		if err != nil {
 			// this condition should only occur in the simulator
 			// ref : https://github.com/Gravity-Bridge/Gravity-Bridge/issues/35
@@ -61,27 +61,27 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 
 	if (latestValset == nil) || (lastUnbondingHeight == uint64(ctx.BlockHeight())) || significantPowerDiff {
 		// if the conditions are true, put in a new validator set request to be signed and submitted to Ethereum
-		k.SetValsetRequest(ctx)
+		k.SetValsetRequest(ctx, evmChainPrefix)
 	}
 }
 
-func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
+func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChainPrefix string) {
 	// Validator set pruning
 	// prune all validator sets with a nonce less than the
 	// last observed nonce, they can't be submitted any longer
 	//
 	// Only prune valsets after the signed valsets window has passed
 	// so that slashing can occur the block before we remove them
-	lastObserved := k.GetLastObservedValset(ctx)
+	lastObserved := k.GetLastObservedValset(ctx, evmChainPrefix)
 	currentBlock := uint64(ctx.BlockHeight())
 	tooEarly := currentBlock < params.SignedValsetsWindow
 	if lastObserved != nil && !tooEarly {
-		earliestToPrune := currentBlock - params.SignedValsetsWindow
-		sets := k.GetValsets(ctx)
+		earliestToPrune := currentBlock - params.GetSignedValsetsWindow()
+		sets := k.GetValsets(ctx, evmChainPrefix)
 		for _, set := range sets {
 			if set.Nonce < lastObserved.Nonce && set.Height < earliestToPrune {
-				k.DeleteValset(ctx, set.Nonce)
-				k.DeleteValsetConfirms(ctx, set.Nonce)
+				k.DeleteValset(ctx, evmChainPrefix, set.Nonce)
+				k.DeleteValsetConfirms(ctx, evmChainPrefix, set.Nonce)
 			}
 		}
 	}
@@ -91,9 +91,9 @@ func slashing(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	params := k.GetParams(ctx)
 
 	// Slash validator for not confirming valset requests, batch requests, logic call requests
-	valsetSlashing(ctx, k, params)
-	batchSlashing(ctx, evmChainPrefix, k, params)
-	logicCallSlashing(ctx, evmChainPrefix, k, params)
+	valsetSlashing(ctx, k, params, evmChainPrefix)
+	batchSlashing(ctx, k, params, evmChainPrefix)
+	logicCallSlashing(ctx, k, params, evmChainPrefix)
 }
 
 // Iterate over all attestations currently being voted on in order of nonce and
@@ -133,7 +133,7 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 			// If no attestation becomes observed, when we get to the next nonce, every attestation in
 			// it will be skipped. The same will happen for every nonce after that.
 			if nonce == uint64(k.GetLastObservedEventNonce(ctx, evmChainPrefix))+1 {
-				k.TryAttestation(ctx, evmChainPrefix, &att)
+				k.TryAttestation(ctx, &att)
 			}
 		}
 	}
@@ -148,8 +148,8 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 //    here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
 //    project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
 //    AND any deposit or withdraw has occurred to update the Ethereum block height.
-func cleanupTimedOutBatches(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper) {
-	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
+func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
+	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx, evmChainPrefix).EthereumBlockHeight
 	batches := k.GetOutgoingTxBatches(ctx, evmChainPrefix)
 	for _, batch := range batches {
 		if batch.BatchTimeout < ethereumHeight {
@@ -170,8 +170,8 @@ func cleanupTimedOutBatches(ctx sdk.Context, evmChainPrefix string, k keeper.Kee
 //    here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
 //    project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
 //    AND any deposit or withdraw has occurred to update the Ethereum block height.
-func cleanupTimedOutLogicCalls(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper) {
-	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
+func cleanupTimedOutLogicCalls(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
+	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx, evmChainPrefix).EthereumBlockHeight
 	calls := k.GetOutgoingLogicCalls(ctx, evmChainPrefix)
 	for _, call := range calls {
 		if call.Timeout < ethereumHeight {
@@ -186,8 +186,8 @@ func cleanupTimedOutLogicCalls(ctx sdk.Context, evmChainPrefix string, k keeper.
 // prepValsetConfirms loads all confirmations into a hashmap indexed by validatorAddr
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
-func prepValsetConfirms(ctx sdk.Context, k keeper.Keeper, nonce uint64) map[string]types.MsgValsetConfirm {
-	confirms := k.GetValsetConfirms(ctx, nonce)
+func prepValsetConfirms(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string, nonce uint64) map[string]types.MsgValsetConfirm {
+	confirms := k.GetValsetConfirms(ctx, evmChainPrefix, nonce)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string
 	ret := make(map[string]types.MsgValsetConfirm)
 	for _, confirm := range confirms {
@@ -207,19 +207,18 @@ func prepValsetConfirms(ctx sdk.Context, k keeper.Keeper, nonce uint64) map[stri
 }
 
 // valsetSlashing slashes validators who have not signed validator sets during the signing window
-func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
+func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChainPrefix string) {
 	// don't slash in the beginning before there aren't even SignedValsetsWindow blocks yet
 	if uint64(ctx.BlockHeight()) <= params.SignedValsetsWindow {
 		return
 	}
-
-	unslashedValsets := k.GetUnSlashedValsets(ctx, params.SignedValsetsWindow)
+	unslashedValsets := k.GetUnSlashedValsets(ctx, evmChainPrefix, params.SignedValsetsWindow)
 
 	currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
 	unbondingValidators := getUnbondingValidators(ctx, k)
 
 	for _, vs := range unslashedValsets {
-		confirms := prepValsetConfirms(ctx, k, vs.Nonce)
+		confirms := prepValsetConfirms(ctx, k, evmChainPrefix, vs.Nonce)
 
 		// SLASH BONDED VALIDTORS who didn't attest valset request
 
@@ -299,7 +298,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 		}
 		// then we set the latest slashed valset  nonce
-		k.SetLastSlashedValsetNonce(ctx, vs.Nonce)
+		k.SetLastSlashedValsetNonce(ctx, evmChainPrefix, vs.Nonce)
 	}
 }
 
@@ -358,7 +357,7 @@ func prepBatchConfirms(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, 
 // batchSlashing slashes currently bonded validators who have not submitted batch
 // signatures. This is distinct from validator sets, which includes unbonding validators
 // because validator set updates must succeed as validators leave the set, batches will just be re-created
-func batchSlashing(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, params types.Params) {
+func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChainPrefix string) {
 	// We look through the full bonded set (the active set)
 	// and we slash users who haven't signed a batch confirmation that is >15hrs in blocks old
 	var maxHeight uint64
@@ -436,7 +435,7 @@ func prepLogicCallConfirms(ctx sdk.Context, evmChainPrefix string, k keeper.Keep
 // logicCallSlashing slashes currently bonded validators who have not submitted logicCall
 // signatures. This is distinct from validator sets, which includes unbonding validators
 // because validator set updates must succeed as validators leave the set, logicCalls will just be re-created
-func logicCallSlashing(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, params types.Params) {
+func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChainPrefix string) {
 	// We look through the full bonded set (the active set)
 	// and we slash users who haven't signed a batch confirmation that is >15hrs in blocks old
 	var maxHeight uint64
