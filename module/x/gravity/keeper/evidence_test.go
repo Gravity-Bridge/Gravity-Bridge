@@ -50,14 +50,14 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, EthChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 	}
 
 	// when
 	ctx = ctx.WithBlockTime(now)
 
-	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
+	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, EthChainPrefix, *tokenContract, 2)
 	goodBatchExternal := goodBatch.ToExternal()
 	require.NoError(t, err)
 
@@ -104,7 +104,7 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 		Timeout: 420,
 	}
 
-	input.GravityKeeper.SetOutgoingLogicCall(ctx, logicCall)
+	input.GravityKeeper.SetOutgoingLogicCall(ctx, EthChainPrefix, logicCall)
 
 	any, _ := codectypes.NewAnyWithValue(&logicCall)
 

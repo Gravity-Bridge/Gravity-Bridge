@@ -32,7 +32,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.GenesisStat
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "unable to make batch internal: %v", batch))
 		}
-		k.StoreBatch(ctx, *intBatch)
+		k.StoreBatch(ctx, EthChainPrefix, *intBatch)
 	}
 
 	// reset batch confirmations in state
@@ -43,7 +43,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.GenesisStat
 
 	// reset logic calls in state
 	for _, call := range data.LogicCalls {
-		k.SetOutgoingLogicCall(ctx, call)
+		k.SetOutgoingLogicCall(ctx, EthChainPrefix, call)
 	}
 
 	// reset logic call confirmations in state
@@ -59,12 +59,12 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 
 	// restore various nonces, this MUST match GravityNonces in genesis
 	k.SetLatestValsetNonce(ctx, data.GravityNonces.LatestValsetNonce)
-	k.setLastObservedEventNonce(ctx, data.GravityNonces.LastObservedNonce)
+	k.setLastObservedEventNonce(ctx, EthChainPrefix, data.GravityNonces.LastObservedNonce)
 	k.SetLastSlashedValsetNonce(ctx, data.GravityNonces.LastSlashedValsetNonce)
-	k.SetLastSlashedBatchBlock(ctx, data.GravityNonces.LastSlashedBatchBlock)
-	k.SetLastSlashedLogicCallBlock(ctx, data.GravityNonces.LastSlashedLogicCallBlock)
-	k.setID(ctx, data.GravityNonces.LastTxPoolId, types.KeyLastTXPoolID)       //TODO: EVM
-	k.setID(ctx, data.GravityNonces.LastBatchId, types.KeyLastOutgoingBatchID) //TODO: EVM
+	k.SetLastSlashedBatchBlock(ctx, EthChainPrefix, data.GravityNonces.LastSlashedBatchBlock)
+	k.SetLastSlashedLogicCallBlock(ctx, EthChainPrefix, data.GravityNonces.LastSlashedLogicCallBlock)
+	k.setID(ctx, data.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix))       //TODO: EVM
+	k.setID(ctx, data.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix)) //TODO: EVM
 
 	initBridgeDataFromGenesis(ctx, k, data)
 
@@ -74,7 +74,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "invalid unbatched tx: %v", tx))
 		}
-		if err := k.addUnbatchedTX(ctx, intTx); err != nil {
+		if err := k.addUnbatchedTX(ctx, EthChainPrefix, intTx); err != nil {
 			panic(err)
 		}
 	}
@@ -92,7 +92,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err != nil {
 			panic(fmt.Errorf("error when computing ClaimHash for %v", hash))
 		}
-		k.SetAttestation(ctx, claim.GetEventNonce(), hash, &att)
+		k.SetAttestation(ctx, EthChainPrefix, claim.GetEventNonce(), hash, &att)
 	}
 
 	// reset attestation state of specific validators
@@ -117,7 +117,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 			if err != nil {
 				panic(err)
 			}
-			last := k.GetLastEventNonceByValidator(ctx, val)
+			last := k.GetLastEventNonceByValidator(ctx, EthChainPrefix, val)
 			if claim.GetEventNonce() > last {
 				k.SetLastEventNonceByValidator(ctx, val, claim.GetEventNonce())
 			}
@@ -192,17 +192,17 @@ func hasDuplicates(d []types.MsgSetOrchestratorAddress) bool {
 func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	var (
 		p                  = k.GetParams(ctx)
-		calls              = k.GetOutgoingLogicCalls(ctx)
-		batches            = k.GetOutgoingTxBatches(ctx)
+		calls              = k.GetOutgoingLogicCalls(ctx, EthChainPrefix)
+		batches            = k.GetOutgoingTxBatches(ctx, EthChainPrefix)
 		valsets            = k.GetValsets(ctx)
-		attmap, attKeys    = k.GetAttestationMapping(ctx)
+		attmap, attKeys    = k.GetAttestationMapping(ctx, EthChainPrefix)
 		vsconfs            = []types.MsgValsetConfirm{}
 		batchconfs         = []types.MsgConfirmBatch{}
 		callconfs          = []types.MsgConfirmLogicCall{}
 		attestations       = []types.Attestation{}
 		delegates          = k.GetDelegateKeys(ctx)
 		erc20ToDenoms      = []types.ERC20ToDenom{}
-		unbatchedTransfers = k.GetUnbatchedTransactions(ctx)
+		unbatchedTransfers = k.GetUnbatchedTransactions(ctx, EthChainPrefix)
 	)
 
 	// export valset confirmations from state
@@ -216,7 +216,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	for i, batch := range batches {
 		// TODO: set height = 0?
 		batchconfs = append(batchconfs,
-			k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract)...)
+			k.GetBatchConfirmByNonceAndTokenContract(ctx, EthChainPrefix, batch.BatchNonce, batch.TokenContract)...)
 		extBatches[i] = batch.ToExternal()
 	}
 
@@ -224,7 +224,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	for _, call := range calls {
 		// TODO: set height = 0?
 		callconfs = append(callconfs,
-			k.GetLogicConfirmByInvalidationIDAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)...)
+			k.GetLogicConfirmByInvalidationIDAndNonce(ctx, EthChainPrefix, call.InvalidationId, call.InvalidationNonce)...)
 	}
 
 	// export attestations from state
@@ -248,12 +248,12 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		Params: &p,
 		GravityNonces: types.GravityNonces{
 			LatestValsetNonce:         k.GetLatestValsetNonce(ctx),
-			LastObservedNonce:         k.GetLastObservedEventNonce(ctx),
+			LastObservedNonce:         k.GetLastObservedEventNonce(ctx, EthChainPrefix),
 			LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx),
-			LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx),
-			LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx),
-			LastTxPoolId:              k.getID(ctx, types.KeyLastTXPoolID),
-			LastBatchId:               k.getID(ctx, types.KeyLastOutgoingBatchID),
+			LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx, EthChainPrefix),
+			LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx, EthChainPrefix),
+			LastTxPoolId:              k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix)),
+			LastBatchId:               k.getID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix)),
 		},
 		Valsets:            valsets,
 		ValsetConfirms:     vsconfs,

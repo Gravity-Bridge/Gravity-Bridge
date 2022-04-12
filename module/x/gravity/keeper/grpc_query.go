@@ -119,7 +119,7 @@ func (k Keeper) LastPendingValsetRequestByAddr(
 func (k Keeper) BatchFees(
 	c context.Context,
 	req *types.QueryBatchFeeRequest) (*types.QueryBatchFeeResponse, error) {
-	return &types.QueryBatchFeeResponse{BatchFees: k.GetAllBatchFees(sdk.UnwrapSDKContext(c), OutgoingTxBatchSize)}, nil
+	return &types.QueryBatchFeeResponse{BatchFees: k.GetAllBatchFees(sdk.UnwrapSDKContext(c), EthChainPrefix, OutgoingTxBatchSize)}, nil
 }
 
 // LastPendingBatchRequestByAddr queries the LastPendingBatchRequestByAddr of
@@ -136,8 +136,8 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 	var pendingBatchReq types.InternalOutgoingTxBatches
 
 	found := false
-	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
-		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), batch.BatchNonce, batch.TokenContract, addr) != nil
+	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), EthChainPrefix, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), EthChainPrefix, batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
 			pendingBatchReq = append(pendingBatchReq, batch)
 			found = true
@@ -166,8 +166,8 @@ func (k Keeper) LastPendingLogicCallByAddr(
 
 	var pendingLogicReq []types.OutgoingLogicCall
 	found := false
-	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, logic types.OutgoingLogicCall) bool {
-		foundConfirm := k.GetLogicCallConfirm(sdk.UnwrapSDKContext(c),
+	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), EthChainPrefix, func(_ []byte, logic types.OutgoingLogicCall) bool {
+		foundConfirm := k.GetLogicCallConfirm(sdk.UnwrapSDKContext(c), EthChainPrefix,
 			logic.InvalidationId, logic.InvalidationNonce, addr) != nil
 		if !foundConfirm {
 			pendingLogicReq = append(pendingLogicReq, logic)
@@ -191,7 +191,7 @@ func (k Keeper) OutgoingTxBatches(
 	c context.Context,
 	req *types.QueryOutgoingTxBatchesRequest) (*types.QueryOutgoingTxBatchesResponse, error) {
 	var batches []types.OutgoingTxBatch
-	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), EthChainPrefix, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		batches = append(batches, batch.ToExternal())
 		return len(batches) == MaxResults
 	})
@@ -203,7 +203,7 @@ func (k Keeper) OutgoingLogicCalls(
 	c context.Context,
 	req *types.QueryOutgoingLogicCallsRequest) (*types.QueryOutgoingLogicCallsResponse, error) {
 	var calls []types.OutgoingLogicCall
-	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, call types.OutgoingLogicCall) bool {
+	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), EthChainPrefix, func(_ []byte, call types.OutgoingLogicCall) bool {
 		calls = append(calls, call)
 		return len(calls) == MaxResults
 	})
@@ -220,7 +220,7 @@ func (k Keeper) BatchRequestByNonce(
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, err.Error())
 	}
 
-	foundBatch := k.GetOutgoingTXBatch(sdk.UnwrapSDKContext(c), *addr, req.Nonce)
+	foundBatch := k.GetOutgoingTXBatch(sdk.UnwrapSDKContext(c), EthChainPrefix, *addr, req.Nonce)
 	if foundBatch == nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "cannot find tx batch")
 	}
@@ -237,7 +237,7 @@ func (k Keeper) BatchConfirms(
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid contract address in request")
 	}
-	k.IterateBatchConfirmByNonceAndTokenContract(sdk.UnwrapSDKContext(c),
+	k.IterateBatchConfirmByNonceAndTokenContract(sdk.UnwrapSDKContext(c), EthChainPrefix,
 		req.Nonce, *contract, func(_ []byte, c types.MsgConfirmBatch) bool {
 			confirms = append(confirms, c)
 			return false
@@ -249,7 +249,7 @@ func (k Keeper) BatchConfirms(
 func (k Keeper) LogicConfirms(
 	c context.Context,
 	req *types.QueryLogicConfirmsRequest) (*types.QueryLogicConfirmsResponse, error) {
-	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(sdk.UnwrapSDKContext(c), req.InvalidationId, req.InvalidationNonce)
+	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(sdk.UnwrapSDKContext(c), EthChainPrefix, req.InvalidationId, req.InvalidationNonce)
 
 	return &types.QueryLogicConfirmsResponse{Confirms: confirms}, nil
 }
@@ -272,7 +272,7 @@ func (k Keeper) LastEventNonceByAddr(
 	if err := sdk.VerifyAddressFormat(validator.GetOperator()); err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid validator address")
 	}
-	lastEventNonce := k.GetLastEventNonceByValidator(ctx, validator.GetOperator())
+	lastEventNonce := k.GetLastEventNonceByValidator(ctx, EthChainPrefix, validator.GetOperator())
 	ret.EventNonce = lastEventNonce
 	return &ret, nil
 }
@@ -328,7 +328,7 @@ func (k Keeper) GetAttestations(
 	reverse := strings.EqualFold(req.OrderBy, "desc")
 	filter := req.Height > 0 || req.Nonce > 0 || req.ClaimType != ""
 
-	k.IterateAttestations(ctx, reverse, func(_ []byte, att types.Attestation) (abort bool) {
+	k.IterateAttestations(ctx, EthChainPrefix, reverse, func(_ []byte, att types.Attestation) (abort bool) {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
 			iterErr = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
@@ -442,8 +442,8 @@ func (k Keeper) GetPendingSendToEth(
 	c context.Context,
 	req *types.QueryPendingSendToEth) (*types.QueryPendingSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	batches := k.GetOutgoingTxBatches(ctx)
-	unbatched_tx := k.GetUnbatchedTransactions(ctx)
+	batches := k.GetOutgoingTxBatches(ctx, EthChainPrefix)
+	unbatched_tx := k.GetUnbatchedTransactions(ctx, EthChainPrefix)
 	sender_address := req.GetSenderAddress()
 	res := types.QueryPendingSendToEthResponse{
 		TransfersInBatches: []types.OutgoingTransferTx{},

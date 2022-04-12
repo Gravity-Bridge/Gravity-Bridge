@@ -340,8 +340,8 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
-	pk.StoreBatch(ctx, *batch)
-	unslashedBatches := pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))
+	pk.StoreBatch(ctx, keeper.EthChainPrefix, *batch)
+	unslashedBatches := pk.GetUnSlashedBatches(ctx, keeper.EthChainPrefix, uint64(ctx.BlockHeight()))
 	assert.True(t, len(unslashedBatches) == 1 && unslashedBatches[0].BatchNonce == 1)
 
 	for i, orch := range keeper.OrchAddrs {
@@ -393,8 +393,8 @@ func TestBatchSlashing(t *testing.T) {
 		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
-	pk.StoreBatch(ctx, *batch)
-	unslashedBatches := pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))
+	pk.StoreBatch(ctx, keeper.EthChainPrefix, *batch)
+	unslashedBatches := pk.GetUnSlashedBatches(ctx, keeper.EthChainPrefix, uint64(ctx.BlockHeight()))
 	assert.True(t, len(unslashedBatches) == 1 && unslashedBatches[0].BatchNonce == 1)
 
 	for i, orch := range keeper.OrchAddrs {
@@ -438,9 +438,9 @@ func TestBatchSlashing(t *testing.T) {
 	require.False(t, val2.IsJailed())
 
 	// Ensure that the last slashed valset nonce is set properly
-	lastSlashedBatchBlock := input.GravityKeeper.GetLastSlashedBatchBlock(ctx)
+	lastSlashedBatchBlock := input.GravityKeeper.GetLastSlashedBatchBlock(ctx, keeper.EthChainPrefix)
 	assert.Equal(t, lastSlashedBatchBlock, batch.Block)
-	assert.True(t, len(pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))) == 0)
+	assert.True(t, len(pk.GetUnSlashedBatches(ctx, keeper.EthChainPrefix, uint64(ctx.BlockHeight()))) == 0)
 
 }
 
@@ -517,7 +517,7 @@ func TestBatchTimeout(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, keeper.EthChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 	}
 
@@ -526,22 +526,22 @@ func TestBatchTimeout(t *testing.T) {
 	ctx = ctx.WithBlockHeight(250)
 
 	// check that we can make a batch without first setting an ethereum block height
-	b1, err1 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 1)
+	b1, err1 := pk.BuildOutgoingTXBatch(ctx, keeper.EthChainPrefix, *tokenContract, 1)
 	require.NoError(t, err1)
 	require.Equal(t, b1.BatchTimeout, uint64(0))
 
 	pk.SetLastObservedEthereumBlockHeight(ctx, 500)
 
 	// increase number of max txs to create more profitable batch
-	b2, err2 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
+	b2, err2 := pk.BuildOutgoingTXBatch(ctx, keeper.EthChainPrefix, *tokenContract, 2)
 	require.NoError(t, err2)
 	// this is exactly block 500 plus twelve hours
 	require.Equal(t, b2.BatchTimeout, uint64(504))
 
 	// make sure the batches got stored in the first place
-	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b1.TokenContract, b1.BatchNonce)
 	require.NotNil(t, gotFirstBatch)
-	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b2.TokenContract, b2.BatchNonce)
 	require.NotNil(t, gotSecondBatch)
 
 	// persist confirmations for second batch to test their deletion on batch timeout
@@ -561,41 +561,41 @@ func TestBatchTimeout(t *testing.T) {
 	}
 
 	// verify that confirms are persisted
-	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, b2.BatchNonce, b2.TokenContract)
+	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, keeper.EthChainPrefix, b2.BatchNonce, b2.TokenContract)
 	require.Equal(t, len(keeper.OrchAddrs), len(secondBatchConfirms))
 
 	// when, way into the future
 	ctx = ctx.WithBlockTime(now)
 	ctx = ctx.WithBlockHeight(9)
 
-	b3, err2 := pk.BuildOutgoingTXBatch(ctx, *tokenContract, 3)
+	b3, err2 := pk.BuildOutgoingTXBatch(ctx, keeper.EthChainPrefix, *tokenContract, 3)
 	require.NoError(t, err2)
 
 	EndBlocker(ctx, pk)
 
 	// this had a timeout of zero should be deleted.
-	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b1.TokenContract, b1.BatchNonce)
 	require.Nil(t, gotFirstBatch)
 	// make sure the end blocker does not delete these, as the block height has not officially
 	// been updated by a relay event
-	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b2.TokenContract, b2.BatchNonce)
 	require.NotNil(t, gotSecondBatch)
-	gotThirdBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, b3.TokenContract, b3.BatchNonce)
+	gotThirdBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b3.TokenContract, b3.BatchNonce)
 	require.NotNil(t, gotThirdBatch)
 
 	pk.SetLastObservedEthereumBlockHeight(ctx, 5000)
 	EndBlocker(ctx, pk)
 
 	// make sure the end blocker does delete these, as we've got a new Ethereum block height
-	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b1.TokenContract, b1.BatchNonce)
 	require.Nil(t, gotFirstBatch)
-	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b2.TokenContract, b2.BatchNonce)
 	require.Nil(t, gotSecondBatch)
-	gotThirdBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, b3.TokenContract, b3.BatchNonce)
+	gotThirdBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b3.TokenContract, b3.BatchNonce)
 	require.NotNil(t, gotThirdBatch)
 
 	// verify that second batch confirms are deleted
-	secondBatchConfirms = input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, b2.BatchNonce, b2.TokenContract)
+	secondBatchConfirms = input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, keeper.EthChainPrefix, b2.BatchNonce, b2.TokenContract)
 	require.Equal(t, 0, len(secondBatchConfirms))
 }
 

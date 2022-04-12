@@ -579,7 +579,7 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
-		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, EthChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:
 		// 1: amount 100, fee 2
@@ -591,7 +591,7 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 	input.Context = input.Context.WithBlockTime(now)
 
 	// tx batch size is 2, so that some of them stay behind
-	_, err = input.GravityKeeper.BuildOutgoingTXBatch(input.Context, *tokenContract, maxTxElements)
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(input.Context, EthChainPrefix, *tokenContract, maxTxElements)
 	require.NoError(t, err)
 	// Should have 2 and 3 from above
 	// 1 and 4 should be unbatched
@@ -684,9 +684,9 @@ func TestQueryLogicCalls(t *testing.T) {
 		InvalidationId:       invalidationId,
 		InvalidationNonce:    uint64(invalidationNonce),
 	}
-	k.SetOutgoingLogicCall(sdkCtx, call)
+	k.SetOutgoingLogicCall(sdkCtx, EthChainPrefix, call)
 
-	res := k.GetOutgoingLogicCall(sdkCtx, invalidationId, invalidationNonce)
+	res := k.GetOutgoingLogicCall(sdkCtx, EthChainPrefix, invalidationId, invalidationNonce)
 
 	require.Equal(t, call, *res)
 
@@ -745,7 +745,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 		InvalidationId:       invalidationId,
 		InvalidationNonce:    uint64(invalidationNonce),
 	}
-	k.SetOutgoingLogicCall(sdkCtx, call)
+	k.SetOutgoingLogicCall(sdkCtx, EthChainPrefix, call)
 
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 
@@ -759,7 +759,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 
 	k.SetLogicCallConfirm(sdkCtx, &confirm)
 
-	res := k.GetLogicConfirmByInvalidationIDAndNonce(sdkCtx, invalidationId, 1)
+	res := k.GetLogicConfirmByInvalidationIDAndNonce(sdkCtx, EthChainPrefix, invalidationId, 1)
 	assert.Equal(t, len(res), 1)
 }
 
@@ -1060,7 +1060,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
-		_, err = input.GravityKeeper.AddToOutgoingPool(sdkCtx, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(sdkCtx, EthChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:
 		// 1: amount 100, fee 2
@@ -1074,7 +1074,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 
 	// tx batch size is 2, so that some of them stay behind
 	// Should contain 2 and 3 from above
-	_, err = input.GravityKeeper.BuildOutgoingTXBatch(sdkCtx, *tokenContract, 2)
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(sdkCtx, EthChainPrefix, *tokenContract, 2)
 	require.NoError(t, err)
 
 	// Should receive 1 and 4 unbatched, 2 and 3 batched in response

@@ -20,34 +20,34 @@ func TestGetAndDeleteAttestation(t *testing.T) {
 	// Get created attestations
 	for i := 0; i < length; i++ {
 		nonce := uint64(1 + i)
-		att := k.GetAttestation(ctx, nonce, hashes[i])
+		att := k.GetAttestation(ctx, EthChainPrefix, nonce, hashes[i])
 		require.NotNil(t, att)
 	}
-	recentAttestations := k.GetMostRecentAttestations(ctx, uint64(length))
+	recentAttestations := k.GetMostRecentAttestations(ctx, EthChainPrefix, uint64(length))
 	require.True(t, len(recentAttestations) == length)
 
 	// Delete last 3 attestations
 	var nilAtt *types.Attestation
 	for i := 7; i < length; i++ {
 		nonce := uint64(1 + i)
-		att := k.GetAttestation(ctx, nonce, hashes[i])
-		k.DeleteAttestation(ctx, *att)
+		att := k.GetAttestation(ctx, EthChainPrefix, nonce, hashes[i])
+		k.DeleteAttestation(ctx, EthChainPrefix, *att)
 
-		att = k.GetAttestation(ctx, nonce, hashes[i])
+		att = k.GetAttestation(ctx, EthChainPrefix, nonce, hashes[i])
 		require.Equal(t, nilAtt, att)
 	}
-	recentAttestations = k.GetMostRecentAttestations(ctx, uint64(10))
+	recentAttestations = k.GetMostRecentAttestations(ctx, EthChainPrefix, uint64(10))
 	require.True(t, len(recentAttestations) == 7)
 
 	// Check all attestations again
 	for i := 0; i < 7; i++ {
 		nonce := uint64(1 + i)
-		att := k.GetAttestation(ctx, nonce, hashes[i])
+		att := k.GetAttestation(ctx, EthChainPrefix, nonce, hashes[i])
 		require.NotNil(t, att)
 	}
 	for i := 7; i < length; i++ {
 		nonce := uint64(1 + i)
-		att := k.GetAttestation(ctx, nonce, hashes[i])
+		att := k.GetAttestation(ctx, EthChainPrefix, nonce, hashes[i])
 		require.Equal(t, nilAtt, att)
 	}
 }
@@ -63,7 +63,7 @@ func TestGetMostRecentAttestations(t *testing.T) {
 	length := 10
 	msgs, anys, _ := createAttestations(t, length, k, ctx)
 
-	recentAttestations := k.GetMostRecentAttestations(ctx, uint64(length))
+	recentAttestations := k.GetMostRecentAttestations(ctx, EthChainPrefix, uint64(length))
 	require.True(t, len(recentAttestations) == length,
 		"recentAttestations should have len %v but instead has %v", length, len(recentAttestations))
 	for n, attest := range recentAttestations {
@@ -99,7 +99,7 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdktypes.Context
 		hash, err := msg.ClaimHash()
 		hashes = append(hashes, hash)
 		require.NoError(t, err)
-		k.SetAttestation(ctx, nonce, hash, att)
+		k.SetAttestation(ctx, EthChainPrefix, nonce, hash, att)
 	}
 
 	return msgs, anys, hashes
@@ -165,12 +165,12 @@ func TestGetSetLastEventNonceByValidator(t *testing.T) {
 	addrInBytes := valAccount.GetAddress().Bytes()
 
 	// In case this is first time validator is submiting claim, nonce is expected to be LastObservedNonce-1
-	k.setLastObservedEventNonce(ctx, nonce)
-	getEventNonce := k.GetLastEventNonceByValidator(ctx, addrInBytes)
+	k.setLastObservedEventNonce(ctx, EthChainPrefix, nonce)
+	getEventNonce := k.GetLastEventNonceByValidator(ctx, EthChainPrefix, addrInBytes)
 	require.Equal(t, nonce-1, getEventNonce)
 
 	require.NotPanics(t, func() { k.SetLastEventNonceByValidator(ctx, addrInBytes, nonce) })
 
-	getEventNonce = k.GetLastEventNonceByValidator(ctx, addrInBytes)
+	getEventNonce = k.GetLastEventNonceByValidator(ctx, EthChainPrefix, addrInBytes)
 	require.Equal(t, nonce, getEventNonce)
 }

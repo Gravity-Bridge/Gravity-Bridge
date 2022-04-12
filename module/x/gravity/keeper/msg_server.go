@@ -133,7 +133,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, sdkerrors.Wrap(err, "destination address is invalid or blacklisted")
 	}
 
-	txID, err := k.AddToOutgoingPool(ctx, sender, *dest, msg.Amount, msg.BridgeFee)
+	txID, err := k.AddToOutgoingPool(ctx, EthChainPrefix, sender, *dest, msg.Amount, msg.BridgeFee)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not add to outgoing pool")
 	}
@@ -159,7 +159,7 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 		return nil, sdkerrors.Wrap(err, "Could not look up erc 20 denominator")
 	}
 
-	batch, err := k.BuildOutgoingTXBatch(ctx, *tokenContract, OutgoingTxBatchSize)
+	batch, err := k.BuildOutgoingTXBatch(ctx, EthChainPrefix, *tokenContract, OutgoingTxBatchSize)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not build outgoing tx batch")
 	}
@@ -187,7 +187,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	ctx := sdk.UnwrapSDKContext(c)
 
 	// fetch the outgoing batch given the nonce
-	batch := k.GetOutgoingTXBatch(ctx, *contract, msg.Nonce)
+	batch := k.GetOutgoingTXBatch(ctx, EthChainPrefix, *contract, msg.Nonce)
 	if batch == nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find batch")
 	}
@@ -205,7 +205,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	}
 
 	// check if we already have this confirm
-	if k.GetBatchConfirm(ctx, msg.Nonce, *contract, orchaddr) != nil {
+	if k.GetBatchConfirm(ctx, EthChainPrefix, msg.Nonce, *contract, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
 	key := k.SetBatchConfirm(ctx, msg)
@@ -229,7 +229,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 	}
 
 	// fetch the outgoing logic given the nonce
-	logic := k.GetOutgoingLogicCall(ctx, invalidationIdBytes, msg.InvalidationNonce)
+	logic := k.GetOutgoingLogicCall(ctx, EthChainPrefix, invalidationIdBytes, msg.InvalidationNonce)
 	if logic == nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find logic")
 	}
@@ -246,7 +246,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 	}
 
 	// check if we already have this confirm
-	if k.GetLogicCallConfirm(ctx, invalidationIdBytes, msg.InvalidationNonce, orchaddr) != nil {
+	if k.GetLogicCallConfirm(ctx, EthChainPrefix, invalidationIdBytes, msg.InvalidationNonce, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
 
@@ -280,7 +280,7 @@ func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator
 // translated from the message to the Ethereum claim interface
 func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, msg types.EthereumClaim) error {
 	// Add the claim to the store
-	_, err := k.Attest(ctx, msg, msgAny)
+	_, err := k.Attest(ctx, EthChainPrefix, msg, msgAny)
 	if err != nil {
 		return sdkerrors.Wrap(err, "create attestation")
 	}
@@ -471,7 +471,7 @@ func (k msgServer) CancelSendToEth(c context.Context, msg *types.MsgCancelSendTo
 	if err != nil {
 		return nil, err
 	}
-	err = k.RemoveFromOutgoingPoolAndRefund(ctx, msg.TransactionId, sender)
+	err = k.RemoveFromOutgoingPoolAndRefund(ctx, EthChainPrefix, msg.TransactionId, sender)
 	if err != nil {
 		return nil, err
 	}

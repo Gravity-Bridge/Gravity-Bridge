@@ -49,7 +49,7 @@ func TestModuleBalanceUnbatchedTxs(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
+		r, err := input.GravityKeeper.AddToOutgoingPool(ctx, EthChainPrefix, mySender, *receiver, amount, fee)
 		require.NotZero(t, r)
 		require.NoError(t, err)
 		// Should create:
@@ -61,7 +61,7 @@ func TestModuleBalanceUnbatchedTxs(t *testing.T) {
 	checkInvariant(t, ctx, input.GravityKeeper, true)
 
 	// Remove one of the transactions
-	err = input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, 1, mySender)
+	err = input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, EthChainPrefix, 1, mySender)
 	require.NoError(t, err)
 	checkInvariant(t, ctx, input.GravityKeeper, true)
 
@@ -120,7 +120,7 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 			require.NoError(t, err)
 			fee := feeToken.GravityCoin()
 
-			r, err := input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amount, fee)
+			r, err := input.GravityKeeper.AddToOutgoingPool(ctx, EthChainPrefix, mySender, *myReceiver, amount, fee)
 			require.NoError(t, err)
 			ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v", r, amount, fee))
 			// Should create:
@@ -139,10 +139,10 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 		// when
 		ctx = ctx.WithBlockTime(now)
 		// tx batch size is 3, so that some of them stay behind
-		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, tok.Contract, 3)
+		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, EthChainPrefix, tok.Contract, 3)
 		require.NoError(t, err)
 		// then check the batch persists
-		gotBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, batch.TokenContract, batch.BatchNonce)
+		gotBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, EthChainPrefix, batch.TokenContract, batch.BatchNonce)
 		require.NotNil(t, gotBatch)
 		batches[i] = gotBatch
 		// The module should be balanced with the new unobserved batch + leftover unbatched txs
@@ -150,8 +150,8 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 		checkImbalancedModule(t, ctx, input.GravityKeeper, input.BankKeeper, mySender, voucherCoins[i])
 	}
 	// Remove a tx from the pool for each contract (both of these have fee = 1 and won't be batched
-	input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, 4, mySender)
-	input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, 8, mySender)
+	input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, EthChainPrefix, 4, mySender)
+	input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, EthChainPrefix, 8, mySender)
 
 	// Here we execute the most recently created batch to test the module's balance is correct after deletion of the first batch
 	// All of the batch's transactions need to end up back in the unbatched tx pool and should be counted there for us
@@ -161,7 +161,7 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 	checkImbalancedModule(t, ctx, input.GravityKeeper, input.BankKeeper, mySender, voucherCoins[1])
 
 	// Simulate one batch being relayed and observed
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, batches[1].TokenContract, batches[1].BatchNonce)
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, EthChainPrefix, batches[1].TokenContract, batches[1].BatchNonce)
 	// The module should be balanced with the batch now being observed + one leftover unbatched tx still in the pool
 	checkInvariant(t, ctx, input.GravityKeeper, true)
 	checkImbalancedModule(t, ctx, input.GravityKeeper, input.BankKeeper, mySender, voucherCoins[0])

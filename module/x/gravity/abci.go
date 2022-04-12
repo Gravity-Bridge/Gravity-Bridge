@@ -11,13 +11,13 @@ import (
 // EndBlocker is called at the end of every block
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 	params := k.GetParams(ctx)
-	slashing(ctx, k)
-	attestationTally(ctx, k)
-	cleanupTimedOutBatches(ctx, k)
-	cleanupTimedOutLogicCalls(ctx, k)
+	slashing(ctx, k, keeper.EthChainPrefix)
+	attestationTally(ctx, k, keeper.EthChainPrefix)
+	cleanupTimedOutBatches(ctx, k, keeper.EthChainPrefix)
+	cleanupTimedOutLogicCalls(ctx, k, keeper.EthChainPrefix)
 	createValsets(ctx, k)
 	pruneValsets(ctx, k, params)
-	pruneAttestations(ctx, k)
+	pruneAttestations(ctx, k, keeper.EthChainPrefix)
 }
 
 func createValsets(ctx sdk.Context, k keeper.Keeper) {
@@ -87,26 +87,26 @@ func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 	}
 }
 
-func slashing(ctx sdk.Context, k keeper.Keeper) {
+func slashing(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	params := k.GetParams(ctx)
 
 	// Slash validator for not confirming valset requests, batch requests, logic call requests
 	valsetSlashing(ctx, k, params)
-	batchSlashing(ctx, k, params)
-	logicCallSlashing(ctx, k, params)
+	batchSlashing(ctx, evmChainPrefix, k, params)
+	logicCallSlashing(ctx, evmChainPrefix, k, params)
 }
 
 // Iterate over all attestations currently being voted on in order of nonce and
 // "Observe" those who have passed the threshold. Break the loop once we see
 // an attestation that has not passed the threshold
-func attestationTally(ctx sdk.Context, k keeper.Keeper) {
+func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	params := k.GetParams(ctx)
 	// bridge is currently disabled, do not process attestations from Ethereum
 	if !params.BridgeActive {
 		return
 	}
 
-	attmap, keys := k.GetAttestationMapping(ctx)
+	attmap, keys := k.GetAttestationMapping(ctx, evmChainPrefix)
 
 	// This iterates over all keys (event nonces) in the attestation mapping. Each value contains
 	// a slice with one or more attestations at that event nonce. There can be multiple attestations
@@ -132,8 +132,8 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 			// we skip the other attestations and move on to the next nonce again.
 			// If no attestation becomes observed, when we get to the next nonce, every attestation in
 			// it will be skipped. The same will happen for every nonce after that.
-			if nonce == uint64(k.GetLastObservedEventNonce(ctx))+1 {
-				k.TryAttestation(ctx, &att)
+			if nonce == uint64(k.GetLastObservedEventNonce(ctx, evmChainPrefix))+1 {
+				k.TryAttestation(ctx, evmChainPrefix, &att)
 			}
 		}
 	}
@@ -148,12 +148,12 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 //    here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
 //    project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
 //    AND any deposit or withdraw has occurred to update the Ethereum block height.
-func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
+func cleanupTimedOutBatches(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper) {
 	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
-	batches := k.GetOutgoingTxBatches(ctx)
+	batches := k.GetOutgoingTxBatches(ctx, evmChainPrefix)
 	for _, batch := range batches {
 		if batch.BatchTimeout < ethereumHeight {
-			err := k.CancelOutgoingTXBatch(ctx, batch.TokenContract, batch.BatchNonce)
+			err := k.CancelOutgoingTXBatch(ctx, evmChainPrefix, batch.TokenContract, batch.BatchNonce)
 			if err != nil {
 				panic("Failed to cancel outgoing txbatch!")
 			}
@@ -170,12 +170,12 @@ func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
 //    here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
 //    project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
 //    AND any deposit or withdraw has occurred to update the Ethereum block height.
-func cleanupTimedOutLogicCalls(ctx sdk.Context, k keeper.Keeper) {
+func cleanupTimedOutLogicCalls(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper) {
 	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
-	calls := k.GetOutgoingLogicCalls(ctx)
+	calls := k.GetOutgoingLogicCalls(ctx, evmChainPrefix)
 	for _, call := range calls {
 		if call.Timeout < ethereumHeight {
-			err := k.CancelOutgoingLogicCall(ctx, call.InvalidationId, call.InvalidationNonce)
+			err := k.CancelOutgoingLogicCall(ctx, evmChainPrefix, call.InvalidationId, call.InvalidationNonce)
 			if err != nil {
 				panic("Failed to cancel outgoing logic call!")
 			}
@@ -335,8 +335,8 @@ func getUnbondingValidators(ctx sdk.Context, k keeper.Keeper) (addresses []strin
 // prepBatchConfirms loads all confirmations into a hashmap indexed by validatorAddr
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
-func prepBatchConfirms(ctx sdk.Context, k keeper.Keeper, batch types.InternalOutgoingTxBatch) map[string]types.MsgConfirmBatch {
-	confirms := k.GetBatchConfirmByNonceAndTokenContract(ctx, batch.BatchNonce, batch.TokenContract)
+func prepBatchConfirms(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, batch types.InternalOutgoingTxBatch) map[string]types.MsgConfirmBatch {
+	confirms := k.GetBatchConfirmByNonceAndTokenContract(ctx, evmChainPrefix, batch.BatchNonce, batch.TokenContract)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]types.MsgConfirmBatch)
 	for _, confirm := range confirms {
@@ -358,7 +358,7 @@ func prepBatchConfirms(ctx sdk.Context, k keeper.Keeper, batch types.InternalOut
 // batchSlashing slashes currently bonded validators who have not submitted batch
 // signatures. This is distinct from validator sets, which includes unbonding validators
 // because validator set updates must succeed as validators leave the set, batches will just be re-created
-func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
+func batchSlashing(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, params types.Params) {
 	// We look through the full bonded set (the active set)
 	// and we slash users who haven't signed a batch confirmation that is >15hrs in blocks old
 	var maxHeight uint64
@@ -372,10 +372,10 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 	}
 
 	currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
-	unslashedBatches := k.GetUnSlashedBatches(ctx, maxHeight)
+	unslashedBatches := k.GetUnSlashedBatches(ctx, evmChainPrefix, maxHeight)
 	for _, batch := range unslashedBatches {
 		// SLASH BONDED VALIDTORS who didn't attest batch requests
-		confirms := prepBatchConfirms(ctx, k, batch)
+		confirms := prepBatchConfirms(ctx, evmChainPrefix, k, batch)
 		for _, val := range currentBondedSet {
 			consAddr, err := val.GetConsAddr()
 			if err != nil {
@@ -406,15 +406,15 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 		}
 		// then we set the latest slashed batch block
-		k.SetLastSlashedBatchBlock(ctx, batch.Block)
+		k.SetLastSlashedBatchBlock(ctx, evmChainPrefix, batch.Block)
 	}
 }
 
 // prepLogicCallConfirms loads all confirmations into a hashmap indexed by validatorAddr
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
-func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call types.OutgoingLogicCall) map[string]*types.MsgConfirmLogicCall {
-	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)
+func prepLogicCallConfirms(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, call types.OutgoingLogicCall) map[string]*types.MsgConfirmLogicCall {
+	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(ctx, evmChainPrefix, call.InvalidationId, call.InvalidationNonce)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]*types.MsgConfirmLogicCall)
 	for _, confirm := range confirms {
@@ -436,7 +436,7 @@ func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call types.Outgoing
 // logicCallSlashing slashes currently bonded validators who have not submitted logicCall
 // signatures. This is distinct from validator sets, which includes unbonding validators
 // because validator set updates must succeed as validators leave the set, logicCalls will just be re-created
-func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
+func logicCallSlashing(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, params types.Params) {
 	// We look through the full bonded set (the active set)
 	// and we slash users who haven't signed a batch confirmation that is >15hrs in blocks old
 	var maxHeight uint64
@@ -450,11 +450,11 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 	}
 
 	currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
-	unslashedLogicCalls := k.GetUnSlashedLogicCalls(ctx, maxHeight)
+	unslashedLogicCalls := k.GetUnSlashedLogicCalls(ctx, evmChainPrefix, maxHeight)
 	for _, call := range unslashedLogicCalls {
 
 		// SLASH BONDED VALIDTORS who didn't attest batch requests
-		confirms := prepLogicCallConfirms(ctx, k, call)
+		confirms := prepLogicCallConfirms(ctx, evmChainPrefix, k, call)
 		for _, val := range currentBondedSet {
 			// Don't slash validators who joined after batch is created
 			consAddr, err := val.GetConsAddr()
@@ -483,7 +483,7 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 		}
 		// then we set the latest slashed logic call block
-		k.SetLastSlashedLogicCallBlock(ctx, call.Block)
+		k.SetLastSlashedLogicCallBlock(ctx, evmChainPrefix, call.Block)
 	}
 }
 
@@ -492,14 +492,14 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 // use. This could be combined with create attestation and save some computation
 // but (A) pruning keeps the iteration small in the first place and (B) there is
 // already enough nuance in the other handler that it's best not to complicate it further
-func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
-	attmap, keys := k.GetAttestationMapping(ctx)
+func pruneAttestations(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
+	attmap, keys := k.GetAttestationMapping(ctx, evmChainPrefix)
 
 	// we delete all attestations earlier than the current event nonce
 	// minus some buffer value. This buffer value is purely to allow
 	// frontends and other UI components to view recent oracle history
 	const eventsToKeep = 1000
-	lastNonce := uint64(k.GetLastObservedEventNonce(ctx))
+	lastNonce := uint64(k.GetLastObservedEventNonce(ctx, evmChainPrefix))
 	var cutoff uint64
 	if lastNonce <= eventsToKeep {
 		return
@@ -517,7 +517,7 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 		for _, att := range attmap[nonce] {
 			// delete all before the cutoff
 			if nonce < cutoff {
-				k.DeleteAttestation(ctx, att)
+				k.DeleteAttestation(ctx, evmChainPrefix, att)
 			}
 		}
 	}

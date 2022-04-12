@@ -309,26 +309,26 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 
 // SetLastSlashedLogicCallBlock returns true if the last slashed logic call block
 // has been set in the store
-func (k Keeper) HasLastSlashedLogicCallBlock(ctx sdk.Context) bool {
+func (k Keeper) HasLastSlashedLogicCallBlock(ctx sdk.Context, evmChainPrefix string) bool {
 	store := ctx.KVStore(k.storeKey)
-	return store.Has(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, EthChainPrefix))
+	return store.Has(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, evmChainPrefix))
 }
 
 // SetLastSlashedLogicCallBlock sets the latest slashed logic call block height
-func (k Keeper) SetLastSlashedLogicCallBlock(ctx sdk.Context, blockHeight uint64) {
+func (k Keeper) SetLastSlashedLogicCallBlock(ctx sdk.Context, evmChainPrefix string, blockHeight uint64) {
 
-	if k.HasLastSlashedLogicCallBlock(ctx) && k.GetLastSlashedLogicCallBlock(ctx) > blockHeight {
+	if k.HasLastSlashedLogicCallBlock(ctx, evmChainPrefix) && k.GetLastSlashedLogicCallBlock(ctx, evmChainPrefix) > blockHeight {
 		panic("Attempted to decrement LastSlashedBatchBlock")
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, EthChainPrefix), types.UInt64Bytes(blockHeight))
+	store.Set(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, evmChainPrefix), types.UInt64Bytes(blockHeight))
 }
 
 // GetLastSlashedLogicCallBlock returns the latest slashed logic call block
-func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context) uint64 {
+func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context, evmChainPrefix string) uint64 {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, EthChainPrefix))
+	bytes := store.Get(types.AppendChainPrefix(types.LastSlashedLogicCallBlock, evmChainPrefix))
 
 	if len(bytes) == 0 {
 		panic("Last slashed logic call block not initialized in genesis")
@@ -337,9 +337,9 @@ func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context) uint64 {
 }
 
 // GetUnSlashedLogicCalls returns all the unslashed logic calls in state
-func (k Keeper) GetUnSlashedLogicCalls(ctx sdk.Context, maxHeight uint64) (out []types.OutgoingLogicCall) {
-	lastSlashedLogicCallBlock := k.GetLastSlashedLogicCallBlock(ctx)
-	calls := k.GetOutgoingLogicCalls(ctx)
+func (k Keeper) GetUnSlashedLogicCalls(ctx sdk.Context, evmChainPrefix string, maxHeight uint64) (out []types.OutgoingLogicCall) {
+	lastSlashedLogicCallBlock := k.GetLastSlashedLogicCallBlock(ctx, evmChainPrefix)
+	calls := k.GetOutgoingLogicCalls(ctx, evmChainPrefix)
 	for _, call := range calls {
 		if call.Block > lastSlashedLogicCallBlock {
 			out = append(out, call)

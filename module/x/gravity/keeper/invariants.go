@@ -34,8 +34,8 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			newInt := sdk.NewInt(0)
 			expectedBals[v.Denom] = &newInt
 		}
-		expectedBals = sumUnconfirmedBatchModuleBalances(ctx, k, expectedBals)
-		expectedBals = sumUnbatchedTxModuleBalances(ctx, k, expectedBals)
+		expectedBals = sumUnconfirmedBatchModuleBalances(ctx, EthChainPrefix, k, expectedBals)
+		expectedBals = sumUnbatchedTxModuleBalances(ctx, EthChainPrefix, k, expectedBals)
 		expectedBals = sumPendingIbcAutoForwards(ctx, k, expectedBals)
 
 		// Compare actual vs expected balances
@@ -64,8 +64,8 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 }
 
 // sumUnconfirmedBatchModuleBalances calculate the value the module should have stored due to unconfirmed batches
-func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
-	k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, evmChainPrefix string, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+	k.IterateOutgoingTXBatches(ctx, evmChainPrefix, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		batchTotal := sdk.NewInt(0)
 		// Collect the send amount + fee amount for each tx
 		for _, tx := range batch.Transactions {
@@ -90,9 +90,9 @@ func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals m
 }
 
 // sumUnbatchedTxModuleBalances calculates the value the module should have stored due to unbatched txs
-func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+func sumUnbatchedTxModuleBalances(ctx sdk.Context, evmChainPrefix string, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
 	// It is also given the balance of all unbatched txs in the pool
-	k.IterateUnbatchedTransactions(ctx, types.AppendChainPrefix(types.OutgoingTXPoolKey, EthChainPrefix), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
+	k.IterateUnbatchedTransactions(ctx, types.AppendChainPrefix(types.OutgoingTXPoolKey, evmChainPrefix), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		contract := tx.Erc20Token.Contract
 		_, denom := k.ERC20ToDenomLookup(ctx, contract)
 

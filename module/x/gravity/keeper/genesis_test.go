@@ -105,7 +105,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// add transaction to the pool
-		id, err := input.GravityKeeper.AddToOutgoingPool(ctx, *sender, *receiver, amountToken.GravityCoin(), feeToken.GravityCoin())
+		id, err := input.GravityKeeper.AddToOutgoingPool(ctx, EthChainPrefix, *sender, *receiver, amountToken.GravityCoin(), feeToken.GravityCoin())
 		require.NoError(t, err)
 		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v of contract %v from %v to %v", i, amount, fee, contract, sender, receiver))
 
@@ -126,7 +126,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	// with 100 tx in each batch, 1000 txs per contract, we want 5 batches per contract to batch 500 txs per contract
 	batches := make([]*types.InternalOutgoingTxBatch, 5*len(contracts))
 	for i, v := range contracts {
-		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *v, uint(batchSize))
+		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, EthChainPrefix, *v, uint(batchSize))
 		require.NoError(t, err)
 		batches[i] = batch
 		ctx.Logger().Info(fmt.Sprintf("Created batch %v for contract %v with %v transactions", i, v.GetAddress(), batchSize))
@@ -139,8 +139,8 @@ func TestBatchAndTxImportExport(t *testing.T) {
 
 // Requires that all transactions in txs exist in keeper
 func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, txs []*types.InternalOutgoingTransferTx) {
-	unbatched := keeper.GetUnbatchedTransactions(ctx)
-	batches := keeper.GetOutgoingTxBatches(ctx)
+	unbatched := keeper.GetUnbatchedTransactions(ctx, EthChainPrefix)
+	batches := keeper.GetOutgoingTxBatches(ctx, EthChainPrefix)
 	// Collect all txs into an array
 	var gotTxs []*types.InternalOutgoingTransferTx
 	gotTxs = append(gotTxs, unbatched...)
@@ -170,9 +170,9 @@ func exportImport(t *testing.T, input *TestInput) {
 	genesisState := ExportGenesis(input.Context, input.GravityKeeper)
 	newEnv := CreateTestEnv(t)
 	input = &newEnv
-	unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context)
+	unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context, EthChainPrefix)
 	require.Empty(t, unbatched)
-	batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context)
+	batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context, EthChainPrefix)
 	require.Empty(t, batches)
 	InitGenesis(input.Context, input.GravityKeeper, genesisState)
 }
