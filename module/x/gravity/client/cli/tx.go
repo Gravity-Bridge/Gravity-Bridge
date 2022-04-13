@@ -41,6 +41,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 		CmdGovIbcMetadataProposal(),
 		CmdGovAirdropProposal(),
 		CmdGovUnhaltBridgeProposal(),
+		CmdExecutePendingIbcAutoForwards(),
 	}...)
 
 	return gravityTxCmd
@@ -386,6 +387,40 @@ func CmdSetOrchestratorAddress() *cobra.Command {
 				Validator:    args[0],
 				Orchestrator: args[1],
 				EthAddress:   args[2],
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func CmdExecutePendingIbcAutoForwards() *cobra.Command {
+	//nolint: exhaustivestruct
+	cmd := &cobra.Command{
+		Use:   "execute-pending-ibc-auto-forwards [forwards-to-execute]",
+		Short: "Executes a given number of IBC Auto-Forwards",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			sender := cliCtx.GetFromAddress()
+			if sender.String() == "" {
+				return fmt.Errorf("from address must be specified")
+			}
+			forwardsToClear, err := strconv.ParseUint(args[0], 10, 0)
+			if err != nil {
+				return sdkerrors.Wrap(err, "Unable to parse forwards-to-execute as an non-negative integer")
+			}
+			msg := types.MsgExecuteIbcAutoForwards{
+				ForwardsToClear: forwardsToClear,
+				Executor:        cliCtx.GetFromAddress().String(),
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err

@@ -4,10 +4,9 @@ import (
 	"context"
 	"strings"
 
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -464,4 +463,13 @@ func (k Keeper) GetPendingSendToEth(
 	}
 
 	return &res, nil
+}
+
+func (k Keeper) GetPendingIbcAutoForwards(
+	c context.Context,
+	req *types.QueryPendingIbcAutoForwards,
+) (*types.QueryPendingIbcAutoForwardsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	pendingForwards := k.PendingIbcAutoForwards(ctx, req.Limit)
+	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
 }
