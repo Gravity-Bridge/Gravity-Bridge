@@ -90,6 +90,9 @@ service Query {
   rpc GetPendingSendToEth(QueryPendingSendToEth) returns (QueryPendingSendToEthResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_pending_send_to_eth";
   }
+  rpc GetPendingIbcAutoForwards(QueryPendingIbcAutoForwards) returns (QueryPendingIbcAutoForwardsResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_pending_ibc_auto_forwards";
+  }
 }
 
 message QueryParamsRequest {}
@@ -263,4 +266,13 @@ message QueryPendingSendToEth {
 message QueryPendingSendToEthResponse {
   repeated OutgoingTransferTx transfers_in_batches = 1 [(gogoproto.nullable) = false];
   repeated OutgoingTransferTx unbatched_transfers  = 2 [(gogoproto.nullable) = false];
+}
+
+message QueryPendingIbcAutoForwards{
+  // limit defines the number of pending forwards to return, in order of their SendToCosmos.EventNonce
+  uint64 limit = 1;
+}
+
+message QueryPendingIbcAutoForwardsResponse{
+  repeated PendingIbcAutoForward pending_ibc_auto_forwards = 1;
 }

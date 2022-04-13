@@ -97,3 +97,12 @@ message IBCMetadataProposal {
   ];
   string ibc_denom = 4;
 }
+
+// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
+// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
+message PendingIbcAutoForward {
+  string foreign_receiver = 1;         // the destination address. sdk.AccAddress does not preserve foreign prefixes
+  cosmos.base.v1beta1.Coin token = 2; // the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
+  string ibc_channel = 3;              // the IBC channel to send `Amount` over via ibc-transfer module
+  uint64 event_nonce = 4;              // the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
+}
