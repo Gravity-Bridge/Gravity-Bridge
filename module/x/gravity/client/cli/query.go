@@ -7,6 +7,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
@@ -26,6 +28,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetPendingValsetRequest(),
 		CmdGetPendingOutgoingTXBatchRequest(),
 		CmdGetPendingSendToEth(),
+		GetCmdPendingIbcAutoForwards(),
 		GetCmdQueryParams(),
 	}...)
 
@@ -186,6 +189,38 @@ func CmdGetPendingSendToEth() *cobra.Command {
 			}
 
 			res, err := queryClient.GetPendingSendToEth(cmd.Context(), req)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func GetCmdPendingIbcAutoForwards() *cobra.Command {
+	//nolint: exhaustivestruct
+	cmd := &cobra.Command{
+		Use:   "pending-ibc-auto-forwards [optional limit]",
+		Short: "Query SendToCosmos transactions waiting to be forwarded over IBC",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			queryClient := types.NewQueryClient(clientCtx)
+
+			var limit uint64 = 0
+			if args[0] != "" {
+				var err error
+				limit, err = strconv.ParseUint(args[0], 10, 0)
+				if err != nil {
+					return sdkerrors.Wrapf(err, "Unable to parse limit from %v", args[0])
+				}
+			}
+
+			req := &types.QueryPendingIbcAutoForwards{Limit: limit}
+			res, err := queryClient.GetPendingIbcAutoForwards(cmd.Context(), req)
 			if err != nil {
 				return err
 			}

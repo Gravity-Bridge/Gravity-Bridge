@@ -12,6 +12,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
@@ -114,6 +115,23 @@ func NewKeeper(
 	k.ValidateMembers()
 
 	return k
+}
+
+/////////////////////////////
+//       HELPERS           //
+/////////////////////////////
+
+// SendToCommunityPool handles incorrect SendToCosmos calls to the community pool, since the calls
+// have already been made on Ethereum there's nothing we can do to reverse them, and we should at least
+// make use of the tokens which would otherwise be lost
+func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
+	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distrtypes.ModuleName, coins); err != nil {
+		return sdkerrors.Wrap(err, "transfer to community pool failed")
+	}
+	feePool := k.DistKeeper.GetFeePool(ctx)
+	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
+	k.DistKeeper.SetFeePool(ctx, feePool)
+	return nil
 }
 
 /////////////////////////////

@@ -23,7 +23,7 @@ func AllInvariants(k Keeper) sdk.Invariant {
 	}
 }
 
-// Checks that the module account's balance is equal to the balance of unbatched transactions and unobserved batches
+// ModuleBalanceInvariant checks that the module account's balance is equal to the balance of unbatched transactions and unobserved batches
 // Note that the returned bool should be true if there is an error, e.g. an unexpected module balance
 func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
@@ -36,6 +36,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 		}
 		expectedBals = sumUnconfirmedBatchModuleBalances(ctx, k, expectedBals)
 		expectedBals = sumUnbatchedTxModuleBalances(ctx, k, expectedBals)
+		expectedBals = sumPendingIbcAutoForwards(ctx, k, expectedBals)
 
 		// Compare actual vs expected balances
 		for _, actual := range actualBals {
@@ -62,7 +63,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 	}
 }
 
-// Calculate the value the module should have stored due to unconfirmed batches
+// sumUnconfirmedBatchModuleBalances calculate the value the module should have stored due to unconfirmed batches
 func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
 	k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		batchTotal := sdk.NewInt(0)
@@ -88,7 +89,7 @@ func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals m
 	return expectedBals
 }
 
-// Calculate the value the module should have stored due to unbatched txs
+// sumUnbatchedTxModuleBalances calculates the value the module should have stored due to unbatched txs
 func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
 	// It is also given the balance of all unbatched txs in the pool
 	k.IterateUnbatchedTransactions(ctx, []byte(types.OutgoingTXPoolKey), func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
@@ -106,6 +107,19 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[st
 
 		return false // continue iterating
 	})
+
+	return expectedBals
+}
+
+func sumPendingIbcAutoForwards(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+	for _, forward := range k.PendingIbcAutoForwards(ctx, uint64(0)) {
+		if _, ok := expectedBals[forward.Token.Denom]; !ok {
+			zero := sdk.ZeroInt()
+			expectedBals[forward.Token.Denom] = &zero
+		} else {
+			*expectedBals[forward.Token.Denom] = expectedBals[forward.Token.Denom].Add(forward.Token.Amount)
+		}
+	}
 
 	return expectedBals
 }

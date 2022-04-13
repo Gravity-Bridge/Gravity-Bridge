@@ -367,6 +367,21 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 	return &types.MsgSendToCosmosClaimResponse{}, nil
 }
 
+// ExecuteIbcAutoForwards moves pending IBC Auto-Forwards to their respective chains by calling ibc-transfer's Transfer
+// function with all the relevant information
+// Note: this endpoint and the related queue are necessary due to a Tendermint bug where events created in EndBlocker
+// do not appear. We process SendToCosmos observations in EndBlocker but are therefore unable to auto-forward these txs
+// in the same block. This endpoint triggers the creation of those ibc-transfer events which relayers watch for.
+func (k msgServer) ExecuteIbcAutoForwards(c context.Context, msg *types.MsgExecuteIbcAutoForwards) (*types.MsgExecuteIbcAutoForwardsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := k.ProcessPendingIbcAutoForwards(ctx, msg.GetForwardsToClear()); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgExecuteIbcAutoForwardsResponse{}, nil
+}
+
 // WithdrawClaim handles MsgBatchSendToEthClaim
 // TODO it is possible to submit an old msgWithdrawClaim (old defined as covering an event nonce that has already been
 // executed aka 'observed' and had it's slashing window expire) that will never be cleaned up in the endblocker. This
