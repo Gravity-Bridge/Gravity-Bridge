@@ -72,6 +72,8 @@ pub fn create_default_test_config() -> GravityBridgeToolsConfig {
     no_relay_market_config.relayer.valset_relaying_mode = ValsetRelayingMode::EveryValset;
     no_relay_market_config.relayer.batch_request_mode = BatchRequestMode::EveryBatch;
     no_relay_market_config.relayer.relayer_loop_speed = 10;
+    no_relay_market_config.relayer.ibc_auto_forward_loop_speed = 10;
+    no_relay_market_config.relayer.ibc_auto_forwards_to_execute = 300;
     no_relay_market_config
 }
 

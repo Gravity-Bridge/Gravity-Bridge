@@ -11,6 +11,7 @@ use gravity_utils::connection_prep::{
 };
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::RelayerConfig;
+use relayer::ibc_auto_forwarding::ibc_auto_forward_loop;
 use relayer::main_loop::relayer_main_loop;
 use relayer::main_loop::TIMEOUT;
 use std::path::Path;
@@ -118,6 +119,15 @@ pub async fn relayer(
         print_relaying_explanation(&config, false)
     }
 
+    ibc_auto_forward_loop(
+        cosmos_key,
+        &contact,
+        grpc.clone(),
+        args.fees.clone(),
+        config.clone(),
+    )
+    .await;
+
     relayer_main_loop(
         ethereum_key,
         cosmos_key,
@@ -129,5 +139,5 @@ pub async fn relayer(
         params.gravity_id,
         config,
     )
-    .await
+    .await;
 }
