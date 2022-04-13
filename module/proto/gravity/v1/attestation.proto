@@ -84,10 +84,20 @@ message EventSendToCosmosLocal {
   string amount = 4;
 }
 
-message EventSendToCosmosIbc {
+message EventSendToCosmosPendingIbcAutoForward {
   string nonce = 1;
   string receiver = 2;
   string token = 3;
   string amount = 4;
   string channel = 5;
+}
+
+message EventSendToCosmosExecutedIbcAutoForward {
+  string nonce = 1;
+  string receiver = 2;
+  string token = 3;
+  string amount = 4;
+  string channel = 5;
+  string timeout_time = 6;
+  string timeout_height = 7;
 }

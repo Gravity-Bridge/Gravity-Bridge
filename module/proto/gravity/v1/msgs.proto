@@ -28,6 +28,9 @@ service Msg {
   rpc SendToCosmosClaim(MsgSendToCosmosClaim) returns (MsgSendToCosmosClaimResponse) {
     option (google.api.http).post = "/gravity/v1/send_to_cosmos_claim";
   }
+  rpc ExecuteIbcAutoForwards(MsgExecuteIbcAutoForwards) returns (MsgExecuteIbcAutoForwardsResponse) {
+    option (google.api.http).post = "/gravity/v1/execute_ibc_auto_forwards";
+  }
   rpc BatchSendToEthClaim(MsgBatchSendToEthClaim) returns (MsgBatchSendToEthClaimResponse) {
     option (google.api.http).post = "/gravity/v1/batch_send_to_eth_claim";
   }
@@ -194,6 +197,17 @@ message MsgSendToCosmosClaim {
 }
 
 message MsgSendToCosmosClaimResponse {}
+
+// MsgExecuteIbcAutoForwards
+// Prompts the forwarding of Pending IBC Auto-Forwards in the queue
+// The Pending forwards will be executed in order of their original SendToCosmos.EventNonce
+// The funds in the queue will be sent to a local gravity-prefixed address if IBC transfer is not possible
+message MsgExecuteIbcAutoForwards {
+  uint64 forwards_to_clear = 1; // How many queued forwards to clear, be careful about gas limits
+  string executor = 2; // This message's sender
+}
+
+message MsgExecuteIbcAutoForwardsResponse {}
 
 // BatchSendToEthClaim claims that a batch of send to eth
 // operations on the bridge contract was executed.

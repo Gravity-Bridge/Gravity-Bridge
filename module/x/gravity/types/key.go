@@ -145,6 +145,10 @@ var (
 	// PastEthSignatureCheckpointKey indexes eth signature checkpoints that have existed
 	// [0x1cbe0be407a979331b98e599eeedd09f]
 	PastEthSignatureCheckpointKey = HashString("PastEthSignatureCheckpointKey")
+
+	// PendingIBCAutoForwards indexes pending SendToCosmos sends via IBC, queued by event nonce
+	// [0x5b89a7c5dc9abd2a7abc2560d6eb42ea]
+	PendingIbcAutoForwards = HashString("IbcAutoForwardQueue")
 )
 
 // GetOrchestratorAddressKey returns the following key format
@@ -307,4 +311,11 @@ func convertByteArrToString(value []byte) string {
 		ret.WriteString(string(value[i]))
 	}
 	return ret.String()
+}
+
+// GetPendingIbcAutoForwardKey returns the following key format
+// prefix		EventNonce
+// [0x0][0 0 0 0 0 0 0 1]
+func GetPendingIbcAutoForwardKey(eventNonce uint64) []byte {
+	return AppendBytes(PendingIbcAutoForwards, UInt64Bytes(eventNonce))
 }

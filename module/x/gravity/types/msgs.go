@@ -21,6 +21,7 @@ var (
 	_ sdk.Msg = &MsgConfirmLogicCall{}
 	_ sdk.Msg = &MsgLogicCallExecutedClaim{}
 	_ sdk.Msg = &MsgSendToCosmosClaim{}
+	_ sdk.Msg = &MsgExecuteIbcAutoForwards{}
 	_ sdk.Msg = &MsgBatchSendToEthClaim{}
 	_ sdk.Msg = &MsgValsetUpdatedClaim{}
 	_ sdk.Msg = &MsgSubmitBadSignatureEvidence{}
@@ -397,6 +398,22 @@ const (
 func (msg *MsgSendToCosmosClaim) ClaimHash() ([]byte, error) {
 	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s", msg.EventNonce, msg.BlockHeight, msg.TokenContract, msg.Amount.String(), msg.EthereumSender, msg.CosmosReceiver)
 	return tmhash.Sum([]byte(path)), nil
+}
+
+func (msg *MsgExecuteIbcAutoForwards) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Executor); err != nil {
+		return sdkerrors.Wrap(err, "Unable to parse executor as a valid bech32 address")
+	}
+	return nil
+}
+
+func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {
+	msg.ProtoMessage()
+	acc, err := sdk.AccAddressFromBech32(msg.Executor)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{acc}
 }
 
 // GetType returns the claim type
