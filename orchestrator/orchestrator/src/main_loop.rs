@@ -20,11 +20,12 @@ use deep_space::Contact;
 use deep_space::{client::ChainStatus, utils::FeeInfo};
 use deep_space::{coin::Coin, private_key::PrivateKey as CosmosPrivateKey};
 use futures::future::join;
-use futures::future::join3;
+use futures::future::join4;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
+use relayer::ibc_auto_forwarding::ibc_auto_forward_loop;
 use relayer::main_loop::relayer_main_loop;
 use std::cmp::min;
 use std::process::exit;
@@ -77,18 +78,25 @@ pub async fn orchestrator_main_loop(
     let c = relayer_main_loop(
         ethereum_key,
         Some(cosmos_key),
-        Some(fee),
+        Some(fee.clone()),
         web3,
-        contact,
+        contact.clone(),
         grpc_client.clone(),
         gravity_contract_address,
         gravity_id,
-        config.relayer,
+        config.relayer.clone(),
+    );
+    let d = ibc_auto_forward_loop(
+        Some(cosmos_key),
+        &contact,
+        grpc_client.clone(),
+        Some(fee.clone()),
+        config.relayer.clone(),
     );
 
-    // if the relayer is not enabled we just don't start the future
+    // if the relayer is not enabled we just don't start the relayer_main_loop or ibc_auto_forward_loop futures
     if config.orchestrator.relayer_enabled {
-        join3(a, b, c).await;
+        join4(a, b, c, d).await;
     } else {
         join(a, b).await;
     }

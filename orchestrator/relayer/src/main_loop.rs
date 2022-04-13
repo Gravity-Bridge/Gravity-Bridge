@@ -29,7 +29,7 @@ pub const ALTRUISTIC_GAS_PERCENTAGE: f32 = 0.05;
 /// A target for over what time period we consider the ALTRUISTIC_GAS_PERCENTAGE
 pub const ALTRUISTIC_RELAY_PERIOD: u64 = 60 * 60 * 24;
 
-/// This function contains the orchestrator primary loop, it is broken out of the main loop so that
+/// This function contains the relayer primary loop, it is broken out of the main loop so that
 /// it can be called in the test runner for easier orchestration of multi-node tests
 #[allow(clippy::too_many_arguments)]
 pub async fn relayer_main_loop(

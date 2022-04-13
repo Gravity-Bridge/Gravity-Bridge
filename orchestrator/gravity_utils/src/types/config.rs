@@ -41,6 +41,10 @@ pub struct RelayerConfig {
     /// the speed at which the relayer loop runs, in seconds
     /// higher values reduce the chances of money lost to a collision
     pub relayer_loop_speed: u64,
+    /// the speed at which the relayer checks for pending ibc auto forwards, in seconds
+    pub ibc_auto_forward_loop_speed: u64,
+    /// the number of pending ibc auto forwards to attempt to execute per loop
+    pub ibc_auto_forwards_to_execute: u64,
 }
 
 /// Relayer configuration that's is more easily parsable with toml
@@ -56,6 +60,10 @@ pub struct TomlRelayerConfig {
     pub logic_call_market_enabled: bool,
     #[serde(default = "default_relayer_loop_speed")]
     pub relayer_loop_speed: u64,
+    #[serde(default = "default_ibc_auto_forward_loop_speed")]
+    pub ibc_auto_forward_loop_speed: u64,
+    #[serde(default = "default_ibc_auto_forwards_to_execute")]
+    pub ibc_auto_forwards_to_execute: u64,
 }
 
 impl From<TomlRelayerConfig> for RelayerConfig {
@@ -66,6 +74,8 @@ impl From<TomlRelayerConfig> for RelayerConfig {
             batch_request_mode: input.batch_request_mode,
             logic_call_market_enabled: input.logic_call_market_enabled,
             relayer_loop_speed: input.relayer_loop_speed,
+            ibc_auto_forward_loop_speed: input.ibc_auto_forward_loop_speed,
+            ibc_auto_forwards_to_execute: input.ibc_auto_forwards_to_execute,
         }
     }
 }
@@ -211,6 +221,14 @@ fn default_relayer_loop_speed() -> u64 {
     600
 }
 
+fn default_ibc_auto_forward_loop_speed() -> u64 {
+    60
+}
+
+fn default_ibc_auto_forwards_to_execute() -> u64 {
+    50
+}
+
 impl Default for RelayerConfig {
     fn default() -> Self {
         RelayerConfig {
@@ -219,6 +237,8 @@ impl Default for RelayerConfig {
             batch_relaying_mode: default_batch_relaying_mode().into(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
+            ibc_auto_forward_loop_speed: default_ibc_auto_forward_loop_speed(),
+            ibc_auto_forwards_to_execute: default_ibc_auto_forwards_to_execute(),
         }
     }
 }
@@ -231,6 +251,8 @@ impl Default for TomlRelayerConfig {
             batch_relaying_mode: default_batch_relaying_mode(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
+            ibc_auto_forward_loop_speed: default_ibc_auto_forward_loop_speed(),
+            ibc_auto_forwards_to_execute: default_ibc_auto_forwards_to_execute(),
         }
     }
 }

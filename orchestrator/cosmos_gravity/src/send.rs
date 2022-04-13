@@ -10,7 +10,6 @@ use ethereum_gravity::message_signatures::{
     encode_logic_call_confirm, encode_tx_batch_confirm, encode_valset_confirm,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
-use gravity_proto::gravity::MsgConfirmLogicCall;
 use gravity_proto::gravity::MsgErc20DeployedClaim;
 use gravity_proto::gravity::MsgLogicCallExecutedClaim;
 use gravity_proto::gravity::MsgRequestBatch;
@@ -21,6 +20,7 @@ use gravity_proto::gravity::MsgValsetConfirm;
 use gravity_proto::gravity::MsgValsetUpdatedClaim;
 use gravity_proto::gravity::{MsgBatchSendToEthClaim, MsgSubmitBadSignatureEvidence};
 use gravity_proto::gravity::{MsgCancelSendToEth, MsgConfirmBatch};
+use gravity_proto::gravity::{MsgConfirmLogicCall, MsgExecuteIbcAutoForwards};
 use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
 use std::{collections::HashMap, time::Duration};
@@ -455,4 +455,32 @@ pub async fn cancel_send_to_eth(
             private_key,
         )
         .await
+}
+
+/// Executes a MsgExecuteIbcAutoForwards on the gravity chain, which will process forwards_to_clear number of pending ibc auto forwards
+pub async fn execute_pending_ibc_auto_forwards(
+    contact: &Contact,
+    cosmos_key: PrivateKey,
+    fee: Coin,
+    forwards_to_clear: u64,
+) -> Result<(), CosmosGrpcError> {
+    let prefix = contact.get_prefix();
+    let cosmos_addr = cosmos_key.to_address(&prefix).unwrap();
+    let msg = Msg::new(
+        "/gravity.v1.MsgExecuteIbcAutoForwards",
+        MsgExecuteIbcAutoForwards {
+            forwards_to_clear,
+            executor: cosmos_addr.to_string(),
+        },
+    );
+    let timeout = Duration::from_secs(60);
+    let res = contact
+        .send_message(&[msg], None, &[fee], Some(timeout), cosmos_key)
+        .await;
+
+    if res.is_err() {
+        return Err(res.err().unwrap());
+    }
+
+    Ok(())
 }

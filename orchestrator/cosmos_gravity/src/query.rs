@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use clarity::Address as EthAddress;
 use deep_space::address::Address;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::Attestation;
 use gravity_proto::gravity::Params;
 use gravity_proto::gravity::QueryAttestationsRequest;
 use gravity_proto::gravity::QueryBatchConfirmsRequest;
@@ -27,6 +26,7 @@ use gravity_proto::gravity::QueryPendingSendToEth;
 use gravity_proto::gravity::QueryPendingSendToEthResponse;
 use gravity_proto::gravity::QueryValsetConfirmsByNonceRequest;
 use gravity_proto::gravity::QueryValsetRequestRequest;
+use gravity_proto::gravity::{Attestation, PendingIbcAutoForward, QueryPendingIbcAutoForwards};
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
 use tonic::transport::Channel;
@@ -308,4 +308,24 @@ pub async fn get_pending_batch_fees(
 ) -> Result<QueryBatchFeeResponse, GravityError> {
     let request = client.batch_fees(QueryBatchFeeRequest {}).await?;
     Ok(request.into_inner())
+}
+
+/// Queries the Gravity chain for Pending Ibc Auto Forwards, returning an empty vec if there is an error
+pub async fn get_all_pending_ibc_auto_forwards(
+    grpc_client: &mut GravityQueryClient<Channel>,
+) -> Vec<PendingIbcAutoForward> {
+    let pending_forwards = grpc_client
+        .get_pending_ibc_auto_forwards(QueryPendingIbcAutoForwards { limit: 0 })
+        .await;
+    if pending_forwards.is_err() {
+        let status = pending_forwards.err().unwrap();
+        warn!(
+            "Received an error when querying for pending ibc auto forwards: {}",
+            status.message()
+        );
+        return vec![];
+    }
+
+    let pending_forwards = pending_forwards.unwrap();
+    pending_forwards.into_inner().pending_ibc_auto_forwards
 }
