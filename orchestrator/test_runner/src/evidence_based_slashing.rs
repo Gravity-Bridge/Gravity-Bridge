@@ -36,7 +36,7 @@ pub async fn evidence_based_slashing(
     // reporter is another validator using their delegate key
     let submitter_private_key = keys[1].orch_key;
     // this is a false valset, one that happens to contain only the
-    // validator signing it, as if they where trying to take over the
+    // validator signing it, as if they were trying to take over the
     // bridge. This valset isn't valid for submitting but that's not a
     // condition of the slashing
     let false_valset = Valset {

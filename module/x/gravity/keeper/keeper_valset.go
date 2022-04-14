@@ -239,7 +239,7 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedVa
 // implementations are involved.
 //
 // 'total cosmos power' has an edge case, if a validator has not set their
-// Ethereum key they are not included in the total. If they where control
+// Ethereum key they are not included in the total. If they were control
 // of the bridge could be lost in the following situation.
 //
 // If we have 100 total power, and 100 total power joins the validator set

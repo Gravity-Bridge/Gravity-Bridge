@@ -107,7 +107,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		// if somehow this genesis state is saved when all attestations
 		// have been cleaned up GetLastEventNonceByValidator handles that case
 		//
-		// if we where to save and load the last event nonce for every validator
+		// if we were to save and load the last event nonce for every validator
 		// then we would need to carry that state forever across all chain restarts
 		// but since we've already had to handle the edge case of new validators joining
 		// while all attestations have already been cleaned up we can do this instead and

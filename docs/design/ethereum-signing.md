@@ -14,7 +14,7 @@ The `Delegate Ethereum address` then represents that validator on the Ethereum b
 
 Validators run an external process called an `Ethereum Signer` this process is required because we can not yet insert this sort of simple signature logic into CosmosSdk based chains without significant modification to Tendermint. This may be possible in the future with [modifications to Tendermint](https://github.com/tendermint/tendermint/issues/6066).
 
-It should be noted that both [GRAVSLASH-02](/spec/slashing-spec.md) and [GRAVSLASH-03](/spec/slashing-spec.md) could be eliminated with no loss of security if it where possible to perform the Ethereum signatures inside the consensus code. This is a pretty limited feature addition to Tendermint that would make Gravity far less prone to slashing.
+It should be noted that both [GRAVSLASH-02](/spec/slashing-spec.md) and [GRAVSLASH-03](/spec/slashing-spec.md) could be eliminated with no loss of security if it were possible to perform the Ethereum signatures inside the consensus code. This is a pretty limited feature addition to Tendermint that would make Gravity far less prone to slashing.
 
 Until such a change is provided the signing flow works as follows.
 

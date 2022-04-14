@@ -73,7 +73,7 @@ pub async fn find_latest_valset(
 /// for a given nonce. In the mundane version of this warning the validator sets disagree on sorting order
 /// which can happen if some relayer uses an unstable sort, or in a case of a mild griefing attack.
 /// The Gravity contract validates signatures in order of highest to lowest power. That way it can exit
-/// the loop early once a vote has enough power, if a relayer where to submit things in the reverse order
+/// the loop early once a vote has enough power, if a relayer were to submit things in the reverse order
 /// they could grief users of the contract into paying more in gas.
 /// The other (and far worse) way a disagreement here could occur is if validators are colluding to steal
 /// funds from the Gravity contract and have submitted a highjacking update. If slashing for off Cosmos chain
