@@ -256,7 +256,7 @@ func (i InternalOutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 	}
 
 	// we hash the resulting encoded bytes discarding the first 4 bytes these 4 bytes are the constant
-	// method name 'checkpoint'. If you where to replace the checkpoint constant in this code you would
+	// method name 'checkpoint'. If you were to replace the checkpoint constant in this code you would
 	// then need to adjust how many bytes you truncate off the front to get the output of abi.encode()
 	return crypto.Keccak256Hash(abiEncodedBatch[4:]).Bytes()
 }

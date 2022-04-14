@@ -140,7 +140,7 @@ async fn submit_and_pass_airdrop_proposal(
         panic!("Failed to distribute airdrop amounts correctly!")
     }
 
-    // assert that no tokens where created by this airdrop, remember inflation is disabled
+    // assert that no tokens were created by this airdrop, remember inflation is disabled
     let total_supply_end = contact.query_supply_of(denom.clone()).await.unwrap();
     assert_eq!(total_supply_start, total_supply_end);
 

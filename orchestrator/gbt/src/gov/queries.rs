@@ -72,6 +72,6 @@ pub async fn query_airdrops(opts: AirdropQueryOpts, prefix: String) {
         }
     }
     if !found {
-        info!("No Airdrop proposals meeting the criteria where found!")
+        info!("No Airdrop proposals meeting the criteria were found!")
     }
 }

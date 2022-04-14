@@ -204,7 +204,7 @@ func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) []byte {
 // [0x0][0 0 0 0 0 0 0 1][fd1af8cec6c67fcf156f1b61fdf91ebc04d05484d007436e75342fc05bbff35a]
 // An attestation is an event multiple people are voting on, this function needs the claim
 // details because each Attestation is aggregating all claims of a specific event, lets say
-// validator X and validator y where making different claims about the same event nonce
+// validator X and validator y were making different claims about the same event nonce
 // Note that the claim hash does NOT include the claimer address and only identifies an event
 func GetAttestationKey(eventNonce uint64, claimHash []byte) []byte {
 	return AppendBytes(OracleAttestationKey, UInt64Bytes(eventNonce), claimHash)

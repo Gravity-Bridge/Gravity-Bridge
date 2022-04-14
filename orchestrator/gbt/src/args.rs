@@ -348,7 +348,7 @@ pub struct EmergencyBridgeHaltProposalOpts {
 
 /// If there is a fork on the Ethereum mainnet it may cause disagreement in the bridge Oracle
 /// since there is no way for validators to retract a claim once made normally this fork would
-/// cause an irresolveable deadlock in the oracle. If this where to occur passing a OracleUnhaltProposal
+/// cause an irresolveable deadlock in the oracle. If this were to occur passing a OracleUnhaltProposal
 /// will reset the oracle and allow the bridge to progress normally
 #[derive(Parser)]
 pub struct OracleUnhaltProposalOpts {

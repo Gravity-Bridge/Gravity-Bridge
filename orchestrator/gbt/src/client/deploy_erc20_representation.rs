@@ -148,7 +148,7 @@ pub async fn deploy_erc20_representation(
                                     }
                                 }
                             }
-                            error!("We where unable to find your ERC20 as a claim after {} seconds. Are you sure the Ethereum transaction went through? Is the node you are using keeping up with the chain?", WAIT_TIME);
+                            error!("We were unable to find your ERC20 as a claim after {} seconds. Are you sure the Ethereum transaction went through? Is the node you are using keeping up with the chain?", WAIT_TIME);
                             exit(1);
                         }
                         Err(e) => {

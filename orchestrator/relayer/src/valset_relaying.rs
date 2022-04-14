@@ -62,7 +62,7 @@ pub async fn relay_valsets(
         Err(GravityError::ValsetUpToDate) => return,
         Err(e) => {
             error!(
-                "We where unable to find a valid validator set update to submit! {:?}",
+                "We were unable to find a valid validator set update to submit! {:?}",
                 e
             );
             return;
