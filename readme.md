@@ -64,6 +64,8 @@ To contribute to Gravity, refer to these guides.
 
 [Security hotspots](/docs/developer/hotspots.md)
 
+[Migrations](/docs/developer/migrations.md)
+
 ## Status
 
 Gravity bridge is under development and will be undergoing audits soon. Instructions for deployment and use are provided in the hope that they will be useful.
