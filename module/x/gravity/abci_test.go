@@ -166,7 +166,7 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	if err != nil {
 		panic("found invalid address in EthAddr")
 	}
-	input.GravityKeeper.SetEthAddressForValidator(input.Context, valAddr, *ethAddr)
+	input.GravityKeeper.SetEvmAddressForValidator(input.Context, valAddr, *ethAddr)
 	input.GravityKeeper.SetOrchestratorValidator(input.Context, valAddr, accAddr)
 
 	notNiceVal, found := pk.GetOrchestratorValidator(ctx, accAddr)
@@ -323,7 +323,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	if err != nil {
 		panic("found invalid address in EthAddr")
 	}
-	input.GravityKeeper.SetEthAddressForValidator(input.Context, valAddr, *ethAddr)
+	input.GravityKeeper.SetEvmAddressForValidator(input.Context, valAddr, *ethAddr)
 	input.GravityKeeper.SetOrchestratorValidator(input.Context, valAddr, accAddr)
 
 	notNiceVal, found := pk.GetOrchestratorValidator(ctx, accAddr)

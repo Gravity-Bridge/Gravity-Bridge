@@ -181,7 +181,7 @@ func TestDelegateKeys(t *testing.T) {
 		// set the ethereum address
 		ethAddr, err := types.NewEthAddress(ethAddrs[i])
 		require.NoError(t, err)
-		k.SetEthAddressForValidator(ctx, val, *ethAddr)
+		k.SetEvmAddressForValidator(ctx, val, *ethAddr)
 	}
 
 	addresses := k.GetDelegateKeys(ctx)

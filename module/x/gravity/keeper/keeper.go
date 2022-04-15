@@ -230,20 +230,20 @@ func (k Keeper) UnpackAttestationClaim(att *types.Attestation) (types.EthereumCl
 // For the time being this will serve
 func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddress {
 	store := ctx.KVStore(k.storeKey)
-	prefix := types.EthAddressByValidatorKey
+	prefix := types.EvmAddressByValidatorKey
 	iter := store.Iterator(prefixRange(prefix))
 	defer iter.Close()
 
-	ethAddresses := make(map[string]gethcommon.Address)
+	evmAddresses := make(map[string]gethcommon.Address)
 
 	for ; iter.Valid(); iter.Next() {
 		// the 'key' contains both the prefix and the value, so we need
 		// to cut off the starting bytes, if you don't do this a valid
 		// cosmos key will be made out of EthAddressByValidatorKey + the startin bytes
 		// of the actual key
-		key := iter.Key()[len(types.EthAddressByValidatorKey):]
+		key := iter.Key()[len(types.EvmAddressByValidatorKey):]
 		value := iter.Value()
-		ethAddress, err := types.NewEthAddressFromBytes(value)
+		evmAddress, err := types.NewEthAddressFromBytes(value)
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "found invalid ethAddress %v under key %v", string(value), key))
 		}
@@ -251,7 +251,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 		if err := sdk.VerifyAddressFormat(valAddress); err != nil {
 			panic(sdkerrors.Wrapf(err, "invalid valAddress in key %v", valAddress))
 		}
-		ethAddresses[valAddress.String()] = ethAddress.GetAddress()
+		evmAddresses[valAddress.String()] = evmAddress.GetAddress()
 	}
 
 	store = ctx.KVStore(k.storeKey)
@@ -278,7 +278,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 
 	var result []types.MsgSetOrchestratorAddress
 
-	for valAddr, ethAddr := range ethAddresses {
+	for valAddr, evmAddr := range evmAddresses {
 		orch, ok := orchAddresses[valAddr]
 		if !ok {
 			// this should never happen unless the store
@@ -288,7 +288,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 		result = append(result, types.MsgSetOrchestratorAddress{
 			Orchestrator: orch,
 			Validator:    valAddr,
-			EthAddress:   ethAddr.Hex(),
+			EthAddress:   evmAddr.Hex(),
 		})
 
 	}

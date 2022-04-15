@@ -302,7 +302,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 		if err != nil {
 			panic("found invalid address in EthAddrs")
 		}
-		input.GravityKeeper.SetEthAddressForValidator(input.Context, addr, *ethAddr)
+		input.GravityKeeper.SetEvmAddressForValidator(input.Context, addr, *ethAddr)
 
 		input.GravityKeeper.SetOrchestratorValidator(input.Context, addr, OrchAddrs[i])
 	}
@@ -361,7 +361,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 			if err != nil {
 				panic("found invalid address in EthAddrs")
 			}
-			input.GravityKeeper.SetEthAddressForValidator(input.Context, valAddr, *ethAddr)
+			input.GravityKeeper.SetEvmAddressForValidator(input.Context, valAddr, *ethAddr)
 			input.GravityKeeper.SetOrchestratorValidator(input.Context, valAddr, accAddr)
 
 			// increase block height by 100 blocks

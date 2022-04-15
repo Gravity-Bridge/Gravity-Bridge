@@ -666,7 +666,7 @@ func TestQueryLogicCalls(t *testing.T) {
 			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
-			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
+			input.GravityKeeper.SetEvmAddressForValidator(sdkCtx, valAddr, *ethAddr)
 			validators = append(validators, valAddr)
 		}
 	}
@@ -727,7 +727,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
-			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
+			input.GravityKeeper.SetEvmAddressForValidator(sdkCtx, valAddr, *ethAddr)
 			validators = append(validators, valAddr)
 		}
 	}

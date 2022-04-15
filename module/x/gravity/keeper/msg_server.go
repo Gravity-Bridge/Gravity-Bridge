@@ -42,7 +42,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 
 	// check that the validator does not have an existing key
 	_, foundExistingOrchestratorKey := k.GetOrchestratorValidator(ctx, orch)
-	_, foundExistingEthAddress := k.GetEthAddressByValidator(ctx, val)
+	_, foundExistingEthAddress := k.GetEvmAddressByValidator(ctx, val)
 
 	// ensure that the validator exists
 	if k.Keeper.StakingKeeper.Validator(ctx, val) == nil {
@@ -65,7 +65,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 	// set the orchestrator address
 	k.SetOrchestratorValidator(ctx, val, orch)
 	// set the ethereum address
-	k.SetEthAddressForValidator(ctx, val, *addr)
+	k.SetEvmAddressForValidator(ctx, val, *addr)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventSetOperatorAddress{
@@ -327,7 +327,7 @@ func (k msgServer) confirmHandlerCommon(ctx sdk.Context, ethAddress string, orch
 		return sdkerrors.Wrapf(err, "discovered invalid validator address for orchestrator %v", orchestrator)
 	}
 
-	ethAddressFromStore, found := k.GetEthAddressByValidator(ctx, validator.GetOperator())
+	ethAddressFromStore, found := k.GetEvmAddressByValidator(ctx, validator.GetOperator())
 	if !found {
 		return sdkerrors.Wrap(types.ErrEmpty, "no eth address set for validator")
 	}

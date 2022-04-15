@@ -106,3 +106,11 @@ message PendingIbcAutoForward {
   string ibc_channel = 3;              // the IBC channel to send `Amount` over via ibc-transfer module
   uint64 event_nonce = 4;              // the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
 }
+
+// EVMChainProposal defines struct for different supported EVM chains data
+// Prefix: short EVM chain name that is used as key
+// Chain name: full chain name
+message EVMChainProposal {
+  string prefix = 1;
+  string chain_name = 2;
+}

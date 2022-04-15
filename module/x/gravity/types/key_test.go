@@ -9,7 +9,7 @@ import (
 
 func TestPrefixKeysSameLength(t *testing.T) {
 	allKeys := getAllKeys()
-	prefixKeys := allKeys[0:26]
+	prefixKeys := allKeys[0:25]
 	length := len(HashString("All keys should be same length when hashed"))
 
 	for _, key := range prefixKeys {
@@ -30,10 +30,10 @@ func getAllKeys() [][]byte {
 	i := 0
 	inc := func(i *int) *int { *i += 1; return i }
 
-	keys := make([][]byte, 46)
+	keys := make([][]byte, 47)
 
-	keys[i] = EthAddressByValidatorKey
-	keys[*inc(&i)] = ValidatorByEthAddressKey
+	keys[i] = EvmAddressByValidatorKey
+	keys[*inc(&i)] = ValidatorByEvmAddressKey
 	keys[*inc(&i)] = ValsetRequestKey
 	keys[*inc(&i)] = ValsetConfirmKey
 	keys[*inc(&i)] = OracleAttestationKey
@@ -42,7 +42,6 @@ func getAllKeys() [][]byte {
 	keys[*inc(&i)] = BatchConfirmKey
 	keys[*inc(&i)] = LastEventNonceByValidatorKey
 	keys[*inc(&i)] = LastObservedEventNonceKey
-	keys[*inc(&i)] = SequenceKeyPrefix
 	keys[*inc(&i)] = KeyLastTXPoolID
 	keys[*inc(&i)] = KeyLastOutgoingBatchID
 	keys[*inc(&i)] = KeyOrchestratorAddress
@@ -76,8 +75,8 @@ func getAllKeys() [][]byte {
 	dummyDenom := "footoken"
 
 	keys[*inc(&i)] = GetOrchestratorAddressKey(dummyAddr)
-	keys[*inc(&i)] = GetEthAddressByValidatorKey(dummyAddr)
-	keys[*inc(&i)] = GetValidatorByEthAddressKey(dummyEthAddr)
+	keys[*inc(&i)] = GetEvmAddressByValidatorKey(dummyAddr)
+	keys[*inc(&i)] = GetValidatorByEvmAddressKey(dummyEthAddr)
 	keys[*inc(&i)] = GetValsetKey(dummyPrefix, dummyNonce)
 	keys[*inc(&i)] = GetValsetConfirmNoncePrefix(dummyPrefix, dummyNonce)
 	keys[*inc(&i)] = GetValsetConfirmKey(dummyPrefix, dummyNonce, dummyAddr)
@@ -95,6 +94,8 @@ func getAllKeys() [][]byte {
 	keys[*inc(&i)] = GetLogicConfirmNonceInvalidationIdPrefix(dummyPrefix, dummyBytes, dummyNonce)
 	keys[*inc(&i)] = GetLogicConfirmKey(dummyPrefix, dummyBytes, dummyNonce, dummyAddr)
 	keys[*inc(&i)] = GetPastEvmSignatureCheckpointKey(dummyPrefix, dummyBytes)
+	keys[*inc(&i)] = GetPendingIbcAutoForwardKey(dummyNonce)
+	keys[*inc(&i)] = GetEvmChainKey(dummyPrefix)
 
 	return keys
 }

@@ -58,15 +58,15 @@ func (k Keeper) checkBadSignatureEvidenceInternal(ctx sdk.Context, evmChainPrefi
 	}
 
 	// Get eth address of the offending validator using the checkpoint and the signature
-	ethAddress, err := types.EthAddressFromSignature(checkpoint, sigBytes)
+	evmAddress, err := types.EthAddressFromSignature(checkpoint, sigBytes)
 	if err != nil {
 		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("signature to eth address failed with checkpoint %s and signature %s", hex.EncodeToString(checkpoint), signature))
 	}
 
 	// Find the offending validator by eth address
-	val, found := k.GetValidatorByEthAddress(ctx, *ethAddress)
+	val, found := k.GetValidatorByEvmAddress(ctx, *evmAddress)
 	if !found {
-		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Did not find validator for eth address %s from signature %s with checkpoint %s and GravityID %s", ethAddress.GetAddress().Hex(), signature, hex.EncodeToString(checkpoint), gravityID))
+		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Did not find validator for eth address %s from signature %s with checkpoint %s and GravityID %s", evmAddress.GetAddress().Hex(), signature, hex.EncodeToString(checkpoint), gravityID))
 	}
 
 	// Slash the offending validator

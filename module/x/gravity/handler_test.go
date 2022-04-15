@@ -573,7 +573,7 @@ func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	// test all lookup methods
 
 	// individual lookups
-	ethLookup, found := k.GetEthAddressByValidator(ctx, valAddress)
+	ethLookup, found := k.GetEvmAddressByValidator(ctx, valAddress)
 	assert.True(t, found)
 	assert.Equal(t, ethLookup, ethAddress)
 
@@ -628,7 +628,7 @@ func TestMsgValsetConfirm(t *testing.T) {
 	vs.Height = uint64(1)
 	vs.Nonce = uint64(1)
 	k.StoreValset(ctx, keeper.EthChainPrefix, vs)
-	k.SetEthAddressForValidator(input.Context, keeper.ValAddrs[0], *ethAddressParsed)
+	k.SetEvmAddressForValidator(input.Context, keeper.ValAddrs[0], *ethAddressParsed)
 
 	// try wrong eth address
 	msg := &types.MsgValsetConfirm{

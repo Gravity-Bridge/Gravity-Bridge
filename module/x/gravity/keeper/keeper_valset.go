@@ -271,8 +271,8 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context, evmChainPrefix string) (types.
 
 		p := sdk.NewInt(k.StakingKeeper.GetLastValidatorPower(ctx, val))
 
-		if ethAddr, found := k.GetEthAddressByValidator(ctx, val); found {
-			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: ethAddr.GetAddress().Hex()}
+		if evmAddr, found := k.GetEvmAddressByValidator(ctx, val); found {
+			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: evmAddr.GetAddress().Hex()}
 			ibv, err := types.NewInternalBridgeValidator(bv)
 			if err != nil {
 				return types.Valset{}, sdkerrors.Wrapf(err, types.ErrInvalidEthAddress.Error(), val)
