@@ -70,8 +70,12 @@ func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
 	err := v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	addr, found := input.GravityKeeper.GetCosmosOriginatedERC20(input.Context, denom)
-	assert.True(t, found)
+	bz := input.Context.KVStore(input.GravityStoreKey).Get(v2.GetDenomToERC20Key(denom))
+	assert.NotNil(t, bz)
+	addr, err := types.NewEthAddressFromBytes(bz)
+	assert.Nil(t, err)
+	assert.NotNil(t, addr)
+
 	// Triple check that the migration worked
 	assert.Equal(t, tokenContract, strings.ToLower(addr.GetAddress().Hex()))
 	assert.Equal(t, gethcommon.HexToAddress(tokenContract), addr.GetAddress())
@@ -90,8 +94,10 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	tokenAddr, err := types.NewEthAddress(tokenContract)
 	assert.NoError(t, err)
 
-	storedDenom, found := input.GravityKeeper.GetCosmosOriginatedDenom(input.Context, *tokenAddr)
-	assert.True(t, found)
+	bz := input.Context.KVStore(input.GravityStoreKey).Get(v2.GetERC20ToDenomKey(*tokenAddr))
+	assert.NotNil(t, bz)
+
+	storedDenom := string(bz)
 	assert.Equal(t, denom, storedDenom)
 
 	var erc20ToDenoms = []types.ERC20ToDenom{}

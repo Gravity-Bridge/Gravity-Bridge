@@ -561,5 +561,5 @@ func (a AttestationHandler) addToIbcAutoForwardQueue(
 	}
 
 	// forward will be validated when adding to queue, error only returned if unable to send funds to local user
-	return a.keeper.addPendingIbcAutoForward(ctx, forward, claim.TokenContract)
+	return a.keeper.addPendingIbcAutoForward(ctx, forward, EthChainPrefix, claim.TokenContract)
 }
