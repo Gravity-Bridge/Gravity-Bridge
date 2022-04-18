@@ -128,7 +128,7 @@ func NewKeeper(
 /////////////////////////////
 
 // SendToCommunityPool handles incorrect SendToCosmos calls to the community pool, since the calls
-// have already been made on Ethereum there's nothing we can do to reverse them, and we should at least
+// have already been made on evm chain there's nothing we can do to reverse them, and we should at least
 // make use of the tokens which would otherwise be lost
 func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distrtypes.ModuleName, coins); err != nil {
@@ -155,7 +155,7 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 	k.paramSpace.SetParamSet(ctx, &ps)
 }
 
-// GetBridgeContractAddress returns the bridge contract address on ETH
+// GetBridgeContractAddress returns the bridge contract address on evm chain
 func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) *types.EthAddress {
 	var a string
 	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeEthereumAddress, &a)
@@ -166,7 +166,7 @@ func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) *types.EthAddress {
 	return addr
 }
 
-// GetBridgeChainID returns the chain id of the ETH chain we are running against
+// GetBridgeChainID returns the chain id of the evm chain we are running against
 func (k Keeper) GetBridgeChainID(ctx sdk.Context) uint64 {
 	var a uint64
 	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeContractChainID, &a)
@@ -222,9 +222,9 @@ func (k Keeper) UnpackAttestationClaim(att *types.Attestation) (types.EthereumCl
 // a vector of MsgSetOrchestratorAddress entires containing all the delgate keys for state
 // export / import. This may seem at first glance to be excessively complicated, why not combine
 // the EthAddress and Orchestrator address indexes and simply iterate one thing? The answer is that
-// even though we set the Eth and Orchestrator address in the same place we use them differently we
-// always go from Orchestrator address to Validator address and from validator address to Ethereum address
-// we want to keep looking up the validator address for various reasons, so a direct Orchestrator to Ethereum
+// even though we set the evm and Orchestrator address in the same place we use them differently we
+// always go from Orchestrator address to Validator address and from validator address to evm chain address
+// we want to keep looking up the validator address for various reasons, so a direct Orchestrator to evm chain
 // address mapping will mean having to keep two of the same data around just to provide lookups.
 //
 // For the time being this will serve
@@ -294,7 +294,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 	}
 
 	// we iterated over a map, so now we have to sort to ensure the
-	// output here is deterministic, eth address chosen for no particular
+	// output here is deterministic, evm address chosen for no particular
 	// reason
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].EthAddress < result[j].EthAddress
@@ -398,7 +398,7 @@ func (k Keeper) DeserializeValidatorIterator(vals []byte) stakingtypes.ValAddres
 	return validators
 }
 
-// Checks if the provided Ethereum address is on the Governance blacklist
+// Checks if the provided evm address is on the Governance blacklist
 func (k Keeper) IsOnBlacklist(ctx sdk.Context, addr types.EthAddress) bool {
 	params := k.GetParams(ctx)
 	// Checks the address if it's inside the blacklisted address list and marks
@@ -416,7 +416,7 @@ func (k Keeper) IsOnBlacklist(ctx sdk.Context, addr types.EthAddress) bool {
 	return false
 }
 
-// Returns true if the provided address is invalid to send to Ethereum this could be
+// Returns true if the provided address is invalid to send to evm chain this could be
 // for one of several reasons. (1) it is invalid in general like the Zero address, (2)
 // it is invalid for a subset of ERC20 addresses or (3) it is on the governance deposit/withdraw
 // blacklist. (2) is not yet implemented

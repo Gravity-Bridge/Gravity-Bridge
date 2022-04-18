@@ -64,7 +64,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 
 	// set the orchestrator address
 	k.SetOrchestratorValidator(ctx, val, orch)
-	// set the ethereum address
+	// set the evm address
 	k.SetEvmAddressForValidator(ctx, val, *addr)
 
 	ctx.EventManager().EmitTypedEvent(
@@ -277,7 +277,7 @@ func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator
 }
 
 // claimHandlerCommon is an internal function that provides common code for processing claims once they are
-// translated from the message to the Ethereum claim interface
+// translated from the message to the evm chain claim interface
 func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, msg types.EthereumClaim) error {
 	// Add the claim to the store
 	_, err := k.Attest(ctx, EthChainPrefix, msg, msgAny)
@@ -425,7 +425,7 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 	return &types.MsgERC20DeployedClaimResponse{}, nil
 }
 
-// LogicCallExecutedClaim handles claims for executing a logic call on Ethereum
+// LogicCallExecutedClaim handles claims for executing a logic call on evm chain
 func (k msgServer) LogicCallExecutedClaim(c context.Context, msg *types.MsgLogicCallExecutedClaim) (*types.MsgLogicCallExecutedClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -445,7 +445,7 @@ func (k msgServer) LogicCallExecutedClaim(c context.Context, msg *types.MsgLogic
 	return &types.MsgLogicCallExecutedClaimResponse{}, nil
 }
 
-// ValsetUpdatedClaim handles claims for executing a validator set update on Ethereum
+// ValsetUpdatedClaim handles claims for executing a validator set update on evm chain
 func (k msgServer) ValsetUpdateClaim(c context.Context, msg *types.MsgValsetUpdatedClaim) (*types.MsgValsetUpdatedClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 

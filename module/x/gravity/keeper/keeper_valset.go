@@ -19,7 +19,7 @@ import (
 
 // SetValsetRequest returns a new instance of the Gravity BridgeValidatorSet
 // by taking a snapshot of the current set, this validator set is also placed
-// into the store to be signed by validators and submitted to Ethereum. This
+// into the store to be signed by validators and submitted to evm chain. This
 // is the only function to call when you want to create a validator set that
 // is signed by consensus. If you want to peek at the present state of the set
 // and perhaps take action based on that use k.GetCurrentValset
@@ -34,7 +34,7 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context, evmChainPrefix string) types.V
 
 	// Store the checkpoint as a legit past valset, this is only for evidence
 	// based slashing. We are storing the checkpoint that will be signed with
-	// the validators Ethereum keys so that we know not to slash them if someone
+	// the validators evm keys so that we know not to slash them if someone
 	// attempts to submit the signature of this validator set as evidence of bad behavior
 	checkpoint := valset.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, evmChainPrefix, checkpoint)
@@ -52,7 +52,7 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context, evmChainPrefix string) types.V
 }
 
 // StoreValset is for storing a valiator set at a given height, once this function is called
-// the validator set will be available to the Ethereum Signers (orchestrators) to submit signatures
+// the validator set will be available to the evm chain Signers (orchestrators) to submit signatures
 // therefore this function will panic if you attempt to overwrite an existing key. Any changes to
 // historical valsets can not possibly be correct, as it would invalidate the signatures. The only
 // valid operation on the same index is store followed by delete when it is time to prune state
@@ -239,14 +239,14 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, evmChainPrefi
 // implementations are involved.
 //
 // 'total cosmos power' has an edge case, if a validator has not set their
-// Ethereum key they are not included in the total. If they were control
+// evm key they are not included in the total. If they were control
 // of the bridge could be lost in the following situation.
 //
 // If we have 100 total power, and 100 total power joins the validator set
 // the new validators hold more than 33% of the bridge power, if we generate
-// and submit a valset and they don't have their eth keys set they can never
+// and submit a valset and they don't have their evm keys set they can never
 // update the validator set again and the bridge and all its' funds are lost.
-// For this reason we exclude validators with unset eth keys from validator sets
+// For this reason we exclude validators with unset evm keys from validator sets
 //
 // The function is intended to return what the valset would look like if you made one now
 // you should call this function, evaluate if you want to save this new valset, and discard

@@ -59,7 +59,7 @@ func (k Keeper) AddToOutgoingPool(
 			amount.Amount, tokenContract)
 	}
 	// construct outgoing tx, as part of this process we represent
-	// the token as an ERC20 token since it is preparing to go to ETH
+	// the token as an ERC20 token since it is preparing to go to evm
 	// rather than the denom that is the input to this function.
 	outgoing, err := types.OutgoingTransferTx{
 		Id:          nextID,

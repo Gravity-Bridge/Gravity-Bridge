@@ -530,7 +530,7 @@ func TestBatchTimeout(t *testing.T) {
 	require.NoError(t, err1)
 	require.Equal(t, b1.BatchTimeout, uint64(0))
 
-	pk.SetLastObservedEthereumBlockHeight(ctx, keeper.EthChainPrefix, 500)
+	pk.SetLastObservedEvmChainBlockHeight(ctx, keeper.EthChainPrefix, 500)
 
 	// increase number of max txs to create more profitable batch
 	b2, err2 := pk.BuildOutgoingTXBatch(ctx, keeper.EthChainPrefix, *tokenContract, 2)
@@ -583,7 +583,7 @@ func TestBatchTimeout(t *testing.T) {
 	gotThirdBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b3.TokenContract, b3.BatchNonce)
 	require.NotNil(t, gotThirdBatch)
 
-	pk.SetLastObservedEthereumBlockHeight(ctx, keeper.EthChainPrefix, 5000)
+	pk.SetLastObservedEvmChainBlockHeight(ctx, keeper.EthChainPrefix, 5000)
 	EndBlocker(ctx, pk)
 
 	// make sure the end blocker does delete these, as we've got a new Ethereum block height

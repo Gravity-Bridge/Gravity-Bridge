@@ -103,7 +103,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 					panic("attempting to apply events to state out of order")
 				}
 				k.setLastObservedEventNonce(ctx, EthChainPrefix, claim.GetEventNonce())
-				k.SetLastObservedEthereumBlockHeight(ctx, EthChainPrefix, claim.GetBlockHeight())
+				k.SetLastObservedEvmChainBlockHeight(ctx, EthChainPrefix, claim.GetBlockHeight())
 
 				att.Observed = true
 				k.SetAttestation(ctx, EthChainPrefix, claim.GetEventNonce(), hash, att)
@@ -294,9 +294,9 @@ func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context, evmChainPrefix string
 	return types.UInt64FromBytes(bytes)
 }
 
-// GetLastObservedEthereumBlockHeight height gets the block height to of the last observed attestation from
+// GetLastObservedEvmChainBlockHeight height gets the block height to of the last observed attestation from
 // the store
-func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context, evmChainPrefix string) types.LastObservedEthereumBlockHeight {
+func (k Keeper) GetLastObservedEvmChainBlockHeight(ctx sdk.Context, evmChainPrefix string) types.LastObservedEthereumBlockHeight {
 	store := ctx.KVStore(k.storeKey)
 	bytes := store.Get(types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, evmChainPrefix))
 
@@ -314,19 +314,19 @@ func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context, evmChainPref
 	return height
 }
 
-// SetLastObservedEthereumBlockHeight sets the block height in the store.
-func (k Keeper) SetLastObservedEthereumBlockHeight(ctx sdk.Context, evmChainPrefix string, ethereumHeight uint64) {
+// SetLastObservedEvmChainBlockHeight sets the block height in the store.
+func (k Keeper) SetLastObservedEvmChainBlockHeight(ctx sdk.Context, evmChainPrefix string, evmChainHeight uint64) {
 	store := ctx.KVStore(k.storeKey)
 	height := types.LastObservedEthereumBlockHeight{
-		EthereumBlockHeight: ethereumHeight,
+		EthereumBlockHeight: evmChainHeight,
 		CosmosBlockHeight:   uint64(ctx.BlockHeight()),
 	}
 	store.Set(types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, evmChainPrefix), k.cdc.MustMarshal(&height))
 }
 
 // GetLastObservedValset retrieves the last observed validator set from the store
-// WARNING: This value is not an up to date validator set on Ethereum, it is a validator set
-// that AT ONE POINT was the one in the Gravity bridge on Ethereum. If you assume that it's up
+// WARNING: This value is not an up to date validator set on evm chain, it is a validator set
+// that AT ONE POINT was the one in the Gravity bridge on evm chain. If you assume that it's up
 // to date you may break the bridge
 func (k Keeper) GetLastObservedValset(ctx sdk.Context, evmChainPrefix string) *types.Valset {
 	store := ctx.KVStore(k.storeKey)

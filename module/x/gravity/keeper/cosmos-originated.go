@@ -41,10 +41,10 @@ func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, evmChainPrefix 
 }
 
 // DenomToERC20 returns (bool isCosmosOriginated, EthAddress ERC20, err)
-// Using this information, you can see if an asset is native to Cosmos or Ethereum,
+// Using this information, you can see if an asset is native to Cosmos or evm chain,
 // and get its corresponding ERC20 address.
 // This will return an error if it cant parse the denom as a gravity denom, and then also can't find the denom
-// in an index of ERC20 contracts deployed on Ethereum to serve as synthetic Cosmos assets.
+// in an index of ERC20 contracts deployed on evm chain to serve as synthetic Cosmos assets.
 func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, evmChainPrefix string, denom string) (bool, *types.EthAddress, error) {
 	// First try parsing the ERC20 out of the denom
 	tc1, err := types.GravityDenomToERC20(denom)
@@ -60,7 +60,7 @@ func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, evmChainPrefix string, denom
 		return true, tc2, nil
 	}
 
-	// This is an ethereum-originated asset
+	// This is an evmChain-originated asset
 	return false, tc1, nil
 }
 
@@ -86,7 +86,7 @@ func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, evmChainPrefix string, coin
 }
 
 // ERC20ToDenom returns (bool isCosmosOriginated, string denom, err)
-// Using this information, you can see if an ERC20 address representing an asset is native to Cosmos or Ethereum,
+// Using this information, you can see if an ERC20 address representing an asset is native to Cosmos or evm chain,
 // and get its corresponding denom
 func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, evmChainPrefix string, tokenContract types.EthAddress) (bool, string) {
 	// First try looking up tokenContract in index

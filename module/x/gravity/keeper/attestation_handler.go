@@ -73,7 +73,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		)
 	}
 	tokenAddress, errTokenAddress := types.NewEthAddress(claim.TokenContract)
-	ethereumSender, errEthereumSender := types.NewEthAddress(claim.EthereumSender)
+	evmChainSender, errEvmChainSender := types.NewEthAddress(claim.EthereumSender)
 	// nil address is not possible unless the validators get together and submit
 	// a bogus event, this would create lost tokens stuck in the bridge
 	// and not accessible to anyone
@@ -88,20 +88,20 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		return sdkerrors.Wrap(errTokenAddress, "invalid token contract on claim")
 	}
 	// likewise nil sender would have to be caused by a bogus event
-	if errEthereumSender != nil {
+	if errEvmChainSender != nil {
 		hash, _ := claim.ClaimHash()
-		a.keeper.logger(ctx).Error("Invalid ethereum sender",
-			"cause", errEthereumSender.Error(),
+		a.keeper.logger(ctx).Error("Invalid evm chain sender",
+			"cause", errEvmChainSender.Error(),
 			"claim type", claim.GetType(),
 			"id", types.GetAttestationKey(EthChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
-		return sdkerrors.Wrap(errTokenAddress, "invalid ethereum sender on claim")
+		return sdkerrors.Wrap(errTokenAddress, "invalid evn chain sender on claim")
 	}
 
 	// Block blacklisted asset transfers
 	// (these funds are unrecoverable for the blacklisted sender, they will instead be sent to community pool)
-	if a.keeper.IsOnBlacklist(ctx, *ethereumSender) {
+	if a.keeper.IsOnBlacklist(ctx, *evmChainSender) {
 		hash, _ := claim.ClaimHash()
 		a.keeper.logger(ctx).Error("Invalid SendToCosmos: receiver is blacklisted",
 			"address", receiverAddress,
@@ -118,9 +118,9 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	coins := sdk.Coins{coin}
 
 	moduleAddr := a.keeper.accountKeeper.GetModuleAddress(types.ModuleName)
-	if !isCosmosOriginated { // We need to mint eth-originated coins (aka vouchers)
+	if !isCosmosOriginated { // We need to mint evm-originated coins (aka vouchers)
 		if err := a.mintEthereumOriginatedVouchers(ctx, moduleAddr, claim, coin); err != nil {
-			// TODO: Evaluate closely, if we can't mint an ethereum voucher, what should we do?
+			// TODO: Evaluate closely, if we can't mint an evm voucher, what should we do?
 			return err
 		}
 	}
@@ -143,7 +143,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	}
 
 	// for whatever reason above, blacklisted, invalid string, etc this deposit is not valid
-	// we can't send the tokens back on the Ethereum side, and if we don't put them somewhere on
+	// we can't send the tokens back on the evm chain side, and if we don't put them somewhere on
 	// the cosmos side they will be lost an inaccessible even though they are locked in the bridge.
 	// so we deposit the tokens into the community pool for later use via governance vote
 	if invalidAddress {
@@ -184,7 +184,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	return nil
 }
 
-// Upon acceptance of sufficient validator BatchSendToEth claims: burn ethereum originated vouchers, invalidate pending
+// Upon acceptance of sufficient validator BatchSendToEth claims: burn evm originated vouchers, invalidate pending
 // batches with lower claim.BatchNonce, and clean up state
 // Note: Previously SendToEth was referred to as a bridge "Withdrawal", as tokens are withdrawn from the gravity contract
 func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.MsgBatchSendToEthClaim) error {
@@ -203,7 +203,7 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 	return err
 }
 
-// Upon acceptance of sufficient ERC20 Deployed claims, register claim.TokenContract as the canonical ethereum
+// Upon acceptance of sufficient ERC20 Deployed claims, register claim.TokenContract as the canonical evm
 // representation of the metadata governance previously voted for
 func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.MsgERC20DeployedClaim) error {
 	tokenAddress, err := types.NewEthAddress(claim.TokenContract)
@@ -246,7 +246,7 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	// to find the DenomUnit which matches up to the main token "display" value. Then we take the
 	// "exponent" from this DenomUnit.
 	// If the correct DenomUnit is not found, it will default to 0. This will result in there being no decimal places
-	// in the token's ERC20 on Ethereum. So, for example, if this happened with Atom, 1 Atom would appear on Ethereum
+	// in the token's ERC20 on evm chain. So, for example, if this happened with Atom, 1 Atom would appear on evm chain
 	// as 1 million Atoms, having 6 extra places before the decimal point.
 	// This will only happen with a Denom Metadata which is for all intents and purposes invalid, but I am not sure
 	// this is checked for at any other point.
@@ -321,7 +321,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, EthChainPrefix, *rewardAddress)
 		if isCosmosOriginated {
 			// If it is cosmos originated, mint some coins to account
-			// for coins that now exist on Ethereum and may eventually come
+			// for coins that now exist on evm chain and may eventually come
 			// back to Cosmos.
 			//
 			// Note the flow is
@@ -351,7 +351,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 			// coins := sdk.Coins{sdk.NewCoin(denom, claim.RewardAmount)}
 			// a.bankKeeper.BurnCoins(ctx, types.ModuleName, coins)
 
-			// if you want to issue Ethereum originated tokens remove this panic and uncomment
+			// if you want to issue evm originated tokens remove this panic and uncomment
 			// the above code but note that you will have to constantly replenish the tokens in the
 			// module or your chain will eventually halt.
 			panic("Can not use Ethereum originated token as reward!")
@@ -389,13 +389,13 @@ func (a AttestationHandler) assertSentAmount(ctx sdk.Context, moduleAddr sdk.Acc
 	}
 }
 
-// mintEthereumOriginatedVouchers creates new "gravity0x..." vouchers for ethereum tokens and asserts both that the
+// mintEthereumOriginatedVouchers creates new "gravity0x..." vouchers for evm tokens and asserts both that the
 // supply of that voucher does not exceed Uint256 max value, and the minted balance is correct
 func (a AttestationHandler) mintEthereumOriginatedVouchers(
 	ctx sdk.Context, moduleAddr sdk.AccAddress, claim types.MsgSendToCosmosClaim, coin sdk.Coin,
 ) error {
 	preMintBalance := a.keeper.bankKeeper.GetBalance(ctx, moduleAddr, coin.Denom)
-	// Ensure that users are not bridging an impossible amount, only 2^256 - 1 tokens can exist on ethereum
+	// Ensure that users are not bridging an impossible amount, only 2^256 - 1 tokens can exist on evm chain
 	prevSupply := a.keeper.bankKeeper.GetSupply(ctx, coin.Denom)
 	newSupply := new(big.Int).Add(prevSupply.Amount.BigInt(), claim.Amount.BigInt())
 	if newSupply.BitLen() > 256 { // new supply overflows uint256
@@ -507,7 +507,7 @@ func (a AttestationHandler) sendCoinToLocalAddress(
 
 	err = a.keeper.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, sdk.NewCoins(coin))
 	if err != nil {
-		// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
+		// someone attempted to send tokens to a blacklisted user from evm chain, log and send to Community pool
 		hash, _ := claim.ClaimHash()
 		a.keeper.logger(ctx).Error("Blacklisted deposit",
 			"cause", err.Error(),

@@ -82,27 +82,27 @@ func (k Keeper) BuildOutgoingTXBatch(
 	return batch, nil
 }
 
-// This gets the batch timeout height in Ethereum blocks.
+// This gets the batch timeout height in evm chain blocks.
 func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) uint64 {
 	params := k.GetParams(ctx)
 	currentCosmosHeight := ctx.BlockHeight()
-	// we store the last observed Cosmos and Ethereum heights, we do not concern ourselves if these values are zero because
-	// no batch can be produced if the last Ethereum block height is not first populated by a deposit event.
-	heights := k.GetLastObservedEthereumBlockHeight(ctx, evmChainPrefix)
+	// we store the last observed Cosmos and evm chain heights, we do not concern ourselves if these values are zero because
+	// no batch can be produced if the last evm chain block height is not first populated by a deposit event.
+	heights := k.GetLastObservedEvmChainBlockHeight(ctx, evmChainPrefix)
 	if heights.CosmosBlockHeight == 0 || heights.EthereumBlockHeight == 0 {
 		return 0
 	}
-	// we project how long it has been in milliseconds since the last Ethereum block height was observed
+	// we project how long it has been in milliseconds since the last evm chain block height was observed
 	projectedMillis := (uint64(currentCosmosHeight) - heights.CosmosBlockHeight) * params.AverageBlockTime
-	// we convert that projection into the current Ethereum height using the average Ethereum block time in millis
-	projectedCurrentEthereumHeight := (projectedMillis / params.AverageEthereumBlockTime) + heights.EthereumBlockHeight
+	// we convert that projection into the current evm chain height using the average evm chain block time in millis
+	projectedCurrentEvmChainHeight := (projectedMillis / params.AverageEthereumBlockTime) + heights.EthereumBlockHeight
 	// we convert our target time for block timeouts (lets say 12 hours) into a number of blocks to
-	// place on top of our projection of the current Ethereum block height.
+	// place on top of our projection of the current evm chain block height.
 	blocksToAdd := params.TargetBatchTimeout / params.AverageEthereumBlockTime
-	return projectedCurrentEthereumHeight + blocksToAdd
+	return projectedCurrentEvmChainHeight + blocksToAdd
 }
 
-// OutgoingTxBatchExecuted is run when the Cosmos chain detects that a batch has been executed on Ethereum
+// OutgoingTxBatchExecuted is run when the Cosmos chain detects that a batch has been executed on evm chain
 // It frees all the transactions in the batch, then cancels all earlier batches, this function panics instead
 // of returning errors because any failure will cause a double spend.
 func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, tokenContract types.EthAddress, nonce uint64) {
@@ -111,13 +111,13 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, 
 		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract.GetAddress().Hex(), nonce))
 	}
 	contract := b.TokenContract
-	// Burn tokens if they're Ethereum originated
+	// Burn tokens if they're evm chain originated
 	if isCosmosOriginated, _ := k.ERC20ToDenomLookup(ctx, evmChainPrefix, contract); !isCosmosOriginated {
 		totalToBurn := sdk.NewInt(0)
 		for _, tx := range b.Transactions {
 			totalToBurn = totalToBurn.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
 		}
-		// burn vouchers to send them back to ETH
+		// burn vouchers to send them back to evm chain
 		erc20, err := types.NewInternalERC20Token(totalToBurn, contract.GetAddress().Hex())
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "invalid ERC20 address in executed batch"))

@@ -130,7 +130,7 @@ func (k Keeper) GetOrchestratorValidatorAddr(ctx sdk.Context, orch sdk.AccAddres
 //       ETH ADDRESS       //
 /////////////////////////////
 
-// SetEthAddress sets the ethereum address for a given validator
+// SetEthAddress sets the evm address for a given validator
 func (k Keeper) SetEvmAddressForValidator(ctx sdk.Context, validator sdk.ValAddress, evmAddr types.EthAddress) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
@@ -140,7 +140,7 @@ func (k Keeper) SetEvmAddressForValidator(ctx sdk.Context, validator sdk.ValAddr
 	store.Set(types.GetValidatorByEvmAddressKey(evmAddr), []byte(validator))
 }
 
-// GetEvmAddressByValidator returns the eth address for a given gravity validator
+// GetEvmAddressByValidator returns the evm address for a given gravity validator
 func (k Keeper) GetEvmAddressByValidator(ctx sdk.Context, validator sdk.ValAddress) (evmAddress *types.EthAddress, found bool) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
@@ -158,7 +158,7 @@ func (k Keeper) GetEvmAddressByValidator(ctx sdk.Context, validator sdk.ValAddre
 	return addr, true
 }
 
-// GetValidatorByEvmAddress returns the validator for a given eth address
+// GetValidatorByEvmAddress returns the validator for a given evm address
 func (k Keeper) GetValidatorByEvmAddress(ctx sdk.Context, evmAddr types.EthAddress) (validator stakingtypes.Validator, found bool) {
 	store := ctx.KVStore(k.storeKey)
 	valAddr := store.Get([]byte(types.GetValidatorByEvmAddressKey(evmAddr)))

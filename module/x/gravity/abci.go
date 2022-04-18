@@ -60,7 +60,7 @@ func createValsets(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	}
 
 	if (latestValset == nil) || (lastUnbondingHeight == uint64(ctx.BlockHeight())) || significantPowerDiff {
-		// if the conditions are true, put in a new validator set request to be signed and submitted to Ethereum
+		// if the conditions are true, put in a new validator set request to be signed and submitted to evm chain
 		k.SetValsetRequest(ctx, evmChainPrefix)
 	}
 }
@@ -101,7 +101,7 @@ func slashing(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 // an attestation that has not passed the threshold
 func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	params := k.GetParams(ctx)
-	// bridge is currently disabled, do not process attestations from Ethereum
+	// bridge is currently disabled, do not process attestations from evm chain
 	if !params.BridgeActive {
 		return
 	}
@@ -139,20 +139,20 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	}
 }
 
-// cleanupTimedOutBatches deletes batches that have passed their expiration on Ethereum
+// cleanupTimedOutBatches deletes batches that have passed their expiration on evm chain
 // keep in mind several things when modifying this function
 // A) unlike nonces timeouts are not monotonically increasing, meaning batch 5 can have a later timeout than batch 6
 //    this means that we MUST only cleanup a single batch at a time
-// B) it is possible for ethereumHeight to be zero if no events have ever occurred, make sure your code accounts for this
-// C) When we compute the timeout we do our best to estimate the Ethereum block height at that very second. But what we work with
-//    here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
-//    project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
-//    AND any deposit or withdraw has occurred to update the Ethereum block height.
+// B) it is possible for evm chain height to be zero if no events have ever occurred, make sure your code accounts for this
+// C) When we compute the timeout we do our best to estimate the evm chain block height at that very second. But what we work with
+//    here is the evm chain block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
+//    project, if we do a slowdown on evm chain could cause a double spend. Instead timeouts will *only* occur after the timeout period
+//    AND any deposit or withdraw has occurred to update the evm chain block height.
 func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
-	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx, evmChainPrefix).EthereumBlockHeight
+	evmChainHeight := k.GetLastObservedEvmChainBlockHeight(ctx, evmChainPrefix).EthereumBlockHeight
 	batches := k.GetOutgoingTxBatches(ctx, evmChainPrefix)
 	for _, batch := range batches {
-		if batch.BatchTimeout < ethereumHeight {
+		if batch.BatchTimeout < evmChainHeight {
 			err := k.CancelOutgoingTXBatch(ctx, evmChainPrefix, batch.TokenContract, batch.BatchNonce)
 			if err != nil {
 				panic("Failed to cancel outgoing txbatch!")
@@ -161,20 +161,20 @@ func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper, evmChainPrefix str
 	}
 }
 
-// cleanupTimedOutBatches deletes logic calls that have passed their expiration on Ethereum
+// cleanupTimedOutBatches deletes logic calls that have passed their expiration on evm chain
 // keep in mind several things when modifying this function
 // A) unlike nonces timeouts are not monotonically increasing, meaning call 5 can have a later timeout than batch 6
 //    this means that we MUST only cleanup a single call at a time
-// B) it is possible for ethereumHeight to be zero if no events have ever occurred, make sure your code accounts for this
-// C) When we compute the timeout we do our best to estimate the Ethereum block height at that very second. But what we work with
-//    here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
-//    project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
-//    AND any deposit or withdraw has occurred to update the Ethereum block height.
+// B) it is possible for  evm chain height to be zero if no events have ever occurred, make sure your code accounts for this
+// C) When we compute the timeout we do our best to estimate the evm chain block height at that very second. But what we work with
+//    here is the evm chain block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
+//    project, if we do a slowdown on evm chain could cause a double spend. Instead timeouts will *only* occur after the timeout period
+//    AND any deposit or withdraw has occurred to update the evm chain block height.
 func cleanupTimedOutLogicCalls(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
-	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx, evmChainPrefix).EthereumBlockHeight
+	evmChainHeight := k.GetLastObservedEvmChainBlockHeight(ctx, evmChainPrefix).EthereumBlockHeight
 	calls := k.GetOutgoingLogicCalls(ctx, evmChainPrefix)
 	for _, call := range calls {
-		if call.Timeout < ethereumHeight {
+		if call.Timeout < evmChainHeight {
 			err := k.CancelOutgoingLogicCall(ctx, evmChainPrefix, call.InvalidationId, call.InvalidationNonce)
 			if err != nil {
 				panic("Failed to cancel outgoing logic call!")
