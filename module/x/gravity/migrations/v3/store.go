@@ -1,8 +1,6 @@
 package v3
 
 import (
-	"bytes"
-
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -44,7 +42,10 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 	updateKeysWithEthPrefix(store, v2.LastObservedValsetKey)
 
 	updateKeysPrefixToEvm(store, v2.PastEthSignatureCheckpointKey, types.PastEvmSignatureCheckpointKey)
+	updateKeysPrefixToEvmWithoutChain(store, v2.ValidatorByEthAddressKey, types.ValidatorByEvmAddressKey)
+	updateKeysPrefixToEvmWithoutChain(store, v2.EthAddressByValidatorKey, types.EvmAddressByValidatorKey)
 	updateKeyPrefixToEvm(store, v2.LastObservedEthereumBlockHeightKey, types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, EthereumChainPrefix))
+	updateKeyPrefixToEvm(store, v2.LastEventNonceByValidatorKey, types.AppendChainPrefix(types.LastEventNonceByValidatorKey, EthereumChainPrefix))
 
 	return nil
 }
@@ -57,7 +58,7 @@ func updateKeysWithEthPrefix(store storetypes.KVStore, keyPrefix []byte) {
 	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
 		// Set new oldKey on store. Values don't change.
 		oldKey := oldStoreIter.Key()
-		newKey := bytes.Join([][]byte{[]byte(EthereumChainPrefix), oldKey}, []byte{})
+		newKey := types.AppendBytes([]byte(EthereumChainPrefix), oldKey)
 		prefixStore.Set(newKey, oldStoreIter.Value())
 		prefixStore.Delete(oldKey)
 	}
@@ -71,7 +72,21 @@ func updateKeysPrefixToEvm(store storetypes.KVStore, oldKeyPrefix, newKeyPrefix 
 	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
 		// Set new oldKey on store. Values don't change.
 		oldKey := oldStoreIter.Key()
-		newKey := bytes.Join([][]byte{newKeyPrefix, []byte(EthereumChainPrefix), oldKey}, []byte{})
+		newKey := types.AppendBytes(newKeyPrefix, []byte(EthereumChainPrefix), oldKey)
+		store.Set(newKey, oldStoreIter.Value())
+		oldPrefixStore.Delete(oldKey)
+	}
+}
+
+func updateKeysPrefixToEvmWithoutChain(store storetypes.KVStore, oldKeyPrefix, newKeyPrefix []byte) {
+	oldPrefixStore := prefix.NewStore(store, oldKeyPrefix)
+	oldStoreIter := oldPrefixStore.Iterator(nil, nil)
+	defer oldStoreIter.Close()
+
+	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
+		// Set new oldKey on store. Values don't change.
+		oldKey := oldStoreIter.Key()
+		newKey := types.AppendBytes(newKeyPrefix, oldKey)
 		store.Set(newKey, oldStoreIter.Value())
 		oldPrefixStore.Delete(oldKey)
 	}

@@ -981,7 +981,7 @@ func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
 	got := ExportGenesis(ctx, k)
 	require.NotNil(t, got)
 
-	for _, tx := range got.UnbatchedTransfers {
+	for _, tx := range got.EvmChains[0].UnbatchedTransfers {
 		cached := unbatchedTxMap[tx.Id]
 		require.NotNil(t, cached)
 		require.Equal(t, cached, tx, "cached: %+v\nactual: %+v\n", cached, tx)

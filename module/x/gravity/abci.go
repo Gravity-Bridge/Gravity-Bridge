@@ -11,13 +11,17 @@ import (
 // EndBlocker is called at the end of every block
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 	params := k.GetParams(ctx)
-	slashing(ctx, k, keeper.EthChainPrefix)
-	attestationTally(ctx, k, keeper.EthChainPrefix)
-	cleanupTimedOutBatches(ctx, k, keeper.EthChainPrefix)
-	cleanupTimedOutLogicCalls(ctx, k, keeper.EthChainPrefix)
-	createValsets(ctx, k, keeper.EthChainPrefix)
-	pruneValsets(ctx, k, params, keeper.EthChainPrefix)
-	pruneAttestations(ctx, k, keeper.EthChainPrefix)
+	evmChains := k.GetEvmChains(ctx)
+
+	for _, cd := range evmChains {
+		slashing(ctx, k, cd.EvmChainPrefix)
+		attestationTally(ctx, k, cd.EvmChainPrefix)
+		cleanupTimedOutBatches(ctx, k, cd.EvmChainPrefix)
+		cleanupTimedOutLogicCalls(ctx, k, cd.EvmChainPrefix)
+		createValsets(ctx, k, cd.EvmChainPrefix)
+		pruneValsets(ctx, k, params, cd.EvmChainPrefix)
+		pruneAttestations(ctx, k, cd.EvmChainPrefix)
+	}
 }
 
 func createValsets(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
@@ -334,7 +338,7 @@ func getUnbondingValidators(ctx sdk.Context, k keeper.Keeper) (addresses []strin
 // prepBatchConfirms loads all confirmations into a hashmap indexed by validatorAddr
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
-func prepBatchConfirms(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, batch types.InternalOutgoingTxBatch) map[string]types.MsgConfirmBatch {
+func prepBatchConfirms(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string, batch types.InternalOutgoingTxBatch) map[string]types.MsgConfirmBatch {
 	confirms := k.GetBatchConfirmByNonceAndTokenContract(ctx, evmChainPrefix, batch.BatchNonce, batch.TokenContract)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]types.MsgConfirmBatch)
@@ -374,7 +378,7 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmCha
 	unslashedBatches := k.GetUnSlashedBatches(ctx, evmChainPrefix, maxHeight)
 	for _, batch := range unslashedBatches {
 		// SLASH BONDED VALIDTORS who didn't attest batch requests
-		confirms := prepBatchConfirms(ctx, evmChainPrefix, k, batch)
+		confirms := prepBatchConfirms(ctx, k, evmChainPrefix, batch)
 		for _, val := range currentBondedSet {
 			consAddr, err := val.GetConsAddr()
 			if err != nil {
@@ -412,7 +416,7 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmCha
 // prepLogicCallConfirms loads all confirmations into a hashmap indexed by validatorAddr
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
-func prepLogicCallConfirms(ctx sdk.Context, evmChainPrefix string, k keeper.Keeper, call types.OutgoingLogicCall) map[string]*types.MsgConfirmLogicCall {
+func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string, call types.OutgoingLogicCall) map[string]*types.MsgConfirmLogicCall {
 	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(ctx, evmChainPrefix, call.InvalidationId, call.InvalidationNonce)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]*types.MsgConfirmLogicCall)
@@ -453,7 +457,7 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params, ev
 	for _, call := range unslashedLogicCalls {
 
 		// SLASH BONDED VALIDTORS who didn't attest batch requests
-		confirms := prepLogicCallConfirms(ctx, evmChainPrefix, k, call)
+		confirms := prepLogicCallConfirms(ctx, k, evmChainPrefix, call)
 		for _, val := range currentBondedSet {
 			// Don't slash validators who joined after batch is created
 			consAddr, err := val.GetConsAddr()

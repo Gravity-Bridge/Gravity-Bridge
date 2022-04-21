@@ -170,9 +170,13 @@ func exportImport(t *testing.T, input *TestInput) {
 	genesisState := ExportGenesis(input.Context, input.GravityKeeper)
 	newEnv := CreateTestEnv(t)
 	input = &newEnv
-	unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context, EthChainPrefix)
-	require.Empty(t, unbatched)
-	batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context, EthChainPrefix)
-	require.Empty(t, batches)
+
+	for _, cd := range newEnv.GravityKeeper.GetEvmChains(newEnv.Context) {
+		unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context, cd.EvmChainPrefix)
+		require.Empty(t, unbatched)
+		batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context, cd.EvmChainPrefix)
+		require.Empty(t, batches)
+	}
+
 	InitGenesis(input.Context, input.GravityKeeper, genesisState)
 }

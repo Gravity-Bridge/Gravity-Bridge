@@ -16,9 +16,9 @@ func TestGetSetEvmChainData(t *testing.T) {
 	evmChainsData := addEvmChainsToStore(t, ctx, k)
 
 	for _, evmChainData := range evmChainsData {
-		evmChainDataFromStore := k.GetEvmChainData(ctx, evmChainData.Prefix)
-		require.Equal(t, evmChainData.Prefix, evmChainDataFromStore.Prefix)
-		require.Equal(t, evmChainData.ChainName, evmChainDataFromStore.ChainName)
+		evmChainDataFromStore := k.GetEvmChainData(ctx, evmChainData.EvmChainPrefix)
+		require.Equal(t, evmChainData.EvmChainPrefix, evmChainDataFromStore.EvmChainPrefix)
+		require.Equal(t, evmChainData.EvmChainName, evmChainDataFromStore.EvmChainName)
 	}
 }
 
@@ -27,28 +27,32 @@ func TestIterateEvmChainsData(t *testing.T) {
 	k := input.GravityKeeper
 	ctx := input.Context
 
-	evmChainsData := addEvmChainsToStore(t, ctx, k)
-	evmChainsDataFromStore := k.GetEvmChains(ctx)
+	newEvmChains := addEvmChainsToStore(t, ctx, k)
+	evmChainsFromTestEnv := EvmChains
+	evmChainsFromStore := k.GetEvmChains(ctx)
 
-	for i := 0; i < len(evmChainsDataFromStore); i++ {
-		require.Equal(t, evmChainsData[i].Prefix, evmChainsDataFromStore[i].Prefix)
-		require.Equal(t, evmChainsData[i].ChainName, evmChainsDataFromStore[i].ChainName)
+	// Check EVM chains from test environment
+	for i, cp := range evmChainsFromTestEnv {
+		require.Equal(t, cp.EvmChainPrefix, evmChainsFromStore[i].EvmChainPrefix)
+		require.Equal(t, cp.EvmChainName, evmChainsFromStore[i].EvmChainName)
+	}
+
+	// Check newly added EVM chains
+	for i, cp := range evmChainsFromStore[len(evmChainsFromTestEnv):] {
+		require.Equal(t, newEvmChains[i].EvmChainPrefix, cp.EvmChainPrefix)
+		require.Equal(t, newEvmChains[i].EvmChainName, cp.EvmChainName)
 	}
 }
 
-func addEvmChainsToStore(t *testing.T, ctx sdk.Context, k Keeper) []types.EVMChainProposal {
-	evmChainsData := []types.EVMChainProposal{
+func addEvmChainsToStore(t *testing.T, ctx sdk.Context, k Keeper) []types.EvmChain {
+	evmChainsData := []types.EvmChain{
 		{
-			Prefix:    "prefix1",
-			ChainName: "EVM Chain Name 1",
+			EvmChainPrefix: "prefix1",
+			EvmChainName:   "EVM Chain Name 1",
 		},
 		{
-			Prefix:    "prefix2",
-			ChainName: "EVM Chain Name 2",
-		},
-		{
-			Prefix:    "prefix3",
-			ChainName: "EVM Chain Name 3",
+			EvmChainPrefix: "prefix2",
+			EvmChainName:   "EVM Chain Name 2",
 		},
 	}
 

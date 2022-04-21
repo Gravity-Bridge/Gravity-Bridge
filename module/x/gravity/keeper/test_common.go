@@ -239,6 +239,11 @@ var (
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
 	}
+
+	EvmChains = []types.EvmChain{
+		{EvmChainPrefix: "gravity", EvmChainName: "Main Ethereum network"},
+		// {EvmChainPrefix: "dpfx", EvmChainName: "Dummy EVM chain"},
+	}
 )
 
 // TestInput stores the various keepers required to test gravity
@@ -632,6 +637,9 @@ func CreateTestEnv(t *testing.T) TestInput {
 	k.SetLastSlashedLogicCallBlock(ctx, EthChainPrefix, 0)
 	k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix))
 	k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix))
+	for _, cd := range EvmChains {
+		k.SetEvmChainData(ctx, cd)
+	}
 
 	k.SetParams(ctx, TestingGravityParams)
 	params := k.GetParams(ctx)

@@ -124,8 +124,7 @@ func TestMigrateEthAddressByValidator(t *testing.T) {
 	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	//TODO: EVM - this change is breaking tests
-	valEthAddr, found := input.GravityKeeper.GetEvmAddressByValidator(input.Context, validator)
+	valEthAddr, found := v2.GetEthAddressByValidator(input.Context, validator, input.Context.KVStore(input.GravityStoreKey))
 	assert.True(t, found)
 	assert.Equal(t, ethAddr, strings.ToLower(valEthAddr.GetAddress().Hex()))
 	assert.Equal(t, gethcommon.HexToAddress(ethAddr), valEthAddr.GetAddress())

@@ -9,45 +9,46 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.GenesisState, evmChainPrefix string) {
+func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, cd types.EvmChainData) {
 	// reset valsets in state
+	chainPrefix := cd.EvmChain.EvmChainPrefix
 	highest := uint64(0)
-	for _, vs := range data.Valsets {
+	for _, vs := range cd.Valsets {
 		if vs.Nonce > highest {
 			highest = vs.Nonce
 		}
-		k.StoreValset(ctx, evmChainPrefix, vs)
+		k.StoreValset(ctx, chainPrefix, vs)
 	}
-	k.SetLatestValsetNonce(ctx, evmChainPrefix, highest)
+	k.SetLatestValsetNonce(ctx, chainPrefix, highest)
 
 	// reset valset confirmations in state
-	for _, conf := range data.ValsetConfirms {
-		k.SetValsetConfirm(ctx, evmChainPrefix, conf)
+	for _, conf := range cd.ValsetConfirms {
+		k.SetValsetConfirm(ctx, chainPrefix, conf)
 	}
 
 	// reset batches in state
-	for _, batch := range data.Batches {
+	for _, batch := range cd.Batches {
 		// TODO: block height?
 		intBatch, err := batch.ToInternal()
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "unable to make batch internal: %v", batch))
 		}
-		k.StoreBatch(ctx, EthChainPrefix, *intBatch)
+		k.StoreBatch(ctx, chainPrefix, *intBatch)
 	}
 
 	// reset batch confirmations in state
-	for _, conf := range data.BatchConfirms {
+	for _, conf := range cd.BatchConfirms {
 		conf := conf
 		k.SetBatchConfirm(ctx, &conf)
 	}
 
 	// reset logic calls in state
-	for _, call := range data.LogicCalls {
-		k.SetOutgoingLogicCall(ctx, EthChainPrefix, call)
+	for _, call := range cd.LogicCalls {
+		k.SetOutgoingLogicCall(ctx, chainPrefix, call)
 	}
 
 	// reset logic call confirmations in state
-	for _, conf := range data.LogicCallConfirms {
+	for _, conf := range cd.LogicCallConfirms {
 		conf := conf
 		k.SetLogicCallConfirm(ctx, &conf)
 	}
@@ -57,122 +58,125 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.GenesisStat
 func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	k.SetParams(ctx, *data.Params)
 
-	// restore various nonces, this MUST match GravityNonces in genesis
-	k.SetLatestValsetNonce(ctx, EthChainPrefix, data.GravityNonces.LatestValsetNonce)
-	k.setLastObservedEventNonce(ctx, EthChainPrefix, data.GravityNonces.LastObservedNonce)
-	k.SetLastSlashedValsetNonce(ctx, EthChainPrefix, data.GravityNonces.LastSlashedValsetNonce)
-	k.SetLastSlashedBatchBlock(ctx, EthChainPrefix, data.GravityNonces.LastSlashedBatchBlock)
-	k.SetLastSlashedLogicCallBlock(ctx, EthChainPrefix, data.GravityNonces.LastSlashedLogicCallBlock)
-	k.setID(ctx, data.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix))
-	k.setID(ctx, data.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix))
+	for _, cd := range data.EvmChains {
+		// restore various nonces, this MUST match GravityNonces in genesis
+		chainPrefix := cd.EvmChain.EvmChainPrefix
+		k.SetLatestValsetNonce(ctx, chainPrefix, cd.GravityNonces.LatestValsetNonce)
+		k.setLastObservedEventNonce(ctx, chainPrefix, cd.GravityNonces.LastObservedNonce)
+		k.SetLastSlashedValsetNonce(ctx, chainPrefix, cd.GravityNonces.LastSlashedValsetNonce)
+		k.SetLastSlashedBatchBlock(ctx, chainPrefix, cd.GravityNonces.LastSlashedBatchBlock)
+		k.SetLastSlashedLogicCallBlock(ctx, chainPrefix, cd.GravityNonces.LastSlashedLogicCallBlock)
+		k.setID(ctx, cd.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, chainPrefix))
+		k.setID(ctx, cd.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, chainPrefix))
+		k.SetEvmChainData(ctx, cd.EvmChain)
 
-	initBridgeDataFromGenesis(ctx, k, data, EthChainPrefix)
+		initBridgeDataFromGenesis(ctx, k, cd)
 
-	// reset pool transactions in state
-	for _, tx := range data.UnbatchedTransfers {
-		intTx, err := tx.ToInternal()
-		if err != nil {
-			panic(sdkerrors.Wrapf(err, "invalid unbatched tx: %v", tx))
-		}
-		if err := k.addUnbatchedTX(ctx, EthChainPrefix, intTx); err != nil {
-			panic(err)
-		}
-	}
-
-	// reset attestations in state
-	for _, att := range data.Attestations {
-		att := att
-		claim, err := k.UnpackAttestationClaim(&att)
-		if err != nil {
-			panic("couldn't cast to claim")
+		// reset pool transactions in state
+		for _, tx := range cd.UnbatchedTransfers {
+			intTx, err := tx.ToInternal()
+			if err != nil {
+				panic(sdkerrors.Wrapf(err, "invalid unbatched tx: %v", tx))
+			}
+			if err := k.addUnbatchedTX(ctx, chainPrefix, intTx); err != nil {
+				panic(err)
+			}
 		}
 
-		// TODO: block height?
-		hash, err := claim.ClaimHash()
-		if err != nil {
-			panic(fmt.Errorf("error when computing ClaimHash for %v", hash))
-		}
-		k.SetAttestation(ctx, EthChainPrefix, claim.GetEventNonce(), hash, &att)
-	}
+		// reset attestations in state
+		for _, att := range cd.Attestations {
+			att := att
+			claim, err := k.UnpackAttestationClaim(&att)
+			if err != nil {
+				panic("couldn't cast to claim")
+			}
 
-	// reset attestation state of specific validators
-	// this must be done after the above to be correct
-	for _, att := range data.Attestations {
-		att := att
-		claim, err := k.UnpackAttestationClaim(&att)
-		if err != nil {
-			panic("couldn't cast to claim")
+			// TODO: block height?
+			hash, err := claim.ClaimHash()
+			if err != nil {
+				panic(fmt.Errorf("error when computing ClaimHash for %v", hash))
+			}
+			k.SetAttestation(ctx, chainPrefix, claim.GetEventNonce(), hash, &att)
 		}
-		// reconstruct the latest event nonce for every validator
-		// if somehow this genesis state is saved when all attestations
-		// have been cleaned up GetLastEventNonceByValidator handles that case
-		//
-		// if we were to save and load the last event nonce for every validator
-		// then we would need to carry that state forever across all chain restarts
-		// but since we've already had to handle the edge case of new validators joining
-		// while all attestations have already been cleaned up we can do this instead and
-		// not carry around every validators event nonce counter forever.
-		for _, vote := range att.Votes {
-			val, err := sdk.ValAddressFromBech32(vote)
+
+		// reset attestation state of specific validators
+		// this must be done after the above to be correct
+		for _, att := range cd.Attestations {
+			att := att
+			claim, err := k.UnpackAttestationClaim(&att)
+			if err != nil {
+				panic("couldn't cast to claim")
+			}
+			// reconstruct the latest event nonce for every validator
+			// if somehow this genesis state is saved when all attestations
+			// have been cleaned up GetLastEventNonceByValidator handles that case
+			//
+			// if we were to save and load the last event nonce for every validator
+			// then we would need to carry that state forever across all chain restarts
+			// but since we've already had to handle the edge case of new validators joining
+			// while all attestations have already been cleaned up we can do this instead and
+			// not carry around every validators event nonce counter forever.
+			for _, vote := range att.Votes {
+				val, err := sdk.ValAddressFromBech32(vote)
+				if err != nil {
+					panic(err)
+				}
+				last := k.GetLastEventNonceByValidator(ctx, chainPrefix, val)
+				if claim.GetEventNonce() > last {
+					k.SetLastEventNonceByValidator(ctx, chainPrefix, val, claim.GetEventNonce())
+				}
+			}
+		}
+
+		// reset delegate keys in state
+		if hasDuplicates(cd.DelegateKeys) {
+			panic("Duplicate delegate key found in Genesis!")
+		}
+		for _, keys := range cd.DelegateKeys {
+			err := keys.ValidateBasic()
+			if err != nil {
+				panic("Invalid delegate key in Genesis!")
+			}
+			val, err := sdk.ValAddressFromBech32(keys.Validator)
 			if err != nil {
 				panic(err)
 			}
-			last := k.GetLastEventNonceByValidator(ctx, EthChainPrefix, val)
-			if claim.GetEventNonce() > last {
-				k.SetLastEventNonceByValidator(ctx, EthChainPrefix, val, claim.GetEventNonce())
+			evmAddr, err := types.NewEthAddress(keys.EthAddress)
+			if err != nil {
+				panic(err)
+			}
+
+			orch, err := sdk.AccAddressFromBech32(keys.Orchestrator)
+			if err != nil {
+				panic(err)
+			}
+
+			// set the orchestrator address
+			k.SetOrchestratorValidator(ctx, val, orch)
+			// set the ethereum address
+			k.SetEvmAddressForValidator(ctx, val, *evmAddr)
+		}
+
+		// populate state with cosmos originated denom-erc20 mapping
+		for i, item := range cd.Erc20ToDenoms {
+			ethAddr, err := types.NewEthAddress(item.Erc20)
+			if err != nil {
+				panic(fmt.Errorf("invalid erc20 address in Erc20ToDenoms for item %d: %s", i, item.Erc20))
+			}
+			k.setCosmosOriginatedDenomToERC20(ctx, chainPrefix, item.Denom, *ethAddr)
+		}
+
+		// now that we have the denom-erc20 mapping we need to validate
+		// that the valset reward is possible and cosmos originated remove
+		// this if you want a non-cosmos originated reward
+		valsetReward := k.GetParams(ctx).ValsetReward
+		if valsetReward.IsValid() && !valsetReward.IsZero() {
+			_, exists := k.GetCosmosOriginatedERC20(ctx, chainPrefix, valsetReward.Denom)
+			if !exists {
+				panic("Invalid Cosmos originated denom for valset reward")
 			}
 		}
 	}
-
-	// reset delegate keys in state
-	if hasDuplicates(data.DelegateKeys) {
-		panic("Duplicate delegate key found in Genesis!")
-	}
-	for _, keys := range data.DelegateKeys {
-		err := keys.ValidateBasic()
-		if err != nil {
-			panic("Invalid delegate key in Genesis!")
-		}
-		val, err := sdk.ValAddressFromBech32(keys.Validator)
-		if err != nil {
-			panic(err)
-		}
-		evmAddr, err := types.NewEthAddress(keys.EthAddress)
-		if err != nil {
-			panic(err)
-		}
-
-		orch, err := sdk.AccAddressFromBech32(keys.Orchestrator)
-		if err != nil {
-			panic(err)
-		}
-
-		// set the orchestrator address
-		k.SetOrchestratorValidator(ctx, val, orch)
-		// set the ethereum address
-		k.SetEvmAddressForValidator(ctx, val, *evmAddr)
-	}
-
-	// populate state with cosmos originated denom-erc20 mapping
-	for i, item := range data.Erc20ToDenoms {
-		ethAddr, err := types.NewEthAddress(item.Erc20)
-		if err != nil {
-			panic(fmt.Errorf("invalid erc20 address in Erc20ToDenoms for item %d: %s", i, item.Erc20))
-		}
-		k.setCosmosOriginatedDenomToERC20(ctx, EthChainPrefix, item.Denom, *ethAddr)
-	}
-
-	// now that we have the denom-erc20 mapping we need to validate
-	// that the valset reward is possible and cosmos originated remove
-	// this if you want a non-cosmos originated reward
-	valsetReward := k.GetParams(ctx).ValsetReward
-	if valsetReward.IsValid() && !valsetReward.IsZero() {
-		_, exists := k.GetCosmosOriginatedERC20(ctx, EthChainPrefix, valsetReward.Denom)
-		if !exists {
-			panic("Invalid Cosmos originated denom for valset reward")
-		}
-	}
-
 }
 
 func hasDuplicates(d []types.MsgSetOrchestratorAddress) bool {
@@ -190,80 +194,92 @@ func hasDuplicates(d []types.MsgSetOrchestratorAddress) bool {
 // ExportGenesis exports all the state needed to restart the chain
 // from the current state of the chain
 func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
-	var (
-		p                  = k.GetParams(ctx)
-		calls              = k.GetOutgoingLogicCalls(ctx, EthChainPrefix)
-		batches            = k.GetOutgoingTxBatches(ctx, EthChainPrefix)
-		valsets            = k.GetValsets(ctx, EthChainPrefix)
-		attmap, attKeys    = k.GetAttestationMapping(ctx, EthChainPrefix)
-		vsconfs            = []types.MsgValsetConfirm{}
-		batchconfs         = []types.MsgConfirmBatch{}
-		callconfs          = []types.MsgConfirmLogicCall{}
-		attestations       = []types.Attestation{}
-		delegates          = k.GetDelegateKeys(ctx)
-		erc20ToDenoms      = []types.ERC20ToDenom{}
-		unbatchedTransfers = k.GetUnbatchedTransactions(ctx, EthChainPrefix)
-	)
+	p := k.GetParams(ctx)
 
-	// export valset confirmations from state
-	for _, vs := range valsets {
-		// TODO: set height = 0?
-		vsconfs = append(vsconfs, k.GetValsetConfirms(ctx, EthChainPrefix, vs.Nonce)...)
-	}
+	chains := k.GetEvmChains(ctx)
+	evmChains := make([]types.EvmChainData, len(chains))
 
-	// export batch confirmations from state
-	extBatches := make([]types.OutgoingTxBatch, len(batches))
-	for i, batch := range batches {
-		// TODO: set height = 0?
-		batchconfs = append(batchconfs,
-			k.GetBatchConfirmByNonceAndTokenContract(ctx, EthChainPrefix, batch.BatchNonce, batch.TokenContract)...)
-		extBatches[i] = batch.ToExternal()
-	}
+	for ci, cd := range chains {
+		calls := k.GetOutgoingLogicCalls(ctx, cd.EvmChainPrefix)
+		batches := k.GetOutgoingTxBatches(ctx, cd.EvmChainPrefix)
+		valsets := k.GetValsets(ctx, cd.EvmChainPrefix)
+		attmap, attKeys := k.GetAttestationMapping(ctx, cd.EvmChainPrefix)
+		vsconfs := []types.MsgValsetConfirm{}
+		batchconfs := []types.MsgConfirmBatch{}
+		callconfs := []types.MsgConfirmLogicCall{}
+		attestations := []types.Attestation{}
+		delegates := k.GetDelegateKeys(ctx)
+		erc20ToDenoms := []types.ERC20ToDenom{}
+		unbatchedTransfers := k.GetUnbatchedTransactions(ctx, cd.EvmChainPrefix)
 
-	// export logic call confirmations from state
-	for _, call := range calls {
-		// TODO: set height = 0?
-		callconfs = append(callconfs,
-			k.GetLogicConfirmByInvalidationIDAndNonce(ctx, EthChainPrefix, call.InvalidationId, call.InvalidationNonce)...)
-	}
+		// export valset confirmations from state
+		for _, vs := range valsets {
+			// TODO: set height = 0?
+			vsconfs = append(vsconfs, k.GetValsetConfirms(ctx, cd.EvmChainPrefix, vs.Nonce)...)
+		}
 
-	// export attestations from state
-	for _, key := range attKeys {
-		// TODO: set height = 0?
-		attestations = append(attestations, attmap[key]...)
-	}
+		// export batch confirmations from state
+		extBatches := make([]types.OutgoingTxBatch, len(batches))
+		for i, batch := range batches {
+			// TODO: set height = 0?
+			batchconfs = append(batchconfs,
+				k.GetBatchConfirmByNonceAndTokenContract(ctx, cd.EvmChainPrefix, batch.BatchNonce, batch.TokenContract)...)
+			extBatches[i] = batch.ToExternal()
+		}
 
-	// export erc20 to denom relations
-	k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
-		erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
-		return false
-	})
+		// export logic call confirmations from state
+		for _, call := range calls {
+			// TODO: set height = 0?
+			callconfs = append(callconfs,
+				k.GetLogicConfirmByInvalidationIDAndNonce(ctx, cd.EvmChainPrefix, call.InvalidationId, call.InvalidationNonce)...)
+		}
 
-	unbatchedTxs := make([]types.OutgoingTransferTx, len(unbatchedTransfers))
-	for i, v := range unbatchedTransfers {
-		unbatchedTxs[i] = v.ToExternal()
+		// export attestations from state
+		for _, key := range attKeys {
+			// TODO: set height = 0?
+			attestations = append(attestations, attmap[key]...)
+		}
+
+		// export erc20 to denom relations
+		k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
+			erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
+			return false
+		})
+
+		unbatchedTxs := make([]types.OutgoingTransferTx, len(unbatchedTransfers))
+		for i, v := range unbatchedTransfers {
+			unbatchedTxs[i] = v.ToExternal()
+		}
+
+		evmChains[ci] = types.EvmChainData{
+			EvmChain: types.EvmChain{
+				EvmChainPrefix: cd.EvmChainPrefix,
+				EvmChainName:   cd.EvmChainName,
+			},
+			GravityNonces: types.GravityNonces{
+				LatestValsetNonce:         k.GetLatestValsetNonce(ctx, cd.EvmChainPrefix),
+				LastObservedNonce:         k.GetLastObservedEventNonce(ctx, cd.EvmChainPrefix),
+				LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx, cd.EvmChainPrefix),
+				LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx, cd.EvmChainPrefix),
+				LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx, cd.EvmChainPrefix),
+				LastTxPoolId:              k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, cd.EvmChainPrefix)),
+				LastBatchId:               k.getID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, cd.EvmChainPrefix)),
+			},
+			Valsets:            valsets,
+			ValsetConfirms:     vsconfs,
+			Batches:            extBatches,
+			BatchConfirms:      batchconfs,
+			LogicCalls:         calls,
+			LogicCallConfirms:  callconfs,
+			Attestations:       attestations,
+			DelegateKeys:       delegates,
+			Erc20ToDenoms:      erc20ToDenoms,
+			UnbatchedTransfers: unbatchedTxs,
+		}
 	}
 
 	return types.GenesisState{
-		Params: &p,
-		GravityNonces: types.GravityNonces{
-			LatestValsetNonce:         k.GetLatestValsetNonce(ctx, EthChainPrefix),
-			LastObservedNonce:         k.GetLastObservedEventNonce(ctx, EthChainPrefix),
-			LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx, EthChainPrefix),
-			LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx, EthChainPrefix),
-			LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx, EthChainPrefix),
-			LastTxPoolId:              k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix)),
-			LastBatchId:               k.getID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix)),
-		},
-		Valsets:            valsets,
-		ValsetConfirms:     vsconfs,
-		Batches:            extBatches,
-		BatchConfirms:      batchconfs,
-		LogicCalls:         calls,
-		LogicCallConfirms:  callconfs,
-		Attestations:       attestations,
-		DelegateKeys:       delegates,
-		Erc20ToDenoms:      erc20ToDenoms,
-		UnbatchedTransfers: unbatchedTxs,
+		Params:    &p,
+		EvmChains: evmChains,
 	}
 }

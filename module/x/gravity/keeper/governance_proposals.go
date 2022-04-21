@@ -112,7 +112,7 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, evmChainPrefix string, k Keepe
 		valLastNonce := k.GetLastEventNonceByValidator(ctx, evmChainPrefix, val)
 		if valLastNonce > nonceCutoff {
 			ctx.Logger().Info("Resetting validator's last event nonce due to bridge unhalt", "validator", vote, "lastEventNonce", valLastNonce, "resetNonce", nonceCutoff)
-			k.SetLastEventNonceByValidator(ctx, EthChainPrefix, val, nonceCutoff)
+			k.SetLastEventNonceByValidator(ctx, evmChainPrefix, val, nonceCutoff)
 		}
 	}
 }

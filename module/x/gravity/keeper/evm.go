@@ -6,19 +6,20 @@ import (
 )
 
 // SetEvmChainData sets the EVM chain specific data
-func (k Keeper) SetEvmChainData(ctx sdk.Context, evmChainData types.EVMChainProposal) {
-	key := types.GetEvmChainKey(evmChainData.Prefix)
+func (k Keeper) SetEvmChainData(ctx sdk.Context, evmChain types.EvmChain) {
+	key := types.GetEvmChainKey(evmChain.EvmChainPrefix)
 	store := ctx.KVStore(k.storeKey)
 
 	if store.Has(key) {
-		panic("EVM chain already in store.")
+		return
+		//panic("EVM chain already in store.")
 	}
 
-	store.Set(key, k.cdc.MustMarshal(&evmChainData))
+	store.Set(key, k.cdc.MustMarshal(&evmChain))
 }
 
 // GetEvmChainData returns the EVM chain specific data
-func (k Keeper) GetEvmChainData(ctx sdk.Context, evmChainPrefix string) *types.EVMChainProposal {
+func (k Keeper) GetEvmChainData(ctx sdk.Context, evmChainPrefix string) *types.EvmChain {
 	key := types.GetEvmChainKey(evmChainPrefix)
 	store := ctx.KVStore(k.storeKey)
 
@@ -27,22 +28,22 @@ func (k Keeper) GetEvmChainData(ctx sdk.Context, evmChainPrefix string) *types.E
 		return nil
 	}
 
-	var evmChainData types.EVMChainProposal
+	var evmChainData types.EvmChain
 	k.cdc.MustUnmarshal(bytes, &evmChainData)
 	return &evmChainData
 }
 
-func (k Keeper) GetEvmChains(ctx sdk.Context) []types.EVMChainProposal {
+func (k Keeper) GetEvmChains(ctx sdk.Context) []types.EvmChain {
 	store := ctx.KVStore(k.storeKey)
 	prefix := types.EvmChainKey
 	iter := store.Iterator(prefixRange(prefix))
 	defer iter.Close()
 
-	var evmChains []types.EVMChainProposal
+	var evmChains []types.EvmChain
 
 	for ; iter.Valid(); iter.Next() {
 		value := iter.Value()
-		var evmChainData types.EVMChainProposal
+		var evmChainData types.EvmChain
 		k.cdc.MustUnmarshal(value, &evmChainData)
 
 		evmChains = append(evmChains, evmChainData)

@@ -216,7 +216,6 @@ func TestMigrateStoreKeys(t *testing.T) {
 		{
 			"LastEventNonceByValidatorKey",
 			v2.GetLastEventNonceByValidatorKey(validatorAddr),
-			//TODO: EVM - this change is breaking tests
 			types.GetLastEventNonceByValidatorKey(v3.EthereumChainPrefix, validatorAddr),
 			v2.UInt64Bytes(nonce),
 		},
@@ -241,7 +240,6 @@ func TestMigrateStoreKeys(t *testing.T) {
 		{
 			"EthAddressByValidatorKey",
 			v2.GetEthAddressByValidatorKey(validatorAddr),
-			//TODO: EVM - this change is breaking tests
 			types.GetEvmAddressByValidatorKey(validatorAddr),
 			ethAddr.GetAddress().Bytes(),
 		},
