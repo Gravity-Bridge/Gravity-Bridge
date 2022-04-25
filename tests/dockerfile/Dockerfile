@@ -9,6 +9,8 @@ RUN cd /geth && tar -xvf * && mv /geth/**/geth /usr/bin/geth
 # the actual source code for this repo, this **only** includes checked in files!
 # this is a bit of a pain but it does speed things up a lot
 ADD gravity.tar.gz /
+# Download gaia as a IBC test chain
+RUN wget https://github.com/cosmos/gaia/releases/download/v7.0.0/gaiad-v7.0.0-linux-amd64 && mv gaiad-v7.0.0-linux-amd64 /usr/bin/gaiad && chmod +x /usr/bin/gaiad
 # build the test runner specifically to cache a release artifact
 RUN pushd /gravity/orchestrator/test_runner && PATH=$PATH:$HOME/.cargo/bin cargo build --bin test-runner --release
 RUN pushd /gravity/module/ && PATH=$PATH:/usr/local/go/bin GOPROXY=https://proxy.golang.org make && PATH=$PATH:/usr/local/go/bin make install

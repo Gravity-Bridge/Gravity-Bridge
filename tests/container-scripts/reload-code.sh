@@ -23,11 +23,18 @@ make
 make install
 cd /gravity/
 tests/container-scripts/setup-validators.sh $NODES
+tests/container-scripts/setup-ibc-validators.sh $NODES
 tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE $ALCHEMY_ID
+chmod +x tests/container-scripts/setup-relayer.sh
+tests/container-scripts/setup-relayer.sh
 
 # deploy the ethereum contracts
 pushd /gravity/orchestrator/test_runner
 DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full TEST_TYPE=$TEST_TYPE NO_GAS_OPT=1 RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
+
+# Setup and run the IBC relayer in the background
+echo "Running ibc relayer in the background, directing output to /ibc-relayer-logs"
+RUN_IBC_RELAYER=1 RUST_BACKTRACE=full TEST_TYPE=$TEST_TYPE NO_GAS_OPT=1 RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner &
 
 # This keeps the script open to prevent Docker from stopping the container
 # immediately if the nodes are killed by a different process

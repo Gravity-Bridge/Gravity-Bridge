@@ -12,7 +12,8 @@ if [[ ! -z ${OLD_BINARY_LOCATION} ]]; then
     BIN=$OLD_BINARY_LOCATION
 fi
 set -u
-
+# Setup the gravity test chain (chain id gravity-test-1) using gravity as the binary
+# Creates $NODES number of validators, with their home directories at /validator#
 for i in $(seq 1 $NODES);
 do
     # add this ip for loopback dialing
@@ -49,10 +50,37 @@ do
     $BIN $ARGS start &> /validator$i/logs &
 done
 
+# Setup the IBC test chain (chain id ibc-test-1) using gaiad as the binary
+# Creates the same number of validators as the gravity chain above, with their home directories at /ibc-validator#
+BIN=gaiad
+for i in $(seq 1 $NODES);
+do
+    ip addr add 7.7.8.$i/32 dev eth0 || true # allowed to fail
+
+    GAIA_HOME="--home /ibc-validator$i"
+    if [[ "$i" -eq 1 ]]; then
+        # node one gets localhost so we can easily shunt these ports
+        # to the docker host
+        RPC_ADDRESS="--rpc.laddr tcp://0.0.0.0:27657"
+        GRPC_ADDRESS="--grpc.address 0.0.0.0:9190"
+        # Must remap the grpc-web address because it conflicts with what we want to use
+        GRPC_WEB_ADDRESS="--grpc-web.address 0.0.0.0:9192"
+    else
+        RPC_ADDRESS="--rpc.laddr tcp://7.7.8.$i:26658"
+        GRPC_ADDRESS="--grpc.address 7.7.8.$i:9091"
+        # Must remap the grpc-web address because it conflicts with what we want to use
+        GRPC_WEB_ADDRESS="--grpc-web.address 7.7.8.$i:9093"
+    fi
+    LISTEN_ADDRESS="--address tcp://7.7.8.$i:26655"
+    P2P_ADDRESS="--p2p.laddr tcp://7.7.8.$i:26656"
+    LOG_LEVEL="--log_level info"
+    ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $GRPC_WEB_ADDRESS $LOG_LEVEL $P2P_ADDRESS"
+    $BIN $ARGS start &> /ibc-validator$i/logs &
+done
+
 # let the cosmos chain settle before starting eth as it
 # consumes a lot of processing power
 sleep 10
-
 # GETH and TEST_TYPE may be unbound
 set +u
 

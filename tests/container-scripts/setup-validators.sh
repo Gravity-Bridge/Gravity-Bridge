@@ -3,7 +3,7 @@ set -eux
 # your gaiad binary name
 BIN=gravity
 
-CHAIN_ID="gravity-test"
+CHAIN_ID="gravity-test-1"
 
 NODES=$1
 
