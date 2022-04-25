@@ -69,7 +69,7 @@ pub async fn happy_path_test(
     }
 
     // generate an address for coin sending tests, this ensures test imdepotency
-    let user_keys = get_user_key();
+    let user_keys = get_user_key(None);
 
     info!("testing erc20 deposit");
     // the denom and amount of the token bridged from Ethereum -> Cosmos
@@ -327,45 +327,20 @@ pub async fn test_erc20_deposit_result(
     timeout: Option<Duration>,
     expected_change: Option<Uint256>, // provide an expected change when multiple transactions will take place at once
 ) -> Result<(), GravityError> {
-    get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
-        .await
-        .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
-    web30
-        .get_erc20_name(erc20_address, *MINER_ADDRESS)
-        .await
-        .expect("Not a valid ERC20 contract address");
-
-    let mut grpc_client = grpc_client.clone();
     let start_coin = contact
         .get_balance(dest, format!("gravity{}", erc20_address))
         .await
         .unwrap();
 
-    info!(
-        "Sending to Cosmos from {} to {} with amount {}",
-        *MINER_ADDRESS, dest, amount
-    );
-    // we send some erc20 tokens to the gravity contract to register a deposit
-    let tx_id = send_to_cosmos(
-        erc20_address,
-        gravity_address,
-        amount.clone(),
-        dest,
-        *MINER_PRIVATE_KEY,
-        None,
+    send_erc20_deposit(
         web30,
-        vec![],
+        grpc_client,
+        dest,
+        gravity_address,
+        erc20_address,
+        amount.clone(),
     )
-    .await
-    .expect("Failed to send tokens to Cosmos");
-    info!("Send to Cosmos txid: {:#066x}", tx_id);
-
-    let _tx_res = web30
-        .wait_for_transaction(tx_id, OPERATION_TIMEOUT, None)
-        .await
-        .expect("Send to cosmos transaction failed to be included into ethereum side");
-
-    check_send_to_cosmos_attestation(&mut grpc_client, erc20_address, dest, *MINER_ADDRESS).await?;
+    .await?;
 
     let start = Instant::now();
     let duration = match timeout {
@@ -441,6 +416,53 @@ pub async fn test_erc20_deposit_result(
     Err(GravityError::InvalidBridgeStateError(
         "Did not complete deposit!".to_string(),
     ))
+}
+
+pub async fn send_erc20_deposit(
+    web30: &Web3,
+    grpc_client: &mut GravityQueryClient<Channel>,
+    dest: CosmosAddress,
+    gravity_address: EthAddress,
+    erc20_address: EthAddress,
+    amount: Uint256,
+) -> Result<(), GravityError> {
+    get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
+        .await
+        .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+    web30
+        .get_erc20_name(erc20_address, *MINER_ADDRESS)
+        .await
+        .expect("Not a valid ERC20 contract address");
+
+    let mut grpc_client = grpc_client.clone();
+
+    info!(
+        "Sending to Cosmos from {} to {} with amount {}",
+        *MINER_ADDRESS, dest, amount
+    );
+    // we send some erc20 tokens to the gravity contract to register a deposit
+    let tx_id = send_to_cosmos(
+        erc20_address,
+        gravity_address,
+        amount.clone(),
+        dest,
+        *MINER_PRIVATE_KEY,
+        None,
+        web30,
+        vec![],
+    )
+    .await
+    .expect("Failed to send tokens to Cosmos");
+    info!("Send to Cosmos txid: {:#066x}", tx_id);
+
+    let _tx_res = web30
+        .wait_for_transaction(tx_id, OPERATION_TIMEOUT, None)
+        .await
+        .expect("Send to cosmos transaction failed to be included into ethereum side");
+
+    check_send_to_cosmos_attestation(&mut grpc_client, erc20_address, dest, *MINER_ADDRESS).await?;
+
+    Ok(())
 }
 
 // Tries up to TOTAL_TIMEOUT time to find a MsgSendToCosmosClaim attestation created in the

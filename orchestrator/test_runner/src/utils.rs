@@ -234,7 +234,10 @@ pub async fn get_erc20_balance_safe(
     Ok(new_balance.unwrap())
 }
 
-pub fn get_user_key() -> BridgeUserKey {
+// Generates a new BridgeUserKey through randomly generated secrets
+pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
+    let cosmos_prefix = cosmos_prefix.unwrap_or(ADDRESS_PREFIX.as_str());
+
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
     // the starting location of the funds
@@ -242,7 +245,7 @@ pub fn get_user_key() -> BridgeUserKey {
     let eth_address = eth_key.to_address();
     // the destination on cosmos that sends along to the final ethereum destination
     let cosmos_key = CosmosPrivateKey::from_secret(&secret);
-    let cosmos_address = cosmos_key.to_address(ADDRESS_PREFIX.as_str()).unwrap();
+    let cosmos_address = cosmos_key.to_address(cosmos_prefix).unwrap();
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
     // the final destination of the tokens back on Ethereum
@@ -279,6 +282,8 @@ pub struct ValidatorKeys {
     pub orch_key: CosmosPrivateKey,
     /// The validator key used by this validator to actually sign and produce blocks
     pub validator_key: CosmosPrivateKey,
+    // The mnemonic phrase used to generate validator_key
+    pub validator_phrase: String,
 }
 
 /// This function pays the piper for the strange concurrency model that we use for the tests

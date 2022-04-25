@@ -10,6 +10,7 @@ use crate::airdrop_proposal::airdrop_proposal_test;
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
+use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
@@ -31,6 +32,7 @@ use happy_path_v2::happy_path_test_v2;
 use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use relay_market::relay_market_test;
+use std::process::Command;
 use std::{env, time::Duration};
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
@@ -44,6 +46,7 @@ mod ethereum_blacklist_test;
 mod evidence_based_slashing;
 mod happy_path;
 mod happy_path_v2;
+mod ibc_auto_forward;
 mod ibc_metadata;
 mod invalid_events;
 mod orch_keys;
@@ -63,6 +66,8 @@ mod valset_stress;
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
 /// the timeout for the total system
 const TOTAL_TIMEOUT: Duration = Duration::from_secs(300);
+// The config file location for hermes
+const HERMES_CONFIG: &str = "/gravity/tests/assets/ibc-relayer-config.toml";
 
 // Retrieve values from runtime ENV vars
 lazy_static! {
@@ -74,6 +79,14 @@ lazy_static! {
         env::var("COSMOS_NODE_GRPC").unwrap_or_else(|_| "http://localhost:9090".to_owned());
     static ref COSMOS_NODE_ABCI: String =
         env::var("COSMOS_NODE_ABCI").unwrap_or_else(|_| "http://localhost:26657".to_owned());
+    static ref IBC_ADDRESS_PREFIX: String =
+        env::var("IBC_ADDRESS_PREFIX").unwrap_or_else(|_| "cosmos".to_string());
+    static ref IBC_STAKING_TOKEN: String =
+        env::var("IBC_STAKING_TOKEN").unwrap_or_else(|_| "stake".to_owned());
+    static ref IBC_NODE_GRPC: String =
+        env::var("IBC_NODE_GRPC").unwrap_or_else(|_| "http://localhost:9190".to_owned());
+    static ref IBC_NODE_ABCI: String =
+        env::var("IBC_NODE_ABCI").unwrap_or_else(|_| "http://localhost:27657".to_owned());
     static ref ETH_NODE: String =
         env::var("ETH_NODE").unwrap_or_else(|_| "http://localhost:8545".to_owned());
 }
@@ -124,8 +137,12 @@ pub fn get_test_token_name() -> String {
     "footoken".to_string()
 }
 
-pub fn get_chain_id() -> String {
-    "gravity-test".to_string()
+pub fn get_gravity_chain_id() -> String {
+    "gravity-test-1".to_string()
+}
+
+pub fn get_ibc_chain_id() -> String {
+    "ibc-test-1".to_string()
 }
 
 pub fn one_eth() -> Uint256 {
@@ -138,6 +155,13 @@ pub fn one_hundred_eth() -> Uint256 {
 
 pub fn should_deploy_contracts() -> bool {
     match env::var("DEPLOY_CONTRACTS") {
+        Ok(s) => s == "1" || s.to_lowercase() == "yes" || s.to_lowercase() == "true",
+        _ => false,
+    }
+}
+
+pub fn should_setup_and_run_ibc_relayer() -> bool {
+    match env::var("RUN_IBC_RELAYER") {
         Ok(s) => s == "1" || s.to_lowercase() == "yes" || s.to_lowercase() == "true",
         _ => false,
     }
@@ -162,11 +186,26 @@ pub async fn main() {
         .unwrap();
     let web30 = web30::client::Web3::new(ETH_NODE.as_str(), OPERATION_TIMEOUT);
     let keys = get_keys();
+    let (ibc_keys, ibc_phrases) = parse_ibc_validator_keys();
 
     // if we detect this env var we are only deploying contracts, do that then exit.
     if should_deploy_contracts() {
         info!("test-runner in contract deploying mode, deploying contracts, then exiting");
         deploy_contracts(&contact).await;
+        return;
+    }
+
+    // if we detect this env var, run the relayer until it terminates for whatever reason
+    if should_setup_and_run_ibc_relayer() {
+        info!("test-runner in ibc relayer deploying mode: init hermes, create ibc channel, start hermes");
+        let mut hermes_base = Command::new("hermes");
+        let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+        let _res = setup_relayer_keys(keys[0].clone(), ibc_phrases[0].clone()).unwrap();
+        create_ibc_channel(hermes_base);
+        // Need to recreate hermes command: start can't come after create channel, no clone options
+        let mut hermes_base = Command::new("hermes");
+        let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+        run_ibc_relayer(hermes_base, true); // likely will not return from here, just keep running
         return;
     }
 
@@ -387,6 +426,19 @@ pub async fn main() {
                 keys,
                 gravity_address,
                 erc20_addresses,
+            )
+            .await;
+            return;
+        } else if test_type == "IBC_AUTO_FORWARD" {
+            info!("Starting IBC Auto-Forward test");
+            ibc_auto_forward_test(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                erc20_addresses[0],
             )
             .await;
             return;

@@ -68,7 +68,7 @@ pub async fn happy_path_test_v2(
         amount: amount_to_bridge.clone(),
     };
 
-    let user = get_user_key();
+    let user = get_user_key(None);
     // send the user some footoken
     contact
         .send_coins(

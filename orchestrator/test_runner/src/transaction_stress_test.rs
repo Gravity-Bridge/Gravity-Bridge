@@ -50,7 +50,7 @@ pub async fn transaction_stress_test(
     // Generate 100 user keys to send ETH and multiple types of tokens
     let mut user_keys = Vec::new();
     for _ in 0..NUM_USERS {
-        user_keys.push(get_user_key());
+        user_keys.push(get_user_key(None));
     }
     // the sending eth addresses need Ethereum to send ERC20 tokens to the bridge
     let sending_eth_addresses: Vec<EthAddress> = user_keys.iter().map(|i| i.eth_address).collect();

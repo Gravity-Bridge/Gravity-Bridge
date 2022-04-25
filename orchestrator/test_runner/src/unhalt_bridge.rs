@@ -33,7 +33,7 @@ pub async fn unhalt_bridge_test(
     let prefix = contact.get_prefix();
     let mut grpc_client = grpc_client;
     let no_relay_market_config = create_default_test_config();
-    let bridge_user = get_user_key();
+    let bridge_user = get_user_key(None);
 
     info!("Sending bridge user some tokens");
     send_one_eth(bridge_user.eth_address, web30).await;

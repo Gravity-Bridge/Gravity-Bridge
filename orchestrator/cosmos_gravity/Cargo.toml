@@ -21,7 +21,9 @@ sha3 = "0.10"
 tokio = "1.4"
 web30 = "0.18"
 tonic = "0.7"
+bytes = "1.1"
 prost-types = "0.10"
+prost = "0.10"
 
 [dev-dependencies]
 env_logger = "0.9"
