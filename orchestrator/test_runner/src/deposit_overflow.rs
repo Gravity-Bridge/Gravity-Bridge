@@ -30,9 +30,9 @@ pub async fn deposit_overflow_test(
     let orchestrator_keys: Vec<CosmosPrivateKey> =
         keys.clone().into_iter().map(|key| key.orch_key).collect();
     ///////////////////// SETUP /////////////////////
-    let user_keys = get_user_key();
+    let user_keys = get_user_key(None);
     let dest = user_keys.cosmos_address;
-    let dest2 = get_user_key().cosmos_address;
+    let dest2 = get_user_key(None).cosmos_address;
     // this is a valid eth address we are pretending is an erc20
     // since this test is not completely end to end (we don't have an actual overflowing erc20 solidity contract)
     // we just pretend that this random address i an erc20 that overflows with false events.

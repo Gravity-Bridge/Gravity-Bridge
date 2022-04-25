@@ -68,7 +68,7 @@ pub async fn invalid_events(
         // to complete like this function does, since this deposit will have
         // a latter event nonce it will effectively wait for the invalid deposit
         // to complete as well
-        let user_keys = get_user_key();
+        let user_keys = get_user_key(None);
         test_erc20_deposit_panic(
             web30,
             contact,

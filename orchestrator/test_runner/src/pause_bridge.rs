@@ -41,7 +41,7 @@ pub async fn pause_bridge_test(
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
     // generate an address for coin sending tests, this ensures test imdepotency
-    let user_keys = get_user_key();
+    let user_keys = get_user_key(None);
 
     // send some tokens to Cosmos, so that we can try to send them back later
     // this won't complete until the tokens cross the bridge

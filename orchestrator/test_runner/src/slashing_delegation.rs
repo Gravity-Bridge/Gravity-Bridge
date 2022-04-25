@@ -46,13 +46,13 @@ pub async fn slashing_delegation_test(
     // 4 options so 4 users
 
     // user A delegates before slashing, then unbonds
-    let user_a = get_user_key();
+    let user_a = get_user_key(None);
     // user B delegates after slashing, then unbonds
-    let user_b = get_user_key();
+    let user_b = get_user_key(None);
     // user C delegates before sashing, then redelegates
-    let user_c = get_user_key();
+    let user_c = get_user_key(None);
     // user D delegates after sashing, then redelegates
-    let user_d = get_user_key();
+    let user_d = get_user_key(None);
 
     // send test users their required coins
     for coin in vec![amount_to_delegate.clone(), fee_send] {

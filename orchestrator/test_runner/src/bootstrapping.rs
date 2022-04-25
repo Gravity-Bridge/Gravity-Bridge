@@ -1,12 +1,18 @@
-use crate::ETH_NODE;
+use core::str::FromStr;
+
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
+use crate::{get_gravity_chain_id, get_ibc_chain_id, ETH_NODE};
 use crate::{utils::ValidatorKeys, COSMOS_NODE_ABCI};
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::Contact;
-use std::process::Command;
+use ibc::core::ics24_host::identifier::ChainId;
+use ibc_relayer::config::AddressType;
+use ibc_relayer::keyring::{HDPath, KeyRing, Store};
+use std::os::unix::io::{FromRawFd, IntoRawFd};
+use std::process::{Command, Stdio};
 use std::{fs::File, path::Path};
 use std::{
     io::{BufRead, BufReader, Read, Write},
@@ -34,10 +40,11 @@ pub fn parse_ethereum_keys() -> Vec<EthPrivateKey> {
 }
 
 /// Parses the output of the cosmoscli keys add command to import the private key
-fn parse_phrases(filename: &str) -> Vec<CosmosPrivateKey> {
+fn parse_phrases(filename: &str) -> (Vec<CosmosPrivateKey>, Vec<String>) {
     let file = File::open(filename).expect("Failed to find phrases");
     let reader = BufReader::new(file);
-    let mut ret = Vec::new();
+    let mut ret_keys = Vec::new();
+    let mut ret_phrases = Vec::new();
 
     for line in reader.lines() {
         let phrase = line.expect("Error reading phrase file!");
@@ -48,9 +55,10 @@ fn parse_phrases(filename: &str) -> Vec<CosmosPrivateKey> {
             continue;
         }
         let key = CosmosPrivateKey::from_phrase(&phrase, "").expect("Bad phrase!");
-        ret.push(key);
+        ret_keys.push(key);
+        ret_phrases.push(phrase);
     }
-    ret
+    (ret_keys, ret_phrases)
 }
 
 /// Validator private keys are generated via the gravity key add
@@ -60,8 +68,13 @@ fn parse_phrases(filename: &str) -> Vec<CosmosPrivateKey> {
 /// the phrases are in increasing order, so validator 1 is the first key
 /// and so on. While validators may later fail to start it is guaranteed
 /// that we have one key for each validator in this file.
-pub fn parse_validator_keys() -> Vec<CosmosPrivateKey> {
+pub fn parse_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
     let filename = "/validator-phrases";
+    parse_phrases(filename)
+}
+
+pub fn parse_ibc_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
+    let filename = "/ibc-validator-phrases";
     parse_phrases(filename)
 }
 
@@ -70,18 +83,25 @@ pub fn parse_validator_keys() -> Vec<CosmosPrivateKey> {
 /// similar file /orchestrator-phrases
 pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/orchestrator-phrases";
-    parse_phrases(filename)
+    let (orch_keys, _) = parse_phrases(filename);
+    orch_keys
 }
 
 pub fn get_keys() -> Vec<ValidatorKeys> {
-    let cosmos_keys = parse_validator_keys();
+    let (cosmos_keys, cosmos_phrases) = parse_validator_keys();
     let orch_keys = parse_orchestrator_keys();
     let eth_keys = parse_ethereum_keys();
     let mut ret = Vec::new();
-    for ((c_key, o_key), e_key) in cosmos_keys.into_iter().zip(orch_keys).zip(eth_keys) {
+    for (((c_key, c_phrase), o_key), e_key) in cosmos_keys
+        .into_iter()
+        .zip(cosmos_phrases)
+        .zip(orch_keys)
+        .zip(eth_keys)
+    {
         ret.push(ValidatorKeys {
             eth_key: e_key,
             validator_key: c_key,
+            validator_phrase: c_phrase,
             orch_key: o_key,
         })
     }
@@ -224,5 +244,87 @@ fn return_existing<'a>(a: [&'a str; 3], b: [&'a str; 3]) -> [&'a str; 3] {
         b
     } else {
         panic!("No paths exist!")
+    }
+}
+
+// Creates a key in the relayer's test keyring, which the relayer should use
+// Hermes stores its keys in hermes_home/
+pub fn setup_relayer_keys(
+    gravity_key: ValidatorKeys,
+    ibc_phrase: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut keyring = KeyRing::new(
+        Store::Test,
+        "gravity",
+        &ChainId::from_string(&get_gravity_chain_id()),
+    )?;
+
+    let key = keyring.key_from_mnemonic(
+        &gravity_key.validator_phrase,
+        &HDPath::from_str("m/44'/118'/0'/0/0").unwrap(),
+        &AddressType::Cosmos,
+    )?;
+    keyring.add_key("gravitykey", key)?;
+
+    keyring = KeyRing::new(
+        Store::Test,
+        "cosmos",
+        &ChainId::from_string(&get_ibc_chain_id()),
+    )?;
+    let key = keyring.key_from_mnemonic(
+        &ibc_phrase,
+        &HDPath::from_str("m/44'/118'/0'/0/0").unwrap(),
+        &AddressType::Cosmos,
+    )?;
+    keyring.add_key("ibckey", key)?;
+
+    Ok(())
+}
+
+// Create a channel between gravity chain and the ibc test chain over the "transfer" port
+// Writes the output to /ibc-relayer-logs/channel-creation
+pub fn create_ibc_channel(hermes_base: &mut Command) {
+    // hermes -c config.toml create channel gravity-test-1 ibc-test-1 --port-a transfer --port-b transfer
+    let create_channel = hermes_base.args(&[
+        "create",
+        "channel",
+        &get_gravity_chain_id(),
+        &get_ibc_chain_id(),
+        "--port-a",
+        "transfer",
+        "--port-b",
+        "transfer",
+    ]);
+    let out_file = File::create("/ibc-relayer-logs/channel-creation")
+        .unwrap()
+        .into_raw_fd();
+    unsafe {
+        // unsafe needed for stdout + stderr redirect to file
+        let create_channel = create_channel
+            .stdout(Stdio::from_raw_fd(out_file))
+            .stderr(Stdio::from_raw_fd(out_file));
+        info!("Create channel command: {:?}", create_channel);
+        create_channel.spawn().expect("Could not create channel");
+    }
+}
+
+// Start an IBC relayer locally and run until it terminates
+// full_scan Force a full scan of the chains for clients, connections and channels
+// Writes the output to /ibc-relayer-logs/hermes-logs
+pub fn run_ibc_relayer(hermes_base: &mut Command, full_scan: bool) {
+    let mut start = hermes_base.arg("start");
+    if full_scan {
+        start = start.arg("-f");
+    }
+    let out_file = File::create("/ibc-relayer-logs/hermes-logs")
+        .unwrap()
+        .into_raw_fd();
+    unsafe {
+        // unsafe needed for stdout + stderr redirect to file
+        start
+            .stdout(Stdio::from_raw_fd(out_file))
+            .stderr(Stdio::from_raw_fd(out_file))
+            .spawn()
+            .expect("Could not run hermes");
     }
 }

@@ -51,7 +51,7 @@ pub async fn erc721_happy_path_test(
     .await;
 
     // generate an address for coin sending tests, this ensures test imdepotency
-    let user_keys = get_user_key();
+    let user_keys = get_user_key(None);
 
     info!("testing erc721 deposit");
     // Run test with three ERC721 tokens, 200, 201, 202

@@ -27,7 +27,7 @@ pub async fn send_to_eth_and_cancel(
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
     // a pair of cosmos and Ethereum keys + addresses to use for this test
-    let user_keys = get_user_key();
+    let user_keys = get_user_key(None);
 
     test_erc20_deposit_panic(
         web30,
