@@ -6,7 +6,7 @@ use crate::{get_gravity_chain_id, get_ibc_chain_id, ETH_NODE};
 use crate::{utils::ValidatorKeys, COSMOS_NODE_ABCI};
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
-use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::private_key::{PrivateKey as CosmosPrivateKey, DEFAULT_COSMOS_HD_PATH};
 use deep_space::Contact;
 use ibc::core::ics24_host::identifier::ChainId;
 use ibc_relayer::config::AddressType;
@@ -261,7 +261,7 @@ pub fn setup_relayer_keys(
 
     let key = keyring.key_from_mnemonic(
         &gravity_key.validator_phrase,
-        &HDPath::from_str("m/44'/118'/0'/0/0").unwrap(),
+        &HDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
         &AddressType::Cosmos,
     )?;
     keyring.add_key("gravitykey", key)?;
@@ -273,7 +273,7 @@ pub fn setup_relayer_keys(
     )?;
     let key = keyring.key_from_mnemonic(
         &ibc_phrase,
-        &HDPath::from_str("m/44'/118'/0'/0/0").unwrap(),
+        &HDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
         &AddressType::Cosmos,
     )?;
     keyring.add_key("ibckey", key)?;

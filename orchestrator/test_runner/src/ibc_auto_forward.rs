@@ -7,10 +7,13 @@ use crate::{
     STAKING_TOKEN,
 };
 use clarity::Address as EthAddress;
-use cosmos_gravity::utils::decode_any;
+use cosmos_gravity::proposals::UPDATE_HRP_IBC_CHANNEL_PROPOSAL;
+use cosmos_gravity::send::MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL;
 use deep_space::address::Address as CosmosAddress;
+use deep_space::client::msgs::MSG_TRANSFER_TYPE_URL;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::utils::decode_any;
 use deep_space::utils::encode_any;
 use deep_space::{Coin as DSCoin, Contact, Msg};
 use gravity_proto::cosmos_sdk_proto::bech32ibc::bech32ibc::v1::UpdateHrpIbcChannelProposal;
@@ -42,11 +45,6 @@ use std::time::{Duration, SystemTime};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
-
-pub const MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
-pub const MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL: &str = "/gravity.v1.MsgExecuteIbcAutoForwards";
-pub const UPDATE_HRP_IBC_CHANNEL_PROPOSAL: &str =
-    "/bech32ibc.bech32ibc.v1beta1.UpdateHrpIbcChannelProposal";
 
 // Tests IBC transfers and IBC Auto-Forwarding from gravity to another chain (gravity-test-1 -> ibc-test-1)
 pub async fn ibc_auto_forward_test(

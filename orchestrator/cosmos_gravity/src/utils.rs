@@ -1,5 +1,4 @@
 use crate::query::get_last_event_nonce_for_validator;
-use bytes::BytesMut;
 use deep_space::utils::encode_any;
 use deep_space::Address as CosmosAddress;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -10,7 +9,6 @@ use gravity_utils::get_with_retry::RETRY_TIME;
 use gravity_utils::types::LogicCall;
 use gravity_utils::types::TransactionBatch;
 use gravity_utils::types::Valset;
-use prost::{DecodeError, Message};
 use prost_types::Any;
 use tokio::time::sleep;
 use tonic::transport::Channel;
@@ -57,19 +55,4 @@ impl BadSignatureEvidence {
             }
         }
     }
-}
-
-pub fn decode_any<T: Message + Default>(any: Any) -> Result<T, DecodeError> {
-    let bytes = any.value;
-
-    decode_bytes(bytes)
-}
-
-pub fn decode_bytes<T: Message + Default>(bytes: Vec<u8>) -> Result<T, DecodeError> {
-    let mut buf = BytesMut::with_capacity(bytes.len());
-    buf.extend_from_slice(&bytes);
-
-    // Here we use the `T` type to decode whatever type of message this attestation holds
-    // for use in the `f` function
-    T::decode(buf)
 }

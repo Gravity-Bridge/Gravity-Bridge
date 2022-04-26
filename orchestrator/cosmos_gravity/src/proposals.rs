@@ -21,13 +21,20 @@ use serde::Serialize;
 use std::convert::TryFrom;
 use std::time::Duration;
 
+// gravity proposals
 pub const AIRDROP_PROPOSAL_TYPE_URL: &str = "/gravity.v1.AirdropProposal";
 pub const UNHALT_BRIDGE_PROPOSAL_TYPE_URL: &str = "/gravity.v1.UnhaltBridgeProposal";
+pub const IBC_METADATA_PROPOSAL_TYPE_URL: &str = "/gravity.v1.IBCMetadataProposal";
+
+// cosmos-sdk proposals
 pub const PARAMETER_CHANGE_PROPOSAL_TYPE_URL: &str =
     "/cosmos.params.v1beta1.ParameterChangeProposal";
 pub const SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL: &str =
     "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal";
-pub const IBC_METADATA_PROPOSAL_TYPE_URL: &str = "/gravity.v1.IBCMetadataProposal";
+
+// bech32ibc proposals
+pub const UPDATE_HRP_IBC_CHANNEL_PROPOSAL: &str =
+    "/bech32ibc.bech32ibc.v1beta1.UpdateHrpIbcChannelProposal";
 
 /// The proposal.json representation for the airdrop proposal
 #[derive(Serialize, Deserialize, Debug, Clone)]
