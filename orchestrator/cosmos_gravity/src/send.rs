@@ -30,6 +30,23 @@ use crate::utils::BadSignatureEvidence;
 pub const MEMO: &str = "Sent using Althea Gravity Bridge Orchestrator";
 pub const TIMEOUT: Duration = Duration::from_secs(60);
 
+// gravity msg type urls
+pub const MSG_SET_ORCHESTRATOR_ADDRESS_TYPE_URL: &str = "/gravity.v1.MsgSetOrchestratorAddress";
+pub const MSG_VALSET_CONFIRM_TYPE_URL: &str = "/gravity.v1.MsgValsetConfirm";
+pub const MSG_CONFIRM_BATCH_TYPE_URL: &str = "/gravity.v1.MsgConfirmBatch";
+pub const MSG_CONFIRM_LOGIC_CALL_TYPE_URL: &str = "/gravity.v1.MsgConfirmLogicCall";
+pub const MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgSendToCosmosClaim";
+pub const MSG_BATCH_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgBatchSendToEthClaim";
+pub const MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgERC20DeployedClaim";
+pub const MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgLogicCallExecutedClaim";
+pub const MSG_VALSET_UPDATED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgValsetUpdatedClaim";
+pub const MSG_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgSendToEth";
+pub const MSG_REQUEST_BATCH_TYPE_URL: &str = "/gravity.v1.MsgRequestBatch";
+pub const MSG_SUBMIT_BAD_SIGNATURE_EVIDENCE_TYPE_URL: &str =
+    "/gravity.v1.MsgSubmitBadSignatureEvidence";
+pub const MSG_CANCEL_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgCancelSendToEth";
+pub const MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL: &str = "/gravity.v1.MsgExecuteIbcAutoForwards";
+
 /// Send a transaction updating the eth address for the sending
 /// Cosmos address. The sending Cosmos address should be a validator
 /// this can only be called once! Key rotation code is possible but
@@ -58,10 +75,7 @@ pub async fn set_gravity_delegate_addresses(
         eth_address: delegate_eth_address.to_string(),
     };
 
-    let msg = Msg::new(
-        "/gravity.v1.MsgSetOrchestratorAddress",
-        msg_set_orch_address,
-    );
+    let msg = Msg::new(MSG_SET_ORCHESTRATOR_ADDRESS_TYPE_URL, msg_set_orch_address);
     contact
         .send_message(
             &[msg],
@@ -104,7 +118,7 @@ pub async fn send_valset_confirms(
             nonce: valset.nonce,
             signature: bytes_to_hex_str(&eth_signature.to_bytes()),
         };
-        let msg = Msg::new("/gravity.v1.MsgValsetConfirm", confirm);
+        let msg = Msg::new(MSG_VALSET_CONFIRM_TYPE_URL, confirm);
         messages.push(msg);
     }
     let res = contact
@@ -150,7 +164,7 @@ pub async fn send_batch_confirm(
             nonce: batch.nonce,
             signature: bytes_to_hex_str(&eth_signature.to_bytes()),
         };
-        let msg = Msg::new("/gravity.v1.MsgConfirmBatch", confirm);
+        let msg = Msg::new(MSG_CONFIRM_BATCH_TYPE_URL, confirm);
         messages.push(msg);
     }
     contact
@@ -194,7 +208,7 @@ pub async fn send_logic_call_confirm(
             invalidation_id: bytes_to_hex_str(&call.invalidation_id),
             invalidation_nonce: call.invalidation_nonce,
         };
-        let msg = Msg::new("/gravity.v1.MsgConfirmLogicCall", confirm);
+        let msg = Msg::new(MSG_CONFIRM_LOGIC_CALL_TYPE_URL, confirm);
         messages.push(msg);
     }
     contact
@@ -240,7 +254,7 @@ pub async fn send_ethereum_claims(
             ethereum_sender: deposit.sender.to_string(),
             orchestrator: our_address.to_string(),
         };
-        let msg = Msg::new("/gravity.v1.MsgSendToCosmosClaim", claim);
+        let msg = Msg::new(MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL, claim);
         assert!(unordered_msgs.insert(deposit.event_nonce, msg).is_none());
     }
     for withdraw in withdraws {
@@ -251,7 +265,7 @@ pub async fn send_ethereum_claims(
             batch_nonce: withdraw.batch_nonce,
             orchestrator: our_address.to_string(),
         };
-        let msg = Msg::new("/gravity.v1.MsgBatchSendToEthClaim", claim);
+        let msg = Msg::new(MSG_BATCH_SEND_TO_ETH_TYPE_URL, claim);
         assert!(unordered_msgs.insert(withdraw.event_nonce, msg).is_none());
     }
     for deploy in erc20_deploys {
@@ -265,7 +279,7 @@ pub async fn send_ethereum_claims(
             decimals: deploy.decimals as u64,
             orchestrator: our_address.to_string(),
         };
-        let msg = Msg::new("/gravity.v1.MsgERC20DeployedClaim", claim);
+        let msg = Msg::new(MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL, claim);
         assert!(unordered_msgs.insert(deploy.event_nonce, msg).is_none());
     }
     for call in logic_calls {
@@ -276,7 +290,7 @@ pub async fn send_ethereum_claims(
             invalidation_nonce: call.invalidation_nonce,
             orchestrator: our_address.to_string(),
         };
-        let msg = Msg::new("/gravity.v1.MsgLogicCallExecutedClaim", claim);
+        let msg = Msg::new(MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, claim);
         assert!(unordered_msgs.insert(call.event_nonce, msg).is_none());
     }
     for valset in valsets {
@@ -289,7 +303,7 @@ pub async fn send_ethereum_claims(
             reward_token: valset.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),
             orchestrator: our_address.to_string(),
         };
-        let msg = Msg::new("/gravity.v1.MsgValsetUpdatedClaim", claim);
+        let msg = Msg::new(MSG_VALSET_UPDATED_CLAIM_TYPE_URL, claim);
         assert!(unordered_msgs.insert(valset.event_nonce, msg).is_none());
     }
     let mut keys = Vec::new();
@@ -355,7 +369,7 @@ pub async fn send_to_eth(
         bridge_fee: Some(bridge_fee.clone().into()),
     };
 
-    let msg = Msg::new("/gravity.v1.MsgSendToEth", msg_send_to_eth);
+    let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);
     contact
         .send_message(
             &[msg],
@@ -379,7 +393,7 @@ pub async fn send_request_batch(
         sender: our_address.to_string(),
         denom,
     };
-    let msg = Msg::new("/gravity.v1.MsgRequestBatch", msg_request_batch);
+    let msg = Msg::new(MSG_REQUEST_BATCH_TYPE_URL, msg_request_batch);
 
     let fee: Vec<Coin> = match fee {
         Some(fee) => vec![fee],
@@ -416,7 +430,7 @@ pub async fn submit_bad_signature_evidence(
     };
 
     let msg = Msg::new(
-        "/gravity.v1.MsgSubmitBadSignatureEvidence",
+        MSG_SUBMIT_BAD_SIGNATURE_EVIDENCE_TYPE_URL,
         msg_submit_bad_signature_evidence,
     );
     contact
@@ -445,7 +459,7 @@ pub async fn cancel_send_to_eth(
         sender: our_address.to_string(),
     };
 
-    let msg = Msg::new("/gravity.v1.MsgCancelSendToEth", msg_cancel_send_to_eth);
+    let msg = Msg::new(MSG_CANCEL_SEND_TO_ETH_TYPE_URL, msg_cancel_send_to_eth);
     contact
         .send_message(
             &[msg],
@@ -467,7 +481,7 @@ pub async fn execute_pending_ibc_auto_forwards(
     let prefix = contact.get_prefix();
     let cosmos_addr = cosmos_key.to_address(&prefix).unwrap();
     let msg = Msg::new(
-        "/gravity.v1.MsgExecuteIbcAutoForwards",
+        MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL,
         MsgExecuteIbcAutoForwards {
             forwards_to_clear,
             executor: cosmos_addr.to_string(),

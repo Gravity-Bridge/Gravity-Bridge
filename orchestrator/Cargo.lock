@@ -782,9 +782,9 @@ dependencies = [
 
 [[package]]
 name = "deep_space"
-version = "2.10.2"
+version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25cf9c0b871463194d4c79289310800b64fb592e8942e1cfda42c561b5255540"
+checksum = "09ee2b159b46907842156c9c05c87b31c434485694cb055f62389db1549ec3ed"
 dependencies = [
  "base64",
  "bech32",

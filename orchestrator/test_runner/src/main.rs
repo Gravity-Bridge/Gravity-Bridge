@@ -71,6 +71,8 @@ const HERMES_CONFIG: &str = "/gravity/tests/assets/ibc-relayer-config.toml";
 
 // Retrieve values from runtime ENV vars
 lazy_static! {
+    // GRAVITY CHAIN CONSTANTS
+    // These constants all apply to the gravity instance running (gravity-test-1)
     static ref ADDRESS_PREFIX: String =
         env::var("ADDRESS_PREFIX").unwrap_or_else(|_| "gravity".to_string());
     static ref STAKING_TOKEN: String =
@@ -79,6 +81,9 @@ lazy_static! {
         env::var("COSMOS_NODE_GRPC").unwrap_or_else(|_| "http://localhost:9090".to_owned());
     static ref COSMOS_NODE_ABCI: String =
         env::var("COSMOS_NODE_ABCI").unwrap_or_else(|_| "http://localhost:26657".to_owned());
+
+    // IBC CHAIN CONSTANTS
+    // These constants all apply to the gaiad instance running (ibc-test-1)
     static ref IBC_ADDRESS_PREFIX: String =
         env::var("IBC_ADDRESS_PREFIX").unwrap_or_else(|_| "cosmos".to_string());
     static ref IBC_STAKING_TOKEN: String =
@@ -87,6 +92,8 @@ lazy_static! {
         env::var("IBC_NODE_GRPC").unwrap_or_else(|_| "http://localhost:9190".to_owned());
     static ref IBC_NODE_ABCI: String =
         env::var("IBC_NODE_ABCI").unwrap_or_else(|_| "http://localhost:27657".to_owned());
+
+    // LOCAL ETHEREUM CONSTANTS
     static ref ETH_NODE: String =
         env::var("ETH_NODE").unwrap_or_else(|_| "http://localhost:8545".to_owned());
 }
@@ -137,10 +144,12 @@ pub fn get_test_token_name() -> String {
     "footoken".to_string()
 }
 
+/// Returns the chain-id of the gravity instance running, see GRAVITY CHAIN CONSTANTS above
 pub fn get_gravity_chain_id() -> String {
     "gravity-test-1".to_string()
 }
 
+/// Returns the chain-id of the gaiad instance running, see IBC CHAIN CONSTANTS above
 pub fn get_ibc_chain_id() -> String {
     "ibc-test-1".to_string()
 }
