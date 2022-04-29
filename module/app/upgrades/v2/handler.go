@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -18,6 +17,24 @@ import (
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
+// GetMercury2Dot0UpgradeHandler Creates the handler for "mercury2.0", where we fix the mercury upgrade's
+// implementation of IBC Auto Forwarding
+// Note: mercury2.0 is not a consensus breaking change, as it only enables new functionality which is so far unused,
+// thus it is unnecessary to change the consensus version or create a new upgrades module
+func GetMercury2Dot0UpgradeHandler() func(
+	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
+) (module.VersionMap, error) {
+	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+		ctx.Logger().Info("Performing Fix for Mercury IBC Auto-Forwarding")
+		// This upgrade introduces a new hash(PendingIbcAutoForward) key into the gravity store as IBC Auto-Forwards
+		// are queued. This key will only be populated or used upon the creation of the first IBC Auto-Forward.
+		// In short, there is no actual work to be performed here, but the messages make it quite clear that the upgrade
+		// ran, and the new code is running as expected.
+		ctx.Logger().Info("Upgrade Complete!")
+		return vmap, nil
+	}
+}
+
 func GetV2UpgradeHandler(
 	mm *module.Manager, configurator *module.Configurator, accountKeeper *authkeeper.AccountKeeper,
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
@@ -25,7 +42,6 @@ func GetV2UpgradeHandler(
 ) func(
 	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
-	fmt.Println("Enter GetV2UpgradeHandler")
 	if mm == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
 		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil {
 		panic("Nil argument to GetV2UpgradeHandler")

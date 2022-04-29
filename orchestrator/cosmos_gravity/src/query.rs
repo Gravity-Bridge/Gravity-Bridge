@@ -317,12 +317,15 @@ pub async fn get_all_pending_ibc_auto_forwards(
     let pending_forwards = grpc_client
         .get_pending_ibc_auto_forwards(QueryPendingIbcAutoForwards { limit: 0 })
         .await;
-    if pending_forwards.is_err() {
-        let status = pending_forwards.err().unwrap();
-        warn!(
-            "Received an error when querying for pending ibc auto forwards: {}",
-            status.message()
-        );
+    if let Err(status) = pending_forwards {
+        // don't print errors during the upgrade test, which involves running
+        // a newer orchestrator against an older chain due to current design limitations.
+        if !status.message().contains("unknown method") {
+            warn!(
+                "Received an error when querying for pending ibc auto forwards: {}",
+                status.message()
+            );
+        }
         return vec![];
     }
 

@@ -76,6 +76,7 @@ fn parse_phrases(filename: &str) -> (Vec<CosmosPrivateKey>, Vec<String>) {
 /// that we have one key for each validator in this file.
 pub fn parse_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
     let filename = "/validator-phrases";
+    info!("Reading mnemonics from {}", filename);
     parse_phrases(filename)
 }
 
@@ -83,6 +84,7 @@ pub fn parse_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
 /// over IBC for testing purposes
 pub fn parse_ibc_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
     let filename = "/ibc-validator-phrases";
+    info!("Reading mnemonics from {}", filename);
     parse_phrases(filename)
 }
 
@@ -91,6 +93,7 @@ pub fn parse_ibc_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
 /// similar file /orchestrator-phrases
 pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/orchestrator-phrases";
+    info!("Reading orchestrator phrases from {}", filename);
     let (orch_keys, _) = parse_phrases(filename);
     orch_keys
 }

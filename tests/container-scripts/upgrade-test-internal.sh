@@ -24,6 +24,7 @@ make
 make install
 cd /gravity/
 tests/container-scripts/setup-validators.sh $NODES
+tests/container-scripts/setup-ibc-validators.sh $NODES
 
 # Run the old binary
 tests/container-scripts/run-testnet.sh $NODES
