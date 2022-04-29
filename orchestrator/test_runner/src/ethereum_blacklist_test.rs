@@ -40,5 +40,5 @@ pub async fn ethereum_blacklist_test(
     // check that params have changed
     assert_eq!(params.ethereum_blacklist, blocked_addresses);
 
-    info!("Successfully Issued set reward!");
+    info!("Successfully modified the blacklist!");
 }
