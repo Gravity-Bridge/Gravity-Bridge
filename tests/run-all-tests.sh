@@ -6,16 +6,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 bash all-up-test.sh
 export NO_IMAGE_BUILD=1
-bash all-up-test.sh VALSET_STRESS
-bash all-up-test.sh VALSET_REWARDS
-bash all-up-test.sh VALIDATOR_OUT
-bash all-up-test.sh BATCH_STRESS
-bash all-up-test.sh HAPPY_PATH_V2
-bash all-up-test.sh ORCHESTRATOR_KEYS
-bash all-up-test.sh EVIDENCE
-bash all-up-test.sh TXCANCEL
-bash all-up-test.sh INVALID_EVENTS
-bash all-up-test.sh DEPOSIT_OVERFLOW
+#bash all-up-test.sh VALSET_STRESS
+#bash all-up-test.sh VALSET_REWARDS
+#bash all-up-test.sh VALIDATOR_OUT
+#bash all-up-test.sh BATCH_STRESS
+#bash all-up-test.sh HAPPY_PATH_V2
+#bash all-up-test.sh ORCHESTRATOR_KEYS
+#bash all-up-test.sh EVIDENCE
+#bash all-up-test.sh TXCANCEL
+#bash all-up-test.sh INVALID_EVENTS
+#bash all-up-test.sh DEPOSIT_OVERFLOW
 bash all-up-test.sh ETHEREUM_BLACKLIST
 bash all-up-test.sh SIGNATURE_SLASHING
 bash all-up-test.sh UNHALT_BRIDGE

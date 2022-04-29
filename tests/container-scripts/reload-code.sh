@@ -25,8 +25,6 @@ cd /gravity/
 tests/container-scripts/setup-validators.sh $NODES
 tests/container-scripts/setup-ibc-validators.sh $NODES
 tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE $ALCHEMY_ID
-chmod +x tests/container-scripts/setup-relayer.sh
-tests/container-scripts/setup-relayer.sh
 
 # deploy the ethereum contracts
 pushd /gravity/orchestrator/test_runner
