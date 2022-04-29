@@ -20,6 +20,7 @@ bash all-up-test.sh ETHEREUM_BLACKLIST
 bash all-up-test.sh SIGNATURE_SLASHING
 bash all-up-test.sh UNHALT_BRIDGE
 bash all-up-test.sh PAUSE_BRIDGE
+bash all-up-test.sh IBC_AUTO_FORWARD
 if [ ! -z "$ALCHEMY_ID" ]; then
     bash all-up-test.sh ARBITRARY_LOGIC $ALCHEMY_ID
     bash all-up-test.sh RELAY_MARKET $ALCHEMY_ID
