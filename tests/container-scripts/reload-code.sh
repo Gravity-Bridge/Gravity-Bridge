@@ -30,10 +30,6 @@ tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE $ALCHEMY_ID
 pushd /gravity/orchestrator/test_runner
 DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full TEST_TYPE=$TEST_TYPE NO_GAS_OPT=1 RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
 
-# Setup and run the IBC relayer in the background
-echo "Running ibc relayer in the background, directing output to /ibc-relayer-logs"
-RUN_IBC_RELAYER=1 RUST_BACKTRACE=full TEST_TYPE=$TEST_TYPE NO_GAS_OPT=1 RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner &
-
 # This keeps the script open to prevent Docker from stopping the container
 # immediately if the nodes are killed by a different process
 read -p "Press Return to Close...(don't press enter if you want Docker to keep running)"

@@ -1,6 +1,12 @@
 use core::str::FromStr;
+use std::thread;
 
+use crate::get_deposit;
+use crate::HERMES_CONFIG;
 use crate::MINER_PRIVATE_KEY;
+use crate::OPERATION_TIMEOUT;
+use crate::RELAYER_ADDRESS;
+use crate::RELAYER_MNEMONIC;
 use crate::TOTAL_TIMEOUT;
 use crate::{get_gravity_chain_id, get_ibc_chain_id, ETH_NODE};
 use crate::{utils::ValidatorKeys, COSMOS_NODE_ABCI};
@@ -73,6 +79,8 @@ pub fn parse_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
     parse_phrases(filename)
 }
 
+/// The same as parse_validator_keys() except for a second chain accessed
+/// over IBC for testing purposes
 pub fn parse_ibc_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
     let filename = "/ibc-validator-phrases";
     parse_phrases(filename)
@@ -248,10 +256,11 @@ fn return_existing<'a>(a: [&'a str; 3], b: [&'a str; 3]) -> [&'a str; 3] {
 }
 
 // Creates a key in the relayer's test keyring, which the relayer should use
-// Hermes stores its keys in hermes_home/
+// Hermes stores its keys in hermes_home/ gravity_phrase is for the main chain
+/// ibc phrase is for the test chain
 pub fn setup_relayer_keys(
-    gravity_key: ValidatorKeys,
-    ibc_phrase: String,
+    gravity_phrase: &str,
+    ibc_phrase: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut keyring = KeyRing::new(
         Store::Test,
@@ -260,7 +269,7 @@ pub fn setup_relayer_keys(
     )?;
 
     let key = keyring.key_from_mnemonic(
-        &gravity_key.validator_phrase,
+        gravity_phrase,
         &HDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
         &AddressType::Cosmos,
     )?;
@@ -272,7 +281,7 @@ pub fn setup_relayer_keys(
         &ChainId::from_string(&get_ibc_chain_id()),
     )?;
     let key = keyring.key_from_mnemonic(
-        &ibc_phrase,
+        ibc_phrase,
         &HDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
         &AddressType::Cosmos,
     )?;
@@ -327,4 +336,29 @@ pub fn run_ibc_relayer(hermes_base: &mut Command, full_scan: bool) {
             .spawn()
             .expect("Could not run hermes");
     }
+}
+
+// starts up the IBC relayer (hermes) in a background thread
+pub async fn start_ibc_relayer(contact: &Contact, keys: &[ValidatorKeys], ibc_phrases: &[String]) {
+    contact
+        .send_coins(
+            get_deposit(),
+            None,
+            *RELAYER_ADDRESS,
+            Some(OPERATION_TIMEOUT),
+            keys[0].validator_key,
+        )
+        .await
+        .unwrap();
+    info!("test-runner starting IBC relayer mode: init hermes, create ibc channel, start hermes");
+    let mut hermes_base = Command::new("hermes");
+    let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+    let _res = setup_relayer_keys(&RELAYER_MNEMONIC, &ibc_phrases[0]).unwrap();
+    create_ibc_channel(hermes_base);
+    thread::spawn(|| {
+        let mut hermes_base = Command::new("hermes");
+        let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+        run_ibc_relayer(hermes_base, true); // likely will not return from here, just keep running
+    });
+    info!("Running ibc relayer in the background, directing output to /ibc-relayer-logs");
 }

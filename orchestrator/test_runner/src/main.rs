@@ -23,7 +23,9 @@ use crate::valset_rewards::valset_rewards_test;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use deep_space::coin::Coin;
+use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
+use deep_space::PrivateKey as CosmosPrivateKey;
 use erc_721_happy_path::erc721_happy_path_test;
 use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -32,7 +34,6 @@ use happy_path_v2::happy_path_test_v2;
 use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use relay_market::relay_market_test;
-use std::process::Command;
 use std::{env, time::Duration};
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
@@ -114,6 +115,11 @@ lazy_static! {
             .parse()
             .unwrap();
     static ref MINER_ADDRESS: EthAddress = MINER_PRIVATE_KEY.to_address();
+    // this is the key the IBC relayer will use to send IBC messages and channel updates
+    // it's a distinct address to prevent sequence collisions
+    static ref RELAYER_MNEMONIC: String = "below great use captain upon ship tiger exhaust orient burger network uphold wink theory focus cloud energy flavor recall joy phone beach symptom hobby".to_string();
+    static ref RELAYER_PRIVATE_KEY: CosmosPrivateKey = CosmosPrivateKey::from_phrase(&RELAYER_MNEMONIC, "").unwrap();
+    static ref RELAYER_ADDRESS: CosmosAddress = RELAYER_PRIVATE_KEY.to_address(ADDRESS_PREFIX.as_str()).unwrap();
 }
 
 /// Gets the standard non-token fee for the testnet. We deploy the test chain with STAKE
@@ -169,13 +175,6 @@ pub fn should_deploy_contracts() -> bool {
     }
 }
 
-pub fn should_setup_and_run_ibc_relayer() -> bool {
-    match env::var("RUN_IBC_RELAYER") {
-        Ok(s) => s == "1" || s.to_lowercase() == "yes" || s.to_lowercase() == "true",
-        _ => false,
-    }
-}
-
 #[actix_rt::main]
 pub async fn main() {
     env_logger::init();
@@ -194,27 +193,15 @@ pub async fn main() {
         .await
         .unwrap();
     let web30 = web30::client::Web3::new(ETH_NODE.as_str(), OPERATION_TIMEOUT);
+    // keys for the primary test chain
     let keys = get_keys();
+    // keys for the IBC chain connected to the main test chain
     let (ibc_keys, ibc_phrases) = parse_ibc_validator_keys();
 
     // if we detect this env var we are only deploying contracts, do that then exit.
     if should_deploy_contracts() {
         info!("test-runner in contract deploying mode, deploying contracts, then exiting");
         deploy_contracts(&contact).await;
-        return;
-    }
-
-    // if we detect this env var, run the relayer until it terminates for whatever reason
-    if should_setup_and_run_ibc_relayer() {
-        info!("test-runner in ibc relayer deploying mode: init hermes, create ibc channel, start hermes");
-        let mut hermes_base = Command::new("hermes");
-        let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
-        let _res = setup_relayer_keys(keys[0].clone(), ibc_phrases[0].clone()).unwrap();
-        create_ibc_channel(hermes_base);
-        // Need to recreate hermes command: start can't come after create channel, no clone options
-        let mut hermes_base = Command::new("hermes");
-        let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
-        run_ibc_relayer(hermes_base, true); // likely will not return from here, just keep running
         return;
     }
 
@@ -231,6 +218,8 @@ pub async fn main() {
     // for things
     send_eth_to_orchestrators(&keys, &web30).await;
 
+    // assert that the validators have a balance of the footoken we use
+    // for test transfers
     assert!(contact
         .get_balance(
             keys[0]
@@ -242,6 +231,8 @@ pub async fn main() {
         .await
         .unwrap()
         .is_some());
+
+    start_ibc_relayer(&contact, &keys, &ibc_phrases).await;
 
     // This segment contains optional tests, by default we run a happy path test
     // this tests all major functionality of Gravity once or twice.
