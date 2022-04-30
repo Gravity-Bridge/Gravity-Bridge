@@ -23,11 +23,12 @@ pub const ETH_SUBMIT_WAIT_TIME: Duration = Duration::from_secs(600);
 // the donor, while providing maximum utility to the blockchain. Other modes are profitable only
 // and just to always relay everything which is mostly used for tests.
 
-/// If we are relaying in altruistic mode only relay during the lowest 5% of gas prices
-/// for a ALTRUISTIC_RELAY_PERIOD amount of time
-pub const ALTRUISTIC_GAS_PERCENTAGE: f32 = 0.05;
-/// A target for over what time period we consider the ALTRUISTIC_GAS_PERCENTAGE
-pub const ALTRUISTIC_RELAY_PERIOD: u64 = 60 * 60 * 24;
+/// If we are relaying in altruistic mode only relay during the lowest 1% of gas prices
+/// in ALTRUISTIC_SAMPLES
+pub const ALTRUISTIC_GAS_PERCENTAGE: f32 = 0.01;
+/// The number of samples over which ALTRUISTIC_GAS_PERCENTAGE is computed, note this is determined
+/// by the relay loop time.
+pub const ALTRUISTIC_SAMPLES: usize = 2000;
 
 /// This function contains the relayer primary loop, it is broken out of the main loop so that
 /// it can be called in the test runner for easier orchestration of multi-node tests
@@ -45,8 +46,7 @@ pub async fn relayer_main_loop(
 ) {
     let mut grpc_client = grpc_client;
 
-    let gas_entries = ALTRUISTIC_RELAY_PERIOD / relayer_config.relayer_loop_speed;
-    let mut gas_estimator = GasTracker::new(gas_entries as usize);
+    let mut gas_estimator = GasTracker::new(ALTRUISTIC_SAMPLES);
     loop {
         let loop_start = Instant::now();
 
