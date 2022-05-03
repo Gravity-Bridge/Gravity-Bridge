@@ -73,7 +73,7 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     }
 
     info!(
-        "Your tokens should show up in the account {} on Gravity Bridge within 5 minutes",
+        "Your tokens should show up in the account {} on the destination chain within 5 minutes",
         cosmos_dest
     )
 }
