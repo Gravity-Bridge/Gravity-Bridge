@@ -1208,6 +1208,7 @@ dependencies = [
  "dirs",
  "env_logger",
  "ethereum_gravity",
+ "futures",
  "gravity_proto",
  "gravity_utils",
  "lazy_static",
