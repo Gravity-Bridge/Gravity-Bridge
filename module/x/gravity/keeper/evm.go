@@ -6,19 +6,13 @@ import (
 )
 
 // SetEvmChainData sets the EVM chain specific data
+// Check if chains exists before calling this method
 func (k Keeper) SetEvmChainData(ctx sdk.Context, evmChain types.EvmChain) {
 	key := types.GetEvmChainKey(evmChain.EvmChainPrefix)
-	store := ctx.KVStore(k.storeKey)
-
-	if store.Has(key) {
-		return
-		//panic("EVM chain already in store.")
-	}
-
-	store.Set(key, k.cdc.MustMarshal(&evmChain))
+	ctx.KVStore(k.storeKey).Set(key, k.cdc.MustMarshal(&evmChain))
 }
 
-// GetEvmChainData returns the EVM chain specific data
+// GetEvmChainData returns data for the specific EVM chain
 func (k Keeper) GetEvmChainData(ctx sdk.Context, evmChainPrefix string) *types.EvmChain {
 	key := types.GetEvmChainKey(evmChainPrefix)
 	store := ctx.KVStore(k.storeKey)

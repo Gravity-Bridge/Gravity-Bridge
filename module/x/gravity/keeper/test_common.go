@@ -242,7 +242,7 @@ var (
 
 	EvmChains = []types.EvmChain{
 		{EvmChainPrefix: "gravity", EvmChainName: "Main Ethereum network"},
-		// {EvmChainPrefix: "dpfx", EvmChainName: "Dummy EVM chain"},
+		{EvmChainPrefix: "dummy", EvmChainName: "Dummy EVM chain"},
 	}
 )
 
@@ -630,14 +630,14 @@ func CreateTestEnv(t *testing.T) TestInput {
 	)
 
 	// set gravityIDs for batches and tx items, simulating genesis setup
-	k.SetLatestValsetNonce(ctx, EthChainPrefix, 0)
-	k.setLastObservedEventNonce(ctx, EthChainPrefix, 0)
-	k.SetLastSlashedValsetNonce(ctx, EthChainPrefix, 0)
-	k.SetLastSlashedBatchBlock(ctx, EthChainPrefix, 0)
-	k.SetLastSlashedLogicCallBlock(ctx, EthChainPrefix, 0)
-	k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastTXPoolID, EthChainPrefix))
-	k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, EthChainPrefix))
 	for _, cd := range EvmChains {
+		k.SetLatestValsetNonce(ctx, cd.EvmChainPrefix, 0)
+		k.setLastObservedEventNonce(ctx, cd.EvmChainPrefix, 0)
+		k.SetLastSlashedValsetNonce(ctx, cd.EvmChainPrefix, 0)
+		k.SetLastSlashedBatchBlock(ctx, cd.EvmChainPrefix, 0)
+		k.SetLastSlashedLogicCallBlock(ctx, cd.EvmChainPrefix, 0)
+		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastTXPoolID, cd.EvmChainPrefix))
+		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, cd.EvmChainPrefix))
 		k.SetEvmChainData(ctx, cd)
 	}
 

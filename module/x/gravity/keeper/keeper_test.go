@@ -92,7 +92,8 @@ func TestCurrentValsetNormalization(t *testing.T) {
 		spec := spec
 		t.Run(msg, func(t *testing.T) {
 			input, ctx := SetupTestChain(t, spec.srcPowers, true)
-			r, err := input.GravityKeeper.GetCurrentValset(ctx, EthChainPrefix)
+			evmChain := input.GravityKeeper.GetEvmChains(ctx)[0]
+			r, err := input.GravityKeeper.GetCurrentValset(ctx, evmChain.EvmChainPrefix)
 			require.NoError(t, err)
 			rMembers, err := types.BridgeValidators(r.Members).ToInternal()
 			require.NoError(t, err)
@@ -138,16 +139,18 @@ func TestAttestationIterator(t *testing.T) {
 	hash2, err := dep2.ClaimHash()
 	require.NoError(t, err)
 
-	input.GravityKeeper.SetAttestation(ctx, EthChainPrefix, dep1.EventNonce, hash1, att1)
-	input.GravityKeeper.SetAttestation(ctx, EthChainPrefix, dep2.EventNonce, hash2, att2)
+	for _, cd := range input.GravityKeeper.GetEvmChains(ctx) {
+		input.GravityKeeper.SetAttestation(ctx, cd.EvmChainPrefix, dep1.EventNonce, hash1, att1)
+		input.GravityKeeper.SetAttestation(ctx, cd.EvmChainPrefix, dep2.EventNonce, hash2, att2)
 
-	atts := []types.Attestation{}
-	input.GravityKeeper.IterateAttestations(ctx, EthChainPrefix, false, func(_ []byte, att types.Attestation) bool {
-		atts = append(atts, att)
-		return false
-	})
+		atts := []types.Attestation{}
+		input.GravityKeeper.IterateAttestations(ctx, cd.EvmChainPrefix, false, func(_ []byte, att types.Attestation) bool {
+			atts = append(atts, att)
+			return false
+		})
 
-	require.Len(t, atts, 2)
+		require.Len(t, atts, 2)
+	}
 }
 
 //nolint: exhaustivestruct
@@ -201,51 +204,53 @@ func TestLastSlashedValsetNonce(t *testing.T) {
 
 	k := input.GravityKeeper
 
-	vs, err := k.GetCurrentValset(ctx, EthChainPrefix)
-	require.NoError(t, err)
+	for _, cd := range input.GravityKeeper.GetEvmChains(ctx) {
+		vs, err := k.GetCurrentValset(ctx, cd.EvmChainPrefix)
+		require.NoError(t, err)
 
-	i := 1
-	for ; i < 10; i++ {
-		vs.Height = uint64(i)
-		vs.Nonce = uint64(i)
-		k.StoreValset(ctx, EthChainPrefix, vs)
-		k.SetLatestValsetNonce(ctx, EthChainPrefix, vs.Nonce)
+		i := 1
+		for ; i < 10; i++ {
+			vs.Height = uint64(i)
+			vs.Nonce = uint64(i)
+			k.StoreValset(ctx, cd.EvmChainPrefix, vs)
+			k.SetLatestValsetNonce(ctx, cd.EvmChainPrefix, vs.Nonce)
+		}
+
+		latestValsetNonce := k.GetLatestValsetNonce(ctx, cd.EvmChainPrefix)
+		assert.Equal(t, latestValsetNonce, uint64(i-1))
+
+		latestValset := k.GetLatestValset(ctx, cd.EvmChainPrefix)
+		assert.Equal(t, uint64(i-1), latestValset.Nonce)
+
+		//  lastSlashedValsetNonce should be zero initially.
+		lastSlashedValsetNonce := k.GetLastSlashedValsetNonce(ctx, cd.EvmChainPrefix)
+		assert.Equal(t, lastSlashedValsetNonce, uint64(0))
+		unslashedValsets := k.GetUnSlashedValsets(ctx, cd.EvmChainPrefix, uint64(12))
+		assert.Equal(t, len(unslashedValsets), 9)
+
+		// check if last Slashed Valset nonce is set properly or not
+		k.SetLastSlashedValsetNonce(ctx, cd.EvmChainPrefix, uint64(3))
+		lastSlashedValsetNonce = k.GetLastSlashedValsetNonce(ctx, cd.EvmChainPrefix)
+		assert.Equal(t, lastSlashedValsetNonce, uint64(3))
+
+		lastSlashedValset := k.GetValset(ctx, cd.EvmChainPrefix, lastSlashedValsetNonce)
+
+		// when valset height + signedValsetsWindow > current block height, len(unslashedValsets) should be zero
+		unslashedValsets = k.GetUnSlashedValsets(ctx, cd.EvmChainPrefix, uint64(ctx.BlockHeight()))
+		assert.Equal(t, len(unslashedValsets), 0)
+
+		// when lastSlashedValset height + signedValsetsWindow == BlockHeight, len(unslashedValsets) should be zero
+		heightDiff := uint64(ctx.BlockHeight()) - lastSlashedValset.Height
+		unslashedValsets = k.GetUnSlashedValsets(ctx, cd.EvmChainPrefix, heightDiff)
+		assert.Equal(t, len(unslashedValsets), 0)
+
+		// when signedValsetsWindow is between lastSlashedValset height and latest valset's height
+		unslashedValsets = k.GetUnSlashedValsets(ctx, cd.EvmChainPrefix, heightDiff-2)
+		assert.Equal(t, len(unslashedValsets), 2)
+
+		// when signedValsetsWindow > latest valset's height
+		unslashedValsets = k.GetUnSlashedValsets(ctx, cd.EvmChainPrefix, heightDiff-6)
+		assert.Equal(t, len(unslashedValsets), 6)
+		fmt.Println("unslashedValsetsRange", unslashedValsets)
 	}
-
-	latestValsetNonce := k.GetLatestValsetNonce(ctx, EthChainPrefix)
-	assert.Equal(t, latestValsetNonce, uint64(i-1))
-
-	latestValset := k.GetLatestValset(ctx, EthChainPrefix)
-	assert.Equal(t, uint64(i-1), latestValset.Nonce)
-
-	//  lastSlashedValsetNonce should be zero initially.
-	lastSlashedValsetNonce := k.GetLastSlashedValsetNonce(ctx, EthChainPrefix)
-	assert.Equal(t, lastSlashedValsetNonce, uint64(0))
-	unslashedValsets := k.GetUnSlashedValsets(ctx, EthChainPrefix, uint64(12))
-	assert.Equal(t, len(unslashedValsets), 9)
-
-	// check if last Slashed Valset nonce is set properly or not
-	k.SetLastSlashedValsetNonce(ctx, EthChainPrefix, uint64(3))
-	lastSlashedValsetNonce = k.GetLastSlashedValsetNonce(ctx, EthChainPrefix)
-	assert.Equal(t, lastSlashedValsetNonce, uint64(3))
-
-	lastSlashedValset := k.GetValset(ctx, EthChainPrefix, lastSlashedValsetNonce)
-
-	// when valset height + signedValsetsWindow > current block height, len(unslashedValsets) should be zero
-	unslashedValsets = k.GetUnSlashedValsets(ctx, EthChainPrefix, uint64(ctx.BlockHeight()))
-	assert.Equal(t, len(unslashedValsets), 0)
-
-	// when lastSlashedValset height + signedValsetsWindow == BlockHeight, len(unslashedValsets) should be zero
-	heightDiff := uint64(ctx.BlockHeight()) - lastSlashedValset.Height
-	unslashedValsets = k.GetUnSlashedValsets(ctx, EthChainPrefix, heightDiff)
-	assert.Equal(t, len(unslashedValsets), 0)
-
-	// when signedValsetsWindow is between lastSlashedValset height and latest valset's height
-	unslashedValsets = k.GetUnSlashedValsets(ctx, EthChainPrefix, heightDiff-2)
-	assert.Equal(t, len(unslashedValsets), 2)
-
-	// when signedValsetsWindow > latest valset's height
-	unslashedValsets = k.GetUnSlashedValsets(ctx, EthChainPrefix, heightDiff-6)
-	assert.Equal(t, len(unslashedValsets), 6)
-	fmt.Println("unslashedValsetsRange", unslashedValsets)
 }

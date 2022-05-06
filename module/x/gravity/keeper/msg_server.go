@@ -208,7 +208,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	if k.GetBatchConfirm(ctx, EthChainPrefix, msg.Nonce, *contract, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
-	key := k.SetBatchConfirm(ctx, msg)
+	key := k.SetBatchConfirm(ctx, EthChainPrefix, msg)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventBatchConfirmKey{
@@ -250,7 +250,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
 
-	k.SetLogicCallConfirm(ctx, msg)
+	k.SetLogicCallConfirm(ctx, EthChainPrefix, msg)
 
 	return nil, nil
 }

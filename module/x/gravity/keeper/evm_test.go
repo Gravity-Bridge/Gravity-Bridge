@@ -27,21 +27,29 @@ func TestIterateEvmChainsData(t *testing.T) {
 	k := input.GravityKeeper
 	ctx := input.Context
 
-	newEvmChains := addEvmChainsToStore(t, ctx, k)
 	evmChainsFromTestEnv := EvmChains
+	newEvmChains := addEvmChainsToStore(t, ctx, k)
 	evmChainsFromStore := k.GetEvmChains(ctx)
+	evmChainsFromGet := []types.EvmChain{}
 
 	// Check EVM chains from test environment
-	for i, cp := range evmChainsFromTestEnv {
-		require.Equal(t, cp.EvmChainPrefix, evmChainsFromStore[i].EvmChainPrefix)
-		require.Equal(t, cp.EvmChainName, evmChainsFromStore[i].EvmChainName)
+	for _, cp := range evmChainsFromTestEnv {
+		chain := k.GetEvmChainData(ctx, cp.EvmChainPrefix)
+		evmChainsFromGet = append(evmChainsFromGet, *chain)
+		require.Equal(t, cp.EvmChainPrefix, chain.EvmChainPrefix)
+		require.Equal(t, cp.EvmChainName, chain.EvmChainName)
 	}
 
 	// Check newly added EVM chains
-	for i, cp := range evmChainsFromStore[len(evmChainsFromTestEnv):] {
-		require.Equal(t, newEvmChains[i].EvmChainPrefix, cp.EvmChainPrefix)
-		require.Equal(t, newEvmChains[i].EvmChainName, cp.EvmChainName)
+	for _, cp := range newEvmChains {
+		chain := k.GetEvmChainData(ctx, cp.EvmChainPrefix)
+		evmChainsFromGet = append(evmChainsFromGet, *chain)
+		require.Equal(t, cp.EvmChainPrefix, chain.EvmChainPrefix)
+		require.Equal(t, cp.EvmChainName, chain.EvmChainName)
 	}
+
+	// Check if GetEvmChains matches
+	require.ElementsMatch(t, evmChainsFromGet, evmChainsFromStore)
 }
 
 func addEvmChainsToStore(t *testing.T, ctx sdk.Context, k Keeper) []types.EvmChain {

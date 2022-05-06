@@ -26,18 +26,21 @@ func TestValsetCreationIfNotAvailable(t *testing.T) {
 
 	// EndBlocker should set a new validator set if not available
 	EndBlocker(ctx, pk)
-	require.NotNil(t, pk.GetValset(ctx, keeper.EthChainPrefix, uint64(pk.GetLatestValsetNonce(ctx, keeper.EthChainPrefix))))
-	valsets := pk.GetValsets(ctx, keeper.EthChainPrefix)
-	require.True(t, len(valsets) == 1)
+	for _, cd := range input.GravityKeeper.GetEvmChains(input.Context) {
+		require.NotNil(t, pk.GetValset(ctx, cd.EvmChainPrefix, uint64(pk.GetLatestValsetNonce(ctx, cd.EvmChainPrefix))))
+		valsets := pk.GetValsets(ctx, cd.EvmChainPrefix)
+		require.True(t, len(valsets) == 1)
+	}
 }
 
 func TestValsetCreationUponUnbonding(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 
-	currentValsetNonce := pk.GetLatestValsetNonce(ctx, keeper.EthChainPrefix)
-	pk.SetValsetRequest(ctx, keeper.EthChainPrefix)
+	currentValsetNonce := pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix)
+	pk.SetValsetRequest(ctx, evmChain.EvmChainPrefix)
 
 	input.Context = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
 	// begin unbonding
@@ -50,7 +53,7 @@ func TestValsetCreationUponUnbonding(t *testing.T) {
 	EndBlocker(input.Context, pk)
 
 	// TODO: Is this the right check to replace blockHeight == latestValsetNonce with?
-	assert.NotEqual(t, currentValsetNonce, pk.GetLatestValsetNonce(ctx, keeper.EthChainPrefix))
+	assert.NotEqual(t, currentValsetNonce, pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix))
 }
 
 func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
@@ -60,14 +63,15 @@ func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 	params := input.GravityKeeper.GetParams(ctx)
 
-	vs, err := pk.GetCurrentValset(ctx, keeper.EthChainPrefix)
+	vs, err := pk.GetCurrentValset(ctx, evmChain.EvmChainPrefix)
 	require.NoError(t, err)
 	height := uint64(ctx.BlockHeight()) - (params.SignedValsetsWindow + 1)
 	vs.Height = height
 	vs.Nonce = height
-	pk.StoreValset(ctx, keeper.EthChainPrefix, vs)
+	pk.StoreValset(ctx, evmChain.EvmChainPrefix, vs)
 
 	EndBlocker(ctx, pk)
 
@@ -83,17 +87,18 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 	params := input.GravityKeeper.GetParams(ctx)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
-	vs, err := pk.GetCurrentValset(ctx, keeper.EthChainPrefix)
+	vs, err := pk.GetCurrentValset(ctx, evmChain.EvmChainPrefix)
 	require.NoError(t, err)
 	height := uint64(ctx.BlockHeight()) - (params.SignedValsetsWindow + 1)
 	vs.Height = height
 
-	vs.Nonce = pk.GetLatestValsetNonce(ctx, keeper.EthChainPrefix) + 1
-	pk.StoreValset(ctx, keeper.EthChainPrefix, vs)
-	pk.SetLatestValsetNonce(ctx, keeper.EthChainPrefix, vs.Nonce)
+	vs.Nonce = pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix) + 1
+	pk.StoreValset(ctx, evmChain.EvmChainPrefix, vs)
+	pk.SetLatestValsetNonce(ctx, evmChain.EvmChainPrefix, vs.Nonce)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
@@ -104,7 +109,7 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 		require.NoError(t, err)
 
 		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
-		pk.SetValsetConfirm(ctx, keeper.EthChainPrefix, *conf)
+		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 	}
 
 	EndBlocker(ctx, pk)
@@ -126,6 +131,7 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 	params := input.GravityKeeper.GetParams(ctx)
 
 	// Create not nice guy with very little stake
@@ -174,14 +180,14 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	require.Equal(t, notNiceVal.Status, stakingtypes.Unbonded)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
-	vs, err := pk.GetCurrentValset(ctx, keeper.EthChainPrefix)
+	vs, err := pk.GetCurrentValset(ctx, evmChain.EvmChainPrefix)
 	require.NoError(t, err)
 	height := uint64(ctx.BlockHeight()) - (params.SignedValsetsWindow + 1)
 	vs.Height = height
 
-	vs.Nonce = pk.GetLatestValsetNonce(ctx, keeper.EthChainPrefix) + 1
-	pk.StoreValset(ctx, keeper.EthChainPrefix, vs)
-	pk.SetLatestValsetNonce(ctx, keeper.EthChainPrefix, vs.Nonce)
+	vs.Nonce = pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix) + 1
+	pk.StoreValset(ctx, evmChain.EvmChainPrefix, vs)
+	pk.SetLatestValsetNonce(ctx, evmChain.EvmChainPrefix, vs.Nonce)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
@@ -192,11 +198,11 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 		require.NoError(t, err)
 
 		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
-		pk.SetValsetConfirm(ctx, keeper.EthChainPrefix, *conf)
+		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 	}
 
 	conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, accAddr, "dummysig")
-	pk.SetValsetConfirm(ctx, keeper.EthChainPrefix, *conf)
+	pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 
 	// Now remove all the stake
 	_, err = sh(
@@ -219,6 +225,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	fmt.Println("val1  tokens", val.GetTokens().ToDec())
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 	params := input.GravityKeeper.GetParams(ctx)
 
 	// Define slashing variables
@@ -234,7 +241,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 
 	// Create Valset request
 	ctx = ctx.WithBlockHeight(valsetRequestHeight)
-	vs := pk.SetValsetRequest(ctx, keeper.EthChainPrefix)
+	vs := pk.SetValsetRequest(ctx, evmChain.EvmChainPrefix)
 
 	// Start Unbonding validators
 	// Validator-1  Unbond slash window is not expired. if not attested, slash
@@ -255,7 +262,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 		require.NoError(t, err)
 
 		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
-		pk.SetValsetConfirm(ctx, keeper.EthChainPrefix, *conf)
+		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 	}
 	staking.EndBlocker(input.Context, input.StakingKeeper)
 
@@ -281,6 +288,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 	params := pk.GetParams(ctx)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
@@ -340,12 +348,12 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
-	pk.StoreBatch(ctx, keeper.EthChainPrefix, *batch)
-	unslashedBatches := pk.GetUnSlashedBatches(ctx, keeper.EthChainPrefix, uint64(ctx.BlockHeight()))
+	pk.StoreBatch(ctx, evmChain.EvmChainPrefix, *batch)
+	unslashedBatches := pk.GetUnSlashedBatches(ctx, evmChain.EvmChainPrefix, uint64(ctx.BlockHeight()))
 	assert.True(t, len(unslashedBatches) == 1 && unslashedBatches[0].BatchNonce == 1)
 
 	for i, orch := range keeper.OrchAddrs {
-		pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
+		pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
 			Nonce:         batch.BatchNonce,
 			TokenContract: keeper.TokenContractAddrs[0],
 			EthSigner:     keeper.EthAddrs[i].String(),
@@ -356,7 +364,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 
 	// Sign using our not nice validator
 	// This is not really possible if we use confirmHandlerCommon
-	pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
+	pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
 		Nonce:         batch.BatchNonce,
 		TokenContract: keeper.TokenContractAddrs[0],
 		EthSigner:     ethAddr.GetAddress().Hex(),
@@ -379,6 +387,7 @@ func TestBatchSlashing(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 	params := pk.GetParams(ctx)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
@@ -393,8 +402,8 @@ func TestBatchSlashing(t *testing.T) {
 		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
-	pk.StoreBatch(ctx, keeper.EthChainPrefix, *batch)
-	unslashedBatches := pk.GetUnSlashedBatches(ctx, keeper.EthChainPrefix, uint64(ctx.BlockHeight()))
+	pk.StoreBatch(ctx, evmChain.EvmChainPrefix, *batch)
+	unslashedBatches := pk.GetUnSlashedBatches(ctx, evmChain.EvmChainPrefix, uint64(ctx.BlockHeight()))
 	assert.True(t, len(unslashedBatches) == 1 && unslashedBatches[0].BatchNonce == 1)
 
 	for i, orch := range keeper.OrchAddrs {
@@ -418,7 +427,7 @@ func TestBatchSlashing(t *testing.T) {
 			continue
 		}
 
-		pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
+		pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
 			Nonce:         batch.BatchNonce,
 			TokenContract: keeper.TokenContractAddrs[0],
 			EthSigner:     keeper.EthAddrs[i].String(),
@@ -438,9 +447,9 @@ func TestBatchSlashing(t *testing.T) {
 	require.False(t, val2.IsJailed())
 
 	// Ensure that the last slashed valset nonce is set properly
-	lastSlashedBatchBlock := input.GravityKeeper.GetLastSlashedBatchBlock(ctx, keeper.EthChainPrefix)
+	lastSlashedBatchBlock := input.GravityKeeper.GetLastSlashedBatchBlock(ctx, evmChain.EvmChainPrefix)
 	assert.Equal(t, lastSlashedBatchBlock, batch.Block)
-	assert.True(t, len(pk.GetUnSlashedBatches(ctx, keeper.EthChainPrefix, uint64(ctx.BlockHeight()))) == 0)
+	assert.True(t, len(pk.GetUnSlashedBatches(ctx, evmChain.EvmChainPrefix, uint64(ctx.BlockHeight()))) == 0)
 
 }
 
@@ -449,9 +458,10 @@ func TestValsetEmission(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 
 	// Store a validator set with a power change as the most recent validator set
-	vs, err := pk.GetCurrentValset(ctx, keeper.EthChainPrefix)
+	vs, err := pk.GetCurrentValset(ctx, evmChain.EvmChainPrefix)
 	require.NoError(t, err)
 	vs.Nonce--
 	internalMembers, err := types.BridgeValidators(vs.Members).ToInternal()
@@ -459,12 +469,12 @@ func TestValsetEmission(t *testing.T) {
 	delta := float64(internalMembers.TotalPower()) * 0.05
 	vs.Members[0].Power = uint64(float64(vs.Members[0].Power) - delta/2)
 	vs.Members[1].Power = uint64(float64(vs.Members[1].Power) + delta/2)
-	pk.StoreValset(ctx, keeper.EthChainPrefix, vs)
+	pk.StoreValset(ctx, evmChain.EvmChainPrefix, vs)
 
 	// EndBlocker should set a new validator set
 	EndBlocker(ctx, pk)
-	require.NotNil(t, pk.GetValset(ctx, keeper.EthChainPrefix, uint64(pk.GetLatestValsetNonce(ctx, keeper.EthChainPrefix))))
-	valsets := pk.GetValsets(ctx, keeper.EthChainPrefix)
+	require.NotNil(t, pk.GetValset(ctx, evmChain.EvmChainPrefix, uint64(pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix))))
+	valsets := pk.GetValsets(ctx, evmChain.EvmChainPrefix)
 	require.True(t, len(valsets) == 2)
 }
 
@@ -473,8 +483,9 @@ func TestValsetSetting(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	pk.SetValsetRequest(ctx, keeper.EthChainPrefix)
-	valsets := pk.GetValsets(ctx, keeper.EthChainPrefix)
+	evmChain := pk.GetEvmChains(ctx)[0]
+	pk.SetValsetRequest(ctx, evmChain.EvmChainPrefix)
+	valsets := pk.GetValsets(ctx, evmChain.EvmChainPrefix)
 	require.True(t, len(valsets) == 1)
 }
 
@@ -484,6 +495,7 @@ func TestBatchTimeout(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
 	params := pk.GetParams(ctx)
 	var (
 		now                 = time.Now().UTC()
@@ -517,7 +529,7 @@ func TestBatchTimeout(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, keeper.EthChainPrefix, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, evmChain.EvmChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 	}
 
@@ -526,22 +538,22 @@ func TestBatchTimeout(t *testing.T) {
 	ctx = ctx.WithBlockHeight(250)
 
 	// check that we can make a batch without first setting an ethereum block height
-	b1, err1 := pk.BuildOutgoingTXBatch(ctx, keeper.EthChainPrefix, *tokenContract, 1)
+	b1, err1 := pk.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, *tokenContract, 1)
 	require.NoError(t, err1)
 	require.Equal(t, b1.BatchTimeout, uint64(0))
 
-	pk.SetLastObservedEvmChainBlockHeight(ctx, keeper.EthChainPrefix, 500)
+	pk.SetLastObservedEvmChainBlockHeight(ctx, evmChain.EvmChainPrefix, 500)
 
 	// increase number of max txs to create more profitable batch
-	b2, err2 := pk.BuildOutgoingTXBatch(ctx, keeper.EthChainPrefix, *tokenContract, 2)
+	b2, err2 := pk.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, *tokenContract, 2)
 	require.NoError(t, err2)
 	// this is exactly block 500 plus twelve hours
 	require.Equal(t, b2.BatchTimeout, uint64(504))
 
 	// make sure the batches got stored in the first place
-	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, b1.TokenContract, b1.BatchNonce)
 	require.NotNil(t, gotFirstBatch)
-	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, b2.TokenContract, b2.BatchNonce)
 	require.NotNil(t, gotSecondBatch)
 
 	// persist confirmations for second batch to test their deletion on batch timeout
@@ -557,45 +569,45 @@ func TestBatchTimeout(t *testing.T) {
 			Signature:     "dummysig",
 		}
 
-		input.GravityKeeper.SetBatchConfirm(ctx, conf)
+		input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf)
 	}
 
 	// verify that confirms are persisted
-	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, keeper.EthChainPrefix, b2.BatchNonce, b2.TokenContract)
+	secondBatchConfirms := input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, evmChain.EvmChainPrefix, b2.BatchNonce, b2.TokenContract)
 	require.Equal(t, len(keeper.OrchAddrs), len(secondBatchConfirms))
 
 	// when, way into the future
 	ctx = ctx.WithBlockTime(now)
 	ctx = ctx.WithBlockHeight(9)
 
-	b3, err2 := pk.BuildOutgoingTXBatch(ctx, keeper.EthChainPrefix, *tokenContract, 3)
+	b3, err2 := pk.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, *tokenContract, 3)
 	require.NoError(t, err2)
 
 	EndBlocker(ctx, pk)
 
 	// this had a timeout of zero should be deleted.
-	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, b1.TokenContract, b1.BatchNonce)
 	require.Nil(t, gotFirstBatch)
 	// make sure the end blocker does not delete these, as the block height has not officially
 	// been updated by a relay event
-	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, b2.TokenContract, b2.BatchNonce)
 	require.NotNil(t, gotSecondBatch)
-	gotThirdBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b3.TokenContract, b3.BatchNonce)
+	gotThirdBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, b3.TokenContract, b3.BatchNonce)
 	require.NotNil(t, gotThirdBatch)
 
-	pk.SetLastObservedEvmChainBlockHeight(ctx, keeper.EthChainPrefix, 5000)
+	pk.SetLastObservedEvmChainBlockHeight(ctx, evmChain.EvmChainPrefix, 5000)
 	EndBlocker(ctx, pk)
 
 	// make sure the end blocker does delete these, as we've got a new Ethereum block height
-	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b1.TokenContract, b1.BatchNonce)
+	gotFirstBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, b1.TokenContract, b1.BatchNonce)
 	require.Nil(t, gotFirstBatch)
-	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b2.TokenContract, b2.BatchNonce)
+	gotSecondBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, b2.TokenContract, b2.BatchNonce)
 	require.Nil(t, gotSecondBatch)
-	gotThirdBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, keeper.EthChainPrefix, b3.TokenContract, b3.BatchNonce)
+	gotThirdBatch = input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, b3.TokenContract, b3.BatchNonce)
 	require.NotNil(t, gotThirdBatch)
 
 	// verify that second batch confirms are deleted
-	secondBatchConfirms = input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, keeper.EthChainPrefix, b2.BatchNonce, b2.TokenContract)
+	secondBatchConfirms = input.GravityKeeper.GetBatchConfirmByNonceAndTokenContract(ctx, evmChain.EvmChainPrefix, b2.BatchNonce, b2.TokenContract)
 	require.Equal(t, 0, len(secondBatchConfirms))
 }
 
@@ -604,13 +616,14 @@ func TestValsetPruning(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
+	evmChain := pk.GetEvmChains(ctx)[0]
 	params := pk.GetParams(ctx)
 
 	// Create new validator set with nonce 1
-	pk.SetValsetRequest(ctx, keeper.EthChainPrefix)
-	firstValsetNonce := pk.GetLatestValsetNonce(ctx, keeper.EthChainPrefix)
-	require.NotNil(t, pk.GetValset(ctx, keeper.EthChainPrefix, firstValsetNonce))
-	require.True(t, len(pk.GetValsets(ctx, keeper.EthChainPrefix)) == 1)
+	pk.SetValsetRequest(ctx, evmChain.EvmChainPrefix)
+	firstValsetNonce := pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix)
+	require.NotNil(t, pk.GetValset(ctx, evmChain.EvmChainPrefix, firstValsetNonce))
+	require.True(t, len(pk.GetValsets(ctx, evmChain.EvmChainPrefix)) == 1)
 
 	// Create validator set confirmations
 	for i, orch := range keeper.OrchAddrs {
@@ -618,26 +631,27 @@ func TestValsetPruning(t *testing.T) {
 		require.NoError(t, err)
 
 		conf := types.NewMsgValsetConfirm(firstValsetNonce, *ethAddr, orch, "dummysig")
-		pk.SetValsetConfirm(ctx, keeper.EthChainPrefix, *conf)
+		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 	}
 
-	require.True(t, len(pk.GetValsetConfirms(ctx, keeper.EthChainPrefix, firstValsetNonce)) == len(keeper.OrchAddrs))
+	require.True(t, len(pk.GetValsetConfirms(ctx, evmChain.EvmChainPrefix, firstValsetNonce)) == len(keeper.OrchAddrs))
 
 	// Create new validator set with nonce 2
-	pk.SetValsetRequest(ctx, keeper.EthChainPrefix)
-	require.True(t, len(pk.GetValsets(ctx, keeper.EthChainPrefix)) == 2)
-	valset := pk.GetValset(ctx, keeper.EthChainPrefix, pk.GetLatestValsetNonce(ctx, keeper.EthChainPrefix))
+	pk.SetValsetRequest(ctx, evmChain.EvmChainPrefix)
+	require.True(t, len(pk.GetValsets(ctx, evmChain.EvmChainPrefix)) == 2)
+	valset := pk.GetValset(ctx, evmChain.EvmChainPrefix, pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix))
 	require.NotNil(t, valset)
 
 	// Set validator set with nonce 2 as last observed
-	pk.SetLastObservedValset(ctx, keeper.EthChainPrefix, *valset)
-	require.Equal(t, valset.Nonce, pk.GetLastObservedValset(ctx, keeper.EthChainPrefix).Nonce)
+	pk.SetLastObservedValset(ctx, evmChain.EvmChainPrefix, *valset)
+	require.Equal(t, valset.Nonce, pk.GetLastObservedValset(ctx, evmChain.EvmChainPrefix).Nonce)
 
 	// Advance enough blocks so that old validator set gets removed in EndBlocker
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow+1)).WithBlockTime(time.Now().UTC())
 
 	// EndBlocker should cleanup validator set with nonce 1 and it's confirmations
 	EndBlocker(ctx, pk)
-	require.Nil(t, pk.GetValset(ctx, keeper.EthChainPrefix, firstValsetNonce))
-	require.Equal(t, 0, len(pk.GetValsetConfirms(ctx, keeper.EthChainPrefix, firstValsetNonce)))
+
+	require.Nil(t, pk.GetValset(ctx, evmChain.EvmChainPrefix, firstValsetNonce))
+	require.Equal(t, 0, len(pk.GetValsetConfirms(ctx, evmChain.EvmChainPrefix, firstValsetNonce)))
 }

@@ -26,6 +26,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, err          = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
 	)
 	require.NoError(t, err)
 	receiver, err := types.NewEthAddress(myReceiver)
@@ -50,14 +51,14 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, EthChainPrefix, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, evmChain.EvmChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 	}
 
 	// when
 	ctx = ctx.WithBlockTime(now)
 
-	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, EthChainPrefix, *tokenContract, 2)
+	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, *tokenContract, 2)
 	goodBatchExternal := goodBatch.ToExternal()
 	require.NoError(t, err)
 
@@ -76,11 +77,12 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	// input := CreateTestEnv(t)
 	input, ctx := SetupFiveValChain(t)
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	// ctx := input.Context
 
-	valset := input.GravityKeeper.SetValsetRequest(ctx, EthChainPrefix)
+	valset := input.GravityKeeper.SetValsetRequest(ctx, evmChain.EvmChainPrefix)
 
 	any, _ := codectypes.NewAnyWithValue(&valset)
 
@@ -99,12 +101,13 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
 
 	logicCall := types.OutgoingLogicCall{
 		Timeout: 420,
 	}
 
-	input.GravityKeeper.SetOutgoingLogicCall(ctx, EthChainPrefix, logicCall)
+	input.GravityKeeper.SetOutgoingLogicCall(ctx, evmChain.EvmChainPrefix, logicCall)
 
 	any, _ := codectypes.NewAnyWithValue(&logicCall)
 
