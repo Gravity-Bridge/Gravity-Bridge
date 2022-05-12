@@ -177,15 +177,20 @@ func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
 func CmdGetPendingSendToEth() *cobra.Command {
 	//nolint: exhaustivestruct
 	cmd := &cobra.Command{
-		Use:   "pending-send-to-eth [address]",
+		Use:   "pending-send-to-eth [optional sender address]",
 		Short: "Query transactions waiting to go to Ethereum",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
 			queryClient := types.NewQueryClient(clientCtx)
 
+			senderAddress := ""
+			if len(args) > 0 {
+				senderAddress = args[0]
+			}
+
 			req := &types.QueryPendingSendToEth{
-				SenderAddress: args[0],
+				SenderAddress: senderAddress,
 			}
 
 			res, err := queryClient.GetPendingSendToEth(cmd.Context(), req)
