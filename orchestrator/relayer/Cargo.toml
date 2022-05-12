@@ -15,6 +15,7 @@ gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {path = "../gravity_proto/"}
 
 deep_space = "2.11"
+futures = "0.3"
 serde_derive = "1.0"
 clarity = "0.5"
 docopt = "1"
@@ -27,8 +28,3 @@ log = "0.4"
 env_logger = "0.9"
 tokio = "1.4"
 tonic = "0.7"
-openssl-probe = "0.1"
-
-
-[dev-dependencies]
-actix = "0.13"

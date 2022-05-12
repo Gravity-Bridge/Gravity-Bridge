@@ -3,17 +3,59 @@
 //! By having batches requested by relayers instead of created automatically the chain can outsource
 //! the significant work of checking if a batch is profitable before creating it
 
+use std::time::Duration;
+use std::time::Instant;
+
 use clarity::Address as EthAddress;
+use clarity::PrivateKey as EthPrivateKey;
 use clarity::Uint256;
 use cosmos_gravity::query::get_erc20_to_denom;
 use cosmos_gravity::query::get_pending_batch_fees;
 use cosmos_gravity::send::send_request_batch;
-use deep_space::{Coin, Contact, PrivateKey};
+use deep_space::{Coin, Contact, PrivateKey as CosmosPrivateKey};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::prices::get_weth_price;
 use gravity_utils::types::BatchRequestMode;
+use gravity_utils::types::RelayerConfig;
+use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+
+/// performs batch requests
+pub async fn batch_request_loop(
+    contact: Contact,
+    web3: &Web3,
+    grpc_client: GravityQueryClient<Channel>,
+    relayer_config: RelayerConfig,
+    ethereum_key: EthPrivateKey,
+    cosmos_key: CosmosPrivateKey,
+    cosmos_fee: Coin,
+) {
+    let mut grpc_client = grpc_client;
+    loop {
+        let loop_start = Instant::now();
+
+        request_batches(
+            &contact,
+            web3,
+            &mut grpc_client,
+            relayer_config.batch_request_mode,
+            ethereum_key.to_address(),
+            cosmos_key,
+            cosmos_fee.clone(),
+        )
+        .await;
+
+        // a bit of logic that tries to keep things running every relayer_loop_speed seconds exactly
+        // this is not required for any specific reason. In fact we expect and plan for
+        // the timing being off significantly
+        let elapsed = Instant::now() - loop_start;
+        let loop_speed = Duration::from_secs(relayer_config.relayer_loop_speed);
+        if elapsed < loop_speed {
+            delay_for(loop_speed - elapsed).await;
+        }
+    }
+}
 
 pub async fn request_batches(
     contact: &Contact,
@@ -21,7 +63,7 @@ pub async fn request_batches(
     grpc_client: &mut GravityQueryClient<Channel>,
     batch_request_mode: BatchRequestMode,
     eth_address: EthAddress,
-    private_key: PrivateKey,
+    private_key: CosmosPrivateKey,
     request_fee: Coin,
 ) {
     // this actually works either way but sending a tx with zero as the fee

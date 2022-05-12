@@ -2741,7 +2741,6 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 name = "relayer"
 version = "0.4.3"
 dependencies = [
- "actix",
  "actix-rt",
  "clarity",
  "cosmos_gravity",
@@ -2749,12 +2748,12 @@ dependencies = [
  "docopt",
  "env_logger",
  "ethereum_gravity",
+ "futures",
  "gravity_proto",
  "gravity_utils",
  "lazy_static",
  "log",
  "num256",
- "openssl-probe",
  "serde",
  "serde_derive",
  "tokio",

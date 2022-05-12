@@ -38,9 +38,14 @@ pub struct RelayerConfig {
     pub batch_request_mode: BatchRequestMode,
     pub batch_relaying_mode: BatchRelayingMode,
     pub logic_call_market_enabled: bool,
-    /// the speed at which the relayer loop runs, in seconds
+    /// the speed at which the relayer attempts to relay batches logic calls and valsets, in seconds
     /// higher values reduce the chances of money lost to a collision
+    /// also controls the batch request loop speed, however that is offset by batch_request_relay_offset seconds
     pub relayer_loop_speed: u64,
+    /// the delay between the batch request and relaying loops, in seconds
+    /// requesting a batch typically takes 20-25 seconds to process before it can be relayed, this
+    /// offset enables requested batches to be relayed immediately
+    pub batch_request_relay_offset: u64,
     /// the speed at which the relayer checks for pending ibc auto forwards, in seconds
     pub ibc_auto_forward_loop_speed: u64,
     /// the number of pending ibc auto forwards to attempt to execute per loop
@@ -60,6 +65,8 @@ pub struct TomlRelayerConfig {
     pub logic_call_market_enabled: bool,
     #[serde(default = "default_relayer_loop_speed")]
     pub relayer_loop_speed: u64,
+    #[serde(default = "default_batch_request_relay_offset")]
+    pub batch_request_relay_offset: u64,
     #[serde(default = "default_ibc_auto_forward_loop_speed")]
     pub ibc_auto_forward_loop_speed: u64,
     #[serde(default = "default_ibc_auto_forwards_to_execute")]
@@ -74,6 +81,7 @@ impl From<TomlRelayerConfig> for RelayerConfig {
             batch_request_mode: input.batch_request_mode,
             logic_call_market_enabled: input.logic_call_market_enabled,
             relayer_loop_speed: input.relayer_loop_speed,
+            batch_request_relay_offset: input.batch_request_relay_offset,
             ibc_auto_forward_loop_speed: input.ibc_auto_forward_loop_speed,
             ibc_auto_forwards_to_execute: input.ibc_auto_forwards_to_execute,
         }
@@ -221,6 +229,10 @@ fn default_relayer_loop_speed() -> u64 {
     600
 }
 
+fn default_batch_request_relay_offset() -> u64 {
+    45
+}
+
 fn default_ibc_auto_forward_loop_speed() -> u64 {
     60
 }
@@ -237,6 +249,7 @@ impl Default for RelayerConfig {
             batch_relaying_mode: default_batch_relaying_mode().into(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
+            batch_request_relay_offset: default_batch_request_relay_offset(),
             ibc_auto_forward_loop_speed: default_ibc_auto_forward_loop_speed(),
             ibc_auto_forwards_to_execute: default_ibc_auto_forwards_to_execute(),
         }
@@ -251,6 +264,7 @@ impl Default for TomlRelayerConfig {
             batch_relaying_mode: default_batch_relaying_mode(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
+            batch_request_relay_offset: default_batch_request_relay_offset(),
             ibc_auto_forward_loop_speed: default_ibc_auto_forward_loop_speed(),
             ibc_auto_forwards_to_execute: default_ibc_auto_forwards_to_execute(),
         }
