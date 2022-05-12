@@ -6,6 +6,7 @@
 use std::time::Duration;
 use std::time::Instant;
 
+use crate::main_loop::{get_acceptable_gas_price, get_current_gas_price};
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::Uint256;
@@ -131,6 +132,26 @@ pub async fn request_batches(
                         }
                     }
                     Err(e) => warn!("Failed to get price for token {} with {:?}", fee.token, e),
+                }
+            }
+            BatchRequestMode::Altruistic => {
+                let current_gas_price = get_current_gas_price();
+                let ideal_gas = get_acceptable_gas_price();
+                let should_request_altruistic = if let (Some(current_price), Some(good_price)) =
+                    (current_gas_price, ideal_gas)
+                {
+                    current_price <= good_price
+                } else {
+                    false
+                };
+
+                if should_request_altruistic {
+                    info!("Requesting batch for {}", fee.token);
+                    let res =
+                        send_request_batch(private_key, denom, request_fee.clone(), contact).await;
+                    if let Err(e) = res {
+                        warn!("Failed to request batch with {:?}", e);
+                    }
                 }
             }
             BatchRequestMode::EveryBatch => {

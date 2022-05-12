@@ -131,6 +131,9 @@ pub enum BatchRequestMode {
     /// Only ever request profitable batches, regardless of all other
     /// considerations, this is fuzzier than the other modes
     ProfitableOnly,
+    /// Only request batches at times of minimum gas fees to provide maximum utility
+    /// with donated funds
+    Altruistic,
     /// Every possible valid batch should be requested
     EveryBatch,
     /// Does not automatically request batches

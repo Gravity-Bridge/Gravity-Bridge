@@ -31,6 +31,9 @@ pub fn print_relaying_explanation(input: &RelayerConfig, batch_requests: bool) {
         (BatchRequestMode::EveryBatch, true) => info!(
             "This relayer will automatically spend Graviton tx fees to request a batch when any tx are available",
         ),
+        (BatchRequestMode::Altruistic, true) => info!(
+            "This relayer will automatically spend Graviton tx fees to request a batch during the lowest {}% of gas prices over {} samples", ALTRUISTIC_GAS_PERCENTAGE, ALTRUISTIC_SAMPLES,
+        ),
     }
     match &input.batch_relaying_mode {
         gravity_utils::types::BatchRelayingMode::EveryBatch => info!("This relayer will relay every batch. This will cost a lot of ETH!"),
