@@ -3,9 +3,9 @@
 //! By having batches requested by relayers instead of created automatically the chain can outsource
 //! the significant work of checking if a batch is profitable before creating it
 
-use std::time::Duration;
 use std::time::Instant;
 
+use crate::main_loop::delay_until_next_iteration;
 use crate::main_loop::{get_acceptable_gas_price, get_current_gas_price};
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
@@ -18,7 +18,6 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::prices::get_weth_price;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::RelayerConfig;
-use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -47,14 +46,7 @@ pub async fn batch_request_loop(
         )
         .await;
 
-        // a bit of logic that tries to keep things running every relayer_loop_speed seconds exactly
-        // this is not required for any specific reason. In fact we expect and plan for
-        // the timing being off significantly
-        let elapsed = Instant::now() - loop_start;
-        let loop_speed = Duration::from_secs(relayer_config.relayer_loop_speed);
-        if elapsed < loop_speed {
-            delay_for(loop_speed - elapsed).await;
-        }
+        delay_until_next_iteration(loop_start, relayer_config.relayer_loop_speed).await;
     }
 }
 

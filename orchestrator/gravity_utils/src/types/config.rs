@@ -42,6 +42,18 @@ pub struct RelayerConfig {
     /// higher values reduce the chances of money lost to a collision
     /// also controls the batch request loop speed, however that is offset by batch_request_relay_offset seconds
     pub relayer_loop_speed: u64,
+    /// the speed at which the relayer fetches ethereum gas prices for altruistic relaying, in seconds
+    /// the gas tracker will store ALTRUISTIC_SAMPLES samples of gas prices to determine when it is currently a
+    /// "low-fee" period for altruistic batch requests/batch relaying
+    ///
+    /// TODO: Should we move ALTRUISTIC_SAMPLES into here, enabling fine-grained control of the time period to monitor?
+    /// As well, how do we set these defaults?
+    /// e.g. previously we stored 2000 samples collected once every 600 seconds, which covers 333 hours
+    /// To store samples over the last 24 hours we could set the gas tracker loop speed to 43 seconds, which should store
+    /// results over the last 23.89 hours
+    /// We may want to offer a more convenient method via gas_tracker_history (seconds, or hours)
+    /// and gas_sampling_frequency (events per minute/hour), deriving gas_tracker_loop_speed and ALTRUISTIC_SAMPLES
+    pub gas_tracker_loop_speed: u64,
     /// the delay between the batch request and relaying loops, in seconds
     /// requesting a batch typically takes 20-25 seconds to process before it can be relayed, this
     /// offset enables requested batches to be relayed immediately
@@ -65,6 +77,8 @@ pub struct TomlRelayerConfig {
     pub logic_call_market_enabled: bool,
     #[serde(default = "default_relayer_loop_speed")]
     pub relayer_loop_speed: u64,
+    #[serde(default = "default_gas_tracker_loop_speed")]
+    pub gas_tracker_loop_speed: u64,
     #[serde(default = "default_batch_request_relay_offset")]
     pub batch_request_relay_offset: u64,
     #[serde(default = "default_ibc_auto_forward_loop_speed")]
@@ -81,6 +95,7 @@ impl From<TomlRelayerConfig> for RelayerConfig {
             batch_request_mode: input.batch_request_mode,
             logic_call_market_enabled: input.logic_call_market_enabled,
             relayer_loop_speed: input.relayer_loop_speed,
+            gas_tracker_loop_speed: input.gas_tracker_loop_speed,
             batch_request_relay_offset: input.batch_request_relay_offset,
             ibc_auto_forward_loop_speed: input.ibc_auto_forward_loop_speed,
             ibc_auto_forwards_to_execute: input.ibc_auto_forwards_to_execute,
@@ -232,6 +247,10 @@ fn default_relayer_loop_speed() -> u64 {
     600
 }
 
+fn default_gas_tracker_loop_speed() -> u64 {
+    60
+}
+
 fn default_batch_request_relay_offset() -> u64 {
     45
 }
@@ -252,6 +271,7 @@ impl Default for RelayerConfig {
             batch_relaying_mode: default_batch_relaying_mode().into(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
+            gas_tracker_loop_speed: default_gas_tracker_loop_speed(),
             batch_request_relay_offset: default_batch_request_relay_offset(),
             ibc_auto_forward_loop_speed: default_ibc_auto_forward_loop_speed(),
             ibc_auto_forwards_to_execute: default_ibc_auto_forwards_to_execute(),
@@ -267,6 +287,7 @@ impl Default for TomlRelayerConfig {
             batch_relaying_mode: default_batch_relaying_mode(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
+            gas_tracker_loop_speed: default_gas_tracker_loop_speed(),
             batch_request_relay_offset: default_batch_request_relay_offset(),
             ibc_auto_forward_loop_speed: default_ibc_auto_forward_loop_speed(),
             ibc_auto_forwards_to_execute: default_ibc_auto_forwards_to_execute(),

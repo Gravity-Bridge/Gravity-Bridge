@@ -9,7 +9,7 @@ use clarity::address::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::Uint256;
 use deep_space::{Coin, Contact, PrivateKey as CosmosPrivateKey};
-use futures::future::{join, join3};
+use futures::future::{join3, join4};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::{BatchRelayingMode, RelayerConfig, ValsetRelayingMode};
 use std::sync::{Arc, RwLock};
@@ -39,6 +39,8 @@ lazy_static! {
         Arc::new(RwLock::new(GasTracker::new(ALTRUISTIC_SAMPLES)));
 }
 
+/// fetches the lowest ALTRUISTIC_GAS_PERCENTAGE % of gas prices in the gas tracker's store, use in conjunction with
+/// get_current_gas_price() to determine if now is an acceptable time to relay altruistically
 pub fn get_acceptable_gas_price() -> Option<Uint256> {
     GAS_TRACKER
         .read()
@@ -46,10 +48,15 @@ pub fn get_acceptable_gas_price() -> Option<Uint256> {
         .get_acceptable_gas_price(ALTRUISTIC_GAS_PERCENTAGE)
 }
 
+/// fetches the last recorded gas price (accurate within relayer_config.gas_tracker_loop_speed seconds) in the
+/// gas tracker's store. Compare against get_acceptable_gas_price() to determine if this is a relatively low gas price
 pub fn get_current_gas_price() -> Option<Uint256> {
     GAS_TRACKER.read().unwrap().current_gas_price()
 }
 
+/// writes a new gas price entry into the tracker with the current ethereum gas price
+/// WARNING: only the gas_tracker_loop should call this to track gas uniformly across time.
+/// Adjust relayer_config.gas_tracker_loop_speed and ALTRUISTIC_SAMPLES to control the tracker
 pub async fn update_gas_tracker(web3: &Web3) -> Option<Uint256> {
     GAS_TRACKER.write().unwrap().update(web3).await
 }
@@ -82,8 +89,10 @@ pub async fn all_relayer_loops(
         fee.clone(),
         config.clone(),
     );
+    let c = gas_tracker_loop(&web3, config.clone());
+
     if let (Some(key), Some(cosmos_fee)) = (cosmos_key, fee) {
-        let c = batch_request_loop(
+        let d = batch_request_loop(
             contact.clone(),
             &web3,
             grpc_client.clone(),
@@ -93,9 +102,9 @@ pub async fn all_relayer_loops(
             cosmos_fee.clone(),
         );
 
-        join3(a, b, c).await;
+        join4(a, b, c, d).await;
     } else {
-        join(a, b).await;
+        join3(a, b, c).await;
     }
 }
 
@@ -123,8 +132,9 @@ pub async fn relayer_main_loop(
     loop {
         let loop_start = Instant::now();
 
-        // update the gas estimator and determine if we should relay altruistically
-        let current_gas_price = update_gas_tracker(&web3).await;
+        // use the gas estimator to determine if we should relay altruistically
+        // TODO: Check to see when the gas price was sampled? Only a significant issue if the gas tracker loop speed is large
+        let current_gas_price = get_current_gas_price();
         let ideal_gas = get_acceptable_gas_price();
         let should_relay_altruistic =
             if let (Some(current_price), Some(good_price)) = (current_gas_price, ideal_gas) {
@@ -185,13 +195,27 @@ pub async fn relayer_main_loop(
         )
         .await;
 
-        // a bit of logic that tries to keep things running every relayer_loop_speed seconds exactly
-        // this is not required for any specific reason. In fact we expect and plan for
-        // the timing being off significantly
-        let elapsed = Instant::now() - loop_start;
-        let loop_speed = Duration::from_secs(relayer_config.relayer_loop_speed);
-        if elapsed < loop_speed {
-            delay_for(loop_speed - elapsed).await;
-        }
+        delay_until_next_iteration(loop_start, relayer_config.relayer_loop_speed).await;
+    }
+}
+
+/// continually updates the gas tracker with a new gas price entry to enable altruistic batch requests and batch relaying
+pub async fn gas_tracker_loop(web3: &Web3, relayer_config: RelayerConfig) {
+    loop {
+        let loop_start = Instant::now();
+
+        update_gas_tracker(web3).await;
+
+        delay_until_next_iteration(loop_start, relayer_config.gas_tracker_loop_speed).await;
+    }
+}
+
+/// a bit of logic that tries to keep things running every relayer_loop_speed seconds exactly
+/// do not depend heavily on this being accurate, it will roughly get you what you want
+pub async fn delay_until_next_iteration(loop_start: Instant, loop_speed: u64) {
+    let elapsed = Instant::now() - loop_start;
+    let loop_speed = Duration::from_secs(loop_speed);
+    if elapsed < loop_speed {
+        delay_for(loop_speed - elapsed).await;
     }
 }
