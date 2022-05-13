@@ -8,6 +8,8 @@ use std::iter::FromIterator;
 use std::time::Instant;
 use web30::client::Web3;
 
+use crate::error::RelayerError;
+
 /// internal storage type for the GasTracker struct right now the
 /// sample_time is only used for stale identification but it should
 /// be generally useful in improving accuracy elsewhere
@@ -17,6 +19,7 @@ struct GasPriceEntry {
     sample: Uint256,
 }
 
+// TODO: Fix this, it appears the ordering returned always results in a DESC sort
 // implement ord ignoring sample_time
 impl Ord for GasPriceEntry {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -60,6 +63,14 @@ impl GasTracker {
             history: VecDeque::new(),
             size,
         }
+    }
+
+    pub fn expand_history_size(&mut self, size: usize) -> Result<(), RelayerError> {
+        if self.history.len() > size {
+            return Err(RelayerError::InvalidGasTrackerResize);
+        }
+        self.size = size;
+        Ok(())
     }
 
     // TODO: Upstream this function!
@@ -112,7 +123,8 @@ impl GasTracker {
         }
 
         let mut vector: Vec<&GasPriceEntry> = Vec::from_iter(self.history.iter());
-        vector.sort();
+        // TODO: Change back to `vector.sort();` when Ord is fixed
+        vector.sort_by(|a, b| a.sample.partial_cmp(&b.sample).unwrap());
 
         // this should never panic as percentage is less than 1 and vector len is
         // included as a factor

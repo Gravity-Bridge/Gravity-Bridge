@@ -2756,6 +2756,7 @@ dependencies = [
  "num256",
  "serde",
  "serde_derive",
+ "thiserror",
  "tokio",
  "tonic 0.7.1",
  "web30",

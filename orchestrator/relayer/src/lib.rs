@@ -1,4 +1,5 @@
 pub mod batch_relaying;
+pub mod error;
 pub mod find_latest_valset;
 pub mod ibc_auto_forwarding;
 pub mod logic_call_relaying;

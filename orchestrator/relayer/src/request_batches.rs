@@ -6,7 +6,7 @@
 use std::time::Instant;
 
 use crate::main_loop::delay_until_next_iteration;
-use crate::main_loop::{get_acceptable_gas_price, get_current_gas_price};
+use crate::main_loop::get_acceptable_gas_price;
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::Uint256;
@@ -15,6 +15,7 @@ use cosmos_gravity::query::get_pending_batch_fees;
 use cosmos_gravity::send::send_request_batch;
 use deep_space::{Coin, Contact, PrivateKey as CosmosPrivateKey};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_utils::num_conversion::print_gwei;
 use gravity_utils::prices::get_weth_price;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::RelayerConfig;
@@ -35,11 +36,12 @@ pub async fn batch_request_loop(
     loop {
         let loop_start = Instant::now();
 
+        debug!("Batch Request Loop: Starting");
         request_batches(
             &contact,
             web3,
             &mut grpc_client,
-            relayer_config.batch_request_mode,
+            &relayer_config,
             ethereum_key.to_address(),
             cosmos_key,
             cosmos_fee.clone(),
@@ -54,7 +56,7 @@ pub async fn request_batches(
     contact: &Contact,
     web30: &Web3,
     grpc_client: &mut GravityQueryClient<Channel>,
-    batch_request_mode: BatchRequestMode,
+    config: &RelayerConfig,
     eth_address: EthAddress,
     private_key: CosmosPrivateKey,
     request_fee: Coin,
@@ -99,7 +101,7 @@ pub async fn request_batches(
         }
         let denom = denom.unwrap().denom;
 
-        match batch_request_mode {
+        match config.batch_request_mode {
             BatchRequestMode::ProfitableOnly => {
                 let weth_cost_estimate = eth_gas_price.clone() * BATCH_GAS.into();
                 match get_weth_price(token, total_fee, eth_address, web30).await {
@@ -127,12 +129,16 @@ pub async fn request_batches(
                 }
             }
             BatchRequestMode::Altruistic => {
-                let current_gas_price = get_current_gas_price();
-                let ideal_gas = get_acceptable_gas_price();
-                let should_request_altruistic = if let (Some(current_price), Some(good_price)) =
-                    (current_gas_price, ideal_gas)
-                {
-                    current_price <= good_price
+                debug!("Batch Request Loop: The Batch Requester is Altruistic");
+                let ideal_gas =
+                    get_acceptable_gas_price(config.altruistic_acceptable_gas_price_percentage);
+                debug!(
+                    "Batch Request Loop: current gas {:?}, ideal gas {:?}",
+                    print_gwei(eth_gas_price.clone()),
+                    ideal_gas.clone().map(print_gwei)
+                );
+                let should_request_altruistic = if let Some(good_price) = ideal_gas.clone() {
+                    eth_gas_price <= good_price
                 } else {
                     false
                 };
