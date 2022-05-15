@@ -38,9 +38,26 @@ pub struct RelayerConfig {
     pub batch_request_mode: BatchRequestMode,
     pub batch_relaying_mode: BatchRelayingMode,
     pub logic_call_market_enabled: bool,
-    /// the speed at which the relayer loop runs, in seconds
+    /// the speed at which the relayer attempts to relay batches logic calls and valsets, in seconds
     /// higher values reduce the chances of money lost to a collision
+    /// also controls the batch request loop speed, however that is offset by batch_request_relay_offset seconds
     pub relayer_loop_speed: u64,
+    /// the speed at which the relayer fetches ethereum gas prices for altruistic relaying, in seconds
+    /// the gas tracker will store ALTRUISTIC_SAMPLES samples of gas prices to determine when it is currently a
+    /// "low-fee" period for altruistic batch requests/batch relaying
+    pub gas_tracker_loop_speed: u64,
+    /// the number of gas price samples an altruistic relayer will wait for before attempting to relay any batches
+    /// to avoid submitting batches with too little information about gas price changes
+    pub altruistic_batch_relaying_samples_delay: u64,
+    /// the number of samples the gas tracker will store before overwriting the oldest samples
+    /// ensure that altruistic_gas_price_samples * gas_tracker_loop_speed covers the period in seconds the relayer
+    /// should be aware of
+    pub altruistic_gas_price_samples: u64,
+    /// specifies the lowest x% of observed gas prices an altruistic relayer is willing to pay for relaying to ethereum
+    /// also controls when batches are requested
+    /// acceptable gas prices are determined by the samples in the gas tracker, so both
+    /// gas_tracker_loop_speed and altruistic_gas_price_samples will play a role in this decision
+    pub altruistic_acceptable_gas_price_percentage: f32,
     /// the speed at which the relayer checks for pending ibc auto forwards, in seconds
     pub ibc_auto_forward_loop_speed: u64,
     /// the number of pending ibc auto forwards to attempt to execute per loop
@@ -60,6 +77,14 @@ pub struct TomlRelayerConfig {
     pub logic_call_market_enabled: bool,
     #[serde(default = "default_relayer_loop_speed")]
     pub relayer_loop_speed: u64,
+    #[serde(default = "default_gas_tracker_loop_speed")]
+    pub gas_tracker_loop_speed: u64,
+    #[serde(default = "default_altruistic_batch_relaying_samples_delay")]
+    pub altruistic_batch_relaying_samples_delay: u64,
+    #[serde(default = "default_altruistic_gas_price_samples")]
+    pub altruistic_gas_price_samples: u64,
+    #[serde(default = "default_altruistic_acceptable_gas_price_percentage")]
+    pub altruistic_acceptable_gas_price_percentage: f32,
     #[serde(default = "default_ibc_auto_forward_loop_speed")]
     pub ibc_auto_forward_loop_speed: u64,
     #[serde(default = "default_ibc_auto_forwards_to_execute")]
@@ -74,6 +99,11 @@ impl From<TomlRelayerConfig> for RelayerConfig {
             batch_request_mode: input.batch_request_mode,
             logic_call_market_enabled: input.logic_call_market_enabled,
             relayer_loop_speed: input.relayer_loop_speed,
+            gas_tracker_loop_speed: input.gas_tracker_loop_speed,
+            altruistic_batch_relaying_samples_delay: input.altruistic_batch_relaying_samples_delay,
+            altruistic_gas_price_samples: input.altruistic_gas_price_samples,
+            altruistic_acceptable_gas_price_percentage: input
+                .altruistic_acceptable_gas_price_percentage,
             ibc_auto_forward_loop_speed: input.ibc_auto_forward_loop_speed,
             ibc_auto_forwards_to_execute: input.ibc_auto_forwards_to_execute,
         }
@@ -221,6 +251,22 @@ fn default_relayer_loop_speed() -> u64 {
     600
 }
 
+fn default_gas_tracker_loop_speed() -> u64 {
+    60
+}
+
+fn default_altruistic_batch_relaying_samples_delay() -> u64 {
+    5
+}
+
+pub fn default_altruistic_gas_price_samples() -> u64 {
+    2000
+}
+
+fn default_altruistic_acceptable_gas_price_percentage() -> f32 {
+    0.05
+}
+
 fn default_ibc_auto_forward_loop_speed() -> u64 {
     60
 }
@@ -237,6 +283,12 @@ impl Default for RelayerConfig {
             batch_relaying_mode: default_batch_relaying_mode().into(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
+            gas_tracker_loop_speed: default_gas_tracker_loop_speed(),
+            altruistic_batch_relaying_samples_delay:
+                default_altruistic_batch_relaying_samples_delay(),
+            altruistic_gas_price_samples: default_altruistic_gas_price_samples(),
+            altruistic_acceptable_gas_price_percentage:
+                default_altruistic_acceptable_gas_price_percentage(),
             ibc_auto_forward_loop_speed: default_ibc_auto_forward_loop_speed(),
             ibc_auto_forwards_to_execute: default_ibc_auto_forwards_to_execute(),
         }
@@ -251,6 +303,12 @@ impl Default for TomlRelayerConfig {
             batch_relaying_mode: default_batch_relaying_mode(),
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
+            gas_tracker_loop_speed: default_gas_tracker_loop_speed(),
+            altruistic_batch_relaying_samples_delay:
+                default_altruistic_batch_relaying_samples_delay(),
+            altruistic_gas_price_samples: default_altruistic_gas_price_samples(),
+            altruistic_acceptable_gas_price_percentage:
+                default_altruistic_acceptable_gas_price_percentage(),
             ibc_auto_forward_loop_speed: default_ibc_auto_forward_loop_speed(),
             ibc_auto_forwards_to_execute: default_ibc_auto_forwards_to_execute(),
         }
