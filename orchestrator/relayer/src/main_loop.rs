@@ -89,7 +89,7 @@ pub async fn all_relayer_loops(
 ) {
     // Update the tracker with the now-known desired number of samples
     update_gas_history_samples(config.altruistic_gas_price_samples as usize);
-    info!("Starting all relayer loops");
+    debug!("Starting all relayer loops");
 
     let a = relayer_main_loop(
         ethereum_key,
@@ -203,8 +203,14 @@ pub async fn relayer_main_loop(
         let delay_altruistic_relayer = relayer_config.batch_relaying_mode
             == BatchRelayingMode::Altruistic
             && Instant::now() - *RELAYER_START
-                > Duration::from_secs(relayer_config.altruistic_batch_relaying_delay);
-        if should_relay_batches && delay_altruistic_relayer {
+                < Duration::from_secs(relayer_config.altruistic_batch_relaying_delay);
+        if delay_altruistic_relayer {
+            info!(
+                "Delaying relayer because {} seconds have not elapsed",
+                relayer_config.altruistic_batch_relaying_delay
+            )
+        }
+        if should_relay_batches && !delay_altruistic_relayer {
             relay_batches(
                 current_valset.clone(),
                 ethereum_key,
@@ -238,7 +244,10 @@ pub async fn gas_tracker_loop(web3: &Web3, relayer_config: RelayerConfig) {
         let loop_start = Instant::now();
 
         let current = update_gas_tracker(web3).await;
-        debug!("Gas Tracker: Updated gas price history {:?}", current);
+        debug!(
+            "Gas Tracker: Updated gas price history {:?}",
+            current.clone().map(print_gwei),
+        );
 
         delay_until_next_iteration(loop_start, relayer_config.gas_tracker_loop_speed).await;
     }

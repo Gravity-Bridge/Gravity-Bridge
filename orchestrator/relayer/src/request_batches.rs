@@ -36,7 +36,6 @@ pub async fn batch_request_loop(
     loop {
         let loop_start = Instant::now();
 
-        debug!("Batch Request Loop: Starting");
         request_batches(
             &contact,
             web3,
