@@ -2749,6 +2749,7 @@ dependencies = [
  "docopt",
  "env_logger",
  "ethereum_gravity",
+ "futures",
  "gravity_proto",
  "gravity_utils",
  "lazy_static",
@@ -4251,9 +4252,9 @@ dependencies = [
 
 [[package]]
 name = "web30"
-version = "0.18.9"
+version = "0.18.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0447a0eb25fdb7a13d771335906b9b4760d5258f2a8e7c294b4d97113bcb496"
+checksum = "c2673ff03d2a8e648f806f100ed70ca3ca69db42dad7178501557b70d549dbb1"
 dependencies = [
  "awc",
  "clarity",

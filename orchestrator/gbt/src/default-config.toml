@@ -10,6 +10,24 @@ relayer_enabled = false
 [relayer]
 batch_request_mode = "ProfitableOnly"
 
+# Altruistic batch relayer example
+#
+# Gas prices will be collected every 30 seconds
+# Use in conjunction with altruistic_gas_price_samples to determine the gas price awareness period
+# gas_tracker_loop_speed = 30
+#
+# Batch requests and relaying will only happen when the current gas price is less than 5%
+# of all the prices sampled
+# altruistic_acceptable_gas_percentage = 0.05
+#
+# The number of gas price samples to collect.
+# This config will monitor 2880 * 30s = ~24 hours of gas prices
+# altruistic_gas_price_samples = 2880
+#
+# Activate the above configurations
+# [relayer.batch_relaying_mode]
+# mode = "Altruistic"
+
 [relayer.valset_relaying_mode]
 mode = "Altruistic"
 

@@ -5,15 +5,13 @@ use crate::utils::print_relaying_explanation;
 use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::PrivateKey as CosmosPrivateKey;
-use futures::future::join;
 use gravity_utils::connection_prep::check_for_fee;
 use gravity_utils::connection_prep::{
     check_for_eth, create_rpc_connections, wait_for_cosmos_node_ready,
 };
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::RelayerConfig;
-use relayer::ibc_auto_forwarding::ibc_auto_forward_loop;
-use relayer::main_loop::relayer_main_loop;
+use relayer::main_loop::all_relayer_loops;
 use relayer::main_loop::TIMEOUT;
 use std::path::Path;
 use std::process::exit;
@@ -120,25 +118,16 @@ pub async fn relayer(
         print_relaying_explanation(&config, false)
     }
 
-    let ibc_loop = ibc_auto_forward_loop(
+    all_relayer_loops(
         cosmos_key,
-        &contact,
-        grpc.clone(),
-        args.fees.clone(),
-        config.clone(),
-    );
-
-    let relayer_loop = relayer_main_loop(
         ethereum_key,
-        cosmos_key,
-        args.fees,
         web3,
-        contact.clone(),
+        contact,
         grpc,
         contract_address,
         params.gravity_id,
+        args.fees,
         config,
-    );
-
-    join(relayer_loop, ibc_loop).await;
+    )
+    .await;
 }
