@@ -1,5 +1,4 @@
 use gravity_utils::types::{BatchRequestMode, RelayerConfig, ValsetRelayingMode};
-use relayer::main_loop::{ALTRUISTIC_GAS_PERCENTAGE, ALTRUISTIC_SAMPLES};
 use std::time::Duration;
 
 pub const TIMEOUT: Duration = Duration::from_secs(60);
@@ -34,7 +33,7 @@ pub fn print_relaying_explanation(input: &RelayerConfig, batch_requests: bool) {
     }
     match &input.batch_relaying_mode {
         gravity_utils::types::BatchRelayingMode::EveryBatch => info!("This relayer will relay every batch. This will cost a lot of ETH!"),
-        gravity_utils::types::BatchRelayingMode::Altruistic => info!("This relayer will relay batches during the lowest {}% of gas prices over {} samples", ALTRUISTIC_GAS_PERCENTAGE, ALTRUISTIC_SAMPLES),
+        gravity_utils::types::BatchRelayingMode::Altruistic => info!("This relayer will relay batches during the lowest {}% of gas prices over {} samples", input.altruistic_acceptable_gas_price_percentage * 100.0, input.altruistic_gas_price_samples),
         gravity_utils::types::BatchRelayingMode::ProfitableOnly { margin } => info!("This relayer will only relay batches if they have a profitable reward with at least {} margin", margin),
         gravity_utils::types::BatchRelayingMode::ProfitableWithWhitelist { margin, whitelist } =>
             info!("This relayer will relay profitable matches with {} margin, and the following tokens with the provided amounts {:?}", margin, whitelist)
