@@ -113,7 +113,7 @@ pub async fn relayer_main_loop(
                 &contact,
                 &web3,
                 &mut grpc_client,
-                relayer_config.clone(),
+                &relayer_config,
                 ethereum_key.to_address(),
                 cosmos_key,
                 cosmos_fee,
