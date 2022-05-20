@@ -3,15 +3,20 @@
 //! By having batches requested by relayers instead of created automatically the chain can outsource
 //! the significant work of checking if a batch is profitable before creating it
 
+use std::time::Duration;
+
+use crate::altruistic::get_acceptable_gas_price;
 use clarity::Address as EthAddress;
 use clarity::Uint256;
 use cosmos_gravity::query::get_erc20_to_denom;
 use cosmos_gravity::query::get_pending_batch_fees;
 use cosmos_gravity::send::send_request_batch;
-use deep_space::{Coin, Contact, PrivateKey};
+use deep_space::{Coin, Contact, PrivateKey as CosmosPrivateKey};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::prices::get_weth_price;
 use gravity_utils::types::BatchRequestMode;
+use gravity_utils::types::RelayerConfig;
+use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -19,9 +24,9 @@ pub async fn request_batches(
     contact: &Contact,
     web30: &Web3,
     grpc_client: &mut GravityQueryClient<Channel>,
-    batch_request_mode: BatchRequestMode,
+    config: &RelayerConfig,
     eth_address: EthAddress,
-    private_key: PrivateKey,
+    private_key: CosmosPrivateKey,
     request_fee: Coin,
 ) {
     // this actually works either way but sending a tx with zero as the fee
@@ -50,6 +55,9 @@ pub async fn request_batches(
         return;
     }
     let batch_fees = batch_fees.unwrap();
+    if batch_fees.batch_fees.is_empty() {
+        debug!("No pending batches to request: Empty batch fees response")
+    }
 
     for fee in batch_fees.batch_fees {
         let total_fee: Uint256 = fee.total_fees.parse().unwrap();
@@ -64,12 +72,16 @@ pub async fn request_batches(
         }
         let denom = denom.unwrap().denom;
 
-        match batch_request_mode {
+        match config.batch_request_mode {
             BatchRequestMode::ProfitableOnly => {
                 let weth_cost_estimate = eth_gas_price.clone() * BATCH_GAS.into();
                 match get_weth_price(token, total_fee, eth_address, web30).await {
                     Ok(price) => {
                         if price > weth_cost_estimate {
+                            info!(
+                                "Requesting batch for {} because it lis likely to be profitable",
+                                fee.token
+                            );
                             let res = send_request_batch(
                                 private_key,
                                 denom,
@@ -83,6 +95,9 @@ pub async fn request_batches(
                                 } else {
                                     warn!("Failed to request batch with {:?}", e);
                                 }
+                            } else {
+                                // Delay for a bit before attempting to relay batches
+                                delay_for_relaying(config.batch_request_relay_offset).await;
                             }
                         } else {
                             trace!("Did not request unprofitable batch");
@@ -91,15 +106,48 @@ pub async fn request_batches(
                     Err(e) => warn!("Failed to get price for token {} with {:?}", fee.token, e),
                 }
             }
+            BatchRequestMode::Altruistic => {
+                let ideal_gas =
+                    get_acceptable_gas_price(config.altruistic_acceptable_gas_price_percentage);
+                let should_request_altruistic = if let Some(good_price) = ideal_gas.clone() {
+                    eth_gas_price <= good_price
+                } else {
+                    false
+                };
+
+                if should_request_altruistic {
+                    info!(
+                        "Requesting batch for {} because gas prices ({}) are good",
+                        fee.token, eth_gas_price,
+                    );
+                    let res =
+                        send_request_batch(private_key, denom, request_fee.clone(), contact).await;
+                    if let Err(e) = res {
+                        warn!("Failed to request batch with {:?}", e);
+                    } else {
+                        // Delay for a bit before attempting to relay batches
+                        delay_for_relaying(config.batch_request_relay_offset).await;
+                    }
+                }
+            }
             BatchRequestMode::EveryBatch => {
                 info!("Requesting batch for {}", fee.token);
                 let res =
                     send_request_batch(private_key, denom, request_fee.clone(), contact).await;
                 if let Err(e) = res {
                     warn!("Failed to request batch with {:?}", e);
+                } else {
+                    // Delay for a bit before attempting to relay batches
+                    delay_for_relaying(config.batch_request_relay_offset).await;
                 }
             }
             BatchRequestMode::None => {}
         }
     }
+}
+
+/// Batch requests take 20-25 seconds to process before a batch can be relayed, adding in a delay here allows us to
+/// relay a newly created batch immediately without needing to wait for the next relayer_main_loop execution
+async fn delay_for_relaying(delay: u64) {
+    delay_for(Duration::from_secs(delay)).await;
 }
