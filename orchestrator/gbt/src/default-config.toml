@@ -10,11 +10,18 @@ relayer_enabled = false
 [relayer]
 batch_request_mode = "ProfitableOnly"
 
+# After requesting a batch, delay the relayer 45 seconds before attempting
+# to relay batches to give the chain time to process the batch request
+batch_request_relay_offset = 45
+
 # Altruistic batch relayer example
 #
 # Gas prices will be collected every 30 seconds
 # Use in conjunction with altruistic_gas_price_samples to determine the gas price awareness period
 # gas_tracker_loop_speed = 30
+#
+# At least 5 gas price samples will be collected before any batches are relayed
+# altruistic_batch_relaying_samples_delay = 5
 #
 # Batch requests and relaying will only happen when the current gas price is less than 5%
 # of all the prices sampled
@@ -25,6 +32,7 @@ batch_request_mode = "ProfitableOnly"
 # altruistic_gas_price_samples = 2880
 #
 # Activate the above configurations
+# batch_request_mode = "Altruistic"
 # [relayer.batch_relaying_mode]
 # mode = "Altruistic"
 
@@ -49,7 +57,6 @@ margin = 1.1
 # [[relayer.batch_relaying_mode.whitelist]]
 # token = "0x6Bd41fCdF129297c3524395d669c0865b3CA85B2"
 # amount = "50000"
-
 
 [metrics]
 metrics_enabled = false

@@ -46,6 +46,10 @@ pub struct RelayerConfig {
     /// the gas tracker will store ALTRUISTIC_SAMPLES samples of gas prices to determine when it is currently a
     /// "low-fee" period for altruistic batch requests/batch relaying
     pub gas_tracker_loop_speed: u64,
+    /// the delay between the batch request and relaying loops, in seconds
+    /// requesting a batch typically takes 20-25 seconds to process before it can be relayed, this
+    /// offset enables requested batches to be relayed immediately
+    pub batch_request_relay_offset: u64,
     /// the number of gas price samples an altruistic relayer will wait for before attempting to relay any batches
     /// to avoid submitting batches with too little information about gas price changes
     pub altruistic_batch_relaying_samples_delay: u64,
@@ -79,6 +83,8 @@ pub struct TomlRelayerConfig {
     pub relayer_loop_speed: u64,
     #[serde(default = "default_gas_tracker_loop_speed")]
     pub gas_tracker_loop_speed: u64,
+    #[serde(default = "default_batch_request_relay_offset")]
+    pub batch_request_relay_offset: u64,
     #[serde(default = "default_altruistic_batch_relaying_samples_delay")]
     pub altruistic_batch_relaying_samples_delay: u64,
     #[serde(default = "default_altruistic_gas_price_samples")]
@@ -100,6 +106,7 @@ impl From<TomlRelayerConfig> for RelayerConfig {
             logic_call_market_enabled: input.logic_call_market_enabled,
             relayer_loop_speed: input.relayer_loop_speed,
             gas_tracker_loop_speed: input.gas_tracker_loop_speed,
+            batch_request_relay_offset: input.batch_request_relay_offset,
             altruistic_batch_relaying_samples_delay: input.altruistic_batch_relaying_samples_delay,
             altruistic_gas_price_samples: input.altruistic_gas_price_samples,
             altruistic_acceptable_gas_price_percentage: input
@@ -150,6 +157,9 @@ impl From<TomlValsetRelayingMode> for ValsetRelayingMode {
 /// The various possible modes for automatic requests of batches
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum BatchRequestMode {
+    /// Only request batches at times of minimum gas fees to provide maximum utility
+    /// with donated funds
+    Altruistic,
     /// Only ever request profitable batches, regardless of all other
     /// considerations, this is fuzzier than the other modes
     ProfitableOnly,
@@ -255,6 +265,10 @@ fn default_gas_tracker_loop_speed() -> u64 {
     60
 }
 
+fn default_batch_request_relay_offset() -> u64 {
+    45
+}
+
 fn default_altruistic_batch_relaying_samples_delay() -> u64 {
     5
 }
@@ -284,6 +298,7 @@ impl Default for RelayerConfig {
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
             gas_tracker_loop_speed: default_gas_tracker_loop_speed(),
+            batch_request_relay_offset: default_batch_request_relay_offset(),
             altruistic_batch_relaying_samples_delay:
                 default_altruistic_batch_relaying_samples_delay(),
             altruistic_gas_price_samples: default_altruistic_gas_price_samples(),
@@ -304,6 +319,7 @@ impl Default for TomlRelayerConfig {
             logic_call_market_enabled: default_logic_call_market_enabled(),
             relayer_loop_speed: default_relayer_loop_speed(),
             gas_tracker_loop_speed: default_gas_tracker_loop_speed(),
+            batch_request_relay_offset: default_batch_request_relay_offset(),
             altruistic_batch_relaying_samples_delay:
                 default_altruistic_batch_relaying_samples_delay(),
             altruistic_gas_price_samples: default_altruistic_gas_price_samples(),
