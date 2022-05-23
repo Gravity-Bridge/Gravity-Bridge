@@ -263,6 +263,7 @@ func (m *GenesisState) GetEvmChains() []EvmChainData {
 	return nil
 }
 
+// EvmChainData struct, containing all persistant data per EVM chain required by the Gravity module
 type EvmChainData struct {
 	EvmChain           EvmChain                    `protobuf:"bytes,1,opt,name=evm_chain,json=evmChain,proto3" json:"evm_chain"`
 	GravityNonces      GravityNonces               `protobuf:"bytes,2,opt,name=gravity_nonces,json=gravityNonces,proto3" json:"gravity_nonces"`
@@ -395,6 +396,7 @@ func (m *EvmChainData) GetUnbatchedTransfers() []OutgoingTransferTx {
 	return nil
 }
 
+// EvmChain struct contains EVM chain specific data
 type EvmChain struct {
 	EvmChainPrefix string `protobuf:"bytes,1,opt,name=evm_chain_prefix,json=evmChainPrefix,proto3" json:"evm_chain_prefix,omitempty"`
 	EvmChainName   string `protobuf:"bytes,2,opt,name=evm_chain_name,json=evmChainName,proto3" json:"evm_chain_name,omitempty"`
