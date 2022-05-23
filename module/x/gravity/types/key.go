@@ -22,15 +22,15 @@ const (
 )
 
 var (
-	// EthAddressByValidatorKey indexes cosmos validator account addresses
+	// EvmAddressByValidatorKey indexes cosmos validator account addresses
 	// i.e. gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
-	// [0x1248a4405201cc3a00ab515ce9c4dd47]
-	EthAddressByValidatorKey = HashString("EthAddressValidatorKey")
+	// [0xe1c9f604d2a57a4242caa326f86c192e]
+	EvmAddressByValidatorKey = HashString("EvmAddressValidatorKey")
 
-	// ValidatorByEthAddressKey indexes ethereum addresses
+	// ValidatorByEvmAddressKey indexes ethereum addresses
 	// i.e. 0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B
-	// [0xbfe41763f372108317ed982a4cd1b4a8]
-	ValidatorByEthAddressKey = HashString("ValidatorByEthAddressKey")
+	// [0xf0ff4297406d79f5a44a28503b68ca3e]
+	ValidatorByEvmAddressKey = HashString("ValidatorByEvmAddressKey")
 
 	// ValsetRequestKey indexes valset requests by nonce
 	// [0xa318dca6c74494c2fac1841c9e2454fe]
@@ -40,15 +40,6 @@ var (
 	// i.e gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
 	// [0x2f522701d7f28af84632f8228fbe1750]
 	ValsetConfirmKey = HashString("ValsetConfirmKey")
-
-	// OracleClaimKey Claim details by nonce and validator address
-	// i.e. gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
-	// A claim is named more intuitively than an Attestation, it is literally
-	// a validator making a claim to have seen something happen. Claims are
-	// attached to attestations which can be thought of as 'the event' that
-	// will eventually be executed.
-	// [0x15968a4f1cb06e26ab155d6e59eccc85]
-	OracleClaimKey = HashString("OracleClaimKey")
 
 	// OracleAttestationKey attestation details by nonce and validator address
 	// i.e. gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
@@ -79,10 +70,6 @@ var (
 	// [0xa34e56ab6fab9ee91e82ba216bfeb759]
 	LastObservedEventNonceKey = HashString("LastObservedEventNonceKey")
 
-	// SequenceKeyPrefix indexes different txids
-	// [0x33887862fa4fba9c592d6fb84d8dd755]
-	SequenceKeyPrefix = HashString("SequenceKeyPrefix")
-
 	// KeyLastTXPoolID indexes the lastTxPoolID
 	// [0xfd87a616141bfbd26fd2938d6e1cf099]
 	KeyLastTXPoolID = HashString("SequenceKeyPrefix" + "lastTxPoolId")
@@ -103,9 +90,9 @@ var (
 	// [0xd244ded2fa29e95a7719ec40696221e4]
 	KeyOutgoingLogicConfirm = HashString("KeyOutgoingLogicConfirm")
 
-	// LastObservedEthereumBlockHeightKey indexes the latest Ethereum block height
-	// [0x83a283a6c3390f1526250df45e9ef8c6]
-	LastObservedEthereumBlockHeightKey = HashString("LastObservedEthereumBlockHeightKey")
+	// LastObservedEvmBlockHeightKey indexes the latest Ethereum block height
+	// [0x8714755324ba0b02be37e2d2a5af913d]
+	LastObservedEvmBlockHeightKey = HashString("LastObservedEvmBlockHeightKey")
 
 	// DenomToERC20Key prefixes the index of Cosmos originated asset denoms to ERC20s
 	// [0x19fb4f512868744eea13f3eac3672c12]
@@ -142,13 +129,17 @@ var (
 	// [0x2418e9d990ce88e9b844b0bb723d4d7a]
 	LastObservedValsetKey = HashString("LastObservedValsetKey")
 
-	// PastEthSignatureCheckpointKey indexes eth signature checkpoints that have existed
-	// [0x1cbe0be407a979331b98e599eeedd09f]
-	PastEthSignatureCheckpointKey = HashString("PastEthSignatureCheckpointKey")
+	// PastEvmSignatureCheckpointKey indexes evm signature checkpoints that have existed
+	// [0x221c26b198f412c1b4d96dbd2bd6353e]
+	PastEvmSignatureCheckpointKey = HashString("PastEvmSignatureCheckpointKey")
 
 	// PendingIBCAutoForwards indexes pending SendToCosmos sends via IBC, queued by event nonce
 	// [0x5b89a7c5dc9abd2a7abc2560d6eb42ea]
 	PendingIbcAutoForwards = HashString("IbcAutoForwardQueue")
+
+	// EvmChainKey indexes EVM chains supported on cosmos
+	// [0x0a4fce7411f743f9198f56c8f706cd0d]
+	EvmChainKey = HashString("EvmChainKey")
 )
 
 // GetOrchestratorAddressKey returns the following key format
@@ -161,147 +152,174 @@ func GetOrchestratorAddressKey(orc sdk.AccAddress) []byte {
 	return AppendBytes(KeyOrchestratorAddress, orc.Bytes())
 }
 
-// GetEthAddressByValidatorKey returns the following key format
+// GetEvmAddressByValidatorKey returns the following key format
 // prefix              cosmos-validator
 // [0x0][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
-func GetEthAddressByValidatorKey(validator sdk.ValAddress) []byte {
+func GetEvmAddressByValidatorKey(validator sdk.ValAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return AppendBytes(EthAddressByValidatorKey, validator.Bytes())
+	return AppendBytes(EvmAddressByValidatorKey, validator.Bytes())
 }
 
-// GetValidatorByEthAddressKey returns the following key format
+// GetValidatorByEvmAddressKey returns the following key format
 // prefix              cosmos-validator
 // [0x0][0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B]
-func GetValidatorByEthAddressKey(ethAddress EthAddress) []byte {
-	return AppendBytes(ValidatorByEthAddressKey, ethAddress.GetAddress().Bytes())
+func GetValidatorByEvmAddressKey(evmAddress EthAddress) []byte {
+	return AppendBytes(ValidatorByEvmAddressKey, evmAddress.GetAddress().Bytes())
 }
 
 // GetValsetKey returns the following key format
-// prefix    nonce
-// [0x0][0 0 0 0 0 0 0 1]
-func GetValsetKey(nonce uint64) []byte {
-	return AppendBytes(ValsetRequestKey, UInt64Bytes(nonce))
+// prefix  chain		nonce
+// [0x0][xyzchain][0 0 0 0 0 0 0 1]
+func GetValsetKey(evmChainPrefix string, nonce uint64) []byte {
+	return AppendBytes(ValsetRequestKey, []byte(evmChainPrefix), UInt64Bytes(nonce))
 }
 
 // GetValsetConfirmNoncePrefix returns the following format
-// prefix   nonce
-// [0x0][0 0 0 0 0 0 0 1]
-func GetValsetConfirmNoncePrefix(nonce uint64) []byte {
-	return AppendBytes(ValsetConfirmKey, UInt64Bytes(nonce))
+// prefix  chain		nonce
+// [0x0][xyzchain][0 0 0 0 0 0 0 1]
+func GetValsetConfirmNoncePrefix(evmChainPrefix string, nonce uint64) []byte {
+	return AppendBytes(ValsetConfirmKey, []byte(evmChainPrefix), UInt64Bytes(nonce))
 }
 
 // GetValsetConfirmKey returns the following key format
-// prefix   nonce                    validator-address
-// [0x0][0 0 0 0 0 0 0 1][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
+// prefix  chain		nonce					validator-address
+// [0x0][xyzchain][0 0 0 0 0 0 0 1][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
 // MARK finish-batches: this is where the key is created in the old (presumed working) code
-func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) []byte {
+func GetValsetConfirmKey(evmChainPrefix string, nonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return AppendBytes(GetValsetConfirmNoncePrefix(nonce), validator.Bytes())
+	return AppendBytes(GetValsetConfirmNoncePrefix(evmChainPrefix, nonce), validator.Bytes())
 }
 
 // GetAttestationKey returns the following key format
-// prefix     nonce                             claim-details-hash
-// [0x0][0 0 0 0 0 0 0 1][fd1af8cec6c67fcf156f1b61fdf91ebc04d05484d007436e75342fc05bbff35a]
+// prefix  chain		nonce						claim-details-hash
+// [0x0][xyzchain][0 0 0 0 0 0 0 1][fd1af8cec6c67fcf156f1b61fdf91ebc04d05484d007436e75342fc05bbff35a]
 // An attestation is an event multiple people are voting on, this function needs the claim
 // details because each Attestation is aggregating all claims of a specific event, lets say
 // validator X and validator y were making different claims about the same event nonce
 // Note that the claim hash does NOT include the claimer address and only identifies an event
-func GetAttestationKey(eventNonce uint64, claimHash []byte) []byte {
-	return AppendBytes(OracleAttestationKey, UInt64Bytes(eventNonce), claimHash)
+func GetAttestationKey(evmChainPrefix string, eventNonce uint64, claimHash []byte) []byte {
+	return AppendBytes(OracleAttestationKey, []byte(evmChainPrefix), UInt64Bytes(eventNonce), claimHash)
 }
 
 // GetOutgoingTxPoolContractPrefix returns
-// prefix			feeContract
-// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+// prefix  chain				feeContract
+// [0x0][xyzchain][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 // This prefix is used for iterating over unbatched transactions for a given contract
-func GetOutgoingTxPoolContractPrefix(contractAddress EthAddress) []byte {
-	return AppendBytes(OutgoingTXPoolKey, contractAddress.GetAddress().Bytes())
+func GetOutgoingTxPoolContractPrefix(evmChainPrefix string, contractAddress EthAddress) []byte {
+	return AppendBytes(OutgoingTXPoolKey, []byte(evmChainPrefix), contractAddress.GetAddress().Bytes())
 }
 
 // GetOutgoingTxPoolKey returns the following key format
-// prefix				feeContract					 feeAmount			id
-// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6][1000000000][0 0 0 0 0 0 0 1]
-func GetOutgoingTxPoolKey(fee InternalERC20Token, id uint64) []byte {
+// prefix  chain					feeContract					 feeAmount		id
+// [0x0][xyzchain][0xc783df8a850f42e7F7e57013759C285caa701eB6][1000000000][0 0 0 0 0 0 0 1]
+func GetOutgoingTxPoolKey(evmChainPrefix string, fee InternalERC20Token, id uint64) []byte {
 	amount := make([]byte, 32)
 	amount = fee.Amount.BigInt().FillBytes(amount)
-	return AppendBytes(OutgoingTXPoolKey, fee.Contract.GetAddress().Bytes(), amount, UInt64Bytes(id))
+	return AppendBytes(OutgoingTXPoolKey, []byte(evmChainPrefix), fee.Contract.GetAddress().Bytes(), amount, UInt64Bytes(id))
 }
 
 // GetOutgoingTxBatchContractPrefix returns the following format
-// prefix     eth-contract-address
-// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6]
-func GetOutgoingTxBatchContractPrefix(tokenContract EthAddress) []byte {
-	return AppendBytes(OutgoingTXBatchKey, tokenContract.GetAddress().Bytes())
+// prefix  chain			evm-contract-address
+// [0x0][xyzchain][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+func GetOutgoingTxBatchContractPrefix(evmChainPrefix string, tokenContract EthAddress) []byte {
+	return AppendBytes(OutgoingTXBatchKey, []byte(evmChainPrefix), tokenContract.GetAddress().Bytes())
 }
 
 // GetOutgoingTxBatchKey returns the following key format
-// prefix     eth-contract-address                     nonce
-// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
-func GetOutgoingTxBatchKey(tokenContract EthAddress, nonce uint64) []byte {
-	return AppendBytes(GetOutgoingTxBatchContractPrefix(tokenContract), UInt64Bytes(nonce))
+// prefix  chain			evm-contract-address					nonce
+// [0x0][xyzchain][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
+func GetOutgoingTxBatchKey(evmChainPrefix string, tokenContract EthAddress, nonce uint64) []byte {
+	return AppendBytes(GetOutgoingTxBatchContractPrefix(evmChainPrefix, tokenContract), UInt64Bytes(nonce))
 }
 
 // GetBatchConfirmNonceContractPrefix returns
-// prefix           eth-contract-address                BatchNonce
-// [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
-func GetBatchConfirmNonceContractPrefix(tokenContract EthAddress, batchNonce uint64) []byte {
-	return AppendBytes(BatchConfirmKey, tokenContract.GetAddress().Bytes(), UInt64Bytes(batchNonce))
+// prefix  chain			evm-contract-address				BatchNonce
+// [0x0][xyzchain][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1]
+func GetBatchConfirmNonceContractPrefix(evmChainPrefix string, tokenContract EthAddress, batchNonce uint64) []byte {
+	return AppendBytes(BatchConfirmKey, []byte(evmChainPrefix), tokenContract.GetAddress().Bytes(), UInt64Bytes(batchNonce))
 }
 
 // GetBatchConfirmKey returns the following key format
-// prefix           eth-contract-address                BatchNonce                       Validator-address
-// [0x0		][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
+// prefix  chain			evm-contract-address                BatchNonce                       Validator-address
+// [0x0][xyzchain][0xc783df8a850f42e7F7e57013759C285caa701eB6][0 0 0 0 0 0 0 1][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
 // TODO this should be a sdk.ValAddress
-func GetBatchConfirmKey(tokenContract EthAddress, batchNonce uint64, validator sdk.AccAddress) []byte {
+func GetBatchConfirmKey(evmChainPrefix string, tokenContract EthAddress, batchNonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return AppendBytes(GetBatchConfirmNonceContractPrefix(tokenContract, batchNonce), validator.Bytes())
+	return AppendBytes(GetBatchConfirmNonceContractPrefix(evmChainPrefix, tokenContract, batchNonce), validator.Bytes())
 }
 
 // GetLastEventNonceByValidatorKey indexes lateset event nonce by validator
 // GetLastEventNonceByValidatorKey returns the following key format
-// prefix              cosmos-validator
-// [0x0][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
-func GetLastEventNonceByValidatorKey(validator sdk.ValAddress) []byte {
+// prefix  chain				cosmos-validator
+// [0x0][xyzchain][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
+func GetLastEventNonceByValidatorKey(evmChainPrefix string, validator sdk.ValAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return AppendBytes(LastEventNonceByValidatorKey, validator.Bytes())
+	return AppendBytes(LastEventNonceByValidatorKey, []byte(evmChainPrefix), validator.Bytes())
 }
 
-func GetDenomToERC20Key(denom string) []byte {
-	return AppendBytes(DenomToERC20Key, []byte(denom))
+// GetDenomToERC20Key return the following key format
+// prefix  chain	denom
+// [0x0][xyzchain][denom]
+func GetDenomToERC20Key(evmChainPrefix string, denom string) []byte {
+	return AppendBytes(DenomToERC20Key, []byte(evmChainPrefix), []byte(denom))
 }
 
-func GetERC20ToDenomKey(erc20 EthAddress) []byte {
-	return AppendBytes(ERC20ToDenomKey, erc20.GetAddress().Bytes())
+// GetERC20ToDenomKey return the following key format
+// prefix  chain			ERC20-Evm-Address
+// [0x0][xyzchain][0xc783df8a850f42e7F7e57013759C285caa701eB6]
+func GetERC20ToDenomKey(evmChainPrefix string, erc20 EthAddress) []byte {
+	return AppendBytes(ERC20ToDenomKey, []byte(evmChainPrefix), erc20.GetAddress().Bytes())
 }
 
-func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) []byte {
-	return AppendBytes(KeyOutgoingLogicCall, invalidationId, UInt64Bytes(invalidationNonce))
+func GetOutgoingLogicCallKey(evmChainPrefix string, invalidationId []byte, invalidationNonce uint64) []byte {
+	return AppendBytes(KeyOutgoingLogicCall, []byte(evmChainPrefix), invalidationId, UInt64Bytes(invalidationNonce))
 }
 
-func GetLogicConfirmNonceInvalidationIdPrefix(invalidationId []byte, invalidationNonce uint64) []byte {
-	return AppendBytes(KeyOutgoingLogicConfirm, invalidationId, UInt64Bytes(invalidationNonce))
+func GetLogicConfirmNonceInvalidationIdPrefix(evmChainPrefix string, invalidationId []byte, invalidationNonce uint64) []byte {
+	return AppendBytes(KeyOutgoingLogicConfirm, []byte(evmChainPrefix), invalidationId, UInt64Bytes(invalidationNonce))
 }
 
-func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) []byte {
+func GetLogicConfirmKey(evmChainPrefix string, invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return AppendBytes(GetLogicConfirmNonceInvalidationIdPrefix(invalidationId, invalidationNonce), validator.Bytes())
+	return AppendBytes(GetLogicConfirmNonceInvalidationIdPrefix(evmChainPrefix, invalidationId, invalidationNonce), validator.Bytes())
 }
 
-// GetPastEthSignatureCheckpointKey returns the following key format
-// prefix    checkpoint
-// [0x0][ checkpoint bytes ]
-func GetPastEthSignatureCheckpointKey(checkpoint []byte) []byte {
-	return AppendBytes(PastEthSignatureCheckpointKey, []byte(convertByteArrToString(checkpoint)))
+// GetPastEvmSignatureCheckpointKey returns the following key format
+// prefix  chain	checkpoint
+// [0x0][xyzchain][checkpoint bytes]
+func GetPastEvmSignatureCheckpointKey(evmChainPrefix string, checkpoint []byte) []byte {
+	return AppendBytes(PastEvmSignatureCheckpointKey, []byte(evmChainPrefix), []byte(convertByteArrToString(checkpoint)))
+}
+
+// GetPendingIbcAutoForwardKey returns the following key format
+// prefix	EventNonce
+// [0x0][0 0 0 0 0 0 0 1]
+func GetPendingIbcAutoForwardKey(eventNonce uint64) []byte {
+	return AppendBytes(PendingIbcAutoForwards, UInt64Bytes(eventNonce))
+}
+
+// GetEvmChainKey returns the following key format
+// prefix  chain
+// [0x0][xyzchain]
+func GetEvmChainKey(evmChainPrefix string) []byte {
+	return AppendBytes(EvmChainKey, []byte(evmChainPrefix))
+}
+
+// Appends chain prefix to prefix
+// prefix  chain
+// [0x0][xyzchain]
+func AppendChainPrefix(prefix []byte, evmChainPrefix string) []byte {
+	return AppendBytes(prefix, []byte(evmChainPrefix))
 }
 
 // This function is broken and it should not be used in other places except in GetPastEthSignatureCheckpointKey
@@ -311,11 +329,4 @@ func convertByteArrToString(value []byte) string {
 		ret.WriteString(string(value[i]))
 	}
 	return ret.String()
-}
-
-// GetPendingIbcAutoForwardKey returns the following key format
-// prefix		EventNonce
-// [0x0][0 0 0 0 0 0 0 1]
-func GetPendingIbcAutoForwardKey(eventNonce uint64) []byte {
-	return AppendBytes(PendingIbcAutoForwards, UInt64Bytes(eventNonce))
 }

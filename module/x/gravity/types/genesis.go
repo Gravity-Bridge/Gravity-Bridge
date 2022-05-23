@@ -120,18 +120,27 @@ func (s GenesisState) ValidateBasic() error {
 // DefaultGenesisState returns empty genesis state
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		Params:             DefaultParams(),
-		GravityNonces:      GravityNonces{},
-		Valsets:            []Valset{},
-		ValsetConfirms:     []MsgValsetConfirm{},
-		Batches:            []OutgoingTxBatch{},
-		BatchConfirms:      []MsgConfirmBatch{},
-		LogicCalls:         []OutgoingLogicCall{},
-		LogicCallConfirms:  []MsgConfirmLogicCall{},
-		Attestations:       []Attestation{},
-		DelegateKeys:       []MsgSetOrchestratorAddress{},
-		Erc20ToDenoms:      []ERC20ToDenom{},
-		UnbatchedTransfers: []OutgoingTransferTx{},
+		Params:    DefaultParams(),
+		EvmChains: []EvmChainData{},
+	}
+}
+
+func DefaultEvmChains() []EvmChainData {
+	return []EvmChainData{
+		{
+			EvmChain:           EvmChain{EvmChainPrefix: "gravity", EvmChainName: "gravity"},
+			GravityNonces:      GravityNonces{},
+			Valsets:            []Valset{},
+			ValsetConfirms:     []MsgValsetConfirm{},
+			Batches:            []OutgoingTxBatch{},
+			BatchConfirms:      []MsgConfirmBatch{},
+			LogicCalls:         []OutgoingLogicCall{},
+			LogicCallConfirms:  []MsgConfirmLogicCall{},
+			Attestations:       []Attestation{},
+			DelegateKeys:       []MsgSetOrchestratorAddress{},
+			Erc20ToDenoms:      []ERC20ToDenom{},
+			UnbatchedTransfers: []OutgoingTransferTx{},
+		},
 	}
 }
 

@@ -29,7 +29,7 @@ func TestConfirmHandlerCommon(t *testing.T) {
 	ethAddress, err := types.NewEthAddress(crypto.PubkeyToAddress(privKey.PublicKey).String())
 	require.NoError(t, err)
 
-	input.GravityKeeper.SetEthAddressForValidator(ctx, ValAddrs[0], *ethAddress)
+	input.GravityKeeper.SetEvmAddressForValidator(ctx, ValAddrs[0], *ethAddress)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, ValAddrs[0], AccAddrs[0])
 
 	batch := types.OutgoingTxBatch{
@@ -55,7 +55,7 @@ func confirmHandlerCommonWithAddress(t *testing.T, address string, testVar testI
 	ethAddress, err := types.NewEthAddress(testVar.ethAddress)
 	require.NoError(t, err)
 
-	input.GravityKeeper.SetEthAddressForValidator(ctx, ValAddrs[0], *ethAddress)
+	input.GravityKeeper.SetEvmAddressForValidator(ctx, ValAddrs[0], *ethAddress)
 	input.GravityKeeper.SetOrchestratorValidator(ctx, ValAddrs[0], AccAddrs[0])
 
 	batch := types.OutgoingTxBatch{

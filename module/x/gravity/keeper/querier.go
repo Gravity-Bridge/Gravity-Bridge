@@ -31,7 +31,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 }
 
 func queryCurrentValset(ctx sdk.Context, keeper Keeper) ([]byte, error) {
-	valset, err := keeper.GetCurrentValset(ctx)
+	valset, err := keeper.GetCurrentValset(ctx, EthChainPrefix)
 	if err != nil {
 		return nil, err
 	}

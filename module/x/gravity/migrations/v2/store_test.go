@@ -70,8 +70,12 @@ func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
 	err := v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	addr, found := input.GravityKeeper.GetCosmosOriginatedERC20(input.Context, denom)
-	assert.True(t, found)
+	bz := input.Context.KVStore(input.GravityStoreKey).Get(v2.GetDenomToERC20Key(denom))
+	assert.NotNil(t, bz)
+	addr, err := types.NewEthAddressFromBytes(bz)
+	assert.Nil(t, err)
+	assert.NotNil(t, addr)
+
 	// Triple check that the migration worked
 	assert.Equal(t, tokenContract, strings.ToLower(addr.GetAddress().Hex()))
 	assert.Equal(t, gethcommon.HexToAddress(tokenContract), addr.GetAddress())
@@ -90,8 +94,10 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	tokenAddr, err := types.NewEthAddress(tokenContract)
 	assert.NoError(t, err)
 
-	storedDenom, found := input.GravityKeeper.GetCosmosOriginatedDenom(input.Context, *tokenAddr)
-	assert.True(t, found)
+	bz := input.Context.KVStore(input.GravityStoreKey).Get(v2.GetERC20ToDenomKey(*tokenAddr))
+	assert.NotNil(t, bz)
+
+	storedDenom := string(bz)
 	assert.Equal(t, denom, storedDenom)
 
 	var erc20ToDenoms = []types.ERC20ToDenom{}
@@ -118,7 +124,7 @@ func TestMigrateEthAddressByValidator(t *testing.T) {
 	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	valEthAddr, found := input.GravityKeeper.GetEthAddressByValidator(input.Context, validator)
+	valEthAddr, found := v2.GetEthAddressByValidator(input.Context, validator, input.Context.KVStore(input.GravityStoreKey))
 	assert.True(t, found)
 	assert.Equal(t, ethAddr, strings.ToLower(valEthAddr.GetAddress().Hex()))
 	assert.Equal(t, gethcommon.HexToAddress(ethAddr), valEthAddr.GetAddress())
@@ -145,7 +151,7 @@ func TestMigrateValidatorByEthAddressKey(t *testing.T) {
 	addr, err := types.NewEthAddress(ethAddr)
 	assert.NoError(t, err)
 
-	key := types.GetValidatorByEthAddressKey(*addr)
+	key := v2.GetValidatorByEthAddressKey(*addr)
 	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
 	assert.Equal(t, validator.Bytes(), res)
 
@@ -182,7 +188,7 @@ func TestMigrateBatchConfirms(t *testing.T) {
 	addr, err := types.NewEthAddress(ethAddr)
 	assert.NoError(t, err)
 
-	newKey := types.GetBatchConfirmKey(*addr, 123, orch)
+	newKey := v2.GetBatchConfirmKey(*addr, 123, orch)
 	entity := input.Context.KVStore(input.GravityStoreKey).Get(newKey)
 	assert.Equal(t, entity, confirmBytes)
 }
@@ -213,7 +219,7 @@ func TestMigrateOutgoingTxs(t *testing.T) {
 	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	key := types.GetOutgoingTxPoolKey(*internalTx, outtx.Id)
+	key := v2.GetOutgoingTxPoolKey(*internalTx, outtx.Id)
 	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
 	assert.Equal(t, inputBytes, res)
 }
@@ -242,7 +248,7 @@ func TestMigrateOutgoingTxBatches(t *testing.T) {
 	err = v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	key := types.GetOutgoingTxBatchKey(*addr, batch.BatchNonce)
+	key := v2.GetOutgoingTxBatchKey(*addr, batch.BatchNonce)
 	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
 	assert.Equal(t, inputBytes, res)
 }

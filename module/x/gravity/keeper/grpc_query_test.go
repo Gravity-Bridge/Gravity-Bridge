@@ -18,13 +18,14 @@ func TestQueryGetAttestations(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	k := input.GravityKeeper
 	ctx := input.Context
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
 
 	queryHelper := baseapp.NewQueryServerTestHelper(ctx, encCfg.InterfaceRegistry)
 	types.RegisterQueryServer(queryHelper, k)
 	queryClient := types.NewQueryClient(queryHelper)
 
 	numAttestations := 10
-	createAttestations(t, k, ctx, numAttestations)
+	createAttestations(t, k, ctx, evmChain.EvmChainPrefix, numAttestations)
 
 	testCases := []struct {
 		name      string
@@ -123,7 +124,7 @@ func TestQueryGetAttestations(t *testing.T) {
 	}
 }
 
-func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length int) {
+func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, evmChainPrefix string, length int) {
 	t.Helper()
 
 	for i := 0; i < length; i++ {
@@ -150,6 +151,6 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 		hash, err := msg.ClaimHash()
 		require.NoError(t, err)
 
-		k.SetAttestation(ctx, nonce, hash, att)
+		k.SetAttestation(ctx, evmChainPrefix, nonce, hash, att)
 	}
 }

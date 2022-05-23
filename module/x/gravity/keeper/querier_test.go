@@ -32,7 +32,8 @@ func TestQueryValsetConfirm(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
-	input.GravityKeeper.SetValsetConfirm(sdkCtx, types.MsgValsetConfirm{
+	evmChain := k.GetEvmChainData(sdkCtx, EthChainPrefix)
+	input.GravityKeeper.SetValsetConfirm(sdkCtx, evmChain.EvmChainPrefix, types.MsgValsetConfirm{
 		Nonce:        nonce,
 		Orchestrator: myValidatorCosmosAddr.String(),
 		EthAddress:   myValidatorEthereumAddr.GetAddress().Hex(),
@@ -108,6 +109,7 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
+	evmChain := k.GetEvmChainData(sdkCtx, EthChainPrefix)
 
 	// seed confirmations
 	for i := 0; i < 3; i++ {
@@ -117,7 +119,7 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		msg.Nonce = uint64(1)
 		msg.Orchestrator = addr.String()
 		msg.Signature = fmt.Sprintf("signature %d", i+1)
-		input.GravityKeeper.SetValsetConfirm(sdkCtx, msg)
+		input.GravityKeeper.SetValsetConfirm(sdkCtx, evmChain.EvmChainPrefix, msg)
 	}
 
 	specs := map[string]struct {
@@ -287,6 +289,7 @@ func TestLastValsetRequests(t *testing.T) {
 	// any lower than this and a validator won't be created
 	const minStake = 1000000
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	evmChain := input.GravityKeeper.GetEvmChainData(input.Context, EthChainPrefix)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := sdk.WrapSDKContext(input.Context)
@@ -299,7 +302,7 @@ func TestLastValsetRequests(t *testing.T) {
 	// Run the staking endblocker to ensure valset is correct in state
 	staking.EndBlocker(input.Context, input.StakingKeeper)
 
-	input.GravityKeeper.SetValsetRequest(input.Context)
+	input.GravityKeeper.SetValsetRequest(input.Context, evmChain.EvmChainPrefix)
 
 	k := input.GravityKeeper
 	for msg, spec := range specs {
@@ -452,9 +455,11 @@ func TestPendingValsetRequests(t *testing.T) {
 			},
 		},
 	}
+
 	// any lower than this and a validator won't be created
 	const minStake = 1000000
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	evmChain := input.GravityKeeper.GetEvmChainData(input.Context, EthChainPrefix)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := sdk.WrapSDKContext(input.Context)
@@ -467,7 +472,7 @@ func TestPendingValsetRequests(t *testing.T) {
 	// Run the staking endblocker to ensure valset is correct in state
 	staking.EndBlocker(input.Context, input.StakingKeeper)
 
-	input.GravityKeeper.SetValsetRequest(input.Context)
+	input.GravityKeeper.SetValsetRequest(input.Context, evmChain.EvmChainPrefix)
 
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 	for msg, spec := range specs {
@@ -531,11 +536,12 @@ func TestLastPendingBatchRequest(t *testing.T) {
 	// any lower than this and a validator won't be created
 	const minStake = 1000000
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
+	evmChain := input.GravityKeeper.GetEvmChainData(input.Context, EthChainPrefix)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := sdk.WrapSDKContext(input.Context)
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
-	createTestBatch(t, input, 2)
+	createTestBatch(t, input, 2, evmChain.EvmChainPrefix)
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
 			req := new(types.QueryLastPendingBatchRequestByAddrRequest)
@@ -548,7 +554,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 }
 
 //nolint: exhaustivestruct
-func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
+func createTestBatch(t *testing.T, input TestInput, maxTxElements uint, evmChainPrefix string) {
 	var (
 		mySender            = bytes.Repeat([]byte{1}, 20)
 		myReceiver          = "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934"
@@ -579,7 +585,7 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
-		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, evmChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:
 		// 1: amount 100, fee 2
@@ -591,7 +597,7 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 	input.Context = input.Context.WithBlockTime(now)
 
 	// tx batch size is 2, so that some of them stay behind
-	_, err = input.GravityKeeper.BuildOutgoingTXBatch(input.Context, *tokenContract, maxTxElements)
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(input.Context, evmChainPrefix, *tokenContract, maxTxElements)
 	require.NoError(t, err)
 	// Should have 2 and 3 from above
 	// 1 and 4 should be unbatched
@@ -605,6 +611,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
+	evmChain := k.GetEvmChainData(sdkCtx, EthChainPrefix)
 
 	var (
 		tokenContract      = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
@@ -612,7 +619,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	input.GravityKeeper.SetBatchConfirm(sdkCtx, &types.MsgConfirmBatch{
+	input.GravityKeeper.SetBatchConfirm(sdkCtx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
 		Nonce:         1,
 		TokenContract: tokenContract,
 		EthSigner:     "0xf35e2cc8e6523d683ed44870f5b7cc785051a77d",
@@ -652,6 +659,7 @@ func TestQueryLogicCalls(t *testing.T) {
 		tokenContract            = "0x7580bfe88dd3d07947908fae12d95872a260f2d8"
 		invalidationId           = []byte("GravityTesting")
 		invalidationNonce uint64 = 1
+		evmChain                 = k.GetEvmChainData(sdkCtx, EthChainPrefix)
 	)
 
 	// seed with valset requests and eth addresses to make validators
@@ -665,7 +673,7 @@ func TestQueryLogicCalls(t *testing.T) {
 			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
-			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
+			input.GravityKeeper.SetEvmAddressForValidator(sdkCtx, valAddr, *ethAddr)
 			validators = append(validators, valAddr)
 		}
 	}
@@ -684,9 +692,9 @@ func TestQueryLogicCalls(t *testing.T) {
 		InvalidationId:       invalidationId,
 		InvalidationNonce:    uint64(invalidationNonce),
 	}
-	k.SetOutgoingLogicCall(sdkCtx, call)
+	k.SetOutgoingLogicCall(sdkCtx, evmChain.EvmChainPrefix, call)
 
-	res := k.GetOutgoingLogicCall(sdkCtx, invalidationId, invalidationNonce)
+	res := k.GetOutgoingLogicCall(sdkCtx, evmChain.EvmChainPrefix, invalidationId, invalidationNonce)
 
 	require.Equal(t, call, *res)
 
@@ -713,6 +721,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 		tokenContract            = "0x7580bfe88dd3d07947908fae12d95872a260f2d8"
 		invalidationId           = []byte("GravityTesting")
 		invalidationNonce uint64 = 1
+		evmChain                 = k.GetEvmChains(sdkCtx)[0]
 	)
 
 	// seed with valset requests and eth addresses to make validators
@@ -726,7 +735,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 			valAddr := bytes.Repeat([]byte{byte(j)}, 20)
 			ethAddr, err := types.NewEthAddress(gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(j + 1)}, 20)).String())
 			require.NoError(t, err)
-			input.GravityKeeper.SetEthAddressForValidator(sdkCtx, valAddr, *ethAddr)
+			input.GravityKeeper.SetEvmAddressForValidator(sdkCtx, valAddr, *ethAddr)
 			validators = append(validators, valAddr)
 		}
 	}
@@ -745,7 +754,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 		InvalidationId:       invalidationId,
 		InvalidationNonce:    uint64(invalidationNonce),
 	}
-	k.SetOutgoingLogicCall(sdkCtx, call)
+	k.SetOutgoingLogicCall(sdkCtx, evmChain.EvmChainPrefix, call)
 
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 
@@ -757,9 +766,9 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 		Signature:         "test",
 	}
 
-	k.SetLogicCallConfirm(sdkCtx, &confirm)
+	k.SetLogicCallConfirm(sdkCtx, evmChain.EvmChainPrefix, &confirm)
 
-	res := k.GetLogicConfirmByInvalidationIDAndNonce(sdkCtx, invalidationId, 1)
+	res := k.GetLogicConfirmByInvalidationIDAndNonce(sdkCtx, evmChain.EvmChainPrefix, invalidationId, 1)
 	assert.Equal(t, len(res), 1)
 }
 
@@ -772,12 +781,13 @@ func TestQueryBatch(t *testing.T) {
 
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
+	evmChain := k.GetEvmChainData(input.Context, EthChainPrefix)
 
 	var (
 		tokenContract = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 	)
 
-	createTestBatch(t, input, 2)
+	createTestBatch(t, input, 2, evmChain.EvmChainPrefix)
 
 	batch, err := k.BatchRequestByNonce(ctx, &types.QueryBatchRequestByNonceRequest{Nonce: 1, ContractAddress: tokenContract})
 	require.NoError(t, err)
@@ -830,9 +840,10 @@ func TestLastBatchesRequest(t *testing.T) {
 
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
+	evmChain := k.GetEvmChainData(input.Context, EthChainPrefix)
 
-	createTestBatch(t, input, 2)
-	createTestBatch(t, input, 3)
+	createTestBatch(t, input, 2, evmChain.EvmChainPrefix)
+	createTestBatch(t, input, 3, evmChain.EvmChainPrefix)
 
 	lastBatches, err := k.OutgoingTxBatches(ctx, &types.QueryOutgoingTxBatchesRequest{})
 	require.NoError(t, err)
@@ -964,10 +975,12 @@ func TestQueryCurrentValset(t *testing.T) {
 
 	sdkCtx := input.Context
 
-	currentValset, err := input.GravityKeeper.GetCurrentValset(sdkCtx)
-	require.NoError(t, err)
+	for _, cd := range input.GravityKeeper.GetEvmChains(sdkCtx) {
+		currentValset, err := input.GravityKeeper.GetCurrentValset(sdkCtx, cd.EvmChainPrefix)
+		require.NoError(t, err)
 
-	assert.Equal(t, expectedValset, currentValset)
+		assert.Equal(t, expectedValset, currentValset)
+	}
 }
 
 //nolint: exhaustivestruct
@@ -987,7 +1000,8 @@ func TestQueryERC20ToDenom(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
+	evmChain := k.GetEvmChainData(input.Context, EthChainPrefix)
+	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, evmChain.EvmChainPrefix, denom, *erc20)
 
 	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{Erc20: erc20.GetAddress().Hex()})
 	require.NoError(t, err)
@@ -1012,7 +1026,8 @@ func TestQueryDenomToERC20(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
+	evmChain := k.GetEvmChainData(input.Context, EthChainPrefix)
+	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, evmChain.EvmChainPrefix, denom, *erc20)
 
 	queriedERC20, err := k.DenomToERC20(ctx, &types.QueryDenomToERC20Request{Denom: denom})
 	require.NoError(t, err)
@@ -1035,6 +1050,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, err2         = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		evmChain            = k.GetEvmChainData(sdkCtx, EthChainPrefix)
 	)
 	require.NoError(t, err1)
 	require.NoError(t, err2)
@@ -1060,7 +1076,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
-		_, err = input.GravityKeeper.AddToOutgoingPool(sdkCtx, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(sdkCtx, evmChain.EvmChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:
 		// 1: amount 100, fee 2
@@ -1074,7 +1090,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 
 	// tx batch size is 2, so that some of them stay behind
 	// Should contain 2 and 3 from above
-	_, err = input.GravityKeeper.BuildOutgoingTXBatch(sdkCtx, *tokenContract, 2)
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(sdkCtx, evmChain.EvmChainPrefix, *tokenContract, 2)
 	require.NoError(t, err)
 
 	// Should receive 1 and 4 unbatched, 2 and 3 batched in response

@@ -130,38 +130,38 @@ func (k Keeper) GetOrchestratorValidatorAddr(ctx sdk.Context, orch sdk.AccAddres
 //       ETH ADDRESS       //
 /////////////////////////////
 
-// SetEthAddress sets the ethereum address for a given validator
-func (k Keeper) SetEthAddressForValidator(ctx sdk.Context, validator sdk.ValAddress, ethAddr types.EthAddress) {
+// SetEthAddress sets the evm address for a given validator
+func (k Keeper) SetEvmAddressForValidator(ctx sdk.Context, validator sdk.ValAddress, evmAddr types.EthAddress) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetEthAddressByValidatorKey(validator), ethAddr.GetAddress().Bytes())
-	store.Set(types.GetValidatorByEthAddressKey(ethAddr), []byte(validator))
+	store.Set(types.GetEvmAddressByValidatorKey(validator), evmAddr.GetAddress().Bytes())
+	store.Set(types.GetValidatorByEvmAddressKey(evmAddr), []byte(validator))
 }
 
-// GetEthAddressByValidator returns the eth address for a given gravity validator
-func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddress) (ethAddress *types.EthAddress, found bool) {
+// GetEvmAddressByValidator returns the evm address for a given gravity validator
+func (k Keeper) GetEvmAddressByValidator(ctx sdk.Context, validator sdk.ValAddress) (evmAddress *types.EthAddress, found bool) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	ethAddr := store.Get(types.GetEthAddressByValidatorKey(validator))
-	if ethAddr == nil {
+	evmAddr := store.Get(types.GetEvmAddressByValidatorKey(validator))
+	if evmAddr == nil {
 		return nil, false
 	}
 
-	addr, err := types.NewEthAddressFromBytes(ethAddr)
+	addr, err := types.NewEthAddressFromBytes(evmAddr)
 	if err != nil {
 		return nil, false
 	}
 	return addr, true
 }
 
-// GetValidatorByEthAddress returns the validator for a given eth address
-func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddress) (validator stakingtypes.Validator, found bool) {
+// GetValidatorByEvmAddress returns the validator for a given evm address
+func (k Keeper) GetValidatorByEvmAddress(ctx sdk.Context, evmAddr types.EthAddress) (validator stakingtypes.Validator, found bool) {
 	store := ctx.KVStore(k.storeKey)
-	valAddr := store.Get([]byte(types.GetValidatorByEthAddressKey(ethAddr)))
+	valAddr := store.Get([]byte(types.GetValidatorByEvmAddressKey(evmAddr)))
 	if valAddr == nil {
 		return stakingtypes.Validator{
 			OperatorAddress: "",
