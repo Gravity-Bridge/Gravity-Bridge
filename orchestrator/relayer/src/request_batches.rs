@@ -59,6 +59,7 @@ pub async fn request_batches(
         debug!("No pending batches to request: Empty batch fees response")
     }
 
+    let mut batch_requested = false;
     for fee in batch_fees.batch_fees {
         let total_fee: Uint256 = fee.total_fees.parse().unwrap();
         let token: EthAddress = fee.token.parse().unwrap();
@@ -96,8 +97,7 @@ pub async fn request_batches(
                                     warn!("Failed to request batch with {:?}", e);
                                 }
                             } else {
-                                // Delay for a bit before attempting to relay batches
-                                delay_for_relaying(config.batch_request_relay_offset).await;
+                                batch_requested = true;
                             }
                         } else {
                             trace!("Did not request unprofitable batch");
@@ -125,8 +125,7 @@ pub async fn request_batches(
                     if let Err(e) = res {
                         warn!("Failed to request batch with {:?}", e);
                     } else {
-                        // Delay for a bit before attempting to relay batches
-                        delay_for_relaying(config.batch_request_relay_offset).await;
+                        batch_requested = true;
                     }
                 }
             }
@@ -137,17 +136,15 @@ pub async fn request_batches(
                 if let Err(e) = res {
                     warn!("Failed to request batch with {:?}", e);
                 } else {
-                    // Delay for a bit before attempting to relay batches
-                    delay_for_relaying(config.batch_request_relay_offset).await;
+                    batch_requested = true;
                 }
             }
             BatchRequestMode::None => {}
         }
     }
-}
 
-/// Batch requests take 20-25 seconds to process before a batch can be relayed, adding in a delay here allows us to
-/// relay a newly created batch immediately without needing to wait for the next relayer_main_loop execution
-async fn delay_for_relaying(delay: u64) {
-    delay_for(Duration::from_secs(delay)).await;
+    // Delay the main loop a bit before attempting to relay batches so that the batch request can be processed
+    if batch_requested {
+        delay_for(Duration::from_secs(config.batch_request_relay_offset)).await;
+    }
 }
