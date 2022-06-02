@@ -1290,6 +1290,7 @@ dependencies = [
  "clarity",
  "deep_space",
  "gravity_proto",
+ "lazy_static",
  "log",
  "num-bigint 0.4.3",
  "num256",
