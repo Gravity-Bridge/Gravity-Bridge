@@ -10,7 +10,7 @@ use ethereum_gravity::utils::get_tx_batch_nonce;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::num_conversion::print_eth;
 use gravity_utils::num_conversion::print_gwei;
-use gravity_utils::prices::get_weth_price;
+use gravity_utils::prices::{get_weth_price_with_retries};
 use gravity_utils::types::BatchRelayingMode;
 use gravity_utils::types::WhitelistToken;
 use gravity_utils::types::{BatchConfirmResponse, RelayerConfig, TransactionBatch, Valset};
@@ -134,7 +134,7 @@ async fn should_relay_batch(
     let batch_reward_amount = batch.total_fee.amount.clone();
     let batch_reward_token = batch.total_fee.token_contract_address;
     // gets the price of the provided amount of the provided token in weth
-    let price = get_weth_price(
+    let price = get_weth_price_with_retries(
         batch_reward_token,
         batch_reward_amount.clone(),
         pubkey,
