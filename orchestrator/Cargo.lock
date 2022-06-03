@@ -4252,9 +4252,9 @@ dependencies = [
 
 [[package]]
 name = "web30"
-version = "0.18.10"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2673ff03d2a8e648f806f100ed70ca3ca69db42dad7178501557b70d549dbb1"
+checksum = "463b0185237bb5c10abf6ce7a5923b03503aea0bb2ff5d9ad930d790e69c0cb0"
 dependencies = [
  "awc",
  "clarity",
