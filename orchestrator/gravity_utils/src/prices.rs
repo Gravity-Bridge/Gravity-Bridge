@@ -20,7 +20,7 @@ pub async fn get_weth_price(
 
     // TODO: Make sure the market is not too thin
     let price = web3
-        .get_uniswap_price(
+        .get_uniswap_v3_price(
             pubkey,
             token,
             *WETH_CONTRACT_ADDRESS,
@@ -48,7 +48,7 @@ pub async fn get_dai_price(
 
     // TODO: Make sure the market is not too thin
     let price = web3
-        .get_uniswap_price(
+        .get_uniswap_v3_price(
             pubkey,
             token,
             *DAI_CONTRACT_ADDRESS,

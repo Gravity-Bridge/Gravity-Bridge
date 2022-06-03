@@ -38,7 +38,7 @@ async fn should_relay_logic_call(
         } else {
             // Get the token's value in ETH as of the current moment
             let weth_equiv = web3
-                .get_uniswap_price(
+                .get_uniswap_v3_price(
                     our_address,
                     *token,
                     *WETH_CONTRACT_ADDRESS,

@@ -102,7 +102,7 @@ async fn setup_batch_test(
     let mut token_acquired = Err(Web3Error::BadInput("Dummy Error".to_string()));
     while Instant::now() - start < TOTAL_TIMEOUT {
         token_acquired = web30
-            .swap_uniswap(
+            .swap_uniswap_v3(
                 *MINER_PRIVATE_KEY,
                 *WETH_CONTRACT_ADDRESS,
                 erc20_contract,
