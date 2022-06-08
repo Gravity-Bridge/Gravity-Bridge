@@ -233,7 +233,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 	for ; iter.Valid(); iter.Next() {
 		// the 'key' contains both the prefix and the value, so we need
 		// to cut off the starting bytes, if you don't do this a valid
-		// cosmos key will be made out of EthAddressByValidatorKey + the startin bytes
+		// cosmos key will be made out of EthAddressByValidatorKey + the starting bytes
 		// of the actual key
 		key := iter.Key()[len(types.EthAddressByValidatorKey):]
 		value := iter.Value()

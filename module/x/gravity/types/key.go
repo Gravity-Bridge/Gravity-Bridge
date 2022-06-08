@@ -263,7 +263,7 @@ func GetBatchConfirmKey(tokenContract EthAddress, batchNonce uint64, validator s
 	return AppendBytes(GetBatchConfirmNonceContractPrefix(tokenContract, batchNonce), validator.Bytes())
 }
 
-// GetLastEventNonceByValidatorKey indexes lateset event nonce by validator
+// GetLastEventNonceByValidatorKey indexes latest event nonce by validator
 // GetLastEventNonceByValidatorKey returns the following key format
 // prefix              cosmos-validator
 // [0x0][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
