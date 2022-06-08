@@ -234,7 +234,7 @@ func (v Valset) GetCheckpoint(gravityIDstring string) []byte {
 		panic(err)
 	}
 
-	// this should never happen, unless an invalid paramater value has been set by the chain
+	// this should never happen, unless an invalid parameter value has been set by the chain
 	err = ValidateEthAddress(v.RewardToken)
 	if err != nil {
 		panic(err)

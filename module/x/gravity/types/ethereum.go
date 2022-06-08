@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// GravityDenomPrefix indicates the prefix for all assests minted by this module
+	// GravityDenomPrefix indicates the prefix for all assets minted by this module
 	GravityDenomPrefix = ModuleName
 
 	// GravityDenomSeparator is the separator for gravity denoms
@@ -177,7 +177,7 @@ func GravityDenom(tokenContract EthAddress) string {
 	return fmt.Sprintf("%s%s%s", GravityDenomPrefix, GravityDenomSeparator, tokenContract.GetAddress().Hex())
 }
 
-// ValidateBasic permforms stateless validation
+// ValidateBasic performs stateless validation
 func (e *ERC20Token) ValidateBasic() error {
 	if err := ValidateEthAddress(e.Contract); err != nil {
 		return sdkerrors.Wrap(err, "ethereum address")
