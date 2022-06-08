@@ -70,15 +70,15 @@ The Ethereum signer watches several [query endpoints](/module/proto/gravity/v1/q
 
 ### ConfirmBatch
 
-Submits an Ethereum signature over a batche appearing in the `LastPendingBatchRequestByAddr` query
+Submits an Ethereum signature over a batch appearing in the `LastPendingBatchRequestByAddr` query
 
 ### ConfirmLogicCall
 
-Submits an Ethereum signature over a batche appearing in the `LastPendingLogicCallByAddr` query
+Submits an Ethereum signature over a batch appearing in the `LastPendingLogicCallByAddr` query
 
 ### ValsetConfirm
 
-Submits an Ethereum signature over a batche appearing in the `LastPendingValsetRequestByAddr` query
+Submits an Ethereum signature over a batch appearing in the `LastPendingValsetRequestByAddr` query
 
 ## Validator Messages
 

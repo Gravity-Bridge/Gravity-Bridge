@@ -4,7 +4,7 @@ The Gravity contract locks assets on Ethereum to facilitate a Tendermint blockch
 
 Usage example:
 
-- You send 25 DAI to the Gravity contract, specifying which address on the Tendermint chain should recieve the syntehtic DAI.
+- You send 25 DAI to the Gravity contract, specifying which address on the Tendermint chain should recieve the synthetic DAI.
 - Validators on the Tendermint chain see that this has happened and mint 25 synthetic DAI for the address you specified on the Tendermint chain.
 - You send the 25 synthetic DAI to Jim on the Tendermint chain.
 - Jim sends the synthetic DAI to Gravity module on the Tendermint chain, specifying which Ethereum address should receive it.
@@ -59,7 +59,7 @@ This contains information about a batch that has been successfully processed. It
 
 ### SendToCosmosEvent
 
-This is emitted every time someone sends tokens to the contract to be bridged to the Tendermint chain. It contains all information neccesary to credit the tokens to the correct Cosmos account, as well as the _eventNonce.
+This is emitted every time someone sends tokens to the contract to be bridged to the Tendermint chain. It contains all information necessary to credit the tokens to the correct Cosmos account, as well as the _eventNonce.
 
 ### ValsetUpdatedEvent
 
