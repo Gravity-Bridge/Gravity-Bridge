@@ -113,7 +113,7 @@ go: downloading github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
 ```
 
-If you see depednecy errors like this, clean your cache and build again
+If you see dependency errors like this, clean your cache and build again
 
 ```
 
@@ -142,7 +142,7 @@ cd proto-build && cargo run
 
 ### Tips for IDEs
 
-- We strongly recomend installing [Rust Analyzer](https://rust-analyzer.github.io/) in your IDE.
+- We strongly recommend installing [Rust Analyzer](https://rust-analyzer.github.io/) in your IDE.
 - Launch VS Code in /solidity with the solidity extension enabled to get inline typechecking of the solidity contract
 - Launch VS Code in /module/app with the go extension enabled to get inline typechecking of the dummy cosmos chain
 
@@ -222,7 +222,7 @@ bash tests/all-up-test.sh TEST_NAME
 
 ```
 
-To run all the integraton tests and check your code completely run
+To run all the integration tests and check your code completely run
 
 ```
 
@@ -231,7 +231,7 @@ bash tests/run-all-up-tests.sh
 ```
 
 This will run every available all up test. This will take quite some time, go get coffee and if your development machine is
-particularly slow I recomend just pushing to Github. Average runtime per all up test on a modern linux machine is ~5 minutes each.
+particularly slow I recommend just pushing to Github. Average runtime per all up test on a modern linux machine is ~5 minutes each.
 
 You can also use
 
