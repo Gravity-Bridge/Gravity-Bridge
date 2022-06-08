@@ -94,7 +94,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 			attestationPower = attestationPower.Add(sdk.NewInt(validatorPower))
 			// If the power of all the validators that have voted on the attestation is higher or equal to the threshold,
 			// process the attestation, set Observed to true, and break
-			if attestationPower.GTE(requiredPower) {
+			if attestationPower.GT(requiredPower) {
 				lastEventNonce := k.GetLastObservedEventNonce(ctx)
 				// this check is performed at the next level up so this should never panic
 				// outside of programmer error.
