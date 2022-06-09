@@ -586,3 +586,28 @@ func (k Keeper) GetPendingIbcAutoForwards(
 	pendingForwards := k.PendingIbcAutoForwards(ctx, req.Limit)
 	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
 }
+
+// QueryDenomMetaData queries the IBC denom representation
+func (k Keeper) QueryDenomMetaData(
+	c context.Context,
+	req *types.QueryDenomMetaDataRequest) (*types.QueryDenomMetaDataResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	res, exist := k.bankKeeper.GetDenomMetaData(ctx, req.Denom)
+
+	return &types.QueryDenomMetaDataResponse{Metadata: &res, Exist: exist}, nil
+}
+
+// QueryCosmosOriginatedERC20 queries ERC20 representation by IBC denom
+func (k Keeper) QueryCosmosOriginatedERC20(
+	c context.Context,
+	req *types.QueryCosmosOriginatedERC20Request) (*types.QueryCosmosOriginatedERC20Response, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	res, exist := k.GetCosmosOriginatedERC20(ctx, req.Denom)
+
+	if res == nil {
+		return &types.QueryCosmosOriginatedERC20Response{}, nil
+	}
+
+	return &types.QueryCosmosOriginatedERC20Response{EthAddress: res.GetAddress().String(), Exist: exist}, nil
+
+}
