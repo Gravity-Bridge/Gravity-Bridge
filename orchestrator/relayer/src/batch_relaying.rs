@@ -10,7 +10,7 @@ use ethereum_gravity::utils::get_tx_batch_nonce;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::num_conversion::print_eth;
 use gravity_utils::num_conversion::print_gwei;
-use gravity_utils::prices::{get_weth_price_with_retries};
+use gravity_utils::prices::get_weth_price_with_retries;
 use gravity_utils::types::BatchRelayingMode;
 use gravity_utils::types::WhitelistToken;
 use gravity_utils::types::{BatchConfirmResponse, RelayerConfig, TransactionBatch, Valset};
@@ -124,40 +124,40 @@ async fn should_relay_batch(
     cost: Uint256,
     pubkey: EthAddress,
     config: &BatchRelayingMode,
-) -> bool {
+) -> (bool, Option<Uint256>) {
     // skip price request below in the trivial case, couldn't really
     // figure the code duplication / extra network IO balance otherwise
     if let BatchRelayingMode::EveryBatch = config {
-        return true;
+        return (true, None);
     }
 
     let batch_reward_amount = batch.total_fee.amount.clone();
     let batch_reward_token = batch.total_fee.token_contract_address;
     // gets the price of the provided amount of the provided token in weth
     let price = get_weth_price_with_retries(
+        pubkey,
         batch_reward_token,
         batch_reward_amount.clone(),
-        pubkey,
         web3,
     )
     .await;
 
     match config {
-        BatchRelayingMode::EveryBatch | BatchRelayingMode::Altruistic => true,
+        BatchRelayingMode::EveryBatch | BatchRelayingMode::Altruistic => (true, None),
         BatchRelayingMode::ProfitableOnly { margin } => {
             let cost_with_margin = get_cost_with_margin(cost, *margin);
 
             // we need to see how much WETH we can get for the reward token amount,
             // and compare that value to the gas cost times the margin
             match price {
-                Ok(price) => price > cost_with_margin,
+                Ok(price) => (price > cost_with_margin, Some(price)),
                 Err(e) => {
                     info!(
                         "Unable to determine swap price of token {} for WETH \n
                 it may just not be on Uniswap - Will not be relaying batch {:?}",
                         batch_reward_token, e
                     );
-                    false
+                    (false, None)
                 }
             }
         }
@@ -171,17 +171,20 @@ async fn should_relay_batch(
                     let one = Uint256::from(1u8);
                     let one = one.pow(decimals as u32).to_string().parse().unwrap();
                     let reward_amount_in_weth = (whitelist_price / one) * batch_reward_amount;
-                    reward_amount_in_weth > cost_with_margin
+                    (
+                        reward_amount_in_weth > cost_with_margin,
+                        Some(reward_amount_in_weth),
+                    )
                 }
                 // we got the price in uniswap
-                (Ok(price), None) => price > cost_with_margin,
+                (Ok(price), None) => (price > cost_with_margin, Some(price)),
                 (Err(e), _) => {
                     info!(
                         "Unable to determine swap price of token {} for WETH \n
                 it may just not be on Uniswap - Will not be relaying batch {:?}",
                         batch_reward_token, e
                     );
-                    false
+                    (false, None)
                 }
             }
         }
@@ -298,7 +301,7 @@ async fn submit_batches(
                     .display_with_eth_info(our_ethereum_address, web3)
                     .await;
 
-                let should_relay = should_relay_batch(
+                let (should_relay, reward_in_weth) = should_relay_batch(
                     web3,
                     &oldest_signed_batch,
                     cost.get_total(),
@@ -308,6 +311,13 @@ async fn submit_batches(
                 .await;
 
                 if should_relay {
+                    info!(
+                        "Attempting to relay batch {}/{} Expected Cost: {:} Reward: {:?}",
+                        oldest_signed_batch.token_contract,
+                        oldest_signed_batch.nonce,
+                        print_eth(cost.get_total()),
+                        reward_in_weth.clone().map(print_eth),
+                    );
                     let res = send_eth_transaction_batch(
                         current_valset.clone(),
                         oldest_signed_batch,
@@ -324,8 +334,8 @@ async fn submit_batches(
                     }
                 } else {
                     info!(
-                        "Not relaying batch {}/{} due to it not being profitable",
-                        oldest_signed_batch.token_contract, oldest_signed_batch.nonce
+                        "Not relaying batch {}/{} due to it not being profitable. Cost: {}, Reward: {:?}",
+                        oldest_signed_batch.token_contract, oldest_signed_batch.nonce, print_eth(cost.get_total()), reward_in_weth.clone().map(print_eth),
                     );
                 }
             }
