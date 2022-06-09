@@ -23,7 +23,8 @@ lazy_static! {
 /// Adjust relayer_config.gas_tracker_loop_speed and ALTRUISTIC_SAMPLES to control the tracker
 /// panics if the GAS_TRACKER lock is currently held by another thread or is poisoned
 async fn update_gas_tracker(web3: &Web3) -> Option<Uint256> {
-    GAS_TRACKER.write().unwrap().update(web3).await
+    // TODO: Remove this after altruistic relayer has been merged
+    GAS_TRACKER.write().unwrap().sample_and_update(web3).await
 }
 
 /// fetches the lowest ALTRUISTIC_GAS_PERCENTAGE % of gas prices in the gas tracker's store, use in conjunction with

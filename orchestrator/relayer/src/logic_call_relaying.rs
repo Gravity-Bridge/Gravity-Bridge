@@ -6,6 +6,7 @@ use ethereum_gravity::message_signatures::encode_logic_call_confirm_hashed;
 use ethereum_gravity::{logic_call::send_eth_logic_call, utils::get_logic_call_nonce};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::num_conversion::{print_eth, print_gwei};
+use gravity_utils::prices::get_weth_price_with_retries;
 use gravity_utils::types::{LogicCall, RelayerConfig};
 use gravity_utils::types::{LogicCallConfirmResponse, Valset};
 use std::collections::HashMap;
@@ -37,17 +38,8 @@ async fn should_relay_logic_call(
             total_weth_reward += (*total).clone();
         } else {
             // Get the token's value in ETH as of the current moment
-            let weth_equiv = web3
-                .get_uniswap_price(
-                    our_address,
-                    *token,
-                    *WETH_CONTRACT_ADDRESS,
-                    None,
-                    (*total).clone(),
-                    None,
-                    None,
-                )
-                .await;
+            let weth_equiv =
+                get_weth_price_with_retries(our_address, *token, (*total).clone(), web3).await;
             if weth_equiv.is_err() {
                 // Can't get the price so we ignore it
                 info!(

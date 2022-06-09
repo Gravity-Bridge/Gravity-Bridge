@@ -1284,7 +1284,6 @@ dependencies = [
 name = "gravity_utils"
 version = "0.1.0"
 dependencies = [
- "actix",
  "clarity",
  "deep_space",
  "gravity_proto",
@@ -4253,9 +4252,9 @@ dependencies = [
 
 [[package]]
 name = "web30"
-version = "0.18.12"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f702c1d71d9487900e63732c1454062025e456ab6e41c77267a2dec5f4120b2f"
+checksum = "463b0185237bb5c10abf6ce7a5923b03503aea0bb2ff5d9ad930d790e69c0cb0"
 dependencies = [
  "awc",
  "clarity",
