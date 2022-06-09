@@ -9,6 +9,7 @@ import "gravity/v1/batch.proto";
 import "gravity/v1/attestation.proto";
 import "google/api/annotations.proto";
 import "gogoproto/gogo.proto";
+import "cosmos/bank/v1beta1/bank.proto";
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types";
 
@@ -98,6 +99,12 @@ service Query {
   }
   rpc GetPendingIbcAutoForwards(QueryPendingIbcAutoForwards) returns (QueryPendingIbcAutoForwardsResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_pending_ibc_auto_forwards";
+  }
+  rpc QueryDenomMetaData(QueryDenomMetaDataRequest) returns (QueryDenomMetaDataResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_denom_metadata";
+  }
+  rpc QueryCosmosOriginatedERC20(QueryCosmosOriginatedERC20Request) returns (QueryCosmosOriginatedERC20Response) {
+    option (google.api.http).get = "/gravity/v1beta/query_cosmos_originated_erc20";
   }
 }
 
@@ -314,4 +321,23 @@ message QueryPendingIbcAutoForwards{
 
 message QueryPendingIbcAutoForwardsResponse{
   repeated PendingIbcAutoForward pending_ibc_auto_forwards = 1;
+}
+
+
+message QueryDenomMetaDataRequest{
+  string denom = 1;
+}
+
+message QueryDenomMetaDataResponse{
+  cosmos.bank.v1beta1.Metadata metadata = 1;
+  bool exist =2;
+}
+
+message QueryCosmosOriginatedERC20Request{
+  string denom = 1;
+}
+
+message QueryCosmosOriginatedERC20Response{
+  string eth_address = 1;
+  bool exist = 2;
 }
