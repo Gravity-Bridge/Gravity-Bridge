@@ -25,4 +25,3 @@ lazy_static = "1"
 
 [dev_dependencies]
 rand = "0.8"
-actix = "0.13"

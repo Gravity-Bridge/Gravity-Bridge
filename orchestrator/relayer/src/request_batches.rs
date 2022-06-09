@@ -13,7 +13,8 @@ use cosmos_gravity::query::get_pending_batch_fees;
 use cosmos_gravity::send::send_request_batch;
 use deep_space::{Coin, Contact, PrivateKey};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::prices::get_weth_price;
+use gravity_utils::num_conversion::print_eth;
+use gravity_utils::prices::get_weth_price_with_retries;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::RelayerConfig;
 use tokio::time::sleep as delay_for;
@@ -76,12 +77,12 @@ pub async fn request_batches(
         match config.batch_request_mode {
             BatchRequestMode::ProfitableOnly => {
                 let weth_cost_estimate = eth_gas_price.clone() * BATCH_GAS.into();
-                match get_weth_price(token, total_fee, eth_address, web30).await {
+                match get_weth_price_with_retries(eth_address, token, total_fee, web30).await {
                     Ok(price) => {
                         if price > weth_cost_estimate {
                             info!(
-                                "Requesting batch for {} because it lis likely to be profitable",
-                                fee.token
+                                "Requesting batch for {} because it is likely to be profitable: Cost: {} Reward: {}",
+                                fee.token, print_eth(weth_cost_estimate), print_eth(price)
                             );
                             let res = send_request_batch(
                                 private_key.clone(),

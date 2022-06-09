@@ -81,10 +81,10 @@ impl TransactionBatch {
         for tx in self.transactions.clone() {
             tx_total += tx.erc20_token.amount.clone();
         }
-        let fee_value_weth = get_weth_price(token, fee_total.clone(), pubkey, web30);
-        let fee_value_dai = get_dai_price(token, fee_total.clone(), pubkey, web30);
-        let tx_value_weth = get_weth_price(token, tx_total.clone(), pubkey, web30);
-        let tx_value_dai = get_dai_price(token, tx_total.clone(), pubkey, web30);
+        let fee_value_weth = get_weth_price(pubkey, token, fee_total.clone(), web30);
+        let fee_value_dai = get_dai_price(pubkey, token, fee_total.clone(), web30);
+        let tx_value_weth = get_weth_price(pubkey, token, tx_total.clone(), web30);
+        let tx_value_dai = get_dai_price(pubkey, token, tx_total.clone(), web30);
         let token_symbol = web30.get_erc20_symbol(token, pubkey);
         let current_block = web30.eth_block_number();
         if let (
