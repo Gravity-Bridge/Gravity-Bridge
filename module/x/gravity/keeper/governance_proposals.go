@@ -142,7 +142,7 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	// this airdrop with the provided recipients list
 	totalRequiredDec := totalRequiredDecCoin.Amount
 	if totalRequiredDec.GT(feePoolAmount) {
-		ctx.Logger().Info("Airdrop failed to excute insufficient tokens in the community pool!")
+		ctx.Logger().Info("Airdrop failed to execute insufficient tokens in the community pool!")
 		return sdkerrors.Wrap(types.ErrInvalid, "Insufficient tokens in community pool")
 	}
 
@@ -150,7 +150,7 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	// so if the recipients list is not a multiple of 20 it must be invalid
 	numRecipients := len(p.Recipients) / 20
 	if len(p.Recipients)%20 != 0 || numRecipients != len(p.Amounts) {
-		ctx.Logger().Info("Airdrop failed to excute invalid recipients")
+		ctx.Logger().Info("Airdrop failed to execute invalid recipients")
 		return sdkerrors.Wrap(types.ErrInvalid, "Invalid recipients")
 	}
 
@@ -164,7 +164,7 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 
 	// check again, just in case the above modulo math is somehow wrong or spoofed
 	if len(parsedRecipients) != len(p.Amounts) {
-		ctx.Logger().Info("Airdrop failed to excute invalid recipients")
+		ctx.Logger().Info("Airdrop failed to execute invalid recipients")
 		return sdkerrors.Wrap(types.ErrInvalid, "Invalid recipients")
 	}
 
@@ -187,7 +187,7 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	}
 
 	if !totalRequiredDecCoin.Amount.Equal(totalSent) {
-		ctx.Logger().Info("Airdrop failed to excute Invalid amount sent", "sent", totalRequiredDecCoin.Amount, "expected", totalSent)
+		ctx.Logger().Info("Airdrop failed to execute Invalid amount sent", "sent", totalRequiredDecCoin.Amount, "expected", totalSent)
 		return sdkerrors.Wrap(types.ErrInvalid, "Invalid amount sent")
 	}
 
