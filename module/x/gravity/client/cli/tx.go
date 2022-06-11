@@ -102,10 +102,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return sdkerrors.Wrap(err, "Your proposal.json is not valid, please correct it")
-			}
-			// Send it
+
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
@@ -168,6 +165,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 				}
 				parsedRecipients[i] = parsed
 			}
+
 			byteEncodedRecipients := []byte{}
 			for _, v := range parsedRecipients {
 				byteEncodedRecipients = append(byteEncodedRecipients, v.Bytes()...)
@@ -192,10 +190,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			// Send it
+
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
@@ -249,10 +244,7 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			// Send it
+
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
@@ -277,6 +269,7 @@ func CmdSendToEth() *cobra.Command {
 			if err != nil {
 				return sdkerrors.Wrap(err, "amount")
 			}
+
 			bridgeFee, err := sdk.ParseCoinsNormalized(args[2])
 			if err != nil {
 				return sdkerrors.Wrap(err, "bridge fee")
@@ -298,10 +291,7 @@ func CmdSendToEth() *cobra.Command {
 				Amount:    amount[0],
 				BridgeFee: bridgeFee[0],
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			// Send it
+
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
@@ -332,10 +322,7 @@ func CmdCancelSendToEth() *cobra.Command {
 				Sender:        cosmosAddr.String(),
 				TransactionId: txId,
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			// Send it
+
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
@@ -361,10 +348,7 @@ func CmdRequestBatch() *cobra.Command {
 				Sender: cosmosAddr.String(),
 				Denom:  fmt.Sprintf("gravity%s", args[0]),
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			// Send it
+
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
@@ -383,15 +367,13 @@ func CmdSetOrchestratorAddress() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
 			msg := types.MsgSetOrchestratorAddress{
 				Validator:    args[0],
 				Orchestrator: args[1],
 				EthAddress:   args[2],
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			// Send it
+
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
@@ -414,18 +396,17 @@ func CmdExecutePendingIbcAutoForwards() *cobra.Command {
 			if sender.String() == "" {
 				return fmt.Errorf("from address must be specified")
 			}
+
 			forwardsToClear, err := strconv.ParseUint(args[0], 10, 0)
 			if err != nil {
 				return sdkerrors.Wrap(err, "Unable to parse forwards-to-execute as an non-negative integer")
 			}
+
 			msg := types.MsgExecuteIbcAutoForwards{
 				ForwardsToClear: forwardsToClear,
 				Executor:        cliCtx.GetFromAddress().String(),
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			// Send it
+
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
 	}
