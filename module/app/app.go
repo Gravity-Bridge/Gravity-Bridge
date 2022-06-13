@@ -105,6 +105,9 @@ import (
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 
+	// Tharsis Ethermint
+	ethante "github.com/tharsis/ethermint/app/ante"
+
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
@@ -705,7 +708,7 @@ func NewGravityApp(
 		BankKeeper:      bankKeeper,
 		FeegrantKeeper:  nil,
 		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
-		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
+		SigGasConsumer:  ethante.DefaultSigVerificationGasConsumer,
 	}
 
 	ah, err := newAnteHandler(options, ibcKeeper.ChannelKeeper, appCodec)
