@@ -63,6 +63,4 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router, storeName string) {
 	r.HandleFunc(fmt.Sprintf("/%s/denom_to_erc20/{%s}", storeName, denom), denomToERC20Handler(cliCtx, storeName)).Methods("GET")
 	// This handler lets you retrieve the denom corresponding to a given ERC20 contract
 	r.HandleFunc(fmt.Sprintf("/%s/erc20_to_denom/{%s}", storeName, tokenAddress), ERC20ToDenomHandler(cliCtx, storeName)).Methods("GET")
-
-	r.HandleFunc(fmt.Sprintf("/%s/denom_metadata/{%s}", storeName, denom), DenomMetaDataHandler(cliCtx, storeName, denom)).Methods("GET")
 }
