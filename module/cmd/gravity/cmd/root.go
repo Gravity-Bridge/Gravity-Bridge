@@ -30,6 +30,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	ethermint "github.com/tharsis/ethermint/crypto/hd"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 )
@@ -47,7 +49,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastBlock).
-		WithHomeDir(app.DefaultNodeHome)
+		WithHomeDir(app.DefaultNodeHome).
+		WithKeyringOptions(ethermint.EthSecp256k1Option())
 
 	//nolint: exhaustivestruct
 	rootCmd := &cobra.Command{
