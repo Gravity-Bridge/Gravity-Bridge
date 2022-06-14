@@ -26,23 +26,19 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 // SetOrchestratorAddress handles MsgSetOrchestratorAddress
 func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOrchestratorAddress) (*types.MsgSetOrchestratorAddressResponse, error) {
 	// ensure that this passes validation, checks the key validity
-	if err := msg.ValidateBasic(); err != nil {
+	err := msg.ValidateBasic()
+	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Key not valid")
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
 
 	// check the following, all should be validated in validate basic
-	val, err := sdk.ValAddressFromBech32(msg.Validator)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Key not valid")
-	}
-	orch, err := sdk.AccAddressFromBech32(msg.Orchestrator)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Key not valid")
-	}
-	ethAddr, err := types.NewEthAddress(msg.EthAddress)
-	if err != nil {
+	// check the following, all should be validated in validate basic
+	val, e1 := sdk.ValAddressFromBech32(msg.Validator)
+	orch, e2 := sdk.AccAddressFromBech32(msg.Orchestrator)
+	ethAddr, e3 := types.NewEthAddress(msg.EthAddress)
+	if e1 != nil || e2 != nil || e3 != nil {
 		return nil, sdkerrors.Wrap(err, "Key not valid")
 	}
 
