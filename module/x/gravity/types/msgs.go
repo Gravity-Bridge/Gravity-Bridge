@@ -70,33 +70,6 @@ func (msg *MsgSetOrchestratorAddress) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{sdk.AccAddress(acc)}
 }
 
-// GetValidator returns sdk.ValAddress from a string of Bech32 validator address.
-func (msg *MsgSetOrchestratorAddress) GetValidator() sdk.ValAddress {
-	addr, err := sdk.ValAddressFromBech32(msg.Validator)
-	if err != nil {
-		panic(err)
-	}
-	return addr
-}
-
-// GetOrchestrator returns sdk.AccAddress from a string of Bech32 orchestrator address.
-func (msg *MsgSetOrchestratorAddress) GetOrchestrator() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(msg.Orchestrator)
-	if err != nil {
-		panic(err)
-	}
-	return addr
-}
-
-// GetEthAddress returns EthAddress from a string of ethereum address.
-func (msg *MsgSetOrchestratorAddress) GetEthAddress() *EthAddress {
-	addr, err := NewEthAddress(msg.EthAddress)
-	if err != nil {
-		panic(err)
-	}
-	return addr
-}
-
 // NewMsgValsetConfirm returns a new msgValsetConfirm
 func NewMsgValsetConfirm(
 	nonce uint64,
