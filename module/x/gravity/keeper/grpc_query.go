@@ -586,13 +586,3 @@ func (k Keeper) GetPendingIbcAutoForwards(
 	pendingForwards := k.PendingIbcAutoForwards(ctx, req.Limit)
 	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
 }
-
-// QueryDenomMetaData queries the IBC denom representation
-func (k Keeper) QueryDenomMetaData(
-	c context.Context,
-	req *types.QueryDenomMetaDataRequest) (*types.QueryDenomMetaDataResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	_, exist := k.bankKeeper.GetDenomMetaData(ctx, req.Denom)
-
-	return &types.QueryDenomMetaDataResponse{Exist: exist}, nil
-}
