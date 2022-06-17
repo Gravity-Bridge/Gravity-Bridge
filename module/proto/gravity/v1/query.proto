@@ -10,7 +10,6 @@ import "gravity/v1/attestation.proto";
 import "google/api/annotations.proto";
 import "gogoproto/gogo.proto";
 
-
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types";
 
 // Query defines the gRPC querier service
@@ -99,9 +98,6 @@ service Query {
   }
   rpc GetPendingIbcAutoForwards(QueryPendingIbcAutoForwards) returns (QueryPendingIbcAutoForwardsResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_pending_ibc_auto_forwards";
-  }
-  rpc QueryDenomMetaData(QueryDenomMetaDataRequest) returns (QueryDenomMetaDataResponse) {
-    option (google.api.http).get = "/gravity/v1beta/query_denom_metadata";
   }
 }
 
@@ -320,11 +316,3 @@ message QueryPendingIbcAutoForwardsResponse{
   repeated PendingIbcAutoForward pending_ibc_auto_forwards = 1;
 }
 
-
-message QueryDenomMetaDataRequest{
-  string denom = 1;
-}
-
-message QueryDenomMetaDataResponse{
-  bool exist =1;
-}
