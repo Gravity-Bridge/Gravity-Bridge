@@ -7,17 +7,18 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
-
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 func GetTxCmd(storeKey string) *cobra.Command {
@@ -104,20 +105,22 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 			}
 
 			metadataErr := proposal.Metadata.Validate()
-
 			if metadataErr != nil {
 				return sdkerrors.Wrap(metadataErr, "invalid metadata or proposal details!")
 			}
 
-			queryClient := types.NewQueryClient(cliCtx)
-
-			req1 := &types.QueryDenomMetaDataRequest{
-				Denom: proposal.IbcDenom,
-			}
-			res1, err := queryClient.QueryDenomMetaData(cmd.Context(), req1)
+			queryClientBank := banktypes.NewQueryClient(cliCtx)
+			res1, err := queryClientBank.DenomMetadata(cmd.Context(), &banktypes.QueryDenomMetadataRequest{Denom: proposal.IbcDenom})
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid metadata")
+				return err
 			}
+
+			exist := false
+			if res1.Metadata.Base != "" {
+				exist = true
+			}
+
+			queryClient := types.NewQueryClient(cliCtx)
 
 			req2 := &types.QueryDenomToERC20Request{
 				Denom: proposal.IbcDenom,
@@ -127,7 +130,11 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				return sdkerrors.Wrap(err, "invalid metadata")
 			}
 
-			if res1.Exist && res2.CosmosOriginated {
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid metadata")
+			}
+
+			if exist && res2.CosmosOriginated {
 				return sdkerrors.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
 			}
 
