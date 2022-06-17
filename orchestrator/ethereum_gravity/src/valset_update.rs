@@ -47,7 +47,10 @@ pub async fn send_eth_valset_update(
             0u32.into(),
             eth_address,
             our_eth_key,
-            vec![SendTxOption::GasPriceMultiplier(1.10f32)],
+            // we maintain a 20% gas price increase to compensate for the 12.5% maximum
+            // base fee increase allowed per block in eip1559, if we overpay we'll
+            // be refunded.
+            vec![SendTxOption::GasPriceMultiplier(1.20f32)],
         )
         .await?;
     info!("Sent valset update with txid {:#066x}", tx);
@@ -69,7 +72,11 @@ pub async fn send_eth_valset_update(
     Ok(())
 }
 
-/// Returns the cost in Eth of sending this valset update
+/// Returns the cost in Eth of sending this valset update, because of the way eip1559 fee
+/// computation works the minimum allowed gas price will trend up or down by as much
+/// as 12.5% per block. In order to prevent race conditions we pad our estimate by 20%
+/// if the gas price has in fact gone down we'll be refunded. But we must bake
+/// this uncertainty into our cost estimates
 pub async fn estimate_valset_cost(
     new_valset: &Valset,
     old_valset: &Valset,
@@ -83,6 +90,8 @@ pub async fn estimate_valset_cost(
     let our_nonce = web3.eth_get_transaction_count(our_eth_address).await?;
     let gas_limit = min((u64::MAX - 1).into(), our_balance.clone());
     let gas_price = web3.eth_gas_price().await?;
+    // increase the value by 20% without using floating point multiplication
+    let gas_price = gas_price.clone() + (gas_price / 5u8.into());
     let zero: Uint256 = 0u8.into();
     let val = web3
         .eth_estimate_gas(TransactionRequest {
