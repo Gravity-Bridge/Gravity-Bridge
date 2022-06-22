@@ -2,7 +2,7 @@
 
 Welcome! This guide covers how to get your development machine setup to contribute to Gravity Bridge, as well as the basics of how the code is laid out.
 
-If you find anything in this guide that is confusing or does not work, please open an issue or [chat with us](https://discord.gg/d3DshmHpXA).
+If you find anything in this guide that is confusing or does not work, please open an issue or [chat with us](https://discord.gg/d3DshmHpXA). You can also find resources specific to the main Gravity Bridge instance (such as testnet RPC) in the [Gravity Docs](https://github.com/gravity-bridge/gravity-docs)
 
 We're always happy to help new developers get started
 
@@ -168,15 +168,21 @@ of Gravity bridge for you as a developer to interact with. This is very useful f
 
 ./tests/build-container.sh
 
-# This starts the Ethereum chain, Cosmos chain, and a full set of Orchestrators + relayers
+# This starts the Ethereum chain, Cosmos chain,
 
+```
 ./tests/start-chains.sh
-
 ```
 
-switch to a new terminal and run one of these two commands. A list of all predefined tests can be found [here](https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/orchestrator/test_runner/src/main.rs#L169)
+switch to a new terminal and run a test case. A list of all predefined tests can be found [here](https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/orchestrator/test_runner/src/main.rs#L169)
+
+These test cases spawn Orchestrators as well as an IBC relayer, run through their test scenario and then exit. If you just want to have a fully functioning instance of GB running locally you can use this command.
 
 ```
+./tests/run-tests.sh RUN_ORCH_ONLY
+```
+
+This will just kick off the orchestrators and ibc relayer and not run any particular test case.
 
 # This runs a pre-defined test against the chains, keeping state between runs
 
