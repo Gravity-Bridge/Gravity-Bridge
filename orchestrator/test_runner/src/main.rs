@@ -35,6 +35,7 @@ use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use relay_market::relay_market_test;
 use std::{env, time::Duration};
+use tokio::time::sleep;
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
@@ -236,12 +237,32 @@ pub async fn main() {
 
     // This segment contains optional tests, by default we run a happy path test
     // this tests all major functionality of Gravity once or twice.
-    // VALSET_STRESS sends in 1k valsets to sign and update
-    // BATCH_STRESS fills several batches and executes an out of order batch
     // VALIDATOR_OUT simulates a validator not participating in the happy path test
+    // BATCH_STRESS fills several batches and executes an out of order batch
+    // VALSET_STRESS sends in 1k valsets to sign and update
+    // VALSET_REWARDS tests the reward functions for validator set updates
     // V2_HAPPY_PATH runs the happy path tests but focusing on moving Cosmos assets to Ethereum
-    // ARBITRARY_LOGIC tests the arbitrary logic functionality, where an arbitrary contract call
-    //                 is created and deployed vai the bridge.
+    // RELAY_MARKET uses the Alchemy api to run a test against forked Ethereum state and test Ethereum
+    //              relaying profitability, which requires Uniswap to be deployed and populated.
+    // ORCHESTRATOR_KEYS tests setting the orchestrator Ethereum and Cosmos delegate addresses used to submit
+    //                   ethereum signatures and oracle events
+    // EVIDENCE tests evidence based slashing, which is triggered when a validator signs a message with their
+    //          Ethereum key not created by the Gravity chain
+    // TXCANCEL tests the creation of a MsgSendToETH and the cancelation flow if it's in or out of a batch
+    // INVALID_EVENTS tests the creation of hostile events on Ethereum, such as tokens with bad unicode for names
+    // UNHALT_BRIDGE tests halting of the bridge when an Ethereum oracle disagreement occurs and unhalting the bridge via gov vote
+    // PAUSE_BRIDGE tests a governance vote to pause and unpause bridge functionality
+    // DEPOSIT_OVERFLOW tests attacks of gravity.sol where a hostle erc20 imitates a supply above uint256 max
+    // ETHEREUM_BLACKLIST tests the blacklist functionality of Ethereum addresses not allowed to interact with the bridge
+    // AIRDROP_PROPOSAL tests the airdrop proposal by creating and executing an airdrop
+    // SIGNATURE_SLASHING tests that validators are not improperly slashed when submitting ethereum signatures
+    // SLASHING_DELEGATION tests delegating and claiming rewards from a validator that has been slashed by gravity
+    // IBC_METADATA tests the creation of an IBC Metadata proposal to allow the deployment of an ERC20 representation
+    // ERC721_HAPPY_PATH tests ERC721 extension for Gravity.sol, solidity only
+    // UPGRADE_PART_1 handles creating a chain upgrade proposal and passing it
+    // UPGRADE_PART_2 upgrades the chain binaries and starts the upgraded chain after being halted in part 1
+    // IBC_AUT_FORWARD tests ibc auto forwarding functionality.
+    // RUN_ORCH_ONLY runs only the orchestrators, for local testing where you want the chain to just run.
     let test_type = env::var("TEST_TYPE");
     info!("Starting tests with {:?}", test_type);
     if let Ok(test_type) = test_type {
@@ -441,6 +462,9 @@ pub async fn main() {
                 erc20_addresses[0],
             )
             .await;
+            return;
+        } else if test_type == "RUN_ORCH_ONLY" {
+            sleep(Duration::from_secs(1_000_000_000)).await;
             return;
         } else if !test_type.is_empty() {
             panic!("Err Unknown test type")
