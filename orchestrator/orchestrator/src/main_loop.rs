@@ -18,7 +18,10 @@ use cosmos_gravity::{
 use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
 use deep_space::{client::ChainStatus, utils::FeeInfo};
-use deep_space::{coin::Coin, private_key::PrivateKey as CosmosPrivateKey};
+use deep_space::{
+    coin::Coin,
+    private_key::{CosmosPrivateKey, PrivateKey},
+};
 use futures::future::{join, join3};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;

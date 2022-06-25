@@ -7,7 +7,7 @@ use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::proposals::submit_unhalt_bridge_proposal;
 use cosmos_gravity::query::{get_attestations, get_last_event_nonce_for_validator};
 use deep_space::address::Address as CosmosAddress;
-use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::{Contact, Fee};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;

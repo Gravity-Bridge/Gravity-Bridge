@@ -2,6 +2,7 @@ use crate::args::CosmosToEthOpts;
 use crate::utils::TIMEOUT;
 use cosmos_gravity::query::get_denom_to_erc20;
 use cosmos_gravity::send::send_to_eth;
+use deep_space::PrivateKey;
 use gravity_proto::gravity::QueryDenomToErc20Request;
 use gravity_utils::{
     connection_prep::{check_for_fee, create_rpc_connections},

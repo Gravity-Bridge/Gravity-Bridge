@@ -4,7 +4,10 @@
 use clarity::{utils::bytes_to_hex_str, Address as EthAddress, Uint256};
 use cosmos_gravity::{query::get_last_event_nonce_for_validator, send::send_ethereum_claims};
 use deep_space::Contact;
-use deep_space::{coin::Coin, private_key::PrivateKey as CosmosPrivateKey};
+use deep_space::{
+    coin::Coin,
+    private_key::{CosmosPrivateKey, PrivateKey},
+};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::get_with_retry::get_block_number_with_retry;
 use gravity_utils::get_with_retry::get_net_version_with_retry;

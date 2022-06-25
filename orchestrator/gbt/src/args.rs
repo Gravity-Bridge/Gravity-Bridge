@@ -4,7 +4,7 @@
 use clap::Parser;
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
-use deep_space::PrivateKey as CosmosPrivateKey;
+use deep_space::CosmosPrivateKey;
 use deep_space::{address::Address as CosmosAddress, Coin};
 use std::path::PathBuf;
 

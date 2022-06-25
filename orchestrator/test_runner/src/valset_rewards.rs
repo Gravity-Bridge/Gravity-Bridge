@@ -1,6 +1,7 @@
 //! This is a test for validator set relaying rewards
 
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
+use crate::get_fee;
 use crate::happy_path::test_valset_update;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{
@@ -68,7 +69,13 @@ pub async fn valset_rewards_test(
     // next we create a governance proposal to use the newly bridged asset as the reward
     // and vote to pass the proposal
     info!("Creating parameter change governance proposal");
-    create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        params_to_change,
+        get_fee(None),
+    )
+    .await;
 
     vote_yes_on_proposals(contact, &keys, None).await;
 

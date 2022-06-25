@@ -70,7 +70,13 @@ pub async fn pause_bridge_test(
     params_to_change.push(halt);
 
     // next we create a governance proposal halt the bridge temporarily
-    create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        params_to_change,
+        get_fee(None),
+    )
+    .await;
 
     vote_yes_on_proposals(contact, &keys, None).await;
 
@@ -163,7 +169,13 @@ pub async fn pause_bridge_test(
     params_to_change.push(unhalt);
 
     // crate a governance proposal to resume the bridge
-    create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        params_to_change,
+        get_fee(None),
+    )
+    .await;
 
     vote_yes_on_proposals(contact, &keys, None).await;
 

@@ -602,9 +602,9 @@ checksum = "5827cebf4670468b8772dd191856768aedcb1b0278a04f989f7766351917b9dc"
 
 [[package]]
 name = "cosmos-sdk-proto-althea"
-version = "0.12.4"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72a4903141f49492a4d7e25b29fc2a2b97dda184ecf77975d75683ff35350d61"
+checksum = "6b8ac408131eec621842f9c16e1224f092657c7fa617c423d6d081706f146420"
 dependencies = [
  "prost 0.10.0",
  "prost-types 0.10.0",
@@ -782,13 +782,14 @@ dependencies = [
 
 [[package]]
 name = "deep_space"
-version = "2.11.0"
+version = "2.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09ee2b159b46907842156c9c05c87b31c434485694cb055f62389db1549ec3ed"
+checksum = "2f3b02d0d99f4d6af57ea07f0f297d329a709402f0334708b95f3e045f2dc7d2"
 dependencies = [
  "base64",
  "bech32",
  "bytes",
+ "clarity",
  "cosmos-sdk-proto-althea",
  "hmac 0.12.1",
  "log",
@@ -806,6 +807,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "sha2 0.10.2",
+ "sha3 0.10.1",
  "tokio",
  "tonic 0.7.1",
  "unicode-normalization",

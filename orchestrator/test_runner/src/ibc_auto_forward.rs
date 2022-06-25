@@ -12,7 +12,7 @@ use cosmos_gravity::send::MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::client::msgs::MSG_TRANSFER_TYPE_URL;
 use deep_space::error::CosmosGrpcError;
-use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::utils::decode_any;
 use deep_space::utils::encode_any;
 use deep_space::{Coin as DSCoin, Contact, Msg};
@@ -90,6 +90,8 @@ pub async fn ibc_auto_forward_test(
         ibc_transfer_qc.clone(),
         sender,
         receiver,
+        None,
+        None,
         gravity_channel_id.clone(),
         Duration::from_secs(60 * 3),
     )
@@ -167,11 +169,13 @@ pub async fn test_ibc_transfer(
     contact: &Contact,                     // Src chain's deep_space client
     dst_bank_qc: BankQueryClient<Channel>, // Dst chain's GRPC x/bank query client
     dst_ibc_transfer_qc: IbcTransferQueryClient<Channel>, // Dst chain's GRPC ibc-transfer query client
-    sender: CosmosPrivateKey,                             // The Src chain's funds sender
+    sender: impl PrivateKey,                              // The Src chain's funds sender
     receiver: CosmosAddress,                              // The Dst chain's funds receiver
+    coin: Option<Coin>,                                   // The coin to send to receiver
+    fee_coin: Option<DSCoin>, // The fee to pay for submitting the transfer msg
     channel_id: String,       // The Src chain's ibc channel connecting to Dst
     packet_timeout: Duration, // Used to create ibc-transfer timeout-timestamp
-) {
+) -> bool {
     let sender_address = sender.to_address(&*ADDRESS_PREFIX).unwrap().to_string();
     let pre_bal = get_ibc_balance(
         receiver,
@@ -189,14 +193,14 @@ pub async fn test_ibc_transfer(
         .unwrap()
         .as_nanos() as u64;
     info!("Calculated 150 minutes from now: {:?}", timeout_timestamp);
-    let amount: Uint256 = one_atom();
+    let coin = coin.unwrap_or(Coin {
+        denom: STAKING_TOKEN.to_string(),
+        amount: one_atom().to_string(),
+    });
     let msg_transfer = MsgTransfer {
         source_port: "transfer".to_string(),
         source_channel: channel_id,
-        token: Some(Coin {
-            amount: amount.clone().to_string(),
-            denom: STAKING_TOKEN.as_str().to_string(),
-        }),
+        token: Some(coin.clone()),
         sender: sender_address,
         receiver: receiver.to_string(),
         timeout_height: None,
@@ -204,14 +208,15 @@ pub async fn test_ibc_transfer(
     };
     info!("Submitting MsgTransfer {:?}", msg_transfer);
     let msg_transfer = Msg::new(MSG_TRANSFER_TYPE_URL, msg_transfer);
+    let fee_coin = fee_coin.unwrap_or(DSCoin {
+        amount: 100u16.into(),
+        denom: (*STAKING_TOKEN).to_string(),
+    });
     let send_res = contact
         .send_message(
             &[msg_transfer],
             Some("Test Relaying".to_string()),
-            &[DSCoin {
-                amount: 100u16.into(),
-                denom: (*STAKING_TOKEN).to_string(),
-            }],
+            &[fee_coin],
             Some(OPERATION_TIMEOUT),
             sender,
         )
@@ -237,43 +242,49 @@ pub async fn test_ibc_transfer(
     .await;
     match (pre_bal, post_bal) {
         (None, None) => {
-            panic!("Failed to transfer stake to ibc-test-1 user {}!", receiver,);
+            error!("Failed to transfer stake to ibc-test-1 user {}!", receiver);
+            return false;
         }
         (None, Some(post)) => {
-            if Uint256::from_str(&post.amount).unwrap() != amount {
-                panic!(
+            if post.amount != coin.amount {
+                error!(
                     "Incorrect ibc stake balance for user {}: actual {} != expected {}",
-                    receiver, post.amount, amount,
+                    receiver, post.amount, coin.amount,
                 );
+                return false;
             }
             info!(
                 "Successfully transfered {} stake (aka {}) to ibc-test-1!",
-                amount, post.denom
+                coin.amount, post.denom
             );
         }
         (Some(pre), Some(post)) => {
+            let amount_uint = Uint256::from_str(&coin.amount).unwrap();
             let pre_amt = Uint256::from_str(&pre.amount).unwrap();
             let post_amt = Uint256::from_str(&post.amount).unwrap();
-            if post_amt < pre_amt || post_amt - pre_amt.clone() != amount.clone() {
-                panic!(
+            if post_amt < pre_amt || post_amt - pre_amt.clone() != amount_uint {
+                error!(
                     "Incorrect ibc stake balance for user {}: actual {} != expected {}",
                     receiver,
                     post.amount,
-                    (pre_amt + amount),
+                    (pre_amt + amount_uint),
                 );
+                return false;
             }
             info!(
                 "Successfully transfered {} stake (aka {}) to ibc-test-1!",
-                amount, post.denom
+                coin.amount, post.denom
             );
         }
         (Some(_), None) => {
-            panic!(
+            error!(
                 "User wound up with no balance after ibc transfer? {}",
                 receiver,
             );
+            return false;
         }
     }
+    return true;
 }
 
 // Retrieves the channel connecting the chain behind `ibc_channel_qc` and the chain with id `foreign_chain_id`

@@ -55,7 +55,7 @@ pub async fn set_gravity_delegate_addresses(
     contact: &Contact,
     delegate_eth_address: EthAddress,
     delegate_cosmos_address: Address,
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     fee: Coin,
 ) -> Result<TxResponse, CosmosGrpcError> {
     trace!("Updating Gravity Delegate addresses");
@@ -95,7 +95,7 @@ pub async fn send_valset_confirms(
     eth_private_key: EthPrivateKey,
     fee: Coin,
     valsets: Vec<Valset>,
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     gravity_id: String,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
@@ -140,7 +140,7 @@ pub async fn send_batch_confirm(
     eth_private_key: EthPrivateKey,
     fee: Coin,
     transaction_batches: Vec<TransactionBatch>,
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     gravity_id: String,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
@@ -184,7 +184,7 @@ pub async fn send_logic_call_confirm(
     eth_private_key: EthPrivateKey,
     fee: Coin,
     logic_calls: Vec<LogicCall>,
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     gravity_id: String,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
@@ -225,7 +225,7 @@ pub async fn send_logic_call_confirm(
 #[allow(clippy::too_many_arguments)]
 pub async fn send_ethereum_claims(
     contact: &Contact,
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     deposits: Vec<SendToCosmosEvent>,
     withdraws: Vec<TransactionBatchExecutedEvent>,
     erc20_deploys: Vec<Erc20DeployedEvent>,
@@ -327,7 +327,7 @@ pub async fn send_ethereum_claims(
 /// one is the fee to be sent to Ethereum, which must be the same denom as the amount
 /// the other is the Cosmos chain fee, which can be any allowed coin
 pub async fn send_to_eth(
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     destination: EthAddress,
     amount: Coin,
     bridge_fee: Coin,
@@ -382,7 +382,7 @@ pub async fn send_to_eth(
 }
 
 pub async fn send_request_batch(
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     denom: String,
     fee: Option<Coin>,
     contact: &Contact,
@@ -413,7 +413,7 @@ pub async fn send_request_batch(
 /// Sends evidence of a bad signature to the chain to slash the malicious validator
 /// who signed an invalid message with their Ethereum key
 pub async fn submit_bad_signature_evidence(
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     fee: Coin,
     contact: &Contact,
     signed_object: BadSignatureEvidence,
@@ -447,7 +447,7 @@ pub async fn submit_bad_signature_evidence(
 /// Cancels a user provided SendToEth transaction, provided it's not already in a batch
 /// you should check with `QueryPendingSendToEth`
 pub async fn cancel_send_to_eth(
-    private_key: PrivateKey,
+    private_key: impl PrivateKey,
     fee: Coin,
     contact: &Contact,
     transaction_id: u64,
@@ -474,7 +474,7 @@ pub async fn cancel_send_to_eth(
 /// Executes a MsgExecuteIbcAutoForwards on the gravity chain, which will process forwards_to_clear number of pending ibc auto forwards
 pub async fn execute_pending_ibc_auto_forwards(
     contact: &Contact,
-    cosmos_key: PrivateKey,
+    cosmos_key: impl PrivateKey,
     fee: Coin,
     forwards_to_clear: u64,
 ) -> Result<(), CosmosGrpcError> {

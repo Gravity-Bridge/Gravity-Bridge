@@ -10,6 +10,7 @@ use crate::airdrop_proposal::airdrop_proposal_test;
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
+use crate::ethereum_keys::ethereum_keys_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::invalid_events::invalid_events;
@@ -25,7 +26,7 @@ use clarity::{Address as EthAddress, Uint256};
 use deep_space::coin::Coin;
 use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
-use deep_space::PrivateKey as CosmosPrivateKey;
+use deep_space::{CosmosPrivateKey, PrivateKey};
 use erc_721_happy_path::erc721_happy_path_test;
 use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -46,6 +47,7 @@ mod bootstrapping;
 mod deposit_overflow;
 mod erc_721_happy_path;
 mod ethereum_blacklist_test;
+mod ethereum_keys;
 mod evidence_based_slashing;
 mod happy_path;
 mod happy_path_v2;
@@ -263,8 +265,9 @@ pub async fn main() {
     // ERC721_HAPPY_PATH tests ERC721 extension for Gravity.sol, solidity only
     // UPGRADE_PART_1 handles creating a chain upgrade proposal and passing it
     // UPGRADE_PART_2 upgrades the chain binaries and starts the upgraded chain after being halted in part 1
-    // IBC_AUT_FORWARD tests ibc auto forwarding functionality.
+    // IBC_AUTO_FORWARD tests ibc auto forwarding functionality.
     // RUN_ORCH_ONLY runs only the orchestrators, for local testing where you want the chain to just run.
+    // ETHERMINT_KEYS runs a gamut of transactions using a Ethermint key to test no loss of functionality
     let test_type = env::var("TEST_TYPE");
     info!("Starting tests with {:?}", test_type);
     if let Ok(test_type) = test_type {
@@ -466,6 +469,20 @@ pub async fn main() {
                 erc20_addresses[0],
             )
             .await;
+            return;
+        } else if test_type == "ETHEREUM_KEYS" || test_type == "ETHERMINT_KEYS" {
+            info!("Starting Ethereum Keys test");
+            let result = ethereum_keys_test(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                erc20_addresses[0],
+            )
+            .await;
+            assert!(result);
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;

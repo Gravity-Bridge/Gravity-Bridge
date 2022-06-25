@@ -7,6 +7,7 @@ use crate::utils::ValidatorKeys;
 use clarity::Address as EthAddress;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::Contact;
+use deep_space::PrivateKey;
 use gravity_proto::gravity::{
     query_client::QueryClient as GravityQueryClient, QueryDelegateKeysByEthAddress,
     QueryDelegateKeysByOrchestratorAddress,

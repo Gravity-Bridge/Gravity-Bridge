@@ -7,7 +7,7 @@ use crate::utils::{check_cosmos_balances, get_user_key, submit_false_claims, Val
 use crate::OPERATION_TIMEOUT;
 use crate::{get_fee, MINER_ADDRESS};
 use clarity::{Address as EthAddress, Uint256};
-use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::private_key::CosmosPrivateKey;
 use deep_space::{Coin, Contact, Fee};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::QueryErc20ToDenomRequest;
