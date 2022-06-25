@@ -11,7 +11,7 @@ use clarity::Uint256;
 use cosmos_gravity::query::get_erc20_to_denom;
 use cosmos_gravity::query::get_pending_batch_fees;
 use cosmos_gravity::send::send_request_batch;
-use deep_space::{Coin, Contact, PrivateKey as CosmosPrivateKey};
+use deep_space::{Coin, Contact, PrivateKey};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::prices::get_weth_price;
 use gravity_utils::types::BatchRequestMode;
@@ -26,7 +26,7 @@ pub async fn request_batches(
     grpc_client: &mut GravityQueryClient<Channel>,
     config: &RelayerConfig,
     eth_address: EthAddress,
-    private_key: CosmosPrivateKey,
+    private_key: impl PrivateKey,
     request_fee: Coin,
 ) {
     // this actually works either way but sending a tx with zero as the fee
@@ -84,7 +84,7 @@ pub async fn request_batches(
                                 fee.token
                             );
                             let res = send_request_batch(
-                                private_key,
+                                private_key.clone(),
                                 denom,
                                 request_fee.clone(),
                                 contact,
@@ -120,8 +120,13 @@ pub async fn request_batches(
                         "Requesting batch for {} because gas prices ({}) are good",
                         fee.token, eth_gas_price,
                     );
-                    let res =
-                        send_request_batch(private_key, denom, request_fee.clone(), contact).await;
+                    let res = send_request_batch(
+                        private_key.clone(),
+                        denom,
+                        request_fee.clone(),
+                        contact,
+                    )
+                    .await;
                     if let Err(e) = res {
                         warn!("Failed to request batch with {:?}", e);
                     } else {
@@ -132,7 +137,8 @@ pub async fn request_batches(
             BatchRequestMode::EveryBatch => {
                 info!("Requesting batch for {}", fee.token);
                 let res =
-                    send_request_batch(private_key, denom, request_fee.clone(), contact).await;
+                    send_request_batch(private_key.clone(), denom, request_fee.clone(), contact)
+                        .await;
                 if let Err(e) = res {
                     warn!("Failed to request batch with {:?}", e);
                 } else {

@@ -9,5 +9,5 @@ edition = "2018"
 [dependencies]
 prost = "0.10"
 prost-types = "0.10"
-cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.12", features = ["bech32ibc"]}
+cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.13", features = ["bech32ibc", "ethermint"]}
 tonic = "0.7"

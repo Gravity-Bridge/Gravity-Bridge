@@ -91,7 +91,7 @@ pub async fn evidence_based_slashing(
     info!("Evidence based slashing test succeeded! Validator now jailed!");
 }
 
-async fn check_validator(contact: &Contact, key: PrivateKey, filter: &str) -> (bool, bool) {
+async fn check_validator(contact: &Contact, key: impl PrivateKey, filter: &str) -> (bool, bool) {
     let validators = contact
         .get_validators_list(QueryValidatorsRequest {
             pagination: None,
@@ -119,7 +119,7 @@ async fn print_validator_status(contact: &Contact) {
 }
 
 /// Delegates to a specific validator
-async fn delegate_to_validator(keys: &[ValidatorKeys], to: PrivateKey, contact: &Contact) {
+async fn delegate_to_validator(keys: &[ValidatorKeys], to: impl PrivateKey, contact: &Contact) {
     let delegate_address = get_operator_address(to);
     let amount = Coin {
         denom: STAKING_TOKEN.to_string(),

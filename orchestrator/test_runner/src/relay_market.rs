@@ -12,7 +12,7 @@ use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::query::get_oldest_unsigned_transaction_batches;
 use cosmos_gravity::send::send_to_eth;
 use deep_space::coin::Coin;
-use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::{Address, Contact};
 use ethereum_gravity::utils::get_tx_batch_nonce;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;

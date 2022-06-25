@@ -1,7 +1,7 @@
 use cosmos_gravity::{
     query::get_all_pending_ibc_auto_forwards, send::execute_pending_ibc_auto_forwards,
 };
-use deep_space::{Coin, Contact, PrivateKey as CosmosPrivateKey};
+use deep_space::{Coin, Contact, CosmosPrivateKey};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::RelayerConfig;
 use std::time::{Duration, Instant};

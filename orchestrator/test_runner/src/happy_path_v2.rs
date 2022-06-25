@@ -16,7 +16,7 @@ use clarity::Address as EthAddress;
 use clarity::Uint256;
 use cosmos_gravity::send::send_to_eth;
 use deep_space::coin::Coin;
-use deep_space::Contact;
+use deep_space::{Contact, PrivateKey};
 use ethereum_gravity::deploy_erc20::deploy_erc20;
 use ethereum_gravity::utils::get_valset_nonce;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
@@ -104,21 +104,43 @@ pub async fn happy_path_test_v2(
     send_one_eth(user.eth_address, web30).await;
     info!("Sent 1 eth to user address {}", user.eth_address);
 
-    let res = send_to_eth(
+    let success = send_to_eth_and_confirm(
+        web30,
+        contact,
         user.cosmos_key,
         user.eth_address,
         send_to_eth_coin,
         get_fee(Some(ibc_metadata.base.clone())),
         get_fee(Some(ibc_metadata.base.clone())),
+        erc20_contract,
+    )
+    .await;
+    assert!(success, "User's balance did not reach {}", amount_to_bridge)
+}
+
+pub async fn send_to_eth_and_confirm(
+    web30: &Web3,
+    contact: &Contact,
+    cosmos_key: impl PrivateKey,
+    eth_receiver: EthAddress,
+    send_to_eth_coin: Coin,
+    cosmos_fee_coin: Coin,
+    bridge_fee_coin: Coin,
+    erc20_contract: EthAddress,
+) -> bool {
+    let amount_to_bridge = send_to_eth_coin.amount.clone();
+    let res = send_to_eth(
+        cosmos_key,
+        eth_receiver,
+        send_to_eth_coin,
+        bridge_fee_coin,
+        cosmos_fee_coin,
         contact,
     )
     .await
     .unwrap();
     info!("Send to eth res {:?}", res);
-    info!(
-        "Locked up {} {} to send to Cosmos",
-        amount_to_bridge, token_to_send_to_eth
-    );
+    info!("Locked up {} to send to Cosmos", amount_to_bridge);
 
     info!("Waiting for batch to be signed and relayed to Ethereum");
 
@@ -127,27 +149,24 @@ pub async fn happy_path_test_v2(
     // and cause any individual request to fail.
 
     while Instant::now() - start < TOTAL_TIMEOUT {
-        let new_balance = get_erc20_balance_safe(erc20_contract, web30, user.eth_address).await;
+        let new_balance = get_erc20_balance_safe(erc20_contract, web30, eth_receiver).await;
         // only keep trying if our error is gas related
         if new_balance.is_err() {
             continue;
         }
         let balance = new_balance.unwrap();
         if balance == amount_to_bridge {
-            info!(
-                "Successfully bridged {} Cosmos asset {} to Ethereum!",
-                amount_to_bridge, token_to_send_to_eth
-            );
+            info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
             assert!(balance == amount_to_bridge.clone());
-            break;
+            return true;
         } else if balance != 0u8.into() {
-            panic!(
-                "Expected {} {} but got {} instead",
-                amount_to_bridge, token_to_send_to_eth, balance
-            );
+            error!("Expected {} but got {} instead", amount_to_bridge, balance);
+            return false;
         }
         delay_for(Duration::from_secs(1)).await;
     }
+    error!("Timed out waiting for ethereum balance");
+    false
 }
 
 /// This segment is broken out because it's used in two different tests

@@ -345,7 +345,13 @@ pub async fn disable_inflation(contact: &Contact, keys: &[ValidatorKeys]) {
         value: r#""0""#.to_string(),
     };
     params_to_change.push(change);
-    create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        params_to_change,
+        get_fee(None),
+    )
+    .await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
 }

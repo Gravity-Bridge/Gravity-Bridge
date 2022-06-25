@@ -17,8 +17,8 @@ use deep_space::address::Address as CosmosAddress;
 use deep_space::client::ChainStatus;
 use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
-use deep_space::private_key::PrivateKey as CosmosPrivateKey;
-use deep_space::{Contact, Fee, Msg};
+use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
+use deep_space::{Address, Contact, EthermintPrivateKey, Fee, Msg};
 use ethereum_gravity::utils::get_event_nonce;
 use futures::future::join_all;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
@@ -26,7 +26,9 @@ use gravity_proto::cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
     ParamChange, ParameterChangeProposal,
 };
-use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
+use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
+    DelegationResponse, QueryValidatorsRequest,
+};
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::{Plan, SoftwareUpgradeProposal};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
@@ -235,6 +237,7 @@ pub async fn get_erc20_balance_safe(
 }
 
 // Generates a new BridgeUserKey through randomly generated secrets
+// cosmos_prefix allows for generation of a cosmos_address with a different prefix than "gravity"
 pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
     let cosmos_prefix = cosmos_prefix.unwrap_or(ADDRESS_PREFIX.as_str());
 
@@ -260,6 +263,7 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
         eth_dest_key,
     }
 }
+
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct BridgeUserKey {
     // the starting addresses that get Eth balances to send across the bridge
@@ -271,6 +275,35 @@ pub struct BridgeUserKey {
     // the location tokens are sent back to on Ethereum
     pub eth_dest_address: EthAddress,
     pub eth_dest_key: EthPrivateKey,
+}
+
+// Generates a new EthermintUserKey through a randomly generated secret
+// cosmos_prefix allows for generation of a cosmos_address with a different prefix than "gravity"
+pub fn get_ethermint_key(cosmos_prefix: Option<&str>) -> EthermintUserKey {
+    let cosmos_prefix = cosmos_prefix.unwrap_or(ADDRESS_PREFIX.as_str());
+
+    let mut rng = rand::thread_rng();
+    let secret: [u8; 32] = rng.gen();
+    // the starting location of the funds
+    // the destination on cosmos that sends along to the final ethereum destination
+    let ethermint_key = EthermintPrivateKey::from_secret(&secret);
+    let ethermint_address = ethermint_key.to_address(cosmos_prefix).unwrap();
+    // TODO: Verify that this conversion works like `evmosd debug addr`
+    let eth_address = EthAddress::from_slice(ethermint_address.as_bytes()).unwrap();
+
+    EthermintUserKey {
+        ethermint_address,
+        ethermint_key,
+        eth_address,
+    }
+}
+
+// Represents an Ethermint account, with address represented in the cosmos-sdk and Ethereum styles
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+pub struct EthermintUserKey {
+    pub ethermint_address: CosmosAddress, // the user's address according to ethsecp256k1
+    pub ethermint_key: EthermintPrivateKey, // the user's private key
+    pub eth_address: EthAddress,          // the ethermint_address treated as an EthAddress
 }
 
 #[derive(Debug, Clone)]
@@ -357,7 +390,7 @@ pub async fn start_orchestrators(
 // cosmos side and the bridge will effectively break.
 #[allow(clippy::too_many_arguments)]
 pub async fn submit_false_claims(
-    keys: &[CosmosPrivateKey],
+    keys: &[impl PrivateKey],
     nonce: u64,
     height: u64,
     amount: Uint256,
@@ -388,7 +421,7 @@ pub async fn submit_false_claims(
                 Some("All your bridge are belong to us".to_string()),
                 fee.amount.as_slice(),
                 timeout,
-                *k,
+                k.clone(),
             )
             .await
             .expect("Failed to submit false claim");
@@ -399,8 +432,9 @@ pub async fn submit_false_claims(
 /// Creates a proposal to change the params of our test chain
 pub async fn create_parameter_change_proposal(
     contact: &Contact,
-    key: CosmosPrivateKey,
+    key: impl PrivateKey,
     params_to_change: Vec<ParamChange>,
+    fee_coin: Coin,
 ) {
     let proposal = ParameterChangeProposal {
         title: "Set gravity settings!".to_string(),
@@ -410,7 +444,7 @@ pub async fn create_parameter_change_proposal(
     let res = submit_parameter_change_proposal(
         proposal,
         get_deposit(),
-        get_fee(None),
+        fee_coin,
         contact,
         key,
         Some(TOTAL_TIMEOUT),
@@ -421,7 +455,7 @@ pub async fn create_parameter_change_proposal(
 }
 
 /// Gets the operator address for a given validator private key
-pub fn get_operator_address(key: CosmosPrivateKey) -> CosmosAddress {
+pub fn get_operator_address(key: impl PrivateKey) -> CosmosAddress {
     // this is not guaranteed to be correct, the chain may set the valoper prefix in a
     // different way, but I haven't yet seen one that does not match this pattern
     key.to_address(&format!("{}valoper", *ADDRESS_PREFIX))
@@ -524,7 +558,7 @@ pub async fn vote_yes_on_proposals(
 pub async fn vote_yes_with_retry(
     contact: &Contact,
     proposal_id: u64,
-    key: CosmosPrivateKey,
+    key: impl PrivateKey,
     timeout: Duration,
 ) {
     const MAX_VOTES: u64 = 5;
@@ -534,7 +568,7 @@ pub async fn vote_yes_with_retry(
             proposal_id,
             VoteOption::Yes,
             get_fee(None),
-            key,
+            key.clone(),
             Some(timeout),
         )
         .await;
@@ -545,7 +579,7 @@ pub async fn vote_yes_with_retry(
                 proposal_id,
                 VoteOption::Yes,
                 get_fee(None),
-                key,
+                key.clone(),
                 Some(timeout),
             )
             .await;
@@ -727,4 +761,72 @@ pub async fn wait_for_block(contact: &Contact, height: u64) -> Result<(), Cosmos
         }
     }
     Ok(())
+}
+
+/// Delegates `delegate_amount` to `delegate_to` and queries for confirmation of that delegation
+/// Returns an error if the delegation or the query fail, returns the result of the delegation query
+pub async fn delegate_and_confirm(
+    contact: &Contact,
+    user_key: impl PrivateKey,
+    user_address: Address,
+    delegate_to: Address,
+    delegate_amount: Coin,
+    fee_coin: Coin,
+) -> Result<Option<DelegationResponse>, CosmosGrpcError> {
+    let deleg_result = contact
+        .delegate_to_validator(
+            delegate_to,
+            delegate_amount.clone(),
+            fee_coin,
+            user_key,
+            Some(TOTAL_TIMEOUT),
+        )
+        .await;
+    if deleg_result.is_err() {
+        let err_str = format!(
+            "Failed to delegate {} to validator {}, error {:?}",
+            delegate_amount,
+            delegate_to,
+            deleg_result.unwrap_err()
+        );
+        error!("{}", err_str);
+        return Err(CosmosGrpcError::BadResponse(err_str));
+    }
+    let deleg_confirm = contact.get_delegation(delegate_to, user_address).await;
+    if deleg_confirm.is_err() {
+        let err_str = format!(
+            "Failed to query for delegation of {} to validator {}, error {:?}",
+            delegate_amount,
+            delegate_to,
+            deleg_confirm.unwrap_err()
+        );
+        error!("{}", err_str);
+        return Err(CosmosGrpcError::BadResponse(err_str));
+    }
+    Ok(deleg_confirm.unwrap())
+}
+
+/// Waits up to TOTAL_TIMEOUT or provided timeout for the `user_address` account to gain at least `balance`
+pub async fn wait_for_balance(
+    contact: &Contact,
+    user_address: Address,
+    balance: Coin,
+    timeout: Option<Duration>,
+) {
+    let duration = timeout.unwrap_or(TOTAL_TIMEOUT);
+    let start = Instant::now();
+    while Instant::now() - start < duration {
+        let actual_balance = contact
+            .get_balance(user_address, balance.denom.clone())
+            .await;
+        if let Ok(Some(bal)) = actual_balance {
+            if bal.denom == balance.denom && bal.amount >= balance.amount {
+                return;
+            }
+        }
+
+        contact.wait_for_next_block(duration).await.unwrap();
+    }
+
+    panic!("User did not attain >= expected balance");
 }

@@ -1,8 +1,8 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
-use crate::{happy_path_test, happy_path_test_v2, utils::*};
+use crate::{ethereum_keys_test, happy_path_test, happy_path_test_v2, utils::*};
 use clarity::Address as EthAddress;
 use deep_space::client::ChainStatus;
-use deep_space::Contact;
+use deep_space::{Contact, CosmosPrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use std::time::Duration;
@@ -22,6 +22,7 @@ pub async fn upgrade_part_1(
     contact: &Contact,
     grpc_client: GravityQueryClient<Channel>,
     keys: Vec<ValidatorKeys>,
+    ibc_keys: Vec<CosmosPrivateKey>,
     gravity_address: EthAddress,
     erc20_addresses: Vec<EthAddress>,
 ) {
@@ -36,7 +37,18 @@ pub async fn upgrade_part_1(
         keys.clone(),
         gravity_address,
         erc20_addresses.clone(),
-        metadata,
+        metadata.clone(),
+    )
+    .await;
+    run_upgrade_specific_tests(
+        web30,
+        contact,
+        grpc_client.clone(),
+        keys.clone(),
+        ibc_keys,
+        gravity_address,
+        erc20_addresses.clone(),
+        false,
     )
     .await;
 
@@ -87,6 +99,7 @@ pub async fn upgrade_part_2(
     contact: &Contact,
     grpc_client: GravityQueryClient<Channel>,
     keys: Vec<ValidatorKeys>,
+    ibc_keys: Vec<CosmosPrivateKey>,
     gravity_address: EthAddress,
     erc20_addresses: Vec<EthAddress>,
 ) {
@@ -114,7 +127,18 @@ pub async fn upgrade_part_2(
         keys.clone(),
         gravity_address,
         erc20_addresses.clone(),
-        metadata,
+        metadata.clone(),
+    )
+    .await;
+    run_upgrade_specific_tests(
+        web30,
+        contact,
+        grpc_client.clone(),
+        keys.clone(),
+        ibc_keys,
+        gravity_address,
+        erc20_addresses.clone(),
+        true,
     )
     .await;
 }
@@ -152,4 +176,39 @@ pub async fn run_all_recoverable_tests(
         Some(ibc_metadata),
     )
     .await;
+}
+
+// These tests should fail in upgrade_part_1() but pass in upgrade_part_2()
+pub async fn run_upgrade_specific_tests(
+    web30: &Web3,
+    contact: &Contact,
+    grpc_client: GravityQueryClient<Channel>,
+    keys: Vec<ValidatorKeys>,
+    ibc_keys: Vec<CosmosPrivateKey>,
+    gravity_address: EthAddress,
+    erc20_addresses: Vec<EthAddress>,
+    post_upgrade: bool,
+) {
+    let res = ethereum_keys_test(
+        web30,
+        grpc_client,
+        contact,
+        keys,
+        ibc_keys,
+        gravity_address,
+        erc20_addresses[0],
+    )
+    .await;
+    if !post_upgrade {
+        // Expect failure
+        assert_eq!(res, false);
+        info!("Ethereum keys are not supported before the upgrade, waiting for upgrade then testing again!");
+    } else {
+        // Expect success
+        assert_eq!(
+            res, true,
+            "Ethereum keys are not supported after the upgrade, investigation needed!!"
+        );
+        info!("Successful Ethereum keys test after the upgrade!");
+    }
 }

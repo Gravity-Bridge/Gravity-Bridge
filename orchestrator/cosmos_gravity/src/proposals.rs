@@ -80,7 +80,7 @@ pub async fn submit_airdrop_proposal(
     deposit: Coin,
     fee: Coin,
     contact: &Contact,
-    key: PrivateKey,
+    key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let mut byte_recipients = Vec::new();
@@ -128,7 +128,7 @@ pub async fn submit_unhalt_bridge_proposal(
     deposit: Coin,
     fee: Coin,
     contact: &Contact,
-    key: PrivateKey,
+    key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
     // encode as a generic proposal
@@ -152,7 +152,7 @@ pub async fn submit_pause_bridge_proposal(
     deposit: Coin,
     fee: Coin,
     contact: &Contact,
-    key: PrivateKey,
+    key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let mut params_to_change = Vec::new();
@@ -176,7 +176,7 @@ pub async fn submit_parameter_change_proposal(
     deposit: Coin,
     fee: Coin,
     contact: &Contact,
-    key: PrivateKey,
+    key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
     // encode as a generic proposal
@@ -192,7 +192,7 @@ pub async fn submit_upgrade_proposal(
     deposit: Coin,
     fee: Coin,
     contact: &Contact,
-    key: PrivateKey,
+    key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
     // encode as a generic proposal
@@ -263,7 +263,7 @@ pub async fn submit_ibc_metadata_proposal(
     deposit: Coin,
     fee: Coin,
     contact: &Contact,
-    key: PrivateKey,
+    key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
     // encode as a generic proposal

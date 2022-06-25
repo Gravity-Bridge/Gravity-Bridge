@@ -19,7 +19,7 @@ orchestrator = {path = "../orchestrator/"}
 bytes = "1"
 prost = "0.10"
 prost-types = "0.10"
-deep_space = "2.11"
+deep_space = {version = "2.11", features = ["ethermint"]}
 serde_derive = "1.0"
 clarity = "0.5"
 docopt = "1"

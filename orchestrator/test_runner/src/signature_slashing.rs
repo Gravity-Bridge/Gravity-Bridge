@@ -8,7 +8,7 @@ use crate::utils::{
     create_default_test_config, create_parameter_change_proposal, start_orchestrators,
     vote_yes_on_proposals, ValidatorKeys,
 };
-use crate::TOTAL_TIMEOUT;
+use crate::{get_fee, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::client::types::ChainStatus;
@@ -105,7 +105,13 @@ pub async fn reduce_slashing_window(
     // next we create a governance proposal to use the newly bridged asset as the reward
     // and vote to pass the proposal
     info!("Creating parameter change governance proposal");
-    create_parameter_change_proposal(contact, keys[0].validator_key, params_to_change).await;
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        params_to_change,
+        get_fee(None),
+    )
+    .await;
 
     vote_yes_on_proposals(contact, keys, None).await;
 

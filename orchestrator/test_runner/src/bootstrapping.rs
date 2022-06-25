@@ -12,7 +12,7 @@ use crate::{get_gravity_chain_id, get_ibc_chain_id, ETH_NODE};
 use crate::{utils::ValidatorKeys, COSMOS_NODE_ABCI};
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
-use deep_space::private_key::{PrivateKey as CosmosPrivateKey, DEFAULT_COSMOS_HD_PATH};
+use deep_space::private_key::{CosmosPrivateKey, PrivateKey, DEFAULT_COSMOS_HD_PATH};
 use deep_space::Contact;
 use ibc::core::ics24_host::identifier::ChainId;
 use ibc_relayer::config::AddressType;

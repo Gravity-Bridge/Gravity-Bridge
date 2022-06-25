@@ -12,7 +12,7 @@ use cosmos_gravity::send::send_to_eth;
 use cosmos_gravity::{query::get_oldest_unsigned_transaction_batches, send::send_ethereum_claims};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::coin::Coin;
-use deep_space::private_key::PrivateKey as CosmosPrivateKey;
+use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::Contact;
 use ethereum_gravity::utils::get_valset_nonce;
 use ethereum_gravity::{send_to_cosmos::send_to_cosmos, utils::get_tx_batch_nonce};
