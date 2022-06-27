@@ -39,6 +39,7 @@ use tokio::time::sleep;
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
+use orch_only::orch_only_test;
 
 mod airdrop_proposal;
 mod bootstrapping;
@@ -63,6 +64,7 @@ mod upgrade;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
+mod orch_only;
 
 /// the timeout for individual requests
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
@@ -464,6 +466,7 @@ pub async fn main() {
             .await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
+            orch_only_test(keys, gravity_address).await;
             sleep(Duration::from_secs(1_000_000_000)).await;
             return;
         } else if !test_type.is_empty() {
