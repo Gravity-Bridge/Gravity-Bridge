@@ -33,13 +33,13 @@ use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
 use lazy_static::lazy_static;
 use orch_keys::orch_keys;
+use orch_only::orch_only_test;
 use relay_market::relay_market_test;
 use std::{env, time::Duration};
 use tokio::time::sleep;
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
-use orch_only::orch_only_test;
 
 mod airdrop_proposal;
 mod bootstrapping;
@@ -53,6 +53,7 @@ mod ibc_auto_forward;
 mod ibc_metadata;
 mod invalid_events;
 mod orch_keys;
+mod orch_only;
 mod pause_bridge;
 mod relay_market;
 mod signature_slashing;
@@ -64,7 +65,6 @@ mod upgrade;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
-mod orch_only;
 
 /// the timeout for individual requests
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
