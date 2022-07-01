@@ -307,7 +307,10 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
         "--port-b",
         "transfer",
     ]);
-    let out_file = File::create("/ibc-relayer-logs/channel-creation")
+
+    let out_file = File::options()
+        .write(true)
+        .open("/ibc-relayer-logs/channel-creation")
         .unwrap()
         .into_raw_fd();
     unsafe {
@@ -328,7 +331,9 @@ pub fn run_ibc_relayer(hermes_base: &mut Command, full_scan: bool) {
     if full_scan {
         start = start.arg("-f");
     }
-    let out_file = File::create("/ibc-relayer-logs/hermes-logs")
+    let out_file = File::options()
+        .write(true)
+        .open("/ibc-relayer-logs/hermes-logs")
         .unwrap()
         .into_raw_fd();
     unsafe {
