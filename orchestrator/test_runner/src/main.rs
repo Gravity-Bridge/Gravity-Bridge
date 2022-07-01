@@ -429,6 +429,7 @@ pub async fn main() {
                 &contact,
                 grpc_client,
                 keys,
+                ibc_keys,
                 gravity_address,
                 erc20_addresses,
             )
@@ -447,6 +448,7 @@ pub async fn main() {
                 &contact,
                 grpc_client,
                 keys,
+                ibc_keys,
                 gravity_address,
                 erc20_addresses,
             )
