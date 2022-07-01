@@ -1,6 +1,7 @@
 package upgrades
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -8,8 +9,10 @@ import (
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
+	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 )
 
@@ -34,5 +37,15 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		v2.V2FixPlanName, // mercury2.0
 		v2.GetMercury2Dot0UpgradeHandler(),
+	)
+
+	// Polaris UPGRADE HANDLER SETUP
+	upgradeKeeper.SetUpgradeHandler(
+		polaris.V2toPolarisPlanName,
+		func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+			// The polaris update only includes new functionality and no upgrade logic is needed
+			ctx.Logger().Info("Polaris Upgrade Complete!")
+			return vmap, nil
+		},
 	)
 }

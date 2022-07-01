@@ -53,10 +53,10 @@ pub async fn upgrade_part_1(
         None,
         UpgradeProposalParams {
             upgrade_height,
-            plan_name: "mercury2.0".to_string(),
-            plan_info: "mercury2.0 upgrade info here".to_string(),
-            proposal_title: "mercury2.0 upgrade proposal title here".to_string(),
-            proposal_desc: "mercury2.0 upgrade proposal description here".to_string(),
+            plan_name: "polaris".to_string(),
+            plan_info: "polaris upgrade info here".to_string(),
+            proposal_title: "polaris upgrade proposal title here".to_string(),
+            proposal_desc: "polaris upgrade proposal description here".to_string(),
         },
     )
     .await;
