@@ -165,6 +165,7 @@ pub async fn ibc_auto_forward_test(
 }
 
 // Sends 1 gravity-test-1 stake from `sender` to `receiver` on ibc-test-1 and asserts receipt of funds
+#[allow(clippy::too_many_arguments)]
 pub async fn test_ibc_transfer(
     contact: &Contact,                     // Src chain's deep_space client
     dst_bank_qc: BankQueryClient<Channel>, // Dst chain's GRPC x/bank query client
@@ -284,7 +285,7 @@ pub async fn test_ibc_transfer(
             return false;
         }
     }
-    return true;
+    true
 }
 
 // Retrieves the channel connecting the chain behind `ibc_channel_qc` and the chain with id `foreign_chain_id`
