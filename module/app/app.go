@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"io"
 	"net/http"
 	"os"
@@ -644,6 +645,17 @@ func NewGravityApp(
 		evidencetypes.ModuleName,
 		stakingtypes.ModuleName,
 		ibchost.ModuleName,
+		banktypes.ModuleName,
+		crisistypes.ModuleName,
+		authtypes.ModuleName,
+		vestingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		bech32ibctypes.ModuleName,
+		gravitytypes.ModuleName,
+		genutiltypes.ModuleName,
+		authz.ModuleName,
+		govtypes.ModuleName,
+		paramstypes.ModuleName,
 	)
 	mm.SetOrderEndBlockers(
 		crisistypes.ModuleName,
@@ -651,6 +663,20 @@ func NewGravityApp(
 		stakingtypes.ModuleName,
 		gravitytypes.ModuleName,
 		upgradetypes.ModuleName,
+		capabilitytypes.ModuleName,
+		minttypes.ModuleName,
+		distrtypes.ModuleName,
+		slashingtypes.ModuleName,
+		evidencetypes.ModuleName,
+		ibchost.ModuleName,
+		banktypes.ModuleName,
+		authtypes.ModuleName,
+		vestingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		bech32ibctypes.ModuleName,
+		genutiltypes.ModuleName,
+		authz.ModuleName,
+		paramstypes.ModuleName,
 	)
 	mm.SetOrderInitGenesis(
 		capabilitytypes.ModuleName,
@@ -670,6 +696,8 @@ func NewGravityApp(
 		gravitytypes.ModuleName,
 		bech32ibctypes.ModuleName,
 		crisistypes.ModuleName,
+		vestingtypes.ModuleName,
+		paramstypes.ModuleName,
 	)
 
 	mm.RegisterInvariants(&crisisKeeper)
