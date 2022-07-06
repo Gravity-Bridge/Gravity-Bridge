@@ -1,7 +1,6 @@
 package upgrades
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -9,7 +8,7 @@ import (
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
@@ -23,6 +22,7 @@ func RegisterUpgradeHandlers(
 	mm *module.Manager, configurator *module.Configurator, accountKeeper *authkeeper.AccountKeeper,
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper, upgradeKeeper *upgradekeeper.Keeper,
+	transferKeeper *ibctransferkeeper.Keeper,
 ) {
 	if mm == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
 		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil || upgradeKeeper == nil {
@@ -42,10 +42,6 @@ func RegisterUpgradeHandlers(
 	// Polaris UPGRADE HANDLER SETUP
 	upgradeKeeper.SetUpgradeHandler(
 		polaris.V2toPolarisPlanName,
-		func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
-			// The polaris update only includes new functionality and no upgrade logic is needed
-			ctx.Logger().Info("Polaris Upgrade Complete!")
-			return vmap, nil
-		},
+		polaris.GetPolarisUpgradeHandler(mm, configurator, transferKeeper),
 	)
 }
