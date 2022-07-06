@@ -7,8 +7,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	channelkeeper "github.com/cosmos/ibc-go/v2/modules/core/04-channel/keeper"
-	ibcante "github.com/cosmos/ibc-go/v2/modules/core/ante"
+	ibcante "github.com/cosmos/ibc-go/v3/modules/core/ante"
+	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 )
 
 // Constructs a new sdk.AnteHandler for the Gravity app.
@@ -18,7 +18,7 @@ import (
 // with additional AnteDecorators. This complicated process is desirable because:
 //   1. the default sdk AnteHandler can change on any upgrade (so we do not want to have a stale list of AnteDecorators),
 //   2. it is not possible to modify an AnteHandler once it is constructed
-func newAnteHandler(options ante.HandlerOptions, ibcChannelKeeper channelkeeper.Keeper, cdc codec.BinaryCodec) (*sdk.AnteHandler, error) {
+func newAnteHandler(options ante.HandlerOptions, ibcKeeper *ibckeeper.Keeper, cdc codec.BinaryCodec) (*sdk.AnteHandler, error) {
 	// Call the default sdk antehandler constructor to avoid auditing our changes in the future
 	baseAnteHandler, err := ante.NewAnteHandler(options)
 	if err != nil {
@@ -26,7 +26,7 @@ func newAnteHandler(options ante.HandlerOptions, ibcChannelKeeper channelkeeper.
 	}
 
 	// Create additional AnteDecorators to chain together
-	ibcAnteDecorator := ibcante.NewAnteDecorator(ibcChannelKeeper)
+	ibcAnteDecorator := ibcante.NewAnteDecorator(ibcKeeper)
 	minCommissionDecorator := NewMinCommissionDecorator(cdc)
 
 	addlDecorators := []sdk.AnteDecorator{ibcAnteDecorator, minCommissionDecorator}

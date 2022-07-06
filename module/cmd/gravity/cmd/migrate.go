@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	v100 "github.com/cosmos/ibc-go/v2/modules/core/legacy/v100"
+	v100 "github.com/cosmos/ibc-go/v3/modules/core/legacy/v100"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/pkg/errors"
