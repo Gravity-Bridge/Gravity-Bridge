@@ -7,7 +7,7 @@ import (
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ibchost "github.com/cosmos/ibc-go/v2/modules/core/24-host"
+	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 	"testing"
 	"time"
 
@@ -62,9 +62,9 @@ import (
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	dbm "github.com/tendermint/tm-db"
 
-	ibctransferkeeper "github.com/cosmos/ibc-go/v2/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
@@ -598,7 +598,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	scopedTransferKeeper := capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
 	ibcTransferKeeper := ibctransferkeeper.NewKeeper(
 		marshaler, keyIbcTransfer, getSubspace(paramsKeeper, ibctransfertypes.ModuleName),
-		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
+		ibcKeeper.ChannelKeeper, ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
 		accountKeeper, bankKeeper, scopedTransferKeeper,
 	)
 

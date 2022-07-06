@@ -87,16 +87,16 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	// Cosmos IBC-Go
-	transfer "github.com/cosmos/ibc-go/v2/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v2/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v2/modules/core"
-	ibcclient "github.com/cosmos/ibc-go/v2/modules/core/02-client"
-	ibcclientclient "github.com/cosmos/ibc-go/v2/modules/core/02-client/client"
-	ibcclienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
-	porttypes "github.com/cosmos/ibc-go/v2/modules/core/05-port/types"
-	ibchost "github.com/cosmos/ibc-go/v2/modules/core/24-host"
-	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
+	transfer "github.com/cosmos/ibc-go/v3/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v3/modules/core"
+	ibcclient "github.com/cosmos/ibc-go/v3/modules/core/02-client"
+	ibcclientclient "github.com/cosmos/ibc-go/v3/modules/core/02-client/client"
+	ibcclienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	porttypes "github.com/cosmos/ibc-go/v3/modules/core/05-port/types"
+	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
+	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 
 	// Osmosis-Labs Bech32-IBC
 	"github.com/osmosis-labs/bech32-ibc/x/bech32ibc"
@@ -462,7 +462,7 @@ func NewGravityApp(
 
 	ibcTransferKeeper := ibctransferkeeper.NewKeeper(
 		appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
-		ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
+		ibcKeeper.ChannelKeeper, ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
 		accountKeeper, bankKeeper, scopedTransferKeeper,
 	)
 	app.ibcTransferKeeper = &ibcTransferKeeper
@@ -535,10 +535,11 @@ func NewGravityApp(
 	)
 	app.govKeeper = &govKeeper
 
-	ibcTransferModule := transfer.NewAppModule(ibcTransferKeeper)
+	ibcTransferAppModule := transfer.NewAppModule(ibcTransferKeeper)
+	ibcTransferIBCModule := transfer.NewIBCModule(ibcTransferKeeper)
 
 	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibcTransferModule)
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibcTransferIBCModule)
 	ibcKeeper.SetRouter(ibcRouter)
 
 	evidenceKeeper := *evidencekeeper.NewKeeper(
@@ -623,7 +624,7 @@ func NewGravityApp(
 		evidence.NewAppModule(evidenceKeeper),
 		ibc.NewAppModule(&ibcKeeper),
 		params.NewAppModule(paramsKeeper),
-		ibcTransferModule,
+		ibcTransferAppModule,
 		gravity.NewAppModule(
 			gravityKeeper,
 			bankKeeper,
@@ -718,7 +719,7 @@ func NewGravityApp(
 		params.NewAppModule(paramsKeeper),
 		evidence.NewAppModule(evidenceKeeper),
 		ibc.NewAppModule(&ibcKeeper),
-		ibcTransferModule,
+		ibcTransferAppModule,
 	)
 	app.sm = &sm
 
@@ -739,7 +740,7 @@ func NewGravityApp(
 		SigGasConsumer:  ethante.DefaultSigVerificationGasConsumer,
 	}
 
-	ah, err := newAnteHandler(options, ibcKeeper.ChannelKeeper, appCodec)
+	ah, err := newAnteHandler(options, &ibcKeeper, appCodec)
 	if err != nil {
 		panic("invalid antehandler created")
 	}
@@ -954,7 +955,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 func (app *Gravity) registerUpgradeHandlers() {
 	upgrades.RegisterUpgradeHandlers(
 		app.mm, app.configurator, app.accountKeeper, app.bankKeeper, app.bech32IbcKeeper, app.distrKeeper,
-		app.mintKeeper, app.stakingKeeper, app.upgradeKeeper,
+		app.mintKeeper, app.stakingKeeper, app.upgradeKeeper, app.ibcTransferKeeper,
 	)
 }
 
