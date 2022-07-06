@@ -3,8 +3,8 @@ package app
 import (
 	"github.com/cosmos/cosmos-sdk/std"
 
-	ethermintcryptocodec "github.com/tharsis/ethermint/crypto/codec"
-	ethermintcodec "github.com/tharsis/ethermint/encoding/codec"
+	ethermintcryptocodec "github.com/evmos/ethermint/crypto/codec"
+	ethermintcodec "github.com/evmos/ethermint/encoding/codec"
 
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 )

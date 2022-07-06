@@ -107,7 +107,7 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 
 	// Tharsis Ethermint
-	ethante "github.com/tharsis/ethermint/app/ante"
+	ethante "github.com/evmos/ethermint/app/ante"
 
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
