@@ -179,6 +179,7 @@ pub async fn run_all_recoverable_tests(
 }
 
 // These tests should fail in upgrade_part_1() but pass in upgrade_part_2()
+#[allow(clippy::too_many_arguments)]
 pub async fn run_upgrade_specific_tests(
     web30: &Web3,
     contact: &Contact,
@@ -201,12 +202,12 @@ pub async fn run_upgrade_specific_tests(
     .await;
     if !post_upgrade {
         // Expect failure
-        assert_eq!(res, false);
+        assert!(!res);
         info!("Ethereum keys are not supported before the upgrade, waiting for upgrade then testing again!");
     } else {
         // Expect success
-        assert_eq!(
-            res, true,
+        assert!(
+            res,
             "Ethereum keys are not supported after the upgrade, investigation needed!!"
         );
         info!("Successful Ethereum keys test after the upgrade!");

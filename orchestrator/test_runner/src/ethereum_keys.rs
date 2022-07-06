@@ -95,14 +95,14 @@ pub async fn setup_ethermint_test(
     assert_eq!(
         balance,
         Some(Coin {
-            denom: denom,
+            denom,
             amount: send_amount
         })
     );
     info!("User {} has {}", user_address, balance.unwrap());
 
     // Send the user a bit of eth for future queries
-    send_eth_bulk(one_eth(), &vec![user_eth_address], web30).await;
+    send_eth_bulk(one_eth(), &[user_eth_address], web30).await;
 
     let erc20_denom = "gravity".to_string() + &erc20_address.to_string();
     let send_amount: Uint256 = one_eth() * 10u8.into();
@@ -163,7 +163,7 @@ pub async fn example_ethermint_key_usage(
         .await;
     debug!("user_send is {:?}", user_send);
 
-    let expected_balance = start_balance.amount.clone() - send_amount.clone().clone();
+    let expected_balance = start_balance.amount.clone() - send_amount.clone();
     let balance = contact
         .get_balance(user_cosmos_address, denom.clone())
         .await
@@ -197,13 +197,13 @@ pub async fn example_ethermint_key_usage(
         denom: denom.clone(),
         amount: delegate_amt,
     };
-    let valoper_prefix = ADDRESS_PREFIX.clone().to_string() + "valoper";
+    let valoper_prefix = ADDRESS_PREFIX.to_string() + "valoper";
     let delegate_to = validator_keys[0]
         .validator_key
         .to_address(&valoper_prefix)
         .unwrap();
     let delegation_res = delegate_and_confirm(
-        &contact,
+        contact,
         user_key,
         user_cosmos_address,
         delegate_to,
@@ -272,7 +272,7 @@ pub async fn example_ethermint_key_usage(
         contact,
         ibc_bank_qc.clone(),
         ibc_transfer_qc.clone(),
-        user_key.clone(),
+        user_key,
         receiver,
         Some(ProtoCoin {
             denom: denom.clone(),
@@ -337,10 +337,8 @@ pub async fn example_ethermint_key_usage(
             stake_rewards = Some(reward.clone());
         }
     }
-    let _reward = stake_rewards.expect(&format!(
-        "Could not find a reward in stake from {:?}",
-        rewards
-    ));
+    let _reward = stake_rewards
+        .unwrap_or_else(|| panic!("Could not find a reward in stake from {:?}", rewards));
     let stake_balance = contact
         .get_balance(user_cosmos_address, "stake".to_string())
         .await
@@ -383,5 +381,5 @@ pub async fn example_ethermint_key_usage(
     info!("Successfully used distribution module with ethermint account {}, withdrew staking rewards!", user_cosmos_address);
 
     info!("Successfully tested example usage of an ethermint account!");
-    return true;
+    true
 }
