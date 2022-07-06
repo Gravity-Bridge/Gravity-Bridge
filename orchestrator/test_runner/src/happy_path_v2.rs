@@ -118,6 +118,7 @@ pub async fn happy_path_test_v2(
     assert!(success, "User's balance did not reach {}", amount_to_bridge)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn send_to_eth_and_confirm(
     web30: &Web3,
     contact: &Contact,
