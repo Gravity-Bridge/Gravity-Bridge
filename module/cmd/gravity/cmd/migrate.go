@@ -27,7 +27,7 @@ const flagGenesisTime = "genesis-time"
 // MigrateGenesisCmd returns a command to execute genesis state migration.
 // This is a copy of the genutil migrate cmd, with minimal changes to call the ibc v1->v2 genesis migration code
 func MigrateGravityGenesisCmd() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "ibc-migrate [genesis-file]",
 		Short: "Migrate gravity genesis to ibc v2",

@@ -13,7 +13,7 @@ import (
 )
 
 func GetQueryCmd() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	gravityQueryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Querying commands for the gravity module",
@@ -36,7 +36,7 @@ func GetQueryCmd() *cobra.Command {
 }
 
 func CmdGetCurrentValset() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "current-valset",
 		Short: "Query current valset",
@@ -60,7 +60,7 @@ func CmdGetCurrentValset() *cobra.Command {
 }
 
 func CmdGetValsetRequest() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "valset-request [nonce]",
 		Short: "Get requested valset with a particular nonce",
@@ -91,7 +91,7 @@ func CmdGetValsetRequest() *cobra.Command {
 }
 
 func CmdGetValsetConfirm() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "valset-confirm [nonce] [bech32 validator address]",
 		Short: "Get valset confirmation with a particular nonce from a particular validator",
@@ -123,7 +123,7 @@ func CmdGetValsetConfirm() *cobra.Command {
 }
 
 func CmdGetPendingValsetRequest() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-valset-request [bech32 orchestrator address]",
 		Short: "Get the latest valset request which has not been signed by a particular orchestrator",
@@ -149,7 +149,7 @@ func CmdGetPendingValsetRequest() *cobra.Command {
 }
 
 func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-batch-request [bech32 orchestrator address]",
 		Short: "Get the latest outgoing TX batch request which has not been signed by a particular orchestrator",
@@ -175,7 +175,7 @@ func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
 }
 
 func CmdGetPendingSendToEth() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-send-to-eth [address]",
 		Short: "Query transactions waiting to go to Ethereum",
@@ -201,7 +201,7 @@ func CmdGetPendingSendToEth() *cobra.Command {
 }
 
 func GetCmdPendingIbcAutoForwards() *cobra.Command {
-	//nolint: exhaustivestruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-ibc-auto-forwards [optional limit]",
 		Short: "Query SendToCosmos transactions waiting to be forwarded over IBC",
