@@ -361,7 +361,7 @@ pub async fn start_ibc_relayer(contact: &Contact, keys: &[ValidatorKeys], ibc_ph
     info!("test-runner starting IBC relayer mode: init hermes, create ibc channel, start hermes");
     let mut hermes_base = Command::new("hermes");
     let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
-    let _res = setup_relayer_keys(&RELAYER_MNEMONIC, &ibc_phrases[0]).unwrap();
+    setup_relayer_keys(&RELAYER_MNEMONIC, &ibc_phrases[0]).unwrap();
     create_ibc_channel(hermes_base);
     thread::spawn(|| {
         let mut hermes_base = Command::new("hermes");
