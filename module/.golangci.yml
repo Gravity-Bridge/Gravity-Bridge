@@ -18,7 +18,7 @@ linters:
       - unused
       - varcheck
 
-      - exhaustivestruct
+      - exhaustruct
       - errcheck
     # - gosec
     # - goimports
@@ -32,7 +32,7 @@ linters-settings:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
     # default is false: such cases aren't reported by default.
     check-blank: true
-  exhaustivestruct:
+  exhaustruct:
     # Struct Patterns is a list of expressions to match struct packages and names
     # The struct packages have the form example.com/package.ExampleStruct
     # The matching patterns can use matching syntax from https://pkg.go.dev/path#Match
@@ -46,23 +46,23 @@ issues:
         - dupl
     - path: config/
       linters:
-        - exhaustivestruct
+        - exhaustruct
         - errcheck
     - path: contrib/
       linters:
-        - exhaustivestruct
+        - exhaustruct
         - errcheck
     - path: proto/
       linters:
-        - exhaustivestruct
+        - exhaustruct
         - errcheck
     - path: third_party/
       linters:
-        - exhaustivestruct
+        - exhaustruct
         - errcheck
     - path: x/
       linters:
-        - exhaustivestruct
+        - exhaustruct
         - errcheck
 
   golint:
