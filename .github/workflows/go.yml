@@ -34,7 +34,7 @@ jobs:
       - name: Install golang-lint 
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
       - name: Build
-        run: cd module && golangci-lint run -c .golangci.yml --disable-all --timeout=3m && go mod verify
+        run: cd module && golangci-lint run -c .golangci.yml --disable-all --timeout=30m && go mod verify
 
   test:
     name: Test
