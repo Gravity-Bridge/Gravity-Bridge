@@ -3,13 +3,14 @@ package polaris
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 )
 
 func GetPolarisUpgradeHandler(
-	mm *module.Manager, configurator *module.Configurator, transferKeeper *ibctransferkeeper.Keeper,
+	mm *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper,
 ) func(
 	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
@@ -79,7 +80,12 @@ func GetPolarisUpgradeHandler(
 		}
 
 		ctx.Logger().Info("Polaris Upgrade: Running any configured module migrations")
-		return mm.RunMigrations(ctx, *configurator, fromVM)
+		out, outErr := mm.RunMigrations(ctx, *configurator, fromVM)
+
+		ctx.Logger().Info("Asserting invariants after upgrade")
+		crisisKeeper.AssertInvariants(ctx)
+
+		return out, outErr
 	}
 }
 
