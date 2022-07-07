@@ -315,4 +315,3 @@ message QueryPendingIbcAutoForwards{
 message QueryPendingIbcAutoForwardsResponse{
   repeated PendingIbcAutoForward pending_ibc_auto_forwards = 1;
 }
-
