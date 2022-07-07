@@ -130,10 +130,6 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				return sdkerrors.Wrap(err, "invalid metadata")
 			}
 
-			if err != nil {
-				return sdkerrors.Wrap(err, "invalid metadata")
-			}
-
 			if exist && res2.CosmosOriginated {
 				return sdkerrors.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
 			}
