@@ -30,7 +30,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	ethermint "github.com/tharsis/ethermint/crypto/hd"
+	ethermint "github.com/evmos/ethermint/crypto/hd"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
