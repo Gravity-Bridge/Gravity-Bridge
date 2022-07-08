@@ -88,9 +88,6 @@ jobs:
         run: |
           pushd ./module/artifacts/
           cp *linux-amd64 gravity-linux-amd64
-          cp *darwin-amd64 gravity-darwin-amd64
-          cp *windows-amd64.exe gravity-windows-amd64.exe
-          cp *linux-arm64 gravity-linux-arm64
           popd
 
       - name: Upload Gravity Bridge Linux
@@ -104,38 +101,38 @@ jobs:
           asset_name: gravity-linux-amd64
           asset_content_type: application/bin
 
-      - name: Upload Gravity Bridge Mac
-        id: upload-gravity-bridge-mac
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./module/artifacts/gravity-darwin-amd64
-          asset_name: gravity-darwin-amd64
-          asset_content_type: application/bin
-
-      - name: Upload Gravity Bridge Windows
-        id: upload-gravity-bridge-windows
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./module/artifacts/gravity-windows-amd64.exe
-          asset_name: gravity-windows-amd64.exe
-          asset_content_type: application/bin
-
-      - name: Upload Gravity Bridge Linux ARM
-        id: upload-gravity-bridge-linux-arm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./module/artifacts/gravity-linux-arm64
-          asset_name: gravity-linux-arm64
-          asset_content_type: application/bin
+#      - name: Upload Gravity Bridge Mac
+#        id: upload-gravity-bridge-mac
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./module/artifacts/gravity-darwin-amd64
+#          asset_name: gravity-darwin-amd64
+#          asset_content_type: application/bin
+#
+#      - name: Upload Gravity Bridge Windows
+#        id: upload-gravity-bridge-windows
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./module/artifacts/gravity-windows-amd64.exe
+#          asset_name: gravity-windows-amd64.exe
+#          asset_content_type: application/bin
+#
+#      - name: Upload Gravity Bridge Linux ARM
+#        id: upload-gravity-bridge-linux-arm
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./module/artifacts/gravity-linux-arm64
+#          asset_name: gravity-linux-arm64
+#          asset_content_type: application/bin
 
       # next we upload the contract artifact, in a production situation a previous version will
       # already be deployed on Ethereum and this won't be very useful, but as any chain leads up
@@ -156,73 +153,73 @@ jobs:
       # entry is already made and rust builds take nearly 10 minutes, so instead
       # of having a workable release in 20 minutes we can have one in 10 with the ARM
       # binaries coming 10 minutes later.
-      - name: Build GBT ARM64
-        run: |
-          cd orchestrator
-          cross build --target aarch64-unknown-linux-musl --release
+#      - name: Build GBT ARM64
+#        run: |
+#          cd orchestrator
+#          cross build --target aarch64-unknown-linux-musl --release
+#
+#      - name: Upload Gravity Bridge Tools ARM
+#        id: upload-gbt-arm
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./orchestrator/target/aarch64-unknown-linux-musl/release/gbt
+#          asset_name: gbt-arm
+#          asset_content_type: application/bin
 
-      - name: Upload Gravity Bridge Tools ARM
-        id: upload-gbt-arm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/aarch64-unknown-linux-musl/release/gbt
-          asset_name: gbt-arm
-          asset_content_type: application/bin
+#      - name: Build GBT Windows
+#        run: |
+#          cd orchestrator
+#          cross build --target x86_64-pc-windows-gnu --release
+#
+#      - name: Upload Gravity Bridge Tools Windows
+#        id: upload-gbt-windows
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./orchestrator/target/x86_64-pc-windows-gnu/release/gbt.exe
+#          asset_name: gbt.exe
+#          asset_content_type: application/bin
 
-      - name: Build GBT Windows 
-        run: |
-          cd orchestrator
-          cross build --target x86_64-pc-windows-gnu --release
-
-      - name: Upload Gravity Bridge Tools Windows 
-        id: upload-gbt-windows
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/x86_64-pc-windows-gnu/release/gbt.exe
-          asset_name: gbt.exe
-          asset_content_type: application/bin
-
-      - name: Build GBT Mac 
-        run: |
-          sudo apt install \
-                clang \
-                gcc \
-                g++ \
-                zlib1g-dev \
-                libmpc-dev \
-                libmpfr-dev \
-                libgmp-dev \
-                libssl-dev \
-                xz-utils \
-                libxml2-dev
-          rustup target add x86_64-apple-darwin
-          pushd /tmp/
-          git clone https://github.com/tpoechtrager/osxcross
-          cd osxcross
-          wget -nc https://s3.dockerproject.org/darwin/v2/MacOSX10.10.sdk.tar.xz
-          mv MacOSX10.10.sdk.tar.xz tarballs/
-          UNATTENDED=yes OSX_VERSION_MIN=10.7 ./build.sh
-          popd
-          cd orchestrator
-          PATH="/tmp/osxcross/target/bin:$PATH" \
-          CC=o64-clang \
-          CXX=o64-clang++ \
-          LIBZ_SYS_STATIC=1 \
-          cargo build --target x86_64-apple-darwin --release
-
-      - name: Upload Gravity Bridge Tools Mac
-        id: upload-gbt-mac
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./orchestrator/target/x86_64-apple-darwin/release/gbt
-          asset_name: gbt-mac-amd64
-          asset_content_type: application/bin
+#      - name: Build GBT Mac
+#        run: |
+#          sudo apt install \
+#                clang \
+#                gcc \
+#                g++ \
+#                zlib1g-dev \
+#                libmpc-dev \
+#                libmpfr-dev \
+#                libgmp-dev \
+#                libssl-dev \
+#                xz-utils \
+#                libxml2-dev
+#          rustup target add x86_64-apple-darwin
+#          pushd /tmp/
+#          git clone https://github.com/tpoechtrager/osxcross
+#          cd osxcross
+#          wget -nc https://s3.dockerproject.org/darwin/v2/MacOSX10.10.sdk.tar.xz
+#          mv MacOSX10.10.sdk.tar.xz tarballs/
+#          UNATTENDED=yes OSX_VERSION_MIN=10.7 ./build.sh
+#          popd
+#          cd orchestrator
+#          PATH="/tmp/osxcross/target/bin:$PATH" \
+#          CC=o64-clang \
+#          CXX=o64-clang++ \
+#          LIBZ_SYS_STATIC=1 \
+#          cargo build --target x86_64-apple-darwin --release
+#
+#      - name: Upload Gravity Bridge Tools Mac
+#        id: upload-gbt-mac
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./orchestrator/target/x86_64-apple-darwin/release/gbt
+#          asset_name: gbt-mac-amd64
+#          asset_content_type: application/bin
