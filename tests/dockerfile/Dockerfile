@@ -1,4 +1,4 @@
-FROM fedora:35
+FROM fedora:36
 ENV GOPATH=/go
 ENV PATH=$PATH:/go/bin
 RUN dnf install -y git make gcc gcc-c++ which iproute iputils procps-ng vim-minimal tmux net-tools htop tar jq npm openssl-devel perl rust cargo golang wget
@@ -19,3 +19,4 @@ ADD gravity.tar.gz /
 RUN pushd /gravity/orchestrator/test_runner && PATH=$PATH:$HOME/.cargo/bin cargo build --bin test-runner --release
 RUN pushd /gravity/module/ && PATH=$PATH:/usr/local/go/bin GOPROXY=https://proxy.golang.org make && PATH=$PATH:/usr/local/go/bin make install
 RUN pushd /gravity/solidity/ && HUSKY_SKIP_INSTALL=1 npm install && npm run typechain
+RUN git config --global --add safe.directory /gravity
