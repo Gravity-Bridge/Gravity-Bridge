@@ -1200,7 +1200,7 @@ dependencies = [
 
 [[package]]
 name = "gbt"
-version = "1.6.1"
+version = "1.6.4"
 dependencies = [
  "actix-rt",
  "clap",
@@ -2225,7 +2225,6 @@ dependencies = [
  "num256",
  "openssl",
  "openssl-probe",
- "openssl-src",
  "rand 0.8.5",
  "relayer",
  "serde",
