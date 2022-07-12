@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bytes"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -111,7 +112,6 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 		Timeout:              420,
 		InvalidationId:       []byte{},
 		InvalidationNonce:    0,
-		CosmosBlockCreated:   0,
 	}
 
 	input.GravityKeeper.SetOutgoingLogicCall(ctx, logicCall)

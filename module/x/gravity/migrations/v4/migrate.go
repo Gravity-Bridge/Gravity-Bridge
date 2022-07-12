@@ -28,9 +28,6 @@ func GetParams(ctx sdk.Context, paramSpace paramstypes.Subspace) (params v3.Para
 
 // V3ToV4Params Adds any new params to the given v3Params, using the new default values
 func V3ToV4Params(v3Params v3.Params) types.Params {
-	v4DefaultParams := types.DefaultParams()
-	// NEW PARAMS: MonitoredTokenAddresses
-	minChainFeeBasisPoints := v4DefaultParams.MinChainFeeBasisPoints
 
 	v4Params := types.Params{
 		GravityId:                    v3Params.GravityId,
@@ -51,7 +48,6 @@ func V3ToV4Params(v3Params v3.Params) types.Params {
 		ValsetReward:                 v3Params.ValsetReward,
 		BridgeActive:                 v3Params.BridgeActive,
 		EthereumBlacklist:            v3Params.EthereumBlacklist,
-		MinChainFeeBasisPoints:       minChainFeeBasisPoints,
 	}
 	return v4Params
 }
