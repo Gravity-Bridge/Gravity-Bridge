@@ -17,6 +17,7 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/snapshots"
+	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
@@ -26,11 +27,10 @@ import (
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
+	tmcfg "github.com/tendermint/tendermint/config"
 	tmcli "github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-
-	ethermint "github.com/evmos/ethermint/crypto/hd"
 
 	"github.com/umee-network/Gravity-Bridge/module/app"
 	"github.com/umee-network/Gravity-Bridge/module/app/params"
@@ -49,8 +49,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastBlock).
-		WithHomeDir(app.DefaultNodeHome).
-		WithKeyringOptions(ethermint.EthSecp256k1Option())
+		WithHomeDir(app.DefaultNodeHome)
+		// WithKeyringOptions(ethermint.EthSecp256k1Option())
 
 	//nolint: exhaustruct
 	rootCmd := &cobra.Command{
@@ -63,7 +63,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 			gravityAppTemplate, gravityAppConfig := initAppConfig()
 
-			return server.InterceptConfigsPreRunHandler(cmd, gravityAppTemplate, gravityAppConfig)
+			return server.InterceptConfigsPreRunHandler(cmd, gravityAppTemplate, gravityAppConfig, tmcfg.DefaultConfig())
 		},
 	}
 
@@ -240,9 +240,10 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverty
 		baseapp.SetInterBlockCache(cache),
 		baseapp.SetTrace(cast.ToBool(appOpts.Get(server.FlagTrace))),
 		baseapp.SetIndexEvents(cast.ToStringSlice(appOpts.Get(server.FlagIndexEvents))),
-		baseapp.SetSnapshotStore(snapshotStore),
-		baseapp.SetSnapshotInterval(cast.ToUint64(appOpts.Get(server.FlagStateSyncSnapshotInterval))),
-		baseapp.SetSnapshotKeepRecent(cast.ToUint32(appOpts.Get(server.FlagStateSyncSnapshotKeepRecent))),
+		baseapp.SetSnapshot(snapshotStore, snapshottypes.SnapshotOptions{
+			Interval:   cast.ToUint64(appOpts.Get(server.FlagStateSyncSnapshotInterval)),
+			KeepRecent: cast.ToUint32(appOpts.Get(server.FlagStateSyncSnapshotKeepRecent)),
+		}),
 	)
 }
 

@@ -12,7 +12,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1b1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/spf13/cobra"
 
 	"github.com/umee-network/Gravity-Bridge/module/x/gravity/keeper"
@@ -97,7 +97,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 			}
 
 			// Make the message
-			msg := govtypes.MsgSubmitProposal{
+			msg := govv1b1.MsgSubmitProposal{
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
@@ -187,7 +187,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 			}
 
 			// Make the message
-			msg := govtypes.MsgSubmitProposal{
+			msg := govv1b1.MsgSubmitProposal{
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
@@ -244,7 +244,7 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 			}
 
 			// Make the message
-			msg := govtypes.MsgSubmitProposal{
+			msg := govv1b1.MsgSubmitProposal{
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,

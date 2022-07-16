@@ -38,7 +38,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
-	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -106,9 +105,6 @@ import (
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
-
-	// Tharsis Ethermint
-	ethante "github.com/evmos/ethermint/app/ante"
 
 	gravityparams "github.com/umee-network/Gravity-Bridge/module/app/params"
 	"github.com/umee-network/Gravity-Bridge/module/app/upgrades"
@@ -713,7 +709,7 @@ func NewGravityApp(
 		bank.NewAppModule(appCodec, bankKeeper, accountKeeper),
 		capability.NewAppModule(appCodec, capabilityKeeper),
 		gov.NewAppModule(appCodec, govKeeper, accountKeeper, bankKeeper),
-		mint.NewAppModule(appCodec, mintKeeper, accountKeeper),
+		mint.NewAppModule(appCodec, mintKeeper, accountKeeper, nil),
 		staking.NewAppModule(appCodec, stakingKeeper, accountKeeper, bankKeeper),
 		distr.NewAppModule(appCodec, distrKeeper, accountKeeper, bankKeeper, stakingKeeper),
 		slashing.NewAppModule(appCodec, slashingKeeper, accountKeeper, bankKeeper, stakingKeeper),
@@ -738,7 +734,7 @@ func NewGravityApp(
 		BankKeeper:      bankKeeper,
 		FeegrantKeeper:  nil,
 		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
-		SigGasConsumer:  ethante.DefaultSigVerificationGasConsumer,
+		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 	}
 
 	ah, err := newAnteHandler(options, &ibcKeeper, appCodec)
@@ -892,7 +888,6 @@ func (app *Gravity) SimulationManager() *module.SimulationManager {
 func (app *Gravity) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
 	rpc.RegisterRoutes(clientCtx, apiSvr.Router)
-	authrest.RegisterTxRoutes(clientCtx, apiSvr.Router)
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 	ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)

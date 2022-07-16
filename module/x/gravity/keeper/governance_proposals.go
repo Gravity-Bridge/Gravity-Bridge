@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
@@ -24,17 +24,20 @@ func RegisterProposalTypes() {
 	metadata := "gravity/IBCMetadata"
 	if !govtypes.IsValidProposalType(strings.TrimPrefix(metadata, prefix)) {
 		govtypes.RegisterProposalType(types.ProposalTypeIBCMetadata)
-		govtypes.RegisterProposalTypeCodec(&types.IBCMetadataProposal{}, metadata)
+		// TODO: Migration to v0.46
+		// govtypes.RegisterProposalTypeCodec(&types.IBCMetadataProposal{}, metadata)
 	}
 	unhalt := "gravity/UnhaltBridge"
 	if !govtypes.IsValidProposalType(strings.TrimPrefix(unhalt, prefix)) {
 		govtypes.RegisterProposalType(types.ProposalTypeUnhaltBridge)
-		govtypes.RegisterProposalTypeCodec(&types.UnhaltBridgeProposal{}, unhalt)
+		// TODO: Migration to v0.46
+		// govtypes.RegisterProposalTypeCodec(&types.UnhaltBridgeProposal{}, unhalt)
 	}
 	airdrop := "gravity/Airdrop"
 	if !govtypes.IsValidProposalType(strings.TrimPrefix(airdrop, prefix)) {
 		govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
-		govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
+		// TODO: Migration to v0.46
+		// govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
 	}
 }
 

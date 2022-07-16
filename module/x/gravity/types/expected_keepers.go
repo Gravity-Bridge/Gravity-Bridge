@@ -23,7 +23,7 @@ type StakingKeeper interface {
 	IterateLastValidators(sdk.Context, func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 	Validator(sdk.Context, sdk.ValAddress) stakingtypes.ValidatorI
 	ValidatorByConsAddr(sdk.Context, sdk.ConsAddress) stakingtypes.ValidatorI
-	Slash(sdk.Context, sdk.ConsAddress, int64, int64, sdk.Dec)
+	Slash(sdk.Context, sdk.ConsAddress, int64, int64, sdk.Dec) sdk.Int
 	Jail(sdk.Context, sdk.ConsAddress)
 }
 
