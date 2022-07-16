@@ -12,8 +12,8 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
-	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
-	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
+	polaris "github.com/umee-network/Gravity-Bridge/module/app/upgrades/polaris"
+	v2 "github.com/umee-network/Gravity-Bridge/module/app/upgrades/v2"
 )
 
 // RegisterUpgradeHandlers registers handlers for all upgrades

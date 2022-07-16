@@ -2,12 +2,13 @@ package app
 
 import (
 	"fmt"
-	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
+
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -109,12 +110,12 @@ import (
 	// Tharsis Ethermint
 	ethante "github.com/evmos/ethermint/app/ante"
 
-	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
-	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	gravityparams "github.com/umee-network/Gravity-Bridge/module/app/params"
+	"github.com/umee-network/Gravity-Bridge/module/app/upgrades"
+	v2 "github.com/umee-network/Gravity-Bridge/module/app/upgrades/v2"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/keeper"
+	gravitytypes "github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 const appName = "app"

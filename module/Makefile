@@ -83,7 +83,7 @@ proto-lint:
 	@$(DOCKER_BUF) lint --error-format=json
 
 proto-check-breaking:
-	@$(DOCKER_BUF) breaking --against "https://github.com/Gravity-Bridge/Gravity-Bridge.git#branch=main,subdir=module"
+	@$(DOCKER_BUF) breaking --against "https://github.com/umee-network/Gravity-Bridge.git#branch=main,subdir=module"
 
 TM_URL           = https://raw.githubusercontent.com/tendermint/tendermint/v0.34.0-rc3/proto/tendermint
 GOGO_PROTO_URL   = https://raw.githubusercontent.com/regen-network/protobuf/cosmos

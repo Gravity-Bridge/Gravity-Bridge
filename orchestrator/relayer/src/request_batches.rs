@@ -1,5 +1,5 @@
 //! This file handles the automatic request of batches, see the documentation on batch creation
-//! https://github.com/Gravity-Bridge/Gravity-Bridge/blob/main/spec/batch-creation-spec.md
+//! https://github.com/umee-network/Gravity-Bridge/blob/main/spec/batch-creation-spec.md
 //! By having batches requested by relayers instead of created automatically the chain can outsource
 //! the significant work of checking if a batch is profitable before creating it
 

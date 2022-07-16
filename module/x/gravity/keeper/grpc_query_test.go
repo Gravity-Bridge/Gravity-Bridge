@@ -4,13 +4,13 @@ import (
 	gocontext "context"
 	"testing"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"github.com/umee-network/Gravity-Bridge/module/app"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 func TestQueryGetAttestations(t *testing.T) {

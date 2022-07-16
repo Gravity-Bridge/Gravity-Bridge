@@ -8,10 +8,10 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 type testInitStruct struct {

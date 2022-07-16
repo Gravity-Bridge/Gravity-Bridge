@@ -5,8 +5,8 @@ NODES=$1
 # old binary version to run
 OLD_VERSION=$2
 
-echo "Downloading old gravity version at https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64"
-wget https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64
+echo "Downloading old gravity version at https://github.com/umee-network/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64"
+wget https://github.com/umee-network/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64
 mv gravity-linux-amd64 oldgravity
 # Make old gravity executable
 chmod +x oldgravity

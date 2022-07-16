@@ -3,7 +3,7 @@ OLD_VERSION=$1
 set -eux
 
 if [[ -z "${OLD_VERSION}" ]]; then
-  echo "Must provide old gravity version for upgrade test, make sure it matches a version at https://github.com/Gravity-Bridge/Gravity-Bridge/releases"
+  echo "Must provide old gravity version for upgrade test, make sure it matches a version at https://github.com/umee-network/Gravity-Bridge/releases"
   exit 1
 fi
 

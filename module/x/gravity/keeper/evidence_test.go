@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 //nolint: exhaustruct

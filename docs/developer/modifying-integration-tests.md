@@ -30,7 +30,7 @@ The test runner module contains some logic for running the contract deployer and
 ### Chain Upgrades
 It is possible to simulate the Gravity Bridge chain going through an upgrade by using [run-upgrade-test.sh](/tests/run-upgrade-test.sh).
 Pass a version like *v1.4.3-beta* and the test will download the given version of gravity from the
-[Gravity-Bridge releases page](https://github.com/Gravity-Bridge/Gravity-Bridge/releases/),
+[Gravity-Bridge releases page](https://github.com/umee-network/Gravity-Bridge/releases/),
 execute several of the integration tests to generate data. Then an upgrade gov proposal will execute and halt the chain,
 followed by the current chain code executing the same set of tests on the new binary.
 

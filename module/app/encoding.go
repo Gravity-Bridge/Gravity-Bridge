@@ -6,7 +6,7 @@ import (
 	ethermintcryptocodec "github.com/evmos/ethermint/crypto/codec"
 	ethermintcodec "github.com/evmos/ethermint/encoding/codec"
 
-	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
+	gravityparams "github.com/umee-network/Gravity-Bridge/module/app/params"
 )
 
 // MakeEncodingConfig creates an EncodingConfig for gravity.

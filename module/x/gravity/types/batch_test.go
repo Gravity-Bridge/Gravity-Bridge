@@ -4,10 +4,10 @@ import (
 	"encoding/hex"
 	"testing"
 
-	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	_ "github.com/umee-network/Gravity-Bridge/module/config"
 )
 
 //nolint: exhaustruct

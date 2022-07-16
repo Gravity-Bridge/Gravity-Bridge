@@ -3,12 +3,12 @@ package keeper
 import (
 	"testing"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 //nolint: exhaustruct

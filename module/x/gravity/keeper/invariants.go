@@ -3,8 +3,8 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 // TODO: Add any future invariants here

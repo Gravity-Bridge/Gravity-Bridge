@@ -1,4 +1,4 @@
-module github.com/Gravity-Bridge/Gravity-Bridge/module
+module github.com/umee-network/Gravity-Bridge/module
 
 go 1.18
 

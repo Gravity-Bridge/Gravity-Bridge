@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/cmd/gravity/cmd"
-	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/cosmos/cosmos-sdk/server"
+	"github.com/umee-network/Gravity-Bridge/module/cmd/gravity/cmd"
+	_ "github.com/umee-network/Gravity-Bridge/module/config"
 )
 
 func main() {

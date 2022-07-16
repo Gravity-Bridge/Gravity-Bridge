@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 // Have the validators put in a erc20<>denom relation with ERC20DeployedEvent

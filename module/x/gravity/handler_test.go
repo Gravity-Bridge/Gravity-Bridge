@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	_ "github.com/umee-network/Gravity-Bridge/module/config"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 //nolint: exhaustruct

@@ -3,9 +3,9 @@ package v2
 import (
 	"strings"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 const (

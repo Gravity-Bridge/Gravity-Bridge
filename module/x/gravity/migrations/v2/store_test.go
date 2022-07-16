@@ -6,11 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
-	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,6 +13,11 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	_ "github.com/umee-network/Gravity-Bridge/module/config"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/keeper"
+	v1 "github.com/umee-network/Gravity-Bridge/module/x/gravity/migrations/v1"
+	v2 "github.com/umee-network/Gravity-Bridge/module/x/gravity/migrations/v2"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 const denom string = "graviton"

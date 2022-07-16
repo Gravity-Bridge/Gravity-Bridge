@@ -1,11 +1,11 @@
 package gravity
 
 import (
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/umee-network/Gravity-Bridge/module/x/gravity/types"
 )
 
 // EndBlocker is called at the end of every block
@@ -38,7 +38,7 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 		vs, err := k.GetCurrentValset(ctx)
 		if err != nil {
 			// this condition should only occur in the simulator
-			// ref : https://github.com/Gravity-Bridge/Gravity-Bridge/issues/35
+			// ref : https://github.com/umee-network/Gravity-Bridge/issues/35
 			if err == types.ErrNoValidators {
 				ctx.Logger().Error("no bonded validators",
 					"cause", err.Error(),
