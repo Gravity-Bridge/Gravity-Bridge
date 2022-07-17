@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
@@ -74,7 +75,7 @@ func SimulationOperations(app Gravity, cdc codec.JSONCodec, config simtypes.Conf
 		Rand:         &rand.Rand{},
 		GenState:     map[string]json.RawMessage{},
 		Accounts:     []simtypes.Account{},
-		InitialStake: 0,
+		InitialStake: math.NewInt(0),
 		NumBonded:    0,
 		GenTimestamp: time.Time{},
 		UnbondTime:   0,

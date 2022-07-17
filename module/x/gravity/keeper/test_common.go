@@ -222,6 +222,7 @@ var (
 		MaxEntries:        10,
 		HistoricalEntries: 10000,
 		BondDenom:         "stake",
+		MinCommissionRate: sdk.NewDecWithPrec(0, 0),
 	}
 
 	// TestingGravityParams is a set of gravity params for testing
@@ -271,8 +272,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 	input.StakingKeeper.SetParams(input.Context, TestingStakeParams)
 
 	// Initialize each of the validators
-	msgSvcRouter := baseapp.NewMsgServiceRouter()
-	stakingtypes.RegisterMsgServer(msgSvcRouter, stakingkeeper.NewMsgServerImpl(input.StakingKeeper))
+	msgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
 
 	for i := range []int{0, 1, 2, 3, 4} {
 
@@ -291,9 +291,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 
 		// Create a validator for that account using some of the tokens in the account
 		// and the staking handler
-		_, err := msgSvcRouter.Handler(
-			NewTestMsgCreateValidator(ValAddrs[i], ConsPubKeys[i], StakingAmount),
-		)(input.Context, NewTestMsgCreateValidator(ValAddrs[i], ConsPubKeys[i], StakingAmount))
+		_, err := msgServer.CreateValidator(input.Context, NewTestMsgCreateValidator(ValAddrs[i], ConsPubKeys[i], StakingAmount))
 
 		// Return error if one exists
 		require.NoError(t, err)
@@ -328,8 +326,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 
 	// Initialize each of the validators
 
-	msgSvcRouter := baseapp.NewMsgServiceRouter()
-	stakingtypes.RegisterMsgServer(msgSvcRouter, stakingkeeper.NewMsgServerImpl(input.StakingKeeper))
+	msgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
 
 	for i, weight := range weights {
 		consPrivKey := ed25519.GenPrivKey()
@@ -355,9 +352,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 
 		// Create a validator for that account using some of the tokens in the account
 		// and the staking handler
-		_, err := msgSvcRouter.Handler(
-			NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(weight)),
-		)(input.Context, NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(weight)))
+		_, err := msgServer.CreateValidator(input.Context, NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(weight)))
 		require.NoError(t, err)
 
 		// Run the staking endblocker to ensure valset is correct in state
@@ -546,16 +541,16 @@ func CreateTestEnv(t *testing.T) TestInput {
 	moduleAcct := accountKeeper.GetAccount(ctx, stakeAddr)
 	require.NotNil(t, moduleAcct)
 
-	router := baseapp.NewRouter()
-	router.AddRoute(bank.AppModule{
-		AppModuleBasic: bank.AppModuleBasic{},
-	}.Route())
-	router.AddRoute(staking.AppModule{
-		AppModuleBasic: staking.AppModuleBasic{},
-	}.Route())
-	router.AddRoute(distribution.AppModule{
-		AppModuleBasic: distribution.AppModuleBasic{},
-	}.Route())
+	// router := baseapp.NewRouter()
+	// router.AddRoute(bank.AppModule{
+	// 	AppModuleBasic: bank.AppModuleBasic{},
+	// }.Route())
+	// router.AddRoute(staking.AppModule{
+	// 	AppModuleBasic: staking.AppModuleBasic{},
+	// }.Route())
+	// router.AddRoute(distribution.AppModule{
+	// 	AppModuleBasic: distribution.AppModuleBasic{},
+	// }.Route())
 
 	// Load default wasm config
 
