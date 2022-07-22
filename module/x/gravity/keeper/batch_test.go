@@ -64,7 +64,7 @@ func TestBatches(t *testing.T) {
 
 	// when
 	ctx = ctx.WithBlockTime(now)
-
+	input.GravityKeeper.SetLastObservedEthereumBlockHeight(ctx, 1234567)
 	// maxElements must be greater then 0, otherwise the batch would not be created
 	noBatch, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 0)
 	require.Nil(t, noBatch)
@@ -100,6 +100,7 @@ func TestBatches(t *testing.T) {
 		},
 		TokenContract: myTokenContractAddr.GetAddress().Hex(),
 		Block:         1234567,
+		BatchTimeout:  input.GravityKeeper.getBatchTimeoutHeight(ctx),
 	}
 	assert.Equal(t, expFirstBatch.BatchTimeout, gotFirstBatch.BatchTimeout)
 	assert.Equal(t, expFirstBatch.BatchNonce, gotFirstBatch.BatchNonce)
@@ -185,6 +186,7 @@ func TestBatches(t *testing.T) {
 	secondBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
 	require.NoError(t, err)
 
+	input.GravityKeeper.SetLastObservedEthereumBlockHeight(ctx, 1234567)
 	// check that the more profitable batch has the right txs in it
 	// Should only have 5: and 6: above
 	expSecondBatch := types.OutgoingTxBatch{
@@ -207,6 +209,7 @@ func TestBatches(t *testing.T) {
 		},
 		TokenContract: myTokenContractAddr.GetAddress().Hex(),
 		Block:         1234567,
+		BatchTimeout:  input.GravityKeeper.getBatchTimeoutHeight(ctx),
 	}
 
 	assert.Equal(t, expSecondBatch.BatchTimeout, secondBatch.BatchTimeout)
@@ -247,7 +250,8 @@ func TestBatches(t *testing.T) {
 	// =================================
 
 	// Execute the batch
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
+	msg := types.MsgBatchSendToEthClaim{BlockHeight: secondBatch.Block, BatchNonce: secondBatch.BatchNonce}
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
 
 	// check batch has been deleted
 	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
@@ -429,6 +433,7 @@ func TestBatchesFullCoins(t *testing.T) {
 
 	// create the more profitable batch
 	ctx = ctx.WithBlockTime(now)
+	input.GravityKeeper.SetLastObservedEthereumBlockHeight(ctx, 1234567)
 	// tx batch size is 2, so that some of them stay behind
 	secondBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
 	require.NoError(t, err)
@@ -454,6 +459,7 @@ func TestBatchesFullCoins(t *testing.T) {
 		},
 		TokenContract: myTokenContractAddr,
 		Block:         1234567,
+		BatchTimeout:  input.GravityKeeper.getBatchTimeoutHeight(ctx),
 	}
 
 	assert.Equal(t, expSecondBatch.BatchTimeout, secondBatch.BatchTimeout)
@@ -469,7 +475,8 @@ func TestBatchesFullCoins(t *testing.T) {
 	// =================================
 
 	// Execute the batch
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
+	msg := types.MsgBatchSendToEthClaim{BlockHeight: secondBatch.Block, BatchNonce: secondBatch.BatchNonce}
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
 
 	// check batch has been deleted
 	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
@@ -553,6 +560,7 @@ func TestManyBatches(t *testing.T) {
 	// set senders balance
 	input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, allVouchers))
+	input.GravityKeeper.SetLastObservedEthereumBlockHeight(ctx, 1234567)
 
 	// CREATE FIRST BATCH
 	// ==================
@@ -608,7 +616,8 @@ func TestManyBatches(t *testing.T) {
 		gotBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, *contractAddr, batch.BatchNonce)
 		// we may have already deleted some of the batches in this list by executing later ones
 		if gotBatch != nil {
-			input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *contractAddr, batch.BatchNonce)
+			msg := types.MsgBatchSendToEthClaim{BlockHeight: batch.Block, BatchNonce: batch.BatchNonce}
+			input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *contractAddr, msg)
 		}
 	}
 }

@@ -105,6 +105,7 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 		input.AccountKeeper.NewAccountWithAddress(ctx, mySender)
 		require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, mySender, v))
 	}
+	input.GravityKeeper.SetLastObservedEthereumBlockHeight(ctx, 1234567)
 
 	////////////////// EXECUTE //////////////////
 	// Check the invariant without any transactions
@@ -161,7 +162,8 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 	checkImbalancedModule(t, ctx, input.GravityKeeper, input.BankKeeper, mySender, voucherCoins[1])
 
 	// Simulate one batch being relayed and observed
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, batches[1].TokenContract, batches[1].BatchNonce)
+	msg := types.MsgBatchSendToEthClaim{BlockHeight: batches[1].Block, BatchNonce: batches[1].BatchNonce}
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, batches[1].TokenContract, msg)
 	// The module should be balanced with the batch now being observed + one leftover unbatched tx still in the pool
 	checkInvariant(t, ctx, input.GravityKeeper, true)
 	checkImbalancedModule(t, ctx, input.GravityKeeper, input.BankKeeper, mySender, voucherCoins[0])
