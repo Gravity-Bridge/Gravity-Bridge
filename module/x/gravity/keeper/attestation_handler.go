@@ -518,7 +518,7 @@ func (a AttestationHandler) sendCoinToLocalAddress(
 	} else { // no error
 		a.keeper.logger(ctx).Info("SendToCosmos to local gravity receiver", "ethSender", claim.EthereumSender,
 			"receiver", receiver, "denom", coin.Denom, "amount", coin.Amount.String(), "nonce", claim.EventNonce,
-			"ethContract", claim.TokenContract, "ethBlockHeight", claim.BlockHeight,
+			"ethContract", claim.TokenContract, "ethBlockHeight", claim.EthBlockHeight,
 			"cosmosBlockHeight", ctx.BlockHeight(),
 		)
 		if err := ctx.EventManager().EmitTypedEvent(&types.EventSendToCosmosLocal{

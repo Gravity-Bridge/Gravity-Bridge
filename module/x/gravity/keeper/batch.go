@@ -63,7 +63,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 		panic(sdkerrors.Wrap(err, "unable to create batch"))
 	}
 	// set the current block height when storing the batch
-	batch.Block = uint64(ctx.BlockHeight())
+	batch.EthBlock = uint64(ctx.BlockHeight())
 	k.StoreBatch(ctx, *batch)
 
 	// Get the checkpoint and store it as a legit past batch
@@ -106,8 +106,8 @@ func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context) uint64 {
 // of returning errors because any failure will cause a double spend.
 func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.EthAddress, claim types.MsgBatchSendToEthClaim) {
 	b := k.GetOutgoingTXBatch(ctx, tokenContract, claim.BatchNonce)
-	if b.BatchTimeout <= claim.BlockHeight {
-		panic(fmt.Sprintf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", claim.BatchNonce, claim.BlockHeight, b.BatchTimeout))
+	if b.BatchTimeout <= claim.EthBlockHeight {
+		panic(fmt.Sprintf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", claim.BatchNonce, claim.EthBlockHeight, b.BatchTimeout))
 	}
 	if b == nil {
 		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract.GetAddress().Hex(), claim.BatchNonce))
@@ -136,7 +136,9 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 		if iter_batch.BatchNonce < b.BatchNonce && iter_batch.TokenContract.GetAddress() == tokenContract.GetAddress() {
 			err := k.CancelOutgoingTXBatch(ctx, tokenContract, iter_batch.BatchNonce)
 			if err != nil {
-				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s", tokenContract.GetAddress().Hex(), iter_batch.BatchNonce, tokenContract.GetAddress().Hex(), claim.BatchNonce, err))
+				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s",
+					tokenContract.GetAddress().Hex(), iter_batch.BatchNonce,
+					tokenContract.GetAddress().Hex(), claim.BatchNonce, err))
 			}
 		}
 		return false
@@ -341,7 +343,7 @@ func (k Keeper) GetUnSlashedBatches(ctx sdk.Context, maxHeight uint64) (out []ty
 	lastSlashedBatchBlock := k.GetLastSlashedBatchBlock(ctx)
 	batches := k.GetOutgoingTxBatches(ctx)
 	for _, batch := range batches {
-		if batch.Block > lastSlashedBatchBlock && batch.Block < maxHeight {
+		if batch.EthBlock > lastSlashedBatchBlock && batch.EthBlock < maxHeight {
 			out = append(out, batch)
 		}
 	}

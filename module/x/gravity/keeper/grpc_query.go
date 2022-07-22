@@ -415,7 +415,7 @@ func (k Keeper) GetAttestations(
 
 		var match bool
 		switch {
-		case filter && claim.GetBlockHeight() == req.Height:
+		case filter && claim.GetEthBlockHeight() == req.Height:
 			attestations = append(attestations, att)
 			match = true
 

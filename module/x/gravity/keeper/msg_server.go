@@ -437,8 +437,8 @@ func additionalPatchChecks(ctx sdk.Context, k msgServer, msg *types.MsgBatchSend
 	var b types.OutgoingTxBatch
 	k.cdc.MustUnmarshal(bz, &b)
 
-	if b.BatchTimeout <= msg.BlockHeight {
-		panic(fmt.Errorf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", msg.BatchNonce, msg.BlockHeight, b.BatchTimeout))
+	if b.BatchTimeout <= msg.EthBlockHeight {
+		panic(fmt.Errorf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", msg.BatchNonce, msg.EthBlockHeight, b.BatchTimeout))
 	}
 }
 

@@ -185,7 +185,7 @@ message MsgConfirmLogicCallResponse {}
 // -------------
 message MsgSendToCosmosClaim {
   uint64 event_nonce    = 1;
-  uint64 block_height   = 2;
+  uint64 eth_block_height   = 2;
   string token_contract = 3;
   string amount         = 4 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
@@ -213,7 +213,7 @@ message MsgExecuteIbcAutoForwardsResponse {}
 // operations on the bridge contract was executed.
 message MsgBatchSendToEthClaim {
   uint64 event_nonce    = 1;
-  uint64 block_height   = 2;
+  uint64 eth_block_height   = 2;
   uint64 batch_nonce    = 3;
   string token_contract = 4;
   string orchestrator   = 5;
@@ -226,7 +226,7 @@ message MsgBatchSendToEthClaimResponse {}
 // to represent a Cosmos asset
 message MsgERC20DeployedClaim {
   uint64 event_nonce    = 1;
-  uint64 block_height   = 2;
+  uint64 eth_block_height   = 2;
   string cosmos_denom   = 3;
   string token_contract = 4;
   string name           = 5;
@@ -241,7 +241,7 @@ message MsgERC20DeployedClaimResponse {}
 // call has been executed
 message MsgLogicCallExecutedClaim {
   uint64 event_nonce        = 1;
-  uint64 block_height       = 2;
+  uint64 eth_block_height       = 2;
   bytes  invalidation_id    = 3;
   uint64 invalidation_nonce = 4;
   string orchestrator       = 5;
@@ -254,7 +254,7 @@ message MsgLogicCallExecutedClaimResponse {}
 message MsgValsetUpdatedClaim {
   uint64 event_nonce               = 1;
   uint64 valset_nonce              = 2;
-  uint64 block_height              = 3;
+  uint64 eth_block_height              = 3;
   repeated BridgeValidator members = 4 [(gogoproto.nullable) = false];
   string reward_amount             = 5 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
