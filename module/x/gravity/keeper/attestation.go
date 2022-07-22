@@ -54,13 +54,23 @@ func (k Keeper) Attest(
 		}
 	}
 
-	// Add the validator's vote to this attestation
-	att.Votes = append(att.Votes, valAddr.String())
+	ethClaim, err := k.UnpackAttestationClaim(att)
+	if err != nil {
+		panic(fmt.Sprintf("could not unpack stored attestation claim, %v", err))
+	}
 
-	k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
-	k.SetLastEventNonceByValidator(ctx, valAddr, claim.GetEventNonce())
+	if ethClaim.GetBlockHeight() == claim.GetBlockHeight() {
 
-	return att, nil
+		// Add the validator's vote to this attestation
+		att.Votes = append(att.Votes, valAddr.String())
+
+		k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
+		k.SetLastEventNonceByValidator(ctx, valAddr, claim.GetEventNonce())
+
+		return att, nil
+	} else {
+		return nil, fmt.Errorf("invalid height - this claim's height is %v while the stored height is %v", claim.GetBlockHeight(), ethClaim.GetBlockHeight())
+	}
 }
 
 // TryAttestation checks if an attestation has enough votes to be applied to the consensus state
