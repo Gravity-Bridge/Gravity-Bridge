@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
-
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 func GetTxCmd(storeKey string) *cobra.Command {
@@ -89,6 +91,47 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				proposal.Metadata.Display == "" ||
 				proposal.Metadata.Symbol == "" {
 				return fmt.Errorf("proposal json file is not valid, please check example json in docs")
+			}
+
+			// checks if the provided token denom is a proper IBC token, not a native token.
+			if !strings.HasPrefix(proposal.IbcDenom, "ibc/") && !strings.HasPrefix(proposal.IbcDenom, "IBC/") {
+				return sdkerrors.Wrap(types.ErrInvalid, "Target denom is not an IBC token")
+			}
+
+			// check that our base unit is the IBC token name on this chain. This makes setting/loading denom
+			// metadata work out, as SetDenomMetadata uses the base denom as an index
+			if proposal.Metadata.Base != proposal.IbcDenom {
+				return sdkerrors.Wrap(types.ErrInvalid, "Metadata base must be the same as the IBC denom!")
+			}
+
+			metadataErr := proposal.Metadata.Validate()
+			if metadataErr != nil {
+				return sdkerrors.Wrap(metadataErr, "invalid metadata or proposal details!")
+			}
+
+			queryClientBank := banktypes.NewQueryClient(cliCtx)
+			res1, err := queryClientBank.DenomMetadata(cmd.Context(), &banktypes.QueryDenomMetadataRequest{Denom: proposal.IbcDenom})
+			if err != nil {
+				return err
+			}
+
+			exist := false
+			if res1.Metadata.Base != "" {
+				exist = true
+			}
+
+			queryClient := types.NewQueryClient(cliCtx)
+
+			req2 := &types.QueryDenomToERC20Request{
+				Denom: proposal.IbcDenom,
+			}
+			res2, err := queryClient.DenomToERC20(cmd.Context(), req2)
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid metadata")
+			}
+
+			if exist && res2.CosmosOriginated {
+				return sdkerrors.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
 			}
 
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
