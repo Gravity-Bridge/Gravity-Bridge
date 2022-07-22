@@ -192,7 +192,7 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 	if err != nil {
 		return sdkerrors.Wrap(err, "invalid token contract on batch")
 	}
-	a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim.BatchNonce)
+	a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim)
 
 	err = ctx.EventManager().EmitTypedEvent(
 		&types.EventBatchSendToEthClaim{
