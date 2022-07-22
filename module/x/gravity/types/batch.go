@@ -96,7 +96,7 @@ type InternalOutgoingTxBatch struct {
 	BatchTimeout  uint64
 	Transactions  []*InternalOutgoingTransferTx
 	TokenContract EthAddress
-	Block         uint64
+	EthBlock      uint64
 }
 
 func NewInternalOutgingTxBatch(
@@ -111,7 +111,7 @@ func NewInternalOutgingTxBatch(
 		BatchTimeout:  timeout,
 		Transactions:  transactions,
 		TokenContract: contract,
-		Block:         block,
+		EthBlock:      block,
 	}
 	if err := ret.ValidateBasic(); err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func NewInternalOutgingTxBatchFromExternalBatch(batch OutgoingTxBatch) (*Interna
 		BatchTimeout:  batch.BatchTimeout,
 		Transactions:  txs,
 		TokenContract: *contractAddr,
-		Block:         batch.Block,
+		EthBlock:      batch.EthBlock,
 	}, nil
 }
 
@@ -156,7 +156,7 @@ func (i *InternalOutgoingTxBatch) ToExternal() OutgoingTxBatch {
 		BatchTimeout:  i.BatchTimeout,
 		Transactions:  txs,
 		TokenContract: i.TokenContract.GetAddress().Hex(),
-		Block:         i.Block,
+		EthBlock:      i.EthBlock,
 	}
 }
 
@@ -174,7 +174,7 @@ func (i *InternalOutgoingTxBatches) ToExternalArray() []OutgoingTxBatch {
 			BatchTimeout:  val.BatchTimeout,
 			Transactions:  txs,
 			TokenContract: val.TokenContract.GetAddress().Hex(),
-			Block:         val.Block,
+			EthBlock:      val.EthBlock,
 		})
 	}
 

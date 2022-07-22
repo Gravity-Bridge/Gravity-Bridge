@@ -59,7 +59,7 @@ func (k Keeper) Attest(
 		panic(fmt.Sprintf("could not unpack stored attestation claim, %v", err))
 	}
 
-	if ethClaim.GetBlockHeight() == claim.GetBlockHeight() {
+	if ethClaim.GetEthBlockHeight() == claim.GetEthBlockHeight() {
 
 		// Add the validator's vote to this attestation
 		att.Votes = append(att.Votes, valAddr.String())
@@ -69,7 +69,7 @@ func (k Keeper) Attest(
 
 		return att, nil
 	} else {
-		return nil, fmt.Errorf("invalid height - this claim's height is %v while the stored height is %v", claim.GetBlockHeight(), ethClaim.GetBlockHeight())
+		return nil, fmt.Errorf("invalid height - this claim's height is %v while the stored height is %v", claim.GetEthBlockHeight(), ethClaim.GetEthBlockHeight())
 	}
 }
 
@@ -111,7 +111,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 					panic("attempting to apply events to state out of order")
 				}
 				k.setLastObservedEventNonce(ctx, claim.GetEventNonce())
-				k.SetLastObservedEthereumBlockHeight(ctx, claim.GetBlockHeight())
+				k.SetLastObservedEthereumBlockHeight(ctx, claim.GetEthBlockHeight())
 
 				att.Observed = true
 				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)

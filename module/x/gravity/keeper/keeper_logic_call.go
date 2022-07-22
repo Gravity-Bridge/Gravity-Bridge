@@ -25,7 +25,7 @@ func (k Keeper) GetOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, inv
 		Timeout:              0,
 		InvalidationId:       invalidationID,
 		InvalidationNonce:    invalidationNonce,
-		Block:                0,
+		EthBlock:             0,
 	}
 	k.cdc.MustUnmarshal(store.Get(types.GetOutgoingLogicCallKey(invalidationID, invalidationNonce)), &call)
 	return &call

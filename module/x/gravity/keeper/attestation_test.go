@@ -80,7 +80,7 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdktypes.Context
 		nonce := uint64(1 + i)
 		msg := types.MsgSendToCosmosClaim{
 			EventNonce:     nonce,
-			BlockHeight:    1,
+			EthBlockHeight: 1,
 			TokenContract:  "0x00000000000000000001",
 			Amount:         sdktypes.NewInt(10000000000 + int64(i)),
 			EthereumSender: "0x00000000000000000002",
@@ -194,11 +194,11 @@ func TestInvalidHeight(t *testing.T) {
 	badHeight := lastEthHeight.EthereumBlockHeight + 2
 
 	bad := types.MsgBatchSendToEthClaim{
-		EventNonce:    lastNonce + 1,
-		BlockHeight:   badHeight,
-		BatchNonce:    uint64(lastBatchNonce + 1),
-		TokenContract: tokenContract,
-		Orchestrator:  orch0.String(),
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: badHeight,
+		BatchNonce:     uint64(lastBatchNonce + 1),
+		TokenContract:  tokenContract,
+		Orchestrator:   orch0.String(),
 	}
 	context := sdktypes.WrapSDKContext(ctx)
 	log.Info("Submitting bad eth claim from orchestrator 0", "orch", orch0.String(), "val", val0.String())
@@ -211,11 +211,11 @@ func TestInvalidHeight(t *testing.T) {
 	for _, orch := range OrchAddrs[1:] {
 		log.Info("Submitting good eth claim from orchestrators", "orch", orch.String())
 		good := types.MsgBatchSendToEthClaim{
-			EventNonce:    lastNonce + 1,
-			BlockHeight:   goodHeight,
-			BatchNonce:    uint64(lastBatchNonce + 1),
-			TokenContract: tokenContract,
-			Orchestrator:  orch.String(),
+			EventNonce:     lastNonce + 1,
+			EthBlockHeight: goodHeight,
+			BatchNonce:     uint64(lastBatchNonce + 1),
+			TokenContract:  tokenContract,
+			Orchestrator:   orch.String(),
 		}
 		_, err := msgServer.BatchSendToEthClaim(context, &good)
 		require.Error(t, err)
