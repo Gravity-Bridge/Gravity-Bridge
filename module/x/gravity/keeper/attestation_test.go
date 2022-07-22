@@ -174,3 +174,60 @@ func TestGetSetLastEventNonceByValidator(t *testing.T) {
 	getEventNonce = k.GetLastEventNonceByValidator(ctx, addrInBytes)
 	require.Equal(t, nonce, getEventNonce)
 }
+
+func TestInvalidHeight(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+	pk := input.GravityKeeper
+	log := ctx.Logger()
+
+	msgServer := NewMsgServerImpl(pk)
+
+	// Submit a bad claim:
+	val0 := ValAddrs[0]
+	orch0 := OrchAddrs[0]
+	lastNonce := pk.GetLastObservedEventNonce(ctx)
+	lastEthHeight := pk.GetLastObservedEthereumBlockHeight(ctx)
+	lastBatchNonce := 0
+	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	goodHeight := lastEthHeight.EthereumBlockHeight + 1
+	badHeight := lastEthHeight.EthereumBlockHeight + 2
+
+	bad := types.MsgBatchSendToEthClaim{
+		EventNonce:    lastNonce + 1,
+		BlockHeight:   badHeight,
+		BatchNonce:    uint64(lastBatchNonce + 1),
+		TokenContract: tokenContract,
+		Orchestrator:  orch0.String(),
+	}
+	context := sdktypes.WrapSDKContext(ctx)
+	log.Info("Submitting bad eth claim from orchestrator 0", "orch", orch0.String(), "val", val0.String())
+	_, err := msgServer.BatchSendToEthClaim(context, &bad)
+	require.NoError(t, err)
+
+	badHash, err := bad.ClaimHash()
+	require.NoError(t, err)
+
+	for _, orch := range OrchAddrs[1:] {
+		log.Info("Submitting good eth claim from orchestrators", "orch", orch.String())
+		good := types.MsgBatchSendToEthClaim{
+			EventNonce:    lastNonce + 1,
+			BlockHeight:   goodHeight,
+			BatchNonce:    uint64(lastBatchNonce + 1),
+			TokenContract: tokenContract,
+			Orchestrator:  orch.String(),
+		}
+		_, err := msgServer.BatchSendToEthClaim(context, &good)
+		require.Error(t, err)
+
+		goodHash, err := good.ClaimHash()
+		require.NoError(t, err)
+		require.Equal(t, badHash, goodHash) // The hash should be the same, even though that's wrong
+
+		att := pk.GetAttestation(ctx, good.GetEventNonce(), goodHash)
+		require.NotNil(t, att)
+		log.Info("Asserting that the bad attestation only has one claimer", "attVotes", att.Votes)
+		require.Equal(t, len(att.Votes), 1) // No votes on this attestation
+	}
+
+}
