@@ -135,7 +135,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	}
 
 	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
-		return nil, sdkerrors.Wrap(err, "destination address is invalid or blacklisted")
+		return nil, sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted")
 	}
 
 	txID, err := k.AddToOutgoingPool(ctx, sender, *dest, msg.Amount, msg.BridgeFee)
