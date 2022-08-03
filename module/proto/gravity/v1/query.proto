@@ -72,6 +72,12 @@ service Query {
   rpc DenomToERC20(QueryDenomToERC20Request) returns (QueryDenomToERC20Response) {
     option (google.api.http).get = "/gravity/v1beta/cosmos_originated/denom_to_erc20";
   }
+  rpc GetLastObservedEthBlock(QueryLastObservedEthBlockRequest) returns (QueryLastObservedEthBlockResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_last_observed_eth_block";
+  }
+  rpc GetLastObservedEthNonce(QueryLastObservedEthNonceRequest) returns (QueryLastObservedEthNonceResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_last_observed_eth_nonce";
+  }
   rpc GetAttestations(QueryAttestationsRequest) returns (QueryAttestationsResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_attestations";
   }
@@ -210,6 +216,36 @@ message QueryDenomToERC20Response {
   bool   cosmos_originated = 2;
 }
 
+// QueryLastObservedEthBlockRequest defines the request for getting the height of the
+// last applied Ethereum Event on the bridge. This is expected to lag the actual
+// Ethereum block height significantly due to 1. Ethereum Finality and
+//  2. Consensus mirroring the state on Ethereum
+message QueryLastObservedEthBlockRequest{
+  // indicates whether to search for store data using the old Gravity v1 key "LastObservedEthereumBlockHeightKey"
+  // Note that queries before the Mercury upgrade at height 1282013 must set this to true
+  bool use_v1_key = 1;
+}
+message QueryLastObservedEthBlockResponse{
+  // a response of 0 indicates that no Ethereum events have been observed, and thus
+  // the bridge is inactive
+  uint64 block = 1;
+}
+
+// QueryLastObservedEthNonceRequest defines the request for getting the event nonce
+// of the last applied Ethereum Event on the bridge.
+// Note that this is likely to lag the last executed event a little
+// due to 1. Ethereum Finality and 2. Consensus mirroring the Ethereum state
+message QueryLastObservedEthNonceRequest{
+  // indicates whether to search for store data using the old Gravity v1 key "LastObservedEventNonceKey"
+  // Note that queries before the Mercury upgrade at height 1282013 must set this to true
+  bool use_v1_key = 1;
+}
+message QueryLastObservedEthNonceResponse{
+  // a response of 0 indicates that no Ethereum events have been observed, and thus
+  // the bridge is inactive
+  uint64 nonce = 1;
+}
+
 // QueryAttestationsRequest defines the request structure for getting recent
 // attestations with optional query parameters. By default, a limited set of
 // recent attestations will be returned, defined by 'limit'. These attestations
@@ -230,6 +266,9 @@ message QueryAttestationsRequest {
   uint64 nonce = 4;
   // height allows filtering attestations by Ethereum claim height.
   uint64 height = 5;
+  // indicates whether to search for store data using the old Gravity v1 key "OracleAttestationKey"
+  // Note that queries before the Mercury upgrade at height 1282013 must set this to true
+  bool use_v1_key = 6;
 }
 
 message QueryAttestationsResponse {
