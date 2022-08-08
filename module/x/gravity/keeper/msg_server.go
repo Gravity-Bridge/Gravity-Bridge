@@ -398,11 +398,24 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not check orchestrator validator")
 	}
-	any, err := codectypes.NewAnyWithValue(msg)
+	contractAddress, err := types.NewEthAddress(msg.TokenContract)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "Invalid TokenContract on MsgBatchSendToEthClaim")
+	}
+	b := k.GetOutgoingTXBatch(ctx, *contractAddress, msg.BatchNonce)
+	if b == nil {
+		return nil, fmt.Errorf("Batch claim submitted without an original in the store!")
+	}
+	if b.BatchTimeout <= msg.BlockHeight {
+		return nil, fmt.Errorf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", msg.BatchNonce, msg.BlockHeight, b.BatchTimeout)
+	}
+
+	msgAny, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not check Any value")
 	}
-	err = k.claimHandlerCommon(ctx, any, msg)
+
+	err = k.claimHandlerCommon(ctx, msgAny, msg)
 	if err != nil {
 		return nil, err
 	}
