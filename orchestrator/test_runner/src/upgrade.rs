@@ -1,5 +1,5 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
-use crate::{ethereum_keys_test, happy_path_test, happy_path_test_v2, utils::*};
+use crate::{happy_path_test, happy_path_test_v2, utils::*};
 use clarity::Address as EthAddress;
 use deep_space::client::ChainStatus;
 use deep_space::{Contact, CosmosPrivateKey};
@@ -65,10 +65,10 @@ pub async fn upgrade_part_1(
         None,
         UpgradeProposalParams {
             upgrade_height,
-            plan_name: "polaris".to_string(),
-            plan_info: "polaris upgrade info here".to_string(),
-            proposal_title: "polaris upgrade proposal title here".to_string(),
-            proposal_desc: "polaris upgrade proposal description here".to_string(),
+            plan_name: "enterupgradename".to_string(),
+            plan_info: "enterupgradename upgrade info here".to_string(),
+            proposal_title: "enterupgradename upgrade proposal title here".to_string(),
+            proposal_desc: "enterupgradename upgrade proposal description here".to_string(),
         },
     )
     .await;
@@ -181,35 +181,26 @@ pub async fn run_all_recoverable_tests(
 // These tests should fail in upgrade_part_1() but pass in upgrade_part_2()
 #[allow(clippy::too_many_arguments)]
 pub async fn run_upgrade_specific_tests(
-    web30: &Web3,
-    contact: &Contact,
-    grpc_client: GravityQueryClient<Channel>,
-    keys: Vec<ValidatorKeys>,
-    ibc_keys: Vec<CosmosPrivateKey>,
-    gravity_address: EthAddress,
-    erc20_addresses: Vec<EthAddress>,
-    post_upgrade: bool,
+    _web30: &Web3,
+    _contact: &Contact,
+    _grpc_client: GravityQueryClient<Channel>,
+    _keys: Vec<ValidatorKeys>,
+    _ibc_keys: Vec<CosmosPrivateKey>,
+    _gravity_address: EthAddress,
+    _erc20_addresses: Vec<EthAddress>,
+    _post_upgrade: bool,
 ) {
-    let res = ethereum_keys_test(
-        web30,
-        grpc_client,
-        contact,
-        keys,
-        ibc_keys,
-        gravity_address,
-        erc20_addresses[0],
-    )
-    .await;
-    if !post_upgrade {
-        // Expect failure
-        assert!(!res);
-        info!("Ethereum keys are not supported before the upgrade, waiting for upgrade then testing again!");
-    } else {
-        // Expect success
-        assert!(
-            res,
-            "Ethereum keys are not supported after the upgrade, investigation needed!!"
-        );
-        info!("Successful Ethereum keys test after the upgrade!");
-    }
+    // TODO: Add a new test for enterupgradename let res = new_test().await;
+    // if !post_upgrade {
+    //     // Expect failure
+    //     assert!(!res);
+    //     info!("Ethereum keys are not supported before the upgrade, waiting for upgrade then testing again!");
+    // } else {
+    //     // Expect success
+    //     assert!(
+    //         res,
+    //         "Ethereum keys are not supported after the upgrade, investigation needed!!"
+    //     );
+    //     info!("Successful Ethereum keys test after the upgrade!");
+    // }
 }
