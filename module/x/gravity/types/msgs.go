@@ -440,7 +440,7 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 
 // Hash implements WithdrawBatch.Hash
 func (msg *MsgBatchSendToEthClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%s/%d/%d/%s", msg.TokenContract, msg.BatchNonce, msg.EventNonce, msg.TokenContract)
+	path := fmt.Sprintf("%d/%d/%d/%s", msg.EventNonce, msg.EthBlockHeight, msg.BatchNonce, msg.TokenContract)
 	return tmhash.Sum([]byte(path)), nil
 }
 
