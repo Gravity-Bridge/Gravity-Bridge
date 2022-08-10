@@ -40,7 +40,7 @@ import (
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := app.MakeEncodingConfig()
-	//nolint: exhaustruct
+	// nolint: exhaustruct
 	initClientCtx := client.Context{}.
 		WithCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
@@ -52,7 +52,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithHomeDir(app.DefaultNodeHome).
 		WithKeyringOptions(ethermint.EthSecp256k1Option())
 
-	//nolint: exhaustruct
+	// nolint: exhaustruct
 	rootCmd := &cobra.Command{
 		Use:   "gravity",
 		Short: "Stargate Gravity App",
@@ -105,7 +105,7 @@ func Execute(rootCmd *cobra.Command) error {
 	// https://github.com/spf13/cobra/pull/1118.
 	srvCtx := server.NewDefaultContext()
 	ctx := context.Background()
-	//nolint: exhaustruct
+	// nolint: exhaustruct
 	ctx = context.WithValue(ctx, client.ClientContextKey, &client.Context{})
 	ctx = context.WithValue(ctx, server.ServerContextKey, srvCtx)
 
@@ -147,7 +147,7 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 }
 
 func queryCommand() *cobra.Command {
-	//nolint: exhaustruct
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:                        "query",
 		Aliases:                    []string{"q"},
@@ -172,7 +172,7 @@ func queryCommand() *cobra.Command {
 }
 
 func txCommand() *cobra.Command {
-	//nolint: exhaustruct
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:                        "tx",
 		Short:                      "Transactions subcommands",

@@ -103,15 +103,17 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err != nil {
 			panic("couldn't cast to claim")
 		}
-		// reconstruct the latest event nonce for every validator
-		// if somehow this genesis state is saved when all attestations
-		// have been cleaned up GetLastEventNonceByValidator handles that case
-		//
-		// if we were to save and load the last event nonce for every validator
-		// then we would need to carry that state forever across all chain restarts
-		// but since we've already had to handle the edge case of new validators joining
-		// while all attestations have already been cleaned up we can do this instead and
-		// not carry around every validators event nonce counter forever.
+		/*
+			reconstruct the latest event nonce for every validator
+			if somehow this genesis state is saved when all attestations
+			have been cleaned up GetLastEventNonceByValidator handles that case
+
+			if we were to save and load the last event nonce for every validator
+			then we would need to carry that state forever across all chain restarts
+			but since we've already had to handle the edge case of new validators joining
+			while all attestations have already been cleaned up we can do this instead and
+			not carry around every validator's event nonce counter forever.
+		*/
 		for _, vote := range att.Votes {
 			val, err := sdk.ValAddressFromBech32(vote)
 			if err != nil {

@@ -426,7 +426,7 @@ func additionalPatchChecks(ctx sdk.Context, k msgServer, msg *types.MsgBatchSend
 	}
 
 	// Replicate the following but without using a gas meter:
-	//		b := k.GetOutgoingTXBatch(ctx, *contractAddress, msg.BatchNonce)
+	// b := k.GetOutgoingTXBatch(ctx, *contractAddress, msg.BatchNonce)
 	store := ctx.MultiStore().GetKVStore(k.storeKey)
 	key := types.GetOutgoingTxBatchKey(*contractAddress, msg.BatchNonce)
 	if !store.Has(key) {

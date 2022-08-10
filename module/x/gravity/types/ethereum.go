@@ -106,7 +106,7 @@ func EthAddrLessThan(e EthAddress, o EthAddress) bool {
 }
 
 /////////////////////////
-//     ERC20Token      //
+// ERC20Token      //
 /////////////////////////
 
 // NewERC20Token returns a new instance of an ERC20

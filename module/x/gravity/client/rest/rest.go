@@ -27,7 +27,7 @@ const (
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx client.Context, r *mux.Router, storeName string) {
 
-	/// Valsets
+	// Valsets
 
 	// This endpoint gets all of the validator set confirmations for a given nonce. In order to determine if a valset is complete
 	// the relayer queries the latest valsets and then compares the number of members they show versus the length of this endpoints output
@@ -45,7 +45,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router, storeName string) {
 	// used to deploy the contract by the contract deployer script
 	r.HandleFunc(fmt.Sprintf("/%s/current_valset", storeName), currentValsetHandler(cliCtx, storeName)).Methods("GET")
 
-	/// Batches
+	// Batches
 
 	// The Ethereum signer queries this endpoint and signs whatever it returns once per loop iteration
 	r.HandleFunc(fmt.Sprintf("/%s/pending_batch_requests/{%s}", storeName, bech32ValidatorAddress), lastBatchesByAddressHandler(cliCtx, storeName)).Methods("GET")
@@ -57,7 +57,7 @@ func RegisterRoutes(cliCtx client.Context, r *mux.Router, storeName string) {
 	// the relayer will compare the valset power on the contract to the number of signatures
 	r.HandleFunc(fmt.Sprintf("/%s/batch_confirm/{%s}/{%s}", storeName, nonce, tokenAddress), allBatchConfirmsHandler(cliCtx, storeName)).Methods("GET")
 
-	/// Cosmos originated assets
+	// Cosmos originated assets
 
 	// This handler lets you retrieve the ERC20 contract corresponding to a given denom
 	r.HandleFunc(fmt.Sprintf("/%s/denom_to_erc20/{%s}", storeName, denom), denomToERC20Handler(cliCtx, storeName)).Methods("GET")

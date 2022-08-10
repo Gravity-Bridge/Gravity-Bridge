@@ -39,7 +39,7 @@ import (
 )
 
 // GenTxCmd builds the application's gentx command.
-//nolint:gocyclo
+// nolint:gocyclo
 func GenTxCmd(mbm module.BasicManager, txEncCfg client.TxEncodingConfig, genBalIterator types.GenesisBalancesIterator, defaultNodeHome string) *cobra.Command {
 	ipDefault, errIpDefault := server.ExternalIP()
 	if errIpDefault != nil {
@@ -47,7 +47,7 @@ func GenTxCmd(mbm module.BasicManager, txEncCfg client.TxEncodingConfig, genBalI
 	}
 	fsCreateValidator, defaultsDesc := cli.CreateValidatorMsgFlagSet(ipDefault)
 
-	//nolint: exhaustruct
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "gentx [key_name] [amount] [eth-address] [orchestrator-address]",
 		Short: "Generate a genesis tx carrying a self delegation, oracle key delegation and orchestrator key delegation",
@@ -308,7 +308,7 @@ const flagGenTxDir = "gentx-dir"
 
 // CollectGenTxsCmd - return the cobra command to collect genesis transactions
 func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeHome string) *cobra.Command {
-	//nolint: exhaustruct
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "collect-gentxs",
 		Short: "Collect genesis txs and output a genesis.json file",

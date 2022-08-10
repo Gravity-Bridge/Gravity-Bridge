@@ -1636,7 +1636,7 @@ func (m *QueryDenomToERC20Response) GetCosmosOriginated() bool {
 // QueryLastObservedEthBlockRequest defines the request for getting the height of the
 // last applied Ethereum Event on the bridge. This is expected to lag the actual
 // Ethereum block height significantly due to 1. Ethereum Finality and
-//  2. Consensus mirroring the state on Ethereum
+// 2. Consensus mirroring the state on Ethereum
 type QueryLastObservedEthBlockRequest struct {
 	// indicates whether to search for store data using the old Gravity v1 key "LastObservedEthereumBlockHeightKey"
 	// Note that queries before the Mercury upgrade at height 1282013 must set this to true

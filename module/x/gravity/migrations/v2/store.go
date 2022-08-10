@@ -15,7 +15,6 @@ import (
 
 // MigrateStore performs in-place store migrations from v1 to v2. The migration
 // includes:
-//
 // - Change all Cosmos orginated ERC20 mappings from (HEX) string to bytes.
 // - Change all validator Ethereum keys from (HEX) string to bytes.
 func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.BinaryCodec) error {

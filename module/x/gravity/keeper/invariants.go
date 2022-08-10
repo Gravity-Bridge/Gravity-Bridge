@@ -13,13 +13,14 @@ func AllInvariants(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		return ModuleBalanceInvariant(k)(ctx)
 
-		// Example additional invariants
-		//  res, stop := FutureInvariant(k)(ctx)
-		//	if stop {
-		//		return res, stop
-		//	}
-		//
-		//	return AnotherFutureInvariant(k)(ctx)
+		/*
+			Example additional invariants:
+			res, stop := FutureInvariant(k)(ctx)
+			if stop {
+				return res, stop
+			}
+			return AnotherFutureInvariant(k)(ctx)
+		*/
 	}
 }
 

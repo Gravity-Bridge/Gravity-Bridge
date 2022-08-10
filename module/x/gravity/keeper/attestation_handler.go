@@ -346,8 +346,8 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 				return sdkerrors.Wrapf(err, "unable to mint cosmos originated coins %v", coins)
 			}
 		} else {
-			// // If it is not cosmos originated, burn the coins (aka Vouchers)
-			// // so that we don't think we have more in the bridge than we actually do
+			// If it is not cosmos originated, burn the coins (aka Vouchers)
+			// so that we don't think we have more in the bridge than we actually do
 			// coins := sdk.Coins{sdk.NewCoin(denom, claim.RewardAmount)}
 			// a.bankKeeper.BurnCoins(ctx, types.ModuleName, coins)
 

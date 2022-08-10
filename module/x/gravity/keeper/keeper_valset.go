@@ -13,9 +13,9 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-/////////////////////////////
-//     VALSET REQUESTS     //
-/////////////////////////////
+//////////////////////////
+/// VALSET REQUESTS //////
+//////////////////////////
 
 // SetValsetRequest returns a new instance of the Gravity BridgeValidatorSet
 // by taking a snapshot of the current set, this validator set is also placed
@@ -315,9 +315,9 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 // normalizeValidatorPower scales rawPower with respect to totalValidatorPower to take a value between 0 and 2^32
 // Uses BigInt operations to avoid overflow errors
 // Example: rawPower = max (2^63 - 1), totalValidatorPower = 1 validator: (2^63 - 1)
-//   result: (2^63 - 1) * 2^32 / (2^63 - 1) = 2^32 = 4294967296 [this is the multiplier value below, our max output]
+// result: (2^63 - 1) * 2^32 / (2^63 - 1) = 2^32 = 4294967296 [this is the multiplier value below, our max output]
 // Example: rawPower = max (2^63 - 1), totalValidatorPower = 1000 validators with the same power: 1000*(2^63 - 1)
-//   result: (2^63 - 1) * 2^32 / (1000(2^63 - 1)) = 2^32 / 1000 = 4294967
+// result: (2^63 - 1) * 2^32 / (1000(2^63 - 1)) = 2^32 / 1000 = 4294967
 func normalizeValidatorPower(rawPower uint64, totalValidatorPower sdk.Int) uint64 {
 	// Compute rawPower * multiplier / quotient
 	// Set the upper limit to 2^32, which would happen if there is a single validator with all the power
@@ -331,7 +331,7 @@ func normalizeValidatorPower(rawPower uint64, totalValidatorPower sdk.Int) uint6
 }
 
 /////////////////////////////
-//     VALSET CONFIRMS     //
+// VALSET CONFIRMS     //
 /////////////////////////////
 
 // GetValsetConfirm returns a valset confirmation by a nonce and validator address
