@@ -13,7 +13,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestBatches(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -307,7 +307,7 @@ func TestBatches(t *testing.T) {
 
 // tests that batches work with large token amounts, mostly a duplicate of the above
 // tests but using much bigger numbers
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestBatchesFullCoins(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -521,7 +521,7 @@ func TestBatchesFullCoins(t *testing.T) {
 
 // TestManyBatches handles test cases around batch execution, specifically executing multiple batches
 // out of sequential order, which is exactly what happens on the
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestManyBatches(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -622,7 +622,7 @@ func TestManyBatches(t *testing.T) {
 	}
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestPoolTxRefund(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -698,7 +698,7 @@ func TestPoolTxRefund(t *testing.T) {
 	require.Equal(t, sdk.NewInt(104), balances.AmountOf(myDenom))
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -775,7 +775,7 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	require.NotNil(t, gotFirstBatch)
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 // test that tokens on the blacklist do not enter batches
 func TestEthereumBlacklistBatches(t *testing.T) {
 	input := CreateTestEnv(t)

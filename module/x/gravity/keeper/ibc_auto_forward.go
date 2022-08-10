@@ -1,10 +1,12 @@
 // Contains all the logic for IBC Auto-Forwarding from ethereum to foreign ibc-enabled cosmos chains
 // This logic should be used by attestation_handler, msg_server, and the CLI methods
-// Flow: On processing a SendToCosmos attestation in attestation handler with a foreign-prefixed CosmosReceiver address,
-// a new entry is created in the PendingIbcAutoForwards queue. Later a MsgExecuteIbcAutoForwards can be submitted to
-// clear the queue and move the funds to their destination chains over IBC.
-// This queue is necessary due to a Tendermint bug where ctx.EventManager().EmitEvent() has no effect when called from
-// EndBlocker. The queue allows processing SendToCosmos attestations from EndBlocker while emitting events from DeliverTx.
+/*
+Flow: On processing a SendToCosmos attestation in attestation handler with a foreign-prefixed CosmosReceiver address,
+  a new entry is created in the PendingIbcAutoForwards queue. Later a MsgExecuteIbcAutoForwards can be submitted to
+  clear the queue and move the funds to their destination chains over IBC.
+This queue is necessary due to a Tendermint bug where ctx.EventManager().EmitEvent() has no effect when called from
+  EndBlocker. The queue allows processing SendToCosmos attestations from EndBlocker while emitting events from DeliverTx.
+*/
 
 package keeper
 
@@ -208,19 +210,23 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context) (stop bool, er
 	// Log + emit event
 	if recoverableErr == nil {
 		k.logEmitIbcForwardSuccessEvent(ctx, *forward, msgTransfer)
-	} else { // Funds have already been sent to the fallback user, emit a failure log
-		// k.ibcTransferKeeper.Transfer() failure cases (and resolution)
-		//  1. Sender is invalid bech32 (checked before send)
-		//  2. IBC Sends are not enabled (local receiver)
-		//  3. Could not find the channel end from portId + sourceChannel (checked before send)
-		//  4. Could not find the next sequence for the source end (local receiver)
-		//  5. ibc-transfer module doesn't own the capability for the source end (local receiver)
-		//  6. Could not get an ibc denom's full path from its hash (local receiver of invalid token?)
-		//  7. Unable to send a gravity-native token to the ibc-transfer escrow address (local receiver)
-		//  8. Unable to send ibc vouchers to the ibc-transfer module, or sent to ibc-transfer module but couldn't burn
-		//		(local receiver of a token which can't be sent?)
-		//  9. Could not send packet to the channel e.g. connection issues, misconfigured packet, timeouts, sequences
-		//		(local receiver)
+	} else {
+		// Funds have already been sent to the fallback user, emit a failure log
+		/*
+			k.ibcTransferKeeper.Transfer() failure cases (and resolution)
+
+			1. Sender is invalid bech32 (checked before send)
+			2. IBC Sends are not enabled (local receiver)
+			3. Could not find the channel end from portId + sourceChannel (checked before send)
+			4. Could not find the next sequence for the source end (local receiver)
+			5. ibc-transfer module doesn't own the capability for the source end (local receiver)
+			6. Could not get an ibc denom's full path from its hash (local receiver of invalid token?)
+			7. Unable to send a gravity-native token to the ibc-transfer escrow address (local receiver)
+			8. Unable to send ibc vouchers to the ibc-transfer module, or sent to ibc-transfer module but couldn't burn
+				(local receiver of a token which can't be sent?)
+			9. Could not send packet to the channel e.g. connection issues, misconfigured packet, timeouts, sequences
+			    (local receiver)
+		*/
 		k.logEmitIbcForwardFailureEvent(ctx, *forward, recoverableErr)
 	}
 	return false, nil // Error case has been handled, funds are in receiver's control locally or on IBC chain

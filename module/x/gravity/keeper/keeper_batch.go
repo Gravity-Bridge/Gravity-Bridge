@@ -8,7 +8,7 @@ import (
 )
 
 /////////////////////////////
-//      BATCH CONFIRMS     //
+/////// BATCH CONFIRMS     //
 /////////////////////////////
 
 // GetBatchConfirm returns a batch confirmation given its nonce, the token contract, and a validator address

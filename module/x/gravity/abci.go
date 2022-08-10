@@ -25,8 +25,8 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 	// WARNING: do not use k.GetLastObservedValset in this function, it *will* result in losing control of the bridge
 	// 1. If there are no valset requests, create a new one.
 	// 2. If there is at least one validator who started unbonding in current block. (we persist last unbonded block height in hooks.go)
-	//      This will make sure the unbonding validator has to provide an attestation to a new Valset
-	//	    that excludes him before he completely Unbonds.  Otherwise he will be slashed
+	// This will make sure the unbonding validator has to provide an attestation to a new Valset
+	// that excludes him before he completely Unbonds.  Otherwise he will be slashed
 	// 3. If power change between validators of CurrentValset and latest valset request is > 5%
 
 	// get the last valsets to compare against
@@ -69,7 +69,6 @@ func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 	// Validator set pruning
 	// prune all validator sets with a nonce less than the
 	// last observed nonce, they can't be submitted any longer
-	//
 	// Only prune valsets after the signed valsets window has passed
 	// so that slashing can occur the block before we remove them
 	lastObserved := k.GetLastObservedValset(ctx)
@@ -142,12 +141,12 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 // cleanupTimedOutBatches deletes batches that have passed their expiration on Ethereum
 // keep in mind several things when modifying this function
 // A) unlike nonces timeouts are not monotonically increasing, meaning batch 5 can have a later timeout than batch 6
-//    this means that we MUST only cleanup a single batch at a time
+// this means that we MUST only cleanup a single batch at a time
 // B) it is possible for ethereumHeight to be zero if no events have ever occurred, make sure your code accounts for this
 // C) When we compute the timeout we do our best to estimate the Ethereum block height at that very second. But what we work with
-//    here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
-//    project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
-//    AND any deposit or withdraw has occurred to update the Ethereum block height.
+// here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
+// project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
+// AND any deposit or withdraw has occurred to update the Ethereum block height.
 func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
 	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
 	batches := k.GetOutgoingTxBatches(ctx)
@@ -164,12 +163,12 @@ func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
 // cleanupTimedOutBatches deletes logic calls that have passed their expiration on Ethereum
 // keep in mind several things when modifying this function
 // A) unlike nonces timeouts are not monotonically increasing, meaning call 5 can have a later timeout than batch 6
-//    this means that we MUST only cleanup a single call at a time
+// this means that we MUST only cleanup a single call at a time
 // B) it is possible for ethereumHeight to be zero if no events have ever occurred, make sure your code accounts for this
 // C) When we compute the timeout we do our best to estimate the Ethereum block height at that very second. But what we work with
-//    here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
-//    project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
-//    AND any deposit or withdraw has occurred to update the Ethereum block height.
+// here is the Ethereum block height at the time of the last Deposit or Withdraw to be observed. It's very important we do not
+// project, if we do a slowdown on ethereum could cause a double spend. Instead timeouts will *only* occur after the timeout period
+// AND any deposit or withdraw has occurred to update the Ethereum block height.
 func cleanupTimedOutLogicCalls(ctx sdk.Context, k keeper.Keeper) {
 	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
 	calls := k.GetOutgoingLogicCalls(ctx)
@@ -230,7 +229,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 			valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
 
-			//  Slash validator ONLY if he joined before valset is created
+			// Slash validator ONLY if he joined before valset is created
 			startedBeforeValsetCreated := valSigningInfo.StartHeight < int64(vs.Height)
 
 			if exist && startedBeforeValsetCreated {

@@ -10,7 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint: exhaustruct
+// TestOutgoingTxBatchCheckpointGold1 tests an outgoing tx batch checkpoint
+// nolint: exhaustruct
 func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 	senderAddr, err := sdk.AccAddressFromHex("527FBEE652609AB150F0AEE9D61A2F76CFC4A73E")
 	require.NoError(t, err)
@@ -22,8 +23,7 @@ func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 	destAddress, err := NewEthAddress("0x9FC9C2DfBA3b6cF204C37a5F690619772b926e39")
 	require.NoError(t, err)
 	src := OutgoingTxBatch{
-		BatchNonce: 1,
-		//
+		BatchNonce:   1,
 		BatchTimeout: 2111,
 		Transactions: []OutgoingTransferTx{
 			{
@@ -54,7 +54,7 @@ func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 	assert.Equal(t, goldHash, hex.EncodeToString(ourHash))
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestOutgoingLogicCallCheckpointGold1(t *testing.T) {
 	payload, err := hex.DecodeString("0x74657374696e675061796c6f6164000000000000000000000000000000000000"[2:])
 	require.NoError(t, err)

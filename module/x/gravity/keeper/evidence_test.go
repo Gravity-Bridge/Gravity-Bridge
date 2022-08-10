@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -72,7 +72,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	// input := CreateTestEnv(t)
 	input, ctx := SetupFiveValChain(t)
@@ -93,7 +93,7 @@ func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -117,7 +117,7 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestSubmitBadSignatureEvidenceSlash(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
