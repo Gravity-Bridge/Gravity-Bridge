@@ -26,7 +26,6 @@ jobs:
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
@@ -35,63 +34,50 @@ jobs:
         run: tests/all-up-test.sh
         env:
           HARDHAT: True
-          NO_IMAGE_BUILD: True
   validator-out:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Run all up test with a validator out
         run: tests/all-up-test.sh VALIDATOR_OUT
-        env:
-          NO_IMAGE_BUILD: True
   valset-stress:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Run all up valset stress test
         run: tests/all-up-test.sh VALSET_STRESS
-        env:
-          NO_IMAGE_BUILD: True
   batch-stress:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Run all up batch stress test
         run: tests/all-up-test.sh BATCH_STRESS
-        env:
-          NO_IMAGE_BUILD: True
   v2-happy-path:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Run all up batch stress test
         run: tests/all-up-test.sh V2_HAPPY_PATH
-        env:
-          NO_IMAGE_BUILD: True
 #  relay-market:
 #    runs-on: ubuntu-latest
 #    needs: happy-path-geth
@@ -113,236 +99,185 @@ jobs:
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Run orchestrator key setting test
         run: tests/all-up-test.sh ORCHESTRATOR_KEYS
-        env:
-          NO_IMAGE_BUILD: True
   valset_update_rewards:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Run the validator set update rewards test
         run: tests/all-up-test.sh VALSET_REWARDS
-        env:
-          NO_IMAGE_BUILD: True
   evidence_based_slashing:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Run the evidence based slashing test
         run: tests/all-up-test.sh EVIDENCE
-        env:
-          NO_IMAGE_BUILD: True
   transaction-cancel:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Run the transaction cancel test
         run: tests/all-up-test.sh TXCANCEL
-        env:
-          NO_IMAGE_BUILD: True
   invalid-events:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Submit invalid events
         run: tests/all-up-test.sh INVALID_EVENTS
-        env:
-          NO_IMAGE_BUILD: True
   unhalt-bridge:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Halt bridge with ETH hardfork and then unhalt the bridge via governance
         run: tests/all-up-test.sh UNHALT_BRIDGE
-        env:
-          NO_IMAGE_BUILD: True
   pause-bridge:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Pause and then resume the bridge via governance
         run: tests/all-up-test.sh PAUSE_BRIDGE
-        env:
-          NO_IMAGE_BUILD: True
   deposit-overflow:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Submit an overflowing deposit
         run: tests/all-up-test.sh DEPOSIT_OVERFLOW
-        env:
-          NO_IMAGE_BUILD: True
   ethereum-blacklist:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Attempt to deposit to a blacklisted address
         run: tests/all-up-test.sh ETHEREUM_BLACKLIST
-        env:
-          NO_IMAGE_BUILD: True
   airdrop_proposal:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Execute a governance powered airdrop
         run: tests/all-up-test.sh AIRDROP_PROPOSAL
-        env:
-          NO_IMAGE_BUILD: True
   signature_slashing:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Test slashing for unsubmitted signatures
         run: tests/all-up-test.sh SIGNATURE_SLASHING
-        env:
-          NO_IMAGE_BUILD: True
   slashing_delegation:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Test delegation after slashing
         run: tests/all-up-test.sh SLASHING_DELEGATION
-        env:
-          NO_IMAGE_BUILD: True
   ibc_metadata:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Test setting metadata for IBC tokens
         run: tests/all-up-test.sh IBC_METADATA
-        env:
-          NO_IMAGE_BUILD: True
   erc721_happy_path:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Test ERC721 happy path
         run: tests/all-up-test.sh ERC721_HAPPY_PATH
-        env:
-          NO_IMAGE_BUILD: True
   upgrade_test:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Test Mercury state upgrade
         run: tests/run-upgrade-test.sh v1.5.2
-        env:
-          NO_IMAGE_BUILD: True
   ibc_auto_forward_test:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Test Eth->Gravity IBC Auto-Forwarding
         run: tests/all-up-test.sh IBC_AUTO_FORWARD
-        env:
-          NO_IMAGE_BUILD: True
   ethereum_keys:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
       - uses: actions/checkout@v2
-      - uses: satackey/action-docker-layer-caching@v0.0.11
         with:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
       - name: Test Ethereum Keys signing support between deep_space and Gravity Bridge Chain
         run: tests/all-up-test.sh ETHEREUM_KEYS
-        env:
-          NO_IMAGE_BUILD: True
