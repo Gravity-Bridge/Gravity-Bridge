@@ -1,12 +1,14 @@
 package keeper
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 func TestGetAndDeleteAttestation(t *testing.T) {
@@ -179,19 +181,46 @@ func TestInvalidHeight(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 	pk := input.GravityKeeper
+	msgServer := NewMsgServerImpl(pk)
 	log := ctx.Logger()
 
-	msgServer := NewMsgServerImpl(pk)
-
-	// Submit a bad claim:
 	val0 := ValAddrs[0]
 	orch0 := OrchAddrs[0]
+	sender := AccAddrs[0]
+	receiver := EthAddrs[0]
 	lastNonce := pk.GetLastObservedEventNonce(ctx)
-	lastEthHeight := pk.GetLastObservedEthereumBlockHeight(ctx)
+	lastEthHeight := pk.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
 	lastBatchNonce := 0
 	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-	goodHeight := lastEthHeight.EthereumBlockHeight + 1
-	badHeight := lastEthHeight.EthereumBlockHeight + 2
+	goodHeight := lastEthHeight + 1
+	batchTimeout := lastEthHeight + 100
+	badHeight := batchTimeout
+
+	// Setup a batch with a timeout
+	batch := types.OutgoingTxBatch{
+		BatchNonce:   uint64(lastBatchNonce + 1),
+		BatchTimeout: batchTimeout,
+		Transactions: []types.OutgoingTransferTx{{
+			Id:          0,
+			Sender:      sender.String(),
+			DestAddress: receiver.String(),
+			Erc20Token: types.ERC20Token{
+				Contract: tokenContract,
+				Amount:   sdktypes.NewInt(1),
+			},
+			Erc20Fee: types.ERC20Token{
+				Contract: tokenContract,
+				Amount:   sdktypes.NewInt(1),
+			},
+		}},
+		TokenContract: tokenContract,
+		EthBlock:      0,
+	}
+	b, err := batch.ToInternal()
+	require.NoError(t, err)
+	pk.StoreBatch(ctx, *b)
+
+	// Submit a bad claim with EthBlockHeight >= timeout
 
 	bad := types.MsgBatchSendToEthClaim{
 		EventNonce:     lastNonce + 1,
@@ -202,13 +231,26 @@ func TestInvalidHeight(t *testing.T) {
 	}
 	context := sdktypes.WrapSDKContext(ctx)
 	log.Info("Submitting bad eth claim from orchestrator 0", "orch", orch0.String(), "val", val0.String())
-	_, err := msgServer.BatchSendToEthClaim(context, &bad)
+
+	// BatchSendToEthClaim is supposed to panic and fail the message execution, set up a defer recover to catch it
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("recovered from panic:", r)
+		} else {
+			panic("Expected to find a panic coming from BatchSendToEthClaim()!")
+		}
+	}()
+	_, err = msgServer.BatchSendToEthClaim(context, &bad)
 	require.NoError(t, err)
 
+	// Assert that there is no attestation since the above panicked
 	badHash, err := bad.ClaimHash()
 	require.NoError(t, err)
+	att := pk.GetAttestation(ctx, bad.GetEventNonce(), badHash)
+	require.Nil(t, att)
 
-	for _, orch := range OrchAddrs[1:] {
+	// Attest the actual batch, and assert the votes are correct
+	for i, orch := range OrchAddrs[1:] {
 		log.Info("Submitting good eth claim from orchestrators", "orch", orch.String())
 		good := types.MsgBatchSendToEthClaim{
 			EventNonce:     lastNonce + 1,
@@ -218,7 +260,7 @@ func TestInvalidHeight(t *testing.T) {
 			Orchestrator:   orch.String(),
 		}
 		_, err := msgServer.BatchSendToEthClaim(context, &good)
-		require.Error(t, err)
+		require.NoError(t, err)
 
 		goodHash, err := good.ClaimHash()
 		require.NoError(t, err)
@@ -227,7 +269,7 @@ func TestInvalidHeight(t *testing.T) {
 		att := pk.GetAttestation(ctx, good.GetEventNonce(), goodHash)
 		require.NotNil(t, att)
 		log.Info("Asserting that the bad attestation only has one claimer", "attVotes", att.Votes)
-		require.Equal(t, len(att.Votes), 1) // No votes on this attestation
+		require.Equal(t, len(att.Votes), i+1) // Only these good orchestrators votes should be counted
 	}
 
 }
