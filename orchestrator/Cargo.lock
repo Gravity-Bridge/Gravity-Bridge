@@ -1277,6 +1277,7 @@ name = "gravity_proto"
 version = "0.1.0"
 dependencies = [
  "cosmos-sdk-proto-althea",
+ "deep_space",
  "prost 0.10.0",
  "prost-types 0.10.0",
  "tonic 0.7.1",
