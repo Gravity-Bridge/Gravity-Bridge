@@ -2,6 +2,7 @@ package v3
 
 import (
 	"encoding/hex"
+	"fmt"
 	"reflect"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -35,23 +36,33 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 // Iterates over every value stored under keyPrefix, computes the new key using getNewKey,
 // then stores the value in the new key before deleting the old key
 func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix []byte, getNewKey func([]byte, codec.BinaryCodec, []byte, []byte) ([]byte, error)) error {
-	oldStore := prefix.NewStore(store, keyPrefix)
-	oldStoreIter := oldStore.Iterator(nil, nil)
-	defer oldStoreIter.Close()
+	prefixStore := prefix.NewStore(store, keyPrefix)
+	prefixStoreIter := prefixStore.Iterator(nil, nil)
+	defer prefixStoreIter.Close()
 
-	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
+	for ; prefixStoreIter.Valid(); prefixStoreIter.Next() {
 		// Set new key on store. Values don't change.
-		oldKey := oldStoreIter.Key()
+		oldKey := prefixStoreIter.Key()
 		// The old key lacks a prefix, because the PrefixStore omits it on Get and expects no prefix on Set
 		oldKeyWithPrefix := types.AppendBytes(keyPrefix, oldKey)
-		value := oldStoreIter.Value()
+		value := prefixStoreIter.Value()
 		newKey, err := getNewKey(value, cdc, oldKeyWithPrefix, keyPrefix)
 		if err != nil {
 			return err
 		}
-		if !reflect.DeepEqual(oldKey, newKey) {
-			store.Set(newKey, value)
-			oldStore.Delete(oldKey)
+		if reflect.DeepEqual(oldKey, newKey) {
+			// Nothing changed, don't write anything
+			continue
+		} else {
+			// The key has changed
+			if prefixStore.Has(newKey) {
+				// Collisions are not allowed
+				panic(fmt.Sprintf("New key collides with an existing key! %s", hex.EncodeToString(newKey)))
+			}
+
+			// Delete the old key and replace it with the new key
+			prefixStore.Delete(oldKey)
+			prefixStore.Set(newKey, value)
 		}
 	}
 	return nil
@@ -89,8 +100,6 @@ func getAttestationConverter(logger log.Logger) func([]byte, codec.BinaryCodec, 
 					"old-claim-hash", hex.EncodeToString(oldClaimHash), "new-claim-hash", hex.EncodeToString(hash),
 				)
 				panic("Attempted to migrate an attestation which should not have moved!")
-			} else {
-				// Nothing happened, so nothing to report
 			}
 		} else {
 			// Batch attestations **must** move, unless we have some sort of hash collision

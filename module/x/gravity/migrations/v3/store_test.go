@@ -59,6 +59,7 @@ func TestMigrateAttestation(t *testing.T) {
 		Claim:    msgAny,
 	}
 	oldClaimHash, err := v2.MsgBatchSendToEthClaimHash(msg)
+	require.NoError(t, err)
 	newClaimHash, err := msg.ClaimHash()
 	require.NoError(t, err)
 	attestationOldKey := v2.GetAttestationKey(nonce, oldClaimHash)

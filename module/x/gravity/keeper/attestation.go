@@ -2,12 +2,13 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"sort"
-	"strconv"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -243,7 +244,12 @@ func (k Keeper) IterateAttestations(ctx sdk.Context, reverse bool, cb func([]byt
 	} else {
 		iter = store.Iterator(prefixRange(prefix))
 	}
-	defer iter.Close()
+	defer func(iter storetypes.Iterator) {
+		err := iter.Close()
+		if err != nil {
+			panic("Unable to close attestation iterator!")
+		}
+	}(iter)
 
 	for ; iter.Valid(); iter.Next() {
 		att := types.Attestation{
@@ -306,7 +312,7 @@ func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context) uint64 {
 // the store
 func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastObservedEthereumBlockHeight {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get([]byte(types.LastObservedEthereumBlockHeightKey))
+	bytes := store.Get(types.LastObservedEthereumBlockHeightKey)
 
 	if len(bytes) == 0 {
 		return types.LastObservedEthereumBlockHeight{
