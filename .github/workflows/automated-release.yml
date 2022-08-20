@@ -25,6 +25,10 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v2
+        
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: orchestrator/
 
       - name: Set ENV var for GOPATH
         run: |
@@ -119,7 +123,6 @@ jobs:
       - name: Build GBT ARM64
         run: |
           cd orchestrator
-          cargo clean
           cross build --target aarch64-unknown-linux-musl --release
 
       - name: Upload Gravity Bridge Tools ARM
@@ -136,7 +139,6 @@ jobs:
       - name: Build GBT Windows
         run: |
           cd orchestrator
-          cargo clean
           cross build --target x86_64-pc-windows-gnu --release
 
       - name: Upload Gravity Bridge Tools Windows
@@ -176,7 +178,6 @@ jobs:
           CC=o64-clang \
           CXX=o64-clang++ \
           LIBZ_SYS_STATIC=1 \
-          cargo clean
           cargo build --target x86_64-apple-darwin --release
 
       - name: Upload Gravity Bridge Tools Mac
