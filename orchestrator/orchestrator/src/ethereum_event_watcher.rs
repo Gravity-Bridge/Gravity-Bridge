@@ -173,7 +173,6 @@ pub async fn check_for_events(
             )
         }
 
-        let mut new_event_nonce: Uint256 = last_event_nonce.into();
         if !deposits.is_empty()
             || !withdraws.is_empty()
             || !erc20_deploys.is_empty()
@@ -183,38 +182,63 @@ pub async fn check_for_events(
             let res = send_ethereum_claims(
                 contact,
                 our_private_key,
-                deposits,
-                withdraws,
-                erc20_deploys,
-                logic_calls,
-                valsets,
+                deposits.clone(),
+                withdraws.clone(),
+                erc20_deploys.clone(),
+                logic_calls.clone(),
+                valsets.clone(),
                 fee,
             )
             .await?;
-            new_event_nonce = get_last_event_nonce_for_validator(
+            let new_event_nonce = get_last_event_nonce_for_validator(
                 grpc_client,
                 our_cosmos_address,
                 contact.get_prefix(),
             )
-            .await?
-            .into();
+            .await?;
 
             info!("Current event nonce is {}", new_event_nonce);
 
             // since we can't actually trust that the above txresponse is correct we have to check here
             // we may be able to trust the tx response post grpc
-            if new_event_nonce == last_event_nonce.into() {
+            if new_event_nonce == last_event_nonce {
                 return Err(GravityError::InvalidBridgeStateError(
                     format!("Claims did not process, trying to update but still on {}, trying again in a moment, check txhash {} for errors", last_event_nonce, res.txhash),
                 ));
             } else {
                 info!("Claims processed, new nonce {}", new_event_nonce);
             }
+
+            // find the eth block for our newest event nonce
+            let valsets = ValsetUpdatedEvent::get_block_for_nonce(new_event_nonce, &valsets);
+            let deposits = SendToCosmosEvent::get_block_for_nonce(new_event_nonce, &deposits);
+            let withdraws =
+                TransactionBatchExecutedEvent::get_block_for_nonce(new_event_nonce, &withdraws);
+            let erc20_deploys =
+                Erc20DeployedEvent::get_block_for_nonce(new_event_nonce, &erc20_deploys);
+            let logic_calls =
+                LogicCallExecutedEvent::get_block_for_nonce(new_event_nonce, &logic_calls);
+
+            let block = match (valsets, deposits, withdraws, erc20_deploys, logic_calls) {
+                (Some(b), _, _, _, _) => b,
+                (_, Some(b), _, _, _) => b,
+                (_, _, Some(b), _, _) => b,
+                (_, _, _, Some(b), _) => b,
+                (_, _, _, _, Some(b)) => b,
+                _ => panic!("It's impossible for an event to be in more than one list!"),
+            };
+
+            Ok(CheckedNonces {
+                block_number: block,
+                event_nonce: new_event_nonce.into(),
+            })
+        } else {
+            // no changes
+            Ok(CheckedNonces {
+                block_number: latest_block,
+                event_nonce: last_event_nonce.into(),
+            })
         }
-        Ok(CheckedNonces {
-            block_number: latest_block,
-            event_nonce: new_event_nonce,
-        })
     } else {
         error!("Failed to get events");
         metrics_errors_counter(1, "Failed to get events");

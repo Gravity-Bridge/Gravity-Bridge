@@ -244,6 +244,15 @@ impl ValsetUpdatedEvent {
         }
         ret
     }
+    // gets the Ethereum block for the given nonce
+    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+        for item in input {
+            if item.event_nonce == event_nonce {
+                return Some(item.block_height.clone());
+            }
+        }
+        None
+    }
 }
 
 /// A parsed struct representing the Ethereum event fired by the Gravity contract when
@@ -326,6 +335,16 @@ impl TransactionBatchExecutedEvent {
             }
         }
         ret
+    }
+
+    // gets the Ethereum block for the given nonce
+    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+        for item in input {
+            if item.event_nonce == event_nonce {
+                return Some(item.block_height.clone());
+            }
+        }
+        None
     }
 }
 
@@ -503,6 +522,16 @@ impl SendToCosmosEvent {
             }
         }
         ret
+    }
+
+    // gets the Ethereum block for the given nonce
+    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+        for item in input {
+            if item.event_nonce == event_nonce {
+                return Some(item.block_height.clone());
+            }
+        }
+        None
     }
 }
 
@@ -789,6 +818,16 @@ impl Erc20DeployedEvent {
         }
         ret
     }
+
+    // gets the Ethereum block for the given nonce
+    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+        for item in input {
+            if item.event_nonce == event_nonce {
+                return Some(item.block_height.clone());
+            }
+        }
+        None
+    }
 }
 /// A parsed struct representing the Ethereum event fired when someone uses the Gravity
 /// contract to deploy a new ERC20 contract representing a Cosmos asset
@@ -822,6 +861,16 @@ impl LogicCallExecutedEvent {
             }
         }
         ret
+    }
+
+    // gets the Ethereum block for the given nonce
+    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+        for item in input {
+            if item.event_nonce == event_nonce {
+                return Some(item.block_height.clone());
+            }
+        }
+        None
     }
 }
 
