@@ -310,11 +310,20 @@ pub async fn send_ethereum_claims(
     for (key, _) in unordered_msgs.iter() {
         keys.push(*key);
     }
+    // sorts ascending by default
     keys.sort_unstable();
 
+    const MAX_ORACLE_MESSAGES: usize = 1000;
     let mut msgs = Vec::new();
     for i in keys {
+        // pushes messages with a later nonce onto the end
         msgs.push(unordered_msgs.remove_entry(&i).unwrap().1);
+    }
+    // prevents the message buffer from getting too big if a lot of events
+    // are left in a validators queue
+    while msgs.len() > MAX_ORACLE_MESSAGES {
+        // pops messages off of the end
+        msgs.pop();
     }
 
     contact
