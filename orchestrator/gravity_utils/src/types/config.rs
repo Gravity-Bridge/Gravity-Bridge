@@ -171,7 +171,7 @@ pub enum BatchRequestMode {
 
 /// A whitelisted token that will be relayed given the batch
 /// provides at least amount of this specific token
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct WhitelistToken {
     /// the price of this token, denominated in weth per coin
     pub price: Uint256,
