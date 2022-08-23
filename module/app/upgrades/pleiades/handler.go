@@ -1,4 +1,4 @@
-package enterupgradename
+package pleiades
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -7,18 +7,18 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
-func GetenterupgradenameUpgradeHandler(
+func GetPleiadesUpgradeHandler(
 	mm *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper,
 ) func(
 	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
 	if mm == nil {
-		panic("Nil argument to GetenterupgradenameUpgradeHandler")
+		panic("Nil argument to GetPleiadesUpgradeHandler")
 	}
 	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
-		ctx.Logger().Info("enterupgradename upgrade: Enter handler")
+		ctx.Logger().Info("Pleiades upgrade: Enter handler")
 
-		ctx.Logger().Info("enterupgradename Upgrade: Running any configured module migrations")
+		ctx.Logger().Info("Pleiades Upgrade: Running any configured module migrations")
 		out, outErr := mm.RunMigrations(ctx, *configurator, vmap)
 
 		ctx.Logger().Info("Asserting invariants after upgrade")

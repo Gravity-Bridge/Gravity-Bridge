@@ -1,4 +1,4 @@
-# enterupgradename UPGRADE
+# Mercury UPGRADE
 
 The *Mercury* upgrade includes several changes, and in the code is also referred to as the v2 upgrade, because it is the upgrade in which the Gravity ConsensusVersion() result changes from "1" to "2".
 

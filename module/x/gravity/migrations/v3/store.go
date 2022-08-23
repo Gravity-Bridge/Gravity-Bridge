@@ -19,17 +19,17 @@ import (
 //
 // - Migrate all attestations to their correct new keys
 func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.BinaryCodec) error {
-	ctx.Logger().Info("enterupgradename Upgrade: Beginning the migrations for the gravity module")
+	ctx.Logger().Info("Pleiades Upgrade: Beginning the migrations for the gravity module")
 	store := ctx.KVStore(storeKey)
 
 	convertAttestationKey := getAttestationConverter(ctx.Logger())
 	// Migrate all stored attestations by iterating over everything stored under the OracleAttestationKey
-	ctx.Logger().Info("enterupgradename Upgrade: Beginning Attestation Upgrade")
+	ctx.Logger().Info("Pleiades Upgrade: Beginning Attestation Upgrade")
 	if err := migrateKeysFromValues(store, cdc, types.OracleAttestationKey, convertAttestationKey); err != nil {
 		return err
 	}
 
-	ctx.Logger().Info("enterupgradename Upgrade: Finished the migrations for the gravity module successfully!")
+	ctx.Logger().Info("Pleiades Upgrade: Finished the migrations for the gravity module successfully!")
 	return nil
 }
 
