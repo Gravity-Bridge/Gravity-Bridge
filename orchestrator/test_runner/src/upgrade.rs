@@ -1,13 +1,13 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
 use crate::{happy_path_test, happy_path_test_v2, utils::*};
-use clarity::{Address as EthAddress};
+use clarity::Address as EthAddress;
 use cosmos_gravity::send::{
     MSG_BATCH_SEND_TO_ETH_TYPE_URL, MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL,
     MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL,
     MSG_VALSET_UPDATED_CLAIM_TYPE_URL,
 };
 use deep_space::client::ChainStatus;
-use deep_space::utils::{decode_any};
+use deep_space::utils::decode_any;
 use deep_space::{Contact, CosmosPrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::gravity::query_client::{QueryClient as GravityQueryClient, QueryClient};
@@ -81,10 +81,10 @@ pub async fn upgrade_part_1(
     let upgrade_height = (curr_height + 40) as i64;
     let upgrade_prop_params = UpgradeProposalParams {
         upgrade_height,
-        plan_name: "enterupgradename".to_string(),
-        plan_info: "enterupgradename upgrade info here".to_string(),
-        proposal_title: "enterupgradename upgrade proposal title here".to_string(),
-        proposal_desc: "enterupgradename upgrade proposal description here".to_string(),
+        plan_name: "pleiades".to_string(),
+        plan_info: "Pleiades upgrade info here".to_string(),
+        proposal_title: "Pleiades upgrade proposal title here".to_string(),
+        proposal_desc: "Pleiades upgrade proposal description here".to_string(),
     };
     info!(
         "Starting upgrade vote with params name: {}, height: {}",
@@ -216,7 +216,7 @@ pub async fn run_upgrade_specific_tests(
     _erc20_addresses: Vec<EthAddress>,
     _post_upgrade: bool,
 ) {
-    // TODO: Add a new test for enterupgradename let res = new_test().await;
+    // TODO: Add a new test for Pleiades let res = new_test().await;
     // if !post_upgrade {
     //     // Expect failure
     //     assert!(!res);
