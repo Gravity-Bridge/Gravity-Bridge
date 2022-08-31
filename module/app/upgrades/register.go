@@ -12,6 +12,7 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/icav3"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 )
@@ -44,5 +45,11 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		polaris.V2toPolarisPlanName,
 		polaris.GetPolarisUpgradeHandler(mm, configurator, crisisKeeper, transferKeeper),
+	)
+
+	// ICA UPGRADE HANDLER SETUP
+	upgradeKeeper.SetUpgradeHandler(
+		icav3.ICAPlanName,
+		icav3.GetICAUpgradeHandler(mm, configurator),
 	)
 }
