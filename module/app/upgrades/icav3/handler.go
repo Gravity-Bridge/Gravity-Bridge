@@ -16,7 +16,6 @@ import (
 
 var ICAPlanName = "ica"
 
-// nolint: exhaustruct
 func GetICAUpgradeHandler(
 	mm *module.Manager,
 	configurator *module.Configurator) func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
@@ -32,8 +31,10 @@ func GetICAUpgradeHandler(
 		// Set Initial Consensus Version
 		fromVM[icatypes.ModuleName] = mm.Modules[icatypes.ModuleName].ConsensusVersion()
 		// create ICS27 Controller submodule params
+		//nolint: exhaustruct
 		controllerParams := icacontrollertypes.Params{}
 		// create ICS27 Host submodule params
+		//nolint: exhaustruct
 		hostParams := icahosttypes.Params{
 			HostEnabled: true,
 			AllowMessages: []string{
