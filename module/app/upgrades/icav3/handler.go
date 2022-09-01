@@ -32,7 +32,7 @@ func GetICAUpgradeHandler(
 		fromVM[icatypes.ModuleName] = mm.Modules[icatypes.ModuleName].ConsensusVersion()
 		// create ICS27 Controller submodule params
 		//nolint: exhaustruct
-		controllerParams := icacontrollertypes.Params{}
+		controllerParams := icacontrollertypes.Params{ControllerEnabled: true}
 		// create ICS27 Host submodule params
 		//nolint: exhaustruct
 		hostParams := icahosttypes.Params{
