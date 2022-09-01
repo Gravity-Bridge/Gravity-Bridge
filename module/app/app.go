@@ -264,7 +264,7 @@ type Gravity struct {
 	upgradeKeeper       *upgradekeeper.Keeper
 	paramsKeeper        *paramskeeper.Keeper
 	ibcKeeper           *ibckeeper.Keeper
-	ICAControllerKeeper *icacontrollerkeeper.Keeper
+	ICAControllerKeeper icacontrollerkeeper.Keeper
 	ICAHostKeeper       *icahostkeeper.Keeper
 	ICAAuthKeeper       *icaauthkeeper.Keeper
 	evidenceKeeper      *evidencekeeper.Keeper
@@ -573,13 +573,15 @@ func NewGravityApp(
 		appCodec, keys[icacontrollertypes.StoreKey],
 		app.GetSubspace(icacontrollertypes.SubModuleName),
 		app.ibcKeeper.ChannelKeeper, // may be replaced with middleware such as ics29 fee
-		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
-		scopedICAControllerKeeper, bApp.MsgServiceRouter(),
+		app.ibcKeeper.ChannelKeeper,
+		&app.ibcKeeper.PortKeeper,
+		scopedICAControllerKeeper,
+		bApp.MsgServiceRouter(),
 	)
 
-	app.ICAControllerKeeper = &icaControllerKeeper
+	app.ICAControllerKeeper = icaControllerKeeper
 
-	icaModule := ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper)
+	icaModule := ica.NewAppModule(&app.ICAControllerKeeper, app.ICAHostKeeper)
 
 	icaAuthKeeper := icaauthkeeper.NewKeeper(
 		appCodec, keys[icaauthtypes.StoreKey],
@@ -1065,6 +1067,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(gravitytypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
+	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 
 	return paramsKeeper
 }
@@ -1107,7 +1110,9 @@ func (app *Gravity) registerStoreLoaders() {
 	if upgradeInfo.Name == icav3.ICAPlanName {
 		if !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) { // Recognized the plan, need to skip this one though
 			storeUpgrades := storetypes.StoreUpgrades{
-				Added: []string{icahosttypes.StoreKey},
+				Added: []string{icacontrollertypes.StoreKey,
+					icahosttypes.StoreKey,
+					icaauthtypes.StoreKey},
 				// Check upgrade docs to see which type of store loader is necessary for deletes/renames
 				// Renamed: []storetypes.StoreRename{{"foo", "bar"}}, example foo to bar rename
 				// Deleted: []string{"bazmodule"}, example deleted bazmodule

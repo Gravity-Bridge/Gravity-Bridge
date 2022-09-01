@@ -9,8 +9,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/log"
-	dbm "github.com/tendermint/tm-db"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
@@ -40,17 +38,22 @@ func init() {
 	ibctesting.DefaultTestingAppInit = SetupICATestingApp
 }
 
+// fauxMerkleModeOpt returns a BaseApp option to use a dbStoreAdapter instead of
+// an IAVLStore for faster simulation speed.
 func fauxMerkleModeOpt(bapp *baseapp.BaseApp) {
 	bapp.SetFauxMerkleMode()
 }
 
 func SetupICATestingApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
-	db := dbm.NewMemDB()
-	// encCdc := icaapp.MakeEncodingConfig()
-	//logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, MakeEncodingConfig(), EmptyAppOptions{}, fauxMerkleModeOpt
+	//db := dbm.NewMemDB()
+	_, db, _, logger, _, _ := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
+
+	defer func() {
+		db.Close()
+	}()
 	app := icaapp.NewGravityApp(
-		log.NewNopLogger(), db, nil, true, map[int64]bool{},
-		icaapp.DefaultNodeHome, 5, icaapp.MakeEncodingConfig(),
+		logger, db, nil, true, map[int64]bool{},
+		icaapp.DefaultNodeHome, icaapp.FlagPeriodValue, icaapp.MakeEncodingConfig(),
 		simapp.EmptyAppOptions{}, fauxMerkleModeOpt)
 	// TODO: figure out if it's ok that w MakeEncodingConfig inside of our Genesis.go. It would be a different instance than the one used in app
 	return app, icaapp.NewDefaultGenesisState()
