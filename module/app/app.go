@@ -101,10 +101,18 @@ import (
 
 	//  ica
 	ica "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts"
+	icacontroller "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/controller"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/controller/keeper"
+	icacontrollertypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/controller/types"
 	icahost "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host"
 	icahostkeeper "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/keeper"
 	icahosttypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
+
+	//ica auth
+	intertx "github.com/cosmos/interchain-accounts/x/inter-tx"
+	intertxkeeper "github.com/cosmos/interchain-accounts/x/inter-tx/keeper"
+	intertxtypes "github.com/cosmos/interchain-accounts/x/inter-tx/types"
 
 	// Osmosis-Labs Bech32-IBC
 	"github.com/osmosis-labs/bech32-ibc/x/bech32ibc"
@@ -164,6 +172,7 @@ var (
 		gravity.AppModuleBasic{},
 		bech32ibc.AppModuleBasic{},
 		ica.AppModuleBasic{},
+		intertx.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -221,30 +230,34 @@ type Gravity struct {
 
 	// keepers
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
-	accountKeeper     *authkeeper.AccountKeeper
-	authzKeeper       *authzkeeper.Keeper
-	bankKeeper        *bankkeeper.BaseKeeper
-	capabilityKeeper  *capabilitykeeper.Keeper
-	stakingKeeper     *stakingkeeper.Keeper
-	slashingKeeper    *slashingkeeper.Keeper
-	mintKeeper        *mintkeeper.Keeper
-	distrKeeper       *distrkeeper.Keeper
-	govKeeper         *govkeeper.Keeper
-	crisisKeeper      *crisiskeeper.Keeper
-	upgradeKeeper     *upgradekeeper.Keeper
-	paramsKeeper      *paramskeeper.Keeper
-	ibcKeeper         *ibckeeper.Keeper
-	ICAHostKeeper     *icahostkeeper.Keeper
-	evidenceKeeper    *evidencekeeper.Keeper
-	ibcTransferKeeper *ibctransferkeeper.Keeper
-	gravityKeeper     *keeper.Keeper
-	bech32IbcKeeper   *bech32ibckeeper.Keeper
+	accountKeeper       *authkeeper.AccountKeeper
+	authzKeeper         *authzkeeper.Keeper
+	bankKeeper          *bankkeeper.BaseKeeper
+	capabilityKeeper    *capabilitykeeper.Keeper
+	stakingKeeper       *stakingkeeper.Keeper
+	slashingKeeper      *slashingkeeper.Keeper
+	mintKeeper          *mintkeeper.Keeper
+	distrKeeper         *distrkeeper.Keeper
+	govKeeper           *govkeeper.Keeper
+	crisisKeeper        *crisiskeeper.Keeper
+	upgradeKeeper       *upgradekeeper.Keeper
+	paramsKeeper        *paramskeeper.Keeper
+	ibcKeeper           *ibckeeper.Keeper
+	ICAControllerKeeper *icacontrollerkeeper.Keeper
+	ICAHostKeeper       *icahostkeeper.Keeper
+	InterTxKeeper       *intertxkeeper.Keeper
+	evidenceKeeper      *evidencekeeper.Keeper
+	ibcTransferKeeper   *ibctransferkeeper.Keeper
+	gravityKeeper       *keeper.Keeper
+	bech32IbcKeeper     *bech32ibckeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
-	ScopedIBCKeeper      *capabilitykeeper.ScopedKeeper
-	ScopedICAHostKeeper  *capabilitykeeper.ScopedKeeper
-	ScopedTransferKeeper *capabilitykeeper.ScopedKeeper
+	ScopedIBCKeeper           *capabilitykeeper.ScopedKeeper
+	ScopedTransferKeeper      *capabilitykeeper.ScopedKeeper
+	ScopedICAHostKeeper       *capabilitykeeper.ScopedKeeper
+	ScopedICAControllerKeeper *capabilitykeeper.ScopedKeeper
+	ScopedInterTxKeeper       *capabilitykeeper.ScopedKeeper
 
 	// Module Manager
 	mm *module.Manager
@@ -328,6 +341,12 @@ func (app Gravity) ValidateMembers() {
 	if app.ScopedICAHostKeeper == nil {
 		panic("Nil ScopedICAHostKeeper!")
 	}
+	if app.ScopedICAControllerKeeper == nil {
+		panic("Nil ScopedICAControllerKeeper!")
+	}
+	if app.ScopedInterTxKeeper == nil {
+		panic("Nil ScopedInterTxKeeper!")
+	}
 
 	// managers
 	if app.mm == nil {
@@ -367,7 +386,8 @@ func NewGravityApp(
 		slashingtypes.StoreKey, govtypes.StoreKey, paramstypes.StoreKey,
 		ibchost.StoreKey, upgradetypes.StoreKey, evidencetypes.StoreKey,
 		ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		gravitytypes.StoreKey, bech32ibctypes.StoreKey, icahosttypes.StoreKey,
+		gravitytypes.StoreKey, bech32ibctypes.StoreKey, icacontrollertypes.StoreKey,
+		icahosttypes.StoreKey, intertxtypes.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -403,8 +423,14 @@ func NewGravityApp(
 	app.ScopedTransferKeeper = &scopedTransferKeeper
 
 	// ica
+	scopedInterTxKeeper := capabilityKeeper.ScopeToModule(intertxtypes.ModuleName)
+	app.ScopedInterTxKeeper = &scopedInterTxKeeper
+
 	scopedICAHostKeeper := capabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
 	app.ScopedICAHostKeeper = &scopedICAHostKeeper
+
+	scopedICAControllerKeeper := capabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
+	app.ScopedICAControllerKeeper = &scopedICAControllerKeeper
 
 	// Applications that wish to enforce statically created ScopedKeepers should call `Seal` after creating
 	// their scoped modules in `NewApp` with `ScopeToModule`
@@ -522,6 +548,27 @@ func NewGravityApp(
 	)
 	app.ICAHostKeeper = &icaHostKeeper
 
+	icaControllerKeeper := icacontrollerkeeper.NewKeeper(
+		appCodec, keys[icacontrollertypes.StoreKey],
+		app.GetSubspace(icacontrollertypes.SubModuleName),
+		app.ibcKeeper.ChannelKeeper, // may be replaced with middleware such as ics29 fee
+		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
+		scopedICAControllerKeeper, bApp.MsgServiceRouter(),
+	)
+
+	app.ICAControllerKeeper = &icaControllerKeeper
+
+	icaModule := ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper)
+
+	interTxKeeper := intertxkeeper.NewKeeper(
+		appCodec, keys[intertxtypes.StoreKey],
+		icaControllerKeeper, scopedInterTxKeeper)
+	app.InterTxKeeper = &interTxKeeper
+	interTxModule := intertx.NewAppModule(appCodec, *app.InterTxKeeper)
+	interTxIBCModule := intertx.NewIBCModule(*app.InterTxKeeper)
+
+	icaControllerIBCModule := icacontroller.NewIBCModule(icaControllerKeeper, interTxIBCModule)
+
 	icaHostIBCModule := icahost.NewIBCModule(*app.ICAHostKeeper)
 
 	// Add the staking hooks from distribution, slashing, and gravity to staking
@@ -576,8 +623,11 @@ func NewGravityApp(
 	ibcTransferIBCModule := transfer.NewIBCModule(ibcTransferKeeper)
 
 	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(icahosttypes.SubModuleName, icaHostIBCModule).
-		AddRoute(ibctransfertypes.ModuleName, ibcTransferIBCModule)
+	ibcRouter.AddRoute(icacontrollertypes.SubModuleName, icaControllerIBCModule).
+		AddRoute(icahosttypes.SubModuleName, icaHostIBCModule).
+		AddRoute(ibctransfertypes.ModuleName, ibcTransferIBCModule).
+		AddRoute(intertxtypes.ModuleName, icaControllerIBCModule)
+
 	ibcKeeper.SetRouter(ibcRouter)
 
 	evidenceKeeper := *evidencekeeper.NewKeeper(
@@ -661,9 +711,10 @@ func NewGravityApp(
 		upgrade.NewAppModule(upgradeKeeper),
 		evidence.NewAppModule(evidenceKeeper),
 		ibc.NewAppModule(&ibcKeeper),
-		ica.NewAppModule(nil, app.ICAHostKeeper),
 		params.NewAppModule(paramsKeeper),
 		ibcTransferAppModule,
+		icaModule,
+		interTxModule,
 		gravity.NewAppModule(
 			gravityKeeper,
 			bankKeeper,
@@ -685,7 +736,6 @@ func NewGravityApp(
 		evidencetypes.ModuleName,
 		stakingtypes.ModuleName,
 		ibchost.ModuleName,
-		icatypes.ModuleName,
 		banktypes.ModuleName,
 		crisistypes.ModuleName,
 		authtypes.ModuleName,
@@ -697,6 +747,8 @@ func NewGravityApp(
 		authz.ModuleName,
 		govtypes.ModuleName,
 		paramstypes.ModuleName,
+		icatypes.ModuleName,
+		intertxtypes.ModuleName,
 	)
 	mm.SetOrderEndBlockers(
 		crisistypes.ModuleName,
@@ -710,7 +762,6 @@ func NewGravityApp(
 		slashingtypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibchost.ModuleName,
-		icatypes.ModuleName,
 		banktypes.ModuleName,
 		authtypes.ModuleName,
 		vestingtypes.ModuleName,
@@ -719,6 +770,8 @@ func NewGravityApp(
 		genutiltypes.ModuleName,
 		authz.ModuleName,
 		paramstypes.ModuleName,
+		icatypes.ModuleName,
+		intertxtypes.ModuleName,
 	)
 	mm.SetOrderInitGenesis(
 		capabilitytypes.ModuleName,
@@ -731,7 +784,6 @@ func NewGravityApp(
 		minttypes.ModuleName,
 		upgradetypes.ModuleName,
 		ibchost.ModuleName,
-		icatypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
@@ -741,6 +793,8 @@ func NewGravityApp(
 		crisistypes.ModuleName,
 		vestingtypes.ModuleName,
 		paramstypes.ModuleName,
+		icatypes.ModuleName,
+		intertxtypes.ModuleName,
 	)
 
 	mm.RegisterInvariants(&crisisKeeper)
