@@ -45,9 +45,16 @@ do
     LISTEN_ADDRESS="--address tcp://7.7.7.$i:26655"
     P2P_ADDRESS="--p2p.laddr tcp://7.7.7.$i:26656"
     LOG_LEVEL="--log_level info"
-    INVARIANTS_CHECK="--inv-check-period 1"
-    ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $GRPC_WEB_ADDRESS $LOG_LEVEL $INVARIANTS_CHECK $P2P_ADDRESS"
-    $BIN $ARGS start &> /validator$i/logs &
+    if [ ! -z $"FAILING_INVARIANT" ]; then
+        # Invariants are expected to fail, skip them at the start of the chain + allow MsgVerifyInvariant to halt the node
+        CRISIS_CONFIG="--x-crisis-skip-assert-invariants --x-crisis-verify-halts-node"
+    else
+        # Invariants are not expected to fail, run them every block
+        INVARIANTS_CHECK="--inv-check-period 1"
+    fi
+    ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $GRPC_WEB_ADDRESS $LOG_LEVEL $P2P_ADDRESS"
+    START_ARGS="$INVARIANTS_CHECK"
+    $BIN $ARGS start $START_ARGS &> /validator$i/logs &
 done
 
 # Setup the IBC test chain (chain id ibc-test-1) using gaiad as the binary

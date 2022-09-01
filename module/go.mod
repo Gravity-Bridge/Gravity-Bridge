@@ -153,3 +153,5 @@ replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alp
 replace github.com/gogo/grpc => google.golang.org/grpc v1.33.2
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
+
+replace github.com/cosmos/cosmos-sdk => github.com/althea-net/cosmos-sdk v0.45.6-checkhalteveryblock

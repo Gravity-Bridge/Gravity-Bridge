@@ -6,6 +6,10 @@ TEST_TYPE=$2
 ALCHEMY_ID=$3
 set -eux
 
+if [[ $TEST_TYPE == *"INVARIANTS_HALT_CHAIN"* ]];  then
+    export FAILING_INVARIANT="set" # Set the variable, which will be checked with [[ -z ]]
+fi
+
 # Stop any currently running gravity and eth processes
 pkill gravityd || true # allowed to fail
 pkill geth || true # allowed to fail

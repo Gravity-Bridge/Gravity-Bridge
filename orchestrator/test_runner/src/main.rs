@@ -15,6 +15,7 @@ use crate::ethereum_keys::ethereum_keys_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::invalid_events::invalid_events;
+use crate::invariants_halt_chain::invariants_halt_chain;
 use crate::pause_bridge::pause_bridge_test;
 use crate::signature_slashing::signature_slashing_test;
 use crate::slashing_delegation::slashing_delegation_test;
@@ -56,6 +57,7 @@ mod happy_path_v2;
 mod ibc_auto_forward;
 mod ibc_metadata;
 mod invalid_events;
+mod invariants_halt_chain;
 mod orch_keys;
 mod orch_only;
 mod pause_bridge;
@@ -501,6 +503,9 @@ pub async fn main() {
                 erc20_addresses,
             )
             .await;
+            return;
+        } else if test_type == "INVARIANTS_HALT_CHAIN" {
+            invariants_halt_chain(&contact, keys).await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;

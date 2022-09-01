@@ -5,6 +5,10 @@ TEST_TYPE=$2
 ALCHEMY_ID=$3
 set -eux
 
+if [[ $TEST_TYPE == *"INVARIANTS_HALT_CHAIN"* ]];  then
+    export FAILING_INVARIANT="set" # Set the variable, which will be checked later
+done
+
 bash /gravity/tests/container-scripts/setup-validators.sh $NODES
 bash /gravity/tests/container-scripts/setup-ibc-validators.sh $NODES
 bash /gravity/tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE $ALCHEMY_ID &
