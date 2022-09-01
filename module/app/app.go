@@ -276,9 +276,9 @@ type Gravity struct {
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
 	ScopedIBCKeeper           *capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper      *capabilitykeeper.ScopedKeeper
-	ScopedICAHostKeeper       *capabilitykeeper.ScopedKeeper
-	ScopedICAControllerKeeper *capabilitykeeper.ScopedKeeper
 	ScopedICAAuthKeeper       *capabilitykeeper.ScopedKeeper
+	ScopedICAControllerKeeper *capabilitykeeper.ScopedKeeper
+	ScopedICAHostKeeper       *capabilitykeeper.ScopedKeeper
 
 	// Module Manager
 	mm *module.Manager
@@ -543,20 +543,6 @@ func NewGravityApp(
 	)
 	app.bech32IbcKeeper = &bech32IbcKeeper
 
-	gravityKeeper := keeper.NewKeeper(
-		keys[gravitytypes.StoreKey],
-		app.GetSubspace(gravitytypes.ModuleName),
-		appCodec,
-		&bankKeeper,
-		&stakingKeeper,
-		&slashingKeeper,
-		&distrKeeper,
-		&accountKeeper,
-		&ibcTransferKeeper,
-		&bech32IbcKeeper,
-	)
-	app.gravityKeeper = &gravityKeeper
-
 	// ibc
 	icaHostKeeper := icahostkeeper.NewKeeper(
 		appCodec, app.keys[icahosttypes.StoreKey],
@@ -593,6 +579,20 @@ func NewGravityApp(
 	icaControllerIBCModule := icacontroller.NewIBCModule(icaControllerKeeper, icaAuthIBCModule)
 
 	icaHostIBCModule := icahost.NewIBCModule(*app.ICAHostKeeper)
+
+	gravityKeeper := keeper.NewKeeper(
+		keys[gravitytypes.StoreKey],
+		app.GetSubspace(gravitytypes.ModuleName),
+		appCodec,
+		&bankKeeper,
+		&stakingKeeper,
+		&slashingKeeper,
+		&distrKeeper,
+		&accountKeeper,
+		&ibcTransferKeeper,
+		&bech32IbcKeeper,
+	)
+	app.gravityKeeper = &gravityKeeper
 
 	// Add the staking hooks from distribution, slashing, and gravity to staking
 	stakingKeeper.SetHooks(

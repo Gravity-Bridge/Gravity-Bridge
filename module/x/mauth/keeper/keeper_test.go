@@ -7,15 +7,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/simapp"
 
-	"github.com/stretchr/testify/suite"
-	"github.com/tendermint/tendermint/crypto"
-
+	icaapp "github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	ibctesting "github.com/cosmos/ibc-go/v3/testing"
-
-	icaapp "github.com/Gravity-Bridge/Gravity-Bridge/module/app"
+	"github.com/stretchr/testify/suite"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 )
 
 var (
@@ -45,14 +45,10 @@ func fauxMerkleModeOpt(bapp *baseapp.BaseApp) {
 }
 
 func SetupICATestingApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
-	//db := dbm.NewMemDB()
-	_, db, _, logger, _, _ := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
+	db := dbm.NewMemDB()
 
-	defer func() {
-		db.Close()
-	}()
 	app := icaapp.NewGravityApp(
-		logger, db, nil, true, map[int64]bool{},
+		log.NewNopLogger(), db, nil, true, map[int64]bool{},
 		icaapp.DefaultNodeHome, icaapp.FlagPeriodValue, icaapp.MakeEncodingConfig(),
 		simapp.EmptyAppOptions{}, fauxMerkleModeOpt)
 	// TODO: figure out if it's ok that w MakeEncodingConfig inside of our Genesis.go. It would be a different instance than the one used in app
