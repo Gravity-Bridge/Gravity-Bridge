@@ -1,0 +1,6 @@
+syntax = "proto3";
+package orbit.v1;
+option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/orbit/types";
+
+// Msg defines the state transitions possible within orbit
+service Msg {}

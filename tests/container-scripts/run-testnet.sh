@@ -50,10 +50,11 @@ do
         CRISIS_CONFIG="--x-crisis-skip-assert-invariants --x-crisis-verify-halts-node"
     else
         # Invariants are not expected to fail, run them every block
-        INVARIANTS_CHECK="--inv-check-period 1"
+        CRISIS_CONFIG="--inv-check-period 1"
     fi
+    INTEGRATION_TEST_MODE="--UNSAFE-TEST-MODE-NEVER-USE-IN-PROD-this-flag-is-extra-long-to-discourage-you-from-typing-it-seriously-do-not-use-this-flag-on-your-mainnet-node-it-can-cause-some-significant-issues-for-you"
     ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $GRPC_WEB_ADDRESS $LOG_LEVEL $P2P_ADDRESS"
-    START_ARGS="$INVARIANTS_CHECK"
+    START_ARGS="$CRISIS_CONFIG $INTEGRATION_TEST_MODE"
     $BIN $ARGS start $START_ARGS &> /validator$i/logs &
 done
 
