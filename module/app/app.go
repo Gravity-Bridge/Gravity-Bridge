@@ -110,9 +110,9 @@ import (
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
 
 	//ica auth
-	icaauth "github.com/Gravity-Bridge/Gravity-Bridge/module/x/mauth"
-	icaauthkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/mauth/keeper"
-	icaauthtypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/mauth/types"
+	icaauth "github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth"
+	icaauthkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/keeper"
+	icaauthtypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
 
 	// Osmosis-Labs Bech32-IBC
 	"github.com/osmosis-labs/bech32-ibc/x/bech32ibc"
