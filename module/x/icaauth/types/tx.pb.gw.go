@@ -242,9 +242,9 @@ func RegisterMsgHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 }
 
 var (
-	pattern_Msg_RegisterAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"mauth", "v1beta1", "register-account"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_RegisterAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"icaauth", "v1", "register-account"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Msg_SubmitTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"mauth", "v1beta1", "submit-tx"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_SubmitTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"icaauth", "v1", "submit-tx"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
