@@ -1,4 +1,4 @@
-package mauth
+package icaauth
 
 import (
 	"encoding/json"
