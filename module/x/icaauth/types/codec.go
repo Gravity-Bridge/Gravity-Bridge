@@ -10,8 +10,8 @@ import (
 )
 
 func RegisterCodec(cdc *codec.LegacyAmino) {
-	//	cdc.RegisterConcrete(MsgRegister{}, "icaauth/MsgRegister", nil)
-	//	cdc.RegisterConcrete(MsgSend{}, "icaauth/MsgSend", nil)
+	cdc.RegisterConcrete(&MsgRegisterAccount{}, "icaauth/MsgRegisterAccount", nil)
+	cdc.RegisterConcrete(&MsgSubmitTx{}, "icaauth/MsgSubmitTx", nil)
 }
 
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
