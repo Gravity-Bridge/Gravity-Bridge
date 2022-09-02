@@ -64,6 +64,9 @@ issues:
       linters:
         - exhaustruct
         - errcheck
+    - path: x/orbit
+      linters:
+        - unused
 
   golint:
     # minimal confidence for issues, default is 0.8

@@ -144,6 +144,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 func addModuleInitFlags(startCmd *cobra.Command) {
 	crisis.AddModuleInitFlags(startCmd)
+	app.AddChainInitFlags(startCmd)
 }
 
 func queryCommand() *cobra.Command {

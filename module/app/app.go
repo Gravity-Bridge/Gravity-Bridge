@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
+	"github.com/spf13/cobra"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -115,6 +116,10 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+
+	orbit "github.com/Gravity-Bridge/Gravity-Bridge/module/x/orbit"
+	orbitkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/orbit/keeper"
+	orbittypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/orbit/types"
 )
 
 const appName = "app"
@@ -127,7 +132,7 @@ var (
 	// non-dependant module elements, such as codec registration
 	// and genesis verification.
 
-	ModuleBasics = module.NewBasicManager(
+	appModBasics = []module.AppModuleBasic{
 		auth.AppModuleBasic{},
 		authzmodule.AppModuleBasic{},
 		genutil.AppModuleBasic{},
@@ -154,7 +159,8 @@ var (
 		vesting.AppModuleBasic{},
 		gravity.AppModuleBasic{},
 		bech32ibc.AppModuleBasic{},
-	)
+	}
+	ModuleBasics = module.NewBasicManager(appModBasics...)
 
 	// module account permissions
 	// NOTE: We believe that this is giving various modules access to functions of the supply module? We will probably need to use this.
@@ -180,6 +186,8 @@ var (
 
 	// enable checks that run on the first BeginBlocker execution after an upgrade/genesis init/node restart
 	firstBlock sync.Once
+
+	integrationTestWarningMessage = "!!! This node is in Integration Test Mode, this is unsafe for a mainnet node! If you are running your validator and seeing this message, something has gone wrong and you should reach out for help in the Discord! !!!"
 )
 
 // MakeCodec creates the application codec. The codec is sealed before it is
@@ -241,6 +249,10 @@ type Gravity struct {
 
 	// configurator
 	configurator *module.Configurator
+
+	// INTEGRATION TEST ENVIRONMENT ONLY
+	IntegrationTestMode bool
+	OrbitKeeper         *orbitkeeper.Keeper
 }
 
 // ValidateMembers checks for nil members
@@ -317,6 +329,11 @@ func (app Gravity) ValidateMembers() {
 	if app.sm == nil {
 		panic("Nil ModuleManager!")
 	}
+
+	// Check that orbit does not accidentally become configured
+	if app.OrbitKeeper != nil && !app.IntegrationTestMode {
+		panic("The chain is NOT in IntegrationTestMode but Orbit module was initialized!")
+	}
 }
 
 func init() {
@@ -333,6 +350,10 @@ func NewGravityApp(
 	homePath string, invCheckPeriod uint, encodingConfig gravityparams.EncodingConfig,
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp),
 ) *Gravity {
+	integrationTestMode := cast.ToBool(appOpts.Get(IntegrationTestModeFlag))
+	if integrationTestMode {
+		appModBasics = append(appModBasics, orbit.AppModuleBasic{})
+	}
 	appCodec := encodingConfig.Marshaler
 	legacyAmino := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
@@ -363,6 +384,13 @@ func NewGravityApp(
 		keys:              keys,
 		tKeys:             tKeys,
 		memKeys:           memKeys,
+	}
+	if integrationTestMode {
+		app.IntegrationTestMode = true
+		// Warn the validator their node is in integration test mode, with a vengance
+		for i := 0; i < 25; i++ {
+			logger.Error(integrationTestWarningMessage)
+		}
 	}
 
 	paramsKeeper := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tKeys[paramstypes.TStoreKey])
@@ -487,6 +515,21 @@ func NewGravityApp(
 	)
 	app.gravityKeeper = &gravityKeeper
 
+	orbitKeeper := orbitkeeper.NewKeeper(
+		keys[gravitytypes.StoreKey],
+		app.GetSubspace(gravitytypes.ModuleName),
+		appCodec,
+		&bankKeeper,
+		&stakingKeeper,
+		&slashingKeeper,
+		&distrKeeper,
+		&accountKeeper,
+		&ibcTransferKeeper,
+		&bech32IbcKeeper,
+		&gravityKeeper,
+	)
+	app.OrbitKeeper = &orbitKeeper
+
 	// Add the staking hooks from distribution, slashing, and gravity to staking
 	stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(
@@ -554,7 +597,7 @@ func NewGravityApp(
 
 	app.registerStoreLoaders()
 
-	mm := *module.NewManager(
+	mmMods := []module.AppModule{
 		genutil.NewAppModule(
 			accountKeeper,
 			stakingKeeper,
@@ -633,11 +676,19 @@ func NewGravityApp(
 			appCodec,
 			bech32IbcKeeper,
 		),
-	)
+	}
+	if app.IntegrationTestMode {
+		mmMods = append([]module.AppModule{orbit.NewAppModule(
+			&orbitKeeper, &bankKeeper, &gravityKeeper, &ibcTransferKeeper, &ibcKeeper, &accountKeeper, &authzKeeper,
+			&capabilityKeeper, &govKeeper, &mintKeeper, &slashingKeeper, &distrKeeper, &stakingKeeper, &upgradeKeeper,
+			&evidenceKeeper, &paramsKeeper, &bech32IbcKeeper,
+		)}, mmMods...)
+	}
+	mm := *module.NewManager(mmMods...)
 	app.mm = &mm
 
 	// NOTE: capability module's BeginBlocker must come before any modules using capabilities (e.g. IBC)
-	mm.SetOrderBeginBlockers(
+	mmBeginBlockers := []string{
 		upgradetypes.ModuleName,
 		capabilitytypes.ModuleName,
 		minttypes.ModuleName,
@@ -657,8 +708,15 @@ func NewGravityApp(
 		authz.ModuleName,
 		govtypes.ModuleName,
 		paramstypes.ModuleName,
-	)
-	mm.SetOrderEndBlockers(
+	}
+	if app.IntegrationTestMode {
+		// Add orbit to the end of the Begin Blockers
+		mmBeginBlockers = append(mmBeginBlockers, orbittypes.ModuleName)
+	}
+
+	mm.SetOrderBeginBlockers(mmBeginBlockers...)
+
+	mmEndBlockers := []string{
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
@@ -678,8 +736,14 @@ func NewGravityApp(
 		genutiltypes.ModuleName,
 		authz.ModuleName,
 		paramstypes.ModuleName,
-	)
-	mm.SetOrderInitGenesis(
+	}
+	if app.IntegrationTestMode {
+		// Add orbit to the end of the End Blockers
+		mmEndBlockers = append(mmEndBlockers, orbittypes.ModuleName)
+	}
+	mm.SetOrderEndBlockers(mmEndBlockers...)
+
+	mmInitGen := []string{
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
@@ -699,7 +763,11 @@ func NewGravityApp(
 		crisistypes.ModuleName,
 		vestingtypes.ModuleName,
 		paramstypes.ModuleName,
-	)
+	}
+	if app.IntegrationTestMode {
+		mmInitGen = append(mmInitGen, orbittypes.ModuleName)
+	}
+	mm.SetOrderInitGenesis(mmInitGen...)
 
 	mm.RegisterInvariants(&crisisKeeper)
 	mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
@@ -781,6 +849,24 @@ func (app *Gravity) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 		app.firstBeginBlocker(ctx)
 	})
 
+	// Potentially halt the node if integration test mode is active
+	if app.OrbitKeeper != nil && !app.IntegrationTestMode {
+		panic("The chain is NOT in Integration Test Mode but Orbit module was initialized!")
+	}
+
+	// Runtime test mode checks to prevent running a node in Integration Test Mode on mainnet
+	if app.IntegrationTestMode {
+		// Our tests should take less than 50k blocks to run, and mainnet is already way past block 50k
+		height := ctx.BlockHeight()
+		if height >= 50000 {
+			panic("The Integration Test mode block height limit has been reached! If you are running your validator for mainnet then it has been misconfigured! Reach out on the discord for help!")
+		}
+
+		// Print the integration test warning message regularly in case the validator missed the many printed at the start
+		if height%25 == 0 {
+			ctx.Logger().Error(integrationTestWarningMessage)
+		}
+	}
 	return out
 }
 
@@ -984,4 +1070,14 @@ func (app *Gravity) registerStoreLoaders() {
 			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 		}
 	}
+}
+
+// FLAGS
+
+// IntegrationTestModeFlag sets the chain up for additional integration testing, which is a very dangerous mode to be so NEVER USE ON MAINNET
+const IntegrationTestModeFlag = "UNSAFE-TEST-MODE-NEVER-USE-IN-PROD-this-flag-is-extra-long-to-discourage-you-from-typing-it-seriously-do-not-use-this-flag-on-your-mainnet-node-it-can-cause-some-significant-issues-for-you"
+
+// AddChainInitFlags adds start commands specific to this chain
+func AddChainInitFlags(startCmd *cobra.Command) {
+	startCmd.Flags().Bool(IntegrationTestModeFlag, false, "Sets the chain to an unsafe test mode **DO NOT USE THIS FLAG FOR YOUR MAINNET NODE!!!**")
 }
