@@ -66,16 +66,6 @@ func getRegisterAccountCmd() *cobra.Command {
 	return cmd
 }
 
-//	cmd.Flags().AddFlagSet(fsConnectionPair)
-//
-//	_ = cmd.MarkFlagRequired(FlagConnectionID)
-//	_ = cmd.MarkFlagRequired(FlagCounterpartyConnectionID)
-//
-//	flags.AddTxFlagsToCmd(cmd)
-//
-//	return cmd
-//}
-
 func getSubmitTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "submit-tx [path/to/sdk_msg.json]",
