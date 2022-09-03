@@ -76,10 +76,10 @@ message NonExistenceProof {
     ExistenceProof right = 3;
 }
 
-/*
-CommitmentProof is either an ExistenceProof or a NonExistenceProof, or a Batch of such messages
-*/
+
+// CommitmentProof is either an ExistenceProof or a NonExistenceProof, or a Batch of such messages
 message CommitmentProof {
+  // proof
     oneof proof {
         ExistenceProof exist = 1;
         NonExistenceProof nonexist = 2;
@@ -183,6 +183,7 @@ message BatchProof {
 
 // Use BatchEntry not CommitmentProof, to avoid recursion
 message BatchEntry {
+  // proof
   oneof proof {
     ExistenceProof exist = 1;
     NonExistenceProof nonexist = 2;
@@ -199,6 +200,7 @@ message CompressedBatchProof {
 
 // Use BatchEntry not CommitmentProof, to avoid recursion
 message CompressedBatchEntry {
+  // proof
   oneof proof {
     CompressedExistenceProof exist = 1;
     CompressedNonExistenceProof nonexist = 2;
