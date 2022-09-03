@@ -34,6 +34,7 @@ func GetICAUpgradeHandler(
 		controllerParams := icacontrollertypes.Params{ControllerEnabled: true}
 
 		// create ICS27 Host submodule params
+		// nolint: exhaustruct
 		hostParams := icahosttypes.Params{
 			HostEnabled: true,
 			AllowMessages: []string{

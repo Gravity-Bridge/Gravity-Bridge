@@ -51,6 +51,7 @@ func SetupICATestingApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
 		log.NewNopLogger(), db, nil, true, map[int64]bool{},
 		icaapp.DefaultNodeHome, icaapp.FlagPeriodValue, icaapp.MakeEncodingConfig(),
 		simapp.EmptyAppOptions{}, fauxMerkleModeOpt)
+
 	// TODO: figure out if it's ok that w MakeEncodingConfig inside of our Genesis.go. It would be a different instance than the one used in app
 	return app, icaapp.NewDefaultGenesisState()
 }

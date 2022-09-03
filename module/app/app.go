@@ -99,7 +99,7 @@ import (
 	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 
-	//  ica
+	// ica
 	ica "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts"
 	icacontroller "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/controller"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/controller/keeper"
@@ -109,7 +109,7 @@ import (
 	icahosttypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
 
-	//ica auth
+	// ica auth
 	icaauth "github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth"
 	icaauthkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/keeper"
 	icaauthtypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
@@ -220,7 +220,7 @@ func (app *Gravity) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
 }
 
 func (app *Gravity) GetTxConfig() client.TxConfig {
-	return app.GetTxConfig()
+	return nil
 }
 
 // MakeCodec creates the application codec. The codec is sealed before it is
