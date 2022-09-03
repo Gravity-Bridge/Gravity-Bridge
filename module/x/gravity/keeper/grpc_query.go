@@ -2,12 +2,14 @@ package keeper
 
 import (
 	"context"
-	"strings"
-
+	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"strings"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -22,6 +24,7 @@ var _ types.QueryServer = Keeper{
 	AttestationHandler: nil,
 }
 
+const MERCURY_UPGRADE_HEIGHT uint64 = 1282013
 const QUERY_ATTESTATIONS_LIMIT uint64 = 1000
 
 // Params queries the params of the gravity module
@@ -307,12 +310,87 @@ func (k Keeper) ERC20ToDenom(
 	return &ret, nil
 }
 
+// GetLastObservedEthBlock queries the LastObservedEthereumBlockHeight
+func (k Keeper) GetLastObservedEthBlock(
+	c context.Context,
+	req *types.QueryLastObservedEthBlockRequest,
+) (*types.QueryLastObservedEthBlockResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	// Use the old locator pre-Mercury, when the keys changed to hashed strings
+	var locator func(ctx sdk.Context) types.LastObservedEthereumBlockHeight
+	if req.UseV1Key {
+		locator = k.GetOldLastObservedEthereumBlockHeight
+	} else {
+		locator = k.GetLastObservedEthereumBlockHeight
+	}
+
+	ethHeight := locator(ctx)
+
+	return &types.QueryLastObservedEthBlockResponse{Block: ethHeight.EthereumBlockHeight}, nil
+}
+
+func (k Keeper) GetOldLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastObservedEthereumBlockHeight {
+	store := ctx.KVStore(k.storeKey)
+	bytes := store.Get([]byte(v1.LastObservedEthereumBlockHeightKey))
+
+	if len(bytes) == 0 {
+		return types.LastObservedEthereumBlockHeight{
+			CosmosBlockHeight:   0,
+			EthereumBlockHeight: 0,
+		}
+	}
+	height := types.LastObservedEthereumBlockHeight{
+		CosmosBlockHeight:   0,
+		EthereumBlockHeight: 0,
+	}
+	k.cdc.MustUnmarshal(bytes, &height)
+	return height
+}
+
+// GetLastObservedEthNonce queries the LastObservedEventNonce
+func (k Keeper) GetLastObservedEthNonce(
+	c context.Context,
+	req *types.QueryLastObservedEthNonceRequest,
+) (*types.QueryLastObservedEthNonceResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	// Use the old locator pre-Mercury, when the keys changed to hashed strings
+	var locator func(ctx sdk.Context) uint64
+	if req.UseV1Key {
+		locator = k.GetOldLastObservedEventNonce
+	} else {
+		locator = k.GetLastObservedEventNonce
+	}
+	nonce := locator(ctx)
+
+	return &types.QueryLastObservedEthNonceResponse{Nonce: nonce}, nil
+}
+
+func (k Keeper) GetOldLastObservedEventNonce(ctx sdk.Context) uint64 {
+	store := ctx.KVStore(k.storeKey)
+	bytes := store.Get([]byte(v1.LastObservedEventNonceKey))
+
+	if len(bytes) == 0 {
+		return 0
+	}
+	return types.UInt64FromBytes(bytes)
+}
+
 // GetAttestations queries the attestation map
 func (k Keeper) GetAttestations(
 	c context.Context,
 	req *types.QueryAttestationsRequest,
 ) (*types.QueryAttestationsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	// Use the old iterator pre-Mercury, when the keys changed to hashed strings
+	var iterator func(ctx sdk.Context, reverse bool, cb func([]byte, types.Attestation) bool)
+	if req.UseV1Key {
+		iterator = k.IterateOldAttestations
+	} else {
+		iterator = k.IterateAttestations
+	}
 
 	limit := req.Limit
 	if limit == 0 || limit > QUERY_ATTESTATIONS_LIMIT {
@@ -328,7 +406,7 @@ func (k Keeper) GetAttestations(
 	reverse := strings.EqualFold(req.OrderBy, "desc")
 	filter := req.Height > 0 || req.Nonce > 0 || req.ClaimType != ""
 
-	k.IterateAttestations(ctx, reverse, func(_ []byte, att types.Attestation) (abort bool) {
+	iterator(ctx, reverse, func(_ []byte, att types.Attestation) (abort bool) {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
 			iterErr = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
@@ -370,6 +448,41 @@ func (k Keeper) GetAttestations(
 	}
 
 	return &types.QueryAttestationsResponse{Attestations: attestations}, nil
+}
+
+// This is the pre-Mercury Attestation iterator, which used an old prefix
+func (k Keeper) IterateOldAttestations(ctx sdk.Context, reverse bool, cb func([]byte, types.Attestation) bool) {
+	store := ctx.KVStore(k.storeKey)
+	prefix := v1.OracleAttestationKey
+
+	var iter storetypes.Iterator
+	if reverse {
+		iter = store.ReverseIterator(prefixRange([]byte(prefix)))
+	} else {
+		iter = store.Iterator(prefixRange([]byte(prefix)))
+	}
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		att := types.Attestation{
+			Observed: false,
+			Votes:    []string{},
+			Height:   0,
+			Claim: &codectypes.Any{
+				TypeUrl:              "",
+				Value:                []byte{},
+				XXX_NoUnkeyedLiteral: struct{}{},
+				XXX_unrecognized:     []byte{},
+				XXX_sizecache:        0,
+			},
+		}
+		k.cdc.MustUnmarshal(iter.Value(), &att)
+
+		// cb returns true to stop early
+		if cb(iter.Key(), att) {
+			return
+		}
+	}
 }
 
 func (k Keeper) GetDelegateKeyByValidator(
@@ -443,21 +556,21 @@ func (k Keeper) GetPendingSendToEth(
 	req *types.QueryPendingSendToEth) (*types.QueryPendingSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	batches := k.GetOutgoingTxBatches(ctx)
-	unbatched_tx := k.GetUnbatchedTransactions(ctx)
-	sender_address := req.GetSenderAddress()
+	unbatchedTxs := k.GetUnbatchedTransactions(ctx)
+	senderAddress := req.GetSenderAddress()
 	res := types.QueryPendingSendToEthResponse{
 		TransfersInBatches: []types.OutgoingTransferTx{},
 		UnbatchedTransfers: []types.OutgoingTransferTx{},
 	}
 	for _, batch := range batches {
 		for _, tx := range batch.Transactions {
-			if tx.Sender.String() == sender_address {
+			if senderAddress == "" || tx.Sender.String() == senderAddress {
 				res.TransfersInBatches = append(res.TransfersInBatches, tx.ToExternal())
 			}
 		}
 	}
-	for _, tx := range unbatched_tx {
-		if tx.Sender.String() == sender_address {
+	for _, tx := range unbatchedTxs {
+		if senderAddress == "" || tx.Sender.String() == senderAddress {
 			res.UnbatchedTransfers = append(res.UnbatchedTransfers, tx.ToExternal())
 		}
 	}

@@ -72,7 +72,7 @@ pub async fn ibc_auto_forward_test(
         .expect("Could not connect ibc-transfer query client");
 
     // Wait for the ibc channel to be created and find the channel ids
-    let channel_id_timeout = Duration::from_secs(60);
+    let channel_id_timeout = Duration::from_secs(60 * 5);
     let gravity_channel_id = get_channel_id(
         gravity_channel_qc,
         get_ibc_chain_id(),
@@ -93,7 +93,7 @@ pub async fn ibc_auto_forward_test(
         None,
         None,
         gravity_channel_id.clone(),
-        Duration::from_secs(60 * 3),
+        Duration::from_secs(60 * 5),
     )
     .await;
 
@@ -307,11 +307,12 @@ pub async fn get_channel_id(
             .channels(QueryChannelsRequest { pagination: None })
             .await;
         if channels.is_err() {
-            delay_for(Duration::from_secs(10)).await;
+            delay_for(Duration::from_secs(5)).await;
             continue;
         }
         let channels = channels.unwrap().into_inner().channels;
         for channel in channels {
+            // Make an IBC Channel ClientState request with port=transfer channel=channel.channel_id
             let client_state_res = ibc_channel_qc
                 .channel_client_state(QueryChannelClientStateRequest {
                     port_id: "transfer".to_string(),
@@ -335,6 +336,7 @@ pub async fn get_channel_id(
             }
             let client_state_any = client_state.unwrap().client_state.unwrap();
 
+            // Check to see if this client state contains foreign_chain_id (e.g. "cavity-1")
             let client_state = decode_any::<ClientState>(client_state_any).unwrap();
             if client_state.chain_id == foreign_chain_id {
                 return Ok(channel.channel_id);

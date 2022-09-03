@@ -16,7 +16,7 @@ const OutgoingTxBatchSize = 100
 // BuildOutgoingTXBatch starts the following process chain:
 // - find bridged denominator for given voucher type
 // - determine if an unexecuted batch is already waiting for this token type, if so confirm the new batch would
-//   have a higher total fees. If not exit without creating a batch
+// have a higher total fees. If not exit without creating a batch
 // - select available transactions from the outgoing transaction pool sorted by fee desc
 // - persist an outgoing batch object with an incrementing ID = nonce
 // - emit an event
@@ -104,10 +104,13 @@ func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context) uint64 {
 // OutgoingTxBatchExecuted is run when the Cosmos chain detects that a batch has been executed on Ethereum
 // It frees all the transactions in the batch, then cancels all earlier batches, this function panics instead
 // of returning errors because any failure will cause a double spend.
-func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.EthAddress, nonce uint64) {
-	b := k.GetOutgoingTXBatch(ctx, tokenContract, nonce)
+func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.EthAddress, claim types.MsgBatchSendToEthClaim) {
+	b := k.GetOutgoingTXBatch(ctx, tokenContract, claim.BatchNonce)
+	if b.BatchTimeout <= claim.BlockHeight {
+		panic(fmt.Sprintf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", claim.BatchNonce, claim.BlockHeight, b.BatchTimeout))
+	}
 	if b == nil {
-		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract.GetAddress().Hex(), nonce))
+		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract.GetAddress().Hex(), claim.BatchNonce))
 	}
 	contract := b.TokenContract
 	// Burn tokens if they're Ethereum originated
@@ -133,7 +136,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 		if iter_batch.BatchNonce < b.BatchNonce && iter_batch.TokenContract.GetAddress() == tokenContract.GetAddress() {
 			err := k.CancelOutgoingTXBatch(ctx, tokenContract, iter_batch.BatchNonce)
 			if err != nil {
-				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s", tokenContract.GetAddress().Hex(), iter_batch.BatchNonce, tokenContract.GetAddress().Hex(), nonce, err))
+				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s", tokenContract.GetAddress().Hex(), iter_batch.BatchNonce, tokenContract.GetAddress().Hex(), claim.BatchNonce, err))
 			}
 		}
 		return false

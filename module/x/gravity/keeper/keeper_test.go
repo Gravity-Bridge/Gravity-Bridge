@@ -13,7 +13,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestPrefixRange(t *testing.T) {
 	cases := map[string]struct {
 		src      []byte
@@ -48,7 +48,7 @@ func TestPrefixRange(t *testing.T) {
 }
 
 // Test that valset creation produces the expected normalized power values
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestCurrentValsetNormalization(t *testing.T) {
 	// Setup the overflow test
 	maxPower64 := make([]uint64, 64)             // users with max power (approx 2^63)
@@ -101,7 +101,7 @@ func TestCurrentValsetNormalization(t *testing.T) {
 	}
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestAttestationIterator(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -150,7 +150,7 @@ func TestAttestationIterator(t *testing.T) {
 	require.Len(t, atts, 2)
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestDelegateKeys(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -194,7 +194,7 @@ func TestDelegateKeys(t *testing.T) {
 
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestLastSlashedValsetNonce(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -218,7 +218,7 @@ func TestLastSlashedValsetNonce(t *testing.T) {
 	latestValset := k.GetLatestValset(ctx)
 	assert.Equal(t, uint64(i-1), latestValset.Nonce)
 
-	//  lastSlashedValsetNonce should be zero initially.
+	// lastSlashedValsetNonce should be zero initially.
 	lastSlashedValsetNonce := k.GetLastSlashedValsetNonce(ctx)
 	assert.Equal(t, lastSlashedValsetNonce, uint64(0))
 	unslashedValsets := k.GetUnSlashedValsets(ctx, uint64(12))

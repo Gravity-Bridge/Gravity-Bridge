@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestAirdropProposal(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -104,7 +104,7 @@ func TestAirdropProposal(t *testing.T) {
 	input.AssertInvariants()
 }
 
-//nolint: exhaustruct
+// nolint: exhaustruct
 func TestIBCMetadataProposal(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()

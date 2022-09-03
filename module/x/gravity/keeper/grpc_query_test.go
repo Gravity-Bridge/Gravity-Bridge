@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	gocontext "context"
+	"fmt"
 	"testing"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
@@ -18,6 +19,10 @@ func TestQueryGetAttestations(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	k := input.GravityKeeper
 	ctx := input.Context
+
+	// Some query functions use additional logic to determine if they should look up values using the v1 key, or the new
+	// hashed bytes keys used post-Mercury, so we must set the block height high enough here for the correct data to be found
+	ctx = ctx.WithBlockHeight(int64(keeper.MERCURY_UPGRADE_HEIGHT) + ctx.BlockHeight())
 
 	queryHelper := baseapp.NewQueryServerTestHelper(ctx, encCfg.InterfaceRegistry)
 	types.RegisterQueryServer(queryHelper, k)
@@ -152,4 +157,9 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 
 		k.SetAttestation(ctx, nonce, hash, att)
 	}
+}
+
+func TestClaimTypesTest(t *testing.T) {
+	claim := types.MsgSendToCosmosClaim{}
+	fmt.Println("Claim Type:", claim.Type())
 }

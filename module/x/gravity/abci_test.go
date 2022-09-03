@@ -54,7 +54,7 @@ func TestValsetCreationUponUnbonding(t *testing.T) {
 }
 
 func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
-	//	Don't slash validators if valset is created before he is bonded.
+	// Don't slash validators if valset is created before he is bonded.
 
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -211,7 +211,7 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T) {
 	//	Slashing Conditions for Unbonding Validator
 
-	//  Create 5 validators
+	// Create 5 validators
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -478,7 +478,7 @@ func TestValsetSetting(t *testing.T) {
 	require.True(t, len(valsets) == 1)
 }
 
-/// Test batch timeout
+// Test batch timeout
 func TestBatchTimeout(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()

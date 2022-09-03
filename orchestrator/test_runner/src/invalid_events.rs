@@ -186,6 +186,14 @@ fn get_erc20_test_values() -> Vec<Erc20Params> {
         decimals: 255,
     });
 
+    let blank = String::new().as_bytes().to_vec();
+    test_strings.push(Erc20Params {
+        erc20_symbol: blank.clone(),
+        erc20_name: blank.clone(),
+        cosmos_denom: blank,
+        decimals: 6,
+    });
+
     // move into testing long but valid utf8
     // a very long, but valid utf8 string
     let rand_string: String = thread_rng()

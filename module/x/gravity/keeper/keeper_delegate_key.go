@@ -12,9 +12,9 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-/////////////////////////////
-//    ADDRESS DELEGATION   //
-/////////////////////////////
+///////////////////////////
+//// ADDRESS DELEGATION ///
+///////////////////////////
 
 // SetOrchestratorValidator sets the Orchestrator key for a given validator
 func (k Keeper) SetOrchestratorValidator(ctx sdk.Context, val sdk.ValAddress, orch sdk.AccAddress) {
@@ -127,7 +127,7 @@ func (k Keeper) GetOrchestratorValidatorAddr(ctx sdk.Context, orch sdk.AccAddres
 }
 
 /////////////////////////////
-//       ETH ADDRESS       //
+// ETH ADDRESS       //
 /////////////////////////////
 
 // SetEthAddress sets the ethereum address for a given validator

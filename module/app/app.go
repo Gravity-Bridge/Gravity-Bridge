@@ -413,7 +413,7 @@ func NewGravityApp(
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	//nolint: exhaustruct
+	// nolint: exhaustruct
 	var app = &Gravity{
 		BaseApp:           &bApp,
 		legacyAmino:       legacyAmino,

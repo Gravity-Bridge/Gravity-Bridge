@@ -135,7 +135,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	}
 
 	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
-		return nil, sdkerrors.Wrap(err, "destination address is invalid or blacklisted")
+		return nil, sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted")
 	}
 
 	txID, err := k.AddToOutgoingPool(ctx, sender, *dest, msg.Amount, msg.BridgeFee)
@@ -398,16 +398,48 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not check orchestrator validator")
 	}
-	any, err := codectypes.NewAnyWithValue(msg)
+
+	/* Perform some additional checks on the input to determine if it is valid before allowing it on the chain
+	   Note that because of the gas meter we must avoid calls which consume gas, like fetching data from the keeper
+	*/
+	additionalPatchChecks(ctx, k, msg)
+
+	msgAny, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "Could not check Any value")
+		panic(sdkerrors.Wrap(err, "Could not check Any value"))
 	}
-	err = k.claimHandlerCommon(ctx, any, msg)
+
+	err = k.claimHandlerCommon(ctx, msgAny, msg)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.MsgBatchSendToEthClaimResponse{}, nil
+}
+
+// Performs additional checks on msg to determine if it is valid
+func additionalPatchChecks(ctx sdk.Context, k msgServer, msg *types.MsgBatchSendToEthClaim) {
+	contractAddress, err := types.NewEthAddress(msg.TokenContract)
+
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "Invalid TokenContract on MsgBatchSendToEthClaim"))
+	}
+
+	// Replicate the following but without using a gas meter:
+	// b := k.GetOutgoingTXBatch(ctx, *contractAddress, msg.BatchNonce)
+	store := ctx.MultiStore().GetKVStore(k.storeKey)
+	key := types.GetOutgoingTxBatchKey(*contractAddress, msg.BatchNonce)
+	if !store.Has(key) {
+		// Batch deleted, just add the vote to the stored attestation
+		return
+	}
+	bz := store.Get(key)
+	var b types.OutgoingTxBatch
+	k.cdc.MustUnmarshal(bz, &b)
+
+	if b.BatchTimeout <= msg.BlockHeight {
+		panic(fmt.Errorf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", msg.BatchNonce, msg.BlockHeight, b.BatchTimeout))
+	}
 }
 
 // ERC20Deployed handles MsgERC20Deployed

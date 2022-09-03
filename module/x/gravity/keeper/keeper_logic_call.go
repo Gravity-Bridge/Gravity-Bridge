@@ -10,9 +10,9 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-/////////////////////////////
-//       LOGICCALLS        //
-/////////////////////////////
+////////////////////
+//// LOGICCALLS ////
+////////////////////
 
 // GetOutgoingLogicCall gets an outgoing logic call
 func (k Keeper) GetOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, invalidationNonce uint64) *types.OutgoingLogicCall {
@@ -97,7 +97,7 @@ func (k Keeper) CancelOutgoingLogicCall(ctx sdk.Context, invalidationId []byte, 
 }
 
 /////////////////////////////
-//       LOGICCONFIRMS     //
+// LOGICCONFIRMS     //
 /////////////////////////////
 
 // SetLogicCallConfirm sets a logic confirm in the store

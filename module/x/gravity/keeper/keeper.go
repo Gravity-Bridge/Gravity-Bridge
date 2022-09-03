@@ -117,9 +117,9 @@ func NewKeeper(
 	return k
 }
 
-/////////////////////////////
-//       HELPERS           //
-/////////////////////////////
+////////////////////////
+/////// HELPERS ////////
+////////////////////////
 
 // SendToCommunityPool handles incorrect SendToCosmos calls to the community pool, since the calls
 // have already been made on Ethereum there's nothing we can do to reverse them, and we should at least
@@ -135,7 +135,7 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 }
 
 /////////////////////////////
-//       PARAMETERS        //
+//////// PARAMETERS /////////
 /////////////////////////////
 
 // GetParams returns the parameters from the store
@@ -298,7 +298,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 }
 
 /////////////////////////////
-//   Logic Call Slashing   //
+//// Logic Call Slashing ////
 /////////////////////////////
 
 // SetLastSlashedLogicCallBlock returns true if the last slashed logic call block
@@ -343,7 +343,7 @@ func (k Keeper) GetUnSlashedLogicCalls(ctx sdk.Context, maxHeight uint64) (out [
 }
 
 /////////////////////////////
-//       Parameters        //
+//////// Parameters /////////
 /////////////////////////////
 
 // prefixRange turns a prefix into a (start, end) range. The start is the given prefix value and

@@ -22,7 +22,8 @@ import (
 
 var testMbm = module.NewBasicManager(genutil.AppModuleBasic{})
 
-//nolint: exhaustruct
+// TestAddGenesisAccountCmd tests adding a genesis account
+// nolint: exhaustruct
 func TestAddGenesisAccountCmd(t *testing.T) {
 	_, _, addr1 := testdata.KeyTestPubAddr()
 	tests := []struct {

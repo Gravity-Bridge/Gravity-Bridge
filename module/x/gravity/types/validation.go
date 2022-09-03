@@ -15,7 +15,7 @@ import (
 )
 
 //////////////////////////////////////
-//      BRIDGE VALIDATOR(S)         //
+/////// BRIDGE VALIDATOR(S) //////////
 //////////////////////////////////////
 
 // ToInternal transforms a BridgeValidator into its fully validated internal type
@@ -198,7 +198,7 @@ func (b InternalBridgeValidators) ValidateBasic() error {
 }
 
 //////////////////////////////////////
-//             VALSETS              //
+// VALSETS              //
 //////////////////////////////////////
 
 // NewValset returns a new valset
