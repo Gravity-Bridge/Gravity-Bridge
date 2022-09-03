@@ -22,19 +22,18 @@ func GetICAUpgradeHandler(
 	if mm == nil {
 		panic("Nil argument to GetICAUpgradeHandler")
 	}
-	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+	return func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
 		ctx.Logger().Info("ICA upgrade: Enter handler")
 		// We previously upgraded via genesis, thus we don't want to run upgrades for all the modules
-		fromVM := make(map[string]uint64)
 		ctx.Logger().Info("ICA upgrade: Creating version map")
 
 		// Set Initial Consensus Version
 		fromVM[icatypes.ModuleName] = mm.Modules[icatypes.ModuleName].ConsensusVersion()
+
 		// create ICS27 Controller submodule params
-		//nolint: exhaustruct
 		controllerParams := icacontrollertypes.Params{ControllerEnabled: true}
+
 		// create ICS27 Host submodule params
-		//nolint: exhaustruct
 		hostParams := icahosttypes.Params{
 			HostEnabled: true,
 			AllowMessages: []string{
@@ -52,10 +51,12 @@ func GetICAUpgradeHandler(
 				sdk.MsgTypeURL(&govtypes.MsgVote{}),
 			},
 		}
+
 		icamodule, ok := mm.Modules[icatypes.ModuleName].(ica.AppModule)
 		if !ok {
 			panic("Module is not of type ica.AppModule")
 		}
+
 		// initialize ICS27 module
 		icamodule.InitModule(ctx, controllerParams, hostParams)
 		return mm.RunMigrations(ctx, *configurator, fromVM)
