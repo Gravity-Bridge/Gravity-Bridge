@@ -64,7 +64,8 @@ func TestMigrateAttestation(t *testing.T) {
 	require.NoError(t, err)
 	attestationOldKey := v2.GetAttestationKey(nonce, oldClaimHash)
 
-	store.Set(attestationOldKey, marshaler.MustMarshal(dummyAttestation))
+	msgBytes := marshaler.MustMarshal(dummyAttestation)
+	store.Set(attestationOldKey, msgBytes)
 
 	// Run migrations
 	err = MigrateStore(ctx, gravityKey, marshaler)
@@ -75,6 +76,7 @@ func TestMigrateAttestation(t *testing.T) {
 	// Check migration results:
 	require.Empty(t, oldKeyEntry)
 	require.NotEqual(t, oldKeyEntry, newKeyEntry)
+	require.Equal(t, newKeyEntry, msgBytes)
 	require.NotEqual(t, newKeyEntry, []byte(""))
 	require.NotEmpty(t, newKeyEntry)
 }
