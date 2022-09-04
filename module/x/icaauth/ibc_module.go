@@ -61,7 +61,7 @@ func (im IBCModule) OnChanOpenTry(
 	counterpartyVersion string,
 ) (version string, err error) {
 	// https://github.com/cosmos/ibc-go/blob/v3.0.0/docs/apps/interchain-accounts/auth-modules.md#ibcmodule-implementation
-	return "", sdkerrors.Wrap(icatypes.ErrInvalidChannelFlow, "channel handshake must be initiated by controller chain")
+	return icatypes.Version, sdkerrors.Wrap(icatypes.ErrInvalidChannelFlow, "channel handshake must be initiated by controller chain")
 }
 
 // OnChanOpenAck implements the IBCModule interface
