@@ -27,6 +27,8 @@ lint:
     - gogoproto
     - cosmos_proto
     - google
+    - ibc
+    - ics23
 breaking:
   use:
     - FILE
