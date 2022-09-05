@@ -31,7 +31,7 @@ pub struct MsgRegisterAccountResponse {
 }
 
 // MsgSubmitTx defines the payload for Msg/SubmitTx
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgSubmitTx {
     #[prost(string, tag="1")]
     pub owner: ::prost::alloc::string::String,
