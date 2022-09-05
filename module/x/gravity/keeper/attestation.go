@@ -331,6 +331,10 @@ func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastOb
 // SetLastObservedEthereumBlockHeight sets the block height in the store.
 func (k Keeper) SetLastObservedEthereumBlockHeight(ctx sdk.Context, ethereumHeight uint64) {
 	store := ctx.KVStore(k.storeKey)
+	previous := k.GetLastObservedEthereumBlockHeight(ctx)
+	if previous.EthereumBlockHeight > ethereumHeight {
+		panic("Attempt to roll back Ethereum block height!")
+	}
 	height := types.LastObservedEthereumBlockHeight{
 		EthereumBlockHeight: ethereumHeight,
 		CosmosBlockHeight:   uint64(ctx.BlockHeight()),
@@ -369,6 +373,13 @@ func (k Keeper) SetLastObservedValset(ctx sdk.Context, valset types.Valset) {
 // setLastObservedEventNonce sets the latest observed event nonce
 func (k Keeper) setLastObservedEventNonce(ctx sdk.Context, nonce uint64) {
 	store := ctx.KVStore(k.storeKey)
+	last := k.GetLastObservedEventNonce(ctx)
+	// event nonce must increase, unless it's zero at which point allow zero to be set
+	// as many times as needed (genesis test setup etc)
+	zeroCase := last == 0 && nonce == 0
+	if last >= nonce && !zeroCase {
+		panic("Event nonce going backwards or replay!")
+	}
 	store.Set(types.LastObservedEventNonceKey, types.UInt64Bytes(nonce))
 }
 

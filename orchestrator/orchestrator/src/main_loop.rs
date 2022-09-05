@@ -36,11 +36,21 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
+/// The total terminal difficulty for "The Merge" where Ethereum becomes PoS
+pub const ETH_MERGE_TTD: u128 = 58750000000000000000000u128;
+/// Computed to be about 48 hours before the merge, at this height we will pause
+/// the Gravity oracle
+pub const ETH_GRAV_HALT_TTD: u128 = 58591842390178918929502u128;
+/// An the approximate change to TDD in an hour as computed Sep 4
+/// 100% garunteed to be somewhat inaccurate
+pub const APPROX_TDD_PER_HOUR: f64 = 3294950204605855635.0;
 /// The execution speed governing all loops in this file
 /// which is to say all loops started by Orchestrator main
 /// loop except the relayer loop
 pub const ETH_SIGNER_LOOP_SPEED: Duration = Duration::from_secs(11);
 pub const ETH_ORACLE_LOOP_SPEED: Duration = Duration::from_secs(13);
+/// Run the oracle loop slower while waiting for the merge
+pub const ETH_ORACLE_WAITING_SPEED: Duration = Duration::from_secs(90);
 
 /// This loop combines the three major roles required to make
 /// up the 'Orchestrator', all three of these are async loops
@@ -108,6 +118,8 @@ pub async fn eth_oracle_main_loop(
     gravity_contract_address: EthAddress,
     fee: Coin,
 ) {
+    let merge_terminal_total_difficulty: Uint256 = ETH_MERGE_TTD.into();
+    let grav_oracle_halt_total_difficulty: Uint256 = ETH_GRAV_HALT_TTD.into();
     let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
     let long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
     let block_delay = get_block_delay(&web3).await;
@@ -132,7 +144,7 @@ pub async fn eth_oracle_main_loop(
         let latest_eth_block = web3.eth_block_number().await;
         let latest_cosmos_block = contact.get_chain_status().await;
 
-        match (latest_eth_block, latest_cosmos_block) {
+        match (&latest_eth_block, latest_cosmos_block) {
             (Ok(latest_eth_block), Ok(ChainStatus::Moving { block_height })) => {
                 trace!(
                     "Latest Eth block {} Latest Cosmos block {}",
@@ -176,6 +188,39 @@ pub async fn eth_oracle_main_loop(
                 delay_for(DELAY).await;
                 continue;
             }
+        }
+
+        let latest_concise_block = web3
+            .eth_get_block_by_number(latest_eth_block.unwrap())
+            .await;
+        if let Ok(block) = latest_concise_block {
+            if block.total_difficulty >= grav_oracle_halt_total_difficulty {
+                info!("Total difficulty {}", block.total_difficulty);
+                // print some nice progress messages for users
+                if merge_terminal_total_difficulty >= block.total_difficulty {
+                    let estimated_remaining_difficulty =
+                        merge_terminal_total_difficulty.clone() - block.total_difficulty.clone();
+                    let estimated_remaining_difficulty: f64 =
+                        estimated_remaining_difficulty.to_string().parse().unwrap();
+                    let estimated_hours = estimated_remaining_difficulty / APPROX_TDD_PER_HOUR;
+
+                    info!("Orchestrator has detected ETH2 merge will occur within 48 hours oracle is now halted");
+                    info!(
+                        "Current TDD {} ETH2 Merge {} Estimated {:.2} hours until the merge",
+                        block.total_difficulty, ETH_MERGE_TTD, estimated_hours
+                    );
+                } else {
+                    info!("ETH2 Merge Complete! Please see Discord and Chain Governance for next steps to re-enable the bridge post merge!")
+                }
+
+                delay_for(ETH_ORACLE_WAITING_SPEED).await;
+                continue;
+            }
+        } else {
+            warn!("Unable to check terminal difficulty, not running oracle");
+
+            delay_for(ETH_ORACLE_WAITING_SPEED).await;
+            continue;
         }
 
         // if the governance vote reset last event nonce sent by validator to some lower value, we can detect this

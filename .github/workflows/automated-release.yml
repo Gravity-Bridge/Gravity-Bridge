@@ -174,10 +174,10 @@ jobs:
           UNATTENDED=yes OSX_VERSION_MIN=10.7 ./build.sh
           popd
           cd orchestrator
-          PATH="/tmp/osxcross/target/bin:$PATH" \
-          CC=o64-clang \
-          CXX=o64-clang++ \
-          LIBZ_SYS_STATIC=1 \
+          export PATH="/tmp/osxcross/target/bin:$PATH"
+          export CC=o64-clang
+          export CXX=o64-clang++
+          export LIBZ_SYS_STATIC=1
           cargo build --target x86_64-apple-darwin --release
 
       - name: Upload Gravity Bridge Tools Mac
