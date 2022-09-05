@@ -13,6 +13,7 @@ use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
+use crate::ica::ica_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
 use crate::signature_slashing::signature_slashing_test;
@@ -67,6 +68,7 @@ mod upgrade;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
+mod ica;
 
 /// the timeout for individual requests
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
@@ -180,7 +182,7 @@ pub fn should_deploy_contracts() -> bool {
     }
 }
 
-#[actix_rt::main]
+//#[actix_rt::main]
 pub async fn main() {
     env_logger::init();
     info!("Starting Gravity test-runner");
@@ -405,6 +407,15 @@ pub async fn main() {
         } else if test_type == "IBC_METADATA" {
             info!("Starting IBC metadata proposal test");
             ibc_metadata_proposal_test(gravity_address, keys, grpc_client, &contact, &web30).await;
+            return;
+        } else if test_type == "ICA_TEST" {
+            info!("Starting IBC metadata proposal test");
+            ica_test(
+                gravity_address,
+                keys, 
+                grpc_client, 
+                &contact, 
+                &web30).await;
             return;
         } else if test_type == "ERC721_HAPPY_PATH" {
             info!("Starting ERC 721 transfer test");
