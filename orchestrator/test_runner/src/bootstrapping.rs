@@ -323,11 +323,11 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
     }
 }
 
-// Create a channel between gravity chain and the ibc test chain over the "transfer" port
-// Writes the output to /ibc-relayer-logs/channel-creation
+// Create a connection between gravity chain and the ibc test chain
+// Writes the output to /ibc-relayer-logs/connection-creation
 pub fn create_ibc_connection(hermes_base: &mut Command) {
     // hermes -c config.toml create channel gravity-test-1 ibc-test-1 --port-a transfer --port-b transfer
-    let create_channel = hermes_base.args(&[
+    let create_connection = hermes_base.args(&[
         "create",
         "connection",
         &get_gravity_chain_id(),
@@ -336,16 +336,16 @@ pub fn create_ibc_connection(hermes_base: &mut Command) {
 
     let out_file = File::options()
         .write(true)
-        .open("/ibc-relayer-logs/channel-creation")
+        .open("/ibc-relayer-logs/connection-creation")
         .unwrap()
         .into_raw_fd();
     unsafe {
         // unsafe needed for stdout + stderr redirect to file
-        let create_channel = create_channel
+        let create_connection = create_connection
             .stdout(Stdio::from_raw_fd(out_file))
             .stderr(Stdio::from_raw_fd(out_file));
-        info!("Create channel command: {:?}", create_channel);
-        create_channel.spawn().expect("Could not create channel");
+        info!("Create connection command: {:?}", create_connection);
+        create_connection.spawn().expect("Could not create connection");
     }
 }
 
