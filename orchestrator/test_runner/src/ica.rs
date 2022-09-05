@@ -47,7 +47,7 @@ pub async fn ica_test(
     )
     .await
     .expect("Could not find gravity-test-1 counterparty connection id");
-    println!("{}{}", gravity_connection_id,gravity_counterparty_connection_id)
+    println!("connection_id: {} counterparty_connection_id {}", gravity_connection_id,gravity_counterparty_connection_id)
 }
 
 // Retrieves the channel connecting the chain behind `ibc_channel_qc` and the chain with id `foreign_chain_id`
