@@ -53,7 +53,7 @@ func RegisterUpgradeHandlers(
 		icav3.ICAPlanName,
 		icav3.GetICAUpgradeHandler(mm, configurator),
 	)
-	
+
 	// Pleiades aka v2->v3 UPGRADE HANDLER SETUP
 	upgradeKeeper.SetUpgradeHandler(
 		pleiades.PolarisToPleiadesPlanName,
