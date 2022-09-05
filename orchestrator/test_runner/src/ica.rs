@@ -25,9 +25,7 @@ pub async fn ica_test(
     ibc_keys: Vec<CosmosPrivateKey>,
     gravity_address: EthAddress,
 ) {
-    let no_relay_market_config = create_default_test_config();
-    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
-
+   
     let gravity_connection_qc = ConnectionQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
         .expect("Could not connect channel query client");

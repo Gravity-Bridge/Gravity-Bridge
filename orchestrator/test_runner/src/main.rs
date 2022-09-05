@@ -409,7 +409,7 @@ pub async fn main() {
             ibc_metadata_proposal_test(gravity_address, keys, grpc_client, &contact, &web30).await;
             return;
         } else if test_type == "ICA_TEST" {
-            info!("Starting IBC metadata proposal test");
+            info!("Starting ICA test");
             ica_test(
                 &web30,
                 grpc_client,
