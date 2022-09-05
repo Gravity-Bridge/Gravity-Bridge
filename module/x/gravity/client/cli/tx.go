@@ -115,11 +115,6 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				return err
 			}
 
-			exist := false
-			if res1.Metadata.Base != "" {
-				exist = true
-			}
-
 			queryClient := types.NewQueryClient(cliCtx)
 
 			req2 := &types.QueryDenomToERC20Request{
@@ -130,7 +125,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				return sdkerrors.Wrap(err, "invalid metadata")
 			}
 
-			if exist && res2.CosmosOriginated {
+			if res1.Metadata.Base != "" && res2.CosmosOriginated {
 				return sdkerrors.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
 			}
 
