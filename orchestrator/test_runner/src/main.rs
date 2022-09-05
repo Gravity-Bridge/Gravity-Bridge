@@ -182,7 +182,7 @@ pub fn should_deploy_contracts() -> bool {
     }
 }
 
-#[actix_rt::main]
+//#[actix_rt::main]
 pub async fn main() {
     env_logger::init();
     info!("Starting Gravity test-runner");
@@ -417,7 +417,7 @@ pub async fn main() {
                 keys,
                 ibc_keys,
                 gravity_address,
-                ).await;
+            ).await;
             return;
         } else if test_type == "ERC721_HAPPY_PATH" {
             info!("Starting ERC 721 transfer test");
