@@ -43,6 +43,7 @@ jobs:
         run: |
           cargo install cross
           cd orchestrator
+          cargo clean
           cross build --target x86_64-unknown-linux-musl --release
 
       # now that the code has built create the release and start uploading
@@ -119,6 +120,7 @@ jobs:
       - name: Build GBT ARM64
         run: |
           cd orchestrator
+          cargo clean
           cross build --target aarch64-unknown-linux-musl --release
 
       - name: Upload Gravity Bridge Tools ARM
@@ -135,6 +137,7 @@ jobs:
       - name: Build GBT Windows
         run: |
           cd orchestrator
+          cargo clean
           cross build --target x86_64-pc-windows-gnu --release
 
       - name: Upload Gravity Bridge Tools Windows
@@ -174,6 +177,7 @@ jobs:
           export CC=o64-clang
           export CXX=o64-clang++
           export LIBZ_SYS_STATIC=1
+          cargo clean
           cargo build --target x86_64-apple-darwin --release
 
       - name: Upload Gravity Bridge Tools Mac
