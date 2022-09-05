@@ -38,7 +38,7 @@ pub async fn ica_test(
     let ibc_connection_qc = ConnectionQueryClient::connect(IBC_NODE_GRPC.as_str())
         .await
         .expect("Could not connect ibc-transfer query client");
-
+    
     // Wait for the ibc channel to be created and find the connection ids
     let connection_id_timeout = Duration::from_secs(60 * 5);
     let connection_id = get_connection_id(
@@ -58,6 +58,7 @@ pub async fn ica_test(
         connection_id,
         counterparty_connection_id,
     );
+
     //create gravity&gaia interchain accounts
     let ok = create_interchain_account(
         contact,
@@ -160,10 +161,10 @@ pub async fn create_interchain_account(
     };
     info!("Submitting MsgRegisterAccount {:?}", msg_register_account_counter_chain);
 
-    let mut grpc_gravity = GravityMsgClient::connect(COSMOS_NODE_GRPC.as_str())
+    let mut grpc_counter_chain = GravityMsgClient::connect(IBC_NODE_GRPC.as_str())
     .await
     .expect("Can't create a channel");
-    let msg = grpc_gravity.register_account(msg_register_account_counter_chain)
+    let msg = grpc_counter_chain.register_account(msg_register_account_counter_chain)
     .await
     .expect("Could not create interchain account for gravity");
     info!("Sent MsgTransfer with response {:?}", msg);
