@@ -12,7 +12,6 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
-
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/icav3"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
@@ -53,7 +52,8 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		icav3.ICAPlanName,
 		icav3.GetICAUpgradeHandler(mm, configurator),
-
+	)
+	
 	// Pleiades aka v2->v3 UPGRADE HANDLER SETUP
 	upgradeKeeper.SetUpgradeHandler(
 		pleiades.PolarisToPleiadesPlanName,
