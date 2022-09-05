@@ -426,19 +426,14 @@ func additionalPatchChecks(ctx sdk.Context, k msgServer, msg *types.MsgBatchSend
 	}
 
 	// Replicate the following but without using a gas meter:
-	// b := k.GetOutgoingTXBatch(ctx, *contractAddress, msg.BatchNonce)
-	store := ctx.MultiStore().GetKVStore(k.storeKey)
-	key := types.GetOutgoingTxBatchKey(*contractAddress, msg.BatchNonce)
-	if !store.Has(key) {
+	b := k.GetOutgoingTXBatch(ctx, *contractAddress, msg.BatchNonce)
+	if b == nil {
 		// Batch deleted, just add the vote to the stored attestation
 		return
 	}
-	bz := store.Get(key)
-	var b types.OutgoingTxBatch
-	k.cdc.MustUnmarshal(bz, &b)
 
 	if b.BatchTimeout <= msg.EthBlockHeight {
-		panic(fmt.Errorf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", msg.BatchNonce, msg.EthBlockHeight, b.BatchTimeout))
+		panic(fmt.Errorf("batch with nonce %d submitted after it timed out (submission %d >= timeout %d)", msg.BatchNonce, msg.EthBlockHeight, b.BatchTimeout))
 	}
 }
 
