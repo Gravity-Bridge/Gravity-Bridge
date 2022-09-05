@@ -182,7 +182,7 @@ pub fn should_deploy_contracts() -> bool {
     }
 }
 
-//#[actix_rt::main]
+#[actix_rt::main]
 pub async fn main() {
     env_logger::init();
     info!("Starting Gravity test-runner");
