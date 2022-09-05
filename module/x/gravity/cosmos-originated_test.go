@@ -77,14 +77,14 @@ func addDenomToERC20Relation(tv *testingVars) {
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {
 		ethClaim := types.MsgERC20DeployedClaim{
-			EventNonce:    myNonce,
-			BlockHeight:   0,
-			CosmosDenom:   tv.denom,
-			TokenContract: tv.erc20,
-			Name:          "Graviton",
-			Symbol:        "GRAV",
-			Decimals:      6,
-			Orchestrator:  v.String(),
+			EventNonce:     myNonce,
+			EthBlockHeight: 0,
+			CosmosDenom:    tv.denom,
+			TokenContract:  tv.erc20,
+			Name:           "Graviton",
+			Symbol:         "GRAV",
+			Decimals:       6,
+			Orchestrator:   v.String(),
 		}
 		_, err := tv.h(tv.ctx, &ethClaim)
 		require.NoError(tv.t, err)
@@ -172,7 +172,7 @@ func acceptDepositEvent(tv *testingVars) {
 	for _, v := range keeper.OrchAddrs {
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     myNonce,
-			BlockHeight:    0,
+			EthBlockHeight: 0,
 			TokenContract:  myErc20.Contract,
 			Amount:         myErc20.Amount,
 			EthereumSender: anyETHAddr,
@@ -234,14 +234,14 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {
 		ethClaim := types.MsgERC20DeployedClaim{
-			EventNonce:    myNonce,
-			BlockHeight:   0,
-			CosmosDenom:   ibcDenom,
-			TokenContract: tokenContract,
-			Name:          "Atom",
-			Symbol:        "ATOM",
-			Decimals:      6,
-			Orchestrator:  v.String(),
+			EventNonce:     myNonce,
+			EthBlockHeight: 0,
+			CosmosDenom:    ibcDenom,
+			TokenContract:  tokenContract,
+			Name:           "Atom",
+			Symbol:         "ATOM",
+			Decimals:       6,
+			Orchestrator:   v.String(),
 		}
 		_, err := tv.h(tv.ctx, &ethClaim)
 		require.NoError(tv.t, err)

@@ -1,14 +1,34 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
-use crate::{ethereum_keys_test, happy_path_test, happy_path_test_v2, utils::*};
+use crate::{happy_path_test, happy_path_test_v2, utils::*};
 use clarity::Address as EthAddress;
+use cosmos_gravity::send::{
+    MSG_BATCH_SEND_TO_ETH_TYPE_URL, MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL,
+    MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL,
+    MSG_VALSET_UPDATED_CLAIM_TYPE_URL,
+};
 use deep_space::client::ChainStatus;
+use deep_space::utils::decode_any;
 use deep_space::{Contact, CosmosPrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::query_client::{QueryClient as GravityQueryClient, QueryClient};
+use gravity_proto::gravity::{
+    ClaimType, EthereumClaim, MsgBatchSendToEthClaim, MsgErc20DeployedClaim,
+    MsgLogicCallExecutedClaim, MsgSendToCosmosClaim, MsgValsetUpdatedClaim,
+    QueryAttestationsRequest,
+};
 use std::time::Duration;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+
+// The number of attestations run_all_recoverable_tests and run_upgrade_specific_tests should create
+const MINIMUM_ATTESTATIONS: u64 = 10;
+// Those attestations broken down by type
+const EXPECTED_SENDS_TO_COSMOS: u64 = 3;
+const EXPECTED_BATCHES: u64 = 2;
+const EXPECTED_ERC20S: u64 = 1;
+const EXPECTED_LOGIC_CALLS: u64 = 0;
+const MINIMUM_VALSETS: u64 = 4; // There may be more valsets depending on how long the test takes
 
 /// Perform a series of integration tests to seed the system with data, then submit and pass a chain
 /// upgrade proposal
@@ -45,7 +65,7 @@ pub async fn upgrade_part_1(
         contact,
         grpc_client.clone(),
         keys.clone(),
-        ibc_keys,
+        ibc_keys.clone(),
         gravity_address,
         erc20_addresses.clone(),
         false,
@@ -59,19 +79,22 @@ pub async fn upgrade_part_1(
         panic!("Chain is not moving!");
     };
     let upgrade_height = (curr_height + 40) as i64;
-    execute_upgrade_proposal(
-        contact,
-        &keys,
-        None,
-        UpgradeProposalParams {
-            upgrade_height,
-            plan_name: "polaris".to_string(),
-            plan_info: "polaris upgrade info here".to_string(),
-            proposal_title: "polaris upgrade proposal title here".to_string(),
-            proposal_desc: "polaris upgrade proposal description here".to_string(),
-        },
-    )
-    .await;
+    let upgrade_prop_params = UpgradeProposalParams {
+        upgrade_height,
+        plan_name: "pleiades".to_string(),
+        plan_info: "Pleiades upgrade info here".to_string(),
+        proposal_title: "Pleiades upgrade proposal title here".to_string(),
+        proposal_desc: "Pleiades upgrade proposal description here".to_string(),
+    };
+    info!(
+        "Starting upgrade vote with params name: {}, height: {}",
+        upgrade_prop_params.plan_name.clone(),
+        upgrade_height
+    );
+    execute_upgrade_proposal(contact, &keys, None, upgrade_prop_params).await;
+
+    // Check that the expected attestations exist
+    check_attestations(grpc_client.clone(), MINIMUM_ATTESTATIONS).await;
 
     info!(
         "Ready to run the new binary, waiting for chain panic at upgrade height of {}!",
@@ -104,6 +127,9 @@ pub async fn upgrade_part_2(
     erc20_addresses: Vec<EthAddress>,
 ) {
     info!("Starting upgrade_part_2 test");
+    // Check that the expected attestations exist
+    check_attestations(grpc_client.clone(), MINIMUM_ATTESTATIONS).await;
+
     let mut metadata: Option<Metadata> = None;
     {
         let all_metadata = contact.get_all_denoms_metadata().await.unwrap();
@@ -181,35 +207,129 @@ pub async fn run_all_recoverable_tests(
 // These tests should fail in upgrade_part_1() but pass in upgrade_part_2()
 #[allow(clippy::too_many_arguments)]
 pub async fn run_upgrade_specific_tests(
-    web30: &Web3,
-    contact: &Contact,
-    grpc_client: GravityQueryClient<Channel>,
-    keys: Vec<ValidatorKeys>,
-    ibc_keys: Vec<CosmosPrivateKey>,
-    gravity_address: EthAddress,
-    erc20_addresses: Vec<EthAddress>,
-    post_upgrade: bool,
+    _web30: &Web3,
+    _contact: &Contact,
+    _grpc_client: GravityQueryClient<Channel>,
+    _keys: Vec<ValidatorKeys>,
+    _ibc_keys: Vec<CosmosPrivateKey>,
+    _gravity_address: EthAddress,
+    _erc20_addresses: Vec<EthAddress>,
+    _post_upgrade: bool,
 ) {
-    let res = ethereum_keys_test(
-        web30,
-        grpc_client,
-        contact,
-        keys,
-        ibc_keys,
-        gravity_address,
-        erc20_addresses[0],
-    )
-    .await;
-    if !post_upgrade {
-        // Expect failure
-        assert!(!res);
-        info!("Ethereum keys are not supported before the upgrade, waiting for upgrade then testing again!");
-    } else {
-        // Expect success
-        assert!(
-            res,
-            "Ethereum keys are not supported after the upgrade, investigation needed!!"
-        );
-        info!("Successful Ethereum keys test after the upgrade!");
+    // TODO: Add a new test for Pleiades let res = new_test().await;
+    // if !post_upgrade {
+    //     // Expect failure
+    //     assert!(!res);
+    //     info!("Ethereum keys are not supported before the upgrade, waiting for upgrade then testing again!");
+    // } else {
+    //     // Expect success
+    //     assert!(
+    //         res,
+    //         "Ethereum keys are not supported after the upgrade, investigation needed!!"
+    //     );
+    //     info!("Successful Ethereum keys test after the upgrade!");
+    // }
+}
+
+/// Checks that the expected attestations are returned from the grpc endpoint
+async fn check_attestations(grpc_client: QueryClient<Channel>, expected_attestations: u64) {
+    info!("Checking attestations before the upgrade");
+    let mut grpc_client = grpc_client;
+    let attestations = grpc_client
+        .get_attestations(QueryAttestationsRequest {
+            limit: 0,
+            order_by: "desc".to_string(),
+            claim_type: "".to_string(),
+            nonce: 0,
+            height: 0,
+        })
+        .await
+        .expect("Failed to get attestations pre-upgrade")
+        .into_inner()
+        .attestations;
+    assert!(!attestations.is_empty());
+    assert!(attestations.len() >= expected_attestations as usize);
+    let mut claims: Vec<Box<dyn EthereumClaim>> = vec![];
+    for (i, att) in attestations.iter().enumerate() {
+        assert!(att.observed);
+        let claim_any = att
+            .claim
+            .clone()
+            .unwrap_or_else(|| panic!("Attestation {} had no claims!", i));
+        claims.push(unpack_and_print_claim_info(claim_any, i));
     }
+    let mut sends_to_cosmos = 0;
+    let mut batches = 0;
+    let mut erc20s_deployed = 0;
+    let mut logic_calls = 0;
+    let mut valsets_updated = 0;
+    for claim in claims {
+        match claim.get_type() {
+            ClaimType::Unspecified => panic!("Unexpected claim!"),
+            ClaimType::SendToCosmos => sends_to_cosmos += 1,
+            ClaimType::BatchSendToEth => batches += 1,
+            ClaimType::Erc20Deployed => erc20s_deployed += 1,
+            ClaimType::LogicCallExecuted => logic_calls += 1,
+            ClaimType::ValsetUpdated => valsets_updated += 1,
+        }
+    }
+    assert_eq!(sends_to_cosmos, EXPECTED_SENDS_TO_COSMOS);
+    assert_eq!(batches, EXPECTED_BATCHES);
+    assert_eq!(erc20s_deployed, EXPECTED_ERC20S);
+    assert_eq!(logic_calls, EXPECTED_LOGIC_CALLS);
+    assert!(valsets_updated >= MINIMUM_VALSETS); // New valsets can be created at any time, we want at least as many as we had
+}
+
+fn unpack_and_print_claim_info(claim_any: prost_types::Any, i: usize) -> Box<dyn EthereumClaim> {
+    let claim: Box<dyn EthereumClaim>;
+    if claim_any.type_url == MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL {
+        claim = Box::new(decode_any::<MsgSendToCosmosClaim>(claim_any).unwrap());
+        info!(
+            "Claim {} is {} at height {} with nonce {}",
+            i,
+            claim.get_type().to_string(),
+            claim.get_eth_block_height(),
+            claim.get_event_nonce()
+        )
+    } else if claim_any.type_url == MSG_BATCH_SEND_TO_ETH_TYPE_URL {
+        claim = Box::new(decode_any::<MsgBatchSendToEthClaim>(claim_any).unwrap());
+        info!(
+            "Claim {} is {} at height {} with nonce {}",
+            i,
+            claim.get_type().to_string(),
+            claim.get_eth_block_height(),
+            claim.get_event_nonce()
+        )
+    } else if claim_any.type_url == MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL {
+        claim = Box::new(decode_any::<MsgErc20DeployedClaim>(claim_any).unwrap());
+        info!(
+            "Claim {} is {} at height {} with nonce {}",
+            i,
+            claim.get_type().to_string(),
+            claim.get_eth_block_height(),
+            claim.get_event_nonce()
+        )
+    } else if claim_any.type_url == MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL {
+        claim = Box::new(decode_any::<MsgLogicCallExecutedClaim>(claim_any).unwrap());
+        info!(
+            "Claim {} is {} at height {} with nonce {}",
+            i,
+            claim.get_type().to_string(),
+            claim.get_eth_block_height(),
+            claim.get_event_nonce()
+        )
+    } else if claim_any.type_url == MSG_VALSET_UPDATED_CLAIM_TYPE_URL {
+        claim = Box::new(decode_any::<MsgValsetUpdatedClaim>(claim_any).unwrap());
+        info!(
+            "Claim {} is {} at height {} with nonce {}",
+            i,
+            claim.get_type().to_string(),
+            claim.get_eth_block_height(),
+            claim.get_event_nonce()
+        )
+    } else {
+        panic!("Unexpected claim type detected! {:?}", claim_any);
+    }
+
+    claim
 }

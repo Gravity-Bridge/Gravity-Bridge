@@ -135,7 +135,7 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 		nonce := uint64(1 + i)
 		msg := types.MsgSendToCosmosClaim{
 			EventNonce:     nonce,
-			BlockHeight:    1,
+			EthBlockHeight: 1,
 			TokenContract:  "0x00000000000000000001",
 			Amount:         sdk.NewInt(10000000000 + int64(i)),
 			EthereumSender: "0x00000000000000000002",

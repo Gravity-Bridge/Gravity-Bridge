@@ -383,7 +383,7 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
 
 			// Don't slash validators who joined after batch is created
-			startedBeforeBatchCreated := valSigningInfo.StartHeight < int64(batch.Block)
+			startedBeforeBatchCreated := valSigningInfo.StartHeight < int64(batch.EthBlock)
 			if exist && startedBeforeBatchCreated {
 				// check if validator confirmed the batch
 				_, found := confirms[val.GetOperator().String()]
@@ -405,7 +405,7 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 		}
 		// then we set the latest slashed batch block
-		k.SetLastSlashedBatchBlock(ctx, batch.Block)
+		k.SetLastSlashedBatchBlock(ctx, batch.EthBlock)
 	}
 }
 
@@ -461,7 +461,7 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				panic(err)
 			}
 			valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
-			startedBeforeCallCreated := valSigningInfo.StartHeight < int64(call.Block)
+			startedBeforeCallCreated := valSigningInfo.StartHeight < int64(call.EthBlock)
 			if exist && startedBeforeCallCreated {
 				// check that the validator confirmed the logic call
 				_, found := confirms[val.GetOperator().String()]
@@ -482,7 +482,7 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 		}
 		// then we set the latest slashed logic call block
-		k.SetLastSlashedLogicCallBlock(ctx, call.Block)
+		k.SetLastSlashedLogicCallBlock(ctx, call.EthBlock)
 	}
 }
 

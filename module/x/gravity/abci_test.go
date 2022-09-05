@@ -337,7 +337,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 		BatchTimeout:  0,
 		Transactions:  []types.OutgoingTransferTx{},
 		TokenContract: keeper.TokenContractAddrs[0],
-		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
+		EthBlock:      uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
 	pk.StoreBatch(ctx, *batch)
@@ -390,7 +390,7 @@ func TestBatchSlashing(t *testing.T) {
 		BatchTimeout:  0,
 		Transactions:  []types.OutgoingTransferTx{},
 		TokenContract: keeper.TokenContractAddrs[0],
-		Block:         uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
+		EthBlock:      uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
 	pk.StoreBatch(ctx, *batch)
@@ -408,7 +408,7 @@ func TestBatchSlashing(t *testing.T) {
 			valConsAddr, _ := validator.GetConsAddr()
 			valSigningInfo := slashingtypes.ValidatorSigningInfo{
 				Address:             "",
-				StartHeight:         int64(batch.Block + 1),
+				StartHeight:         int64(batch.EthBlock + 1),
 				IndexOffset:         0,
 				JailedUntil:         time.Time{},
 				Tombstoned:          false,
@@ -439,7 +439,7 @@ func TestBatchSlashing(t *testing.T) {
 
 	// Ensure that the last slashed valset nonce is set properly
 	lastSlashedBatchBlock := input.GravityKeeper.GetLastSlashedBatchBlock(ctx)
-	assert.Equal(t, lastSlashedBatchBlock, batch.Block)
+	assert.Equal(t, lastSlashedBatchBlock, batch.EthBlock)
 	assert.True(t, len(pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))) == 0)
 
 }

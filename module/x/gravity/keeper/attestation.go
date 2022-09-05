@@ -2,12 +2,13 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"sort"
-	"strconv"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -59,7 +60,7 @@ func (k Keeper) Attest(
 		panic(fmt.Sprintf("could not unpack stored attestation claim, %v", err))
 	}
 
-	if ethClaim.GetBlockHeight() == claim.GetBlockHeight() {
+	if ethClaim.GetEthBlockHeight() == claim.GetEthBlockHeight() {
 
 		// Add the validator's vote to this attestation
 		att.Votes = append(att.Votes, valAddr.String())
@@ -69,7 +70,7 @@ func (k Keeper) Attest(
 
 		return att, nil
 	} else {
-		return nil, fmt.Errorf("invalid height - this claim's height is %v while the stored height is %v", claim.GetBlockHeight(), ethClaim.GetBlockHeight())
+		return nil, fmt.Errorf("invalid height - this claim's height is %v while the stored height is %v", claim.GetEthBlockHeight(), ethClaim.GetEthBlockHeight())
 	}
 }
 
@@ -111,7 +112,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 					panic("attempting to apply events to state out of order")
 				}
 				k.setLastObservedEventNonce(ctx, claim.GetEventNonce())
-				k.SetLastObservedEthereumBlockHeight(ctx, claim.GetBlockHeight())
+				k.SetLastObservedEthereumBlockHeight(ctx, claim.GetEthBlockHeight())
 
 				att.Observed = true
 				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
@@ -243,7 +244,12 @@ func (k Keeper) IterateAttestations(ctx sdk.Context, reverse bool, cb func([]byt
 	} else {
 		iter = store.Iterator(prefixRange(prefix))
 	}
-	defer iter.Close()
+	defer func(iter storetypes.Iterator) {
+		err := iter.Close()
+		if err != nil {
+			panic("Unable to close attestation iterator!")
+		}
+	}(iter)
 
 	for ; iter.Valid(); iter.Next() {
 		att := types.Attestation{
@@ -306,7 +312,7 @@ func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context) uint64 {
 // the store
 func (k Keeper) GetLastObservedEthereumBlockHeight(ctx sdk.Context) types.LastObservedEthereumBlockHeight {
 	store := ctx.KVStore(k.storeKey)
-	bytes := store.Get([]byte(types.LastObservedEthereumBlockHeightKey))
+	bytes := store.Get(types.LastObservedEthereumBlockHeightKey)
 
 	if len(bytes) == 0 {
 		return types.LastObservedEthereumBlockHeight{

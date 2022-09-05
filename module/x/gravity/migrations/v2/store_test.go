@@ -230,7 +230,7 @@ func TestMigrateOutgoingTxBatches(t *testing.T) {
 		BatchTimeout:  0,
 		Transactions:  []types.OutgoingTransferTx{},
 		TokenContract: addr.GetAddress().Hex(),
-		Block:         123,
+		EthBlock:      123,
 	}
 	assert.NoError(t, err)
 
@@ -524,14 +524,14 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 		BatchTimeout:  0,
 		Transactions:  []types.OutgoingTransferTx{},
 		TokenContract: ethAddr.GetAddress().String(),
-		Block:         123,
+		EthBlock:      123,
 	}
 	dummyCornerCaseBatch := types.OutgoingTxBatch{
 		BatchNonce:    128,
 		BatchTimeout:  0,
 		Transactions:  []types.OutgoingTransferTx{},
 		TokenContract: ethAddr.GetAddress().String(),
-		Block:         123,
+		EthBlock:      123,
 	}
 
 	dummyValset := types.Valset{
@@ -577,7 +577,7 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 
 	msg := types.MsgSendToCosmosClaim{
 		EventNonce:     nonce,
-		BlockHeight:    1,
+		EthBlockHeight: 1,
 		TokenContract:  "0x00000000000000000001",
 		Amount:         sdk.NewInt(10000000000 + int64(1)),
 		EthereumSender: "0x00000000000000000002",
@@ -731,7 +731,7 @@ func TestMigrateInvalidStore(t *testing.T) {
 		BatchTimeout:  0,
 		Transactions:  []types.OutgoingTransferTx{},
 		TokenContract: invalidEthAddress,
-		Block:         123,
+		EthBlock:      123,
 	}
 	dummyValsetConfirm := types.MsgValsetConfirm{
 		Nonce:        1,
