@@ -31,6 +31,7 @@ set +e
 mkdir /ibc-relayer-logs
 touch /ibc-relayer-logs/hermes-logs
 touch /ibc-relayer-logs/channel-creation
+touch /ibc-relayer-logs/connection-creation
 set -e
 
 # deploy the ethereum contracts

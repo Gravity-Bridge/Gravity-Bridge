@@ -11,7 +11,8 @@ ADD https://github.com/gadost/gaia/releases/download/v7.0.0-ica-gravity-1/gaiad 
 # Setup Hermes for IBC connections between chains. >= 0.15.0 for ICA test
 ADD https://github.com/informalsystems/ibc-rs/releases/download/v0.15.0/hermes-v0.15.0-x86_64-unknown-linux-gnu.tar.gz /tmp/
 RUN cd /tmp/ && tar -xvf hermes-v0.15.0-x86_64-unknown-linux-gnu.tar.gz && mv hermes /usr/bin/
-RUN mkdir /ibc-relayer-logs && touch /ibc-relayer-logs/hermes-logs && touch /ibc-relayer-logs/channel-creation
+RUN mkdir /ibc-relayer-logs && touch /ibc-relayer-logs/hermes-logs && \
+touch /ibc-relayer-logs/channel-creation && touch /ibc-relayer-logs/connection-creation
 # the actual source code for this repo, this **only** includes checked in files!
 # this is a bit of a pain but it does speed things up a lot
 ADD gravity.tar.gz /
