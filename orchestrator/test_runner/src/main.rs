@@ -411,12 +411,9 @@ pub async fn main() {
         } else if test_type == "ICA_TEST" {
             info!("Starting ICA test");
             ica_test(
-                &web30,
-                grpc_client,
                 &contact,
                 keys,
                 ibc_keys,
-                gravity_address,
             ).await;
             return;
         } else if test_type == "ERC721_HAPPY_PATH" {

@@ -868,6 +868,45 @@ pub mod msg_client {
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
+
+        /// Register defines a rpc handler for MsgRegisterAccount
+        pub async fn register_account(
+            &mut self,
+            request: impl tonic::IntoRequest<super::MsgRegisterAccount>,
+        ) -> Result<tonic::Response<super::MsgRegisterAccountResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/icaauth.v1.Msg/RegisterAccount",
+            );
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+        /// SubmitTx defines a rpc handler for MsgSubmitTx
+        pub async fn submit_tx(
+            &mut self,
+            request: impl tonic::IntoRequest<super::MsgSubmitTx>,
+        ) -> Result<tonic::Response<super::MsgSubmitTxResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/icaauth.v1.Msg/SubmitTx");
+            self.inner.unary(request.into_request(), path, codec).await
+        }
     }
 }
 /// Attestation is an aggregate of `claims` that eventually becomes `observed` by
@@ -2126,6 +2165,32 @@ pub mod query_client {
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/gravity.v1.Query/GetPendingIbcAutoForwards",
+            );
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+
+        /// QueryInterchainAccountFromAddress returns the interchain account for given owner address on a given connection pair
+        pub async fn interchain_account_from_address(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::QueryInterchainAccountFromAddressRequest,
+            >,
+        ) -> Result<
+                tonic::Response<super::QueryInterchainAccountFromAddressResponse>,
+                tonic::Status,
+            > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/icaauth.v1.Query/InterchainAccountFromAddress",
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
