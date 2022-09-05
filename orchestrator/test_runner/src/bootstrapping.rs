@@ -326,7 +326,7 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
 // Create a connection between gravity chain and the ibc test chain
 // Writes the output to /ibc-relayer-logs/connection-creation
 pub fn create_ibc_connection(hermes_base: &mut Command) {
-    // hermes -c config.toml create channel gravity-test-1 ibc-test-1 --port-a transfer --port-b transfer
+    // hermes -c config.toml create connection gravity-test-1 ibc-test-1
     let create_connection = hermes_base.args(&[
         "create",
         "connection",

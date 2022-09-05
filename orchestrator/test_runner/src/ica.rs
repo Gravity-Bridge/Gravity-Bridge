@@ -16,7 +16,14 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
-// Test Interchain accounts host / controller. Create , Send , Delegate
+/// Test Interchain accounts host / controller. Create , Send , Delegate
+/// Plan is 
+/// 1. get connection_id , counterparty_connection_id 
+/// 2. register interchain account gravity -> ibc 
+/// 3. check account registered
+/// 4. send some stake tokens
+/// 5. delegate 
+/// 6. repeat 1-5 for ibc -> gravity
 pub async fn ica_test(
     web30: &Web3,
     gravity_client: GravityQueryClient<Channel>,
