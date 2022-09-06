@@ -10,34 +10,39 @@ use deep_space::{Msg,Contact};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::QueryAllBalancesRequest;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::QueryClient as ConnectionQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
+use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::{
+    QueryInterchainAccountFromAddressRequest, MsgRegisterAccount, MsgSubmitTx,
+};
+use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+use gravity_utils::connection_prep::create_rpc_connections;
 use std::time::Instant;
 use std::time::Duration;
 use cosmos_gravity::send::TIMEOUT;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
-use gravity_proto::gravity::{
-    QueryInterchainAccountFromAddressRequest, MsgRegisterAccount, MsgSubmitTx,
-};
-use gravity_utils::connection_prep::create_rpc_connections;
-use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
 use anyhow::{Context, Result};
 use prost::Message;
 use prost_types::Any;
 
-/// Trait to serialize/deserialize types to and from `prost_types::Any`
+pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAccount";
+pub const MSG_SEND_TOKENS_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
+pub const MSG_SUBMIT_TX_URL: &str = "/icaauth.v1.MsgSubmitTx";
+pub const STAKIN_DELEGATE_TYPE_URL: &str = "/cosmos.staking.v1beta1.MsgDelegate";
+
+// Trait to serialize/deserialize types to and from `prost_types::Any`
 pub trait AnyConvert: Sized {
-    /// Deserialize value from `prost_types::Any`
+    // Deserialize value from `prost_types::Any`
     fn from_any(value: &Any) -> Result<Self>;
 
-    /// Serialize value to `prost_types::Any`
+    // Serialize value to `prost_types::Any`
     fn to_any(&self) -> Result<Any>;
 }
 
-/// Encodes a message into protobuf
+// Encodes a message into protobuf
 pub fn proto_encode<M: Message>(message: &M) -> Result<Vec<u8>> {
     let mut buf = Vec::with_capacity(message.encoded_len());
     message
@@ -45,8 +50,6 @@ pub fn proto_encode<M: Message>(message: &M) -> Result<Vec<u8>> {
         .context("unable to encode protobuf message")?;
     Ok(buf)
 }
-
-
     
 impl AnyConvert for MsgDelegate {
         fn from_any(value: &::prost_types::Any) -> ::anyhow::Result<Self> {
@@ -67,14 +70,6 @@ impl AnyConvert for MsgDelegate {
         })
     }
 }
-
-
-
-pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAccount";
-pub const MSG_SEND_TOKENS_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
-pub const MSG_SUBMIT_TX_URL: &str = "/icaauth.v1.MsgSubmitTx";
-pub const STAKIN_DELEGATE_TYPE_URL: &str = "/cosmos.staking.v1beta1.MsgDelegate";
-
 
 /// Test Interchain accounts host / controller. Create , Send , Delegate
 /// Plan is 
@@ -199,7 +194,9 @@ pub async fn ica_test(
     };
     info!("Tokens sent!");
     
-    info!("Check balances..");
+    info!("Waith 25 seconds and check balances..");
+    delay_for(Duration::from_secs(25)).await;
+    
     let cosmos_qc = CosmosQueryClient::connect(COSMOS_NODE_GRPC.as_str())
     .await
     .expect("Could not connect channel query client");
@@ -434,8 +431,10 @@ pub async fn get_interchain_account_balance(
             delay_for(Duration::from_secs(5)).await;
             continue;
         }
-        return Ok(balance.unwrap().into_inner().balances[0].amount.clone());
-        
+        let balance = balance.unwrap().into_inner().balances;
+        for b in balance {
+            return Ok(b.amount);
+        }    
     }
     Err(CosmosGrpcError::BadResponse("Can't get interchain account".to_string()))
 }
