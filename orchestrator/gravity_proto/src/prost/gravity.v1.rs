@@ -885,7 +885,7 @@ pub mod msg_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/icaauth.v1.Msg/RegisterAccount",
+                "/icaauth.v1.MsgRegisterAccount",
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
@@ -904,7 +904,7 @@ pub mod msg_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/icaauth.v1.Msg/SubmitTx");
+            let path = http::uri::PathAndQuery::from_static("/icaauth.v1.MsgSubmitTx");
             self.inner.unary(request.into_request(), path, codec).await
         }
     }
