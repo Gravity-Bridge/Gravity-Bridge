@@ -297,7 +297,7 @@ pub async fn ica_test(
 
     let amount_delegated_to_counterchain_validator = check_delegatinons(
         ibc_keys[0],
-        ADDRESS_PREFIX.to_string(),
+        IBC_ADDRESS_PREFIX.to_string(),
         gravity_account.clone(),
         cpc_staking_qc,
         Some(timeout),
