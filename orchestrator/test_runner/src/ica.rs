@@ -556,9 +556,10 @@ pub async fn check_delegatinons(
     };
 
     let valoper_prefix = prefix + "valoper";
-
+    info!("valoper address: {}",validator_key.to_address(&valoper_prefix).unwrap().to_string());
     let start = Instant::now();
     while Instant::now() - start < timeout {
+        delay_for(Duration::from_secs(5)).await;
         let delegators = qc
             .validator_delegations(
                 QueryValidatorDelegationsRequest { 
@@ -569,7 +570,6 @@ pub async fn check_delegatinons(
                 }
             )
             .await;
-        info!("{:?}",delegators);
         if delegators.is_err() {
             delay_for(Duration::from_secs(5)).await;
             continue;
@@ -580,6 +580,7 @@ pub async fn check_delegatinons(
         .delegation_responses;
         for b in delegators {
             if b.delegation.clone().unwrap().delegator_address == delegator_address {
+                info!("{:?}",b);
                 delay_for(Duration::from_secs(5)).await;
                 return Ok(b.delegation.clone().unwrap().shares);
             }
