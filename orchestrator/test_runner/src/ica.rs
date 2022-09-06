@@ -1,7 +1,7 @@
 use crate::utils::*;
 use crate::OPERATION_TIMEOUT;
 use crate::{
-    COSMOS_NODE_GRPC, IBC_NODE_GRPC, IBC_ADDRESS_PREFIX,
+    COSMOS_NODE_GRPC, IBC_NODE_GRPC, IBC_ADDRESS_PREFIX, STAKING_TOKEN,
 };
 use deep_space::error::CosmosGrpcError;
 use deep_space::PrivateKey;
@@ -10,6 +10,7 @@ use deep_space::{Msg,Contact};
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::QueryClient as ConnectionQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use std::time::Instant;
 use std::time::Duration;
 use cosmos_gravity::send::TIMEOUT;
@@ -19,9 +20,10 @@ use gravity_proto::gravity::{
     QueryInterchainAccountFromAddressRequest, MsgRegisterAccount,
 };
 use gravity_utils::connection_prep::create_rpc_connections;
-
+use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
 
 pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAccount";
+pub const MSG_SEND_TOKENS_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
 
 /// Test Interchain accounts host / controller. Create , Send , Delegate
 /// Plan is 
@@ -80,47 +82,72 @@ pub async fn ica_test(
         counterparty_connection_id,
     )
     .await;
-    if !ok.is_err() {
-        info!("Accounts registered");
-        let timeout = Duration::from_secs(60 * 5);
+    if ok.is_err() {}
+
+    info!("Accounts registered");
+    let timeout = Duration::from_secs(60 * 5);
 
         // gravity query client
-        let qc = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
-        .await
-        .expect("Could not connect channel query client");
+    let qc = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+    .await
+    .expect("Could not connect channel query client");
 
         // send tx
-        let grav_account = get_interchain_account(
-            contact,
-            keys[0].validator_key,
-            qc,
-            Some(timeout),
-            connection_id.clone(),
-        )
-        .await
-        .expect("Account for gravity not created or something went wrong");
+    let grav_account = get_interchain_account(
+        contact,
+        keys[0].validator_key,
+        qc,
+        Some(timeout),
+        connection_id.clone(),
+    )
+    .await
+    .expect("Account for gravity not created or something went wrong");
 
-        // counterparty query client
-        let ccqc = GravityQueryClient::connect(IBC_NODE_GRPC.as_str())
-        .await
-        .expect("Could not connect counterparty channel query client");
+    // counterparty query client
+    let ccqc = GravityQueryClient::connect(IBC_NODE_GRPC.as_str())
+    .await
+    .expect("Could not connect counterparty channel query client");
 
-        // send tx
-        let counterchain_account = get_interchain_account(
-            &counter_chain_contact,
-            ibc_keys[0],
-            ccqc,
-            Some(timeout),
-            connection_id.clone(),
-        )
-        .await
-        .expect("Account for counterparty chain not created or something went wrong");
+    // send tx
+    let counterchain_account = get_interchain_account(
+        &counter_chain_contact,
+        ibc_keys[0],
+        ccqc,
+        Some(timeout),
+        connection_id.clone(),
+    )
+    .await
+    .expect("Account for counterparty chain not created or something went wrong");
 
-        info!("gravity interchain account: {} , counterchain interchain account: {}",
-        grav_account, 
+    info!("gravity interchain account: {} , counterchain interchain account: {}",
+    grav_account, 
+    counterchain_account,
+    );
+    
+    // send in gravity chain
+    let ok = send_tokens_to_interchain_account(
+        contact,
+        keys[0].validator_key,
         counterchain_account,
-        )
-    }
+    )
+    .await;
+    if ok.is_err() {
+        error!("Gravity chain response error {:?}",ok.err())
+    };
+    info!("Tokens sent!");
+
+    // send in counterparty chain
+    let ok = send_tokens_to_interchain_account(
+        &counter_chain_contact,
+        ibc_keys[0],
+        grav_account,
+    )
+    .await;
+    if ok.is_err() {
+        error!("Counterparty chain response error {:?}",ok.err())
+    };
+    info!("Tokens sent!");
+
 
 }
 
@@ -241,4 +268,38 @@ pub async fn get_interchain_account(
         return Ok(account);
     }
     Err(CosmosGrpcError::BadResponse("Can't get interchain account".to_string()))
+}
+
+// send tokens to interchain account
+pub async fn send_tokens_to_interchain_account(
+    contact: &Contact,
+    key: CosmosPrivateKey,
+    receiver: String,
+) -> Result<String,CosmosGrpcError> { 
+
+    let coin = Coin {
+        denom:STAKING_TOKEN.clone(),
+        amount: "1000".to_string() ,
+    };
+    let mut coin_vec = Vec::new();
+    coin_vec.push(coin);
+    let send_tokens = MsgSend {
+        from_address: key.to_address(&contact.get_prefix()).unwrap().to_string(),
+        to_address: receiver,
+        amount: coin_vec,
+    };
+    info!("Submitting MsgSend , gravity chain {:?}", send_tokens);
+
+    let send_tokens = Msg::new(MSG_SEND_TOKENS_URL, send_tokens);
+    let send_res = contact
+        .send_message(
+            &[send_tokens],
+            Some("Test Creating interchain account".to_string()),
+            &[],
+            Some(OPERATION_TIMEOUT),
+            key,
+        )
+        .await;
+    info!("Sent MsgRegisterAccount with response {:?}", send_res);
+    return Ok("".to_string())
 }
