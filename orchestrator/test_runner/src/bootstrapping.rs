@@ -323,6 +323,32 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
     }
 }
 
+// Create a connection between gravity chain and the ibc test chain
+// Writes the output to /ibc-relayer-logs/connection-creation
+pub fn create_ibc_connection(hermes_base: &mut Command) {
+    // hermes -c config.toml create connection gravity-test-1 ibc-test-1
+    let create_connection = hermes_base.args(&[
+        "create",
+        "connection",
+        &get_gravity_chain_id(),
+        &get_ibc_chain_id(),
+    ]);
+
+    let out_file = File::options()
+        .write(true)
+        .open("/ibc-relayer-logs/connection-creation")
+        .unwrap()
+        .into_raw_fd();
+    unsafe {
+        // unsafe needed for stdout + stderr redirect to file
+        let create_connection = create_connection
+            .stdout(Stdio::from_raw_fd(out_file))
+            .stderr(Stdio::from_raw_fd(out_file));
+        info!("Create connection command: {:?}", create_connection);
+        create_connection.spawn().expect("Could not create connection");
+    }
+}
+
 // Start an IBC relayer locally and run until it terminates
 // full_scan Force a full scan of the chains for clients, connections and channels
 // Writes the output to /ibc-relayer-logs/hermes-logs
@@ -361,8 +387,12 @@ pub async fn start_ibc_relayer(contact: &Contact, keys: &[ValidatorKeys], ibc_ph
     info!("test-runner starting IBC relayer mode: init hermes, create ibc channel, start hermes");
     let mut hermes_base = Command::new("hermes");
     let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+    
     setup_relayer_keys(&RELAYER_MNEMONIC, &ibc_phrases[0]).unwrap();
     create_ibc_channel(hermes_base);
+    let mut hermes_base = Command::new("hermes");
+    let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+    create_ibc_connection(hermes_base);
     thread::spawn(|| {
         let mut hermes_base = Command::new("hermes");
         let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
