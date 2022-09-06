@@ -294,7 +294,7 @@ pub async fn ica_test(
     delay_for(Duration::from_secs(30)).await;
 
     let amount_delegated_to_counterchain_validator = check_delegatinons(
-        keys[0].validator_key,
+        ibc_keys[0],
         ADDRESS_PREFIX.to_string(),
         gravity_account.clone(),
         cpc_staking_qc,
