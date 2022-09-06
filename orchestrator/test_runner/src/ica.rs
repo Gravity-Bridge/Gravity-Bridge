@@ -25,9 +25,9 @@ pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAc
 
 /// Test Interchain accounts host / controller. Create , Send , Delegate
 /// Plan is 
-/// 1. get connection_id , counterparty_connection_id 
-/// 2. register interchain account gravity -> ibc 
-/// 3. check account registered
+/// 1. get connection_id , counterparty_connection_id:  <fn get_connection_id>
+/// 2. register interchain account gravity -> ibc: <fn create_interchain_account>
+/// 3. check account registered: <fn get_interchain_account>
 /// 4. send some stake tokens
 /// 5. delegate 
 /// 6. repeat 1-5 for ibc -> gravity
@@ -36,14 +36,15 @@ pub async fn ica_test(
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
 ) {
+    // Create connection query clients
     let gravity_connection_qc = ConnectionQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
         .expect("Could not connect channel query client");
     let ibc_connection_qc = ConnectionQueryClient::connect(IBC_NODE_GRPC.as_str())
         .await
-        .expect("Could not connect ibc-transfer query client");
+        .expect("Could not connect counterparty channel query client");
     
-    // Wait for the ibc channel to be created and find the connection ids
+    // Wait for the connections to be created and find the connection ids
     let connection_id_timeout = Duration::from_secs(60 * 5);
     let connection_id = get_connection_id(
         gravity_connection_qc,
@@ -63,10 +64,12 @@ pub async fn ica_test(
         counterparty_connection_id,
     );
 
+    // create GRPC contact for counterparty chain
     let connections =
     create_rpc_connections(IBC_ADDRESS_PREFIX.clone(), Some(IBC_NODE_GRPC.to_string()), None, TIMEOUT).await;
     let counter_chain_contact = connections.contact.unwrap();
-    //create gravity&gaia interchain accounts
+
+    //create gravity, counterparty interchain accounts
     let ok = create_interchain_account(
         contact,
         &counter_chain_contact,
@@ -79,9 +82,13 @@ pub async fn ica_test(
     if !ok.is_err() {
         println!("Accounts registered");
         let timeout = Duration::from_secs(60 * 5);
+
+        // counterparty query client
         let ccqc = GravityQueryClient::connect(IBC_NODE_GRPC.as_str())
         .await
         .expect("Could not connect counterparty channel query client");
+
+        // send tx
         let counterchain_account = get_interchain_account(
             &counter_chain_contact,
             ibc_keys[0],
@@ -92,9 +99,12 @@ pub async fn ica_test(
         .await
         .expect("Account for counterparty chain not created or something went wrong");
 
+        // gravity query client
         let qc = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
         .expect("Could not connect channel query client");
+
+        // send tx
         let grav_account = get_interchain_account(
             contact,
             keys[0].validator_key,
@@ -110,10 +120,9 @@ pub async fn ica_test(
 
 }
 
-// Retrieves the connecting the chain behind `ibc_channel_qc` and the chain with id `foreign_chain_id`
-// Retries up to `timeout` (or OPERATION_TIMEOUT if None)
+// Get connection for both chains
 pub async fn get_connection_id(
-    ibc_connection_qc: ConnectionQueryClient<Channel>, // The Src chain's IbcChannelQueryClient                    // The chain-id of the Dst chain
+    ibc_connection_qc: ConnectionQueryClient<Channel>,
     timeout: Option<Duration>,
 ) -> Result<String, CosmosGrpcError> {
     let mut ibc_connection_qc = ibc_connection_qc;
@@ -139,11 +148,7 @@ pub async fn get_connection_id(
     Err(CosmosGrpcError::BadResponse("No such connection".to_string()))
 }
 
-/// {"body":{"messages":[{"@type":"/icaauth.v1.MsgRegisterAccount",
-/// "owner":"gravity1lz0xxea93d8ythvwlk5hnulenahcv33pam78ps",
-/// "connection_id":"connection-3",
-/// "version":""}],
-///
+// Create interchain accounts
 pub async fn create_interchain_account(
     contact: &Contact,
     counter_chain_contact: &Contact,
@@ -153,12 +158,14 @@ pub async fn create_interchain_account(
     counterparty_connection_id: String,
 ) -> Result<String,CosmosGrpcError> { 
     
+    // chain chain register
     let msg_register_account = MsgRegisterAccount {
         owner: keys[0].validator_key.to_address(&contact.get_prefix()).unwrap().to_string(),
         connection_id,
         version: "".to_string(),
     };
-    info!("Submitting MsgRegisterAccount {:?}", msg_register_account);
+    info!("Submitting MsgRegisterAccount to gravity chain {:?}", msg_register_account);
+
     let msg_register_account = Msg::new(MSG_REGISTER_INTERCHAIN_ACCOUNT_URL, msg_register_account);
     let send_res = contact
         .send_message(
@@ -171,22 +178,22 @@ pub async fn create_interchain_account(
         .await;
     info!("Sent MsgRegisterAccount with response {:?}", send_res);
 
-    // counter party chain register
+    // counterparty chain register
     let msg_register_account_counter_chain = MsgRegisterAccount {
         owner: ibc_keys[0].to_address(&counter_chain_contact.get_prefix()).unwrap().to_string(),
         connection_id: counterparty_connection_id,
         version: "".to_string(),
     };
-    info!("Submitting MsgRegisterAccount {:?}", msg_register_account_counter_chain);
+    info!("Submitting MsgRegisterAccount to counterparty chain {:?}", msg_register_account_counter_chain);
 
-    let msg_register_account = Msg::new(MSG_REGISTER_INTERCHAIN_ACCOUNT_URL, msg_register_account_counter_chain);
+    let msg_register_account_counter_chain = Msg::new(MSG_REGISTER_INTERCHAIN_ACCOUNT_URL, msg_register_account_counter_chain);
     let send_res = counter_chain_contact
         .send_message(
-            &[msg_register_account],
+            &[msg_register_account_counter_chain],
             Some("Test Creating interchain account".to_string()),
             &[],
             Some(OPERATION_TIMEOUT),
-            keys[0].validator_key,
+            ibc_keys[0],
         )
         .await;
     info!("Sent MsgRegisterAccount with response {:?}", send_res);
@@ -227,5 +234,5 @@ pub async fn get_interchain_account(
         let account = account.unwrap().into_inner().interchain_account_address;
         return Ok(account);
     }
-    Err(CosmosGrpcError::BadResponse("No such connection".to_string()))
+    Err(CosmosGrpcError::BadResponse("Can't get interchain account".to_string()))
 }
