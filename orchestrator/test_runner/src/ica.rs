@@ -58,7 +58,7 @@ pub async fn ica_test(
     )
     .await
     .expect("Could not find gravity-test-1 counterparty connection id");
-    println!(
+    info!(
         "Found valid connections: connection_id: {} counterparty_connection_id {}", 
         connection_id,
         counterparty_connection_id,
@@ -80,24 +80,8 @@ pub async fn ica_test(
     )
     .await;
     if !ok.is_err() {
-        println!("Accounts registered");
+        info!("Accounts registered");
         let timeout = Duration::from_secs(60 * 5);
-
-        // counterparty query client
-        let ccqc = GravityQueryClient::connect(IBC_NODE_GRPC.as_str())
-        .await
-        .expect("Could not connect counterparty channel query client");
-
-        // send tx
-        let counterchain_account = get_interchain_account(
-            &counter_chain_contact,
-            ibc_keys[0],
-            ccqc,
-            Some(timeout),
-            connection_id.clone(),
-        )
-        .await
-        .expect("Account for counterparty chain not created or something went wrong");
 
         // gravity query client
         let qc = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
@@ -115,7 +99,26 @@ pub async fn ica_test(
         .await
         .expect("Account for gravity not created or something went wrong");
 
-        println!("gravity interchain account: {} , counterchain interchain account: {}",grav_account,counterchain_account)
+        // counterparty query client
+        let ccqc = GravityQueryClient::connect(IBC_NODE_GRPC.as_str())
+        .await
+        .expect("Could not connect counterparty channel query client");
+
+        // send tx
+        let counterchain_account = get_interchain_account(
+            &counter_chain_contact,
+            ibc_keys[0],
+            ccqc,
+            Some(timeout),
+            connection_id.clone(),
+        )
+        .await
+        .expect("Account for counterparty chain not created or something went wrong");
+
+        info!("gravity interchain account: {} , counterchain interchain account: {}",
+        grav_account, 
+        counterchain_account,
+        )
     }
 
 }
@@ -227,10 +230,12 @@ pub async fn get_interchain_account(
                 }
             )
             .await;
+        info!("{:?}",account);
         if account.is_err() {
             delay_for(Duration::from_secs(5)).await;
             continue;
         }
+
         let account = account.unwrap().into_inner().interchain_account_address;
         return Ok(account);
     }
