@@ -112,8 +112,8 @@ pub async fn ica_test(
         connection_id,
         counterparty_connection_id,
     );
-    info!("Waiting 100 seconds for ConOpenConfirm before account create");
-    delay_for(Duration::from_secs(100)).await;
+    info!("Waiting 120 seconds for ConOpenConfirm before account create");
+    delay_for(Duration::from_secs(120)).await;
     // create GRPC contact for counterparty chain
     let connections =
     create_rpc_connections(IBC_ADDRESS_PREFIX.clone(), Some(IBC_NODE_GRPC.to_string()), None, TIMEOUT).await;
@@ -139,7 +139,9 @@ pub async fn ica_test(
     .await
     .expect("Could not connect channel query client");
 
-        // send tx
+    info!("waiting for ACK 60 secs");
+    delay_for(Duration::from_secs(60)).await;
+    // send tx
     let grav_account = get_interchain_account(
         contact,
         keys[0].validator_key,
@@ -171,6 +173,8 @@ pub async fn ica_test(
     counterchain_account,
     );
     
+    info!("Waiting for TX 30 secs");
+    delay_for(Duration::from_secs(30)).await;
     // send in gravity chain
     let ok = send_tokens_to_interchain_account(
         contact,
@@ -183,6 +187,8 @@ pub async fn ica_test(
     };
     info!("Tokens sent!");
 
+    info!("Waiting for TX 30 secs");
+    delay_for(Duration::from_secs(30)).await;
     // send in counterparty chain
     let ok = send_tokens_to_interchain_account(
         &counter_chain_contact,
@@ -210,6 +216,9 @@ pub async fn ica_test(
         Some(timeout),
     ).await
     .expect("Error on balance check");
+
+    info!("Pause 20 seconds");
+    delay_for(Duration::from_secs(20)).await;
     let counterchain_interchain_account_balance = get_interchain_account_balance(
         counterchain_account.clone(),
         cosmos_qc,
@@ -235,6 +244,10 @@ pub async fn ica_test(
     .await
     .expect("Can't delegate");
     info!("{:?}",delegeted_from_gravity );
+
+    info!("Pause 20 seconds");
+    delay_for(Duration::from_secs(20)).await;
+
     let delegeted_from_counter_chain = delegate_from_interchain_account(
         &counter_chain_contact,
         keys[0].validator_key,
@@ -249,6 +262,7 @@ pub async fn ica_test(
 
     info!("Wait 60 seconds then check delegations");
     delay_for(Duration::from_secs(60)).await;
+
     let staking_qc = StakingQueryClient::connect(COSMOS_NODE_GRPC.as_str())
     .await
     .expect("Could not connect channel query client");
@@ -264,6 +278,10 @@ pub async fn ica_test(
     )
     .await
     .expect("Not delegated!");
+
+    info!("Pause 20 seconds");
+    delay_for(Duration::from_secs(20)).await;
+
     info!("found delegations! to counterchain {}",amount_delegated_to_gravity_validator);
     let amount_delegated_to_counterchain_validator = check_delegatinons(
         keys[0].validator_key,
@@ -562,9 +580,9 @@ pub async fn check_delegatinons(
         .delegation_responses;
         for b in delegators {
             if b.delegation.clone().unwrap().delegator_address == delegator_address {
+                delay_for(Duration::from_secs(5)).await;
                 return Ok(b.delegation.clone().unwrap().shares);
             }
-            
         }    
     }
     Err(CosmosGrpcError::BadResponse("Can't get delegators list".to_string()))
