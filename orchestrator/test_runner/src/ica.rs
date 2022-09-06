@@ -63,7 +63,8 @@ pub async fn ica_test(
         connection_id,
         counterparty_connection_id,
     );
-
+    info!("Waiting 100 seconds for ConOpenConfirm before account create");
+    delay_for(Duration::from_secs(100)).await;
     // create GRPC contact for counterparty chain
     let connections =
     create_rpc_connections(IBC_ADDRESS_PREFIX.clone(), Some(IBC_NODE_GRPC.to_string()), None, TIMEOUT).await;
