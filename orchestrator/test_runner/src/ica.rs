@@ -1,23 +1,27 @@
 use crate::utils::*;
 use crate::OPERATION_TIMEOUT;
 use crate::{
-    COSMOS_NODE_GRPC, IBC_NODE_GRPC,
+    COSMOS_NODE_GRPC, IBC_NODE_GRPC, IBC_ADDRESS_PREFIX,
 };
 use deep_space::error::CosmosGrpcError;
 use deep_space::PrivateKey;
 use deep_space::private_key::CosmosPrivateKey;
-use deep_space::Contact;
+use deep_space::{Msg,Contact};
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::QueryClient as ConnectionQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::msg_client::MsgClient as GravityMsgClient;
 use std::time::Instant;
 use std::time::Duration;
+use cosmos_gravity::send::TIMEOUT;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use gravity_proto::gravity::{
     QueryInterchainAccountFromAddressRequest, MsgRegisterAccount,
 };
+use gravity_utils::connection_prep::create_rpc_connections;
+
+
+pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAccount";
 
 /// Test Interchain accounts host / controller. Create , Send , Delegate
 /// Plan is 
@@ -59,9 +63,13 @@ pub async fn ica_test(
         counterparty_connection_id,
     );
 
+    let connections =
+    create_rpc_connections(IBC_ADDRESS_PREFIX.clone(), Some(IBC_NODE_GRPC.to_string()), None, TIMEOUT).await;
+    let counter_chain_contact = connections.contact.unwrap();
     //create gravity&gaia interchain accounts
     let ok = create_interchain_account(
         contact,
+        &counter_chain_contact,
         keys.clone(),
         ibc_keys.clone(),
         connection_id.clone(),
@@ -131,8 +139,14 @@ pub async fn get_connection_id(
     Err(CosmosGrpcError::BadResponse("No such connection".to_string()))
 }
 
+/// {"body":{"messages":[{"@type":"/icaauth.v1.MsgRegisterAccount",
+/// "owner":"gravity1lz0xxea93d8ythvwlk5hnulenahcv33pam78ps",
+/// "connection_id":"connection-3",
+/// "version":""}],
+///
 pub async fn create_interchain_account(
     contact: &Contact,
+    counter_chain_contact: &Contact,
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
     connection_id: String,
@@ -145,15 +159,19 @@ pub async fn create_interchain_account(
         version: "".to_string(),
     };
     info!("Submitting MsgRegisterAccount {:?}", msg_register_account);
+    let msg_register_account = Msg::new(MSG_REGISTER_INTERCHAIN_ACCOUNT_URL, msg_register_account);
+    let send_res = contact
+        .send_message(
+            &[msg_register_account],
+            Some("Test Creating interchain account".to_string()),
+            &[],
+            Some(OPERATION_TIMEOUT),
+            keys[0].validator_key,
+        )
+        .await;
+    info!("Sent MsgTransfer with response {:?}", send_res);
 
-    let mut grpc_gravity = GravityMsgClient::connect(COSMOS_NODE_GRPC.as_str())
-    .await
-    .expect("Can't create a channel");
-    let msg = grpc_gravity.register_account(msg_register_account)
-    .await
-    .expect("Could not create interchain account for gravity");
-    info!("Sent MsgTransfer with response {:?}", msg);
-
+    // counter party chain register
     let msg_register_account_counter_chain = MsgRegisterAccount {
         owner: ibc_keys[0].to_address(&contact.get_prefix()).unwrap().to_string(),
         connection_id: counterparty_connection_id,
@@ -161,14 +179,17 @@ pub async fn create_interchain_account(
     };
     info!("Submitting MsgRegisterAccount {:?}", msg_register_account_counter_chain);
 
-    let mut grpc_counter_chain = GravityMsgClient::connect(IBC_NODE_GRPC.as_str())
-    .await
-    .expect("Can't create a channel");
-    let msg = grpc_counter_chain.register_account(msg_register_account_counter_chain)
-    .await
-    .expect("Could not create interchain account for gravity");
-    info!("Sent MsgTransfer with response {:?}", msg);
-
+    let msg_register_account = Msg::new(MSG_REGISTER_INTERCHAIN_ACCOUNT_URL, msg_register_account_counter_chain);
+    let send_res = counter_chain_contact
+        .send_message(
+            &[msg_register_account],
+            Some("Test Creating interchain account".to_string()),
+            &[],
+            Some(OPERATION_TIMEOUT),
+            keys[0].validator_key,
+        )
+        .await;
+    info!("Sent MsgTransfer with response {:?}", send_res);
     delay_for(Duration::from_secs(10)).await;
     return Ok("".to_string())
 }
