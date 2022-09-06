@@ -11,7 +11,8 @@ use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::QueryAllBalancesRequ
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::QueryClient as ConnectionQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
-use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
+use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
+    query_client::QueryClient as StakingQueryClient, MsgDelegate, QueryValidatorDelegationsRequest,};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::{
@@ -194,9 +195,9 @@ pub async fn ica_test(
     };
     info!("Tokens sent!");
     
-    info!("Waith 25 seconds and check balances..");
-    delay_for(Duration::from_secs(25)).await;
-    
+    info!("Waith 60 seconds and check balances..");
+    delay_for(Duration::from_secs(60)).await;
+
     let cosmos_qc = CosmosQueryClient::connect(COSMOS_NODE_GRPC.as_str())
     .await
     .expect("Could not connect channel query client");
@@ -227,7 +228,7 @@ pub async fn ica_test(
         contact,
         ibc_keys[0],
         keys[0].validator_key,
-        grav_account,
+        grav_account.clone(),
         connection_id, 
         IBC_ADDRESS_PREFIX.to_string(),
     )
@@ -238,7 +239,7 @@ pub async fn ica_test(
         &counter_chain_contact,
         keys[0].validator_key,
         ibc_keys[0],
-        counterchain_account,
+        counterchain_account.clone(),
         counterparty_connection_id, 
         ADDRESS_PREFIX.to_string(),
     )
@@ -246,6 +247,34 @@ pub async fn ica_test(
     .expect("Can't delegate");
     info!("{:?}",delegeted_from_counter_chain );
 
+    info!("Wait 60 seconds then check delegations");
+    delay_for(Duration::from_secs(60)).await;
+    let staking_qc = StakingQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+    .await
+    .expect("Could not connect channel query client");
+    let staking_ccqc = StakingQueryClient::connect(IBC_NODE_GRPC.as_str())
+    .await
+    .expect("Could not connect channel query client");
+    let amount_delegated_to_gravity_validator = check_delegatinons(
+        keys[0].validator_key,
+        ADDRESS_PREFIX.to_string(),
+        counterchain_account.clone(),
+        staking_qc,
+        Some(timeout),
+    )
+    .await
+    .expect("Not delegated!");
+    info!("found delegations! to counterchain {}",amount_delegated_to_gravity_validator);
+    let amount_delegated_to_counterchain_validator = check_delegatinons(
+        keys[0].validator_key,
+        ADDRESS_PREFIX.to_string(),
+        grav_account.clone(),
+        staking_ccqc,
+        Some(timeout),
+    )
+    .await
+    .expect("Not delegated!");
+    info!("found delegations! to counterchain {}",amount_delegated_to_counterchain_validator);
 }
 
 // Get connection for both chains
@@ -385,7 +414,7 @@ pub async fn send_tokens_to_interchain_account(
         to_address: receiver,
         amount: coin_vec,
     };
-    info!("Submitting MsgSend , gravity chain {:?}", send_tokens);
+    info!("Submitting MsgSend {:?}", send_tokens);
 
     let send_tokens = Msg::new(MSG_SEND_TOKENS_URL, send_tokens);
     let send_res = contact
@@ -489,4 +518,54 @@ pub async fn delegate_from_interchain_account(
 
     delay_for(Duration::from_secs(10)).await;
     return Ok("".to_string())
+}
+
+
+// get balance
+pub async fn check_delegatinons(
+    validator_key: CosmosPrivateKey,
+    prefix: String,
+    delegator_address: String,
+    qc: StakingQueryClient<Channel>,
+    timeout: Option<Duration>,
+) -> Result<String,CosmosGrpcError> { 
+
+    let mut qc = qc
+    ;
+    let timeout = match timeout {
+        Some(t) => t,
+        None => OPERATION_TIMEOUT,
+    };
+
+    let valoper_prefix = prefix + "valoper";
+
+    let start = Instant::now();
+    while Instant::now() - start < timeout {
+        let delegators = qc
+            .validator_delegations(
+                QueryValidatorDelegationsRequest { 
+                    validator_addr: validator_key.to_address(&valoper_prefix)
+                    .unwrap().
+                    to_string(),
+                    pagination: None, 
+                }
+            )
+            .await;
+        info!("{:?}",delegators);
+        if delegators.is_err() {
+            delay_for(Duration::from_secs(5)).await;
+            continue;
+        }
+        let delegators = delegators
+        .unwrap()
+        .into_inner()
+        .delegation_responses;
+        for b in delegators {
+            if b.delegation.clone().unwrap().delegator_address == delegator_address {
+                return Ok(b.delegation.clone().unwrap().shares);
+            }
+            
+        }    
+    }
+    Err(CosmosGrpcError::BadResponse("Can't get delegators list".to_string()))
 }
