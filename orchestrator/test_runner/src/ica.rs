@@ -189,9 +189,9 @@ pub async fn ica_test(
     if ok.is_err() {
         error!("Gravity chain response error {:?}",ok.err())
     };
-    info!("Tokens sent!");
+    info!("Tokens sent to counterparty interchain account from gravity regular account !");
 
-    info!("Waiting for TX 30 secs");
+    info!("Pause 30 seconds, then send TX");
     delay_for(Duration::from_secs(30)).await;
     // send in counterparty chain
     let ok = send_tokens_to_interchain_account(
@@ -203,9 +203,9 @@ pub async fn ica_test(
     if ok.is_err() {
         error!("Counterparty chain response error {:?}",ok.err())
     };
-    info!("Tokens sent!");
+    info!("Tokens sent to gravity interchain account from counterparty regular account!");
     
-    info!("Waith 60 seconds and check balances..");
+    info!("Waiting 60 seconds and check balances..");
     delay_for(Duration::from_secs(60)).await;
 
     // Create CosmosQueryClient for both chains
@@ -217,6 +217,7 @@ pub async fn ica_test(
     .await
     .expect("Could not connect counterparty chain channel query client");
 
+    info!("Try to get balance");
     let gravity_interchain_account_balance = get_interchain_account_balance(
         gravity_account.clone(),
         cpc_cosmos_qc,
@@ -224,7 +225,7 @@ pub async fn ica_test(
     ).await
     .expect("Error on balance check");
 
-    info!("Pause 20 seconds");
+    info!("Pause 20 seconds, then try to get balance");
     delay_for(Duration::from_secs(20)).await;
     let cpc_interchain_account_balance = get_interchain_account_balance(
         cpc_account.clone(),
@@ -255,6 +256,7 @@ pub async fn ica_test(
     info!("Pause 60 seconds");
 
     // delegate from interchain account to counterparty validator
+    info!("Pause 60 seconds. Then delegate from counterparty chain");
     delay_for(Duration::from_secs(60)).await;
     let delegeted_from_cpc = delegate_from_interchain_account(
         &cpc_contact,
