@@ -81,16 +81,16 @@ pub async fn ica_test(
         let timeout = Duration::from_secs(60 * 5);
         let ccqc = GravityQueryClient::connect(IBC_NODE_GRPC.as_str())
         .await
-        .expect("Could not connect channel query client");
+        .expect("Could not connect counterparty channel query client");
         let counterchain_account = get_interchain_account(
-            contact,
+            &counter_chain_contact,
             ibc_keys[0],
             ccqc,
             Some(timeout),
             connection_id.clone(),
         )
         .await
-        .expect("Account for gravity not created or something went wrong");
+        .expect("Account for counterparty chain not created or something went wrong");
 
         let qc = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
@@ -169,11 +169,11 @@ pub async fn create_interchain_account(
             keys[0].validator_key,
         )
         .await;
-    info!("Sent MsgTransfer with response {:?}", send_res);
+    info!("Sent MsgRegisterAccount with response {:?}", send_res);
 
     // counter party chain register
     let msg_register_account_counter_chain = MsgRegisterAccount {
-        owner: ibc_keys[0].to_address(&contact.get_prefix()).unwrap().to_string(),
+        owner: ibc_keys[0].to_address(&counter_chain_contact.get_prefix()).unwrap().to_string(),
         connection_id: counterparty_connection_id,
         version: "".to_string(),
     };
@@ -189,7 +189,7 @@ pub async fn create_interchain_account(
             keys[0].validator_key,
         )
         .await;
-    info!("Sent MsgTransfer with response {:?}", send_res);
+    info!("Sent MsgRegisterAccount with response {:?}", send_res);
     delay_for(Duration::from_secs(10)).await;
     return Ok("".to_string())
 }
