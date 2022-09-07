@@ -541,7 +541,7 @@ pub struct MsgSubmitTx {
     pub msg: ::core::option::Option<::prost_types::Any>,
 }
 /// MsgSubmitTxResponse defines the response for Msg/SubmitTx
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgSubmitTxResponse {
 }
 /// Generated client implementations.
