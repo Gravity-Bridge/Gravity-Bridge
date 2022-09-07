@@ -301,6 +301,8 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
         "create",
         "channel",
         &get_gravity_chain_id(),
+        "--chain-b",
+        &get_ibc_chain_id(),
         "--port-a",
         "transfer",
         "--port-b",
