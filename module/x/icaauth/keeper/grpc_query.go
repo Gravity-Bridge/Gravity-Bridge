@@ -12,6 +12,8 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
 )
 
+var _ types.QueryServer = Keeper{}
+
 // InterchainAccountFromAddress implements the Query/InterchainAccountFromAddress gRPC method
 func (k Keeper) InterchainAccountFromAddress(goCtx context.Context, req *types.QueryInterchainAccountFromAddressRequest) (*types.QueryInterchainAccountFromAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)

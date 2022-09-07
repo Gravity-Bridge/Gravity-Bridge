@@ -1,11 +1,13 @@
 package keeper
 
 import (
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
 )
 
 // RegisterInterchainAccount invokes the InitInterchainAccount entrypoint.

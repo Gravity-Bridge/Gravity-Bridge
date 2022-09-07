@@ -3,12 +3,13 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	"github.com/spf13/cobra"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
 )
 
 // GetTxCmd creates and returns the icaauth tx command

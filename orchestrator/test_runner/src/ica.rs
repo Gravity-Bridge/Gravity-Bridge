@@ -1,20 +1,33 @@
+use crate::airdrop_proposal::wait_for_proposals_to_execute;
+use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::*;
 use crate::OPERATION_TIMEOUT;
-use crate::{ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, STAKING_TOKEN};
+use crate::{
+    get_fee, ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, STAKING_TOKEN,
+};
 use anyhow::{Context, Result};
-use cosmos_gravity::send::TIMEOUT;
+use clarity::Address as EthAddress;
+use clarity::Uint256;
+use cosmos_gravity::query::get_oldest_unsigned_transaction_batches;
+use cosmos_gravity::send::{
+    send_batch_confirm, send_request_batch, MSG_SEND_TO_ETH_TYPE_URL, TIMEOUT,
+};
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::PrivateKey;
 use deep_space::{Contact, Msg};
+use ethereum_gravity::utils::get_gravity_id;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{MsgSend, QueryAllBalancesRequest};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
     query_client::QueryClient as StakingQueryClient, MsgDelegate, QueryValidatorDelegationsRequest,
 };
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::QueryClient as ConnectionQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
+use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::MsgSendToEth;
 use gravity_proto::icaauth::query_client::QueryClient as IcaQueryClient;
 use gravity_proto::icaauth::{
     MsgRegisterAccount, MsgSubmitTx, QueryInterchainAccountFromAddressRequest,
@@ -26,11 +39,12 @@ use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
+use web30::client::Web3;
 
 pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAccount";
 pub const MSG_SEND_TOKENS_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
 pub const MSG_SUBMIT_TX_URL: &str = "/icaauth.v1.MsgSubmitTx";
-pub const STAKIN_DELEGATE_TYPE_URL: &str = "/cosmos.staking.v1beta1.MsgDelegate";
+pub const STAKING_DELEGATE_TYPE_URL: &str = "/cosmos.staking.v1beta1.MsgDelegate";
 
 // Trait to serialize/deserialize types to and from `prost_types::Any`
 pub trait AnyConvert: Sized {
@@ -53,9 +67,9 @@ pub fn proto_encode<M: Message>(message: &M) -> Result<Vec<u8>> {
 impl AnyConvert for MsgDelegate {
     fn from_any(value: &::prost_types::Any) -> ::anyhow::Result<Self> {
         ::anyhow::ensure!(
-            value.type_url == STAKIN_DELEGATE_TYPE_URL,
+            value.type_url == STAKING_DELEGATE_TYPE_URL,
             "invalid type url for `Any` type: expected `{}` and found `{}`",
-            STAKIN_DELEGATE_TYPE_URL,
+            STAKING_DELEGATE_TYPE_URL,
             value.type_url
         );
 
@@ -64,24 +78,56 @@ impl AnyConvert for MsgDelegate {
 
     fn to_any(&self) -> ::anyhow::Result<::prost_types::Any> {
         Ok(::prost_types::Any {
-            type_url: STAKIN_DELEGATE_TYPE_URL.to_owned(),
+            type_url: STAKING_DELEGATE_TYPE_URL.to_owned(),
             value: proto_encode(self)?,
         })
     }
 }
 
-/// Test Interchain accounts host / controller. Create , Send , Delegate
+impl AnyConvert for MsgSendToEth {
+    fn from_any(value: &::prost_types::Any) -> ::anyhow::Result<Self> {
+        ::anyhow::ensure!(
+            value.type_url == MSG_SEND_TO_ETH_TYPE_URL,
+            "invalid type url for `Any` type: expected `{}` and found `{}`",
+            MSG_SEND_TO_ETH_TYPE_URL,
+            value.type_url
+        );
+
+        <Self as ::prost::Message>::decode(value.value.as_slice()).map_err(Into::into)
+    }
+
+    fn to_any(&self) -> ::anyhow::Result<::prost_types::Any> {
+        Ok(::prost_types::Any {
+            type_url: MSG_SEND_TO_ETH_TYPE_URL.to_owned(),
+            value: proto_encode(self)?,
+        })
+    }
+}
+
+/// Test Interchain accounts host / controller. Create , Send , Delegate, Send_to_Eth
 /// Plan is
-/// 1. get connection_id , cpc_connection_id:  <fn get_connection_id>
-/// 2. register interchain account gravity -> ibc: <fn create_interchain_account>
-/// 3. check account registered: <fn get_interchain_account>
-/// 4. send some stake tokens: <fn send_tokens_to_interchain_account>, <fn get_interchain_account_balance>
-/// 5. delegate <fn delegate_from_interchain_account>, <fn check_delegatinons>
+/// 1. Create and pass proposal to allow all ica_host messages <fn add_ica_host_allow_messages>
+/// 2. Get connection_id , cpc_connection_id:  <fn get_connection_id>
+/// 3. Register interchain account gravity -> ibc: <fn create_interchain_account>
+/// 4. Check account registered: <fn get_interchain_account>
+/// 5. Send some stake tokens: <fn send_tokens_to_interchain_account>, <fn get_interchain_account_balance>
+/// 6. Delegate <fn delegate_from_interchain_account>
+/// 7. Check delegations <fn check_delegatinons>
+/// 8. Adopt footoken metadata
+/// 9. SubmitTx MsgSendToEth from counterpartychain ICA. <fn submit_tx>
+/// 10. Request & submit batch
+/// 11. Check eth balance
 pub async fn ica_test(
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
+    gravity_address: EthAddress,
+    web30: &Web3,
+    grpc_client: GravityQueryClient<Channel>,
 ) {
+    // Add allow messages
+    add_ica_host_allow_messages(contact, &keys).await;
+
     // Create connection query clients for both chains
     let gravity_connection_qc = ConnectionQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
@@ -102,8 +148,10 @@ pub async fn ica_test(
         "Found valid connections: connection_id: {} cpc_connection_id {}",
         connection_id, cpc_connection_id,
     );
+
     info!("Waiting 120 seconds for ConOpenConfirm before account create");
     delay_for(Duration::from_secs(120)).await;
+
     // create GRPC contact for counterparty chain
     let connections = create_rpc_connections(
         IBC_ADDRESS_PREFIX.clone(),
@@ -115,7 +163,7 @@ pub async fn ica_test(
     let cpc_contact = connections.contact.unwrap();
 
     //create gravity and cpc interchain accounts
-    info!("Processng interchain account registration");
+    info!("Processing interchain account registration");
     let ok = create_interchain_account(
         contact,
         &cpc_contact,
@@ -139,7 +187,7 @@ pub async fn ica_test(
         .await
         .expect("Could not connect counterparty chain channel query client");
 
-    info!("waiting for ACK 60 secs then send TX");
+    info!("Pause 60s before get interchain accounts");
     delay_for(Duration::from_secs(60)).await;
     let gravity_account = get_interchain_account(
         contact,
@@ -150,8 +198,6 @@ pub async fn ica_test(
     )
     .await
     .expect("Account for gravity not created or something went wrong");
-
-    // send tx
     let cpc_account = get_interchain_account(
         &cpc_contact,
         ibc_keys[0],
@@ -161,32 +207,42 @@ pub async fn ica_test(
     )
     .await
     .expect("Account for counterparty chain not created or something went wrong");
-
     info!(
         "gravity interchain account: {} , counterchain interchain account: {}",
         gravity_account, cpc_account,
     );
-    info!("Waiting for TX 30 secs");
-    delay_for(Duration::from_secs(30)).await;
+
+    let staking_coin = Coin {
+        denom: STAKING_TOKEN.clone(),
+        amount: "2000".to_string(),
+    };
     // send in gravity chain
-    let ok = send_tokens_to_interchain_account(contact, keys[0].validator_key, cpc_account.clone())
-        .await;
+    let ok = send_tokens_to_interchain_account(
+        contact,
+        keys[0].validator_key,
+        cpc_account.clone(),
+        staking_coin.clone(),
+    )
+    .await;
     if ok.is_err() {
         error!("Gravity chain response error {:?}", ok.err())
     };
     info!("Tokens sent to counterparty interchain account from gravity regular account !");
-
-    info!("Pause 30 seconds, then send TX");
-    delay_for(Duration::from_secs(30)).await;
     // send in counterparty chain
-    let ok =
-        send_tokens_to_interchain_account(&cpc_contact, ibc_keys[0], gravity_account.clone()).await;
+    let ok = send_tokens_to_interchain_account(
+        &cpc_contact,
+        ibc_keys[0],
+        gravity_account.clone(),
+        staking_coin.clone(),
+    )
+    .await;
     if ok.is_err() {
         error!("Counterparty chain response error {:?}", ok.err())
     };
     info!("Tokens sent to gravity interchain account from counterparty regular account!");
-    info!("Waiting 60 seconds and check balances..");
-    delay_for(Duration::from_secs(60)).await;
+
+    info!("Pause 30 seconds and check balances");
+    delay_for(Duration::from_secs(30)).await;
 
     // Create CosmosQueryClient for both chains
     let gravity_cosmos_qc = CosmosQueryClient::connect(COSMOS_NODE_GRPC.as_str())
@@ -197,14 +253,11 @@ pub async fn ica_test(
         .await
         .expect("Could not connect counterparty chain channel query client");
 
-    info!("Try to get balance");
+    info!("Trying to get balances");
     let gravity_interchain_account_balance =
         get_interchain_account_balance(gravity_account.clone(), cpc_cosmos_qc, Some(timeout))
             .await
             .expect("Error on balance check");
-
-    info!("Pause 20 seconds, then try to get balance");
-    delay_for(Duration::from_secs(20)).await;
     let cpc_interchain_account_balance =
         get_interchain_account_balance(cpc_account.clone(), gravity_cosmos_qc, Some(timeout))
             .await
@@ -216,31 +269,50 @@ pub async fn ica_test(
         )
     };
 
+    let coin = Coin {
+        denom: STAKING_TOKEN.clone(),
+        amount: "999".to_string(),
+    };
+    let valoper_prefix = ADDRESS_PREFIX.to_string() + "valoper";
+    let ibc_valoper_prefix = IBC_ADDRESS_PREFIX.to_string() + "valoper";
+    let msg_delegate_from_gravity = prepare_msg_delegate(
+        gravity_account.clone(),
+        ibc_keys[0]
+            .to_address(&ibc_valoper_prefix)
+            .unwrap()
+            .to_string(),
+        coin.clone(),
+    );
+    let msg_delegate_from_cpc = prepare_msg_delegate(
+        cpc_account.clone(),
+        keys[0]
+            .validator_key
+            .to_address(&valoper_prefix)
+            .unwrap()
+            .to_string(),
+        coin.clone(),
+    );
     // delegate from interchain account to gravity validator
     info!("Delegating from interchain accounts:");
-    let delegeted_from_gravity = delegate_from_interchain_account(
+    let delegeted_from_gravity = submit_tx(
         contact,
-        ibc_keys[0],
         keys[0].validator_key,
-        gravity_account.clone(),
         connection_id,
-        IBC_ADDRESS_PREFIX.to_string(),
+        msg_delegate_from_gravity,
     )
     .await
     .expect("Can't delegate");
     info!("{:?}", delegeted_from_gravity);
-    info!("Pause 60 seconds");
 
     // delegate from interchain account to counterparty validator
-    info!("Pause 60 seconds. Then delegate from counterparty chain");
-    delay_for(Duration::from_secs(60)).await;
-    let delegeted_from_cpc = delegate_from_interchain_account(
+    info!("Pause 30 seconds. Then delegate from counterparty chain");
+    delay_for(Duration::from_secs(30)).await;
+
+    let delegeted_from_cpc = submit_tx(
         &cpc_contact,
-        keys[0].validator_key,
         ibc_keys[0],
-        cpc_account.clone(),
-        cpc_connection_id,
-        ADDRESS_PREFIX.to_string(),
+        cpc_connection_id.clone(),
+        msg_delegate_from_cpc,
     )
     .await
     .expect("Can't delegate");
@@ -287,6 +359,125 @@ pub async fn ica_test(
         "found delegations! to counterchain, shares: {}",
         amount_delegated_to_counterchain_validator
     );
+
+    info!("Send some footoken to interchain account");
+    let amount_to_send: Uint256 = 20_000_000u64.into();
+    let amount_to_bridge: Uint256 = 10_000_000u64.into();
+    let foo_coin = Coin {
+        denom: "footoken".to_string(),
+        amount: amount_to_send.clone().to_string(),
+    };
+    // send in gravity chain
+    let ok = send_tokens_to_interchain_account(
+        contact,
+        keys[0].validator_key,
+        cpc_account.clone(),
+        foo_coin.clone(),
+    )
+    .await;
+    if ok.is_err() {
+        error!("Gravity chain response error {:?}", ok.err())
+    };
+
+    info!("Deploying representative ERC20");
+    let ibc_metadata = footoken_metadata(contact).await;
+    let mut grpc_client = grpc_client;
+    let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
+        gravity_address,
+        web30,
+        Some(keys.clone()),
+        &mut grpc_client,
+        false,
+        ibc_metadata.clone(),
+    )
+    .await;
+
+    let token_to_send_to_eth = ibc_metadata.base.clone();
+    let send_to_eth_coin = Coin {
+        denom: token_to_send_to_eth.clone(),
+        amount: amount_to_bridge.clone().to_string(),
+    };
+
+    info!("Prepare and send SendToEth message from counterparty chain");
+    let fee = Coin {
+        denom: token_to_send_to_eth.to_string(),
+        amount: 10_000_000u64.to_string(),
+    };
+    let msg_send_to_eth = prepare_msg_send_to_eth(
+        cpc_account.clone(),
+        keys[0].eth_key.to_address().to_string(),
+        send_to_eth_coin.clone(),
+        Some(fee),
+    );
+    info!("{} {:?}", msg_send_to_eth.type_url, msg_send_to_eth.value);
+    let send_to_eth_from_cpc = submit_tx(
+        &cpc_contact,
+        ibc_keys[0],
+        cpc_connection_id.clone(),
+        msg_send_to_eth,
+    )
+    .await
+    .expect("Can't send MsgSendToEth");
+    info!("{:?}", send_to_eth_from_cpc);
+
+    let mut send_request_batch_fee = get_fee(Some(token_to_send_to_eth.clone()));
+    send_request_batch_fee.amount = 200u8.into();
+
+    let res = send_request_batch(
+        keys[0].validator_key,
+        token_to_send_to_eth.clone(),
+        Some(send_request_batch_fee.clone()),
+        contact,
+    )
+    .await
+    .unwrap();
+    info!("send_request_batch {:?}", res);
+    let unsigned_transaction_batches = get_oldest_unsigned_transaction_batches(
+        &mut grpc_client,
+        keys[0]
+            .validator_key
+            .to_address(&contact.get_prefix())
+            .unwrap(),
+        contact.get_prefix(),
+    )
+    .await;
+    let gravity_id = get_gravity_id(gravity_address, keys[0].eth_key.to_address(), web30)
+        .await
+        .unwrap();
+    let res = send_batch_confirm(
+        contact,
+        keys[0].eth_key,
+        send_request_batch_fee.clone(),
+        unsigned_transaction_batches.unwrap(),
+        keys[0].validator_key,
+        gravity_id.clone(),
+    )
+    .await;
+    trace!("Batch confirm result is {:?}", res);
+
+    send_one_eth(keys[0].eth_key.to_address(), web30).await;
+    let start = Instant::now();
+    while Instant::now() - start < TIMEOUT * 15 {
+        let new_balance =
+            get_erc20_balance_safe(erc20_contract, web30, keys[0].eth_key.to_address()).await;
+        // only keep trying if our error is gas related
+        if new_balance.is_err() {
+            continue;
+        }
+        let balance = new_balance.unwrap();
+        if balance != 0u8.into() {
+            info!("Successfully bridged {} to Ethereum!", balance);
+            break;
+        }
+        delay_for(Duration::from_secs(1)).await;
+        if Instant::now() - start > TIMEOUT * 15 {
+            panic!(
+                "Failed to get balance. Expected {} but got {} instead",
+                amount_to_bridge, balance
+            );
+        }
+    }
+    info!("Done ICA Tests!")
 }
 
 // Get connection for both chains
@@ -434,11 +625,8 @@ pub async fn send_tokens_to_interchain_account(
     contact: &Contact,
     key: CosmosPrivateKey,
     receiver: String,
+    coin: Coin,
 ) -> Result<String, CosmosGrpcError> {
-    let coin = Coin {
-        denom: STAKING_TOKEN.clone(),
-        amount: "1000".to_string(),
-    };
     let coin_vec = vec![coin];
     let send_tokens = MsgSend {
         from_address: key.to_address(&contact.get_prefix()).unwrap().to_string(),
@@ -502,60 +690,6 @@ pub async fn get_interchain_account_balance(
     ))
 }
 
-// Create interchain accounts
-pub async fn delegate_from_interchain_account(
-    contact: &Contact,
-    validator_key: CosmosPrivateKey,
-    delegator_key: CosmosPrivateKey,
-    delegator_address: String,
-    connection_id: String,
-    prefix: String,
-) -> Result<String, CosmosGrpcError> {
-    let coin = Coin {
-        denom: STAKING_TOKEN.clone(),
-        amount: "999".to_string(),
-    };
-
-    let valoper_prefix = prefix + "valoper";
-
-    let msg = MsgDelegate {
-        delegator_address,
-        validator_address: validator_key
-            .to_address(&valoper_prefix)
-            .unwrap()
-            .to_string(),
-        amount: Some(coin),
-    };
-
-    let msg = msg.to_any().unwrap();
-
-    // delegate
-    let msg_delegate = MsgSubmitTx {
-        owner: delegator_key
-            .to_address(&contact.get_prefix())
-            .unwrap()
-            .to_string(),
-        connection_id,
-        msg: Some(msg),
-    };
-    info!("Submitting MsgSubmitTx to gravity chain {:?}", msg_delegate);
-
-    let msg_delegate = Msg::new(MSG_SUBMIT_TX_URL, msg_delegate);
-    let send_res = contact
-        .send_message(
-            &[msg_delegate],
-            Some("Test delegating from interchain account".to_string()),
-            &[],
-            Some(OPERATION_TIMEOUT),
-            delegator_key,
-        )
-        .await;
-    info!("Sent MsgSubmitTx with response {:?}", send_res);
-
-    delay_for(Duration::from_secs(10)).await;
-    Ok(send_res.unwrap().txhash)
-}
-
 // get balance
 pub async fn check_delegatinons(
     validator_key: CosmosPrivateKey,
@@ -607,4 +741,89 @@ pub async fn check_delegatinons(
     Err(CosmosGrpcError::BadResponse(
         "Delegator not found:(".to_string(),
     ))
+}
+
+/// submits and passes a proposal to add interchainaccounts host allow messages
+pub async fn add_ica_host_allow_messages(contact: &Contact, keys: &[ValidatorKeys]) {
+    info!("Submitting and passing a proposal to allow all messages for interchainaccounts");
+    let mut params_to_change = Vec::new();
+    let change = ParamChange {
+        subspace: "icahost".to_string(),
+        key: "AllowMessages".to_string(),
+        value: r#"["*"]"#.to_string(),
+    };
+    params_to_change.push(change);
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        params_to_change,
+        get_fee(None),
+    )
+    .await;
+    vote_yes_on_proposals(contact, keys, None).await;
+    wait_for_proposals_to_execute(contact).await;
+}
+
+// SendToETH ICA
+pub async fn submit_tx(
+    contact: &Contact,
+    sender_key: CosmosPrivateKey,
+    connection_id: String,
+    msg: Any,
+) -> Result<String, CosmosGrpcError> {
+    // send
+    let msg_send = MsgSubmitTx {
+        owner: sender_key
+            .to_address(&contact.get_prefix())
+            .unwrap()
+            .to_string(),
+        connection_id,
+        msg: Some(msg),
+    };
+    info!("Submitting MsgSubmitTx to gravity chain {:?}", msg_send);
+
+    let msg_send = Msg::new(MSG_SUBMIT_TX_URL, msg_send);
+    let send_res = contact
+        .send_message(
+            &[msg_send],
+            Some("Test interchain accounts".to_string()),
+            &[],
+            Some(OPERATION_TIMEOUT),
+            sender_key,
+        )
+        .await;
+    info!("Sent MsgSubmitTx with response {:?}", send_res);
+
+    delay_for(Duration::from_secs(10)).await;
+    Ok(send_res.unwrap().txhash)
+}
+
+pub fn prepare_msg_send_to_eth(
+    sender: String,
+    eth_dest: String,
+    amount: Coin,
+    bridge_fee: Option<Coin>,
+) -> Any {
+    let msg = MsgSendToEth {
+        sender,
+        eth_dest,
+        amount: Some(amount),
+        bridge_fee,
+    };
+
+    msg.to_any().unwrap()
+}
+
+pub fn prepare_msg_delegate(
+    delegator_address: String,
+    validator_address: String,
+    amount: Coin,
+) -> Any {
+    let msg = MsgDelegate {
+        delegator_address,
+        validator_address,
+        amount: Some(amount),
+    };
+
+    msg.to_any().unwrap()
 }

@@ -54,5 +54,6 @@ func (k msgServer) SubmitTx(goCtx context.Context, msg *types.MsgSubmitTx) (*typ
 			Msgs:         msg.Msgs,
 		},
 	)
+
 	return &types.MsgSubmitTxResponse{}, nil
 }
