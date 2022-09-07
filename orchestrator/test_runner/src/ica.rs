@@ -1,32 +1,31 @@
 use crate::utils::*;
 use crate::OPERATION_TIMEOUT;
-use crate::{
-    COSMOS_NODE_GRPC, IBC_NODE_GRPC, IBC_ADDRESS_PREFIX, STAKING_TOKEN, ADDRESS_PREFIX,
-};
+use crate::{ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, STAKING_TOKEN};
+use anyhow::{Context, Result};
+use cosmos_gravity::send::TIMEOUT;
 use deep_space::error::CosmosGrpcError;
-use deep_space::PrivateKey;
 use deep_space::private_key::CosmosPrivateKey;
-use deep_space::{Msg,Contact};
+use deep_space::PrivateKey;
+use deep_space::{Contact, Msg};
+use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
+use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{MsgSend, QueryAllBalancesRequest};
+use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
+    query_client::QueryClient as StakingQueryClient, MsgDelegate, QueryValidatorDelegationsRequest,
+};
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::QueryClient as ConnectionQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
-use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{MsgSend, QueryAllBalancesRequest,};
-use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
-    query_client::QueryClient as StakingQueryClient, MsgDelegate, QueryValidatorDelegationsRequest,};
-use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::{
-    QueryInterchainAccountFromAddressRequest, MsgRegisterAccount, MsgSubmitTx,
+    MsgRegisterAccount, MsgSubmitTx, QueryInterchainAccountFromAddressRequest,
 };
-use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
 use gravity_utils::connection_prep::create_rpc_connections;
-use std::time::Instant;
-use std::time::Duration;
-use cosmos_gravity::send::TIMEOUT;
-use tokio::time::sleep as delay_for;
-use tonic::transport::Channel;
-use anyhow::{Context, Result};
 use prost::Message;
 use prost_types::Any;
+use std::time::Duration;
+use std::time::Instant;
+use tokio::time::sleep as delay_for;
+use tonic::transport::Channel;
 
 pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAccount";
 pub const MSG_SEND_TOKENS_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
@@ -50,10 +49,10 @@ pub fn proto_encode<M: Message>(message: &M) -> Result<Vec<u8>> {
         .context("unable to encode protobuf message")?;
     Ok(buf)
 }
-    
+
 impl AnyConvert for MsgDelegate {
-        fn from_any(value: &::prost_types::Any) -> ::anyhow::Result<Self> {
-            ::anyhow::ensure!(
+    fn from_any(value: &::prost_types::Any) -> ::anyhow::Result<Self> {
+        ::anyhow::ensure!(
             value.type_url == STAKIN_DELEGATE_TYPE_URL,
             "invalid type url for `Any` type: expected `{}` and found `{}`",
             STAKIN_DELEGATE_TYPE_URL,
@@ -72,7 +71,7 @@ impl AnyConvert for MsgDelegate {
 }
 
 /// Test Interchain accounts host / controller. Create , Send , Delegate
-/// Plan is 
+/// Plan is
 /// 1. get connection_id , cpc_connection_id:  <fn get_connection_id>
 /// 2. register interchain account gravity -> ibc: <fn create_interchain_account>
 /// 3. check account registered: <fn get_interchain_account>
@@ -90,34 +89,27 @@ pub async fn ica_test(
     let cpc_connection_qc = ConnectionQueryClient::connect(IBC_NODE_GRPC.as_str())
         .await
         .expect("Could not connect counterparty chain channel query client");
-    
+
     // Retrieving connections ids. Waiting up to 2 minutes before OnChanOpenConfirm = success
     let connection_id_timeout = Duration::from_secs(60 * 5);
-    let connection_id = get_connection_id(
-        gravity_connection_qc,
-        Some(connection_id_timeout),
-    )
-    .await
-    .expect("Could not find gravity-test-1 connection id");
-    let cpc_connection_id = get_connection_id(
-        cpc_connection_qc,
-        Some(connection_id_timeout),
-    )
-    .await
-    .expect("Could not find gravity-test-1 counterparty connection id");
+    let connection_id = get_connection_id(gravity_connection_qc, Some(connection_id_timeout))
+        .await
+        .expect("Could not find gravity-test-1 connection id");
+    let cpc_connection_id = get_connection_id(cpc_connection_qc, Some(connection_id_timeout))
+        .await
+        .expect("Could not find gravity-test-1 counterparty connection id");
     info!(
-        "Found valid connections: connection_id: {} cpc_connection_id {}", 
-        connection_id,
-        cpc_connection_id,
+        "Found valid connections: connection_id: {} cpc_connection_id {}",
+        connection_id, cpc_connection_id,
     );
     info!("Waiting 120 seconds for ConOpenConfirm before account create");
     delay_for(Duration::from_secs(120)).await;
     // create GRPC contact for counterparty chain
-    let connections =
-    create_rpc_connections(
-        IBC_ADDRESS_PREFIX.clone(), 
-        Some(IBC_NODE_GRPC.to_string()), 
-        None, TIMEOUT
+    let connections = create_rpc_connections(
+        IBC_ADDRESS_PREFIX.clone(),
+        Some(IBC_NODE_GRPC.to_string()),
+        None,
+        TIMEOUT,
     )
     .await;
     let cpc_contact = connections.contact.unwrap();
@@ -134,20 +126,18 @@ pub async fn ica_test(
     )
     .await;
     if ok.is_err() {
-        error!("Accounts not registred! {:?}",ok.err())
+        error!("Accounts not registred! {:?}", ok.err())
     }
     info!("Accounts registered");
 
     // Create gravity qyery clients for both chains
     let timeout = Duration::from_secs(60 * 5);
     let qc = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
-    .await
-    .expect("Could not connect gravity chain channel query client");
-
+        .await
+        .expect("Could not connect gravity chain channel query client");
     let cpc_qc = GravityQueryClient::connect(IBC_NODE_GRPC.as_str())
-    .await
-    .expect("Could not connect counterparty chain channel query client");
-
+        .await
+        .expect("Could not connect counterparty chain channel query client");
 
     info!("waiting for ACK 60 secs then send TX");
     delay_for(Duration::from_secs(60)).await;
@@ -172,72 +162,58 @@ pub async fn ica_test(
     .await
     .expect("Account for counterparty chain not created or something went wrong");
 
-    info!("gravity interchain account: {} , counterchain interchain account: {}",
-    gravity_account, 
-    cpc_account,
+    info!(
+        "gravity interchain account: {} , counterchain interchain account: {}",
+        gravity_account, cpc_account,
     );
-    
     info!("Waiting for TX 30 secs");
     delay_for(Duration::from_secs(30)).await;
     // send in gravity chain
-    let ok = send_tokens_to_interchain_account(
-        contact,
-        keys[0].validator_key,
-        cpc_account.clone(),
-    )
-    .await;
+    let ok = send_tokens_to_interchain_account(contact, keys[0].validator_key, cpc_account.clone())
+        .await;
     if ok.is_err() {
-        error!("Gravity chain response error {:?}",ok.err())
+        error!("Gravity chain response error {:?}", ok.err())
     };
     info!("Tokens sent to counterparty interchain account from gravity regular account !");
 
     info!("Pause 30 seconds, then send TX");
     delay_for(Duration::from_secs(30)).await;
     // send in counterparty chain
-    let ok = send_tokens_to_interchain_account(
-        &cpc_contact,
-        ibc_keys[0],
-        gravity_account.clone(),
-    )
-    .await;
+    let ok =
+        send_tokens_to_interchain_account(&cpc_contact, ibc_keys[0], gravity_account.clone()).await;
     if ok.is_err() {
-        error!("Counterparty chain response error {:?}",ok.err())
+        error!("Counterparty chain response error {:?}", ok.err())
     };
     info!("Tokens sent to gravity interchain account from counterparty regular account!");
-    
     info!("Waiting 60 seconds and check balances..");
     delay_for(Duration::from_secs(60)).await;
 
     // Create CosmosQueryClient for both chains
     let gravity_cosmos_qc = CosmosQueryClient::connect(COSMOS_NODE_GRPC.as_str())
-    .await
-    .expect("Could not connect gravity chain channel query client");
+        .await
+        .expect("Could not connect gravity chain channel query client");
 
     let cpc_cosmos_qc = CosmosQueryClient::connect(IBC_NODE_GRPC.as_str())
-    .await
-    .expect("Could not connect counterparty chain channel query client");
+        .await
+        .expect("Could not connect counterparty chain channel query client");
 
     info!("Try to get balance");
-    let gravity_interchain_account_balance = get_interchain_account_balance(
-        gravity_account.clone(),
-        cpc_cosmos_qc,
-        Some(timeout),
-    ).await
-    .expect("Error on balance check");
+    let gravity_interchain_account_balance =
+        get_interchain_account_balance(gravity_account.clone(), cpc_cosmos_qc, Some(timeout))
+            .await
+            .expect("Error on balance check");
 
     info!("Pause 20 seconds, then try to get balance");
     delay_for(Duration::from_secs(20)).await;
-    let cpc_interchain_account_balance = get_interchain_account_balance(
-        cpc_account.clone(),
-        gravity_cosmos_qc,
-        Some(timeout),
-    )
-    .await
-    .expect("Error on balance check");
+    let cpc_interchain_account_balance =
+        get_interchain_account_balance(cpc_account.clone(), gravity_cosmos_qc, Some(timeout))
+            .await
+            .expect("Error on balance check");
     if cpc_interchain_account_balance == gravity_interchain_account_balance {
-        info!("balances: {} and {}",
-        gravity_interchain_account_balance,
-        cpc_interchain_account_balance)
+        info!(
+            "balances: {} and {}",
+            gravity_interchain_account_balance, cpc_interchain_account_balance
+        )
     };
 
     // delegate from interchain account to gravity validator
@@ -247,12 +223,12 @@ pub async fn ica_test(
         ibc_keys[0],
         keys[0].validator_key,
         gravity_account.clone(),
-        connection_id, 
+        connection_id,
         IBC_ADDRESS_PREFIX.to_string(),
     )
     .await
     .expect("Can't delegate");
-    info!("{:?}",delegeted_from_gravity );
+    info!("{:?}", delegeted_from_gravity);
     info!("Pause 60 seconds");
 
     // delegate from interchain account to counterparty validator
@@ -263,23 +239,23 @@ pub async fn ica_test(
         keys[0].validator_key,
         ibc_keys[0],
         cpc_account.clone(),
-        cpc_connection_id, 
+        cpc_connection_id,
         ADDRESS_PREFIX.to_string(),
     )
     .await
     .expect("Can't delegate");
-    info!("{:?}",delegeted_from_cpc );
+    info!("{:?}", delegeted_from_cpc);
 
     info!("Wait 60 seconds then check delegations");
     delay_for(Duration::from_secs(60)).await;
 
     // Creating StakingQuery clinets for both chains
     let staking_qc = StakingQueryClient::connect(COSMOS_NODE_GRPC.as_str())
-    .await
-    .expect("Could not connect channel query client");
+        .await
+        .expect("Could not connect channel query client");
     let cpc_staking_qc = StakingQueryClient::connect(IBC_NODE_GRPC.as_str())
-    .await
-    .expect("Could not connect channel query client");
+        .await
+        .expect("Could not connect channel query client");
 
     // check delegation shares
     let amount_delegated_to_gravity_validator = check_delegatinons(
@@ -291,7 +267,10 @@ pub async fn ica_test(
     )
     .await
     .expect("Not delegated!");
-    info!("found delegation! to gravity, shares: {} ",amount_delegated_to_gravity_validator);
+    info!(
+        "found delegation! to gravity, shares: {} ",
+        amount_delegated_to_gravity_validator
+    );
     info!("Pause 30 seconds");
     delay_for(Duration::from_secs(30)).await;
 
@@ -304,7 +283,10 @@ pub async fn ica_test(
     )
     .await
     .expect("Not delegated!");
-    info!("found delegations! to counterchain, shares: {}",amount_delegated_to_counterchain_validator);
+    info!(
+        "found delegations! to counterchain, shares: {}",
+        amount_delegated_to_counterchain_validator
+    );
 }
 
 // Get connection for both chains
@@ -332,7 +314,9 @@ pub async fn get_connection_id(
             return Ok(connection.id);
         }
     }
-    Err(CosmosGrpcError::BadResponse("No such connection".to_string()))
+    Err(CosmosGrpcError::BadResponse(
+        "No such connection".to_string(),
+    ))
 }
 
 // Create interchain accounts
@@ -343,15 +327,21 @@ pub async fn create_interchain_account(
     ibc_keys: Vec<CosmosPrivateKey>,
     connection_id: String,
     cpc_connection_id: String,
-) -> Result<String,CosmosGrpcError> { 
-    
+) -> Result<String, CosmosGrpcError> {
     // chain chain register
     let msg_register_account = MsgRegisterAccount {
-        owner: keys[0].validator_key.to_address(&contact.get_prefix()).unwrap().to_string(),
+        owner: keys[0]
+            .validator_key
+            .to_address(&contact.get_prefix())
+            .unwrap()
+            .to_string(),
         connection_id,
         version: "".to_string(),
     };
-    info!("Submitting MsgRegisterAccount to gravity chain {:?}", msg_register_account);
+    info!(
+        "Submitting MsgRegisterAccount to gravity chain {:?}",
+        msg_register_account
+    );
 
     let msg_register_account = Msg::new(MSG_REGISTER_INTERCHAIN_ACCOUNT_URL, msg_register_account);
     let send_res = contact
@@ -367,13 +357,22 @@ pub async fn create_interchain_account(
 
     // counterparty chain register
     let msg_register_account_counter_chain = MsgRegisterAccount {
-        owner: ibc_keys[0].to_address(&cpc_contact.get_prefix()).unwrap().to_string(),
+        owner: ibc_keys[0]
+            .to_address(&cpc_contact.get_prefix())
+            .unwrap()
+            .to_string(),
         connection_id: cpc_connection_id,
         version: "".to_string(),
     };
-    info!("Submitting MsgRegisterAccount to counterparty chain {:?}", msg_register_account_counter_chain);
+    info!(
+        "Submitting MsgRegisterAccount to counterparty chain {:?}",
+        msg_register_account_counter_chain
+    );
 
-    let msg_register_account_counter_chain = Msg::new(MSG_REGISTER_INTERCHAIN_ACCOUNT_URL, msg_register_account_counter_chain);
+    let msg_register_account_counter_chain = Msg::new(
+        MSG_REGISTER_INTERCHAIN_ACCOUNT_URL,
+        msg_register_account_counter_chain,
+    );
     let send_res = cpc_contact
         .send_message(
             &[msg_register_account_counter_chain],
@@ -385,7 +384,7 @@ pub async fn create_interchain_account(
         .await;
     info!("Sent MsgRegisterAccount with response {:?}", send_res);
     delay_for(Duration::from_secs(10)).await;
-    return Ok("Sent!".to_string())
+    return Ok("Sent!".to_string());
 }
 
 // get interchain account address
@@ -395,8 +394,7 @@ pub async fn get_interchain_account(
     qc: GravityQueryClient<Channel>,
     timeout: Option<Duration>,
     connection_id: String,
-) -> Result<String,CosmosGrpcError> { 
-
+) -> Result<String, CosmosGrpcError> {
     let mut qc = qc;
     let timeout = match timeout {
         Some(t) => t,
@@ -406,14 +404,12 @@ pub async fn get_interchain_account(
     let start = Instant::now();
     while Instant::now() - start < timeout {
         let account = qc
-            .interchain_account_from_address(
-                QueryInterchainAccountFromAddressRequest { 
-                    owner: key.to_address(&contact.get_prefix()).unwrap().to_string(),
-                    connection_id: connection_id.clone(), 
-                }
-            )
+            .interchain_account_from_address(QueryInterchainAccountFromAddressRequest {
+                owner: key.to_address(&contact.get_prefix()).unwrap().to_string(),
+                connection_id: connection_id.clone(),
+            })
             .await;
-        info!("{:?}, waiting...",account);
+        info!("{:?}, waiting...", account);
         if account.is_err() {
             delay_for(Duration::from_secs(5)).await;
             continue;
@@ -422,7 +418,9 @@ pub async fn get_interchain_account(
         let account = account.unwrap().into_inner().interchain_account_address;
         return Ok(account);
     }
-    Err(CosmosGrpcError::BadResponse("Can't get interchain account".to_string()))
+    Err(CosmosGrpcError::BadResponse(
+        "Can't get interchain account".to_string(),
+    ))
 }
 
 // send tokens to interchain account
@@ -430,11 +428,10 @@ pub async fn send_tokens_to_interchain_account(
     contact: &Contact,
     key: CosmosPrivateKey,
     receiver: String,
-) -> Result<String,CosmosGrpcError> { 
-
+) -> Result<String, CosmosGrpcError> {
     let coin = Coin {
-        denom:STAKING_TOKEN.clone(),
-        amount: "1000".to_string() ,
+        denom: STAKING_TOKEN.clone(),
+        amount: "1000".to_string(),
     };
     let mut coin_vec = Vec::new();
     coin_vec.push(coin);
@@ -456,8 +453,7 @@ pub async fn send_tokens_to_interchain_account(
         )
         .await;
     info!("Sent MsgSend with response {:?}", send_res);
-    return Ok("Sent!".to_string())
-
+    return Ok("Sent!".to_string());
 }
 
 // get balance
@@ -465,8 +461,7 @@ pub async fn get_interchain_account_balance(
     account: String,
     qc: CosmosQueryClient<Channel>,
     timeout: Option<Duration>,
-) -> Result<String,CosmosGrpcError> { 
-
+) -> Result<String, CosmosGrpcError> {
     let mut qc = qc;
     let timeout = match timeout {
         Some(t) => t,
@@ -476,14 +471,12 @@ pub async fn get_interchain_account_balance(
     let start = Instant::now();
     while Instant::now() - start < timeout {
         let balance = qc
-            .all_balances(
-                QueryAllBalancesRequest { 
-                    address: account.clone(),
-                    pagination: None, 
-                }
-            )
+            .all_balances(QueryAllBalancesRequest {
+                address: account.clone(),
+                pagination: None,
+            })
             .await;
-        info!("{:?}",balance);
+        info!("{:?}", balance);
         if balance.is_err() {
             delay_for(Duration::from_secs(5)).await;
             continue;
@@ -491,9 +484,11 @@ pub async fn get_interchain_account_balance(
         let balance = balance.unwrap().into_inner().balances;
         for b in balance {
             return Ok(b.amount);
-        }    
+        }
     }
-    Err(CosmosGrpcError::BadResponse("Can't get interchain account".to_string()))
+    Err(CosmosGrpcError::BadResponse(
+        "Can't get interchain account".to_string(),
+    ))
 }
 
 // Create interchain accounts
@@ -503,12 +498,11 @@ pub async fn delegate_from_interchain_account(
     delegator_key: CosmosPrivateKey,
     delegator_address: String,
     connection_id: String,
-    prefix: String
-) -> Result<String,CosmosGrpcError> { 
-    
+    prefix: String,
+) -> Result<String, CosmosGrpcError> {
     let coin = Coin {
-        denom:STAKING_TOKEN.clone(),
-        amount: "999".to_string() ,
+        denom: STAKING_TOKEN.clone(),
+        amount: "999".to_string(),
     };
 
     let valoper_prefix = prefix + "valoper";
@@ -516,17 +510,20 @@ pub async fn delegate_from_interchain_account(
     let msg = MsgDelegate {
         delegator_address,
         validator_address: validator_key
-        .to_address(&valoper_prefix)
-        .unwrap().
-        to_string(),
+            .to_address(&valoper_prefix)
+            .unwrap()
+            .to_string(),
         amount: Some(coin),
     };
 
     let msg = msg.to_any().unwrap();
 
-    // delegate 
+    // delegate
     let msg_delegate = MsgSubmitTx {
-        owner: delegator_key.to_address(&contact.get_prefix()).unwrap().to_string(),
+        owner: delegator_key
+            .to_address(&contact.get_prefix())
+            .unwrap()
+            .to_string(),
         connection_id,
         msg: Some(msg),
     };
@@ -545,9 +542,8 @@ pub async fn delegate_from_interchain_account(
     info!("Sent MsgSubmitTx with response {:?}", send_res);
 
     delay_for(Duration::from_secs(10)).await;
-    return Ok("".to_string())
+    return Ok("".to_string());
 }
-
 
 // get balance
 pub async fn check_delegatinons(
@@ -556,45 +552,48 @@ pub async fn check_delegatinons(
     delegator_address: String,
     qc: StakingQueryClient<Channel>,
     timeout: Option<Duration>,
-) -> Result<String,CosmosGrpcError> { 
-
-    let mut qc = qc
-    ;
+) -> Result<String, CosmosGrpcError> {
+    let mut qc = qc;
     let timeout = match timeout {
         Some(t) => t,
         None => OPERATION_TIMEOUT,
     };
 
     let valoper_prefix = prefix + "valoper";
-    info!("valoper address: {}",validator_key.to_address(&valoper_prefix).unwrap().to_string());
+    info!(
+        "valoper address: {}",
+        validator_key
+            .to_address(&valoper_prefix)
+            .unwrap()
+            .to_string()
+    );
     let start = Instant::now();
     while Instant::now() - start < timeout {
         delay_for(Duration::from_secs(5)).await;
         let delegators = qc
-            .validator_delegations(
-                QueryValidatorDelegationsRequest { 
-                    validator_addr: validator_key.to_address(&valoper_prefix)
-                    .unwrap().
-                    to_string(),
-                    pagination: None, 
-                }
-            )
+            .validator_delegations(QueryValidatorDelegationsRequest {
+                validator_addr: validator_key
+                    .to_address(&valoper_prefix)
+                    .unwrap()
+                    .to_string(),
+                pagination: None,
+            })
             .await;
         if delegators.is_err() {
             delay_for(Duration::from_secs(5)).await;
             continue;
         }
-        let delegators = delegators
-        .unwrap()
-        .into_inner()
-        .delegation_responses;
+        let delegators = delegators.unwrap().into_inner().delegation_responses;
         for delegator in delegators {
             if delegator.delegation.clone().unwrap().delegator_address == delegator_address {
-                info!("{:?}",delegator);
+                info!("{:?}", delegator);
                 delay_for(Duration::from_secs(5)).await;
                 return Ok(delegator.delegation.clone().unwrap().shares);
             }
-        }    
+        }
     }
-    Err(CosmosGrpcError::BadResponse("Delegator not found:(".to_string()))
+
+    Err(CosmosGrpcError::BadResponse(
+        "Delegator not found:(".to_string(),
+    ))
 }
