@@ -264,7 +264,7 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub struct BridgeUserKey {
     // the starting addresses that get Eth balances to send across the bridge
     pub eth_address: EthAddress,

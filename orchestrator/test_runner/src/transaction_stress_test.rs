@@ -1,5 +1,5 @@
-use crate::{get_fee, one_eth, one_hundred_eth, utils::*, TOTAL_TIMEOUT};
-use clarity::Address as EthAddress;
+use crate::{get_fee, one_eth, one_eth_128, one_hundred_eth, utils::*, TOTAL_TIMEOUT};
+use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::{
     query::get_pending_send_to_eth,
     send::{cancel_send_to_eth, send_request_batch, send_to_eth},
@@ -9,9 +9,9 @@ use deep_space::Contact;
 use ethereum_gravity::{send_to_cosmos::send_to_cosmos, utils::get_tx_batch_nonce};
 use futures::future::join_all;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use rand::seq::SliceRandom;
+use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     time::{Duration, Instant},
 };
 use tokio::time::sleep as delay_for;
@@ -47,99 +47,25 @@ pub async fn transaction_stress_test(
     let no_relay_market_config = create_no_batch_requests_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
-    // Generate 100 user keys to send ETH and multiple types of tokens
+    // Generate NUM_USERS user keys to send ETH and multiple types of tokens
     let mut user_keys = Vec::new();
     for _ in 0..NUM_USERS {
         user_keys.push(get_user_key(None));
     }
-    // the sending eth addresses need Ethereum to send ERC20 tokens to the bridge
-    let sending_eth_addresses: Vec<EthAddress> = user_keys.iter().map(|i| i.eth_address).collect();
-    // the destination eth addresses need Ethereum to perform a contract call and get their erc20 balances
-    let dest_eth_addresses: Vec<EthAddress> =
-        user_keys.iter().map(|i| i.eth_dest_address).collect();
-    let mut eth_destinations = Vec::new();
-    eth_destinations.extend(sending_eth_addresses.clone());
-    eth_destinations.extend(dest_eth_addresses);
-    send_eth_bulk(one_eth(), &eth_destinations, web30).await;
-    info!("Sent {} addresses 1 ETH", NUM_USERS);
 
-    // now we need to send all the sending eth addresses erc20's to send
-    for token in erc20_addresses.iter() {
-        send_erc20_bulk(one_hundred_eth(), *token, &sending_eth_addresses, web30).await;
-        info!("Sent {} addresses 100 {}", NUM_USERS, token);
-    }
-    web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
-    for token in erc20_addresses.iter() {
-        let mut sends = Vec::new();
-        for keys in user_keys.iter() {
-            let fut = send_to_cosmos(
-                *token,
-                gravity_address,
-                one_hundred_eth(),
-                keys.cosmos_address,
-                keys.eth_key,
-                Some(TIMEOUT),
-                web30,
-                vec![SendTxOption::GasPriceMultiplier(5.0)],
-            );
-            sends.push(fut);
-        }
-        let txids = join_all(sends).await;
-        let mut wait_for_txid = Vec::new();
-        for txid in txids {
-            let wait = web30.wait_for_transaction(txid.unwrap(), TIMEOUT, None);
-            wait_for_txid.push(wait);
-        }
-        let results = join_all(wait_for_txid).await;
-        for result in results {
-            let result = result.unwrap();
-            result.block_number.unwrap();
-        }
-        info!(
-            "Locked 100 {} from {} into the Gravity Ethereum Contract",
-            token, NUM_USERS
-        );
-        web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
-    }
+    prep_users_for_deposit(&user_keys, &erc20_addresses, web30).await;
 
-    let start = Instant::now();
-    let mut good = true;
-    while Instant::now() - start < TOTAL_TIMEOUT {
-        good = true;
-        for keys in user_keys.iter() {
-            let c_addr = keys.cosmos_address;
-            let balances = contact.get_balances(c_addr).await.unwrap();
-            for token in erc20_addresses.iter() {
-                let mut found = false;
-                for balance in balances.iter() {
-                    if balance.denom.contains(&token.to_string())
-                        && balance.amount == one_hundred_eth()
-                    {
-                        found = true;
-                    }
-                }
-                if !found {
-                    good = false;
-                }
-            }
-        }
-        if good {
-            info!(
-                "All {} deposits bridged to Cosmos successfully!",
-                user_keys.len() * erc20_addresses.len()
-            );
-            break;
-        }
-        delay_for(Duration::from_secs(5)).await;
-    }
-    if !good {
-        panic!(
-            "Failed to perform all {} deposits to Cosmos!",
-            user_keys.len() * erc20_addresses.len()
-        );
-    }
+    let sent_amounts = test_bulk_send_to_cosmos(
+        &user_keys,
+        gravity_address,
+        &erc20_addresses,
+        web30,
+        contact,
+    )
+    .await;
 
-    let send_amount = one_hundred_eth() - 500u16.into();
+    // now that the users have sent to cosmos we check that they have the right amounts
+    // and test execution of large (full batches)
 
     let mut denoms = HashSet::new();
     for token in erc20_addresses.iter() {
@@ -159,7 +85,11 @@ pub async fn transaction_stress_test(
                 }
             }
             let mut send_coin = send_coin.unwrap();
+
+            let send_amount = sent_amounts[keys][token].clone() - 500u16.into();
+
             send_coin.amount = send_amount.clone();
+
             let send_fee = Coin {
                 denom: send_coin.denom.clone(),
                 amount: 1u8.into(),
@@ -267,8 +197,17 @@ pub async fn transaction_stress_test(
                 let bal = get_erc20_balance_safe(*token, web30, e_dest_addr)
                     .await
                     .unwrap();
-                if bal != send_amount.clone() {
-                    if e_dest_addr == user_who_cancels.eth_address && bal == 0u8.into() {
+
+                // we sent a random amount below 100 tokens to each user, now we're sending
+                // it all back, so we should only be down 500
+                let expected_balance = one_hundred_eth() - 500u16.into();
+                let expected_canceled_balance =
+                    one_hundred_eth() - sent_amounts[keys][token].clone();
+
+                if bal != expected_balance.clone() {
+                    if e_dest_addr == user_who_cancels.eth_address
+                        && bal == expected_canceled_balance
+                    {
                         info!("We successfully found the user who canceled their sends!");
                         found_canceled = true;
                     } else {
@@ -303,4 +242,148 @@ pub async fn transaction_stress_test(
                 > 0
         )
     }
+}
+
+/// Preps a provided list of keys for depsoiting to Gravity bridge by sending them eth and ERC20 test
+/// tokens in the test environment
+pub async fn prep_users_for_deposit(
+    user_keys: &[BridgeUserKey],
+    erc20_addresses: &[EthAddress],
+    web30: &Web3,
+) {
+    // the sending eth addresses need Ethereum to send ERC20 tokens to the bridge
+    let sending_eth_addresses: Vec<EthAddress> = user_keys.iter().map(|i| i.eth_address).collect();
+    // the destination eth addresses need Ethereum to perform a contract call and get their erc20 balances
+    let dest_eth_addresses: Vec<EthAddress> =
+        user_keys.iter().map(|i| i.eth_dest_address).collect();
+    let mut eth_destinations = Vec::new();
+    eth_destinations.extend(sending_eth_addresses.clone());
+    eth_destinations.extend(dest_eth_addresses);
+    send_eth_bulk(one_eth(), &eth_destinations, web30).await;
+    info!("Sent {} addresses 1 ETH", NUM_USERS);
+
+    // now we need to send all the sending eth addresses erc20's to send
+    for token in erc20_addresses.iter() {
+        send_erc20_bulk(one_hundred_eth(), *token, &sending_eth_addresses, web30).await;
+        info!("Sent {} addresses 100 {}", NUM_USERS, token);
+    }
+    // wait one block to make sure all sends are processed
+    web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
+}
+
+/// Takes a list of users prepared by prep_users_for_deposit and sends deposits from all of them
+/// across the bridge, checking that the resulting funds arrived and are correct, deposit amounts
+/// are random with a returned mapping of keys to deposit amounts
+pub async fn test_bulk_send_to_cosmos(
+    user_keys: &[BridgeUserKey],
+    gravity_address: EthAddress,
+    erc20_addresses: &[EthAddress],
+    web30: &Web3,
+    contact: &Contact,
+) -> HashMap<BridgeUserKey, HashMap<EthAddress, Uint256>> {
+    let mut amount_sent_per_token_type = HashMap::new();
+    for user in user_keys {
+        amount_sent_per_token_type.insert(*user, HashMap::new());
+    }
+    let mut rng = ThreadRng::default();
+
+    for token in erc20_addresses.iter() {
+        let mut sends = Vec::new();
+        for keys in user_keys.iter() {
+            let amount = generate_test_send_amount(&mut rng);
+            amount_sent_per_token_type
+                .get_mut(keys)
+                .unwrap()
+                .insert(*token, amount.clone());
+
+            let fut = send_to_cosmos(
+                *token,
+                gravity_address,
+                amount,
+                keys.cosmos_address,
+                keys.eth_key,
+                Some(TIMEOUT),
+                web30,
+                vec![SendTxOption::GasPriceMultiplier(5.0)],
+            );
+            sends.push(fut);
+        }
+        let txids = join_all(sends).await;
+        let mut wait_for_txid = Vec::new();
+        for txid in txids {
+            let wait = web30.wait_for_transaction(txid.unwrap(), TIMEOUT, None);
+            wait_for_txid.push(wait);
+        }
+        let results = join_all(wait_for_txid).await;
+        for result in results {
+            let result = result.unwrap();
+            result.block_number.unwrap();
+        }
+        info!(
+            "Locked 100 {} from {} into the Gravity Ethereum Contract",
+            token, NUM_USERS
+        );
+        web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
+    }
+
+    let start = Instant::now();
+    let mut good = true;
+    while Instant::now() - start < TOTAL_TIMEOUT {
+        good = true;
+        for keys in user_keys.iter() {
+            let c_addr = keys.cosmos_address;
+            let balances = contact.get_balances(c_addr).await.unwrap();
+            for token in erc20_addresses.iter() {
+                let mut found = false;
+                for balance in balances.iter() {
+                    if balance.denom.contains(&token.to_string())
+                        && balance.amount == amount_sent_per_token_type[keys][token]
+                    {
+                        found = true;
+                    }
+                }
+                if !found {
+                    good = false;
+                }
+            }
+        }
+        if good {
+            info!(
+                "All {} deposits bridged to Cosmos successfully!",
+                user_keys.len() * erc20_addresses.len()
+            );
+            break;
+        }
+        delay_for(Duration::from_secs(5)).await;
+    }
+    // check that balances on Ethereum have been decremented correctly
+    for keys in user_keys.iter() {
+        let e_dest_addr = keys.eth_dest_address;
+        for token in erc20_addresses.iter() {
+            let bal = get_erc20_balance_safe(*token, web30, e_dest_addr)
+                .await
+                .unwrap();
+            let expected_balance = one_hundred_eth() - amount_sent_per_token_type[keys][token].clone();
+            if bal != expected_balance.clone() {
+                panic!("Failed to decrement all balances on Ethereum!");
+            }
+        }
+    }
+
+    if !good {
+        panic!(
+            "Failed to perform all {} deposits to Cosmos!",
+            user_keys.len() * erc20_addresses.len()
+        );
+    }
+    amount_sent_per_token_type
+}
+
+/// Generates a test send amount that is sufficient to pay the bridge fee back
+/// and less than the deposit size
+pub fn generate_test_send_amount(rng: &mut ThreadRng) -> Uint256 {
+    // we must generate an amount less than this
+    let one_hundred_eth = one_eth_128() * 100;
+    let res: u128 = rng.gen_range(501..one_hundred_eth);
+    res.into()
 }
