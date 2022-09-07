@@ -19,11 +19,13 @@ use ibc_relayer::config::AddressType;
 use ibc_relayer::keyring::{HDPath, KeyRing, Store};
 use std::os::unix::io::{FromRawFd, IntoRawFd};
 use std::process::{Command, Stdio};
+use std::time::Duration;
 use std::{fs::File, path::Path};
 use std::{
     io::{BufRead, BufReader, Read, Write},
     process::ExitStatus,
 };
+use tokio::time::sleep as delay_for;
 
 /// Ethereum private keys for the validators are generated using the gravity eth_keys add command
 /// and dumped into a file /validator-eth-keys in the container, from there they are then used by
@@ -301,7 +303,7 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
         "create",
         "channel",
         &get_gravity_chain_id(),
-        &get_ibc_chain_id(),
+        "connection-0",
         "--port-a",
         "transfer",
         "--port-b",
@@ -320,6 +322,34 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
             .stderr(Stdio::from_raw_fd(out_file));
         info!("Create channel command: {:?}", create_channel);
         create_channel.spawn().expect("Could not create channel");
+    }
+}
+
+// Create a connection between gravity chain and the ibc test chain
+// Writes the output to /ibc-relayer-logs/connection-creation
+pub fn create_ibc_connection(hermes_base: &mut Command) {
+    // hermes -c config.toml create connection gravity-test-1 ibc-test-1
+    let create_connection = hermes_base.args(&[
+        "create",
+        "connection",
+        &get_gravity_chain_id(),
+        &get_ibc_chain_id(),
+    ]);
+
+    let out_file = File::options()
+        .write(true)
+        .open("/ibc-relayer-logs/connection-creation")
+        .unwrap()
+        .into_raw_fd();
+    unsafe {
+        // unsafe needed for stdout + stderr redirect to file
+        let create_connection = create_connection
+            .stdout(Stdio::from_raw_fd(out_file))
+            .stderr(Stdio::from_raw_fd(out_file));
+        info!("Create connection command: {:?}", create_connection);
+        create_connection
+            .spawn()
+            .expect("Could not create connection");
     }
 }
 
@@ -362,6 +392,11 @@ pub async fn start_ibc_relayer(contact: &Contact, keys: &[ValidatorKeys], ibc_ph
     let mut hermes_base = Command::new("hermes");
     let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
     setup_relayer_keys(&RELAYER_MNEMONIC, &ibc_phrases[0]).unwrap();
+    create_ibc_connection(hermes_base);
+    let mut hermes_base = Command::new("hermes");
+    let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+    // connection should exist before start channel creation
+    delay_for(Duration::from_secs(120)).await;
     create_ibc_channel(hermes_base);
     thread::spawn(|| {
         let mut hermes_base = Command::new("hermes");

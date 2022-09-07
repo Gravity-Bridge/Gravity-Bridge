@@ -16,8 +16,8 @@ import (
 // from a chain of AnteDecorators, the final AnteDecorator in the chain being ante.Terminator.
 // This custom AnteHandler constructor loosely chains together the pre-Terminator-ed default sdk AnteHandler
 // with additional AnteDecorators. This complicated process is desirable because:
-// 1. the default sdk AnteHandler can change on any upgrade (so we do not want to have a stale list of AnteDecorators),
-// 2. it is not possible to modify an AnteHandler once it is constructed
+//  1. the default sdk AnteHandler can change on any upgrade (so we do not want to have a stale list of AnteDecorators),
+//  2. it is not possible to modify an AnteHandler once it is constructed
 func newAnteHandler(options ante.HandlerOptions, ibcKeeper *ibckeeper.Keeper, cdc codec.BinaryCodec) (*sdk.AnteHandler, error) {
 	// Call the default sdk antehandler constructor to avoid auditing our changes in the future
 	baseAnteHandler, err := ante.NewAnteHandler(options)

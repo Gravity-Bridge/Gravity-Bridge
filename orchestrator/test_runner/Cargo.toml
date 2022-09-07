@@ -16,6 +16,7 @@ gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {path = "../gravity_proto/"}
 orchestrator = {path = "../orchestrator/"}
 
+anyhow = "1.0.62"
 bytes = "1"
 prost = "0.10"
 prost-types = "0.10"

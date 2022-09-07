@@ -332,6 +332,20 @@ jobs:
         run: tests/all-up-test.sh IBC_AUTO_FORWARD
         env:
           NO_IMAGE_BUILD: True
+  ica_tests:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        with:
+          key: integration-test-cache-{hash}
+          restore-keys: |
+            integration-test-cache-
+      - name: Test Interchain accounts
+        run: tests/all-up-test.sh ICA_TEST
+        env:
+          NO_IMAGE_BUILD: True
   ethereum_keys:
     runs-on: ubuntu-latest
     needs: happy-path-geth
