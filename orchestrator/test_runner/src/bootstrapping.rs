@@ -393,6 +393,8 @@ pub async fn start_ibc_relayer(contact: &Contact, keys: &[ValidatorKeys], ibc_ph
     create_ibc_connection(hermes_base);
     let mut hermes_base = Command::new("hermes");
     let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+    // connection should exist before start channel creation
+    delay_for(Duration::from_secs(30)).await;
     create_ibc_channel(hermes_base);
     thread::spawn(|| {
         let mut hermes_base = Command::new("hermes");
