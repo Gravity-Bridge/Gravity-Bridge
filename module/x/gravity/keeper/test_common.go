@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"fmt"
+
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"

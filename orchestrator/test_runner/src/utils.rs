@@ -236,6 +236,10 @@ pub async fn get_erc20_balance_safe(
     Ok(new_balance.unwrap())
 }
 
+pub fn get_validator_private_keys(keys: &[ValidatorKeys]) -> Vec<CosmosPrivateKey> {
+    keys.iter().map(|k| k.validator_key).collect()
+}
+
 // Generates a new BridgeUserKey through randomly generated secrets
 // cosmos_prefix allows for generation of a cosmos_address with a different prefix than "gravity"
 pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
@@ -488,7 +492,7 @@ pub struct UpgradeProposalParams {
 // Creates and submits a SoftwareUpgradeProposal to the chain, then votes yes with all validators
 pub async fn execute_upgrade_proposal(
     contact: &Contact,
-    keys: &[ValidatorKeys],
+    keys: &[CosmosPrivateKey],
     timeout: Option<Duration>,
     upgrade_params: UpgradeProposalParams,
 ) {
@@ -513,7 +517,7 @@ pub async fn execute_upgrade_proposal(
         get_deposit(),
         get_fee(None),
         contact,
-        keys[0].validator_key,
+        keys[0],
         Some(duration),
     )
     .await
@@ -527,7 +531,7 @@ pub async fn execute_upgrade_proposal(
 // votes yes on every proposal available
 pub async fn vote_yes_on_proposals(
     contact: &Contact,
-    keys: &[ValidatorKeys],
+    keys: &[CosmosPrivateKey],
     timeout: Option<Duration>,
 ) {
     let duration = match timeout {
@@ -543,8 +547,7 @@ pub async fn vote_yes_on_proposals(
     let mut futs = Vec::new();
     for proposal in proposals.proposals {
         for key in keys.iter() {
-            let res =
-                vote_yes_with_retry(contact, proposal.proposal_id, key.validator_key, duration);
+            let res = vote_yes_with_retry(contact, proposal.proposal_id, *key, duration);
             futs.push(res);
         }
     }

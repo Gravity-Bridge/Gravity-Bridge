@@ -14,6 +14,7 @@ use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
+use crate::ica::ica_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
 use crate::signature_slashing::signature_slashing_test;
@@ -55,6 +56,7 @@ mod happy_path;
 mod happy_path_v2;
 mod ibc_auto_forward;
 mod ibc_metadata;
+mod ica;
 mod invalid_events;
 mod orch_keys;
 mod orch_only;
@@ -268,6 +270,7 @@ pub async fn main() {
     // SIGNATURE_SLASHING tests that validators are not improperly slashed when submitting ethereum signatures
     // SLASHING_DELEGATION tests delegating and claiming rewards from a validator that has been slashed by gravity
     // IBC_METADATA tests the creation of an IBC Metadata proposal to allow the deployment of an ERC20 representation
+    // ICA_TEST tests the creation of interchain accounts to allow executes transactions on behalf of a controller chain.
     // ERC721_HAPPY_PATH tests ERC721 extension for Gravity.sol, solidity only
     // UPGRADE_PART_1 handles creating a chain upgrade proposal and passing it
     // UPGRADE_PART_2 upgrades the chain binaries and starts the upgraded chain after being halted in part 1
@@ -412,6 +415,18 @@ pub async fn main() {
         } else if test_type == "IBC_METADATA" {
             info!("Starting IBC metadata proposal test");
             ibc_metadata_proposal_test(gravity_address, keys, grpc_client, &contact, &web30).await;
+            return;
+        } else if test_type == "ICA_TEST" {
+            info!("Starting ICA test");
+            ica_test(
+                &contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                &web30,
+                grpc_client,
+            )
+            .await;
             return;
         } else if test_type == "ERC721_HAPPY_PATH" {
             info!("Starting ERC 721 transfer test");

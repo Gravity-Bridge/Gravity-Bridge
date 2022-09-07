@@ -8,7 +8,7 @@ use crate::utils::{
     create_default_test_config, get_operator_address, get_user_key, start_orchestrators,
     ValidatorKeys,
 };
-use crate::{get_fee, STAKING_TOKEN, TOTAL_TIMEOUT};
+use crate::{get_fee, get_validator_private_keys, STAKING_TOKEN, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use deep_space::{Coin, Contact};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -22,6 +22,7 @@ pub async fn slashing_delegation_test(
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
 ) {
+    let val_priv_keys = get_validator_private_keys(&keys);
     let mut grpc_client = grpc_client;
 
     let amount_to_delegate = Coin {
@@ -101,7 +102,7 @@ pub async fn slashing_delegation_test(
     }
 
     // reduce slashing window so that slashing occurs quickly
-    reduce_slashing_window(contact, &mut grpc_client, &keys).await;
+    reduce_slashing_window(contact, &mut grpc_client, &val_priv_keys).await;
 
     // wait for slashing to occur
     wait_for_height(20, contact).await;

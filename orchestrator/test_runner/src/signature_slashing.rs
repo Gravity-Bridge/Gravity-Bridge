@@ -8,11 +8,11 @@ use crate::utils::{
     create_default_test_config, create_parameter_change_proposal, start_orchestrators,
     vote_yes_on_proposals, ValidatorKeys,
 };
-use crate::{get_fee, TOTAL_TIMEOUT};
+use crate::{get_fee, get_validator_private_keys, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::client::types::ChainStatus;
-use deep_space::Contact;
+use deep_space::{Contact, CosmosPrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use std::time::{Duration, Instant};
@@ -27,6 +27,7 @@ pub async fn signature_slashing_test(
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
 ) {
+    let val_priv_keys = get_validator_private_keys(&keys);
     let mut grpc_client = grpc_client;
 
     let no_relay_market_config = create_default_test_config();
@@ -34,7 +35,7 @@ pub async fn signature_slashing_test(
 
     test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
 
-    reduce_slashing_window(contact, &mut grpc_client, &keys).await;
+    reduce_slashing_window(contact, &mut grpc_client, &val_priv_keys).await;
 
     // check that the block height is greater than 20 if not wait until it is
     // there's some logic here to handle the chian progressing slowly over blocks
@@ -80,7 +81,7 @@ pub async fn get_latest_block(contact: &Contact) -> u64 {
 pub async fn reduce_slashing_window(
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,
-    keys: &[ValidatorKeys],
+    keys: &[CosmosPrivateKey],
 ) {
     let mut params_to_change = Vec::new();
     let signed_valsets_window = ParamChange {
@@ -105,13 +106,7 @@ pub async fn reduce_slashing_window(
     // next we create a governance proposal to use the newly bridged asset as the reward
     // and vote to pass the proposal
     info!("Creating parameter change governance proposal");
-    create_parameter_change_proposal(
-        contact,
-        keys[0].validator_key,
-        params_to_change,
-        get_fee(None),
-    )
-    .await;
+    create_parameter_change_proposal(contact, keys[0], params_to_change, get_fee(None)).await;
 
     vote_yes_on_proposals(contact, keys, None).await;
 

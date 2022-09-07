@@ -30,6 +30,7 @@ pub async fn unhalt_bridge_test(
     gravity_address: EthAddress,
     erc20_address: EthAddress,
 ) {
+    let val_priv_keys = get_validator_private_keys(&keys);
     let prefix = contact.get_prefix();
     let mut grpc_client = grpc_client;
     let no_relay_market_config = create_default_test_config();
@@ -184,7 +185,7 @@ pub async fn unhalt_bridge_test(
 
     info!("Preparing governance proposal!!");
     // Unhalt the bridge
-    submit_and_pass_unhalt_bridge_proposal(initial_valid_nonce, contact, &keys).await;
+    submit_and_pass_unhalt_bridge_proposal(initial_valid_nonce, contact, &val_priv_keys).await;
     wait_for_proposals_to_execute(contact).await;
 
     let after_unhalt_nonces = get_nonces(&mut grpc_client, &keys, &prefix).await;
@@ -236,7 +237,7 @@ pub async fn unhalt_bridge_test(
 async fn submit_and_pass_unhalt_bridge_proposal(
     nonce: u64,
     contact: &Contact,
-    keys: &[ValidatorKeys],
+    keys: &[CosmosPrivateKey],
 ) {
     let proposal_content = UnhaltBridgeProposal {
         title: "Proposal to reset the oracle".to_string(),
@@ -249,7 +250,7 @@ async fn submit_and_pass_unhalt_bridge_proposal(
         get_deposit(),
         get_fee(None),
         contact,
-        keys[0].validator_key,
+        keys[0],
         Some(TOTAL_TIMEOUT),
     )
     .await

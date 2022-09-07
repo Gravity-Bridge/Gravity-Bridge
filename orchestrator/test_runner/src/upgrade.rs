@@ -46,6 +46,7 @@ pub async fn upgrade_part_1(
     gravity_address: EthAddress,
     erc20_addresses: Vec<EthAddress>,
 ) {
+    let val_priv_keys = get_validator_private_keys(&keys);
     info!("Starting upgrade test part 1");
     let metadata = footoken_metadata(contact).await;
     submit_and_pass_ibc_metadata_proposal(metadata.name.clone(), metadata.clone(), contact, &keys)
@@ -91,7 +92,7 @@ pub async fn upgrade_part_1(
         upgrade_prop_params.plan_name.clone(),
         upgrade_height
     );
-    execute_upgrade_proposal(contact, &keys, None, upgrade_prop_params).await;
+    execute_upgrade_proposal(contact, &val_priv_keys, None, upgrade_prop_params).await;
 
     // Check that the expected attestations exist
     check_attestations(grpc_client.clone(), MINIMUM_ATTESTATIONS).await;

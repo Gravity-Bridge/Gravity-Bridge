@@ -17,7 +17,7 @@ pub struct BatchTransaction {
     /// This transactions Cosmos pool id
     pub id: u64,
     /// The senders Cosmos address
-    pub sender: CosmosAddress,
+    pub sender: String,
     pub destination: EthAddress,
     /// The fee that is being paid, must be of the same
     /// ERC20 type as erc20_fee
@@ -220,7 +220,7 @@ impl TryFrom<gravity_proto::gravity::OutgoingTransferTx> for BatchTransaction {
         }
         Ok(BatchTransaction {
             id: input.id,
-            sender: input.sender.parse()?,
+            sender: input.sender,
             destination: input.dest_address.parse()?,
             erc20_token: Erc20Token::try_from(input.erc20_token.unwrap())?,
             erc20_fee: Erc20Token::try_from(input.erc20_fee.unwrap())?,
@@ -233,7 +233,7 @@ impl Into<gravity_proto::gravity::OutgoingTransferTx> for &BatchTransaction {
     fn into(self) -> gravity_proto::gravity::OutgoingTransferTx {
         gravity_proto::gravity::OutgoingTransferTx {
             id: self.id,
-            sender: self.sender.to_string(),
+            sender: self.sender.clone(),
             dest_address: self.destination.to_string(),
             erc20_token: Some(self.erc20_token.clone().into()),
             erc20_fee: Some(self.erc20_fee.clone().into()),

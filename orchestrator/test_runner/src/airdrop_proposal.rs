@@ -1,6 +1,7 @@
 //! This is a test for the Airdrop proposal governance handler, which allows the community to propose
 //! and automatically execute an Airdrop out of the community pool
 
+use crate::get_validator_private_keys;
 use crate::utils::{
     create_parameter_change_proposal, get_coins, vote_yes_on_proposals, ValidatorKeys,
 };
@@ -13,8 +14,8 @@ use cosmos_gravity::proposals::{
 };
 use deep_space::error::CosmosGrpcError;
 use deep_space::utils::encode_any;
-use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
+use deep_space::{Address as CosmosAddress, CosmosPrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::gravity::AirdropProposal as AirdropProposalMsg;
 use rand::prelude::ThreadRng;
@@ -31,7 +32,8 @@ pub async fn airdrop_proposal_test(contact: &Contact, keys: Vec<ValidatorKeys>) 
     // we start by disabling inflation, this allows us to check that the correct
     // amount of tokens was withdrawn from the community pool, if we don't do this inflation
     // in the community pool may be larger than our actual airdrop amount spent.
-    disable_inflation(contact, &keys).await;
+    let val_priv_keys = get_validator_private_keys(&keys);
+    disable_inflation(contact, &val_priv_keys).await;
 
     // now that inflation is disabled we can query the community pool and expect the value to only go down
     let bad_airdrop_denom = "notoken".to_string();
@@ -70,6 +72,7 @@ async fn submit_and_pass_airdrop_proposal(
     keys: &[ValidatorKeys],
     contact: &Contact,
 ) -> Result<bool, CosmosGrpcError> {
+    let val_priv_keys = get_validator_private_keys(keys);
     let community_pool_contents_start = contact.query_community_pool().await.unwrap();
     let total_supply_start = contact.query_supply_of(denom.clone()).await.unwrap();
     let starting_amount_in_pool =
@@ -103,7 +106,7 @@ async fn submit_and_pass_airdrop_proposal(
         res.gas_used
     );
 
-    vote_yes_on_proposals(contact, keys, None).await;
+    vote_yes_on_proposals(contact, &val_priv_keys, None).await;
     wait_for_proposals_to_execute(contact).await;
 
     let mut error = false;
@@ -324,7 +327,7 @@ fn total_array(input: &[u64]) -> Uint256 {
 }
 
 /// submits and passes a proposal to disable inflation on the chain
-pub async fn disable_inflation(contact: &Contact, keys: &[ValidatorKeys]) {
+pub async fn disable_inflation(contact: &Contact, keys: &[CosmosPrivateKey]) {
     info!("Submitting and passing a proposal to zero out inflation");
     let mut params_to_change = Vec::new();
     let change = ParamChange {
@@ -345,13 +348,7 @@ pub async fn disable_inflation(contact: &Contact, keys: &[ValidatorKeys]) {
         value: r#""0""#.to_string(),
     };
     params_to_change.push(change);
-    create_parameter_change_proposal(
-        contact,
-        keys[0].validator_key,
-        params_to_change,
-        get_fee(None),
-    )
-    .await;
+    create_parameter_change_proposal(contact, keys[0], params_to_change, get_fee(None)).await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
 }

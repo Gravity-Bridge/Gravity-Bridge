@@ -425,6 +425,7 @@ pub async fn setup_gravity_auto_forwards(
     sender: CosmosPrivateKey, // The Src chain's funds sender
     keys: &[ValidatorKeys],
 ) {
+    let val_priv_keys = get_validator_private_keys(keys);
     let proposal_any = encode_any(
         UpdateHrpIbcChannelProposal {
             title: "title here".to_string(),
@@ -454,7 +455,7 @@ pub async fn setup_gravity_auto_forwards(
         .await
         .expect("Unable to submit UpdateHrpIbcChannelProposal");
 
-    vote_yes_on_proposals(contact, keys, None).await;
+    vote_yes_on_proposals(contact, &val_priv_keys, None).await;
     wait_for_proposals_to_execute(contact).await;
 }
 
