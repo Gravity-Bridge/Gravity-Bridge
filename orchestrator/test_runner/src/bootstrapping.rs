@@ -19,11 +19,13 @@ use ibc_relayer::config::AddressType;
 use ibc_relayer::keyring::{HDPath, KeyRing, Store};
 use std::os::unix::io::{FromRawFd, IntoRawFd};
 use std::process::{Command, Stdio};
+use std::time::Duration;
 use std::{fs::File, path::Path};
 use std::{
     io::{BufRead, BufReader, Read, Write},
     process::ExitStatus,
 };
+use tokio::time::sleep as delay_for;
 
 /// Ethereum private keys for the validators are generated using the gravity eth_keys add command
 /// and dumped into a file /validator-eth-keys in the container, from there they are then used by
