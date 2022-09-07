@@ -310,7 +310,7 @@ pub async fn get_connection_id(
             continue;
         }
         let connections = connections.unwrap().into_inner().connections;
-        for connection in connections {
+        if let Some(connection) = connections.into_iter().next() {
             return Ok(connection.id);
         }
     }
@@ -384,7 +384,13 @@ pub async fn create_interchain_account(
         .await;
     info!("Sent MsgRegisterAccount with response {:?}", send_res);
     delay_for(Duration::from_secs(10)).await;
-    return Ok("Sent!".to_string());
+    if send_res.is_err() {
+        Err(CosmosGrpcError::BadResponse(
+            "Can't create account".to_string(),
+        ))
+    } else {
+        Ok(send_res.unwrap().txhash)
+    }
 }
 
 // get interchain account address
@@ -433,8 +439,7 @@ pub async fn send_tokens_to_interchain_account(
         denom: STAKING_TOKEN.clone(),
         amount: "1000".to_string(),
     };
-    let mut coin_vec = Vec::new();
-    coin_vec.push(coin);
+    let coin_vec = vec![coin];
     let send_tokens = MsgSend {
         from_address: key.to_address(&contact.get_prefix()).unwrap().to_string(),
         to_address: receiver,
@@ -453,7 +458,13 @@ pub async fn send_tokens_to_interchain_account(
         )
         .await;
     info!("Sent MsgSend with response {:?}", send_res);
-    return Ok("Sent!".to_string());
+    if send_res.is_err() {
+        Err(CosmosGrpcError::BadResponse(
+            "Message not submitted".to_string(),
+        ))
+    } else {
+        Ok(send_res.unwrap().txhash)
+    }
 }
 
 // get balance
@@ -482,7 +493,7 @@ pub async fn get_interchain_account_balance(
             continue;
         }
         let balance = balance.unwrap().into_inner().balances;
-        for b in balance {
+        if let Some(b) = balance.into_iter().next() {
             return Ok(b.amount);
         }
     }
@@ -542,7 +553,7 @@ pub async fn delegate_from_interchain_account(
     info!("Sent MsgSubmitTx with response {:?}", send_res);
 
     delay_for(Duration::from_secs(10)).await;
-    return Ok("".to_string());
+    Ok(send_res.unwrap().txhash)
 }
 
 // get balance
