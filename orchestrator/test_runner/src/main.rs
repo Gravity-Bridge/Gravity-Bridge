@@ -7,6 +7,7 @@
 extern crate log;
 
 use crate::airdrop_proposal::airdrop_proposal_test;
+use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
@@ -43,6 +44,7 @@ use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
 
 mod airdrop_proposal;
+mod batch_timeout;
 mod bootstrapping;
 mod deposit_overflow;
 mod erc_721_happy_path;
@@ -169,6 +171,10 @@ pub fn one_eth() -> Uint256 {
     1000000000000000000u128.into()
 }
 
+pub fn one_eth_128() -> u128 {
+    1000000000000000000u128
+}
+
 pub fn one_hundred_eth() -> Uint256 {
     (1000000000000000000u128 * 100).into()
 }
@@ -268,6 +274,7 @@ pub async fn main() {
     // IBC_AUTO_FORWARD tests ibc auto forwarding functionality.
     // RUN_ORCH_ONLY runs only the orchestrators, for local testing where you want the chain to just run.
     // ETHERMINT_KEYS runs a gamut of transactions using a Ethermint key to test no loss of functionality
+    // BATCH_TIMEOUT is a stress test for batch timeouts, setting an extremely agressive timeout value
     let test_type = env::var("TEST_TYPE");
     info!("Starting tests with {:?}", test_type);
     if let Ok(test_type) = test_type {
@@ -483,6 +490,17 @@ pub async fn main() {
             )
             .await;
             assert!(result);
+            return;
+        } else if test_type == "BATCH_TIMEOUT" || test_type == "TIMEOUT_STRESS" {
+            batch_timeout_test(
+                &web30,
+                &contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;

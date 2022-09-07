@@ -66,54 +66,15 @@ pub async fn transaction_stress_test(
 
     // now that the users have sent to cosmos we check that they have the right amounts
     // and test execution of large (full batches)
-
-    let mut denoms = HashSet::new();
-    for token in erc20_addresses.iter() {
-        let mut futs = Vec::new();
-        for keys in user_keys.iter() {
-            let c_addr = keys.cosmos_address;
-            let c_key = keys.cosmos_key;
-            let e_dest_addr = keys.eth_dest_address;
-            let balances = contact.get_balances(c_addr).await.unwrap();
-            // this way I don't have to hardcode a denom and we can change the way denoms are formed
-            // without changing this test.
-            let mut send_coin = None;
-            for balance in balances {
-                if balance.denom.contains(&token.to_string()) {
-                    send_coin = Some(balance.clone());
-                    denoms.insert(balance.denom);
-                }
-            }
-            let mut send_coin = send_coin.unwrap();
-
-            let send_amount = sent_amounts[keys][token].clone() - 500u16.into();
-
-            send_coin.amount = send_amount.clone();
-
-            let send_fee = Coin {
-                denom: send_coin.denom.clone(),
-                amount: 1u8.into(),
-            };
-            let res = send_to_eth(
-                c_key,
-                e_dest_addr,
-                send_coin,
-                send_fee.clone(),
-                send_fee,
-                contact,
-            );
-            futs.push(res);
-        }
-        let results = join_all(futs).await;
-        for result in results {
-            let result = result.unwrap();
-            trace!("SendToEth result {:?}", result);
-        }
-        info!(
-            "Successfully placed {} {} into the tx pool",
-            NUM_USERS, token
-        );
-    }
+    let denoms = lock_funds_in_pool(
+        &sent_amounts,
+        &keys,
+        &user_keys,
+        &erc20_addresses,
+        contact,
+        false,
+    )
+    .await;
 
     // randomly select a user to cancel their transaction, as part of this test
     // we make sure that this user withdraws absolutely zero tokens
@@ -363,7 +324,8 @@ pub async fn test_bulk_send_to_cosmos(
             let bal = get_erc20_balance_safe(*token, web30, e_dest_addr)
                 .await
                 .unwrap();
-            let expected_balance = one_hundred_eth() - amount_sent_per_token_type[keys][token].clone();
+            let expected_balance =
+                one_hundred_eth() - amount_sent_per_token_type[keys][token].clone();
             if bal != expected_balance.clone() {
                 panic!("Failed to decrement all balances on Ethereum!");
             }
@@ -386,4 +348,92 @@ pub fn generate_test_send_amount(rng: &mut ThreadRng) -> Uint256 {
     let one_hundred_eth = one_eth_128() * 100;
     let res: u128 = rng.gen_range(501..one_hundred_eth);
     res.into()
+}
+
+/// Generates a sendToEth transaction for each user sending their whole
+/// balance back to Ethereum, if request batches is true this function
+/// will generate the maximum number of batches possible for the created tx's
+pub async fn lock_funds_in_pool(
+    sent_amounts: &HashMap<BridgeUserKey, HashMap<EthAddress, Uint256>>,
+    validator_keys: &[ValidatorKeys],
+    user_keys: &[BridgeUserKey],
+    erc20_addresses: &[EthAddress],
+    contact: &Contact,
+    request_batches: bool,
+) -> HashSet<String> {
+    // a counter to ensure that each batch we request is larger than the last by one tx
+    let mut last_batch_request = 1;
+
+    let mut denoms = HashSet::new();
+    for token in erc20_addresses.iter() {
+        let mut futs = Vec::new();
+        for keys in user_keys.iter() {
+            let c_addr = keys.cosmos_address;
+            let c_key = keys.cosmos_key;
+            let e_dest_addr = keys.eth_dest_address;
+            let balances = contact.get_balances(c_addr).await.unwrap();
+            // this way I don't have to hardcode a denom and we can change the way denoms are formed
+            // without changing this test.
+            let mut send_coin = None;
+            for balance in balances {
+                if balance.denom.contains(&token.to_string()) {
+                    send_coin = Some(balance.clone());
+                    denoms.insert(balance.denom);
+                }
+            }
+            let mut send_coin = send_coin.unwrap();
+            let denom = send_coin.denom.clone();
+
+            let send_amount = sent_amounts[keys][token].clone() - 500u16.into();
+
+            send_coin.amount = send_amount.clone();
+
+            let send_fee = Coin {
+                denom: send_coin.denom.clone(),
+                amount: 1u8.into(),
+            };
+            let res = send_to_eth(
+                c_key,
+                e_dest_addr,
+                send_coin,
+                send_fee.clone(),
+                send_fee,
+                contact,
+            );
+            futs.push(res);
+
+            // request progressively bigger batches
+            if request_batches && futs.len() > last_batch_request {
+                last_batch_request = futs.len();
+
+                let results = join_all(futs).await;
+                for result in results {
+                    let result = result.unwrap();
+                    trace!("SendToEth result {:?}", result);
+                }
+                futs = Vec::new();
+
+                info!("Requesting batch for {}", denom);
+                let res = send_request_batch(
+                    validator_keys[0].validator_key,
+                    denom,
+                    Some(get_fee(None)),
+                    contact,
+                )
+                .await
+                .unwrap();
+                info!("batch request response is {:?}", res);
+            }
+        }
+        let results = join_all(futs).await;
+        for result in results {
+            let result = result.unwrap();
+            trace!("SendToEth result {:?}", result);
+        }
+        info!(
+            "Successfully placed {} {} into the tx pool",
+            NUM_USERS, token
+        );
+    }
+    denoms
 }

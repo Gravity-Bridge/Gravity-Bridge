@@ -11,8 +11,6 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
-// Justin: Here's the method I set up to test out sending and cancelling, but I have not been able to get any transaction ids
-// So I have not been able to generate the cancel request
 pub async fn send_to_eth_and_cancel(
     contact: &Contact,
     grpc_client: GravityQueryClient<Channel>,

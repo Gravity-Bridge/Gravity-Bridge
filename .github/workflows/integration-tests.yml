@@ -346,3 +346,17 @@ jobs:
         run: tests/all-up-test.sh ETHEREUM_KEYS
         env:
           NO_IMAGE_BUILD: True
+  batch_timeout:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        with:
+          key: integration-test-cache-{hash}
+          restore-keys: |
+            integration-test-cache-
+      - name: Test extremely agressive batch timeout scenarios
+        run: tests/all-up-test.sh BATCH_TIMEOUT
+        env:
+          NO_IMAGE_BUILD: True
