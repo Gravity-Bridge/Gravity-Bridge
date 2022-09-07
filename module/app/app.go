@@ -926,7 +926,7 @@ func (app *Gravity) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci
 	if err := tmjson.Unmarshal(icaRawGenesisState, &icaGenesisState); err != nil {
 		panic(err)
 	}
-
+	// nolint: exhaustruct
 	icaGenesisState.HostGenesisState.Params.AllowMessages = []string{
 		sdk.MsgTypeURL(&banktypes.MsgSend{}),
 		sdk.MsgTypeURL(&banktypes.MsgMultiSend{}),
