@@ -345,7 +345,9 @@ pub fn create_ibc_connection(hermes_base: &mut Command) {
             .stdout(Stdio::from_raw_fd(out_file))
             .stderr(Stdio::from_raw_fd(out_file));
         info!("Create connection command: {:?}", create_connection);
-        create_connection.spawn().expect("Could not create connection");
+        create_connection
+            .spawn()
+            .expect("Could not create connection");
     }
 }
 
@@ -387,7 +389,6 @@ pub async fn start_ibc_relayer(contact: &Contact, keys: &[ValidatorKeys], ibc_ph
     info!("test-runner starting IBC relayer mode: init hermes, create ibc channel, start hermes");
     let mut hermes_base = Command::new("hermes");
     let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
-    
     setup_relayer_keys(&RELAYER_MNEMONIC, &ibc_phrases[0]).unwrap();
     create_ibc_channel(hermes_base);
     let mut hermes_base = Command::new("hermes");

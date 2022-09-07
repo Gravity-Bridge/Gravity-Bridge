@@ -54,6 +54,7 @@ mod happy_path;
 mod happy_path_v2;
 mod ibc_auto_forward;
 mod ibc_metadata;
+mod ica;
 mod invalid_events;
 mod orch_keys;
 mod orch_only;
@@ -68,7 +69,6 @@ mod upgrade;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
-mod ica;
 
 /// the timeout for individual requests
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
@@ -410,11 +410,7 @@ pub async fn main() {
             return;
         } else if test_type == "ICA_TEST" {
             info!("Starting ICA test");
-            ica_test(
-                &contact,
-                keys,
-                ibc_keys,
-            ).await;
+            ica_test(&contact, keys, ibc_keys).await;
             return;
         } else if test_type == "ERC721_HAPPY_PATH" {
             info!("Starting ERC 721 transfer test");
