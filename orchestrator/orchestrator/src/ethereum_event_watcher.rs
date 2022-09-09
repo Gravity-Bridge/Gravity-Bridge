@@ -24,6 +24,8 @@ use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
 
+use crate::oracle_resync::BLOCKS_TO_SEARCH;
+
 pub struct CheckedNonces {
     pub block_number: Uint256,
     pub event_nonce: Uint256,
@@ -43,6 +45,16 @@ pub async fn check_for_events(
     let our_cosmos_address = our_private_key.to_address(&contact.get_prefix()).unwrap();
     let latest_block = get_block_number_with_retry(web3).await;
     let latest_block = latest_block - block_delay;
+
+    // if the latest block is more than BLOCKS_TO_SEARCH ahead do not search the full history
+    // comparison only to prevent panic on underflow.
+    let latest_block = if latest_block > starting_block
+        && latest_block.clone() - starting_block.clone() > BLOCKS_TO_SEARCH.into()
+    {
+        starting_block.clone() + BLOCKS_TO_SEARCH.into()
+    } else {
+        latest_block
+    };
 
     let deposits = web3
         .check_for_events(
