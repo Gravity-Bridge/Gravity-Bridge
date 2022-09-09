@@ -14,6 +14,10 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
+/// This is roughly the maximum number of blocks a reasonable Ethereum node
+/// can search in a single request before it starts timing out or behaving badly
+pub const BLOCKS_TO_SEARCH: u128 = 5_000u128;
+
 /// This function retrieves the last event nonce this oracle has relayed to Cosmos
 /// it then uses the Ethereum indexes to determine what block the last entry
 pub async fn get_last_checked_block(
@@ -24,7 +28,6 @@ pub async fn get_last_checked_block(
     web3: &Web3,
 ) -> Uint256 {
     let mut grpc_client = grpc_client;
-    const BLOCKS_TO_SEARCH: u128 = 5_000u128;
 
     let latest_block = get_block_number_with_retry(web3).await;
     let mut last_event_nonce: Uint256 =
