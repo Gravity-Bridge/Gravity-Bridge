@@ -261,38 +261,33 @@ pub async fn check_for_events(
 }
 
 /// The number of blocks behind the 'latest block' on Ethereum our event checking should be.
-/// Ethereum does not have finality and as such is subject to chain reorgs and temporary forks
-/// if we check for events up to the very latest block we may process an event which did not
-/// 'actually occur' in the longest POW chain.
+/// Ethereum POS does have finality but is still subject to chain forks and re-orgs in complex
+/// ways. Finality can be delayed many hundreds of blocks and hours of wall time in the worst case
+/// scenario.
 ///
-/// Obviously we must chose some delay in order to prevent incorrect events from being claimed
+/// It is largely encouraged to consider 64 blocks final enough to avoid problems. Exchanges and most
+/// bridges will operate in this way. Ideally we will upgrade to checking actual finality on a beacon
+/// chain node
 ///
-/// For EVM chains with finality the correct value for this is zero. As there's no need
-/// to concern ourselves with re-orgs or forking. This function checks the netID of the
-/// provided Ethereum RPC and adjusts the block delay accordingly
+/// As a quick summary of 'why 96?' we summarize epoch and slot timing of Ethereum proof of
+/// stake consensus, each block is a slot, and each epoch is 32 slots. You are not garunteed
+/// to have a block produced every slot though and an epoch is no garuntee of finalization.
+/// epochs are not instantly final and become final only once the following epoch is 'justified'
+/// during normal protocol operation 3 epochs will always result in finalization.
 ///
-/// The value used here for Ethereum is a balance between being reasonably fast and reasonably secure
-/// As you can see on https://etherscan.io/blocks_forked uncles (one block deep reorgs)
-/// occur once every few minutes. Two deep once or twice a day.
-/// https://etherscan.io/chart/uncles
-/// Let's make a conservative assumption of 1% chance of an uncle being a two block deep reorg
-/// (actual is closer to 0.3%) and assume that continues as we increase the depth.
-/// Given an uncle every 2.8 minutes, a 6 deep reorg would be 2.8 minutes * (100^4) or one
-/// 6 deep reorg every 53,272 years.
+/// https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/
+/// https://arxiv.org/pdf/2003.03052.pdf
+/// https://eth2book.info/altair/part2/incentives/inactivity
+/// https://hackmd.io/@prysmaticlabs/finality
 ///
-/// Of course the above assume that no mining attacks occur. Once we bring that potential into
-/// the equation the question becomes 'how much money'. There is no depth safe from infinite
-/// spending. Taking some source values from https://blog.ethereum.org/2016/05/09/on-settlement-finality/
-/// we will use 13 blocks providing a 1/1_000_000 chance of an attacker with 25% of network hash
-/// power succeeding
 ///
 pub async fn get_block_delay(web3: &Web3) -> Uint256 {
     let net_version = get_net_version_with_retry(web3).await;
 
     match net_version {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
-        // all POW Chains
-        1 | 3 | 6 | 7 => 13u8.into(),
+        // all Ethereum proof of stake Chains
+        1 | 3 | 6 | 7 => 96u8.into(),
         // Dev, our own Gravity Ethereum testnet, and Hardhat respectively
         // all single signer chains with no chance of any reorgs
         2018 | 15 | 31337 => 0u8.into(),
@@ -300,7 +295,7 @@ pub async fn get_block_delay(web3: &Web3) -> Uint256 {
         // up to num validators blocks. Number is higher than Ethereum based
         // on experience with operational issues
         4 | 5 => 10u8.into(),
-        // assume the safe option (POW) where we don't know
-        _ => 13u8.into(),
+        // assume the safe option where we don't know
+        _ => 96u8.into(),
     }
 }
