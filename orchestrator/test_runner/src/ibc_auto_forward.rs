@@ -83,7 +83,7 @@ pub async fn ibc_auto_forward_test(
 
     // Test an IBC transfer of 1 stake from gravity-test-1 to ibc-test-1
     let sender = keys[0].validator_key;
-    let receiver = ibc_keys[0].to_address(&*IBC_ADDRESS_PREFIX).unwrap();
+    let receiver = ibc_keys[0].to_address(&IBC_ADDRESS_PREFIX).unwrap();
     test_ibc_transfer(
         contact,
         ibc_bank_qc.clone(),
@@ -177,7 +177,7 @@ pub async fn test_ibc_transfer(
     channel_id: String,       // The Src chain's ibc channel connecting to Dst
     packet_timeout: Duration, // Used to create ibc-transfer timeout-timestamp
 ) -> bool {
-    let sender_address = sender.to_address(&*ADDRESS_PREFIX).unwrap().to_string();
+    let sender_address = sender.to_address(&ADDRESS_PREFIX).unwrap().to_string();
     let pre_bal = get_ibc_balance(
         receiver,
         (*STAKING_TOKEN).to_string(),
@@ -406,14 +406,11 @@ pub async fn get_ibc_balance(
             }
         }
 
-        match discovered_balance.clone() {
-            Some(discovered) => {
-                let amt = Uint256::from_str(&discovered.amount).unwrap();
-                if amt == expected_balance {
-                    break;
-                }
+        if let Some(discovered) = discovered_balance.clone() {
+            let amt = Uint256::from_str(&discovered.amount).unwrap();
+            if amt == expected_balance {
+                break;
             }
-            None => {}
         }
         delay_for(Duration::from_secs(1)).await;
     }

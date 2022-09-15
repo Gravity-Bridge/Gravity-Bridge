@@ -121,8 +121,8 @@ fn copy_generated_files(from_dir: &Path, to_dir: &Path) {
     println!("Copying generated files into '{}'...", to_dir.display());
 
     // Remove old compiled files
-    remove_dir_all(&to_dir).unwrap_or_default();
-    create_dir_all(&to_dir).unwrap();
+    remove_dir_all(to_dir).unwrap_or_default();
+    create_dir_all(to_dir).unwrap();
 
     let mut filenames = Vec::new();
 

@@ -150,7 +150,7 @@ pub async fn deploy_contracts(contact: &Contact) {
     let output = if all_paths_exist(&A) || all_paths_exist(&B) {
         let paths = return_existing(A, B);
         Command::new(paths[0])
-            .args(&[
+            .args([
                 &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
@@ -162,7 +162,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .expect("Failed to deploy contracts!")
     } else if all_paths_exist(&C) {
         Command::new("npx")
-            .args(&[
+            .args([
                 "ts-node",
                 C[0],
                 &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
@@ -297,7 +297,7 @@ pub fn setup_relayer_keys(
 // Writes the output to /ibc-relayer-logs/channel-creation
 pub fn create_ibc_channel(hermes_base: &mut Command) {
     // hermes -c config.toml create channel gravity-test-1 ibc-test-1 --port-a transfer --port-b transfer
-    let create_channel = hermes_base.args(&[
+    let create_channel = hermes_base.args([
         "create",
         "channel",
         &get_gravity_chain_id(),

@@ -73,7 +73,7 @@ async fn submit_and_pass_airdrop_proposal(
     let community_pool_contents_start = contact.query_community_pool().await.unwrap();
     let total_supply_start = contact.query_supply_of(denom.clone()).await.unwrap();
     let starting_amount_in_pool =
-        get_coins(&*STAKING_TOKEN, &community_pool_contents_start).unwrap();
+        get_coins(&STAKING_TOKEN, &community_pool_contents_start).unwrap();
     let (recipients, amounts) =
         generate_valid_accounts_and_amounts(num_recipients, starting_amount_in_pool.amount.clone());
 
@@ -146,7 +146,7 @@ async fn submit_and_pass_airdrop_proposal(
 
     // assert that the community pool has been properly reduced, remember inflation is disabled
     let community_pool_contents_end = contact.query_community_pool().await.unwrap();
-    let ending_amount_in_pool = get_coins(&*STAKING_TOKEN, &community_pool_contents_end).unwrap();
+    let ending_amount_in_pool = get_coins(&STAKING_TOKEN, &community_pool_contents_end).unwrap();
     info!(
         "FeePool start {} and End {}",
         starting_amount_in_pool.amount, ending_amount_in_pool.amount
@@ -173,7 +173,7 @@ async fn submit_and_fail_airdrop_proposal(
     // ensures we are generating a set of recipients and amounts that is possible to execute
     let community_pool_contents_start = contact.query_community_pool().await.unwrap();
     let starting_amount_in_pool =
-        get_coins(&*STAKING_TOKEN, &community_pool_contents_start).unwrap();
+        get_coins(&STAKING_TOKEN, &community_pool_contents_start).unwrap();
 
     let (recipients, amounts) = if make_too_many {
         let res = generate_invalid_accounts_and_amounts(

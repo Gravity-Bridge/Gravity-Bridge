@@ -155,7 +155,7 @@ pub async fn example_ethermint_key_usage(
             None,
             validator_keys[0]
                 .validator_key
-                .to_address(&*ADDRESS_PREFIX)
+                .to_address(&ADDRESS_PREFIX)
                 .unwrap(),
             Some(OPERATION_TIMEOUT),
             user_key,
@@ -267,7 +267,7 @@ pub async fn example_ethermint_key_usage(
     .expect("Could not find gravity-test-1 channel");
 
     // Test an IBC transfer of 1 stake from gravity-test-1 to ibc-test-1
-    let receiver = ibc_keys[0].to_address(&*IBC_ADDRESS_PREFIX).unwrap();
+    let receiver = ibc_keys[0].to_address(&IBC_ADDRESS_PREFIX).unwrap();
     let success = test_ibc_transfer(
         contact,
         ibc_bank_qc.clone(),
