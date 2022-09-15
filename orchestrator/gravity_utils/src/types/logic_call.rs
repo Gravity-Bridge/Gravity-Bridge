@@ -97,7 +97,7 @@ impl Into<gravity_proto::gravity::OutgoingLogicCall> for &LogicCall {
             invalidation_nonce: self.invalidation_nonce,
             // note the dummy value, this is not used in signatures
             // so it's not required for our evidence based slashing implementation
-            block: 0,
+            eth_block: 0,
         }
     }
 }

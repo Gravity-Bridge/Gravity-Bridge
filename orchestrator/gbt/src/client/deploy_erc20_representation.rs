@@ -118,6 +118,7 @@ pub async fn deploy_erc20_representation(
                             claim_type: String::new(),
                             nonce: 0,
                             height: 0,
+                            use_v1_key: false,
                         })
                         .await;
                     match attestations {
@@ -189,6 +190,7 @@ mod tests {
                 claim_type: String::new(),
                 nonce: 0,
                 height: 0,
+                use_v1_key: false,
             })
             .await
             .unwrap();

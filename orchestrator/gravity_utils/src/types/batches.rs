@@ -257,7 +257,7 @@ impl Into<gravity_proto::gravity::OutgoingTxBatch> for &TransactionBatch {
             batch_timeout: self.batch_timeout,
             transactions: self.transactions.iter().map(|v| v.into()).collect(),
             token_contract: self.token_contract.to_string(),
-            block: 0,
+            eth_block: 0,
         }
     }
 }

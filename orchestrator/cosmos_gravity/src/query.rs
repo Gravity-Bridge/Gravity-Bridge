@@ -255,6 +255,7 @@ pub async fn get_attestations(
             claim_type: String::new(),
             nonce: 0,
             height: 0,
+            use_v1_key: false,
         })
         .await?;
     let attestations = request.into_inner().attestations;

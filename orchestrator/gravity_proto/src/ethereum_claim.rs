@@ -54,7 +54,7 @@ impl EthereumClaim for MsgSendToCosmosClaim {
     }
 
     fn get_eth_block_height(&self) -> u64 {
-        self.block_height
+        self.eth_block_height
     }
 
     fn get_claimer(&self) -> String {
@@ -71,7 +71,7 @@ impl EthereumClaim for MsgBatchSendToEthClaim {
     }
 
     fn get_eth_block_height(&self) -> u64 {
-        self.block_height
+        self.eth_block_height
     }
 
     fn get_claimer(&self) -> String {
@@ -88,7 +88,7 @@ impl EthereumClaim for MsgErc20DeployedClaim {
     }
 
     fn get_eth_block_height(&self) -> u64 {
-        self.block_height
+        self.eth_block_height
     }
 
     fn get_claimer(&self) -> String {
@@ -105,7 +105,7 @@ impl EthereumClaim for MsgLogicCallExecutedClaim {
     }
 
     fn get_eth_block_height(&self) -> u64 {
-        self.block_height
+        self.eth_block_height
     }
 
     fn get_claimer(&self) -> String {
@@ -122,7 +122,7 @@ impl EthereumClaim for MsgValsetUpdatedClaim {
     }
 
     fn get_eth_block_height(&self) -> u64 {
-        self.block_height
+        self.eth_block_height
     }
 
     fn get_claimer(&self) -> String {

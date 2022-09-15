@@ -247,7 +247,7 @@ pub async fn send_ethereum_claims(
     for deposit in deposits {
         let claim = MsgSendToCosmosClaim {
             event_nonce: deposit.event_nonce,
-            block_height: downcast_uint256(deposit.block_height).unwrap(),
+            eth_block_height: downcast_uint256(deposit.block_height).unwrap(),
             token_contract: deposit.erc20.to_string(),
             amount: deposit.amount.to_string(),
             cosmos_receiver: deposit.destination,
@@ -260,7 +260,7 @@ pub async fn send_ethereum_claims(
     for withdraw in withdraws {
         let claim = MsgBatchSendToEthClaim {
             event_nonce: withdraw.event_nonce,
-            block_height: downcast_uint256(withdraw.block_height).unwrap(),
+            eth_block_height: downcast_uint256(withdraw.block_height).unwrap(),
             token_contract: withdraw.erc20.to_string(),
             batch_nonce: withdraw.batch_nonce,
             orchestrator: our_address.to_string(),
@@ -271,7 +271,7 @@ pub async fn send_ethereum_claims(
     for deploy in erc20_deploys {
         let claim = MsgErc20DeployedClaim {
             event_nonce: deploy.event_nonce,
-            block_height: downcast_uint256(deploy.block_height).unwrap(),
+            eth_block_height: downcast_uint256(deploy.block_height).unwrap(),
             cosmos_denom: deploy.cosmos_denom,
             token_contract: deploy.erc20_address.to_string(),
             name: deploy.name,
@@ -285,7 +285,7 @@ pub async fn send_ethereum_claims(
     for call in logic_calls {
         let claim = MsgLogicCallExecutedClaim {
             event_nonce: call.event_nonce,
-            block_height: downcast_uint256(call.block_height).unwrap(),
+            eth_block_height: downcast_uint256(call.block_height).unwrap(),
             invalidation_id: call.invalidation_id,
             invalidation_nonce: call.invalidation_nonce,
             orchestrator: our_address.to_string(),
@@ -297,7 +297,7 @@ pub async fn send_ethereum_claims(
         let claim = MsgValsetUpdatedClaim {
             event_nonce: valset.event_nonce,
             valset_nonce: valset.valset_nonce,
-            block_height: downcast_uint256(valset.block_height).unwrap(),
+            eth_block_height: downcast_uint256(valset.block_height).unwrap(),
             members: valset.members.iter().map(|v| v.into()).collect(),
             reward_amount: valset.reward_amount.to_string(),
             reward_token: valset.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),

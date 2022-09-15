@@ -405,7 +405,7 @@ pub async fn submit_false_claims(
         let orch_addr = k.to_address(&contact.get_prefix()).unwrap();
         let claim = MsgSendToCosmosClaim {
             event_nonce: nonce,
-            block_height: height,
+            eth_block_height: height,
             token_contract: erc20_address.to_string(),
             amount: amount.to_string(),
             cosmos_receiver: cosmos_receiver.to_string(),
