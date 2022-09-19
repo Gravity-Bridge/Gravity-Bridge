@@ -2,6 +2,7 @@ package types
 
 import (
 	fmt "fmt"
+	"regexp"
 	"strings"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -29,6 +30,15 @@ func NewMsgRegisterAccount(owner, connectionID, counterpartyConnectionID string)
 func (msg MsgRegisterAccount) ValidateBasic() error {
 	if strings.TrimSpace(msg.Owner) == "" {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender address")
+	}
+	if strings.TrimSpace(msg.ConnectionId) == "" {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing connection id")
+	}
+
+	re := regexp.MustCompile(`^connection-\d+\z`)
+
+	if !re.MatchString(strings.TrimSpace(msg.ConnectionId)) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid connection id. Format connection-<number> e.g. connection-0, connection-1")
 	}
 
 	return nil
