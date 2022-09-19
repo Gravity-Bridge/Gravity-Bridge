@@ -1,6 +1,7 @@
 use crate::utils::*;
 use crate::OPERATION_TIMEOUT;
-use crate::{ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, STAKING_TOKEN};
+use crate::{ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, get_fee, STAKING_TOKEN};
+use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use anyhow::{Context, Result};
 use cosmos_gravity::send::TIMEOUT;
 use deep_space::error::CosmosGrpcError;
@@ -10,6 +11,7 @@ use deep_space::{Contact, Msg};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{MsgSend, QueryAllBalancesRequest};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
     query_client::QueryClient as StakingQueryClient, MsgDelegate, QueryValidatorDelegationsRequest,
 };
@@ -82,6 +84,8 @@ pub async fn ica_test(
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
 ) {
+    // Add allow messages
+    add_ica_host_allow_messages(contact,&keys).await;
     // Create connection query clients for both chains
     let gravity_connection_qc = ConnectionQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
@@ -607,4 +611,26 @@ pub async fn check_delegatinons(
     Err(CosmosGrpcError::BadResponse(
         "Delegator not found:(".to_string(),
     ))
+}
+
+
+/// submits and passes a proposal to add interchainaccounts host allow messages
+pub async fn add_ica_host_allow_messages(contact: &Contact, keys: &[ValidatorKeys]) {
+    info!("Submitting and passing a proposal to allow all messages for interchainaccounts");
+    let mut params_to_change = Vec::new();
+    let change = ParamChange {
+        subspace: "icahost".to_string(),
+        key: "AllowMessages".to_string(),
+        value: r#"["*"]"#.to_string(),
+    };
+    params_to_change.push(change);
+    create_parameter_change_proposal(
+        contact,
+        keys[0].validator_key,
+        params_to_change,
+        get_fee(None),
+    )
+    .await;
+    vote_yes_on_proposals(contact, keys, None).await;
+    wait_for_proposals_to_execute(contact).await;
 }
