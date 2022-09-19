@@ -2,6 +2,7 @@ package types
 
 import (
 	fmt "fmt"
+	"regexp"
 	"strings"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -18,7 +19,7 @@ var (
 )
 
 // NewMsgRegisterAccount creates a new MsgRegisterAccount instance
-func NewMsgRegisterAccount(owner, connectionID, counterpartyConnectionID string) *MsgRegisterAccount {
+func NewMsgRegisterAccount(owner, connectionID string) *MsgRegisterAccount {
 	return &MsgRegisterAccount{
 		Owner:        owner,
 		ConnectionId: connectionID,
@@ -45,7 +46,7 @@ func (msg MsgRegisterAccount) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgSend creates a new MsgSend instance
-func NewMsgSubmitTx(owner sdk.AccAddress, sdkMsg sdk.Msg, connectionID, counterpartyConnectionID string) (*MsgSubmitTx, error) {
+func NewMsgSubmitTx(owner sdk.AccAddress, sdkMsg sdk.Msg, connectionID string) (*MsgSubmitTx, error) {
 	any, err := PackTxMsgAny(sdkMsg)
 	if err != nil {
 		return nil, err
@@ -102,6 +103,11 @@ func (msg MsgSubmitTx) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic implements sdk.Msg
 func (msg MsgSubmitTx) ValidateBasic() error {
+
+	if strings.TrimSpace(msg.Owner) == "" {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender address")
+	}
+
 	if len(msg.Msg.GetValue()) == 0 {
 		return fmt.Errorf("can't execute an empty msg")
 	}
@@ -110,5 +116,14 @@ func (msg MsgSubmitTx) ValidateBasic() error {
 		return fmt.Errorf("can't execute an empty ConnectionId")
 	}
 
+	if !ValidateConnectionId(strings.TrimSpace(msg.ConnectionId)) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid connection id. Format connection-<number> e.g. connection-0, connection-1")
+	}
+
 	return nil
+}
+
+func ValidateConnectionId(connectionID string) bool {
+	re := regexp.MustCompile(`^connection-\d+\z`)
+	return re.MatchString(strings.TrimSpace(connectionID))
 }
