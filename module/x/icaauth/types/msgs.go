@@ -2,6 +2,7 @@ package types
 
 import (
 	fmt "fmt"
+	"regexp"
 	"strings"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -18,7 +19,7 @@ var (
 )
 
 // NewMsgRegisterAccount creates a new MsgRegisterAccount instance
-func NewMsgRegisterAccount(owner, connectionID, counterpartyConnectionID string) *MsgRegisterAccount {
+func NewMsgRegisterAccount(owner, connectionID string) *MsgRegisterAccount {
 	return &MsgRegisterAccount{
 		Owner:        owner,
 		ConnectionId: connectionID,
@@ -29,6 +30,13 @@ func NewMsgRegisterAccount(owner, connectionID, counterpartyConnectionID string)
 func (msg MsgRegisterAccount) ValidateBasic() error {
 	if strings.TrimSpace(msg.Owner) == "" {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender address")
+	}
+	if strings.TrimSpace(msg.ConnectionId) == "" {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing connection id")
+	}
+
+	if !ValidateConnectionId(strings.TrimSpace(msg.ConnectionId)) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid connection id. Format connection-<number> e.g. connection-0, connection-1")
 	}
 
 	return nil
@@ -45,17 +53,35 @@ func (msg MsgRegisterAccount) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgSend creates a new MsgSend instance
-func NewMsgSubmitTx(owner sdk.AccAddress, sdkMsg sdk.Msg, connectionID, counterpartyConnectionID string) (*MsgSubmitTx, error) {
-	any, err := PackTxMsgAny(sdkMsg)
-	if err != nil {
-		return nil, err
+func NewMsgSubmitTx(owner string, connectionID string, msgs []sdk.Msg) *MsgSubmitTx {
+	msgsAny := make([]*codectypes.Any, len(msgs))
+	for i, msg := range msgs {
+		any, err := codectypes.NewAnyWithValue(msg)
+		if err != nil {
+			panic(err)
+		}
+
+		msgsAny[i] = any
 	}
 
 	return &MsgSubmitTx{
-		Owner:        owner.String(),
+		Owner:        owner,
 		ConnectionId: connectionID,
-		Msg:          any,
-	}, nil
+		Msgs:         msgsAny,
+	}
+}
+
+func (msg MsgSubmitTx) GetMessages() ([]sdk.Msg, error) {
+	msgs := make([]sdk.Msg, len(msg.Msgs))
+	for i, msgAny := range msg.Msgs {
+		msg, ok := msgAny.GetCachedValue().(sdk.Msg)
+		if !ok {
+			return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "messages contains %T which is not a sdk.Msg", msgAny)
+		}
+		msgs[i] = msg
+	}
+
+	return msgs, nil
 }
 
 // PackTxMsgAny marshals the sdk.Msg payload to a protobuf Any type
@@ -73,21 +99,17 @@ func PackTxMsgAny(sdkMsg sdk.Msg) (*codectypes.Any, error) {
 	return any, nil
 }
 
-// UnpackInterfaces implements codectypes.UnpackInterfacesMessage
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (msg MsgSubmitTx) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	var sdkMsg sdk.Msg
-
-	return unpacker.UnpackAny(msg.Msg, &sdkMsg)
-}
-
-// GetTxMsg fetches the cached any message
-func (msg *MsgSubmitTx) GetTxMsg() sdk.Msg {
-	sdkMsg, ok := msg.Msg.GetCachedValue().(sdk.Msg)
-	if !ok {
-		return nil
+	for _, x := range msg.Msgs {
+		var msg sdk.Msg
+		err := unpacker.UnpackAny(x, &msg)
+		if err != nil {
+			return err
+		}
 	}
 
-	return sdkMsg
+	return nil
 }
 
 // GetSigners implements sdk.Msg
@@ -100,15 +122,36 @@ func (msg MsgSubmitTx) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{accAddr}
 }
 
+func (msg *MsgSubmitTx) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
 // ValidateBasic implements sdk.Msg
 func (msg MsgSubmitTx) ValidateBasic() error {
-	if len(msg.Msg.GetValue()) == 0 {
-		return fmt.Errorf("can't execute an empty msg")
+
+	if strings.TrimSpace(msg.Owner) == "" {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender address")
+	}
+
+	for _, m := range msg.Msgs {
+		if len(m.GetValue()) == 0 {
+			return fmt.Errorf("can't execute an empty msg")
+		}
 	}
 
 	if msg.ConnectionId == "" {
 		return fmt.Errorf("can't execute an empty ConnectionId")
 	}
 
+	if !ValidateConnectionId(strings.TrimSpace(msg.ConnectionId)) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid connection id. Format connection-<number> e.g. connection-0, connection-1")
+	}
+
 	return nil
+}
+
+func ValidateConnectionId(connectionID string) bool {
+	re := regexp.MustCompile(`^connection-\d+\z`)
+	return re.MatchString(strings.TrimSpace(connectionID))
 }
