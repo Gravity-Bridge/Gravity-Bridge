@@ -35,9 +35,7 @@ func (msg MsgRegisterAccount) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing connection id")
 	}
 
-	re := regexp.MustCompile(`^connection-\d+\z`)
-
-	if !re.MatchString(strings.TrimSpace(msg.ConnectionId)) {
+	if !ValidateConnectionId(strings.TrimSpace(msg.ConnectionId)) {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid connection id. Format connection-<number> e.g. connection-0, connection-1")
 	}
 
