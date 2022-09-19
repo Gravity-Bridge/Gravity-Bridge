@@ -1,7 +1,9 @@
+use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::utils::*;
 use crate::OPERATION_TIMEOUT;
-use crate::{ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, get_fee, STAKING_TOKEN};
-use crate::airdrop_proposal::wait_for_proposals_to_execute;
+use crate::{
+    get_fee, ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, STAKING_TOKEN,
+};
 use anyhow::{Context, Result};
 use cosmos_gravity::send::TIMEOUT;
 use deep_space::error::CosmosGrpcError;
@@ -85,7 +87,7 @@ pub async fn ica_test(
     ibc_keys: Vec<CosmosPrivateKey>,
 ) {
     // Add allow messages
-    add_ica_host_allow_messages(contact,&keys).await;
+    add_ica_host_allow_messages(contact, &keys).await;
     // Create connection query clients for both chains
     let gravity_connection_qc = ConnectionQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
@@ -612,7 +614,6 @@ pub async fn check_delegatinons(
         "Delegator not found:(".to_string(),
     ))
 }
-
 
 /// submits and passes a proposal to add interchainaccounts host allow messages
 pub async fn add_ica_host_allow_messages(contact: &Contact, keys: &[ValidatorKeys]) {
