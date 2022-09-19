@@ -920,33 +920,6 @@ func (app *Gravity) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
-	icaRawGenesisState := genesisState[icatypes.ModuleName]
-
-	var icaGenesisState icatypes.GenesisState
-	if err := tmjson.Unmarshal(icaRawGenesisState, &icaGenesisState); err != nil {
-		panic(err)
-	}
-	// nolint: exhaustruct
-	icaGenesisState.HostGenesisState.Params.AllowMessages = []string{
-		sdk.MsgTypeURL(&banktypes.MsgSend{}),
-		sdk.MsgTypeURL(&banktypes.MsgMultiSend{}),
-		sdk.MsgTypeURL(&stakingtypes.MsgDelegate{}),
-		sdk.MsgTypeURL(&stakingtypes.MsgUndelegate{}),
-		sdk.MsgTypeURL(&stakingtypes.MsgBeginRedelegate{}),
-		sdk.MsgTypeURL(&stakingtypes.MsgCreateValidator{}),
-		sdk.MsgTypeURL(&stakingtypes.MsgEditValidator{}),
-		sdk.MsgTypeURL(&distrtypes.MsgWithdrawDelegatorReward{}),
-		sdk.MsgTypeURL(&distrtypes.MsgSetWithdrawAddress{}),
-		sdk.MsgTypeURL(&distrtypes.MsgWithdrawValidatorCommission{}),
-		sdk.MsgTypeURL(&distrtypes.MsgFundCommunityPool{}),
-		sdk.MsgTypeURL(&govtypes.MsgVote{}),
-	}
-	genesisJson, err := tmjson.Marshal(icaGenesisState)
-	if err != nil {
-		panic(err)
-	}
-
-	genesisState[icatypes.ModuleName] = genesisJson
 
 	app.upgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
 
