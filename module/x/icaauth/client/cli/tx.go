@@ -35,8 +35,9 @@ func GetTxCmd() *cobra.Command {
 
 func getRegisterAccountCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "register [connection-id]",
-		Args: cobra.ExactArgs(1),
+		Use:   "register [connection-id]",
+		Args:  cobra.ExactArgs(1),
+		Short: "Registers an interchain account",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -63,21 +64,22 @@ func getRegisterAccountCmd() *cobra.Command {
 
 func getSubmitTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "submit-tx [path/to/sdk_msg.json] [connection-id]",
+		Use:  "submit-tx [connection-id] [path/to/sdk_msg.json]",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
-
+			connectionID := args[0]
+			sdkMsg := args[1]
 			cdc := codec.NewProtoCodec(clientCtx.InterfaceRegistry)
 
 			var txMsg sdk.Msg
-			if err := cdc.UnmarshalInterfaceJSON([]byte(args[0]), &txMsg); err != nil {
+			if err := cdc.UnmarshalInterfaceJSON([]byte(sdkMsg), &txMsg); err != nil {
 
 				// check for file path if JSON input is not provided
-				contents, err := os.ReadFile(args[0])
+				contents, err := os.ReadFile(sdkMsg)
 				if err != nil {
 					return errors.Wrap(err, "neither JSON input nor path to .json file for sdk msg were provided")
 				}
@@ -87,7 +89,7 @@ func getSubmitTxCmd() *cobra.Command {
 				}
 			}
 
-			msg, err := types.NewMsgSubmitTx(clientCtx.GetFromAddress(), txMsg, args[1])
+			msg, err := types.NewMsgSubmitTx(clientCtx.GetFromAddress(), txMsg, connectionID)
 			if err != nil {
 				return err
 			}
