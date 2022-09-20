@@ -335,8 +335,8 @@ pub async fn ica_test(
 
     info!("Prepare and send SendToEth message from counterparty chain");
     let fee = Coin {
-        denom: "".to_string(),
-        amount: "".to_string(),
+        denom: STAKING_TOKEN.clone(),
+        amount: "1".to_string(),
     };
     let msg_send_to_eth = prepare_msg_send_to_eth(
         cpc_account.clone(),
@@ -344,7 +344,7 @@ pub async fn ica_test(
         coin.clone(),
         Some(fee),
     );
-
+    info!("{} {:?}",msg_send_to_eth.type_url,msg_send_to_eth.value);
     let send_to_eth_from_cpc = submit_tx(
         &cpc_contact,
         ibc_keys[0],
