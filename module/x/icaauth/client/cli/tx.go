@@ -2,16 +2,12 @@ package cli
 
 import (
 	"fmt"
-	"os"
-
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	"github.com/spf13/cobra"
 )
 
@@ -72,27 +68,14 @@ func getSubmitTxCmd() *cobra.Command {
 				return err
 			}
 			connectionID := args[0]
-			sdkMsg := args[1]
-			cdc := codec.NewProtoCodec(clientCtx.InterfaceRegistry)
+			sdkMsgs := args[1]
 
-			var txMsg sdk.Msg
-			if err := cdc.UnmarshalInterfaceJSON([]byte(sdkMsg), &txMsg); err != nil {
-
-				// check for file path if JSON input is not provided
-				contents, err := os.ReadFile(sdkMsg)
-				if err != nil {
-					return errors.Wrap(err, "neither JSON input nor path to .json file for sdk msg were provided")
-				}
-
-				if err := cdc.UnmarshalInterfaceJSON(contents, &txMsg); err != nil {
-					return errors.Wrap(err, "error unmarshalling sdk msg file")
-				}
-			}
-
-			msg, err := types.NewMsgSubmitTx(clientCtx.GetFromAddress(), txMsg, connectionID)
+			theTx, err := authclient.ReadTxFromFile(clientCtx, sdkMsgs)
 			if err != nil {
 				return err
 			}
+
+			msg := types.NewMsgSubmitTx(clientCtx.GetFromAddress().String(), connectionID, theTx.GetMsgs())
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err
