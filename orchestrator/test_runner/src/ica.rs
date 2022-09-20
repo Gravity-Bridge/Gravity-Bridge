@@ -5,7 +5,7 @@ use crate::{
     get_fee, ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, STAKING_TOKEN,
 };
 use anyhow::{Context, Result};
-use cosmos_gravity::send::TIMEOUT;
+use cosmos_gravity::{send::send_request_batch, send::MSG_SEND_TO_ETH_TYPE_URL, send::TIMEOUT};
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::PrivateKey;
@@ -21,7 +21,7 @@ use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::Qu
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::{
-    MsgRegisterAccount, MsgSubmitTx, QueryInterchainAccountFromAddressRequest,
+    MsgRegisterAccount, MsgSendToEth, MsgSubmitTx, QueryInterchainAccountFromAddressRequest,
 };
 use gravity_utils::connection_prep::create_rpc_connections;
 use prost::Message;
@@ -34,7 +34,7 @@ use tonic::transport::Channel;
 pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAccount";
 pub const MSG_SEND_TOKENS_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
 pub const MSG_SUBMIT_TX_URL: &str = "/icaauth.v1.MsgSubmitTx";
-pub const STAKIN_DELEGATE_TYPE_URL: &str = "/cosmos.staking.v1beta1.MsgDelegate";
+pub const STAKING_DELEGATE_TYPE_URL: &str = "/cosmos.staking.v1beta1.MsgDelegate";
 
 // Trait to serialize/deserialize types to and from `prost_types::Any`
 pub trait AnyConvert: Sized {
@@ -57,9 +57,9 @@ pub fn proto_encode<M: Message>(message: &M) -> Result<Vec<u8>> {
 impl AnyConvert for MsgDelegate {
     fn from_any(value: &::prost_types::Any) -> ::anyhow::Result<Self> {
         ::anyhow::ensure!(
-            value.type_url == STAKIN_DELEGATE_TYPE_URL,
+            value.type_url == STAKING_DELEGATE_TYPE_URL,
             "invalid type url for `Any` type: expected `{}` and found `{}`",
-            STAKIN_DELEGATE_TYPE_URL,
+            STAKING_DELEGATE_TYPE_URL,
             value.type_url
         );
 
@@ -68,7 +68,27 @@ impl AnyConvert for MsgDelegate {
 
     fn to_any(&self) -> ::anyhow::Result<::prost_types::Any> {
         Ok(::prost_types::Any {
-            type_url: STAKIN_DELEGATE_TYPE_URL.to_owned(),
+            type_url: STAKING_DELEGATE_TYPE_URL.to_owned(),
+            value: proto_encode(self)?,
+        })
+    }
+}
+
+impl AnyConvert for MsgSendToEth {
+    fn from_any(value: &::prost_types::Any) -> ::anyhow::Result<Self> {
+        ::anyhow::ensure!(
+            value.type_url == MSG_SEND_TO_ETH_TYPE_URL,
+            "invalid type url for `Any` type: expected `{}` and found `{}`",
+            MSG_SEND_TO_ETH_TYPE_URL,
+            value.type_url
+        );
+
+        <Self as ::prost::Message>::decode(value.value.as_slice()).map_err(Into::into)
+    }
+
+    fn to_any(&self) -> ::anyhow::Result<::prost_types::Any> {
+        Ok(::prost_types::Any {
+            type_url: MSG_SEND_TO_ETH_TYPE_URL.to_owned(),
             value: proto_encode(self)?,
         })
     }
@@ -222,15 +242,36 @@ pub async fn ica_test(
         )
     };
 
+    let coin = Coin {
+        denom: STAKING_TOKEN.clone(),
+        amount: "999".to_string(),
+    };
+    let valoper_prefix = ADDRESS_PREFIX.to_string() + "valoper";
+    let ibc_valoper_prefix = IBC_ADDRESS_PREFIX.to_string() + "valoper";
+    let msg_delegate_from_gravity = prepare_msg_delegate(
+        gravity_account.clone(),
+        ibc_keys[0]
+            .to_address(&ibc_valoper_prefix)
+            .unwrap()
+            .to_string(),
+        coin.clone(),
+    );
+    let msg_delegate_from_cpc = prepare_msg_delegate(
+        cpc_account.clone(),
+        keys[0]
+            .validator_key
+            .to_address(&valoper_prefix)
+            .unwrap()
+            .to_string(),
+        coin.clone(),
+    );
     // delegate from interchain account to gravity validator
     info!("Delegating from interchain accounts:");
-    let delegeted_from_gravity = delegate_from_interchain_account(
+    let delegeted_from_gravity = submit_tx(
         contact,
-        ibc_keys[0],
         keys[0].validator_key,
-        gravity_account.clone(),
         connection_id,
-        IBC_ADDRESS_PREFIX.to_string(),
+        msg_delegate_from_gravity,
     )
     .await
     .expect("Can't delegate");
@@ -240,13 +281,11 @@ pub async fn ica_test(
     // delegate from interchain account to counterparty validator
     info!("Pause 60 seconds. Then delegate from counterparty chain");
     delay_for(Duration::from_secs(60)).await;
-    let delegeted_from_cpc = delegate_from_interchain_account(
+    let delegeted_from_cpc = submit_tx(
         &cpc_contact,
-        keys[0].validator_key,
         ibc_keys[0],
-        cpc_account.clone(),
-        cpc_connection_id,
-        ADDRESS_PREFIX.to_string(),
+        cpc_connection_id.clone(),
+        msg_delegate_from_cpc,
     )
     .await
     .expect("Can't delegate");
@@ -293,6 +332,39 @@ pub async fn ica_test(
         "found delegations! to counterchain, shares: {}",
         amount_delegated_to_counterchain_validator
     );
+
+    info!("Prepare and send SendToEth message from counterparty chain");
+    let fee = Coin {
+        denom: "".to_string(),
+        amount: "".to_string(),
+    };
+    let msg_send_to_eth = prepare_msg_send_to_eth(
+        cpc_account.clone(),
+        keys[0].eth_key.to_address().to_string(),
+        coin.clone(),
+        Some(fee),
+    );
+
+    let send_to_eth_from_cpc = submit_tx(
+        &cpc_contact,
+        ibc_keys[0],
+        cpc_connection_id.clone(),
+        msg_send_to_eth,
+    )
+    .await
+    .expect("Can't send MsgSendToEth");
+    info!("{:?}", send_to_eth_from_cpc);
+    info!("Wait 60 seconds then request batch");
+    delay_for(Duration::from_secs(60)).await;
+    let res = send_request_batch(
+        keys[0].validator_key,
+        STAKING_TOKEN.clone(),
+        Some(get_fee(None)),
+        contact,
+    )
+    .await
+    .unwrap();
+    info!("batch request response is {:?}", res);
 }
 
 // Get connection for both chains
@@ -443,7 +515,7 @@ pub async fn send_tokens_to_interchain_account(
 ) -> Result<String, CosmosGrpcError> {
     let coin = Coin {
         denom: STAKING_TOKEN.clone(),
-        amount: "1000".to_string(),
+        amount: "2000".to_string(),
     };
     let coin_vec = vec![coin];
     let send_tokens = MsgSend {
@@ -506,60 +578,6 @@ pub async fn get_interchain_account_balance(
     Err(CosmosGrpcError::BadResponse(
         "Can't get interchain account".to_string(),
     ))
-}
-
-// Create interchain accounts
-pub async fn delegate_from_interchain_account(
-    contact: &Contact,
-    validator_key: CosmosPrivateKey,
-    delegator_key: CosmosPrivateKey,
-    delegator_address: String,
-    connection_id: String,
-    prefix: String,
-) -> Result<String, CosmosGrpcError> {
-    let coin = Coin {
-        denom: STAKING_TOKEN.clone(),
-        amount: "999".to_string(),
-    };
-
-    let valoper_prefix = prefix + "valoper";
-
-    let msg = MsgDelegate {
-        delegator_address,
-        validator_address: validator_key
-            .to_address(&valoper_prefix)
-            .unwrap()
-            .to_string(),
-        amount: Some(coin),
-    };
-
-    let msg = msg.to_any().unwrap();
-
-    // delegate
-    let msg_delegate = MsgSubmitTx {
-        owner: delegator_key
-            .to_address(&contact.get_prefix())
-            .unwrap()
-            .to_string(),
-        connection_id,
-        msg: Some(msg),
-    };
-    info!("Submitting MsgSubmitTx to gravity chain {:?}", msg_delegate);
-
-    let msg_delegate = Msg::new(MSG_SUBMIT_TX_URL, msg_delegate);
-    let send_res = contact
-        .send_message(
-            &[msg_delegate],
-            Some("Test delegating from interchain account".to_string()),
-            &[],
-            Some(OPERATION_TIMEOUT),
-            delegator_key,
-        )
-        .await;
-    info!("Sent MsgSubmitTx with response {:?}", send_res);
-
-    delay_for(Duration::from_secs(10)).await;
-    Ok(send_res.unwrap().txhash)
 }
 
 // get balance
@@ -634,4 +652,68 @@ pub async fn add_ica_host_allow_messages(contact: &Contact, keys: &[ValidatorKey
     .await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
+}
+
+// SendToETH ICA
+pub async fn submit_tx(
+    contact: &Contact,
+    sender_key: CosmosPrivateKey,
+    connection_id: String,
+    msg: Any,
+) -> Result<String, CosmosGrpcError> {
+    // send
+    let msg_send = MsgSubmitTx {
+        owner: sender_key
+            .to_address(&contact.get_prefix())
+            .unwrap()
+            .to_string(),
+        connection_id,
+        msg: Some(msg),
+    };
+    info!("Submitting MsgSubmitTx to gravity chain {:?}", msg_send);
+
+    let msg_send = Msg::new(MSG_SUBMIT_TX_URL, msg_send);
+    let send_res = contact
+        .send_message(
+            &[msg_send],
+            Some("Test interchain accounts".to_string()),
+            &[],
+            Some(OPERATION_TIMEOUT),
+            sender_key,
+        )
+        .await;
+    info!("Sent MsgSubmitTx with response {:?}", send_res);
+
+    delay_for(Duration::from_secs(10)).await;
+    Ok(send_res.unwrap().txhash)
+}
+
+pub fn prepare_msg_send_to_eth(
+    sender: String,
+    eth_dest: String,
+    amount: Coin,
+    bridge_fee: Option<Coin>,
+) -> Any {
+    let msg = MsgSendToEth {
+        sender,
+        eth_dest,
+        amount: Some(amount),
+        bridge_fee,
+    };
+
+    return msg.to_any().unwrap();
+}
+
+pub fn prepare_msg_delegate(
+    delegator_address: String,
+    validator_address: String,
+    amount: Coin,
+) -> Any {
+    let msg = MsgDelegate {
+        delegator_address,
+        validator_address,
+        amount: Some(amount),
+    };
+
+    return msg.to_any().unwrap();
 }
