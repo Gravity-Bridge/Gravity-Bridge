@@ -45,8 +45,8 @@ func (msg MsgRegisterAccount) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgSend creates a new MsgSend instance
-func NewMsgSubmitTx(owner sdk.AccAddress, sdkMsg sdk.Msg, connectionID, counterpartyConnectionID string) (*MsgSubmitTx, error) {
-	any, err := PackTxMsgAny(sdkMsg)
+func NewMsgSubmitTx(owner sdk.AccAddress, msgs []sdk.Msg, connectionID string) (*MsgSubmitTx, error) {
+	packedMsgs, err := PackTxMsgAnys(msgs)
 	if err != nil {
 		return nil, err
 	}
@@ -54,40 +54,51 @@ func NewMsgSubmitTx(owner sdk.AccAddress, sdkMsg sdk.Msg, connectionID, counterp
 	return &MsgSubmitTx{
 		Owner:        owner.String(),
 		ConnectionId: connectionID,
-		Msg:          any,
+		Msgs:         packedMsgs,
 	}, nil
 }
 
-// PackTxMsgAny marshals the sdk.Msg payload to a protobuf Any type
-func PackTxMsgAny(sdkMsg sdk.Msg) (*codectypes.Any, error) {
-	msg, ok := sdkMsg.(proto.Message)
-	if !ok {
-		return nil, fmt.Errorf("can't proto marshal %T", sdkMsg)
+// PackTxMsgAnys marshals the []sdk.Msg payload to the expected []*Any
+func PackTxMsgAnys(msgs []sdk.Msg) ([]*codectypes.Any, error) {
+	anys := make([]*codectypes.Any, len(msgs))
+	for i, msg := range msgs {
+		pMsg, ok := msg.(proto.Message)
+		if !ok {
+			return nil, fmt.Errorf("unable to marshal %v", msg)
+		}
+		any, err := codectypes.NewAnyWithValue(pMsg)
+		if err != nil {
+			return nil, err
+		}
+		anys[i] = any
 	}
 
-	any, err := codectypes.NewAnyWithValue(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	return any, nil
+	return anys, nil
 }
 
 // UnpackInterfaces implements codectypes.UnpackInterfacesMessage
 func (msg MsgSubmitTx) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	var sdkMsg sdk.Msg
-
-	return unpacker.UnpackAny(msg.Msg, &sdkMsg)
+	for _, message := range msg.Msgs {
+		var sdkMsg sdk.Msg
+		if err := unpacker.UnpackAny(message, &sdkMsg); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-// GetTxMsg fetches the cached any message
-func (msg *MsgSubmitTx) GetTxMsg() sdk.Msg {
-	sdkMsg, ok := msg.Msg.GetCachedValue().(sdk.Msg)
-	if !ok {
-		return nil
+// GetTxMsgs fetches the cached any message
+func (msg MsgSubmitTx) GetTxMsgs() []sdk.Msg {
+	var sdkMsgs []sdk.Msg
+	for _, ne := range msg.Msgs {
+		sdkMsg, ok := ne.GetCachedValue().(sdk.Msg)
+		if !ok {
+			return nil
+		}
+		sdkMsgs = append(sdkMsgs, sdkMsg)
 	}
 
-	return sdkMsg
+	return sdkMsgs
 }
 
 // GetSigners implements sdk.Msg
@@ -102,7 +113,9 @@ func (msg MsgSubmitTx) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic implements sdk.Msg
 func (msg MsgSubmitTx) ValidateBasic() error {
-	if len(msg.Msg.GetValue()) == 0 {
+	for _, m := range msg.Msgs {
+		if len(m.GetValue()) == 0 {
+		}
 		return fmt.Errorf("can't execute an empty msg")
 	}
 

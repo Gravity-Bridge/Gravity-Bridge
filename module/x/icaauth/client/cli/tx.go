@@ -34,6 +34,7 @@ func GetTxCmd() *cobra.Command {
 	return cmd
 }
 
+// getRegisterAccountCmd contains the CLI command for creating a new interchain account on a foreign chain
 func getRegisterAccountCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "register",
@@ -66,9 +67,11 @@ func getRegisterAccountCmd() *cobra.Command {
 	return cmd
 }
 
+// getSubmitTxCmd contains the CLI command for executing one or multiple json-formatted Msgs as an interchain account
+// on a foreign chain
 func getSubmitTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "submit-tx [path/to/sdk_msg.json]",
+		Use:  "submit-tx [JSON msgs or path/to/sdk_msgs.json]",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -78,21 +81,32 @@ func getSubmitTxCmd() *cobra.Command {
 
 			cdc := codec.NewProtoCodec(clientCtx.InterfaceRegistry)
 
+			var txMsgs []sdk.Msg
+
+			// Attempt single msg on command line
 			var txMsg sdk.Msg
-			if err := cdc.UnmarshalInterfaceJSON([]byte(args[0]), &txMsg); err != nil {
+			if err := cdc.UnmarshalInterfaceJSON([]byte(args[0]), &txMsg); err == nil {
+				txMsgs = []sdk.Msg{txMsg}
+			} else {
+				// Attempt multiple msgs on command line
+				if err := cdc.UnmarshalInterfaceJSON([]byte(args[0]), &txMsgs); err != nil {
+					// Finally, attempt to read a file
+					contents, err := os.ReadFile(args[0])
+					if err != nil {
+						return errors.Wrap(err, "neither JSON input nor path to .json file for sdk msg were provided")
+					}
 
-				// check for file path if JSON input is not provided
-				contents, err := os.ReadFile(args[0])
-				if err != nil {
-					return errors.Wrap(err, "neither JSON input nor path to .json file for sdk msg were provided")
-				}
-
-				if err := cdc.UnmarshalInterfaceJSON(contents, &txMsg); err != nil {
-					return errors.Wrap(err, "error unmarshalling sdk msg file")
+					// The file contains a single Msg
+					if err := cdc.UnmarshalInterfaceJSON(contents, &txMsg); err == nil {
+						txMsgs = []sdk.Msg{txMsg}
+					} else if err := cdc.UnmarshalInterfaceJSON(contents, &txMsgs); err != nil { // Try multiple Msgs
+						return errors.Wrap(err, "error unmarshalling sdk msgs file - make sure you have provided an array of messages")
+					}
 				}
 			}
 
-			msg, err := types.NewMsgSubmitTx(clientCtx.GetFromAddress(), txMsg, viper.GetString(FlagConnectionID), viper.GetString(FlagCounterpartyConnectionID))
+			// Format the discovered Msgs for ICA submission
+			msg, err := types.NewMsgSubmitTx(clientCtx.GetFromAddress(), txMsgs, viper.GetString(FlagConnectionID))
 			if err != nil {
 				return err
 			}
