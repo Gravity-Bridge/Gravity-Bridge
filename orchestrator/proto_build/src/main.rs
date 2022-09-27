@@ -64,13 +64,15 @@ fn compile_protos(out_dir: &Path, tmp_dir: &Path) {
 
     let mut gravity_proto_dir = root.clone();
     gravity_proto_dir.push("module/proto/gravity/v1");
+    let mut icaauth_proto_dir = root.clone();
+    icaauth_proto_dir.push("module/proto/icaauth/v1");
     let mut gravity_proto_include_dir = root.clone();
     gravity_proto_include_dir.push("module/proto");
     let mut third_party_proto_include_dir = root;
     third_party_proto_include_dir.push("module/third_party/proto");
 
     // Paths
-    let proto_paths = [gravity_proto_dir];
+    let proto_paths = [gravity_proto_dir, icaauth_proto_dir];
     // we need to have an include which is just the folder of our protos to satisfy protoc
     // which insists that any passed file be included in a directory passed as an include
     let proto_include_paths = [gravity_proto_include_dir, third_party_proto_include_dir];

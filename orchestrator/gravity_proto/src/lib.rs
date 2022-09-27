@@ -9,3 +9,6 @@ pub mod gravity {
     include!("prost/gravity.v1.rs");
     include!("ethereum_claim.rs");
 }
+pub mod icaauth {
+    include!("prost/icaauth.v1.rs");
+}
