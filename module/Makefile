@@ -151,7 +151,12 @@ BUF_VERSION ?= 0.41.0
 
 PROTOC_VERSION ?= 3.16.0
 ifeq ($(UNAME_S),Linux)
-  PROTOC_ZIP ?= protoc-${PROTOC_VERSION}-linux-x86_64.zip
+  ifeq ($(UNAME_M),aarch64)
+    PROTOC_ZIP ?= protoc-${PROTOC_VERSION}-linux-aarch_64.zip
+  endif
+  ifeq ($(UNAME_M),x86_64)
+    PROTOC_ZIP ?= protoc-${PROTOC_VERSION}-linux-x86_64.zip
+  endif
 endif
 ifeq ($(UNAME_S),Darwin)
   PROTOC_ZIP ?= protoc-${PROTOC_VERSION}-osx-x86_64.zip
@@ -163,8 +168,8 @@ proto-tools-stamp:
 	echo "Installing protoc compiler..."
 	(cd /tmp; \
 	curl -OL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}"; \
-	unzip -o ${PROTOC_ZIP} -d $(PREFIX) bin/protoc; \
-	unzip -o ${PROTOC_ZIP} -d $(PREFIX) 'include/*'; \
+	unzip -o ${PROTOC_ZIP} -d ${PREFIX} bin/protoc; \
+	unzip -o ${PROTOC_ZIP} -d ${PREFIX} 'include/*'; \
 	rm -f ${PROTOC_ZIP})
 
 	echo "Installing protoc-gen-gocosmos..."
