@@ -47,6 +47,12 @@ func (k msgServer) SubmitTx(goCtx context.Context, msg *types.MsgSubmitTx) (*typ
 	if err != nil {
 		return nil, err
 	}
-
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventSubmitTx{
+			Owner:        msg.Owner,
+			ConnectionId: msg.ConnectionId,
+			Msgs:         msg.Msgs,
+		},
+	)
 	return &types.MsgSubmitTxResponse{}, nil
 }
