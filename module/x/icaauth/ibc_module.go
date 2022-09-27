@@ -122,30 +122,7 @@ func (im IBCModule) OnAcknowledgementPacket(
 	acknowledgement []byte,
 	relayer sdk.AccAddress,
 ) error {
-	var ack channeltypes.Acknowledgement
-	if err := channeltypes.SubModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-27 packet acknowledgement: %v", err)
-	}
-
-	var txMsgData sdk.TxMsgData
-	if err := proto.Unmarshal(ack.GetResult(), &txMsgData); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-27 tx message data: %v", err)
-	}
-
-	switch len(txMsgData.Data) {
-	case 0:
-		return nil
-	default:
-		for _, msgData := range txMsgData.Data {
-			response, err := handleMsgData(ctx, msgData)
-			if err != nil {
-				return err
-			}
-
-			im.keeper.Logger(ctx).Info("message response in ICS-27 packet response", "response", response)
-		}
-		return nil
-	}
+	panic("UNIMPLEMENTED")
 }
 
 // OnTimeoutPacket implements the IBCModule interface.
