@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
 	"google.golang.org/grpc/codes"
@@ -10,6 +11,13 @@ import (
 // RegisterInterchainAccount invokes the InitInterchainAccount entrypoint.
 // InitInterchainAccount binds a new controller port and initiates a new ICS-27 channel handshake
 func (k Keeper) RegisterInterchainAccount(ctx sdk.Context, owner sdk.AccAddress, connectionID string, version string) error {
+	ctx.EventManager().EmitTypedEvent(
+		&types.EventRegisterInterchainAccount{
+			Owner:        owner.String(),
+			ConnectionId: connectionID,
+			Version:      version,
+		},
+	)
 	return k.icaControllerKeeper.RegisterInterchainAccount(ctx, connectionID, owner.String())
 }
 
