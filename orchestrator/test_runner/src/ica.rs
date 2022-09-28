@@ -365,10 +365,9 @@ pub async fn ica_test(
     delay_for(Duration::from_secs(60)).await;
 
     let mut current_eth_batch_nonce =
-    get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
-        .await
-        .expect("Failed to get current eth valset");
-
+        get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
+            .await
+            .expect("Failed to get current eth valset");
 
     let res = send_request_batch(
         keys[0].validator_key,
@@ -391,7 +390,7 @@ pub async fn ica_test(
             get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
                 .await
                 .expect("Failed to get current eth tx batch nonce");
-            delay_for(Duration::from_secs(4)).await;
+        delay_for(Duration::from_secs(4)).await;
         if Instant::now() - start > TIMEOUT {
             panic!("Failed to submit transaction batch set");
         }
