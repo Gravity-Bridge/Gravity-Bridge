@@ -1,4 +1,5 @@
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
+use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::*;
 use crate::MINER_ADDRESS;
 use crate::OPERATION_TIMEOUT;
@@ -7,6 +8,7 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use clarity::Address as EthAddress;
+use clarity::Uint256;
 use cosmos_gravity::{send::send_request_batch, send::MSG_SEND_TO_ETH_TYPE_URL, send::TIMEOUT};
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::CosmosPrivateKey;
@@ -112,6 +114,7 @@ pub async fn ica_test(
     gravity_address: EthAddress,
     erc20_address: EthAddress,
     web30: &Web3,
+    grpc_client: GravityQueryClient<Channel>,
 ) {
     // Add allow messages
     add_ica_host_allow_messages(contact, &keys).await;
@@ -201,9 +204,18 @@ pub async fn ica_test(
     );
     info!("Waiting for TX 30 secs");
     delay_for(Duration::from_secs(30)).await;
+    let staking_coin = Coin {
+        denom: STAKING_TOKEN.clone(),
+        amount: "2000".to_string(),
+    };
     // send in gravity chain
-    let ok = send_tokens_to_interchain_account(contact, keys[0].validator_key, cpc_account.clone())
-        .await;
+    let ok = send_tokens_to_interchain_account(
+        contact,
+        keys[0].validator_key,
+        cpc_account.clone(),
+        staking_coin.clone(),
+    )
+    .await;
     if ok.is_err() {
         error!("Gravity chain response error {:?}", ok.err())
     };
@@ -212,8 +224,13 @@ pub async fn ica_test(
     info!("Pause 30 seconds, then send TX");
     delay_for(Duration::from_secs(30)).await;
     // send in counterparty chain
-    let ok =
-        send_tokens_to_interchain_account(&cpc_contact, ibc_keys[0], gravity_account.clone()).await;
+    let ok = send_tokens_to_interchain_account(
+        &cpc_contact,
+        ibc_keys[0],
+        gravity_account.clone(),
+        staking_coin.clone(),
+    )
+    .await;
     if ok.is_err() {
         error!("Counterparty chain response error {:?}", ok.err())
     };
@@ -340,6 +357,42 @@ pub async fn ica_test(
         amount_delegated_to_counterchain_validator
     );
 
+    info!("Send some footoken to interchain account");
+    let amount_to_bridge: Uint256 = 1_000_000u64.into();
+    let foo_coin = Coin {
+        denom: "footoken".to_string(),
+        amount: amount_to_bridge.clone().to_string(),
+    };
+    // send in gravity chain
+    let ok = send_tokens_to_interchain_account(
+        contact,
+        keys[0].validator_key,
+        cpc_account.clone(),
+        foo_coin.clone(),
+    )
+    .await;
+    if ok.is_err() {
+        error!("Gravity chain response error {:?}", ok.err())
+    };
+
+    info!("deploy cosmos representing erc20");
+    let ibc_metadata = footoken_metadata(contact).await;
+    let mut grpc_client = grpc_client;
+    let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
+        gravity_address,
+        web30,
+        Some(keys.clone()),
+        &mut grpc_client,
+        false,
+        ibc_metadata.clone(),
+    )
+    .await;
+    let token_to_send_to_eth = ibc_metadata.base.clone();
+    let send_to_eth_coin = Coin {
+        denom: token_to_send_to_eth.clone(),
+        amount: amount_to_bridge.clone().to_string(),
+    };
+
     info!("Prepare and send SendToEth message from counterparty chain");
     let fee = Coin {
         denom: "".to_string(),
@@ -348,7 +401,7 @@ pub async fn ica_test(
     let msg_send_to_eth = prepare_msg_send_to_eth(
         cpc_account.clone(),
         keys[0].eth_key.to_address().to_string(),
-        coin.clone(),
+        send_to_eth_coin.clone(),
         Some(fee),
     );
     info!("{} {:?}", msg_send_to_eth.type_url, msg_send_to_eth.value);
@@ -371,7 +424,7 @@ pub async fn ica_test(
 
     let res = send_request_batch(
         keys[0].validator_key,
-        STAKING_TOKEN.clone(),
+        token_to_send_to_eth.clone(),
         Some(get_fee(None)),
         contact,
     )
@@ -393,6 +446,28 @@ pub async fn ica_test(
         delay_for(Duration::from_secs(4)).await;
         if Instant::now() - start > TIMEOUT {
             panic!("Failed to submit transaction batch set");
+        }
+    }
+    while Instant::now() - start < TIMEOUT {
+        let new_balance =
+            get_erc20_balance_safe(erc20_contract, web30, keys[0].eth_key.to_address()).await;
+        // only keep trying if our error is gas related
+        if new_balance.is_err() {
+            continue;
+        }
+        let balance = new_balance.unwrap();
+        if balance == amount_to_bridge {
+            info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
+            assert!(balance == amount_to_bridge.clone());
+        } else if balance != 0u8.into() {
+            error!("Expected {} but got {} instead", amount_to_bridge, balance);
+        }
+        delay_for(Duration::from_secs(1)).await;
+        if Instant::now() - start > TIMEOUT {
+            panic!(
+                "Failed to get balance. Expected {} but got {} instead",
+                amount_to_bridge, balance
+            );
         }
     }
 }
@@ -542,11 +617,8 @@ pub async fn send_tokens_to_interchain_account(
     contact: &Contact,
     key: CosmosPrivateKey,
     receiver: String,
+    coin: Coin,
 ) -> Result<String, CosmosGrpcError> {
-    let coin = Coin {
-        denom: STAKING_TOKEN.clone(),
-        amount: "2000".to_string(),
-    };
     let coin_vec = vec![coin];
     let send_tokens = MsgSend {
         from_address: key.to_address(&contact.get_prefix()).unwrap().to_string(),

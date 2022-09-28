@@ -418,6 +418,7 @@ pub async fn main() {
                 gravity_address,
                 erc20_addresses[0],
                 &web30,
+                grpc_client,
             )
             .await;
             return;
