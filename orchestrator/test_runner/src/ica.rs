@@ -708,7 +708,7 @@ pub fn prepare_msg_delegate(
     delegator_address: String,
     validator_address: String,
     amount: Coin,
-) -> Any  {
+) -> Any {
     let msg = MsgDelegate {
         delegator_address,
         validator_address,
