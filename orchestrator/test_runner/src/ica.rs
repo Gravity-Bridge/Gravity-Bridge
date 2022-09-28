@@ -344,7 +344,7 @@ pub async fn ica_test(
         coin.clone(),
         Some(fee),
     );
-    info!("{} {:?}",msg_send_to_eth.type_url,msg_send_to_eth.value);
+    info!("{} {:?}", msg_send_to_eth.type_url, msg_send_to_eth.value);
     let send_to_eth_from_cpc = submit_tx(
         &cpc_contact,
         ibc_keys[0],
@@ -701,19 +701,19 @@ pub fn prepare_msg_send_to_eth(
         bridge_fee,
     };
 
-    return msg.to_any().unwrap();
+    msg.to_any().unwrap()
 }
 
 pub fn prepare_msg_delegate(
     delegator_address: String,
     validator_address: String,
     amount: Coin,
-) -> Any {
+) -> Any  {
     let msg = MsgDelegate {
         delegator_address,
         validator_address,
         amount: Some(amount),
     };
 
-    return msg.to_any().unwrap();
+    msg.to_any().unwrap()
 }
