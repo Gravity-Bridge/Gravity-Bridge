@@ -1,15 +1,18 @@
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::utils::*;
+use crate::MINER_ADDRESS;
 use crate::OPERATION_TIMEOUT;
 use crate::{
     get_fee, ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, STAKING_TOKEN,
 };
 use anyhow::{Context, Result};
+use clarity::Address as EthAddress;
 use cosmos_gravity::{send::send_request_batch, send::MSG_SEND_TO_ETH_TYPE_URL, send::TIMEOUT};
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::PrivateKey;
 use deep_space::{Contact, Msg};
+use ethereum_gravity::utils::get_tx_batch_nonce;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{MsgSend, QueryAllBalancesRequest};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
@@ -30,6 +33,7 @@ use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
+use web30::client::Web3;
 
 pub const MSG_REGISTER_INTERCHAIN_ACCOUNT_URL: &str = "/icaauth.v1.MsgRegisterAccount";
 pub const MSG_SEND_TOKENS_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
@@ -105,6 +109,9 @@ pub async fn ica_test(
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
+    gravity_address: EthAddress,
+    erc20_address: EthAddress,
+    web30: &Web3,
 ) {
     // Add allow messages
     add_ica_host_allow_messages(contact, &keys).await;
@@ -335,8 +342,8 @@ pub async fn ica_test(
 
     info!("Prepare and send SendToEth message from counterparty chain");
     let fee = Coin {
-        denom: STAKING_TOKEN.clone(),
-        amount: "1".to_string(),
+        denom: "".to_string(),
+        amount: "".to_string(),
     };
     let msg_send_to_eth = prepare_msg_send_to_eth(
         cpc_account.clone(),
@@ -356,6 +363,13 @@ pub async fn ica_test(
     info!("{:?}", send_to_eth_from_cpc);
     info!("Wait 60 seconds then request batch");
     delay_for(Duration::from_secs(60)).await;
+
+    let mut current_eth_batch_nonce =
+    get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
+        .await
+        .expect("Failed to get current eth valset");
+
+
     let res = send_request_batch(
         keys[0].validator_key,
         STAKING_TOKEN.clone(),
@@ -365,6 +379,23 @@ pub async fn ica_test(
     .await
     .unwrap();
     info!("batch request response is {:?}", res);
+    let starting_batch_nonce = current_eth_batch_nonce;
+
+    let start = Instant::now();
+    while starting_batch_nonce == current_eth_batch_nonce {
+        info!(
+            "Batch is not yet submitted {}>, waiting",
+            starting_batch_nonce
+        );
+        current_eth_batch_nonce =
+            get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
+                .await
+                .expect("Failed to get current eth tx batch nonce");
+            delay_for(Duration::from_secs(4)).await;
+        if Instant::now() - start > TIMEOUT {
+            panic!("Failed to submit transaction batch set");
+        }
+    }
 }
 
 // Get connection for both chains

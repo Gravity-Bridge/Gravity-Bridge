@@ -411,7 +411,7 @@ pub async fn main() {
             return;
         } else if test_type == "ICA_TEST" {
             info!("Starting ICA test");
-            ica_test(&contact, keys, ibc_keys).await;
+            ica_test(&contact, keys, ibc_keys, gravity_address, erc20_addresses[0], &web30).await;
             return;
         } else if test_type == "ERC721_HAPPY_PATH" {
             info!("Starting ERC 721 transfer test");
