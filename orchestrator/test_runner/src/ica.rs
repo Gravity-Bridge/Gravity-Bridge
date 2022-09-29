@@ -418,22 +418,22 @@ pub async fn ica_test(
     .await
     .expect("Can't send MsgSendToEth");
     info!("{:?}", send_to_eth_from_cpc);
-    info!("Wait 60 seconds then request batch");
-    delay_for(Duration::from_secs(60)).await;
+//    info!("Wait 60 seconds then request batch");
+//    delay_for(Duration::from_secs(60)).await;
 
     let mut current_eth_batch_nonce =
         get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
 
-    send_request_batch(
-        keys[0].orch_key,
-        token_to_send_to_eth.clone(),
-        Some(get_fee(None)),
-        contact,
-    )
-    .await
-    .unwrap();
+//    send_request_batch(
+//        keys[0].orch_key,
+//        token_to_send_to_eth.clone(),
+//        Some(get_fee(None)),
+//        contact,
+//    )
+//    .await
+//    .unwrap();
 
     let starting_batch_nonce = current_eth_batch_nonce;
 
