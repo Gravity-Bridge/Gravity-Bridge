@@ -425,7 +425,7 @@ pub async fn ica_test(
             .await
             .expect("Failed to get current eth valset");
 
-    let res = send_request_batch(
+    send_request_batch(
         keys[0].orch_key,
         token_to_send_to_eth.clone(),
         Some(get_fee(None)),
@@ -433,7 +433,7 @@ pub async fn ica_test(
     )
     .await
     .unwrap();
-    info!("batch request response is {:?}", res);
+    
     let starting_batch_nonce = current_eth_batch_nonce;
 
     let start = Instant::now();
