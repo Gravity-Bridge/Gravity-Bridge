@@ -9,7 +9,7 @@ use crate::{
 use anyhow::{Context, Result};
 use clarity::Address as EthAddress;
 use clarity::Uint256;
-use cosmos_gravity::{send::send_request_batch, send::MSG_SEND_TO_ETH_TYPE_URL, send::TIMEOUT};
+use cosmos_gravity::{send::MSG_SEND_TO_ETH_TYPE_URL, send::TIMEOUT};
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::PrivateKey;
@@ -418,26 +418,16 @@ pub async fn ica_test(
     .await
     .expect("Can't send MsgSendToEth");
     info!("{:?}", send_to_eth_from_cpc);
-//    info!("Wait 60 seconds then request batch");
-//    delay_for(Duration::from_secs(60)).await;
 
     let mut current_eth_batch_nonce =
         get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
 
-//    send_request_batch(
-//        keys[0].orch_key,
-//        token_to_send_to_eth.clone(),
-//        Some(get_fee(None)),
-//        contact,
-//    )
-//    .await
-//    .unwrap();
-
     let starting_batch_nonce = current_eth_batch_nonce;
 
     let start = Instant::now();
+
     while starting_batch_nonce == current_eth_batch_nonce {
         info!(
             "Batch is not yet submitted {}>, waiting",
@@ -448,11 +438,11 @@ pub async fn ica_test(
                 .await
                 .expect("Failed to get current eth tx batch nonce");
         delay_for(Duration::from_secs(4)).await;
-        if Instant::now() - start > TIMEOUT {
+        if Instant::now() - start > TIMEOUT * 5 {
             panic!("Failed to submit transaction batch set");
         }
     }
-    while Instant::now() - start < TIMEOUT {
+    while Instant::now() - start < TIMEOUT * 5 {
         let new_balance =
             get_erc20_balance_safe(erc20_contract, web30, keys[0].eth_key.to_address()).await;
         // only keep trying if our error is gas related
