@@ -425,7 +425,7 @@ pub async fn ica_test(
     let res = send_request_batch(
         keys[0].validator_key,
         token_to_send_to_eth.clone(),
-        Some(get_fee(None)),
+        Some(get_fee(Some(ibc_metadata.base.clone()))),
         contact,
     )
     .await
