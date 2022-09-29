@@ -395,7 +395,7 @@ pub async fn ica_test(
 
     info!("Prepare and send SendToEth message from counterparty chain");
     let fee = Coin {
-        denom: "".to_string(),
+        denom: token_to_send_to_eth.to_string(),
         amount: "".to_string(),
     };
     let msg_send_to_eth = prepare_msg_send_to_eth(
