@@ -426,7 +426,7 @@ pub async fn ica_test(
             .expect("Failed to get current eth valset");
 
     let res = send_request_batch(
-        keys[0].validator_key,
+        keys[0].orch_key,
         token_to_send_to_eth.clone(),
         Some(get_fee(None)),
         contact,
