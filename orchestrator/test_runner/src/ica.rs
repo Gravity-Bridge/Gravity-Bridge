@@ -361,10 +361,11 @@ pub async fn ica_test(
     );
 
     info!("Send some footoken to interchain account");
+    let amount_to_send: Uint256 = 2_000_000u64.into();
     let amount_to_bridge: Uint256 = 1_000_000u64.into();
     let foo_coin = Coin {
         denom: "footoken".to_string(),
-        amount: amount_to_bridge.clone().to_string(),
+        amount: amount_to_send.clone().to_string(),
     };
     // send in gravity chain
     let ok = send_tokens_to_interchain_account(
@@ -399,7 +400,7 @@ pub async fn ica_test(
     info!("Prepare and send SendToEth message from counterparty chain");
     let fee = Coin {
         denom: token_to_send_to_eth.to_string(),
-        amount: "".to_string(),
+        amount: "100".to_string(),
     };
     let msg_send_to_eth = prepare_msg_send_to_eth(
         cpc_account.clone(),
@@ -433,7 +434,7 @@ pub async fn ica_test(
     )
     .await
     .unwrap();
-    
+
     let starting_batch_nonce = current_eth_batch_nonce;
 
     let start = Instant::now();
