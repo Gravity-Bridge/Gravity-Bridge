@@ -118,7 +118,7 @@ pub async fn ica_test(
 ) {
     let no_relay_market_config = create_default_test_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
-
+    info!("{} Gravity contract address", gravity_address);
     // Add allow messages
     add_ica_host_allow_messages(contact, &keys).await;
     // Create connection query clients for both chains
