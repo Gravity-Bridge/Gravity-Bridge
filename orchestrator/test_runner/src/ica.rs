@@ -419,7 +419,7 @@ pub async fn ica_test(
     let mut send_request_batch_fee = get_fee(Some(token_to_send_to_eth.to_string()));
     send_request_batch_fee.amount = 1_000_000u64.into();
     send_request_batch(
-        keys[0].orch_key,
+        keys[0].validator_key,
         token_to_send_to_eth.clone(),
         Some(send_request_batch_fee),
         contact,
