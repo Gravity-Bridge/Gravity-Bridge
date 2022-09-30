@@ -115,9 +115,11 @@ pub async fn ica_test(
 ) {
     let no_relay_market_config = create_default_test_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
-    info!("{} Gravity contract address", gravity_address);
+    info!("Gravity contract address {}", gravity_address);
+
     // Add allow messages
     add_ica_host_allow_messages(contact, &keys).await;
+
     // Create connection query clients for both chains
     let gravity_connection_qc = ConnectionQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
@@ -138,8 +140,10 @@ pub async fn ica_test(
         "Found valid connections: connection_id: {} cpc_connection_id {}",
         connection_id, cpc_connection_id,
     );
+
     info!("Waiting 120 seconds for ConOpenConfirm before account create");
     delay_for(Duration::from_secs(120)).await;
+
     // create GRPC contact for counterparty chain
     let connections = create_rpc_connections(
         IBC_ADDRESS_PREFIX.clone(),
@@ -151,7 +155,7 @@ pub async fn ica_test(
     let cpc_contact = connections.contact.unwrap();
 
     //create gravity and cpc interchain accounts
-    info!("Processng interchain account registration");
+    info!("Processing interchain account registration");
     let ok = create_interchain_account(
         contact,
         &cpc_contact,
@@ -175,7 +179,7 @@ pub async fn ica_test(
         .await
         .expect("Could not connect counterparty chain channel query client");
 
-    info!("waiting for ACK 60 secs then send TX");
+    info!("Pause 60s before get interchain accounts");
     delay_for(Duration::from_secs(60)).await;
     let gravity_account = get_interchain_account(
         contact,
@@ -186,8 +190,6 @@ pub async fn ica_test(
     )
     .await
     .expect("Account for gravity not created or something went wrong");
-
-    // send tx
     let cpc_account = get_interchain_account(
         &cpc_contact,
         ibc_keys[0],
@@ -197,13 +199,11 @@ pub async fn ica_test(
     )
     .await
     .expect("Account for counterparty chain not created or something went wrong");
-
     info!(
         "gravity interchain account: {} , counterchain interchain account: {}",
         gravity_account, cpc_account,
     );
-    info!("Waiting for TX 30 secs");
-    delay_for(Duration::from_secs(30)).await;
+
     let staking_coin = Coin {
         denom: STAKING_TOKEN.clone(),
         amount: "2000".to_string(),
@@ -220,9 +220,6 @@ pub async fn ica_test(
         error!("Gravity chain response error {:?}", ok.err())
     };
     info!("Tokens sent to counterparty interchain account from gravity regular account !");
-
-    info!("Pause 30 seconds, then send TX");
-    delay_for(Duration::from_secs(30)).await;
     // send in counterparty chain
     let ok = send_tokens_to_interchain_account(
         &cpc_contact,
@@ -235,8 +232,9 @@ pub async fn ica_test(
         error!("Counterparty chain response error {:?}", ok.err())
     };
     info!("Tokens sent to gravity interchain account from counterparty regular account!");
-    info!("Waiting 60 seconds and check balances..");
-    delay_for(Duration::from_secs(60)).await;
+
+    info!("Pause 30 seconds and check balances");
+    delay_for(Duration::from_secs(30)).await;
 
     // Create CosmosQueryClient for both chains
     let gravity_cosmos_qc = CosmosQueryClient::connect(COSMOS_NODE_GRPC.as_str())
@@ -247,14 +245,11 @@ pub async fn ica_test(
         .await
         .expect("Could not connect counterparty chain channel query client");
 
-    info!("Try to get balance");
+    info!("Trying to get balances");
     let gravity_interchain_account_balance =
         get_interchain_account_balance(gravity_account.clone(), cpc_cosmos_qc, Some(timeout))
             .await
             .expect("Error on balance check");
-
-    info!("Pause 20 seconds, then try to get balance");
-    delay_for(Duration::from_secs(20)).await;
     let cpc_interchain_account_balance =
         get_interchain_account_balance(cpc_account.clone(), gravity_cosmos_qc, Some(timeout))
             .await
@@ -300,11 +295,11 @@ pub async fn ica_test(
     .await
     .expect("Can't delegate");
     info!("{:?}", delegeted_from_gravity);
-    info!("Pause 60 seconds");
 
     // delegate from interchain account to counterparty validator
-    info!("Pause 60 seconds. Then delegate from counterparty chain");
-    delay_for(Duration::from_secs(60)).await;
+    info!("Pause 30 seconds. Then delegate from counterparty chain");
+    delay_for(Duration::from_secs(30)).await;
+
     let delegeted_from_cpc = submit_tx(
         &cpc_contact,
         ibc_keys[0],
@@ -376,7 +371,7 @@ pub async fn ica_test(
         error!("Gravity chain response error {:?}", ok.err())
     };
 
-    info!("deploy cosmos representing erc20");
+    info!("Deploying representative ERC20");
     let ibc_metadata = footoken_metadata(contact).await;
     let mut grpc_client = grpc_client;
     let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
@@ -388,6 +383,7 @@ pub async fn ica_test(
         ibc_metadata.clone(),
     )
     .await;
+
     let token_to_send_to_eth = ibc_metadata.base.clone();
     let send_to_eth_coin = Coin {
         denom: token_to_send_to_eth.clone(),
@@ -416,19 +412,17 @@ pub async fn ica_test(
     .expect("Can't send MsgSendToEth");
     info!("{:?}", send_to_eth_from_cpc);
 
-    let mut send_request_batch_fee = get_fee(Some(token_to_send_to_eth.to_string()));
-    send_request_batch_fee.amount = 1_000_000u64.into();
+    contact.wait_for_next_block(TIMEOUT * 5).await.unwrap();
     send_request_batch(
         keys[0].validator_key,
         token_to_send_to_eth.clone(),
-        Some(send_request_batch_fee),
+        Some(get_fee(None)),
         contact,
     )
     .await
     .unwrap();
 
     let start = Instant::now();
-
     while Instant::now() - start < TIMEOUT * 5 {
         let new_balance =
             get_erc20_balance_safe(erc20_contract, web30, keys[0].eth_key.to_address()).await;
