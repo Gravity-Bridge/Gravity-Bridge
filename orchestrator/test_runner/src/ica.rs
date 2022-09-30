@@ -113,7 +113,7 @@ pub async fn ica_test(
     web30: &Web3,
     grpc_client: GravityQueryClient<Channel>,
 ) {
-    let no_relay_market_config = create_default_test_config();
+    let no_relay_market_config = create_no_batch_requests_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
     info!("Gravity contract address {}", gravity_address);
 
@@ -429,6 +429,8 @@ pub async fn ica_test(
     .await
     .unwrap();
     info!("send_request_batch {:?}", res);
+
+    send_one_eth(keys[0].eth_key.to_address(), web30).await;
 
     let start = Instant::now();
     while Instant::now() - start < TIMEOUT * 15 {
