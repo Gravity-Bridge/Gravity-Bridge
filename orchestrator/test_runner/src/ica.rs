@@ -413,8 +413,13 @@ pub async fn ica_test(
     info!("{:?}", send_to_eth_from_cpc);
 
     contact.wait_for_next_block(TIMEOUT * 5).await.unwrap();
+
     let mut send_request_batch_fee = get_fee(Some(token_to_send_to_eth.clone()));
     send_request_batch_fee.amount = 100u8.into();
+
+    info!("Pause 30 seconds then request batch");
+    delay_for(Duration::from_secs(30)).await;
+
     let res = send_request_batch(
         keys[0].validator_key,
         token_to_send_to_eth.clone(),
