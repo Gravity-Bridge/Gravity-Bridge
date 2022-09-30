@@ -460,6 +460,7 @@ pub async fn ica_test(
         if balance == amount_to_bridge {
             info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
             assert!(balance == amount_to_send.clone());
+            break;
         } else if balance != 0u8.into() {
             error!("Expected {} but got {} instead", amount_to_bridge, balance);
         }
