@@ -465,7 +465,7 @@ pub async fn ica_test(
         if Instant::now() - start > TIMEOUT * 15 {
             panic!(
                 "Failed to get balance. Expected {} but got {} instead",
-                amount_to_send, balance
+                amount_to_bridge, balance
             );
         }
     }
