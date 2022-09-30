@@ -413,14 +413,17 @@ pub async fn ica_test(
     info!("{:?}", send_to_eth_from_cpc);
 
     contact.wait_for_next_block(TIMEOUT * 5).await.unwrap();
-    send_request_batch(
+    let mut send_request_batch_fee = get_fee(Some(token_to_send_to_eth.clone()));
+    send_request_batch_fee.amount = 100u8.into();
+    let res = send_request_batch(
         keys[0].validator_key,
         token_to_send_to_eth.clone(),
-        Some(get_fee(Some(erc20_contract.clone().to_string()))),
+        Some(send_request_batch_fee),
         contact,
     )
     .await
     .unwrap();
+    info!("send_request_batch {:?}", res);
 
     let start = Instant::now();
     while Instant::now() - start < TIMEOUT * 5 {
