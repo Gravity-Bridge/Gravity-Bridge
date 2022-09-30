@@ -1,7 +1,6 @@
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::*;
-use crate::MINER_ADDRESS;
 use crate::OPERATION_TIMEOUT;
 use crate::{
     get_fee, ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, STAKING_TOKEN,
@@ -14,7 +13,6 @@ use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::PrivateKey;
 use deep_space::{Contact, Msg};
-use ethereum_gravity::utils::get_tx_batch_nonce;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{MsgSend, QueryAllBalancesRequest};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
@@ -112,7 +110,6 @@ pub async fn ica_test(
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
     gravity_address: EthAddress,
-    erc20_address: EthAddress,
     web30: &Web3,
     grpc_client: GravityQueryClient<Channel>,
 ) {
@@ -419,10 +416,6 @@ pub async fn ica_test(
     .expect("Can't send MsgSendToEth");
     info!("{:?}", send_to_eth_from_cpc);
 
-    let mut current_eth_batch_nonce =
-        get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
-            .await
-            .expect("Failed to get current eth valset");
     let mut send_request_batch_fee = get_fee(Some(token_to_send_to_eth.to_string()));
     send_request_batch_fee.amount = 1_000_000u64.into();
     send_request_batch(
@@ -434,24 +427,8 @@ pub async fn ica_test(
     .await
     .unwrap();
 
-    let starting_batch_nonce = current_eth_batch_nonce;
-
     let start = Instant::now();
 
-    while starting_batch_nonce == current_eth_batch_nonce {
-        info!(
-            "Batch is not yet submitted {}>, waiting",
-            starting_batch_nonce
-        );
-        current_eth_batch_nonce =
-            get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
-                .await
-                .expect("Failed to get current eth tx batch nonce");
-        delay_for(Duration::from_secs(4)).await;
-        if Instant::now() - start > TIMEOUT * 5 {
-            panic!("Failed to submit transaction batch set");
-        }
-    }
     while Instant::now() - start < TIMEOUT * 5 {
         let new_balance =
             get_erc20_balance_safe(erc20_contract, web30, keys[0].eth_key.to_address()).await;

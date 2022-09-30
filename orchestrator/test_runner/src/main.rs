@@ -416,7 +416,6 @@ pub async fn main() {
                 keys,
                 ibc_keys,
                 gravity_address,
-                erc20_addresses[0],
                 &web30,
                 grpc_client,
             )
