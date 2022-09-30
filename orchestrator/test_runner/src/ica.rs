@@ -423,11 +423,12 @@ pub async fn ica_test(
         get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
-
+    let mut send_request_batch_fee = get_fee(Some(token_to_send_to_eth.to_string()));
+    send_request_batch_fee.amount = 10_000_000u64.into();
     send_request_batch(
         keys[0].orch_key,
         token_to_send_to_eth.clone(),
-        Some(get_fee(Some(token_to_send_to_eth.to_string()))),
+        Some(send_request_batch_fee),
         contact,
     )
     .await
