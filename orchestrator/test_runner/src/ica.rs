@@ -457,18 +457,18 @@ pub async fn ica_test(
             continue;
         }
         let balance = new_balance.unwrap();
-        if balance == amount_to_bridge {
-            info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
+        if balance == amount_to_send {
+            info!("Successfully bridged {} to Ethereum!", amount_to_send);
             assert!(balance == amount_to_send.clone());
             break;
         } else if balance != 0u8.into() {
-            error!("Expected {} but got {} instead", amount_to_bridge, balance);
+            error!("Expected {} but got {} instead", amount_to_send, balance);
         }
         delay_for(Duration::from_secs(1)).await;
         if Instant::now() - start > TIMEOUT * 15 {
             panic!(
                 "Failed to get balance. Expected {} but got {} instead",
-                amount_to_bridge, balance
+                amount_to_send, balance
             );
         }
     }
