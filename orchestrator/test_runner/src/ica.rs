@@ -113,10 +113,6 @@ pub async fn ica_test(
     web30: &Web3,
     grpc_client: GravityQueryClient<Channel>,
 ) {
-    let no_relay_market_config = create_no_batch_requests_config();
-    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
-    info!("Gravity contract address {}", gravity_address);
-
     // Add allow messages
     add_ica_host_allow_messages(contact, &keys).await;
 
@@ -412,13 +408,8 @@ pub async fn ica_test(
     .expect("Can't send MsgSendToEth");
     info!("{:?}", send_to_eth_from_cpc);
 
-    contact.wait_for_next_block(TIMEOUT * 5).await.unwrap();
-
     let mut send_request_batch_fee = get_fee(Some(token_to_send_to_eth.clone()));
-    send_request_batch_fee.amount = 100u8.into();
-
-    info!("Pause 30 seconds then request batch");
-    delay_for(Duration::from_secs(30)).await;
+    send_request_batch_fee.amount = 200u8.into();
 
     let res = send_request_batch(
         keys[0].validator_key,
@@ -429,7 +420,9 @@ pub async fn ica_test(
     .await
     .unwrap();
     info!("send_request_batch {:?}", res);
-
+    let no_relay_market_config = create_no_batch_requests_config();
+    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
+    info!("Gravity contract address {}", gravity_address);
     send_one_eth(keys[0].eth_key.to_address(), web30).await;
 
     let start = Instant::now();
