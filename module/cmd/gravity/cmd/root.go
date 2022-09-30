@@ -32,9 +32,18 @@ import (
 
 	ethermint "github.com/evmos/ethermint/crypto/hd"
 
+	"fmt"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
+	"math/rand"
 )
+
+// InvCheckPeriodPrimes A collection of all primes in (15, 200), for use with the crisis module's Invariant Check Period
+// feature but enabling fast block times by randomly selecting one of these primes with added security by halting the chain when something goes wrong.
+// These primes were selected for several reasons: a) Gravity has a validator limit of 200 thus too many collisions in this set are unlikely (fast blocks),
+// b) in the worst case the chain will halt ~ 20 minutes after invariant failure with more likely halt at ~13 minutes after,
+// c) a recent improvement to the sdk brings faster invariant checks
+var InvCheckPeriodPrimes = []uint{17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199}
 
 // NewRootCmd creates a new root command for simd. It is called once in the
 // main function.
@@ -226,10 +235,17 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverty
 		panic(err)
 	}
 
+	invCheckPer := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
+	if invCheckPer == uint(0) {
+		logger.Info("--inv-check-period NOT PROVIDED, A RANDOM PRIME PERIOD WILL BE GENERATED")
+		invCheckPer = generatePrimeInvCheckPeriod()
+		logger.Info(fmt.Sprintf("This node will check invariants every %d blocks", invCheckPer))
+	}
+
 	return app.NewGravityApp(
 		logger, db, traceStore, true, skipUpgradeHeights,
 		cast.ToString(appOpts.Get(flags.FlagHome)),
-		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
+		invCheckPer,
 		app.MakeEncodingConfig(), // Ideally, we would reuse the one created by NewRootCmd.
 		appOpts,
 		baseapp.SetPruning(pruningOpts),
@@ -244,6 +260,12 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverty
 		baseapp.SetSnapshotInterval(cast.ToUint64(appOpts.Get(server.FlagStateSyncSnapshotInterval))),
 		baseapp.SetSnapshotKeepRecent(cast.ToUint32(appOpts.Get(server.FlagStateSyncSnapshotKeepRecent))),
 	)
+}
+
+// generatePrimeInvCheckPeriod generates a random index into the InvCheckPeriodPrimes for use in newApp
+func generatePrimeInvCheckPeriod() uint {
+	idx := rand.Intn(len(InvCheckPeriodPrimes))
+	return InvCheckPeriodPrimes[idx]
 }
 
 func createSimappAndExport(
