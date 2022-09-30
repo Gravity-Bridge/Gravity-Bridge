@@ -9,7 +9,7 @@ use crate::{
 use anyhow::{Context, Result};
 use clarity::Address as EthAddress;
 use clarity::Uint256;
-use cosmos_gravity::{send::MSG_SEND_TO_ETH_TYPE_URL, send::TIMEOUT};
+use cosmos_gravity::send::{send_request_batch, MSG_SEND_TO_ETH_TYPE_URL, TIMEOUT};
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::PrivateKey;
@@ -423,6 +423,15 @@ pub async fn ica_test(
         get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
+
+    send_request_batch(
+        keys[0].orch_key,
+        token_to_send_to_eth.clone(),
+        Some(get_fee(Some(token_to_send_to_eth.to_string()))),
+        contact,
+    )
+    .await
+    .unwrap();
 
     let starting_batch_nonce = current_eth_batch_nonce;
 
