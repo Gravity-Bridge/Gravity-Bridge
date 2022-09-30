@@ -416,7 +416,7 @@ pub async fn ica_test(
     send_request_batch(
         keys[0].validator_key,
         token_to_send_to_eth.clone(),
-        Some(get_fee(None)),
+        Some(get_fee(Some(erc20_contract.clone().to_string()))),
         contact,
     )
     .await
