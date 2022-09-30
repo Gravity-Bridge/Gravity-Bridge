@@ -426,7 +426,7 @@ pub async fn ica_test(
     info!("send_request_batch {:?}", res);
 
     let start = Instant::now();
-    while Instant::now() - start < TIMEOUT * 5 {
+    while Instant::now() - start < TIMEOUT * 15 {
         let new_balance =
             get_erc20_balance_safe(erc20_contract, web30, keys[0].eth_key.to_address()).await;
         // only keep trying if our error is gas related
