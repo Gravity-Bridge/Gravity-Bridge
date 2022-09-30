@@ -8,11 +8,15 @@ use crate::{
 use anyhow::{Context, Result};
 use clarity::Address as EthAddress;
 use clarity::Uint256;
-use cosmos_gravity::send::{send_request_batch, MSG_SEND_TO_ETH_TYPE_URL, TIMEOUT};
+use cosmos_gravity::query::get_oldest_unsigned_transaction_batches;
+use cosmos_gravity::send::{
+    send_batch_confirm, send_request_batch, MSG_SEND_TO_ETH_TYPE_URL, TIMEOUT,
+};
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::PrivateKey;
 use deep_space::{Contact, Msg};
+use ethereum_gravity::utils::get_gravity_id;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as CosmosQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{MsgSend, QueryAllBalancesRequest};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
@@ -414,17 +418,36 @@ pub async fn ica_test(
     let res = send_request_batch(
         keys[0].validator_key,
         token_to_send_to_eth.clone(),
-        Some(send_request_batch_fee),
+        Some(send_request_batch_fee.clone()),
         contact,
     )
     .await
     .unwrap();
     info!("send_request_batch {:?}", res);
-    let no_relay_market_config = create_no_batch_requests_config();
-    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
-    info!("Gravity contract address {}", gravity_address);
-    send_one_eth(keys[0].eth_key.to_address(), web30).await;
+    let unsigned_transaction_batches = get_oldest_unsigned_transaction_batches(
+        &mut grpc_client,
+        keys[0]
+            .validator_key
+            .to_address(&contact.get_prefix())
+            .unwrap(),
+        contact.get_prefix(),
+    )
+    .await;
+    let gravity_id = get_gravity_id(gravity_address, keys[0].eth_key.to_address(), web30)
+        .await
+        .unwrap();
+    let res = send_batch_confirm(
+        contact,
+        keys[0].eth_key,
+        send_request_batch_fee.clone(),
+        unsigned_transaction_batches.unwrap(),
+        keys[0].validator_key,
+        gravity_id.clone(),
+    )
+    .await;
+    trace!("Batch confirm result is {:?}", res);
 
+    send_one_eth(keys[0].eth_key.to_address(), web30).await;
     let start = Instant::now();
     while Instant::now() - start < TIMEOUT * 15 {
         let new_balance =
@@ -441,7 +464,7 @@ pub async fn ica_test(
             error!("Expected {} but got {} instead", amount_to_bridge, balance);
         }
         delay_for(Duration::from_secs(1)).await;
-        if Instant::now() - start > TIMEOUT {
+        if Instant::now() - start > TIMEOUT * 15 {
             panic!(
                 "Failed to get balance. Expected {} but got {} instead",
                 amount_to_bridge, balance
