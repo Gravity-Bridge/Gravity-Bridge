@@ -102,13 +102,19 @@ impl AnyConvert for MsgSendToEth {
     }
 }
 
-/// Test Interchain accounts host / controller. Create , Send , Delegate
+/// Test Interchain accounts host / controller. Create , Send , Delegate, Send_to_Eth
 /// Plan is
-/// 1. get connection_id , cpc_connection_id:  <fn get_connection_id>
-/// 2. register interchain account gravity -> ibc: <fn create_interchain_account>
-/// 3. check account registered: <fn get_interchain_account>
-/// 4. send some stake tokens: <fn send_tokens_to_interchain_account>, <fn get_interchain_account_balance>
-/// 5. delegate <fn delegate_from_interchain_account>, <fn check_delegatinons>
+/// 1. Create and pass proposal to allow all ica_host messages <fn add_ica_host_allow_messages>
+/// 2. Get connection_id , cpc_connection_id:  <fn get_connection_id>
+/// 3. Register interchain account gravity -> ibc: <fn create_interchain_account>
+/// 4. Check account registered: <fn get_interchain_account>
+/// 5. Send some stake tokens: <fn send_tokens_to_interchain_account>, <fn get_interchain_account_balance>
+/// 6. Delegate <fn delegate_from_interchain_account>
+/// 7. Check delegations <fn check_delegatinons>
+/// 8. Adopt footoken metadata
+/// 9. SubmitTx MsgSendToEth from counterpartychain ICA. <fn submit_tx>
+/// 10. Request & submit batch
+/// 11. Check eth balance
 pub async fn ica_test(
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
