@@ -9,15 +9,20 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 
 // ClaimType is the cosmos type of an event from the counterpart chain that can
 // be handled
-
 enum ClaimType {
   option (gogoproto.goproto_enum_prefix) = false;
 
+  // An unspecified claim type
   CLAIM_TYPE_UNSPECIFIED         = 0;
+  // A claim for a SendToCosmos transaction
   CLAIM_TYPE_SEND_TO_COSMOS      = 1;
+  // A claim for when batches are relayed
   CLAIM_TYPE_BATCH_SEND_TO_ETH   = 2;
+  // A claim for when an erc20 contract has been deployed
   CLAIM_TYPE_ERC20_DEPLOYED      = 3;
+  // A claim for when a logic call has been executed
   CLAIM_TYPE_LOGIC_CALL_EXECUTED = 4;
+  // A claim for when a valset update has happened
   CLAIM_TYPE_VALSET_UPDATED      = 5;
 }
 
