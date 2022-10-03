@@ -119,7 +119,7 @@ func (im IBCModule) OnAcknowledgementPacket(
 	acknowledgement []byte,
 	relayer sdk.AccAddress,
 ) error {
-	panic("UNIMPLEMENTED")
+	return nil
 }
 
 // OnTimeoutPacket implements the IBCModule interface.
