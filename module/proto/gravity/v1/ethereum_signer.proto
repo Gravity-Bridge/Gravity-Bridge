@@ -8,7 +8,10 @@ enum SignType {
   option (gogoproto.goproto_enum_prefix)   = false;
   option (gogoproto.goproto_enum_stringer) = false;
 
+  // An unspecified type
   SIGN_TYPE_UNSPECIFIED                          = 0;
+  // A type for multi-sig updates
   SIGN_TYPE_ORCHESTRATOR_SIGNED_MULTI_SIG_UPDATE = 1;
+  // A type for batches
   SIGN_TYPE_ORCHESTRATOR_SIGNED_WITHDRAW_BATCH   = 2;
 }
