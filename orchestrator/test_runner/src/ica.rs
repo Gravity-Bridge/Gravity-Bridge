@@ -26,6 +26,8 @@ use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
 };
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::QueryClient as ConnectionQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
+use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::MsgSendToEth;
 use gravity_proto::icaauth::query_client::QueryClient as IcaQueryClient;
 use gravity_proto::icaauth::{
     MsgRegisterAccount, MsgSubmitTx, QueryInterchainAccountFromAddressRequest,
