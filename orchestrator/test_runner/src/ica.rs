@@ -26,9 +26,9 @@ use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
 };
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::query_client::QueryClient as ConnectionQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionsRequest;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::{
-    MsgRegisterAccount, MsgSendToEth, MsgSubmitTx, QueryInterchainAccountFromAddressRequest,
+use gravity_proto::icaauth::query_client::QueryClient as IcaQueryClient;
+use gravity_proto::icaauth::{
+    MsgRegisterAccount, MsgSubmitTx, QueryInterchainAccountFromAddressRequest,
 };
 use gravity_utils::connection_prep::create_rpc_connections;
 use prost::Message;
@@ -178,10 +178,10 @@ pub async fn ica_test(
 
     // Create gravity qyery clients for both chains
     let timeout = Duration::from_secs(60 * 5);
-    let qc = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+    let qc = IcaQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
         .expect("Could not connect gravity chain channel query client");
-    let cpc_qc = GravityQueryClient::connect(IBC_NODE_GRPC.as_str())
+    let cpc_qc = IcaQueryClient::connect(IBC_NODE_GRPC.as_str())
         .await
         .expect("Could not connect counterparty chain channel query client");
 
@@ -586,7 +586,7 @@ pub async fn create_interchain_account(
 pub async fn get_interchain_account(
     contact: &Contact,
     key: CosmosPrivateKey,
-    qc: GravityQueryClient<Channel>,
+    qc: IcaQueryClient<Channel>,
     timeout: Option<Duration>,
     connection_id: String,
 ) -> Result<String, CosmosGrpcError> {

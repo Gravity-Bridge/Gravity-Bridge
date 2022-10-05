@@ -2,18 +2,13 @@ package cli
 
 import (
 	"fmt"
-	"os"
-
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/icaauth/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // GetTxCmd creates and returns the icaauth tx command
@@ -36,7 +31,9 @@ func GetTxCmd() *cobra.Command {
 
 func getRegisterAccountCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "register",
+		Use:   "register [connection-id]",
+		Args:  cobra.ExactArgs(1),
+		Short: "Registers an interchain account",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -45,8 +42,7 @@ func getRegisterAccountCmd() *cobra.Command {
 
 			msg := types.NewMsgRegisterAccount(
 				clientCtx.GetFromAddress().String(),
-				viper.GetString(FlagConnectionID),
-				viper.GetString(FlagCounterpartyConnectionID),
+				args[0],
 			)
 
 			if err := msg.ValidateBasic(); err != nil {
@@ -57,10 +53,6 @@ func getRegisterAccountCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().AddFlagSet(fsConnectionPair)
-	_ = cmd.MarkFlagRequired(FlagConnectionID)
-	_ = cmd.MarkFlagRequired(FlagCounterpartyConnectionID)
-
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd
@@ -68,34 +60,22 @@ func getRegisterAccountCmd() *cobra.Command {
 
 func getSubmitTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "submit-tx [path/to/sdk_msg.json]",
-		Args: cobra.ExactArgs(1),
+		Use:  "submit-tx [connection-id] [path/to/sdk_msg.json]",
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
+			connectionID := args[0]
+			sdkMsgs := args[1]
 
-			cdc := codec.NewProtoCodec(clientCtx.InterfaceRegistry)
-
-			var txMsg sdk.Msg
-			if err := cdc.UnmarshalInterfaceJSON([]byte(args[0]), &txMsg); err != nil {
-
-				// check for file path if JSON input is not provided
-				contents, err := os.ReadFile(args[0])
-				if err != nil {
-					return errors.Wrap(err, "neither JSON input nor path to .json file for sdk msg were provided")
-				}
-
-				if err := cdc.UnmarshalInterfaceJSON(contents, &txMsg); err != nil {
-					return errors.Wrap(err, "error unmarshalling sdk msg file")
-				}
-			}
-
-			msg, err := types.NewMsgSubmitTx(clientCtx.GetFromAddress(), txMsg, viper.GetString(FlagConnectionID), viper.GetString(FlagCounterpartyConnectionID))
+			theTx, err := authclient.ReadTxFromFile(clientCtx, sdkMsgs)
 			if err != nil {
 				return err
 			}
+
+			msg := types.NewMsgSubmitTx(clientCtx.GetFromAddress().String(), connectionID, theTx.GetMsgs())
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -104,11 +84,6 @@ func getSubmitTxCmd() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
-
-	cmd.Flags().AddFlagSet(fsConnectionPair)
-
-	_ = cmd.MarkFlagRequired(FlagConnectionID)
-	_ = cmd.MarkFlagRequired(FlagCounterpartyConnectionID)
 
 	flags.AddTxFlagsToCmd(cmd)
 
