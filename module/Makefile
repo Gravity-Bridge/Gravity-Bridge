@@ -147,7 +147,7 @@ BIN ?= $(PREFIX)/bin
 UNAME_S ?= $(shell uname -s)
 UNAME_M ?= $(shell uname -m)
 
-BUF_VERSION ?= 0.41.0
+BUF_VERSION ?= 0.44.0
 
 PROTOC_VERSION ?= 3.16.0
 ifeq ($(UNAME_S),Linux)
