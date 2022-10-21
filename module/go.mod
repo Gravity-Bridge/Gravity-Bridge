@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cosmos/cosmos-sdk v0.45.9
-	github.com/cosmos/ibc-go/v3 v3.2.1
+	github.com/cosmos/ibc-go/v3 v3.3.3
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/evmos/ethermint v0.17.0
 	github.com/gogo/protobuf v1.3.3
@@ -158,3 +158,5 @@ replace github.com/gogo/grpc => google.golang.org/grpc v1.33.2
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
 replace github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23 v0.0.0-20221014140410-2582f0aab7b2
+
+replace github.com/cosmos/ibc-go/v3 => github.com/althea-net/ibc-go/v3 v3.3.3
