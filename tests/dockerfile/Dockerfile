@@ -7,7 +7,7 @@ RUN npm install -g ts-node && npm install -g typescript
 ADD https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.10.10-bb74230f.tar.gz /geth/
 RUN cd /geth && tar -xvf * && mv /geth/**/geth /usr/bin/geth
 # Download modified gaia as a IBC test chain, IMO should be replaced with git clone or something
-ADD https://github.com/althea-net/gaia-ica/releases/download/v7.0.3/gaiad-v7.0.3-linux-amd64 /usr/bin/gaiad
+ADD https://github.com/althea-net/gaia-ica/releases/download/v7.0.4/gaiad-v7.0.4-linux-amd64 /usr/bin/gaiad
 # Setup Hermes for IBC connections between chains. >= 0.15.0 for ICA test
 ADD https://github.com/informalsystems/ibc-rs/releases/download/v0.15.0/hermes-v0.15.0-x86_64-unknown-linux-gnu.tar.gz /tmp/
 RUN cd /tmp/ && tar -xvf hermes-v0.15.0-x86_64-unknown-linux-gnu.tar.gz && mv hermes /usr/bin/
