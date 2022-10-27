@@ -111,23 +111,17 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 			}
 
 			queryClientBank := banktypes.NewQueryClient(cliCtx)
-			res1, err := queryClientBank.DenomMetadata(cmd.Context(), &banktypes.QueryDenomMetadataRequest{Denom: proposal.IbcDenom})
+			_, err = queryClientBank.DenomMetadata(cmd.Context(), &banktypes.QueryDenomMetadataRequest{Denom: proposal.IbcDenom})
+			if err == nil {
+				return sdkerrors.Wrap(metadataErr, "Attempting to set the metadata for a token that already has metadata!")
+			}
+
+			supply, err := queryClientBank.SupplyOf(cmd.Context(), &banktypes.QuerySupplyOfRequest{Denom: proposal.IbcDenom})
 			if err != nil {
-				return err
+				return sdkerrors.Wrap(types.ErrInternal, "Failed to get supply data?")
 			}
-
-			queryClient := types.NewQueryClient(cliCtx)
-
-			req2 := &types.QueryDenomToERC20Request{
-				Denom: proposal.IbcDenom,
-			}
-			res2, err := queryClient.DenomToERC20(cmd.Context(), req2)
-			if err != nil {
-				return sdkerrors.Wrap(err, "invalid metadata")
-			}
-
-			if res1.Metadata.Base != "" && res2.CosmosOriginated {
-				return sdkerrors.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
+			if supply.GetAmount().Amount.Equal(sdk.ZeroInt()) {
+				return sdkerrors.Wrap(types.ErrInvalid, "This ibc hash does not seem to exist on Gravity, are you sure you have the right one?")
 			}
 
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
