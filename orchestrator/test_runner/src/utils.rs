@@ -289,7 +289,7 @@ pub fn get_ethermint_key(cosmos_prefix: Option<&str>) -> EthermintUserKey {
     let ethermint_key = EthermintPrivateKey::from_secret(&secret);
     let ethermint_address = ethermint_key.to_address(cosmos_prefix).unwrap();
     // TODO: Verify that this conversion works like `evmosd debug addr`
-    let eth_address = EthAddress::from_slice(ethermint_address.as_bytes()).unwrap();
+    let eth_address = EthAddress::from_slice(ethermint_address.get_bytes()).unwrap();
 
     EthermintUserKey {
         ethermint_address,
