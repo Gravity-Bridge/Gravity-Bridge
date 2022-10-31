@@ -251,13 +251,14 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
     let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
     let eth_address = eth_key.to_address();
     // the destination on cosmos that sends along to the final ethereum destination
-    let cosmos_key = CosmosPrivateKey::from_secret(&secret);
-    let cosmos_address = cosmos_key.to_address(cosmos_prefix).unwrap();
+    let (cosmos_key, cosmos_address) = get_cosmos_key(cosmos_prefix);
+
+    // Generate a second ethereum wallet for use as a destination
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
-    // the final destination of the tokens back on Ethereum
     let eth_dest_key = EthPrivateKey::from_slice(&secret).unwrap();
     let eth_dest_address = eth_key.to_address();
+
     BridgeUserKey {
         eth_address,
         eth_key,
@@ -266,6 +267,16 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
         eth_dest_address,
         eth_dest_key,
     }
+}
+
+// Generates a cosmos key from a generated secret, using cosmos_prefix for the returned Address
+pub fn get_cosmos_key(cosmos_prefix: &str) -> (CosmosPrivateKey, CosmosAddress) {
+    let mut rng = rand::thread_rng();
+    let secret: [u8; 32] = rng.gen();
+
+    let cosmos_key = CosmosPrivateKey::from_secret(&secret);
+    let cosmos_address = cosmos_key.to_address(cosmos_prefix).unwrap();
+    (cosmos_key, cosmos_address)
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]

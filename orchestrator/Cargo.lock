@@ -3391,6 +3391,7 @@ dependencies = [
  "gravity_utils",
  "ibc",
  "ibc-relayer",
+ "itertools",
  "lazy_static",
  "log",
  "num 0.4.0",
