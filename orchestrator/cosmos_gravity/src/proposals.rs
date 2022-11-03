@@ -85,7 +85,7 @@ pub async fn submit_airdrop_proposal(
 ) -> Result<TxResponse, CosmosGrpcError> {
     let mut byte_recipients = Vec::new();
     for r in proposal.recipients {
-        byte_recipients.extend_from_slice(r.as_bytes())
+        byte_recipients.extend_from_slice(r.get_bytes())
     }
 
     let proposal_content = AirdropProposalMsg {

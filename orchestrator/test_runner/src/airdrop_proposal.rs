@@ -200,7 +200,7 @@ async fn submit_and_fail_airdrop_proposal(
 
     let mut byte_recipients = Vec::new();
     for r in recipients {
-        byte_recipients.extend_from_slice(r.as_bytes())
+        byte_recipients.extend_from_slice(r.get_bytes())
     }
     if make_invalid {
         byte_recipients.extend_from_slice(&[0, 1, 2, 3, 4]);
@@ -267,7 +267,7 @@ fn generate_accounts_and_amounts(
     for _ in 0..num_recipients {
         let secret: [u8; 20] = rng.gen();
         let amount: u64 = rng.gen();
-        let cosmos_address = CosmosAddress::from_bytes(secret, ADDRESS_PREFIX.as_str()).unwrap();
+        let cosmos_address = CosmosAddress::from_slice(&secret, ADDRESS_PREFIX.as_str()).unwrap();
         user_addresses.push(cosmos_address);
         amounts.push(amount)
     }
