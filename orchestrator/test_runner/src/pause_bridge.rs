@@ -29,6 +29,7 @@ pub async fn pause_bridge_test(
     gravity_address: EthAddress,
     erc20_address: EthAddress,
 ) {
+    let val_priv_keys = get_validator_private_keys(&keys);
     let mut grpc_client = grpc_client.clone();
 
     // check that the bridge is active to start the test, this test is especially
@@ -78,7 +79,7 @@ pub async fn pause_bridge_test(
     )
     .await;
 
-    vote_yes_on_proposals(contact, &keys, None).await;
+    vote_yes_on_proposals(contact, &val_priv_keys, None).await;
 
     // wait for the voting period to pass
     wait_for_proposals_to_execute(contact).await;
@@ -177,7 +178,7 @@ pub async fn pause_bridge_test(
     )
     .await;
 
-    vote_yes_on_proposals(contact, &keys, None).await;
+    vote_yes_on_proposals(contact, &val_priv_keys, None).await;
 
     // wait for the voting period to pass
     wait_for_proposals_to_execute(contact).await;

@@ -51,7 +51,7 @@ pub async fn query_airdrops(opts: AirdropQueryOpts, prefix: String) {
                                     let mut buf = [0; 20];
                                     let addr_bytes = &airdrop.recipients[(i * 20)..((i * 20) + 20)];
                                     buf.copy_from_slice(addr_bytes);
-                                    let addr = Address::from_bytes(buf, prefix.clone()).unwrap();
+                                    let addr = Address::from_slice(&buf, prefix.clone()).unwrap();
                                     unpacked.push(addr);
                                 }
                                 assert_eq!(unpacked.len(), airdrop.amounts.len());

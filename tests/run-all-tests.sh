@@ -23,6 +23,8 @@ bash all-up-test.sh AIRDROP_PROPOSAL
 bash all-up-test.sh SIGNATURE_SLASHING
 bash all-up-test.sh SLASHING_DELEGATION
 bash all-up-test.sh IBC_METADATA
+bash all-up-test.sh ICA
+bash all-up-test.sh ICA_SECURITY
 bash all-up-test.sh ERC721_HAPPY_PATH
 bash all-up-test.sh IBC_AUTO_FORWARD
 bash all-up-test.sh ETHEREUM_KEYS

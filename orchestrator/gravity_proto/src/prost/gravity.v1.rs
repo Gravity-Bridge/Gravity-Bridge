@@ -1,11 +1,3 @@
-/// SignType defines messages that have been signed by an orchestrator
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum SignType {
-    Unspecified = 0,
-    OrchestratorSignedMultiSigUpdate = 1,
-    OrchestratorSignedWithdrawBatch = 2,
-}
 /// BridgeValidator represents a validator's ETH address and its power
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct BridgeValidator {
@@ -983,17 +975,22 @@ pub struct EventSendToCosmosExecutedIbcAutoForward {
     #[prost(string, tag="7")]
     pub timeout_height: ::prost::alloc::string::String,
 }
-// ClaimType is the cosmos type of an event from the counterpart chain that can
-// be handled
-
+/// ClaimType is the cosmos type of an event from the counterpart chain that can
+/// be handled
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ClaimType {
+    /// An unspecified claim type
     Unspecified = 0,
+    /// A claim for a SendToCosmos transaction
     SendToCosmos = 1,
+    /// A claim for when batches are relayed
     BatchSendToEth = 2,
+    /// A claim for when an erc20 contract has been deployed
     Erc20Deployed = 3,
+    /// A claim for when a logic call has been executed
     LogicCallExecuted = 4,
+    /// A claim for when a valset update has happened
     ValsetUpdated = 5,
 }
 /// OutgoingTxBatch represents a batch of transactions going from gravity to ETH

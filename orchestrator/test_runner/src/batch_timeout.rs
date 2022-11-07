@@ -11,7 +11,7 @@ use crate::{
 };
 use clarity::Address as EthAddress;
 use cosmos_gravity::{query::get_gravity_params, send::send_request_batch};
-use deep_space::Contact;
+use deep_space::{Contact, CosmosPrivateKey};
 use gravity_proto::{
     cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange,
     gravity::query_client::QueryClient as GravityQueryClient,
@@ -38,6 +38,7 @@ pub async fn batch_timeout_test(
     gravity_address: EthAddress,
     erc20_addresses: Vec<EthAddress>,
 ) {
+    let val_priv_keys = get_validator_private_keys(&keys);
     let mut grpc_client = grpc_client;
 
     let no_relay_market_config = create_no_batch_requests_config();
@@ -46,7 +47,13 @@ pub async fn batch_timeout_test(
     // first we reduce batch timeout (denominated in miliseconds)
     // to one minute, the absolute minimum value
 
-    set_batch_timeout(&keys, BATCH_TIMEOUT_SHORT, contact, &mut grpc_client).await;
+    set_batch_timeout(
+        &val_priv_keys,
+        BATCH_TIMEOUT_SHORT,
+        contact,
+        &mut grpc_client,
+    )
+    .await;
 
     // now that we have set the batch timeout we're going to generate a lot of batches
 
@@ -81,7 +88,13 @@ pub async fn batch_timeout_test(
 
     // vote to increase the timeout, all the batchs already created will not be affected
     // this is so we can relay later, the voting period is long enough to timeout anything that's left
-    set_batch_timeout(&keys, BATCH_TIMEOUT_LONG, contact, &mut grpc_client).await;
+    set_batch_timeout(
+        &val_priv_keys,
+        BATCH_TIMEOUT_LONG,
+        contact,
+        &mut grpc_client,
+    )
+    .await;
 
     // now send a deposit to complete the timeout of all those batches by updating the eth height
     let user = get_user_key(None);
@@ -146,7 +159,7 @@ pub async fn batch_timeout_test(
 }
 
 async fn set_batch_timeout(
-    keys: &[ValidatorKeys],
+    keys: &[CosmosPrivateKey],
     timeout: u64,
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,
@@ -161,13 +174,7 @@ async fn set_batch_timeout(
     params_to_change.push(halt);
 
     // next we create a governance proposal to
-    create_parameter_change_proposal(
-        contact,
-        keys[0].validator_key,
-        params_to_change,
-        get_fee(None),
-    )
-    .await;
+    create_parameter_change_proposal(contact, keys[0], params_to_change, get_fee(None)).await;
 
     vote_yes_on_proposals(contact, keys, None).await;
 

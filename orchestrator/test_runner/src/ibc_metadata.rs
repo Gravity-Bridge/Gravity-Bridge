@@ -3,7 +3,7 @@
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{vote_yes_on_proposals, ValidatorKeys};
-use crate::{get_deposit, get_fee, TOTAL_TIMEOUT};
+use crate::{get_deposit, get_fee, get_validator_private_keys, TOTAL_TIMEOUT};
 use clarity::Address;
 use cosmos_gravity::proposals::submit_ibc_metadata_proposal;
 use deep_space::Contact;
@@ -129,6 +129,7 @@ pub async fn submit_and_pass_ibc_metadata_proposal(
     contact: &Contact,
     keys: &[ValidatorKeys],
 ) {
+    let val_priv_keys = get_validator_private_keys(keys);
     let proposal_content = IbcMetadataProposal {
         title: format!("Proposal to set metadata on {}", denom),
         description: "IBC METADATA!".to_string(),
@@ -144,7 +145,7 @@ pub async fn submit_and_pass_ibc_metadata_proposal(
         Some(TOTAL_TIMEOUT),
     )
     .await;
-    vote_yes_on_proposals(contact, keys, None).await;
+    vote_yes_on_proposals(contact, &val_priv_keys, None).await;
     wait_for_proposals_to_execute(contact).await;
     trace!("Gov proposal executed with {:?}", res);
 }

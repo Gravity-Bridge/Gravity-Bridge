@@ -236,6 +236,10 @@ pub async fn get_erc20_balance_safe(
     Ok(new_balance.unwrap())
 }
 
+pub fn get_validator_private_keys(keys: &[ValidatorKeys]) -> Vec<CosmosPrivateKey> {
+    keys.iter().map(|k| k.validator_key).collect()
+}
+
 // Generates a new BridgeUserKey through randomly generated secrets
 // cosmos_prefix allows for generation of a cosmos_address with a different prefix than "gravity"
 pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
@@ -247,13 +251,14 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
     let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
     let eth_address = eth_key.to_address();
     // the destination on cosmos that sends along to the final ethereum destination
-    let cosmos_key = CosmosPrivateKey::from_secret(&secret);
-    let cosmos_address = cosmos_key.to_address(cosmos_prefix).unwrap();
+    let (cosmos_key, cosmos_address) = get_cosmos_key(cosmos_prefix);
+
+    // Generate a second ethereum wallet for use as a destination
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
-    // the final destination of the tokens back on Ethereum
     let eth_dest_key = EthPrivateKey::from_slice(&secret).unwrap();
     let eth_dest_address = eth_key.to_address();
+
     BridgeUserKey {
         eth_address,
         eth_key,
@@ -262,6 +267,16 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
         eth_dest_address,
         eth_dest_key,
     }
+}
+
+// Generates a cosmos key from a generated secret, using cosmos_prefix for the returned Address
+pub fn get_cosmos_key(cosmos_prefix: &str) -> (CosmosPrivateKey, CosmosAddress) {
+    let mut rng = rand::thread_rng();
+    let secret: [u8; 32] = rng.gen();
+
+    let cosmos_key = CosmosPrivateKey::from_secret(&secret);
+    let cosmos_address = cosmos_key.to_address(cosmos_prefix).unwrap();
+    (cosmos_key, cosmos_address)
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
@@ -289,7 +304,7 @@ pub fn get_ethermint_key(cosmos_prefix: Option<&str>) -> EthermintUserKey {
     let ethermint_key = EthermintPrivateKey::from_secret(&secret);
     let ethermint_address = ethermint_key.to_address(cosmos_prefix).unwrap();
     // TODO: Verify that this conversion works like `evmosd debug addr`
-    let eth_address = EthAddress::from_slice(ethermint_address.as_bytes()).unwrap();
+    let eth_address = EthAddress::from_slice(ethermint_address.get_bytes()).unwrap();
 
     EthermintUserKey {
         ethermint_address,
@@ -488,7 +503,7 @@ pub struct UpgradeProposalParams {
 // Creates and submits a SoftwareUpgradeProposal to the chain, then votes yes with all validators
 pub async fn execute_upgrade_proposal(
     contact: &Contact,
-    keys: &[ValidatorKeys],
+    keys: &[CosmosPrivateKey],
     timeout: Option<Duration>,
     upgrade_params: UpgradeProposalParams,
 ) {
@@ -513,7 +528,7 @@ pub async fn execute_upgrade_proposal(
         get_deposit(),
         get_fee(None),
         contact,
-        keys[0].validator_key,
+        keys[0],
         Some(duration),
     )
     .await
@@ -527,7 +542,7 @@ pub async fn execute_upgrade_proposal(
 // votes yes on every proposal available
 pub async fn vote_yes_on_proposals(
     contact: &Contact,
-    keys: &[ValidatorKeys],
+    keys: &[CosmosPrivateKey],
     timeout: Option<Duration>,
 ) {
     let duration = match timeout {
@@ -543,8 +558,7 @@ pub async fn vote_yes_on_proposals(
     let mut futs = Vec::new();
     for proposal in proposals.proposals {
         for key in keys.iter() {
-            let res =
-                vote_yes_with_retry(contact, proposal.proposal_id, key.validator_key, duration);
+            let res = vote_yes_with_retry(contact, proposal.proposal_id, *key, duration);
             futs.push(res);
         }
     }

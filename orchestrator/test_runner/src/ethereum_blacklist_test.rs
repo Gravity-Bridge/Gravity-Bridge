@@ -1,8 +1,8 @@
 //! This is a test for the Ethereum blacklist, which prevents specific addresses from depositing to or withdrawing from the bridge
 
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
-use crate::get_fee;
 use crate::utils::{create_parameter_change_proposal, vote_yes_on_proposals, ValidatorKeys};
+use crate::{get_fee, get_validator_private_keys};
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
@@ -14,6 +14,7 @@ pub async fn ethereum_blacklist_test(
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
 ) {
+    let val_priv_keys = get_validator_private_keys(&keys);
     let mut grpc_client = grpc_client;
 
     let blocked_addresses: Vec<String> =
@@ -39,7 +40,7 @@ pub async fn ethereum_blacklist_test(
     )
     .await;
 
-    vote_yes_on_proposals(contact, &keys, None).await;
+    vote_yes_on_proposals(contact, &val_priv_keys, None).await;
 
     // wait for the voting period to pass
     wait_for_proposals_to_execute(contact).await;
