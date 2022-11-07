@@ -440,6 +440,7 @@ pub async fn main() {
                 gravity_address,
                 &web30,
                 grpc_client,
+                30,
                 3,
             )
             .await;
@@ -454,7 +455,8 @@ pub async fn main() {
                 gravity_address,
                 &web30,
                 grpc_client,
-                100,
+                300,
+                300,
             )
             .await;
             return;

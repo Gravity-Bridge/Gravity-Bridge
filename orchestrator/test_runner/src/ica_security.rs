@@ -60,6 +60,7 @@ pub async fn ica_sec_test(
     _gravity_address: EthAddress,
     _web30: &Web3,
     _grpc_client: GravityQueryClient<Channel>,
+    num_users: u64,
     registers_per_iteration: usize,
 ) {
     let val_priv_keys = get_validator_private_keys(&keys);
@@ -119,7 +120,7 @@ pub async fn ica_sec_test(
             ibc_ica_qc,
             ibc_conn_id.clone(),
             ibc_keys,
-            30u64,
+            num_users,
             registers_per_iteration,
         )
         .await;
