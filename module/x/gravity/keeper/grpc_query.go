@@ -139,7 +139,7 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 	var pendingBatchReq types.InternalOutgoingTxBatches
 
 	found := false
-	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTxBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		foundConfirm := k.GetBatchConfirm(sdk.UnwrapSDKContext(c), batch.BatchNonce, batch.TokenContract, addr) != nil
 		if !foundConfirm {
 			pendingBatchReq = append(pendingBatchReq, batch)
@@ -194,7 +194,7 @@ func (k Keeper) OutgoingTxBatches(
 	c context.Context,
 	req *types.QueryOutgoingTxBatchesRequest) (*types.QueryOutgoingTxBatchesResponse, error) {
 	var batches []types.OutgoingTxBatch
-	k.IterateOutgoingTXBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTxBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		batches = append(batches, batch.ToExternal())
 		return len(batches) == MaxResults
 	})
@@ -252,7 +252,7 @@ func (k Keeper) BatchConfirms(
 func (k Keeper) LogicConfirms(
 	c context.Context,
 	req *types.QueryLogicConfirmsRequest) (*types.QueryLogicConfirmsResponse, error) {
-	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(sdk.UnwrapSDKContext(c), req.InvalidationId, req.InvalidationNonce)
+	confirms := k.GetLogicConfirmsByInvalidationIdAndNonce(sdk.UnwrapSDKContext(c), req.InvalidationId, req.InvalidationNonce)
 
 	return &types.QueryLogicConfirmsResponse{Confirms: confirms}, nil
 }
@@ -374,7 +374,7 @@ func (k Keeper) GetOldLastObservedEventNonce(ctx sdk.Context) uint64 {
 	if len(bytes) == 0 {
 		return 0
 	}
-	return types.UInt64FromBytes(bytes)
+	return types.UInt64FromBytesUnsafe(bytes)
 }
 
 // GetAttestations queries the attestation map

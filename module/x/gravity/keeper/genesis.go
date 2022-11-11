@@ -237,7 +237,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	for _, call := range calls {
 		// TODO: set height = 0?
 		callconfs = append(callconfs,
-			k.GetLogicConfirmByInvalidationIDAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)...)
+			k.GetLogicConfirmsByInvalidationIdAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)...)
 	}
 
 	// export attestations from state

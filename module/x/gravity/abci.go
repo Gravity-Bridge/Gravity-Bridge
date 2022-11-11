@@ -229,7 +229,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			}
 			valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
 
-			// Slash validator ONLY if he joined before valset is created
+			// Slash validator ONLY if they joined before valset was created
 			startedBeforeValsetCreated := valSigningInfo.StartHeight < int64(vs.Height)
 
 			if exist && startedBeforeValsetCreated {
@@ -413,7 +413,7 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 // reducing the lookup time dramatically and separating out the task of looking up
 // the orchestrator for each validator
 func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call types.OutgoingLogicCall) map[string]*types.MsgConfirmLogicCall {
-	confirms := k.GetLogicConfirmByInvalidationIDAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)
+	confirms := k.GetLogicConfirmsByInvalidationIdAndNonce(ctx, call.InvalidationId, call.InvalidationNonce)
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]*types.MsgConfirmLogicCall)
 	for _, confirm := range confirms {

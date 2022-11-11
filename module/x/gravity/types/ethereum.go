@@ -217,3 +217,26 @@ func GravityDenomToERC20(denom string) (*EthAddress, error) {
 func has0xPrefix(str string) bool {
 	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
 }
+
+func (m ERC20ToDenom) ValidateBasic() error {
+	trimDenom := strings.TrimSpace(m.Denom)
+	if trimDenom == "" || trimDenom != m.Denom {
+		return sdkerrors.Wrap(ErrInvalid, "invalid erc20todenom: denom must be properly formatted")
+	}
+	trimErc20 := strings.TrimSpace(m.Erc20)
+	if trimErc20 == "" || trimErc20 != m.Erc20 {
+		return sdkerrors.Wrap(ErrInvalid, "invalid erc20todenom: erc20 must be properly formatted")
+	}
+	addr, err := NewEthAddress(m.Erc20)
+	if err != nil {
+		return sdkerrors.Wrapf(ErrInvalid, "invalid erc20todenom: erc20 must be a valid ethereum address: %v", err)
+	}
+	if err = addr.ValidateBasic(); err != nil {
+		return sdkerrors.Wrapf(ErrInvalid, "invalid erc20todenom: erc20 address failed validate basic: %v", err)
+	}
+	if err = sdk.ValidateDenom(m.Denom); err != nil {
+		return sdkerrors.Wrapf(ErrInvalid, "invalid erc20todenom: denom is invalid: %v", err)
+	}
+
+	return nil
+}

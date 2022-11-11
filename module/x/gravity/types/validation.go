@@ -322,6 +322,29 @@ func (v Valset) Equal(o Valset) (bool, error) {
 	return true, nil
 }
 
+func (v Valset) ValidateBasic() error {
+	if len(v.Members) == 0 {
+		return sdkerrors.Wrap(ErrInvalidValset, "valset must have members")
+	}
+	for _, mem := range v.Members {
+		_, err := mem.ToInternal() // ToInternal validates the InternalBridgeValidator for us
+		if err != nil {
+			return err
+		}
+	}
+	if v.RewardAmount.IsNegative() {
+		return sdkerrors.Wrap(ErrInvalidValset, "valset reward must not be negative")
+	}
+	cleanToken := strings.TrimSpace(v.RewardToken)
+	if v.RewardAmount.IsPositive() && cleanToken == "" {
+		return sdkerrors.Wrap(ErrInvalidValset, "no valset reward denom for nonzero reward")
+	}
+	if cleanToken != v.RewardToken {
+		return sdkerrors.Wrap(ErrInvalidValset, "reward token should be properly formatted")
+	}
+	return nil
+}
+
 // Valsets is a collection of valset
 type Valsets []Valset
 
@@ -335,6 +358,15 @@ func (v Valsets) Less(i, j int) bool {
 
 func (v Valsets) Swap(i, j int) {
 	v[i], v[j] = v[j], v[i]
+}
+
+func (v Valsets) ValidateBasic() error {
+	for _, valset := range v {
+		if err := valset.ValidateBasic(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetFees returns the total fees contained within a given batch
