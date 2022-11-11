@@ -759,7 +759,7 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 
 	k.SetLogicCallConfirm(sdkCtx, &confirm)
 
-	res := k.GetLogicConfirmByInvalidationIDAndNonce(sdkCtx, invalidationId, 1)
+	res := k.GetLogicConfirmsByInvalidationIdAndNonce(sdkCtx, invalidationId, 1)
 	assert.Equal(t, len(res), 1)
 }
 

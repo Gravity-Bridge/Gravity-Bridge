@@ -36,14 +36,12 @@ func getAllKeys() [][]byte {
 	keys[*inc(&i)] = ValidatorByEthAddressKey
 	keys[*inc(&i)] = ValsetRequestKey
 	keys[*inc(&i)] = ValsetConfirmKey
-	keys[*inc(&i)] = OracleClaimKey
 	keys[*inc(&i)] = OracleAttestationKey
 	keys[*inc(&i)] = OutgoingTXPoolKey
 	keys[*inc(&i)] = OutgoingTXBatchKey
 	keys[*inc(&i)] = BatchConfirmKey
 	keys[*inc(&i)] = LastEventNonceByValidatorKey
 	keys[*inc(&i)] = LastObservedEventNonceKey
-	keys[*inc(&i)] = SequenceKeyPrefix
 	keys[*inc(&i)] = KeyLastTXPoolID
 	keys[*inc(&i)] = KeyLastOutgoingBatchID
 	keys[*inc(&i)] = KeyOrchestratorAddress

@@ -3,7 +3,6 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -208,6 +207,12 @@ func (p Params) ValidateBasic() error {
 	}
 	if err := validateValsetRewardAmount(p.ValsetReward); err != nil {
 		return sdkerrors.Wrap(err, "ValsetReward amount")
+	}
+	if err := validateBridgeActive(p.BridgeActive); err != nil {
+		sdkerrors.Wrap(err, "bridge active parameter")
+	}
+	if err := validateEthereumBlacklistAddresses(p.EthereumBlacklist); err != nil {
+		sdkerrors.Wrap(err, "ethereum blacklist parameter")
 	}
 	return nil
 }
@@ -418,16 +423,14 @@ func validateBridgeActive(i interface{}) error {
 }
 
 func validateEthereumBlacklistAddresses(i interface{}) error {
-	strArr, ok := i.([]string)
+	addresses, ok := i.([]string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
-	for index, value := range strArr {
-		if err := ValidateEthAddress(value); err != nil {
-
-			if !strings.Contains(err.Error(), "empty, index is"+strconv.Itoa(index)) {
-				return err
-			}
+	for _, addr := range addresses {
+		err := ValidateEthAddress(addr)
+		if err != nil {
+			return sdkerrors.Wrapf(ErrInvalidEthAddress, "invalid address %v in Ethereum Blacklist: %v", addr, err)
 		}
 	}
 	return nil

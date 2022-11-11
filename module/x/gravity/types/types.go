@@ -15,7 +15,10 @@ import (
 )
 
 // UInt64FromBytes create uint from binary big endian representation
-func UInt64FromBytes(s []byte) uint64 {
+func UInt64FromBytesUnsafe(s []byte) uint64 {
+	if len(s) > 8 {
+		panic("Invalid uint64 bytes passed to UInt64FromBytes!")
+	}
 	return binary.BigEndian.Uint64(s)
 }
 
