@@ -9,6 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
 func (k Keeper) CheckBadSignatureEvidence(
@@ -98,5 +99,23 @@ func (k Keeper) GetPastEthSignatureCheckpoint(ctx sdk.Context, checkpoint []byte
 		return true
 	} else {
 		return false
+	}
+}
+
+func (k Keeper) IteratePastEthSignatureCheckpoints(ctx sdk.Context, cb func(key []byte, value []byte) (stop bool)) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.PastEthSignatureCheckpointKey)
+	iter := prefixStore.Iterator(nil, nil)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+		if !bytes.Equal(val, []byte{0x1}) {
+			panic(fmt.Sprintf("Invalid stored past eth signature checkpoint key=%v: value %v", key, val))
+		}
+
+		if cb(key, val) {
+			break
+		}
 	}
 }

@@ -34,13 +34,34 @@ func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (*types.
 	return nil, false
 }
 
+// IterateCosmosOriginatedERC20s iterates through every erc20 under DenomToERC20Key, passing it to the given callback.
+// cb should return true to stop iteration, false to continue
+func (k Keeper) IterateCosmosOriginatedERC20s(ctx sdk.Context, cb func(key []byte, erc20 *types.EthAddress) (stop bool)) {
+	store := ctx.KVStore(k.storeKey)
+	prefixStore := prefix.NewStore(store, types.DenomToERC20Key)
+	iter := prefixStore.Iterator(nil, nil)
+
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		erc20, err := types.NewEthAddressFromBytes(iter.Value())
+		if err != nil {
+			panic(fmt.Sprintf("Discovered invalid eth address under key %v in IterateCosmosOriginatedERC20s: %v", iter.Key(), err))
+		}
+		// cb returns true to stop early
+		if cb(iter.Key(), erc20) {
+			break
+		}
+	}
+}
+
 func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, tokenContract types.EthAddress) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetDenomToERC20Key(denom), tokenContract.GetAddress().Bytes())
 	store.Set(types.GetERC20ToDenomKey(tokenContract), []byte(denom))
 }
 
-// DenomToERC20 returns (bool isCosmosOriginated, EthAddress ERC20, err)
+// DenomToERC20Lookup returns (bool isCosmosOriginated, EthAddress ERC20, err)
 // Using this information, you can see if an asset is native to Cosmos or Ethereum,
 // and get its corresponding ERC20 address.
 // This will return an error if it cant parse the denom as a gravity denom, and then also can't find the denom
@@ -107,12 +128,12 @@ func (k Keeper) IterateERC20ToDenom(ctx sdk.Context, cb func([]byte, *types.ERC2
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		Erc20, err := types.NewEthAddressFromBytes(iter.Key())
+		erc20, err := types.NewEthAddressFromBytes(iter.Key())
 		if err != nil {
 			panic("Invalid ERC20 to Denom mapping in store!")
 		}
 		erc20ToDenom := types.ERC20ToDenom{
-			Erc20: Erc20.GetAddress().String(),
+			Erc20: erc20.GetAddress().String(),
 			Denom: string(iter.Value()),
 		}
 		// cb returns true to stop early

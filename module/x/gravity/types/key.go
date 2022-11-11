@@ -1,10 +1,9 @@
 package types
 
 import (
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"strings"
 )
 
 const (
@@ -41,14 +40,17 @@ var (
 	// [0x2f522701d7f28af84632f8228fbe1750]
 	ValsetConfirmKey = HashString("ValsetConfirmKey")
 
-	// OracleClaimKey Claim details by nonce and validator address
+	// LEGACYOracleClaimKey Claim details by nonce and validator address
+	// Note: This is a LEGACY key, i.e. it is no longer in use!
+	// ** DO NOT USE THIS OUTSIDE OF MIGRATION TESTING! **
+	//
 	// i.e. gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
 	// A claim is named more intuitively than an Attestation, it is literally
 	// a validator making a claim to have seen something happen. Claims are
 	// attached to attestations which can be thought of as 'the event' that
 	// will eventually be executed.
 	// [0x15968a4f1cb06e26ab155d6e59eccc85]
-	OracleClaimKey = HashString("OracleClaimKey")
+	LEGACYOracleClaimKey = HashString("OracleClaimKey")
 
 	// OracleAttestationKey attestation details by nonce and validator address
 	// i.e. gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
@@ -79,9 +81,12 @@ var (
 	// [0xa34e56ab6fab9ee91e82ba216bfeb759]
 	LastObservedEventNonceKey = HashString("LastObservedEventNonceKey")
 
-	// SequenceKeyPrefix indexes different txids
+	// LEGACYSequenceKeyPrefix indexes different txids
+	// Note: This is a LEGACY key, i.e. it is no longer in use!
+	// ** DO NOT USE THIS OUTSIDE OF MIGRATION TESTING! **
+	//
 	// [0x33887862fa4fba9c592d6fb84d8dd755]
-	SequenceKeyPrefix = HashString("SequenceKeyPrefix")
+	LEGACYSequenceKeyPrefix = HashString("SequenceKeyPrefix")
 
 	// KeyLastTXPoolID indexes the lastTxPoolID
 	// [0xfd87a616141bfbd26fd2938d6e1cf099]
@@ -135,18 +140,18 @@ var (
 	// [0x06a6b30651341e80276e0d2e19449250]
 	LastUnBondingBlockHeight = HashString("LastUnBondingBlockHeight")
 
-	// LastObservedValsetNonceKey indexes the latest observed valset nonce
+	// PastEthSignatureCheckpointKey indexes eth signature checkpoints that have existed
+	// [0x1cbe0be407a979331b98e599eeedd09f]
+	PastEthSignatureCheckpointKey = HashString("PastEthSignatureCheckpointKey")
+
+	// LastObservedValsetKey indexes the latest observed valset nonce
 	// HERE THERE BE DRAGONS, do not use this value as an up to date validator set
 	// on Ethereum it will always lag significantly and may be totally wrong at some
 	// times.
 	// [0x2418e9d990ce88e9b844b0bb723d4d7a]
 	LastObservedValsetKey = HashString("LastObservedValsetKey")
 
-	// PastEthSignatureCheckpointKey indexes eth signature checkpoints that have existed
-	// [0x1cbe0be407a979331b98e599eeedd09f]
-	PastEthSignatureCheckpointKey = HashString("PastEthSignatureCheckpointKey")
-
-	// PendingIBCAutoForwards indexes pending SendToCosmos sends via IBC, queued by event nonce
+	// PendingIbcAutoForwards indexes pending SendToCosmos sends via IBC, queued by event nonce
 	// [0x5b89a7c5dc9abd2a7abc2560d6eb42ea]
 	PendingIbcAutoForwards = HashString("IbcAutoForwardQueue")
 )

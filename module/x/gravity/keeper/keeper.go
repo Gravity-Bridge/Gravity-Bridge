@@ -23,6 +23,7 @@ import (
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
 // Check that our expected keeper types are implemented
@@ -297,6 +298,63 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 	return result
 }
 
+// IterateEthAddressesByValidator executes the given callback cb with every value stored under EthAddressByValidatorKey
+// cb should return true if iteration must stop, false if it should continue
+func (k Keeper) IterateEthAddressesByValidator(ctx sdk.Context, cb func(key []byte, value types.EthAddress) (stop bool)) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.EthAddressByValidatorKey)
+	iter := prefixStore.Iterator(nil, nil)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+		value, err := types.NewEthAddressFromBytes(val)
+		if err != nil {
+			panic(fmt.Sprintf("Unable to unmarshal EthAddress for validator with key %v and bytes %v", key, val))
+		}
+
+		if cb(key, *value) {
+			break
+		}
+	}
+}
+
+// IterateValidatorsByEthAddress executes the given callback cb with every value stored under ValidatorByEthAddressKey
+// cb should return true if iteration must stop, false if it should continue
+func (k Keeper) IterateValidatorsByEthAddress(ctx sdk.Context, cb func(key []byte, value sdk.ValAddress) (stop bool)) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ValidatorByEthAddressKey)
+	iter := prefixStore.Iterator(nil, nil)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+		value := sdk.ValAddress(val)
+
+		if cb(key, value) {
+			break
+		}
+	}
+}
+
+// IterateValidatorsByOrchestratorAddress executes the given callback cb with every value stored under KeyOrchestratorAddress
+// cb should return true if iteration must stop, false if it should continue
+func (k Keeper) IterateValidatorsByOrchestratorAddress(ctx sdk.Context, cb func(key []byte, value sdk.ValAddress) (stop bool)) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyOrchestratorAddress)
+	iter := prefixStore.Iterator(nil, nil)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+		value := sdk.ValAddress(val)
+
+		if cb(key, value) {
+			break
+		}
+	}
+}
+
 /////////////////////////////
 //// Logic Call Slashing ////
 /////////////////////////////
@@ -327,7 +385,7 @@ func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context) uint64 {
 	if len(bytes) == 0 {
 		panic("Last slashed logic call block not initialized in genesis")
 	}
-	return types.UInt64FromBytes(bytes)
+	return types.UInt64FromBytesUnsafe(bytes)
 }
 
 // GetUnSlashedLogicCalls returns all the unslashed logic calls in state

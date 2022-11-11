@@ -11,6 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
 // TODO-JT: carefully look at atomicity of this function
@@ -233,8 +234,10 @@ func (k Keeper) GetAttestationMapping(ctx sdk.Context) (attestationMapping map[u
 	return
 }
 
-// IterateAttestations iterates through all attestations
-func (k Keeper) IterateAttestations(ctx sdk.Context, reverse bool, cb func([]byte, types.Attestation) bool) {
+// IterateAttestations iterates through all attestations executing a given callback on each discovered attestation
+// If reverse is true, attestations will be returned in descending order by key (aka by event nonce and then claim hash)
+// cb should return true to stop iteration, false to continue
+func (k Keeper) IterateAttestations(ctx sdk.Context, reverse bool, cb func(key []byte, att types.Attestation) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
 	prefix := types.OracleAttestationKey
 
@@ -272,6 +275,25 @@ func (k Keeper) IterateAttestations(ctx sdk.Context, reverse bool, cb func([]byt
 	}
 }
 
+// IterateClaims iterates through all attestations, filtering them for claims of a given type
+// If reverse is true, attestations will be returned in descending order by key (aka by event nonce and then claim hash)
+// cb should return true to stop iteration, false to continue
+func (k Keeper) IterateClaims(ctx sdk.Context, reverse bool, claimType types.ClaimType, cb func(key []byte, att types.Attestation, claim types.EthereumClaim) (stop bool)) {
+	typeUrl := types.ClaimTypeToTypeUrl(claimType) // Used to avoid unpacking undesired attestations
+
+	k.IterateAttestations(ctx, reverse, func(key []byte, att types.Attestation) bool {
+		if att.Claim.TypeUrl == typeUrl {
+			claim, err := k.UnpackAttestationClaim(&att)
+			if err != nil {
+				panic(fmt.Sprintf("Discovered invalid claim in attestation %v under key %v: %v", att, key, err))
+			}
+
+			return cb(key, att, claim)
+		}
+		return false
+	})
+}
+
 // GetMostRecentAttestations returns sorted (by nonce) attestations up to a provided limit number of attestations
 // Note: calls GetAttestationMapping in the hopes that there are potentially many attestations
 // which are distributed between few nonces to minimize sorting time
@@ -305,7 +327,10 @@ func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context) uint64 {
 	if len(bytes) == 0 {
 		return 0
 	}
-	return types.UInt64FromBytes(bytes)
+	if len(bytes) > 8 {
+		panic("Last observed event nonce is not a uint64!")
+	}
+	return types.UInt64FromBytesUnsafe(bytes)
 }
 
 // GetLastObservedEthereumBlockHeight height gets the block height to of the last observed attestation from
@@ -403,14 +428,32 @@ func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValA
 			return 0
 		}
 	}
-	return types.UInt64FromBytes(bytes)
+	return types.UInt64FromBytesUnsafe(bytes)
 }
 
-// setLastEventNonceByValidator sets the latest event nonce for a give validator
+// SetLastEventNonceByValidator sets the latest event nonce for a give validator
 func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress, nonce uint64) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetLastEventNonceByValidatorKey(validator), types.UInt64Bytes(nonce))
+}
+
+// IterateValidatorLastEventNonces iterates through all batch confirmations
+func (k Keeper) IterateValidatorLastEventNonces(ctx sdk.Context, cb func(key []byte, nonce uint64) (stop bool)) {
+	store := ctx.KVStore(k.storeKey)
+	prefixStore := prefix.NewStore(store, types.LastEventNonceByValidatorKey)
+	iter := prefixStore.Iterator(nil, nil)
+
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		nonce := types.UInt64FromBytesUnsafe(iter.Value())
+
+		// cb returns true to stop early
+		if cb(iter.Key(), nonce) {
+			break
+		}
+	}
 }

@@ -261,6 +261,27 @@ func (i InternalOutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 	return crypto.Keccak256Hash(abiEncodedBatch[4:]).Bytes()
 }
 
+func (c OutgoingLogicCall) ValidateBasic() error {
+	for _, t := range c.Transfers {
+		_, err := t.ToInternal() // ToInternal calls ValidateBasic for us
+		if err != nil {
+			return sdkerrors.Wrapf(ErrInvalidLogicCall, "invalid transfer in logic call: %v", err)
+		}
+	}
+	for _, t := range c.Fees {
+		_, err := t.ToInternal() // ToInternal calls ValidateBasic for us
+		if err != nil {
+			return sdkerrors.Wrapf(ErrInvalidLogicCall, "invalid fee in logic call: %v", err)
+		}
+	}
+	_, err := NewEthAddress(c.LogicContractAddress)
+	if err != nil {
+		return sdkerrors.Wrapf(ErrInvalidLogicCall, "invalid logic call logic contract address: %v", err)
+	}
+
+	return nil
+}
+
 // GetCheckpoint gets the checkpoint signature from the given outgoing tx batch
 func (c OutgoingLogicCall) GetCheckpoint(gravityIDstring string) []byte {
 

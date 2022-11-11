@@ -23,7 +23,7 @@ import (
 // is the only function to call when you want to create a validator set that
 // is signed by consensus. If you want to peek at the present state of the set
 // and perhaps take action based on that use k.GetCurrentValset
-// i.e. {"nonce": 1, "memebers": [{"eth_addr": "foo", "power": 11223}]}
+// i.e. {"nonce": 1, "members": [{"eth_addr": "foo", "power": 11223}]}
 func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 	valset, err := k.GetCurrentValset(ctx)
 	if err != nil {
@@ -94,7 +94,7 @@ func (k Keeper) GetLatestValsetNonce(ctx sdk.Context) uint64 {
 
 	store := ctx.KVStore(k.storeKey)
 	bytes := store.Get(types.LatestValsetNonce)
-	return types.UInt64FromBytes(bytes)
+	return types.UInt64FromBytesUnsafe(bytes)
 }
 
 // SetLatestValsetNonce sets the latest valset nonce, since it's
@@ -122,8 +122,8 @@ func (k Keeper) GetValset(ctx sdk.Context, nonce uint64) *types.Valset {
 	return &valset
 }
 
-// IterateValsets retruns all valsetRequests
-func (k Keeper) IterateValsets(ctx sdk.Context, cb func(key []byte, val *types.Valset) bool) {
+// IterateValsets returns all valsetRequests in reverse order, aka most recent first
+func (k Keeper) IterateValsets(ctx sdk.Context, cb func(key []byte, val *types.Valset) (stop bool)) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ValsetRequestKey)
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
@@ -171,7 +171,7 @@ func (k Keeper) GetLastSlashedValsetNonce(ctx sdk.Context) uint64 {
 	if len(bytes) == 0 {
 		return 0
 	}
-	return types.UInt64FromBytes(bytes)
+	return types.UInt64FromBytesUnsafe(bytes)
 }
 
 // SetLastUnBondingBlockHeight sets the last unbonding block height. Note this value is not saved and loaded in genesis
@@ -190,7 +190,7 @@ func (k Keeper) GetLastUnBondingBlockHeight(ctx sdk.Context) uint64 {
 	if len(bytes) == 0 {
 		return 0
 	}
-	return types.UInt64FromBytes(bytes)
+	return types.UInt64FromBytesUnsafe(bytes)
 }
 
 // GetUnSlashedValsets returns all the "ready-to-slash" unslashed validator sets in state (valsets at least signedValsetsWindow blocks old)
@@ -387,6 +387,49 @@ func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []typ
 	}
 
 	return confirms
+}
+
+// IterateValsetConfirms returns all valset confirms in reverse order by nonce, aka most recent valset nonce first
+func (k Keeper) IterateValsetConfirms(ctx sdk.Context, cb func(key []byte, confirms []types.MsgValsetConfirm, nonce uint64) (stop bool)) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ValsetConfirmKey)
+	iter := prefixStore.ReverseIterator(nil, nil)
+	defer iter.Close()
+
+	var confirmsByNonce []types.MsgValsetConfirm
+	var nonce uint64 = 0
+
+	// Iterate through all stored valset confirms grouping them into confirmsByNonce.
+	// When a new nonce is found: process the collected confirmsByNonce, clear the collection + update the current nonce
+	for ; iter.Valid(); iter.Next() {
+		// The iterator guarantees us some nonempty value stored at the Value(), it better be a MsgValsetConfirm
+		var confirm types.MsgValsetConfirm
+		k.cdc.MustUnmarshal(iter.Value(), &confirm)
+
+		if len(confirmsByNonce) == 0 { // First confirm found
+			// Initialize current nonce, start the collection
+			nonce = confirm.Nonce
+			confirmsByNonce = append(confirmsByNonce, confirm)
+		} else {
+			if confirm.Nonce != nonce { // At nonce boundary
+				// We are guaranteed to have some collection of confirms at this point
+				// cb returns true to stop early
+				if cb(iter.Key(), confirmsByNonce, nonce) {
+					return
+				}
+				// Now we are done with the old confirms, update the nonce and clear the collection
+				nonce = confirm.Nonce
+				confirmsByNonce = []types.MsgValsetConfirm{}
+			}
+			// Add the current confirm to the collection
+			confirmsByNonce = append(confirmsByNonce, confirm)
+		}
+	}
+
+	// Process the final nonce, or arrive here if no confirms are in the store
+	if len(confirmsByNonce) != 0 {
+		// This is the final callback execution, we stop regardless of their request to do so
+		cb(iter.Key(), confirmsByNonce, nonce)
+	}
 }
 
 // DeleteValsetConfirms deletes the valset confirmations for the valset at a given nonce from state

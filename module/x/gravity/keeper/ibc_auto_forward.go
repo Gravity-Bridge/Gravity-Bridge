@@ -13,6 +13,7 @@ package keeper
 import (
 	"fmt"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -81,22 +82,34 @@ func (k Keeper) GetNextPendingIbcAutoForward(ctx sdk.Context) *types.PendingIbcA
 
 // PendingIbcAutoForwards returns an ordered slice of the queued IBC Auto-Forward sends to IBC-enabled chains
 func (k Keeper) PendingIbcAutoForwards(ctx sdk.Context, limit uint64) []*types.PendingIbcAutoForward {
-	store := ctx.KVStore(k.storeKey)
-	prefix := types.PendingIbcAutoForwards
-	iter := store.Iterator(prefixRange(prefix))
-	defer iter.Close()
 	forwards := make([]*types.PendingIbcAutoForward, 0)
+
+	k.IteratePendingIbcAutoForwards(ctx, func(key []byte, forward *types.PendingIbcAutoForward) (stop bool) {
+		forwards = append(forwards, forward)
+		if limit != 0 && uint64(len(forwards)) >= limit {
+			return true
+		}
+		return false
+	})
+
+	return forwards
+}
+
+// IteratePendingIbcAutoForwards executes the given callback on each PendingIbcAutoForward in the store
+// cb should return true to stop iteration, false to continue
+func (k Keeper) IteratePendingIbcAutoForwards(ctx sdk.Context, cb func(key []byte, forward *types.PendingIbcAutoForward) (stop bool)) {
+	store := ctx.KVStore(k.storeKey)
+	prefixStore := prefix.NewStore(store, types.PendingIbcAutoForwards)
+	iter := prefixStore.Iterator(nil, nil)
+	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		forward := new(types.PendingIbcAutoForward)
 		k.cdc.MustUnmarshal(iter.Value(), forward)
 
-		forwards = append(forwards, forward)
-
-		if limit != 0 && uint64(len(forwards)) >= limit {
+		if cb(iter.Key(), forward) {
 			break
 		}
 	}
-	return forwards
 }
 
 // addPendingIbcAutoForward enqueues a single new pending IBC Auto-Forward send to an IBC-enabled chain

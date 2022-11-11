@@ -14,8 +14,12 @@ import (
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 )
 
-// UInt64FromBytes create uint from binary big endian representation
-func UInt64FromBytes(s []byte) uint64 {
+// UInt64FromBytesUnsafe create uint from binary big endian representation
+// Note: This is unsafe because the function will panic if provided over 8 bytes
+func UInt64FromBytesUnsafe(s []byte) uint64 {
+	if len(s) > 8 {
+		panic("Invalid uint64 bytes passed to UInt64FromBytes!")
+	}
 	return binary.BigEndian.Uint64(s)
 }
 
