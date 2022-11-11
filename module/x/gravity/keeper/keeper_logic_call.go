@@ -10,9 +10,9 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-////////////////////
-//// LOGICCALLS ////
-////////////////////
+/////////////////////
+//// LOGIC CALLS ////
+/////////////////////
 
 // GetOutgoingLogicCall gets an outgoing logic call
 func (k Keeper) GetOutgoingLogicCall(ctx sdk.Context, invalidationID []byte, invalidationNonce uint64) *types.OutgoingLogicCall {
@@ -97,7 +97,7 @@ func (k Keeper) CancelOutgoingLogicCall(ctx sdk.Context, invalidationId []byte, 
 }
 
 /////////////////////////////
-// LOGICCONFIRMS     //
+///// LOGIC CONFIRMS ////////
 /////////////////////////////
 
 // SetLogicCallConfirm sets a logic confirm in the store
@@ -147,26 +147,38 @@ func (k Keeper) DeleteLogicCallConfirm(
 	ctx.KVStore(k.storeKey).Delete(types.GetLogicConfirmKey(invalidationID, invalidationNonce, val))
 }
 
-// IterateLogicConfirmByInvalidationIDAndNonce iterates over all logic confirms stored by nonce
-func (k Keeper) IterateLogicConfirmByInvalidationIDAndNonce(
+// IterateLogicConfirmsByInvalidationIDAndNonce iterates over all logic confirms stored by invalidation id and nonce,
+// applying the given callback on each discovered confirm.
+// cb should return true to stop iteration, false to continue
+func (k Keeper) IterateLogicConfirmsByInvalidationIDAndNonce(
 	ctx sdk.Context,
 	invalidationID []byte,
 	invalidationNonce uint64,
-	cb func([]byte, *types.MsgConfirmLogicCall) bool) {
-	store := ctx.KVStore(k.storeKey)
+	cb func(key []byte, confirm *types.MsgConfirmLogicCall) (stop bool),
+) {
 	prefix := types.GetLogicConfirmNonceInvalidationIdPrefix(invalidationID, invalidationNonce)
-	iter := store.Iterator(prefixRange([]byte(prefix)))
+	k.iterateLogicConfirmsByPrefix(ctx, prefix, cb)
+}
+
+// IterateLogicConfirmsByInvalidationIDAndNonce iterates over all logic confirms in the store applying the given
+// callback on each discovered confirm.
+// cb should return true to stop iteration, false to continue
+func (k Keeper) IterateLogicConfirms(ctx sdk.Context, cb func(key []byte, confirm *types.MsgConfirmLogicCall) (stop bool)) {
+	prefix := types.KeyOutgoingLogicConfirm
+	k.iterateLogicConfirmsByPrefix(ctx, prefix, cb)
+}
+
+// iterateLogicConfirmsByPrefix iterates over all logic confirms in the store with the given prefix, applying the given
+// callback on each discovered confirm. See the above methods for example usage
+// cb should return true to stop iteration, false to continue
+func (k Keeper) iterateLogicConfirmsByPrefix(ctx sdk.Context, prefix []byte, cb func([]byte, *types.MsgConfirmLogicCall) bool) {
+	store := ctx.KVStore(k.storeKey)
+	iter := store.Iterator(prefixRange(prefix))
 
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		confirm := types.MsgConfirmLogicCall{
-			InvalidationId:    "",
-			InvalidationNonce: invalidationNonce,
-			EthSigner:         "",
-			Orchestrator:      "",
-			Signature:         "",
-		}
+		var confirm types.MsgConfirmLogicCall
 		k.cdc.MustUnmarshal(iter.Value(), &confirm)
 		// cb returns true to stop early
 		if cb(iter.Key(), &confirm) {
@@ -176,8 +188,8 @@ func (k Keeper) IterateLogicConfirmByInvalidationIDAndNonce(
 }
 
 // GetLogicConfirmsByInvalidationIdAndNonce returns the logic call confirms
-func (k Keeper) GetLogicConfirmByInvalidationIDAndNonce(ctx sdk.Context, invalidationId []byte, invalidationNonce uint64) (out []types.MsgConfirmLogicCall) {
-	k.IterateLogicConfirmByInvalidationIDAndNonce(ctx, invalidationId, invalidationNonce, func(_ []byte, msg *types.MsgConfirmLogicCall) bool {
+func (k Keeper) GetLogicConfirmsByInvalidationIdAndNonce(ctx sdk.Context, invalidationId []byte, invalidationNonce uint64) (out []types.MsgConfirmLogicCall) {
+	k.IterateLogicConfirmsByInvalidationIDAndNonce(ctx, invalidationId, invalidationNonce, func(_ []byte, msg *types.MsgConfirmLogicCall) bool {
 		out = append(out, *msg)
 		return false
 	})

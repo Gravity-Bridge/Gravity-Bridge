@@ -534,7 +534,7 @@ func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, f
 	currentBal := input.BankKeeper.GetBalance(ctx, mySender, myTokenDenom).Amount.Uint64()
 	require.Equal(t, currentBal, originalBal-*feesAndAmounts)
 	expectedKey := myTokenContractAddr + fmt.Sprint(fee) + fmt.Sprint(id)
-	input.GravityKeeper.IterateUnbatchedTransactions(ctx, types.OutgoingTXPoolKey, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
+	input.GravityKeeper.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotEqual(t, []byte(expectedKey), key)
 		found := id == tx.Id &&
 			fee == tx.Erc20Fee.Amount.Uint64() &&
@@ -909,9 +909,9 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	for i := 1; i <= 8; i++ {
 		require.True(t, foundMap[uint64(i)])
 	}
-	// IterateUnbatchedTransactions
+	// filterAndIterateUnbatchedTransactions
 	anotherFoundMap := make(map[uint64]bool)
-	input.GravityKeeper.IterateUnbatchedTransactions(ctx, types.OutgoingTXPoolKey, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
+	input.GravityKeeper.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
 		fTx := idToTxMap[tx.Id]
 		require.NotNil(t, fTx)

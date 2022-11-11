@@ -22,4 +22,7 @@ var (
 	ErrInvalidValset            = sdkerrors.Register(ModuleName, 15, "generated invalid valset")
 	ErrDuplicateEthereumKey     = sdkerrors.Register(ModuleName, 16, "duplicate ethereum key")
 	ErrDuplicateOrchestratorKey = sdkerrors.Register(ModuleName, 17, "duplicate orchestrator key")
+	ErrInvalidAttestation       = sdkerrors.Register(ModuleName, 18, "invalid attestation submitted")
+	ErrInvalidClaim             = sdkerrors.Register(ModuleName, 19, "invalid claim submitted")
+	ErrInvalidLogicCall         = sdkerrors.Register(ModuleName, 20, "invalid logic call submitted")
 )

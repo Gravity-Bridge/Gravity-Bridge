@@ -131,7 +131,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 	}
 
 	// Iterate through remaining batches
-	k.IterateOutgoingTXBatches(ctx, func(key []byte, iter_batch types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTxBatches(ctx, func(key []byte, iter_batch types.InternalOutgoingTxBatch) bool {
 		// If the iterated batches nonce is lower than the one that was just executed, cancel it
 		if iter_batch.BatchNonce < b.BatchNonce && iter_batch.TokenContract.GetAddress() == tokenContract.GetAddress() {
 			err := k.CancelOutgoingTXBatch(ctx, tokenContract, iter_batch.BatchNonce)
@@ -266,8 +266,8 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 	return nil
 }
 
-// IterateOutgoingTXBatches iterates through all outgoing batches in DESC order.
-func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, batch types.InternalOutgoingTxBatch) bool) {
+// IterateOutgoingTxBatches iterates through all outgoing batches in DESC order.
+func (k Keeper) IterateOutgoingTxBatches(ctx sdk.Context, cb func(key []byte, batch types.InternalOutgoingTxBatch) bool) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.OutgoingTXBatchKey)
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
@@ -287,11 +287,23 @@ func (k Keeper) IterateOutgoingTXBatches(ctx sdk.Context, cb func(key []byte, ba
 
 // GetOutgoingTxBatches returns the outgoing tx batches
 func (k Keeper) GetOutgoingTxBatches(ctx sdk.Context) (out []types.InternalOutgoingTxBatch) {
-	k.IterateOutgoingTXBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTxBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		out = append(out, batch)
 		return false
 	})
 	return
+}
+
+func (k Keeper) GetOutgoingTxBatchesByNonce(ctx sdk.Context) map[uint64]types.InternalOutgoingTxBatch {
+	batchesByNonce := make(map[uint64]types.InternalOutgoingTxBatch)
+	k.IterateOutgoingTxBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+		if _, exists := batchesByNonce[batch.BatchNonce]; exists {
+			panic(fmt.Sprintf("Batch with duplicate batch nonce %d in store", batch.BatchNonce))
+		}
+		batchesByNonce[batch.BatchNonce] = batch
+		return false
+	})
+	return batchesByNonce
 }
 
 // GetLastOutgoingBatchByTokenType gets the latest outgoing tx batch by token type
@@ -335,7 +347,7 @@ func (k Keeper) GetLastSlashedBatchBlock(ctx sdk.Context) uint64 {
 	if len(bytes) == 0 {
 		panic("Last slashed batch block not initialized from genesis")
 	}
-	return types.UInt64FromBytes(bytes)
+	return types.UInt64FromBytesUnsafe(bytes)
 }
 
 // GetUnSlashedBatches returns all the unslashed batches in state

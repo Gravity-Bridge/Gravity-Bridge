@@ -5,6 +5,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
 /////////////////////////////
@@ -96,4 +97,23 @@ func (k Keeper) GetBatchConfirmByNonceAndTokenContract(ctx sdk.Context, nonce ui
 		return false
 	})
 	return
+}
+
+// IterateBatchConfirms iterates through all batch confirmations
+func (k Keeper) IterateBatchConfirms(ctx sdk.Context, cb func([]byte, types.MsgConfirmBatch) (stop bool)) {
+	store := ctx.KVStore(k.storeKey)
+	prefixStore := prefix.NewStore(store, types.BatchConfirmKey)
+	iter := prefixStore.Iterator(nil, nil)
+
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		var confirm types.MsgConfirmBatch
+		k.cdc.MustUnmarshal(iter.Value(), &confirm)
+
+		// cb returns true to stop early
+		if cb(iter.Key(), confirm) {
+			break
+		}
+	}
 }
