@@ -416,6 +416,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	if err != nil {
 		return fmt.Errorf("Discovered invalid last observed valset %v: %v", valset, err)
 	}
+
 	// PastEthSignatureCheckpointKey
 	k.IteratePastEthSignatureCheckpoints(ctx, func(key []byte, value []byte) (stop bool) {
 		// Check is performed in the iterator function
