@@ -694,8 +694,8 @@ func NewGravityApp(
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		authz.ModuleName,
+		bech32ibctypes.ModuleName, // Must go before gravity so that pending ibc auto forwards can be restored
 		gravitytypes.ModuleName,
-		bech32ibctypes.ModuleName,
 		crisistypes.ModuleName,
 		vestingtypes.ModuleName,
 		paramstypes.ModuleName,
