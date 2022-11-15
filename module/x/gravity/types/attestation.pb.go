@@ -25,15 +25,23 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// ClaimType is the cosmos type of an event from the counterpart chain that can
+// be handled
 type ClaimType int32
 
 const (
-	CLAIM_TYPE_UNSPECIFIED         ClaimType = 0
-	CLAIM_TYPE_SEND_TO_COSMOS      ClaimType = 1
-	CLAIM_TYPE_BATCH_SEND_TO_ETH   ClaimType = 2
-	CLAIM_TYPE_ERC20_DEPLOYED      ClaimType = 3
+	// An unspecified claim type
+	CLAIM_TYPE_UNSPECIFIED ClaimType = 0
+	// A claim for a SendToCosmos transaction
+	CLAIM_TYPE_SEND_TO_COSMOS ClaimType = 1
+	// A claim for when batches are relayed
+	CLAIM_TYPE_BATCH_SEND_TO_ETH ClaimType = 2
+	// A claim for when an erc20 contract has been deployed
+	CLAIM_TYPE_ERC20_DEPLOYED ClaimType = 3
+	// A claim for when a logic call has been executed
 	CLAIM_TYPE_LOGIC_CALL_EXECUTED ClaimType = 4
-	CLAIM_TYPE_VALSET_UPDATED      ClaimType = 5
+	// A claim for when a valset update has happened
+	CLAIM_TYPE_VALSET_UPDATED ClaimType = 5
 )
 
 var ClaimType_name = map[int32]string{

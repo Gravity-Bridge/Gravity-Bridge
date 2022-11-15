@@ -6,12 +6,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
+	"github.com/osmosis-labs/bech32-ibc/x/bech32ibc"
+	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-// Tests that batches and transactions are preserved during chain restart
+// Tests that batches and transactions are preserved during chain restart, including pending forwards
 func TestBatchAndTxImportExport(t *testing.T) {
 	// SETUP ENV + DATA
 	// ==================
@@ -132,13 +137,53 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		ctx.Logger().Info(fmt.Sprintf("Created batch %v for contract %v with %v transactions", i, v.GetAddress(), batchSize))
 	}
 
-	checkAllTransactionsExist(t, input.GravityKeeper, ctx, txs)
+	// CREATE FORWARDS
+	// Setup ibc auto-forwarding for a connection which doesn't exist
+	stake := "stake"
+	foreignHrp := "astro"
+	sourceChannel := "channel-0"
+	rec := bech32ibctypes.HrpIbcRecord{
+		Hrp:               foreignHrp,
+		SourceChannel:     sourceChannel,
+		IcsToHeightOffset: 1000,
+		IcsToTimeOffset:   1000,
+	}
+	input.GravityKeeper.bech32IbcKeeper.SetHrpIbcRecords(ctx, []bech32ibctypes.HrpIbcRecord{rec})
+	hrpRecords := input.GravityKeeper.bech32IbcKeeper.GetHrpIbcRecords(ctx)
+	require.Equal(t, len(hrpRecords), 1)
+	require.Equal(t, hrpRecords[0], rec)
+	forwards := input.GravityKeeper.PendingIbcAutoForwards(ctx, 0)
+	require.Equal(t, 0, len(forwards))
+
+	// Create pending forwards which must be preserved
+	forwards = make([]*types.PendingIbcAutoForward, len(senders))
+	for i, v := range senders {
+		foreignRcv, err := bech32.ConvertAndEncode(foreignHrp, *v)
+		require.NoError(t, err)
+		c := contracts[i%len(contracts)]
+		token, err := types.NewInternalERC20Token(sdk.NewInt(99999999), c.GetAddress().Hex())
+		coins := sdk.NewCoins(token.GravityCoin())
+		// Mint the coins to be forwarded, since the gravity module should already hold the tokens
+		require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, coins))
+		fwd := types.PendingIbcAutoForward{
+			ForeignReceiver: foreignRcv,
+			Token:           &coins[0],
+			IbcChannel:      sourceChannel,
+			EventNonce:      uint64(i + 1),
+		}
+		input.GravityKeeper.setLastObservedEventNonce(ctx, fwd.EventNonce)
+		err = input.GravityKeeper.addPendingIbcAutoForward(ctx, fwd, stake)
+		require.NoError(t, err)
+		forwards[i] = &fwd
+	}
+
+	checkAllTransactionsExist(t, input.GravityKeeper, ctx, txs, forwards)
 	exportImport(t, &input)
-	checkAllTransactionsExist(t, input.GravityKeeper, ctx, txs)
+	checkAllTransactionsExist(t, input.GravityKeeper, ctx, txs, forwards)
 }
 
 // Requires that all transactions in txs exist in keeper
-func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, txs []*types.InternalOutgoingTransferTx) {
+func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, txs []*types.InternalOutgoingTransferTx, forwards []*types.PendingIbcAutoForward) {
 	unbatched := keeper.GetUnbatchedTransactions(ctx)
 	batches := keeper.GetOutgoingTxBatches(ctx)
 	// Collect all txs into an array
@@ -163,10 +208,19 @@ func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, txs
 		require.Equal(t, exp.DestAddress.GetAddress(), gotTxs[i].DestAddress.GetAddress())
 		require.Equal(t, exp.Sender.String(), gotTxs[i].Sender.String())
 	}
+
+	gotFwds := keeper.PendingIbcAutoForwards(ctx, 0)
+	require.Equal(t, len(forwards), len(gotFwds))
+	for i, fwd := range gotFwds {
+		// The order should be preserved because of the type of iterator and the construction of `forwards`
+		require.Equal(t, fwd, forwards[i])
+	}
 }
 
 // Exports and then imports all bridge state, overwrites the `input` test environment to simulate chain restart
 func exportImport(t *testing.T, input *TestInput) {
+	bankGenesis := input.BankKeeper.ExportGenesis(input.Context)                                     // Required for ibc auto forwards
+	bech32ibcGenesis := bech32ibc.ExportGenesis(input.Context, *input.GravityKeeper.bech32IbcKeeper) // Required for ibc auto forwards
 	genesisState := ExportGenesis(input.Context, input.GravityKeeper)
 	newEnv := CreateTestEnv(t)
 	input = &newEnv
@@ -174,5 +228,9 @@ func exportImport(t *testing.T, input *TestInput) {
 	require.Empty(t, unbatched)
 	batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context)
 	require.Empty(t, batches)
+	forwards := input.GravityKeeper.PendingIbcAutoForwards(input.Context, 0)
+	require.Empty(t, forwards)
+	bech32ibc.InitGenesis(input.Context, *input.GravityKeeper.bech32IbcKeeper, *bech32ibcGenesis)
+	input.BankKeeper.InitGenesis(input.Context, bankGenesis)
 	InitGenesis(input.Context, input.GravityKeeper, genesisState)
 }

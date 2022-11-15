@@ -175,6 +175,12 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		}
 	}
 
+	for _, forward := range data.PendingIbcAutoForwards {
+		err := k.addPendingIbcAutoForward(ctx, forward, forward.Token.Denom)
+		if err != nil {
+			panic(fmt.Errorf("unable to restore pending ibc auto forward (%v) to store: %v", forward, err))
+		}
+	}
 }
 
 func hasDuplicates(d []types.MsgSetOrchestratorAddress) bool {
@@ -205,7 +211,12 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		delegates          = k.GetDelegateKeys(ctx)
 		erc20ToDenoms      = []types.ERC20ToDenom{}
 		unbatchedTransfers = k.GetUnbatchedTransactions(ctx)
+		pendingForwards    = k.PendingIbcAutoForwards(ctx, 0)
 	)
+	var forwards []types.PendingIbcAutoForward
+	for _, forward := range pendingForwards {
+		forwards = append(forwards, *forward)
+	}
 
 	// export valset confirmations from state
 	for _, vs := range valsets {
@@ -257,15 +268,16 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 			LastTxPoolId:              k.getID(ctx, types.KeyLastTXPoolID),
 			LastBatchId:               k.getID(ctx, types.KeyLastOutgoingBatchID),
 		},
-		Valsets:            valsets,
-		ValsetConfirms:     vsconfs,
-		Batches:            extBatches,
-		BatchConfirms:      batchconfs,
-		LogicCalls:         calls,
-		LogicCallConfirms:  callconfs,
-		Attestations:       attestations,
-		DelegateKeys:       delegates,
-		Erc20ToDenoms:      erc20ToDenoms,
-		UnbatchedTransfers: unbatchedTxs,
+		Valsets:                valsets,
+		ValsetConfirms:         vsconfs,
+		Batches:                extBatches,
+		BatchConfirms:          batchconfs,
+		LogicCalls:             calls,
+		LogicCallConfirms:      callconfs,
+		Attestations:           attestations,
+		DelegateKeys:           delegates,
+		Erc20ToDenoms:          erc20ToDenoms,
+		UnbatchedTransfers:     unbatchedTxs,
+		PendingIbcAutoForwards: forwards,
 	}
 }
