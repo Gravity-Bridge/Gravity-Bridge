@@ -34,7 +34,7 @@ jobs:
       - name: Install golang-lint 
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
       - name: Build
-        run: cd module && golangci-lint run -c .golangci.yml --disable-all --timeout=30m && go mod verify
+        run: cd module && golangci-lint run -c .golangci.yml --disable-all --timeout=30m --skip-files x/gravity/migrations/v2 && go mod verify
 
   test:
     name: Test
@@ -47,4 +47,4 @@ jobs:
           go-version: ^1.16
       - uses: actions/checkout@v2
       - name: Test
-        run: cd module && go test ./... -mod=readonly -timeout 30m -coverprofile=profile.out -covermode=atomic -race
+        run: cd module && go test -mod=readonly -timeout 30m -coverprofile=profile.out -covermode=atomic -race $(go list ./... | grep -v '/simulation' | grep -v 'x/gravity/migrations/v2')
