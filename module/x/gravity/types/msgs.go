@@ -230,7 +230,7 @@ func (msg MsgConfirmBatch) ValidateBasic() error {
 	}
 	_, err := hex.DecodeString(msg.Signature)
 	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Could not decode hex string %s", msg.Signature)
+		return sdkerrors.Wrapf(ErrInvalidClaim, "could not decode hex string \"%s\": %v", msg.Signature, err)
 	}
 	return nil
 }

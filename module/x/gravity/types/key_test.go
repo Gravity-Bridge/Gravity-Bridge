@@ -7,13 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// ignore
 func TestPrefixKeysSameLength(t *testing.T) {
 	allKeys := getAllKeys()
 	prefixKeys := allKeys[0:27]
 	length := len(HashString("All keys should be same length when hashed"))
 
 	for _, key := range prefixKeys {
-		require.Equal(t, length, len(key))
+		require.Equal(t, length, len(key), "key %v does not have the correct length %d", key, length)
 	}
 }
 
@@ -22,7 +23,7 @@ func TestNoDuplicateKeys(t *testing.T) {
 
 	for i, key := range keys {
 		keys[i] = nil
-		require.NotContains(t, keys, key)
+		require.NotContains(t, keys, key, "key %v should not be in keys!", key)
 	}
 }
 

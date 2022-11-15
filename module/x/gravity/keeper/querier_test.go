@@ -36,7 +36,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 		Nonce:        nonce,
 		Orchestrator: myValidatorCosmosAddr.String(),
 		EthAddress:   myValidatorEthereumAddr.GetAddress().Hex(),
-		Signature:    "alksdjhflkasjdfoiasjdfiasjdfoiasdj",
+		Signature:    "abcdef123456789",
 	})
 
 	specs := map[string]struct {
@@ -55,7 +55,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 
 			// expResp:  []byte(`{"type":"gravity/MsgValsetConfirm", "value":{"eth_address":"0x3232323232323232323232323232323232323232", "nonce": "1", "orchestrator": "cosmos1ees2tqhhhm9ahlhceh2zdguww9lqn2ckukn86l",  "signature": "alksdjhflkasjdfoiasjdfiasjdfoiasdj"}}`),
 			expResp: types.QueryValsetConfirmResponse{
-				Confirm: types.NewMsgValsetConfirm(1, *myValidatorEthereumAddr, myValidatorCosmosAddr, "alksdjhflkasjdfoiasjdfiasjdfoiasdj")},
+				Confirm: types.NewMsgValsetConfirm(1, *myValidatorEthereumAddr, myValidatorCosmosAddr, "abcdef123456789")},
 			expErr: false,
 		},
 		"unknown nonce": {
@@ -116,7 +116,7 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		msg.EthAddress = gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(i + 1)}, 20)).String()
 		msg.Nonce = uint64(1)
 		msg.Orchestrator = addr.String()
-		msg.Signature = fmt.Sprintf("signature %d", i+1)
+		msg.Signature = fmt.Sprintf("d34db33f%d", i)
 		input.GravityKeeper.SetValsetConfirm(sdkCtx, msg)
 	}
 
@@ -128,9 +128,9 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		"all good": {
 			src: types.QueryValsetConfirmsByNonceRequest{Nonce: 1},
 			expResp: types.QueryValsetConfirmsByNonceResponse{Confirms: []types.MsgValsetConfirm{
-				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr2, myValidatorCosmosAddr2, "signature 2"),
-				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr3, myValidatorCosmosAddr3, "signature 3"),
-				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr1, myValidatorCosmosAddr1, "signature 1"),
+				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr2, myValidatorCosmosAddr2, "d34db33f1"),
+				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr3, myValidatorCosmosAddr3, "d34db33f2"),
+				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr1, myValidatorCosmosAddr1, "d34db33f0"),
 			}},
 		},
 		"unknown nonce": {
@@ -617,7 +617,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 		TokenContract: tokenContract,
 		EthSigner:     "0xf35e2cc8e6523d683ed44870f5b7cc785051a77d",
 		Orchestrator:  validatorAddr.String(),
-		Signature:     "signature",
+		Signature:     "d34db33f",
 	})
 
 	batchConfirms, err := k.BatchConfirms(ctx, &types.QueryBatchConfirmsRequest{Nonce: 1, ContractAddress: tokenContract})
@@ -630,7 +630,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 				TokenContract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 				EthSigner:     "0xf35e2cc8e6523d683ed44870f5b7cc785051a77d",
 				Orchestrator:  "gravity1mgamdcs9dah0vn0gqupl05up7pedg2mvc3tzjl",
-				Signature:     "signature",
+				Signature:     "d34db33f",
 			},
 		},
 	}
@@ -701,7 +701,7 @@ func TestQueryLogicCalls(t *testing.T) {
 }
 
 // nolint: exhaustruct
-func TestQueryLogicCallsConfirms(t *testing.T) {
+func TestQueryLogicCallConfirms(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -749,12 +749,13 @@ func TestQueryLogicCallsConfirms(t *testing.T) {
 
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 
+	ethSigner := gethcommon.BytesToAddress(bytes.Repeat([]byte{0x1}, 20)).String()
 	confirm := types.MsgConfirmLogicCall{
 		InvalidationId:    hex.EncodeToString(invalidationId),
 		InvalidationNonce: 1,
-		EthSigner:         "test",
+		EthSigner:         ethSigner,
 		Orchestrator:      valAddr.String(),
-		Signature:         "test",
+		Signature:         "d34db33f",
 	}
 
 	k.SetLogicCallConfirm(sdkCtx, &confirm)
