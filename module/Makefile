@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-PACKAGES=$(shell go list ./... | grep -v '/simulation')
+PACKAGES=$(shell go list ./... | grep -v '/simulation' | grep -v 'x/gravity/migrations/v2')
 VERSION := $(shell git describe --abbrev=6 --dirty --always --tags)
 COMMIT := $(shell git log -1 --format='%H')
 DOCKER := $(shell which docker)
