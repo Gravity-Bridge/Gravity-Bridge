@@ -1,7 +1,6 @@
 package gravity
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -68,6 +67,7 @@ func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
 	vs.Height = height
 	vs.Nonce = height
 	pk.StoreValset(ctx, vs)
+	pk.SetLatestValsetNonce(ctx, vs.Nonce)
 
 	EndBlocker(ctx, pk)
 
@@ -215,9 +215,6 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	val := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
-	fmt.Println("val1  tokens", val.GetTokens().ToDec())
-
 	pk := input.GravityKeeper
 	params := input.GravityKeeper.GetParams(ctx)
 
@@ -265,12 +262,10 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	// Assertions
 	val1 := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
 	assert.True(t, val1.IsJailed())
-	fmt.Println("val1  tokens", val1.GetTokens().ToDec())
 	// check if tokens are slashed for val1.
 
 	val2 := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[1])
 	assert.True(t, val2.IsJailed())
-	fmt.Println("val2  tokens", val2.GetTokens().ToDec())
 	// check if tokens shouldn't be slashed for val2.
 }
 
@@ -460,6 +455,7 @@ func TestValsetEmission(t *testing.T) {
 	vs.Members[0].Power = uint64(float64(vs.Members[0].Power) - delta/2)
 	vs.Members[1].Power = uint64(float64(vs.Members[1].Power) + delta/2)
 	pk.StoreValset(ctx, vs)
+	pk.SetLatestValsetNonce(ctx, vs.Nonce)
 
 	// EndBlocker should set a new validator set
 	EndBlocker(ctx, pk)

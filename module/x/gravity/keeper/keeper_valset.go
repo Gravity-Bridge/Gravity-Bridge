@@ -400,7 +400,9 @@ func (k Keeper) IterateValsetConfirms(ctx sdk.Context, cb func(key []byte, confi
 
 	// Iterate through all stored valset confirms grouping them into confirmsByNonce.
 	// When a new nonce is found: process the collected confirmsByNonce, clear the collection + update the current nonce
+	var key []byte
 	for ; iter.Valid(); iter.Next() {
+		key = iter.Key()
 		// The iterator guarantees us some nonempty value stored at the Value(), it better be a MsgValsetConfirm
 		var confirm types.MsgValsetConfirm
 		k.cdc.MustUnmarshal(iter.Value(), &confirm)
@@ -413,7 +415,7 @@ func (k Keeper) IterateValsetConfirms(ctx sdk.Context, cb func(key []byte, confi
 			if confirm.Nonce != nonce { // At nonce boundary
 				// We are guaranteed to have some collection of confirms at this point
 				// cb returns true to stop early
-				if cb(iter.Key(), confirmsByNonce, nonce) {
+				if cb(key, confirmsByNonce, nonce) {
 					return
 				}
 				// Now we are done with the old confirms, update the nonce and clear the collection
@@ -428,7 +430,7 @@ func (k Keeper) IterateValsetConfirms(ctx sdk.Context, cb func(key []byte, confi
 	// Process the final nonce, or arrive here if no confirms are in the store
 	if len(confirmsByNonce) != 0 {
 		// This is the final callback execution, we stop regardless of their request to do so
-		cb(iter.Key(), confirmsByNonce, nonce)
+		cb(key, confirmsByNonce, nonce)
 	}
 }
 

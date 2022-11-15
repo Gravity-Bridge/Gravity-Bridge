@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
 // nolint: exhaustruct
@@ -109,11 +109,7 @@ func TestAttestationIterator(t *testing.T) {
 	ctx := input.Context
 	// add some attestations to the store
 
-	att1 := &types.Attestation{
-		Observed: true,
-		Votes:    []string{},
-	}
-	dep1 := &types.MsgSendToCosmosClaim{
+	claim1 := &types.MsgSendToCosmosClaim{
 		EventNonce:     1,
 		TokenContract:  TokenContractAddrs[0],
 		Amount:         sdk.NewInt(100),
@@ -121,11 +117,15 @@ func TestAttestationIterator(t *testing.T) {
 		CosmosReceiver: AccAddrs[0].String(),
 		Orchestrator:   AccAddrs[0].String(),
 	}
-	att2 := &types.Attestation{
+	ne1, err := codecTypes.NewAnyWithValue(claim1)
+	require.NoError(t, err)
+	att1 := &types.Attestation{
+		Claim:    ne1,
 		Observed: true,
-		Votes:    []string{},
+		Votes:    []string{ValAddrs[0].String()},
 	}
-	dep2 := &types.MsgSendToCosmosClaim{
+
+	claim2 := &types.MsgSendToCosmosClaim{
 		EventNonce:     2,
 		TokenContract:  TokenContractAddrs[0],
 		Amount:         sdk.NewInt(100),
@@ -133,13 +133,23 @@ func TestAttestationIterator(t *testing.T) {
 		CosmosReceiver: AccAddrs[0].String(),
 		Orchestrator:   AccAddrs[0].String(),
 	}
-	hash1, err := dep1.ClaimHash()
+	ne2, err := codecTypes.NewAnyWithValue(claim2)
 	require.NoError(t, err)
-	hash2, err := dep2.ClaimHash()
+	att2 := &types.Attestation{
+		Claim:    ne2,
+		Observed: true,
+		Votes:    []string{ValAddrs[0].String()},
+	}
+
+	hash1, err := claim1.ClaimHash()
+	require.NoError(t, err)
+	hash2, err := claim2.ClaimHash()
 	require.NoError(t, err)
 
-	input.GravityKeeper.SetAttestation(ctx, dep1.EventNonce, hash1, att1)
-	input.GravityKeeper.SetAttestation(ctx, dep2.EventNonce, hash2, att2)
+	input.GravityKeeper.SetAttestation(ctx, claim1.EventNonce, hash1, att1)
+	input.GravityKeeper.setLastObservedEventNonce(ctx, claim1.EventNonce)
+	input.GravityKeeper.SetAttestation(ctx, claim2.EventNonce, hash2, att2)
+	input.GravityKeeper.setLastObservedEventNonce(ctx, claim2.EventNonce)
 
 	atts := []types.Attestation{}
 	input.GravityKeeper.IterateAttestations(ctx, false, func(_ []byte, att types.Attestation) bool {
@@ -247,5 +257,4 @@ func TestLastSlashedValsetNonce(t *testing.T) {
 	// when signedValsetsWindow > latest valset's height
 	unslashedValsets = k.GetUnSlashedValsets(ctx, heightDiff-6)
 	assert.Equal(t, len(unslashedValsets), 6)
-	fmt.Println("unslashedValsetsRange", unslashedValsets)
 }

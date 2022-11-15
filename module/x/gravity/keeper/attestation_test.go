@@ -1,12 +1,15 @@
 package keeper
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/require"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -25,6 +28,7 @@ func TestGetAndDeleteAttestation(t *testing.T) {
 		att := k.GetAttestation(ctx, nonce, hashes[i])
 		require.NotNil(t, att)
 	}
+
 	recentAttestations := k.GetMostRecentAttestations(ctx, uint64(length))
 	require.True(t, len(recentAttestations) == length)
 
@@ -80,14 +84,19 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdktypes.Context
 	hashes := make([][]byte, 0, length)
 	for i := 0; i < length; i++ {
 		nonce := uint64(1 + i)
+
+		contract := common.BytesToAddress(bytes.Repeat([]byte{0x1}, 20)).String()
+		sender := common.BytesToAddress(bytes.Repeat([]byte{0x2}, 20)).String()
+		orch := sdktypes.AccAddress(bytes.Repeat([]byte{0x3}, 20)).String()
+		receiver := sdktypes.AccAddress(bytes.Repeat([]byte{0x4}, 20)).String()
 		msg := types.MsgSendToCosmosClaim{
 			EventNonce:     nonce,
 			EthBlockHeight: 1,
-			TokenContract:  "0x00000000000000000001",
+			TokenContract:  contract,
 			Amount:         sdktypes.NewInt(10000000000 + int64(i)),
-			EthereumSender: "0x00000000000000000002",
-			CosmosReceiver: "0x00000000000000000003",
-			Orchestrator:   "0x00000000000000000004",
+			EthereumSender: sender,
+			CosmosReceiver: receiver,
+			Orchestrator:   orch,
 		}
 		msgs = append(msgs, msg)
 
@@ -97,6 +106,14 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdktypes.Context
 			Observed: false,
 			Height:   uint64(ctx.BlockHeight()),
 			Claim:    any,
+		}
+		unpackedClaim, err := k.UnpackAttestationClaim(att)
+		if err != nil {
+			panic(fmt.Sprintf("Bad new attestation: %s", err.Error()))
+		}
+		err = unpackedClaim.ValidateBasic()
+		if err != nil {
+			panic(fmt.Sprintf("Bad claim discovered: %s", err.Error()))
 		}
 		hash, err := msg.ClaimHash()
 		hashes = append(hashes, hash)

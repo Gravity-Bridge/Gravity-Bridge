@@ -628,6 +628,7 @@ func TestMsgValsetConfirm(t *testing.T) {
 	vs.Height = uint64(1)
 	vs.Nonce = uint64(1)
 	k.StoreValset(ctx, vs)
+	k.SetLatestValsetNonce(ctx, vs.Nonce)
 	k.SetEthAddressForValidator(input.Context, keeper.ValAddrs[0], *ethAddressParsed)
 
 	// try wrong eth address
@@ -672,5 +673,5 @@ func TestMsgValsetConfirm(t *testing.T) {
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err = h(ctx, msg)
 	require.NoError(t, err)
-
+	EndBlocker(ctx, k)
 }
