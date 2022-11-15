@@ -2,12 +2,6 @@ package keeper
 
 import (
 	"bytes"
-	"fmt"
-	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
-	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
-	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 	"testing"
 	"time"
 
@@ -30,6 +24,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/capability"
+	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
@@ -55,6 +50,8 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
@@ -64,11 +61,13 @@ import (
 
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
 
+	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
@@ -547,8 +546,6 @@ func CreateTestEnv(t *testing.T) TestInput {
 		AppModuleBasic: distribution.AppModuleBasic{},
 	}.Route())
 
-	// Load default wasm config
-
 	govRouter := govtypes.NewRouter().
 		AddRoute(paramsproposal.RouterKey, params.NewParamChangeProposalHandler(paramsKeeper)).
 		AddRoute(govtypes.RouterKey, govtypes.ProposalHandler)
@@ -633,9 +630,6 @@ func CreateTestEnv(t *testing.T) TestInput {
 	k.setID(ctx, 0, types.KeyLastOutgoingBatchID)
 
 	k.SetParams(ctx, TestingGravityParams)
-	params := k.GetParams(ctx)
-
-	fmt.Println(params)
 
 	testInput := TestInput{
 		GravityKeeper:   k,

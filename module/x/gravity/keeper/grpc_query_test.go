@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	gocontext "context"
-	"fmt"
 	"testing"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
@@ -157,9 +156,4 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 
 		k.SetAttestation(ctx, nonce, hash, att)
 	}
-}
-
-func TestClaimTypesTest(t *testing.T) {
-	claim := types.MsgSendToCosmosClaim{}
-	fmt.Println("Claim Type:", claim.Type())
 }
