@@ -29,9 +29,12 @@ func (m Attestation) ValidateBasic(cdc codec.BinaryCodec) error {
 
 func ClaimValidateBasic(cdc codec.BinaryCodec, claim *codectypes.Any) error {
 	var ethClaim EthereumClaim
-	err := cdc.UnpackAny(claim, ethClaim)
+	err := cdc.UnpackAny(claim, &ethClaim)
 	if err != nil {
 		return sdkerrors.Wrap(ErrInvalidClaim, "unable to unmarshal claim")
+	}
+	if ethClaim == nil {
+		return sdkerrors.Wrap(ErrInvalidClaim, "decoded nil claim")
 	}
 
 	// Returns nil on no error from ValidateBasic

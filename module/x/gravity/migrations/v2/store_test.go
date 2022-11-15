@@ -164,13 +164,14 @@ func TestMigrateBatchConfirms(t *testing.T) {
 	ethAddr := "0x2a24af0501a534fca004ee1bd667b783f205a546"
 
 	key := v1.BatchConfirmKey + ethAddr + v1.ConvertByteArrToString(v2.UInt64Bytes(123)) + string(orch.Bytes())
+	signer := gethcommon.BytesToAddress(bytes.Repeat([]byte{0x1}, 20)).String()
 
 	confirm := &types.MsgConfirmBatch{
 		Nonce:         123,
 		TokenContract: ethAddr,
-		EthSigner:     "",
+		EthSigner:     signer,
 		Orchestrator:  orch.String(),
-		Signature:     "",
+		Signature:     "d34db33f",
 	}
 	confirmBytes := input.Marshaler.MustMarshal(confirm)
 	input.Context.KVStore(input.GravityStoreKey).

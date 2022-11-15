@@ -162,6 +162,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		require.NoError(t, err)
 		c := contracts[i%len(contracts)]
 		token, err := types.NewInternalERC20Token(sdk.NewInt(99999999), c.GetAddress().Hex())
+		require.NoError(t, err)
 		coins := sdk.NewCoins(token.GravityCoin())
 		// Mint the coins to be forwarded, since the gravity module should already hold the tokens
 		require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, coins))
@@ -180,6 +181,13 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	checkAllTransactionsExist(t, input.GravityKeeper, ctx, txs, forwards)
 	exportImport(t, &input)
 	checkAllTransactionsExist(t, input.GravityKeeper, ctx, txs, forwards)
+
+	// Clear the pending ibc auto forwards so the invariant won't fail
+	input.GravityKeeper.IteratePendingIbcAutoForwards(ctx, func(_ []byte, fwd *types.PendingIbcAutoForward) bool {
+		require.NoError(t, input.GravityKeeper.deletePendingIbcAutoForward(ctx, fwd.EventNonce))
+		require.NoError(t, input.BankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(*fwd.Token)))
+		return false
+	})
 }
 
 // Requires that all transactions in txs exist in keeper

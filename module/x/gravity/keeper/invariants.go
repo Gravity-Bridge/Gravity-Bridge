@@ -412,11 +412,14 @@ func ValidateStore(ctx sdk.Context, k Keeper) (string, bool) {
 
 	// LastObservedValsetKey
 	valset := k.GetLastObservedValset(ctx)
-	err = valset.ValidateBasic()
+	if valset != nil {
+		err = valset.ValidateBasic()
+	}
 	if err != nil || strErr != "" {
 		strErr = fmt.Sprintf("Discovered invalid last observed valset %v: %v", valset, err)
 		return strErr, true
 	}
+
 	// PastEthSignatureCheckpointKey
 	k.IteratePastEthSignatureCheckpoints(ctx, func(key []byte, value []byte) (stop bool) {
 		// Check is performed in the iterator function

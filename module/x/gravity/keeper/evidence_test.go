@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"bytes"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 )
@@ -100,8 +102,16 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 
 	ctx := input.Context
 
+	contract := common.BytesToAddress(bytes.Repeat([]byte{0x1}, 20)).String()
 	logicCall := types.OutgoingLogicCall{
-		Timeout: 420,
+		Transfers:            []types.ERC20Token{},
+		Fees:                 []types.ERC20Token{},
+		LogicContractAddress: contract,
+		Payload:              []byte{},
+		Timeout:              420,
+		InvalidationId:       []byte{},
+		InvalidationNonce:    0,
+		CosmosBlockCreated:   0,
 	}
 
 	input.GravityKeeper.SetOutgoingLogicCall(ctx, logicCall)
