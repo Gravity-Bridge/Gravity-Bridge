@@ -120,18 +120,19 @@ func (s GenesisState) ValidateBasic() error {
 // DefaultGenesisState returns empty genesis state
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		Params:             DefaultParams(),
-		GravityNonces:      GravityNonces{},
-		Valsets:            []Valset{},
-		ValsetConfirms:     []MsgValsetConfirm{},
-		Batches:            []OutgoingTxBatch{},
-		BatchConfirms:      []MsgConfirmBatch{},
-		LogicCalls:         []OutgoingLogicCall{},
-		LogicCallConfirms:  []MsgConfirmLogicCall{},
-		Attestations:       []Attestation{},
-		DelegateKeys:       []MsgSetOrchestratorAddress{},
-		Erc20ToDenoms:      []ERC20ToDenom{},
-		UnbatchedTransfers: []OutgoingTransferTx{},
+		Params:                 DefaultParams(),
+		GravityNonces:          GravityNonces{},
+		Valsets:                []Valset{},
+		ValsetConfirms:         []MsgValsetConfirm{},
+		Batches:                []OutgoingTxBatch{},
+		BatchConfirms:          []MsgConfirmBatch{},
+		LogicCalls:             []OutgoingLogicCall{},
+		LogicCallConfirms:      []MsgConfirmLogicCall{},
+		Attestations:           []Attestation{},
+		DelegateKeys:           []MsgSetOrchestratorAddress{},
+		Erc20ToDenoms:          []ERC20ToDenom{},
+		UnbatchedTransfers:     []OutgoingTransferTx{},
+		PendingIbcAutoForwards: []PendingIbcAutoForward{},
 	}
 }
 
@@ -208,6 +209,12 @@ func (p Params) ValidateBasic() error {
 	}
 	if err := validateValsetRewardAmount(p.ValsetReward); err != nil {
 		return sdkerrors.Wrap(err, "ValsetReward amount")
+	}
+	if err := validateBridgeActive(p.BridgeActive); err != nil {
+		return sdkerrors.Wrap(err, "bridge active parameter")
+	}
+	if err := validateEthereumBlacklistAddresses(p.EthereumBlacklist); err != nil {
+		return sdkerrors.Wrap(err, "ethereum blacklist parameter")
 	}
 	return nil
 }
