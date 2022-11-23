@@ -25,9 +25,12 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type SignType int32
 
 const (
-	SIGN_TYPE_UNSPECIFIED                          SignType = 0
+	// An unspecified type
+	SIGN_TYPE_UNSPECIFIED SignType = 0
+	// A type for multi-sig updates
 	SIGN_TYPE_ORCHESTRATOR_SIGNED_MULTI_SIG_UPDATE SignType = 1
-	SIGN_TYPE_ORCHESTRATOR_SIGNED_WITHDRAW_BATCH   SignType = 2
+	// A type for batches
+	SIGN_TYPE_ORCHESTRATOR_SIGNED_WITHDRAW_BATCH SignType = 2
 )
 
 var SignType_name = map[int32]string{

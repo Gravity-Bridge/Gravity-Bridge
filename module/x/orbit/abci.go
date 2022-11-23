@@ -1,4 +1,4 @@
-package gravity
+package orbit
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"

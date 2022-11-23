@@ -17,7 +17,7 @@ func init() {
 // RegisterInterfaces registers the interfaces for the proto stuff
 // nolint: exhaustruct
 func RegisterInterfaces(registry types.InterfaceRegistry) {
-	registry.RegisterImplementations((*sdk.Msg)(nil))
+	registry.RegisterImplementations((*sdk.Msg)(nil), &MsgCreateVestingAccount{})
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }

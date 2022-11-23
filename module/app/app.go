@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"io"
 	"net/http"
 	"os"
@@ -44,6 +43,7 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
@@ -352,7 +352,11 @@ func NewGravityApp(
 ) *Gravity {
 	integrationTestMode := cast.ToBool(appOpts.Get(IntegrationTestModeFlag))
 	if integrationTestMode {
-		appModBasics = append(appModBasics, orbit.AppModuleBasic{})
+		// Add Orbit to the Module Basics and register everything for it
+		orbitModBasic := orbit.AppModuleBasic{}
+		appModBasics = append(appModBasics, orbitModBasic)
+		ModuleBasics = module.NewBasicManager(appModBasics...)
+		encodingConfig = MakeEncodingConfig()
 	}
 	appCodec := encodingConfig.Marshaler
 	legacyAmino := encodingConfig.Amino
@@ -678,11 +682,13 @@ func NewGravityApp(
 		),
 	}
 	if app.IntegrationTestMode {
-		mmMods = append([]module.AppModule{orbit.NewAppModule(
+		// Add Orbit to the list of AppModules
+		orbMod := orbit.NewAppModule(
 			&orbitKeeper, &bankKeeper, &gravityKeeper, &ibcTransferKeeper, &ibcKeeper, &accountKeeper, &authzKeeper,
 			&capabilityKeeper, &govKeeper, &mintKeeper, &slashingKeeper, &distrKeeper, &stakingKeeper, &upgradeKeeper,
 			&evidenceKeeper, &paramsKeeper, &bech32IbcKeeper,
-		)}, mmMods...)
+		)
+		mmMods = append([]module.AppModule{orbMod}, mmMods...)
 	}
 	mm := *module.NewManager(mmMods...)
 	app.mm = &mm

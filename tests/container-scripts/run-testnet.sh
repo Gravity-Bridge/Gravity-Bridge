@@ -47,7 +47,7 @@ do
     LOG_LEVEL="--log_level info"
     if [ ! -z $"FAILING_INVARIANT" ]; then
         # Invariants are expected to fail, skip them at the start of the chain + allow MsgVerifyInvariant to halt the node
-        CRISIS_CONFIG="--x-crisis-skip-assert-invariants --x-crisis-verify-halts-node"
+        CRISIS_CONFIG="--x-crisis-skip-assert-invariants"
     else
         # Invariants are not expected to fail, run them every block
         CRISIS_CONFIG="--inv-check-period 1"

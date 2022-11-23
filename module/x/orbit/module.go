@@ -1,4 +1,4 @@
-package gravity
+package orbit
 
 import (
 	"encoding/json"
