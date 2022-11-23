@@ -1,6 +1,8 @@
 use crate::query::get_last_event_nonce_for_validator;
+use deep_space::client::ChainStatus;
+use deep_space::error::CosmosGrpcError;
 use deep_space::utils::encode_any;
-use deep_space::Address as CosmosAddress;
+use deep_space::{Address as CosmosAddress, Contact};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::OutgoingLogicCall as ProtoLogicCall;
 use gravity_proto::gravity::OutgoingTxBatch as ProtoBatch;
@@ -10,8 +12,11 @@ use gravity_utils::types::LogicCall;
 use gravity_utils::types::TransactionBatch;
 use gravity_utils::types::Valset;
 use prost_types::Any;
+use std::convert::TryFrom;
 use tokio::time::sleep;
+use tonic::metadata::AsciiMetadataValue;
 use tonic::transport::Channel;
+use tonic::{IntoRequest, Request};
 
 /// gets the Cosmos last event nonce, no matter how long it takes.
 pub async fn get_last_event_nonce_with_retry(
@@ -54,5 +59,31 @@ impl BadSignatureEvidence {
                 encode_any(l, "/gravity.v1.OutgoingLogicCall".to_string())
             }
         }
+    }
+}
+
+/// Converts a standard GRPC query Request into a historical one at the given `past_height` by adding
+/// the "x-cosmos-block-height" gRPC metadata to the request
+/// `req` should be a standard GRPC request like cosmos_sdk_proto_althea::cosmos::bank::v1beta1::QueryBalancesRequest
+///
+/// Returns a Request with the set gRPC metadata
+pub fn historical_grpc_query<T>(req: impl IntoRequest<T>, past_height: u64) -> Request<T> {
+    let mut request = req.into_request();
+    request.metadata_mut().insert(
+        "x-cosmos-block-height",
+        AsciiMetadataValue::try_from(past_height).expect("Invalid height provided"),
+    );
+    request
+}
+
+/// Fetches the chain status and returns only the current height, or an error
+pub async fn get_current_cosmos_height(contact: &Contact) -> Result<u64, CosmosGrpcError> {
+    let curr_height = contact.get_chain_status().await.unwrap();
+    if let ChainStatus::Moving { block_height } = curr_height {
+        Ok(block_height)
+    } else {
+        Err(CosmosGrpcError::BadResponse(
+            "Chain is not moving".to_string(),
+        ))
     }
 }

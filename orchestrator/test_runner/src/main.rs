@@ -22,6 +22,7 @@ use crate::tx_cancel::send_to_eth_and_cancel;
 use crate::upgrade::{upgrade_part_1, upgrade_part_2};
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
+use crate::vesting::vesting_test;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use deep_space::coin::Coin;
@@ -69,6 +70,7 @@ mod upgrade;
 mod utils;
 mod valset_rewards;
 mod valset_stress;
+mod vesting;
 
 /// the timeout for individual requests
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
@@ -275,6 +277,7 @@ pub async fn main() {
     // RUN_ORCH_ONLY runs only the orchestrators, for local testing where you want the chain to just run.
     // ETHERMINT_KEYS runs a gamut of transactions using a Ethermint key to test no loss of functionality
     // BATCH_TIMEOUT is a stress test for batch timeouts, setting an extremely agressive timeout value
+    // VESTING checks that the vesting module delivers partially and fully vested accounts
     let test_type = env::var("TEST_TYPE");
     info!("Starting tests with {:?}", test_type);
     if let Ok(test_type) = test_type {
@@ -492,6 +495,7 @@ pub async fn main() {
             assert!(result);
             return;
         } else if test_type == "BATCH_TIMEOUT" || test_type == "TIMEOUT_STRESS" {
+            info!("Starting Batch Timeout/Timeout Stress test");
             batch_timeout_test(
                 &web30,
                 &contact,
@@ -501,6 +505,11 @@ pub async fn main() {
                 erc20_addresses,
             )
             .await;
+            return;
+        } else if test_type == "VESTING" {
+            info!("Starting Vesting test");
+            let vesting_keys = parse_vesting_keys();
+            vesting_test(&contact, vesting_keys).await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;
