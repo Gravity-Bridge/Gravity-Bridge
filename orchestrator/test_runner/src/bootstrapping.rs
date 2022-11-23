@@ -98,6 +98,16 @@ pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
     orch_keys
 }
 
+/// Vesting private keys are generated via the gravity key add
+/// command just like the validator keys themselves and stored in a
+/// similar file /vesting-phrases
+pub fn parse_vesting_keys() -> Vec<CosmosPrivateKey> {
+    let filename = "/vesting-phrases";
+    info!("Reading vesting phrases from {}", filename);
+    let (vest_keys, _) = parse_phrases(filename);
+    vest_keys
+}
+
 pub fn get_keys() -> Vec<ValidatorKeys> {
     let (cosmos_keys, cosmos_phrases) = parse_validator_keys();
     let orch_keys = parse_orchestrator_keys();
