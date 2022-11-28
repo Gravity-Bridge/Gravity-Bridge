@@ -393,7 +393,7 @@ func (k Keeper) GetUnSlashedLogicCalls(ctx sdk.Context, maxHeight uint64) (out [
 	lastSlashedLogicCallBlock := k.GetLastSlashedLogicCallBlock(ctx)
 	calls := k.GetOutgoingLogicCalls(ctx)
 	for _, call := range calls {
-		if call.EthBlock > lastSlashedLogicCallBlock {
+		if call.CosmosBlockCreated > lastSlashedLogicCallBlock {
 			out = append(out, call)
 		}
 	}

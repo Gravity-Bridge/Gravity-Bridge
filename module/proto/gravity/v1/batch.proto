@@ -8,11 +8,11 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 
 // OutgoingTxBatch represents a batch of transactions going from gravity to ETH
 message OutgoingTxBatch {
-  uint64                      batch_nonce    = 1;
-  uint64                      batch_timeout  = 2;
-  repeated OutgoingTransferTx transactions   = 3 [(gogoproto.nullable) = false];
-  string                      token_contract = 4;
-  uint64                      eth_block      = 5;
+  uint64                      batch_nonce          = 1;
+  uint64                      batch_timeout        = 2;
+  repeated OutgoingTransferTx transactions         = 3 [(gogoproto.nullable) = false];
+  string                      token_contract       = 4;
+  uint64                      cosmos_block_created = 5;
 }
 
 // OutgoingTransferTx represents an individual send from gravity to ETH
@@ -33,7 +33,7 @@ message OutgoingLogicCall {
   uint64              timeout                = 5;
   bytes               invalidation_id        = 6;
   uint64              invalidation_nonce     = 7;
-  uint64              eth_block              = 8;
+  uint64              cosmos_block_created   = 8;
 }
 
 message EventOutgoingBatchCanceled {

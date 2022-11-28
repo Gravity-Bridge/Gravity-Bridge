@@ -1,10 +1,39 @@
-/// SignType defines messages that have been signed by an orchestrator
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum SignType {
-    Unspecified = 0,
-    OrchestratorSignedMultiSigUpdate = 1,
-    OrchestratorSignedWithdrawBatch = 2,
+/// IDSet represents a set of IDs
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct IdSet {
+    #[prost(uint64, repeated, tag="1")]
+    pub ids: ::prost::alloc::vec::Vec<u64>,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct BatchFees {
+    #[prost(string, tag="1")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub total_fees: ::prost::alloc::string::String,
+    #[prost(uint64, tag="3")]
+    pub tx_count: u64,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct EventWithdrawalReceived {
+    #[prost(string, tag="1")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub outgoing_tx_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct EventWithdrawCanceled {
+    #[prost(string, tag="1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub tx_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
 }
 /// BridgeValidator represents a validator's ETH address and its power
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
@@ -983,17 +1012,22 @@ pub struct EventSendToCosmosExecutedIbcAutoForward {
     #[prost(string, tag="7")]
     pub timeout_height: ::prost::alloc::string::String,
 }
-// ClaimType is the cosmos type of an event from the counterpart chain that can
-// be handled
-
+/// ClaimType is the cosmos type of an event from the counterpart chain that can
+/// be handled
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ClaimType {
+    /// An unspecified claim type
     Unspecified = 0,
+    /// A claim for a SendToCosmos transaction
     SendToCosmos = 1,
+    /// A claim for when batches are relayed
     BatchSendToEth = 2,
+    /// A claim for when an erc20 contract has been deployed
     Erc20Deployed = 3,
+    /// A claim for when a logic call has been executed
     LogicCallExecuted = 4,
+    /// A claim for when a valset update has happened
     ValsetUpdated = 5,
 }
 /// OutgoingTxBatch represents a batch of transactions going from gravity to ETH
@@ -1008,7 +1042,7 @@ pub struct OutgoingTxBatch {
     #[prost(string, tag="4")]
     pub token_contract: ::prost::alloc::string::String,
     #[prost(uint64, tag="5")]
-    pub eth_block: u64,
+    pub cosmos_block_created: u64,
 }
 /// OutgoingTransferTx represents an individual send from gravity to ETH
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
@@ -1042,7 +1076,7 @@ pub struct OutgoingLogicCall {
     #[prost(uint64, tag="7")]
     pub invalidation_nonce: u64,
     #[prost(uint64, tag="8")]
-    pub eth_block: u64,
+    pub cosmos_block_created: u64,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct EventOutgoingBatchCanceled {
@@ -1223,6 +1257,8 @@ pub struct GenesisState {
     pub erc20_to_denoms: ::prost::alloc::vec::Vec<Erc20ToDenom>,
     #[prost(message, repeated, tag="12")]
     pub unbatched_transfers: ::prost::alloc::vec::Vec<OutgoingTransferTx>,
+    #[prost(message, repeated, tag="13")]
+    pub pending_ibc_auto_forwards: ::prost::alloc::vec::Vec<PendingIbcAutoForward>,
 }
 /// GravityCounters contains the many noces and counters required to maintain the bridge state in the genesis
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
@@ -1252,43 +1288,6 @@ pub struct GravityNonces {
     /// during chain upgrades
     #[prost(uint64, tag="7")]
     pub last_batch_id: u64,
-}
-/// IDSet represents a set of IDs
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct IdSet {
-    #[prost(uint64, repeated, tag="1")]
-    pub ids: ::prost::alloc::vec::Vec<u64>,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct BatchFees {
-    #[prost(string, tag="1")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub total_fees: ::prost::alloc::string::String,
-    #[prost(uint64, tag="3")]
-    pub tx_count: u64,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct EventWithdrawalReceived {
-    #[prost(string, tag="1")]
-    pub bridge_contract: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub bridge_chain_id: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub outgoing_tx_id: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub nonce: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct EventWithdrawCanceled {
-    #[prost(string, tag="1")]
-    pub sender: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub tx_id: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub bridge_contract: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub bridge_chain_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryParamsRequest {
@@ -2216,4 +2215,15 @@ pub mod query_client {
             self.inner.unary(request.into_request(), path, codec).await
         }
     }
+}
+/// SignType defines messages that have been signed by an orchestrator
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SignType {
+    /// An unspecified type
+    Unspecified = 0,
+    /// A type for multi-sig updates
+    OrchestratorSignedMultiSigUpdate = 1,
+    /// A type for batches
+    OrchestratorSignedWithdrawBatch = 2,
 }

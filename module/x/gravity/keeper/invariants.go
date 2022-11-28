@@ -469,10 +469,10 @@ func CheckBatches(ctx sdk.Context, k Keeper) error {
 		batch := inProgressBatches[nonce]
 
 		// Batches with lower nonces should not have been created in more-recent cosmos blocks
-		if lastBatch.EthBlock > batch.EthBlock {
+		if lastBatch.CosmosBlockCreated > batch.CosmosBlockCreated {
 			return fmt.Errorf(
 				"old batch created (nonce=%d created=%d) after new batch (nonce=%d created=%d)",
-				lastBatch.BatchNonce, lastBatch.EthBlock, batch.BatchNonce, batch.EthBlock,
+				lastBatch.BatchNonce, lastBatch.CosmosBlockCreated, batch.BatchNonce, batch.CosmosBlockCreated,
 			)
 		}
 	}

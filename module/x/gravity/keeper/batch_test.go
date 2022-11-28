@@ -98,13 +98,13 @@ func TestBatches(t *testing.T) {
 				Erc20Token:  types.NewERC20Token(102, myTokenContractAddr.GetAddress().Hex()),
 			},
 		},
-		TokenContract: myTokenContractAddr.GetAddress().Hex(),
-		EthBlock:      1234567,
-		BatchTimeout:  input.GravityKeeper.getBatchTimeoutHeight(ctx),
+		TokenContract:      myTokenContractAddr.GetAddress().Hex(),
+		CosmosBlockCreated: 1234567,
+		BatchTimeout:       input.GravityKeeper.getBatchTimeoutHeight(ctx),
 	}
 	assert.Equal(t, expFirstBatch.BatchTimeout, gotFirstBatch.BatchTimeout)
 	assert.Equal(t, expFirstBatch.BatchNonce, gotFirstBatch.BatchNonce)
-	assert.Equal(t, expFirstBatch.EthBlock, gotFirstBatch.EthBlock)
+	assert.Equal(t, expFirstBatch.CosmosBlockCreated, gotFirstBatch.CosmosBlockCreated)
 	assert.Equal(t, expFirstBatch.TokenContract, gotFirstBatch.TokenContract.GetAddress().Hex())
 	assert.Equal(t, len(expFirstBatch.Transactions), len(gotFirstBatch.Transactions))
 	for i := 0; i < len(expFirstBatch.Transactions); i++ {
@@ -207,14 +207,14 @@ func TestBatches(t *testing.T) {
 				Erc20Token:  types.NewERC20Token(100, myTokenContractAddr.GetAddress().Hex()),
 			},
 		},
-		TokenContract: myTokenContractAddr.GetAddress().Hex(),
-		EthBlock:      1234567,
-		BatchTimeout:  input.GravityKeeper.getBatchTimeoutHeight(ctx),
+		TokenContract:      myTokenContractAddr.GetAddress().Hex(),
+		CosmosBlockCreated: 1234567,
+		BatchTimeout:       input.GravityKeeper.getBatchTimeoutHeight(ctx),
 	}
 
 	assert.Equal(t, expSecondBatch.BatchTimeout, secondBatch.BatchTimeout)
 	assert.Equal(t, expSecondBatch.BatchNonce, secondBatch.BatchNonce)
-	assert.Equal(t, expSecondBatch.EthBlock, secondBatch.EthBlock)
+	assert.Equal(t, expSecondBatch.CosmosBlockCreated, secondBatch.CosmosBlockCreated)
 	assert.Equal(t, expSecondBatch.TokenContract, secondBatch.TokenContract.GetAddress().Hex())
 	assert.Equal(t, len(expSecondBatch.Transactions), len(secondBatch.Transactions))
 	for i := 0; i < len(expSecondBatch.Transactions); i++ {
@@ -250,7 +250,8 @@ func TestBatches(t *testing.T) {
 	// =================================
 
 	// Execute the batch
-	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: secondBatch.EthBlock, BatchNonce: secondBatch.BatchNonce}
+	fakeBlock := secondBatch.CosmosBlockCreated // A fake ethereum block used for testing only
+	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce}
 	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
 
 	// check batch has been deleted
@@ -380,12 +381,12 @@ func TestBatchesFullCoins(t *testing.T) {
 				Erc20Token:  types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(25)), myTokenContractAddr),
 			},
 		},
-		TokenContract: myTokenContractAddr,
-		EthBlock:      1234567,
+		TokenContract:      myTokenContractAddr,
+		CosmosBlockCreated: 1234567,
 	}
 	assert.Equal(t, expFirstBatch.BatchTimeout, gotFirstBatch.BatchTimeout)
 	assert.Equal(t, expFirstBatch.BatchNonce, gotFirstBatch.BatchNonce)
-	assert.Equal(t, expFirstBatch.EthBlock, gotFirstBatch.EthBlock)
+	assert.Equal(t, expFirstBatch.CosmosBlockCreated, gotFirstBatch.CosmosBlockCreated)
 	assert.Equal(t, expFirstBatch.TokenContract, gotFirstBatch.TokenContract.GetAddress().Hex())
 	assert.Equal(t, len(expFirstBatch.Transactions), len(gotFirstBatch.Transactions))
 	for i := 0; i < len(expFirstBatch.Transactions); i++ {
@@ -457,14 +458,14 @@ func TestBatchesFullCoins(t *testing.T) {
 				Erc20Token:  types.NewSDKIntERC20Token(oneEth.Mul(sdk.NewIntFromUint64(150)), myTokenContractAddr),
 			},
 		},
-		TokenContract: myTokenContractAddr,
-		EthBlock:      1234567,
-		BatchTimeout:  input.GravityKeeper.getBatchTimeoutHeight(ctx),
+		TokenContract:      myTokenContractAddr,
+		CosmosBlockCreated: 1234567,
+		BatchTimeout:       input.GravityKeeper.getBatchTimeoutHeight(ctx),
 	}
 
 	assert.Equal(t, expSecondBatch.BatchTimeout, secondBatch.BatchTimeout)
 	assert.Equal(t, expSecondBatch.BatchNonce, secondBatch.BatchNonce)
-	assert.Equal(t, expSecondBatch.EthBlock, secondBatch.EthBlock)
+	assert.Equal(t, expSecondBatch.CosmosBlockCreated, secondBatch.CosmosBlockCreated)
 	assert.Equal(t, expSecondBatch.TokenContract, secondBatch.TokenContract.GetAddress().Hex())
 	assert.Equal(t, len(expSecondBatch.Transactions), len(secondBatch.Transactions))
 	for i := 0; i < len(expSecondBatch.Transactions); i++ {
@@ -475,7 +476,8 @@ func TestBatchesFullCoins(t *testing.T) {
 	// =================================
 
 	// Execute the batch
-	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: secondBatch.EthBlock, BatchNonce: secondBatch.BatchNonce}
+	fakeBlock := secondBatch.CosmosBlockCreated // A fake ethereum block used for testing only
+	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce}
 	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
 
 	// check batch has been deleted
@@ -616,7 +618,8 @@ func TestManyBatches(t *testing.T) {
 		gotBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, *contractAddr, batch.BatchNonce)
 		// we may have already deleted some of the batches in this list by executing later ones
 		if gotBatch != nil {
-			msg := types.MsgBatchSendToEthClaim{EthBlockHeight: batch.EthBlock, BatchNonce: batch.BatchNonce}
+			fakeBlock := batch.CosmosBlockCreated // A fake ethereum block used for testing only
+			msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: batch.BatchNonce}
 			input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *contractAddr, msg)
 		}
 	}
