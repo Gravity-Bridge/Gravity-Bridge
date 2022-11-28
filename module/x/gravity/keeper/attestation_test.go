@@ -213,8 +213,8 @@ func TestInvalidHeight(t *testing.T) {
 				Amount:   sdktypes.NewInt(1),
 			},
 		}},
-		TokenContract: tokenContract,
-		EthBlock:      0,
+		TokenContract:      tokenContract,
+		CosmosBlockCreated: 0,
 	}
 	b, err := batch.ToInternal()
 	require.NoError(t, err)

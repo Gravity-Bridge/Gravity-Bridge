@@ -333,11 +333,11 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	// First store a batch
 
 	batch, err := types.NewInternalOutgingTxBatchFromExternalBatch(types.OutgoingTxBatch{
-		BatchNonce:    1,
-		BatchTimeout:  0,
-		Transactions:  []types.OutgoingTransferTx{},
-		TokenContract: keeper.TokenContractAddrs[0],
-		EthBlock:      uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
+		BatchNonce:         1,
+		BatchTimeout:       0,
+		Transactions:       []types.OutgoingTransferTx{},
+		TokenContract:      keeper.TokenContractAddrs[0],
+		CosmosBlockCreated: uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
 	pk.StoreBatch(ctx, *batch)
@@ -386,11 +386,11 @@ func TestBatchSlashing(t *testing.T) {
 	// First store a batch
 
 	batch, err := types.NewInternalOutgingTxBatchFromExternalBatch(types.OutgoingTxBatch{
-		BatchNonce:    1,
-		BatchTimeout:  0,
-		Transactions:  []types.OutgoingTransferTx{},
-		TokenContract: keeper.TokenContractAddrs[0],
-		EthBlock:      uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
+		BatchNonce:         1,
+		BatchTimeout:       0,
+		Transactions:       []types.OutgoingTransferTx{},
+		TokenContract:      keeper.TokenContractAddrs[0],
+		CosmosBlockCreated: uint64(ctx.BlockHeight() - int64(params.SignedBatchesWindow+1)),
 	})
 	require.NoError(t, err)
 	pk.StoreBatch(ctx, *batch)
@@ -408,7 +408,7 @@ func TestBatchSlashing(t *testing.T) {
 			valConsAddr, _ := validator.GetConsAddr()
 			valSigningInfo := slashingtypes.ValidatorSigningInfo{
 				Address:             "",
-				StartHeight:         int64(batch.EthBlock + 1),
+				StartHeight:         int64(batch.CosmosBlockCreated + 1),
 				IndexOffset:         0,
 				JailedUntil:         time.Time{},
 				Tombstoned:          false,
@@ -439,7 +439,7 @@ func TestBatchSlashing(t *testing.T) {
 
 	// Ensure that the last slashed valset nonce is set properly
 	lastSlashedBatchBlock := input.GravityKeeper.GetLastSlashedBatchBlock(ctx)
-	assert.Equal(t, lastSlashedBatchBlock, batch.EthBlock)
+	assert.Equal(t, lastSlashedBatchBlock, batch.CosmosBlockCreated)
 	assert.True(t, len(pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))) == 0)
 
 }

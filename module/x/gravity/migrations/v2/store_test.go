@@ -226,11 +226,11 @@ func TestMigrateOutgoingTxBatches(t *testing.T) {
 	assert.NoError(t, err)
 
 	batch := types.OutgoingTxBatch{
-		BatchNonce:    1,
-		BatchTimeout:  0,
-		Transactions:  []types.OutgoingTransferTx{},
-		TokenContract: addr.GetAddress().Hex(),
-		EthBlock:      123,
+		BatchNonce:         1,
+		BatchTimeout:       0,
+		Transactions:       []types.OutgoingTransferTx{},
+		TokenContract:      addr.GetAddress().Hex(),
+		CosmosBlockCreated: 123,
 	}
 	assert.NoError(t, err)
 
@@ -520,18 +520,18 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 	accAddr, _ := sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 
 	dummyOutgoingTxBatch := types.OutgoingTxBatch{
-		BatchNonce:    1,
-		BatchTimeout:  0,
-		Transactions:  []types.OutgoingTransferTx{},
-		TokenContract: ethAddr.GetAddress().String(),
-		EthBlock:      123,
+		BatchNonce:         1,
+		BatchTimeout:       0,
+		Transactions:       []types.OutgoingTransferTx{},
+		TokenContract:      ethAddr.GetAddress().String(),
+		CosmosBlockCreated: 123,
 	}
 	dummyCornerCaseBatch := types.OutgoingTxBatch{
-		BatchNonce:    128,
-		BatchTimeout:  0,
-		Transactions:  []types.OutgoingTransferTx{},
-		TokenContract: ethAddr.GetAddress().String(),
-		EthBlock:      123,
+		BatchNonce:         128,
+		BatchTimeout:       0,
+		Transactions:       []types.OutgoingTransferTx{},
+		TokenContract:      ethAddr.GetAddress().String(),
+		CosmosBlockCreated: 123,
 	}
 
 	dummyValset := types.Valset{
@@ -727,11 +727,11 @@ func TestMigrateInvalidStore(t *testing.T) {
 	invalidAccAddress := "invalid1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm"
 
 	dummyOutgoingTxBatch := types.OutgoingTxBatch{
-		BatchNonce:    1,
-		BatchTimeout:  0,
-		Transactions:  []types.OutgoingTransferTx{},
-		TokenContract: invalidEthAddress,
-		EthBlock:      123,
+		BatchNonce:         1,
+		BatchTimeout:       0,
+		Transactions:       []types.OutgoingTransferTx{},
+		TokenContract:      invalidEthAddress,
+		CosmosBlockCreated: 123,
 	}
 	dummyValsetConfirm := types.MsgValsetConfirm{
 		Nonce:        1,
