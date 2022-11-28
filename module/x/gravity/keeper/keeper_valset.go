@@ -148,7 +148,7 @@ func (k Keeper) GetValsets(ctx sdk.Context) (out []types.Valset) {
 }
 
 // GetLatestValset returns the latest validator set in store. This is different
-// from the CurrrentValset because this one has been saved and is therefore *the* valset
+// from the CurrentValset because this one has been saved and is therefore *the* valset
 // for this nonce. GetCurrentValset shows you what could be, if you chose to save it, this function
 // shows you what is the latest valset that was saved.
 func (k Keeper) GetLatestValset(ctx sdk.Context) (out *types.Valset) {

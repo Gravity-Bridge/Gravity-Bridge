@@ -92,11 +92,11 @@ type InternalOutgoingTxBatches []InternalOutgoingTxBatch
 
 // InternalOutgoingTxBatch is an internal duplicate of OutgoingTxBatch with validation
 type InternalOutgoingTxBatch struct {
-	BatchNonce    uint64
-	BatchTimeout  uint64
-	Transactions  []*InternalOutgoingTransferTx
-	TokenContract EthAddress
-	EthBlock      uint64
+	BatchNonce         uint64
+	BatchTimeout       uint64
+	Transactions       []*InternalOutgoingTransferTx
+	TokenContract      EthAddress
+	CosmosBlockCreated uint64
 }
 
 func NewInternalOutgingTxBatch(
@@ -104,14 +104,14 @@ func NewInternalOutgingTxBatch(
 	timeout uint64,
 	transactions []*InternalOutgoingTransferTx,
 	contract EthAddress,
-	block uint64) (*InternalOutgoingTxBatch, error) {
+	blockCreated uint64) (*InternalOutgoingTxBatch, error) {
 
 	ret := &InternalOutgoingTxBatch{
-		BatchNonce:    nonce,
-		BatchTimeout:  timeout,
-		Transactions:  transactions,
-		TokenContract: contract,
-		EthBlock:      block,
+		BatchNonce:         nonce,
+		BatchTimeout:       timeout,
+		Transactions:       transactions,
+		TokenContract:      contract,
+		CosmosBlockCreated: blockCreated,
 	}
 	if err := ret.ValidateBasic(); err != nil {
 		return nil, err
@@ -134,11 +134,11 @@ func NewInternalOutgingTxBatchFromExternalBatch(batch OutgoingTxBatch) (*Interna
 	}
 
 	return &InternalOutgoingTxBatch{
-		BatchNonce:    batch.BatchNonce,
-		BatchTimeout:  batch.BatchTimeout,
-		Transactions:  txs,
-		TokenContract: *contractAddr,
-		EthBlock:      batch.EthBlock,
+		BatchNonce:         batch.BatchNonce,
+		BatchTimeout:       batch.BatchTimeout,
+		Transactions:       txs,
+		TokenContract:      *contractAddr,
+		CosmosBlockCreated: batch.CosmosBlockCreated,
 	}, nil
 }
 
@@ -152,11 +152,11 @@ func (i *InternalOutgoingTxBatch) ToExternal() OutgoingTxBatch {
 		txs[i] = tx.ToExternal()
 	}
 	return OutgoingTxBatch{
-		BatchNonce:    i.BatchNonce,
-		BatchTimeout:  i.BatchTimeout,
-		Transactions:  txs,
-		TokenContract: i.TokenContract.GetAddress().Hex(),
-		EthBlock:      i.EthBlock,
+		BatchNonce:         i.BatchNonce,
+		BatchTimeout:       i.BatchTimeout,
+		Transactions:       txs,
+		TokenContract:      i.TokenContract.GetAddress().Hex(),
+		CosmosBlockCreated: i.CosmosBlockCreated,
 	}
 }
 
@@ -170,11 +170,11 @@ func (i *InternalOutgoingTxBatches) ToExternalArray() []OutgoingTxBatch {
 		}
 
 		arr = append(arr, OutgoingTxBatch{
-			BatchNonce:    val.BatchNonce,
-			BatchTimeout:  val.BatchTimeout,
-			Transactions:  txs,
-			TokenContract: val.TokenContract.GetAddress().Hex(),
-			EthBlock:      val.EthBlock,
+			BatchNonce:         val.BatchNonce,
+			BatchTimeout:       val.BatchTimeout,
+			Transactions:       txs,
+			TokenContract:      val.TokenContract.GetAddress().Hex(),
+			CosmosBlockCreated: val.CosmosBlockCreated,
 		})
 	}
 
