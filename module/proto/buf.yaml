@@ -16,6 +16,7 @@ breaking:
     - google
     - tendermint
 lint:
+  allow_comment_ignores: true
   use:
     - DEFAULT
     - COMMENTS
