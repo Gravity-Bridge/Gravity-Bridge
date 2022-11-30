@@ -763,9 +763,9 @@ dependencies = [
 
 [[package]]
 name = "deep_space"
-version = "2.15.0"
+version = "2.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ecd93c72df46852e98d19f36b20a6981a33c71cf7c2f90307cc4a34aecf23e5"
+checksum = "5946694f14c5ddbfc7b627a122c12d01e0e1a0747eeca85f3dd302362506dbf4"
 dependencies = [
  "base64",
  "bech32",
@@ -1216,6 +1216,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "toml",
+ "tonic 0.7.2",
  "url",
  "web30",
 ]

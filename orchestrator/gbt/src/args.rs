@@ -4,8 +4,8 @@
 use clap::Parser;
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
-use deep_space::CosmosPrivateKey;
 use deep_space::{address::Address as CosmosAddress, Coin};
+use deep_space::{CosmosPrivateKey, EthermintPrivateKey};
 use std::path::PathBuf;
 
 /// Gravity Bridge tools (gbt) provides tools for interacting with the Althea Gravity bridge for Cosmos based blockchains.
@@ -182,12 +182,14 @@ pub struct KeyOpts {
     pub subcmd: KeysSubcommand,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Parser)]
 pub enum KeysSubcommand {
     RegisterOrchestratorAddress(RegisterOrchestratorAddressOpts),
     SetEthereumKey(SetEthereumKeyOpts),
     SetOrchestratorKey(SetOrchestratorKeyOpts),
     Show,
+    RecoverFunds(RecoverFundsOpts),
 }
 
 /// Register delegate keys for the Gravity Orchestrator.
@@ -228,6 +230,45 @@ pub struct SetEthereumKeyOpts {
 pub struct SetOrchestratorKeyOpts {
     #[clap(short, long)]
     pub phrase: String,
+}
+
+/// Recover inaccessible funds from a failed IBC Auto Forward to an Ethermint chain (e.g. Evmos, Canto)
+/// by either sending them back to Ethereum, or to another Gravity address you control.
+/// To send to Ethereum, provide the --send-to-eth flag.
+/// To send to another Gravity address, provide the --send-on-cosmos flag.
+#[derive(Parser)]
+pub struct RecoverFundsOpts {
+    /// Use this flag if you want to recover your funds by sending them back to Ethereum
+    #[clap(long)]
+    pub send_to_eth: bool,
+    /// Use this flag if you want to recover your funds by sending them to another Gravity address
+    #[clap(long)]
+    pub send_on_cosmos: bool,
+    /// Ethereum mnemonic phrase or 0x... PrivateKey containing the tokens you would like to send
+    #[clap(short, long, parse(try_from_str))]
+    pub ethereum_key: EthermintPrivateKey,
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = "http://localhost:9090")]
+    pub cosmos_grpc: String,
+    /// The Denom and amount you wish to send eg: 100ugraviton
+    #[clap(short, long, parse(try_from_str))]
+    pub amount: Coin,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees eg: 1ugraviton
+    #[clap(long, parse(try_from_str))]
+    pub cosmos_fee: Option<Coin>,
+    /// The amount you want to pay in bridge fees, these are used to pay relayers
+    /// on Ethereum and must be of the same denomination as `amount`
+    /// **Only use this with the send-to-eth flag**
+    #[clap(long, parse(try_from_str))]
+    pub eth_bridge_fee: Option<Coin>,
+    /// The destination address on the Ethereum chain
+    /// **Only use this with the send-to-eth flag**
+    #[clap(long, parse(try_from_str))]
+    pub eth_destination: Option<EthAddress>,
+    /// The Gravity address which should receive the funds
+    /// **Only use this with the send-on-cosmos flag**
+    #[clap(long, parse(try_from_str))]
+    pub cosmos_destination: Option<CosmosAddress>,
 }
 
 /// Initialize configuration
