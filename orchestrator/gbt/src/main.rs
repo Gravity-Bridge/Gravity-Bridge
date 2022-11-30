@@ -5,11 +5,11 @@ extern crate serde_derive;
 
 use crate::args::{ClientSubcommand, KeysSubcommand, SubCommand};
 use crate::config::init_config;
-use crate::keys::show_keys;
+use crate::keys::{recover_funds, show_keys};
 use crate::{orchestrator::orchestrator, relayer::relayer};
 use args::{GovQuerySubcommand, GovSubcommand, GovSubmitSubcommand, Opts};
 use clap::Parser;
-use client::cosmos_to_eth::cosmos_to_eth;
+use client::cosmos_to_eth::cosmos_to_eth_cmd;
 use client::deploy_erc20_representation::deploy_erc20_representation;
 use client::eth_to_cosmos::eth_to_cosmos;
 use config::{get_home_dir, load_config};
@@ -33,12 +33,16 @@ mod utils;
 
 #[actix_rt::main]
 async fn main() {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    let opts: Opts = Opts::parse();
+    let log_level = match opts.verbose {
+        true => "debug",
+        false => "info",
+    };
+    env_logger::Builder::from_env(Env::default().default_filter_or(log_level)).init();
     // On Linux static builds we need to probe ssl certs path to be able to
     // do TLS stuff.
     openssl_probe::init_ssl_cert_env_vars();
     // parse the arguments
-    let opts: Opts = Opts::parse();
 
     // handle global config here
     let address_prefix = opts.address_prefix;
@@ -52,7 +56,7 @@ async fn main() {
                 eth_to_cosmos(eth_to_cosmos_opts, address_prefix).await
             }
             ClientSubcommand::CosmosToEth(cosmos_to_eth_opts) => {
-                cosmos_to_eth(cosmos_to_eth_opts, address_prefix).await
+                cosmos_to_eth_cmd(cosmos_to_eth_opts, address_prefix).await
             }
             ClientSubcommand::DeployErc20Representation(deploy_erc20_opts) => {
                 deploy_erc20_representation(deploy_erc20_opts, address_prefix).await
@@ -73,6 +77,9 @@ async fn main() {
             }
             KeysSubcommand::SetOrchestratorKey(set_orch_key_opts) => {
                 set_orchestrator_key(&home_dir, set_orch_key_opts)
+            }
+            KeysSubcommand::RecoverFunds(recover_funds_opts) => {
+                recover_funds(recover_funds_opts, address_prefix).await
             }
         },
         SubCommand::Orchestrator(orchestrator_opts) => {

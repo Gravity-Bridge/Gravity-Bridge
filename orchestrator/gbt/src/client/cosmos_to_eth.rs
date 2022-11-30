@@ -1,16 +1,19 @@
 use crate::args::CosmosToEthOpts;
 use crate::utils::TIMEOUT;
+use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_denom_to_erc20;
 use cosmos_gravity::send::send_to_eth;
-use deep_space::PrivateKey;
+use deep_space::{Address as CosmosAddress, Coin, Contact, PrivateKey};
+use gravity_proto::gravity::query_client::QueryClient;
 use gravity_proto::gravity::QueryDenomToErc20Request;
 use gravity_utils::{
     connection_prep::{check_for_fee, create_rpc_connections},
     num_conversion::{print_atom, print_eth},
 };
 use std::process::exit;
+use tonic::transport::Channel;
 
-pub async fn cosmos_to_eth(args: CosmosToEthOpts, address_prefix: String) {
+pub async fn cosmos_to_eth_cmd(args: CosmosToEthOpts, address_prefix: String) {
     let cosmos_key = args.cosmos_phrase;
     let gravity_coin = args.amount;
     let fee = args.fee;
@@ -24,9 +27,34 @@ pub async fn cosmos_to_eth(args: CosmosToEthOpts, address_prefix: String) {
     let connections =
         create_rpc_connections(address_prefix, Some(cosmos_grpc), None, TIMEOUT).await;
     let contact = connections.contact.unwrap();
-    let mut grpc = connections.grpc.unwrap();
+    let grpc = connections.grpc.unwrap();
 
-    let res = get_denom_to_erc20(&mut grpc, gravity_coin.denom.clone()).await;
+    cosmos_to_eth(
+        &contact,
+        grpc,
+        cosmos_key,
+        cosmos_address,
+        gravity_coin,
+        fee,
+        bridge_fee,
+        eth_dest,
+    )
+    .await;
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn cosmos_to_eth(
+    contact: &Contact,
+    grpc: QueryClient<Channel>,
+    sender_key: impl PrivateKey,
+    sender_address: CosmosAddress,
+    to_bridge: Coin,
+    cosmos_fee: Coin,
+    bridge_fee: Coin,
+    receiver_address: EthAddress,
+) {
+    let mut grpc = grpc;
+    let res = get_denom_to_erc20(&mut grpc, to_bridge.denom.clone()).await;
     let is_cosmos_originated = match res {
         Ok(v) => v.cosmos_originated,
         Err(e) => {
@@ -37,30 +65,30 @@ pub async fn cosmos_to_eth(args: CosmosToEthOpts, address_prefix: String) {
 
     let res = grpc
         .denom_to_erc20(QueryDenomToErc20Request {
-            denom: gravity_coin.denom.clone(),
+            denom: to_bridge.denom.clone(),
         })
         .await;
     match res {
         Ok(val) => info!(
             "Asset {} has ERC20 representation {}",
-            gravity_coin.denom,
+            to_bridge.denom,
             val.into_inner().erc20
         ),
         Err(_e) => {
             info!(
                 "Asset {} has no ERC20 representation, you may need to deploy an ERC20 for it!",
-                gravity_coin.denom
+                to_bridge.denom
             );
             exit(1);
         }
     }
 
-    let amount = gravity_coin.clone();
-    check_for_fee(&gravity_coin, cosmos_address, &contact).await;
-    check_for_fee(&fee, cosmos_address, &contact).await;
+    let amount = to_bridge.clone();
+    check_for_fee(&to_bridge, sender_address, contact).await;
+    check_for_fee(&cosmos_fee, sender_address, contact).await;
 
     let balance = contact
-        .get_balance(cosmos_address, gravity_coin.denom.clone())
+        .get_balance(sender_address, to_bridge.denom.clone())
         .await
         .expect("Failed to get balances!");
 
@@ -68,30 +96,30 @@ pub async fn cosmos_to_eth(args: CosmosToEthOpts, address_prefix: String) {
         Some(balance) => {
             if balance.amount < amount.amount.clone() + bridge_fee.amount.clone() {
                 if is_cosmos_originated {
-                    error!("Your transfer of {} {} tokens is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_atom(amount.amount), gravity_coin.denom, print_atom(balance.amount));
+                    error!("Your transfer of {} {} tokens is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_atom(amount.amount), to_bridge.denom, print_atom(balance.amount));
                 } else {
-                    error!("Your transfer of {} {} tokens is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_eth(amount.amount), gravity_coin.denom, print_eth(balance.amount));
+                    error!("Your transfer of {} {} tokens is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_eth(amount.amount), to_bridge.denom, print_eth(balance.amount));
                 }
                 exit(1);
             }
         }
         None => {
-            error!("You don't have any {} tokens!", gravity_coin.denom);
+            error!("You don't have any {} tokens!", to_bridge.denom);
             exit(1);
         }
     }
 
     info!(
         "Locking {} / {} into the batch pool",
-        amount.denom, gravity_coin.denom
+        amount.denom, to_bridge.denom
     );
     let res = send_to_eth(
-        cosmos_key,
-        eth_dest,
+        sender_key,
+        receiver_address,
         amount.clone(),
         bridge_fee.clone(),
-        fee.clone(),
-        &contact,
+        cosmos_fee.clone(),
+        contact,
     )
     .await;
     match res {

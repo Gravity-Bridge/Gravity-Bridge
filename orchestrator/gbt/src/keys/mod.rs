@@ -1,10 +1,14 @@
 pub mod register_orchestrator_address;
 
+use crate::args::RecoverFundsOpts;
+use crate::client::cosmos_to_eth::cosmos_to_eth;
+use crate::utils::TIMEOUT;
 use crate::{
     args::{SetEthereumKeyOpts, SetOrchestratorKeyOpts},
     config::{config_exists, load_keys, save_keys},
 };
-use deep_space::{CosmosPrivateKey, PrivateKey};
+use deep_space::{Coin, CosmosPrivateKey, PrivateKey};
+use gravity_utils::connection_prep::create_rpc_connections;
 use std::{path::Path, process::exit};
 
 pub fn show_keys(home_dir: &Path, prefix: &str) {
@@ -56,4 +60,96 @@ pub fn set_orchestrator_key(home_dir: &Path, opts: SetOrchestratorKeyOpts) {
     keys.orchestrator_phrase = Some(opts.phrase);
     save_keys(home_dir, keys);
     info!("Successfully updated Orchestrator Key")
+}
+
+pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
+    let connections = create_rpc_connections(
+        address_prefix.clone(),
+        Some(args.cosmos_grpc.clone()),
+        None,
+        TIMEOUT,
+    )
+    .await;
+    let contact = connections.contact.unwrap();
+    let grpc = connections.grpc.unwrap();
+
+    if args.send_on_cosmos && !args.send_to_eth {
+        if args.eth_bridge_fee.is_some() {
+            error!("Unexpected --eth-bridge-fee with --send-on-cosmos");
+            exit(1);
+        }
+        if args.eth_destination.is_some() {
+            error!("Unexpected --eth-destination with --send-on-cosmos");
+            exit(1);
+        }
+        if args.cosmos_destination.is_none() {
+            error!("You must provide --cosmos-destination when using --send-on-cosmos!");
+            exit(1);
+        }
+        let cosmos_destination = args.cosmos_destination.unwrap();
+        if cosmos_destination.get_prefix() != address_prefix {
+            error!("The provided destination address ({}) does not have the --address-prefix value ({}), are you sure you're sending to the right address?", cosmos_destination, address_prefix);
+            exit(1);
+        }
+
+        let res = contact
+            .send_coins(
+                args.amount.clone(),
+                args.cosmos_fee,
+                cosmos_destination,
+                Some(TIMEOUT),
+                args.ethereum_key,
+            )
+            .await;
+        if res.is_err() {
+            error!(
+                "Received an error response when sending {} of {} to {}, are you sure that your account has enough funds? Error: {}",
+                args.amount.amount.to_string(),
+                args.amount.denom,
+                cosmos_destination,
+                res.err().unwrap(),
+            );
+            exit(1);
+        }
+        info!(
+            "Sent {} of {} to {}, Gravity Tx ID: {}",
+            args.amount.amount,
+            args.amount.denom,
+            cosmos_destination.to_string(),
+            res.unwrap().txhash
+        );
+    } else if args.send_to_eth && !args.send_on_cosmos {
+        if args.cosmos_destination.is_some() {
+            error!("Unexpected --cosmos-destination with --send-to-eth");
+            exit(1);
+        }
+
+        let sender_address = args.ethereum_key.to_address(&address_prefix).unwrap();
+        let cosmos_fee = args.cosmos_fee.unwrap_or_else(|| Coin {
+            amount: 0u8.into(),
+            denom: "ugraviton".to_string(),
+        });
+        if args.eth_bridge_fee.is_none() {
+            error!("--eth-bridge-fee must be provided with --send-to-eth!");
+            exit(1);
+        }
+        if args.eth_destination.is_none() {
+            error!("--eth-destination must be provided with --send-to-eth!");
+            exit(1);
+        }
+        cosmos_to_eth(
+            &contact,
+            grpc,
+            args.ethereum_key,
+            sender_address,
+            args.amount,
+            cosmos_fee,
+            args.eth_bridge_fee.unwrap(),
+            args.eth_destination.unwrap(),
+        )
+        .await;
+    } else {
+        error!("You must provide ONE of --send-to-eth OR --send-on-cosmos");
+        exit(1);
+    }
 }
