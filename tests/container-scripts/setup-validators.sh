@@ -6,6 +6,15 @@ BIN=gravity
 CHAIN_ID="gravity-test-1"
 
 NODES=$1
+# When doing an upgrade test we need to run init using the old binary so we don't include newly added fields
+set +u
+if [[ ! -z ${OLD_BINARY_LOCATION} ]]; then
+  echo "Replacing gravity with $OLD_BINARY_LOCATION"
+  BIN=$OLD_BINARY_LOCATION
+else
+  echo "Old binary not set, using regular gravity"
+fi
+set -u
 
 ALLOCATION="10000000000stake,10000000000footoken,10000000000footoken2,10000000000ibc/nometadatatoken"
 
