@@ -4,9 +4,8 @@ build:
   roots:
     - proto
     - third_party/proto
-  excludes:
-    - third_party/proto/google/protobuf
 lint:
+  allow_comment_ignores: true
   use:
     - DEFAULT
     - COMMENTS
@@ -27,6 +26,7 @@ lint:
     - gogoproto
     - cosmos_proto
     - google
+    - third_party
 breaking:
   use:
     - FILE
@@ -37,3 +37,4 @@ breaking:
     - gogoproto
     - cosmos_proto
     - google
+    - third_party

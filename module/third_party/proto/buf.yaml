@@ -16,6 +16,7 @@ breaking:
     - google
     - tendermint
 lint:
+#  allow_comment_ignores: true
   use:
     - DEFAULT
     - COMMENTS
@@ -23,12 +24,17 @@ lint:
   except:
     - UNARY_RPC
     - COMMENT_FIELD
+    - COMMENT_MESSAGE
+    - COMMENT_RPC
     - SERVICE_SUFFIX
     - PACKAGE_VERSION_SUFFIX
     - RPC_REQUEST_STANDARD_NAME
-    - IMPORT_USED
+    - RPC_RESPONSE_STANDARD_NAME
   ignore:
     - proofs.proto # confio/ics23
     - gogoproto
     - google
     - tendermint
+    - ibc
+    - cosmos
+    - cosmos_proto
