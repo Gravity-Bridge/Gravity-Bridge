@@ -106,10 +106,10 @@ func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (*types.EthA
 	}
 }
 
-// ERC20ToDenom returns (bool isCosmosOriginated, string denom, err)
+// ERC20ToDenomLookup returns (isCosmosOriginated bool, denom string)
 // Using this information, you can see if an ERC20 address representing an asset is native to Cosmos or Ethereum,
 // and get its corresponding denom
-func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, tokenContract types.EthAddress) (bool, string) {
+func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, tokenContract types.EthAddress) (isCosmosOriginated bool, denom string) {
 	// First try looking up tokenContract in index
 	dn1, exists := k.GetCosmosOriginatedDenom(ctx, tokenContract)
 	if exists {

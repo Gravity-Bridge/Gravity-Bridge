@@ -290,27 +290,29 @@ func (msg MsgConfirmLogicCall) GetSigners() []sdk.AccAddress {
 
 // EthereumClaim represents a claim on ethereum state
 type EthereumClaim interface {
-	// All Ethereum claims that we relay from the Gravity contract and into the module
+	// GetEventNonce All Ethereum claims that we relay from the Gravity contract and into the module
 	// have a nonce that is monotonically increasing and unique, since this nonce is
 	// issued by the Ethereum contract it is immutable and must be agreed on by all validators
 	// any disagreement on what claim goes to what nonce means someone is lying.
 	GetEventNonce() uint64
-	// The block height that the claimed event occurred on. This EventNonce provides sufficient
+	// GetEthBlockHeight The block height that the claimed event occurred on. This EventNonce provides sufficient
 	// ordering for the execution of all claims. The block height is used only for batchTimeouts + logicTimeouts
 	// when we go to create a new batch we set the timeout some number of batches out from the last
 	// known height plus projected block progress since then.
 	GetEthBlockHeight() uint64
-	// the delegate address of the claimer, for MsgDepositClaim and MsgWithdrawClaim
+	// GetClaimer the delegate address of the claimer, for MsgDepositClaim and MsgWithdrawClaim
 	// this is sent in as the sdk.AccAddress of the delegated key. it is up to the user
 	// to disambiguate this into a sdk.ValAddress
 	GetClaimer() sdk.AccAddress
-	// Which type of claim this is
+	// GetType Which type of claim this is
 	GetType() ClaimType
 	ValidateBasic() error
-	// The claim hash of this claim. This is used to store these claims and also used to check if two different
+	// ClaimHash The claim hash of this claim. This is used to store these claims and also used to check if two different
 	// validators claims agree. Therefore it's extremely important that this include all elements of the claim
 	// with the exception of the orchestrator who sent it in, which will be used as a different part of the index
 	ClaimHash() ([]byte, error)
+	// GetBridgeBalances The Gravity.sol contract balances at the Eth block height of this claim
+	GetBridgeBalances() []*ERC20Token
 }
 
 // nolint: exhaustruct
@@ -347,6 +349,11 @@ func (msg *MsgSendToCosmosClaim) ValidateBasic() error {
 	// them into the community pool
 	if msg.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
+	}
+	for i, e := range msg.BridgeBalances {
+		if err := e.ValidateBasic(); err != nil {
+			return sdkerrors.Wrapf(err, "invalid %d-th ERC20Token (%v)", i, e)
+		}
 	}
 	return nil
 }
@@ -390,13 +397,14 @@ const (
 	TypeMsgSendToCosmosClaim = "send_to_cosmos_claim"
 )
 
-// Hash implements BridgeDeposit.Hash
+// ClaimHash implements MsgSendToCosmosClaim.ClaimHash
 // modify this with care as it is security sensitive. If an element of the claim is not in this hash a single hostile validator
 // could engineer a hash collision and execute a version of the claim with any unhashed data changed to benefit them.
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (msg *MsgSendToCosmosClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s", msg.EventNonce, msg.EthBlockHeight, msg.TokenContract, msg.Amount.String(), msg.EthereumSender, msg.CosmosReceiver)
+	// Note BridgeBalances is a slice, %s will result in [0xabcd 0xefgh 0xijkl ...]
+	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s/%s", msg.EventNonce, msg.EthBlockHeight, msg.TokenContract, msg.Amount.String(), msg.EthereumSender, msg.CosmosReceiver, msg.BridgeBalances)
 	return tmhash.Sum([]byte(path)), nil
 }
 
@@ -435,12 +443,18 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(e.Orchestrator); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, e.Orchestrator)
 	}
+	for i, token := range e.BridgeBalances {
+		if err := token.ValidateBasic(); err != nil {
+			return sdkerrors.Wrapf(err, "invalid %d-th ERC20Token (%v)", i, token)
+		}
+	}
 	return nil
 }
 
-// Hash implements WithdrawBatch.Hash
+// ClaimHash implements MsgBatchSendToEthClaim.ClaimHash
 func (msg *MsgBatchSendToEthClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%d/%s", msg.EventNonce, msg.EthBlockHeight, msg.BatchNonce, msg.TokenContract)
+	// Note BridgeBalances is a slice, %s will result in [0xabcd 0xefgh 0xijkl ...]
+	path := fmt.Sprintf("%d/%d/%d/%s/%s", msg.EventNonce, msg.EthBlockHeight, msg.BatchNonce, msg.TokenContract, msg.BridgeBalances)
 	return tmhash.Sum([]byte(path)), nil
 }
 
@@ -497,6 +511,11 @@ func (e *MsgERC20DeployedClaim) ValidateBasic() error {
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
 	}
+	for i, token := range e.BridgeBalances {
+		if err := token.ValidateBasic(); err != nil {
+			return sdkerrors.Wrapf(err, "invalid %d-th ERC20Token (%v)", i, token)
+		}
+	}
 	return nil
 }
 
@@ -531,13 +550,14 @@ func (msg MsgERC20DeployedClaim) Type() string { return "ERC20_deployed_claim" }
 // Route should return the name of the module
 func (msg MsgERC20DeployedClaim) Route() string { return RouterKey }
 
-// Hash implements BridgeDeposit.Hash
+// ClaimHash implements MsgERC20DeployedClaim.ClaimHash
 // modify this with care as it is security sensitive. If an element of the claim is not in this hash a single hostile validator
 // could engineer a hash collision and execute a version of the claim with any unhashed data changed to benefit them.
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (b *MsgERC20DeployedClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s/%d", b.EventNonce, b.EthBlockHeight, b.CosmosDenom, b.TokenContract, b.Name, b.Symbol, b.Decimals)
+	// Note BridgeBalances is a slice, %s will result in [0xabcd 0xefgh 0xijkl ...]
+	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s/%d/%s", b.EventNonce, b.EthBlockHeight, b.CosmosDenom, b.TokenContract, b.Name, b.Symbol, b.Decimals, b.BridgeBalances)
 	return tmhash.Sum([]byte(path)), nil
 }
 
@@ -556,6 +576,11 @@ func (e *MsgLogicCallExecutedClaim) ValidateBasic() error {
 	}
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
+	}
+	for i, token := range e.BridgeBalances {
+		if err := token.ValidateBasic(); err != nil {
+			return sdkerrors.Wrapf(err, "invalid %d-th ERC20Token (%v)", i, token)
+		}
 	}
 	return nil
 }
@@ -591,13 +616,15 @@ func (msg MsgLogicCallExecutedClaim) Type() string { return "Logic_Call_Executed
 // Route should return the name of the module
 func (msg MsgLogicCallExecutedClaim) Route() string { return RouterKey }
 
-// Hash implements BridgeDeposit.Hash
+// ClaimHash implements MsgLogicCallExecutedClaim.ClaimHash
 // modify this with care as it is security sensitive. If an element of the claim is not in this hash a single hostile validator
 // could engineer a hash collision and execute a version of the claim with any unhashed data changed to benefit them.
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (b *MsgLogicCallExecutedClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d,%d,%s/%d/", b.EventNonce, b.EthBlockHeight, b.InvalidationId, b.InvalidationNonce)
+	// Note BridgeBalances is a slice, %s will result in [0xabcd 0xefgh 0xijkl ...]
+	// TODO: Why does this have commas in the fmt string? All the others only contain / separators
+	path := fmt.Sprintf("%d,%d,%s/%d/%s", b.EventNonce, b.EthBlockHeight, b.InvalidationId, b.InvalidationNonce, b.BridgeBalances)
 	return tmhash.Sum([]byte(path)), nil
 }
 
@@ -627,6 +654,12 @@ func (e *MsgValsetUpdatedClaim) ValidateBasic() error {
 		err := ValidateEthAddress(member.EthereumAddress)
 		if err != nil {
 			return err
+		}
+	}
+
+	for i, token := range e.BridgeBalances {
+		if err := token.ValidateBasic(); err != nil {
+			return sdkerrors.Wrapf(err, "invalid %d-th ERC20Token (%v)", i, token)
 		}
 	}
 
@@ -664,7 +697,7 @@ func (msg MsgValsetUpdatedClaim) Type() string { return "Valset_Updated_Claim" }
 // Route should return the name of the module
 func (msg MsgValsetUpdatedClaim) Route() string { return RouterKey }
 
-// Hash implements BridgeDeposit.Hash
+// ClaimHash implements MsgValsetUpdatedClaim.ClaimHash
 // modify this with care as it is security sensitive. If an element of the claim is not in this hash a single hostile validator
 // could engineer a hash collision and execute a version of the claim with any unhashed data changed to benefit them.
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
@@ -676,7 +709,7 @@ func (b *MsgValsetUpdatedClaim) ClaimHash() ([]byte, error) {
 		return nil, sdkerrors.Wrap(err, "invalid members")
 	}
 	internalMembers.Sort()
-	path := fmt.Sprintf("%d/%d/%d/%x/%s/%s", b.EventNonce, b.ValsetNonce, b.EthBlockHeight, internalMembers.ToExternal(), b.RewardAmount.String(), b.RewardToken)
+	path := fmt.Sprintf("%d/%d/%d/%x/%s/%s/%s", b.EventNonce, b.ValsetNonce, b.EthBlockHeight, internalMembers.ToExternal(), b.RewardAmount.String(), b.RewardToken, b.BridgeBalances)
 	return tmhash.Sum([]byte(path)), nil
 }
 

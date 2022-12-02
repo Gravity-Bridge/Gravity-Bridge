@@ -99,6 +99,16 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 // set and steal funds on Ethereum without consequence.
 // The practical outcome of this flag being set to 'false' is that deposits from Ethereum will not show up and withdraws from
 // Cosmos will not execute on Ethereum.
+//
+// ethereum_blacklist
+//
+// Addresses on this blacklist are forbidden from bridging to or from Ethereum
+//
+// monitored_token_addresses
+//
+// Addresses on this list will be monitored for cross-bridge balance checks. Orchestrators are required to collect the
+// Gravity.sol contract's balance of each of these ERC20 tokens for each of their submitted claims at the event's
+// ethereum block height
 message Params {
   option (gogoproto.stringer) = false;
 
@@ -133,9 +143,8 @@ message Params {
     (gogoproto.nullable)   = false
   ];
   bool bridge_active = 18;
-  // addresses on this blacklist are forbidden from depositing or withdrawing
-  // from Ethereum to the bridge
   repeated string ethereum_blacklist = 19;
+  repeated string monitored_token_addresses = 20;
 }
 
 // GenesisState struct, containing all persistant data required by the Gravity module

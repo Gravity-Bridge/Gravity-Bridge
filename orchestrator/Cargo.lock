@@ -625,8 +625,10 @@ dependencies = [
  "deep_space",
  "env_logger",
  "ethereum_gravity",
+ "futures",
  "gravity_proto",
  "gravity_utils",
+ "itertools",
  "log",
  "num256",
  "prost 0.10.4",
@@ -4043,9 +4045,7 @@ dependencies = [
 
 [[package]]
 name = "web30"
-version = "0.19.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d73009826c9697b91ba23ed6448e605db03db6472c18da6443a4cc34e36ded43"
+version = "0.19.6"
 dependencies = [
  "awc",
  "clarity",

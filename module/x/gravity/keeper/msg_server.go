@@ -349,7 +349,7 @@ func (k msgServer) confirmHandlerCommon(ctx sdk.Context, ethAddress string, orch
 	return nil
 }
 
-// DepositClaim handles MsgSendToCosmosClaim
+// SendToCosmosClaim handles MsgSendToCosmosClaim
 // TODO it is possible to submit an old msgDepositClaim (old defined as covering an event nonce that has already been
 // executed aka 'observed' and had it's slashing window expire) that will never be cleaned up in the endblocker. This
 // should not be a security risk as 'old' events can never execute but it does store spam in the chain.
@@ -387,7 +387,7 @@ func (k msgServer) ExecuteIbcAutoForwards(c context.Context, msg *types.MsgExecu
 	return &types.MsgExecuteIbcAutoForwardsResponse{}, nil
 }
 
-// WithdrawClaim handles MsgBatchSendToEthClaim
+// BatchSendToEthClaim handles MsgBatchSendToEthClaim
 // TODO it is possible to submit an old msgWithdrawClaim (old defined as covering an event nonce that has already been
 // executed aka 'observed' and had it's slashing window expire) that will never be cleaned up in the endblocker. This
 // should not be a security risk as 'old' events can never execute but it does store spam in the chain.

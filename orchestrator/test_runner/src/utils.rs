@@ -411,6 +411,7 @@ pub async fn submit_false_claims(
             cosmos_receiver: cosmos_receiver.to_string(),
             ethereum_sender: ethereum_sender.to_string(),
             orchestrator: orch_addr.to_string(),
+            bridge_balances: vec![],
         };
         info!("Oracle number {} submitting false deposit {:?}", i, claim);
         let msg_url = "/gravity.v1.MsgSendToCosmosClaim";

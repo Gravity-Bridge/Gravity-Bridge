@@ -192,7 +192,9 @@ pub async fn check_for_events(
             || !valsets.is_empty()
         {
             let res = send_ethereum_claims(
+                web3,
                 contact,
+                gravity_contract_address,
                 our_private_key,
                 deposits.clone(),
                 withdraws.clone(),

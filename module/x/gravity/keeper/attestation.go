@@ -119,6 +119,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
 
 				k.processAttestation(ctx, att, claim)
+				k.assertBalances(ctx, att, claim) // Assert cross-bridge balance integrity AFTER applying updates
 				k.emitObservedEvent(ctx, att, claim)
 
 				break
@@ -149,6 +150,96 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 		)
 	} else {
 		commit() // persist transient storage
+	}
+}
+
+// assertBalances checks that the agreed-upon ethereum balances match the ones on cosmos, in particular:
+// * Ethereum originated balances on Ethereum must match the bank supply of the corresponding gravity0x... denom
+// * Cosmos originated balances on Ethereum correspond to the Gravity module balance of the corresponding ibc/... denom
+// WARNING: These assertions must be run AFTER applying state, or the chain will halt
+func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
+	ethBals := claim.GetBridgeBalances()
+	for _, v := range ethBals {
+		ethBal := v.Amount
+		contract, err := types.NewEthAddress(v.Contract)
+		if err != nil {
+			panic(fmt.Sprintf("observed attestation for event %d with bad bridge balances: %v", claim.GetEventNonce(), err))
+		}
+		cosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
+		var cosmosBal sdk.Coin
+		if !cosmosOriginated { // Ethereum originated
+			// We want the ethereum balance to be the entire supply of the token since the gravity module should not
+			// have minted any new tokens until a SendToCosmos has been observed
+
+			// Check the Ethereum balance against the bank supply
+			cosmosBal = k.bankKeeper.GetSupply(ctx, denom)
+
+		} else { // Cosmos originated
+			// In the event of a cosmos-based asset, we want the ethereum balance to be gravity module balance less pending txs + unconfirmed batches
+			// since new txs could have come in - inflating the gravity module's balance
+
+			// Check the Ethereum balance against the locked up tokens in the gravity module less any unobserved batches and unbatched transaction amounts
+			acct := k.accountKeeper.GetModuleAddress(types.ModuleName)
+			cosmosBal = k.bankKeeper.GetBalance(ctx, acct, denom)
+			unconfirmedBatchTotal := sdk.ZeroInt()
+			k.IterateOutgoingTxBatchesByTokenType(ctx, *contract, func(key []byte, batch types.InternalOutgoingTxBatch) (stop bool) {
+				for _, tx := range batch.Transactions {
+					if tx.Erc20Token.Contract != *contract {
+						k.logger(ctx).Error(
+							"IterateOutgoingTxBatchesByTokenType is broken or an invalid batch was stored",
+							"batchNonce", batch.BatchNonce, "batchContract", batch.TokenContract.GetAddress().String(),
+							"txContract", tx.Erc20Token.Contract.GetAddress().String(),
+							"iteratorContract", contract.GetAddress().String(),
+						)
+						panic("IterateOutgoingTxBatchesByTokenType is broken or an invalid batch was stored")
+					}
+
+					unconfirmedBatchTotal = unconfirmedBatchTotal.Add(tx.Erc20Token.Amount)
+				}
+				return false // continue looping until all batches of this contract type are accounted for
+			})
+			unbatchedTxTotal := sdk.ZeroInt()
+			k.IterateUnbatchedTransactionsByContract(ctx, *contract, func(key []byte, tx *types.InternalOutgoingTransferTx) (stop bool) {
+				if tx.Erc20Token.Contract != *contract {
+					k.logger(ctx).Error(
+						"IterateUnbatchedTransactionsByContract is broken or an invalid batch was stored",
+						"txContract", tx.Erc20Token.Contract.GetAddress().String(),
+						"iteratorContract", contract.GetAddress().String(),
+					)
+					panic("IterateOutgoingTxBatchesByTokenType is broken or an invalid batch was stored")
+				}
+
+				unbatchedTxTotal = unbatchedTxTotal.Add(tx.Erc20Token.Amount)
+				return false // continue looping until all unbatched txs of this contract type are accounted for
+			})
+
+			cosmosBal.Amount = cosmosBal.Amount.Sub(unconfirmedBatchTotal).Sub(unbatchedTxTotal)
+		}
+
+		// There are a few ways that the Gravity.sol balance (Ethereum-side) can be updated:
+		// 1. A user performs a SendToCosmos with an ERC20 token, increasing the balance (expected)
+		// 2. A batch is executed on Ethereum, reducing the balance (expected)
+		// 3. A user can perform an ERC20 send to the Gravity.sol contract address, increasing the balance (unexpected)
+
+		// There are a few ways that the Gravity module balance (Cosmos-side) can be updated:
+		// 1. A user attempts to send their tokens to Ethereum, increasing the balance (expected)
+		// 2. A user receives funds from Ethereum, reducing the balance (expected)
+		// X. It is NOT possible to send the Gravity module a balance it should not receive, because of app.BlockedAddrs()
+
+		// We want to make meaningful assertions about the Ethereum balance and the Gravity module balance while not
+		// halting the chain due to some silly unexpected case.
+		// According to the scenarios above, the Ethereum-side can be higher than we would expect, but NOT lower
+		if ethBal.LT(cosmosBal.Amount) {
+			k.logger(ctx).Error(
+				"Unexpected Ethereum balance! The ethereum balance should be no less than the cosmos balance for this coin.",
+				"ethereumBalance", ethBal.String(),
+				"cosmosBalance", cosmosBal.Amount.String(),
+				"cosmosDenom", denom,
+				"ethereumContract", contract,
+				"cosmosOriginated", cosmosOriginated,
+			)
+			panic("Ethereum balance of a token is too low!")
+		}
 	}
 }
 
