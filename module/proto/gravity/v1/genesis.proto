@@ -103,6 +103,10 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 // min_chain_fee_basis_points
 //
 // The minimum SendToEth `chain_fee` amount, in terms of basis points. e.g. 10% fee = 1000, and 0.02% fee = 2
+//
+// ethereum_blacklist
+//
+// Addresses on this blacklist are forbidden from bridging to or from Ethereum
 message Params {
   option (gogoproto.stringer) = false;
 
@@ -137,8 +141,6 @@ message Params {
     (gogoproto.nullable)   = false
   ];
   bool bridge_active = 18;
-  // addresses on this blacklist are forbidden from depositing or withdrawing
-  // from Ethereum to the bridge
   repeated string ethereum_blacklist = 19;
   uint64 min_chain_fee_basis_points = 20;
 }

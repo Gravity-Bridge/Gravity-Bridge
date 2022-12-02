@@ -10,7 +10,7 @@ use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::UPDATE_HRP_IBC_CHANNEL_PROPOSAL;
 use cosmos_gravity::send::MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL;
 use deep_space::address::Address as CosmosAddress;
-use deep_space::client::msgs::MSG_TRANSFER_TYPE_URL;
+use deep_space::client::type_urls::MSG_TRANSFER_TYPE_URL;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::utils::decode_any;

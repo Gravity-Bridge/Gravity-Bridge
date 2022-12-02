@@ -154,6 +154,12 @@ var (
 	// PendingIbcAutoForwards indexes pending SendToCosmos sends via IBC, queued by event nonce
 	// [0x5b89a7c5dc9abd2a7abc2560d6eb42ea]
 	PendingIbcAutoForwards = HashString("IbcAutoForwardQueue")
+
+	// MonitoredTokenAddresses points to the collection of EthAddresses that orchestrators
+	// are required to monitor the Gravity.sol balance of. Orchestrators can access these
+	// via the MonitoredTokenAddresses gRPC query endpoint.
+	// TODO: Put hashed key here: [0x]
+	MonitoredTokenAddresses = HashString("MonitoredTokenAddresses")
 )
 
 // GetOrchestratorAddressKey returns the following key format

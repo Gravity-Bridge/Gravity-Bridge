@@ -26,6 +26,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
+use num_traits::cast::ToPrimitive;
 use relayer::main_loop::all_relayer_loops;
 use std::cmp::min;
 use std::process::exit;
@@ -60,6 +61,7 @@ pub async fn orchestrator_main_loop(
     user_fee_amount: Coin,
     config: GravityBridgeToolsConfig,
 ) {
+    let eth_address = ethereum_key.to_address();
     let fee = user_fee_amount;
 
     if config.orchestrator.check_eth_rpc {
@@ -68,6 +70,7 @@ pub async fn orchestrator_main_loop(
 
     let a = eth_oracle_main_loop(
         cosmos_key,
+        eth_address,
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
@@ -142,6 +145,7 @@ pub async fn test_eth_connection(web3: Web3) {
 /// and ferried over to Cosmos where they will be used to issue tokens or process batches.
 pub async fn eth_oracle_main_loop(
     cosmos_key: CosmosPrivateKey,
+    eth_address: EthAddress,
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
@@ -181,7 +185,8 @@ pub async fn eth_oracle_main_loop(
 
                 metrics_latest(block_height, "latest_cosmos_block");
                 // Converting into u64
-                metrics_latest(latest_eth_block.to_u64_digits()[0], "latest_eth_block");
+
+                metrics_latest(latest_eth_block.to_u64().unwrap(), "latest_eth_block");
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
                 warn!("Cosmos node syncing, Eth oracle paused");
@@ -249,6 +254,7 @@ pub async fn eth_oracle_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             cosmos_key,
+            eth_address,
             fee.clone(),
             last_checked_block.clone(),
         )

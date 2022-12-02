@@ -41,7 +41,6 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		return a.handleBatchSendToEth(ctx, *claim)
 
 	case *types.MsgERC20DeployedClaim:
-
 		return a.handleErc20Deployed(ctx, *claim)
 
 	case *types.MsgValsetUpdatedClaim:

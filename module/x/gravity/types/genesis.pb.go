@@ -60,6 +60,10 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // min_chain_fee_basis_points
 //
 // The minimum SendToEth `chain_fee` amount, in terms of basis points. e.g. 10% fee = 1000, and 0.02% fee = 2
+//
+// ethereum_blacklist
+//
+// Addresses on this blacklist are forbidden from bridging to or from Ethereum
 type Params struct {
 	GravityId                    string                                 `protobuf:"bytes,1,opt,name=gravity_id,json=gravityId,proto3" json:"gravity_id,omitempty"`
 	ContractSourceHash           string                                 `protobuf:"bytes,2,opt,name=contract_source_hash,json=contractSourceHash,proto3" json:"contract_source_hash,omitempty"`
@@ -78,10 +82,8 @@ type Params struct {
 	SlashFractionBadEthSignature github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,16,opt,name=slash_fraction_bad_eth_signature,json=slashFractionBadEthSignature,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_bad_eth_signature"`
 	ValsetReward                 types.Coin                             `protobuf:"bytes,17,opt,name=valset_reward,json=valsetReward,proto3" json:"valset_reward"`
 	BridgeActive                 bool                                   `protobuf:"varint,18,opt,name=bridge_active,json=bridgeActive,proto3" json:"bridge_active,omitempty"`
-	// addresses on this blacklist are forbidden from depositing or withdrawing
-	// from Ethereum to the bridge
-	EthereumBlacklist      []string `protobuf:"bytes,19,rep,name=ethereum_blacklist,json=ethereumBlacklist,proto3" json:"ethereum_blacklist,omitempty"`
-	MinChainFeeBasisPoints uint64   `protobuf:"varint,20,opt,name=min_chain_fee_basis_points,json=minChainFeeBasisPoints,proto3" json:"min_chain_fee_basis_points,omitempty"`
+	EthereumBlacklist            []string                               `protobuf:"bytes,19,rep,name=ethereum_blacklist,json=ethereumBlacklist,proto3" json:"ethereum_blacklist,omitempty"`
+	MinChainFeeBasisPoints       uint64                                 `protobuf:"varint,20,opt,name=min_chain_fee_basis_points,json=minChainFeeBasisPoints,proto3" json:"min_chain_fee_basis_points,omitempty"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }

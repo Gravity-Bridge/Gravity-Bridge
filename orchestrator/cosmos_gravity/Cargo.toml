@@ -11,21 +11,22 @@ gravity_utils = {path = "../gravity_utils"}
 ethereum_gravity = {path = "../ethereum_gravity"}
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = "2.15"
-clarity = "0.5"
+deep_space = "2.17"
+clarity = "0.7"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-num256 = "0.3"
+num256 = "0.5"
 log = "0.4"
 sha3 = "0.10"
 tokio = "1.4"
-web30 = "0.22"
+web30 = "0.23"
 tonic = "0.7"
 bytes = "1.1"
 prost-types = "0.10"
 prost = "0.10"
 num = "0.4.0"
+futures = "0.3"
 
 [dev-dependencies]
 env_logger = "0.10"

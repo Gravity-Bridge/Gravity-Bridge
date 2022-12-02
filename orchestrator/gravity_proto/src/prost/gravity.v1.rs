@@ -46,20 +46,24 @@ pub enum SignType {
     /// A type for batches
     OrchestratorSignedWithdrawBatch = 2,
 }
-/// Attestation is an aggregate of `claims` that eventually becomes `observed` by
-/// all orchestrators
+/// Attestation is an aggregate of `claims` to an event which eventually becomes `observed` by
+/// all orchestrators. Orchestrators submit Msg*Claim's (e.g. MsgSendToCosmosClaim) and
+/// the chain uses an Attestation to track the in-progress claims made by all orchestrators.
+///
 /// EVENT_NONCE:
-/// EventNonce a nonce provided by the gravity contract that is unique per event fired
+/// EventNonce is a nonce provided by the gravity contract that is unique per event fired
 /// These event nonces must be relayed in order. This is a correctness issue,
 /// if relaying out of order transaction replay attacks become possible
+/// HEIGHT:
+/// Height is the Cosmos block height when the first claim was submitted for this event
 /// OBSERVED:
 /// Observed indicates that >67% of validators have attested to the event,
 /// and that the event should be executed by the gravity state machine
-///
+/// CLAIM:
 /// The actual content of the claims is passed in with the transaction making the claim
 /// and then passed through the call stack alongside the attestation while it is processed
 /// the key in which the attestation is stored is keyed on the exact details of the claim
-/// but there is no reason to store those exact details becuause the next message sender
+/// but there is no reason to store those exact details because the next message sender
 /// will kindly provide you with them.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Attestation {
@@ -292,6 +296,25 @@ pub struct Erc20ToDenom {
     #[prost(string, tag="2")]
     pub denom: ::prost::alloc::string::String,
 }
+/// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
+/// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PendingIbcAutoForward {
+    /// the destination address. sdk.AccAddress does not preserve foreign prefixes
+    #[prost(string, tag="1")]
+    pub foreign_receiver: ::prost::alloc::string::String,
+    /// the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
+    #[prost(message, optional, tag="2")]
+    pub token: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+    /// the IBC channel to send `Amount` over via ibc-transfer module
+    #[prost(string, tag="3")]
+    pub ibc_channel: ::prost::alloc::string::String,
+    /// the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
+    #[prost(uint64, tag="4")]
+    pub event_nonce: u64,
+}
+// CUSTOM PROPOSALS ------------------------------------------------------
+
 /// UnhaltBridgeProposal defines a custom governance proposal useful for restoring
 /// the bridge after a oracle disagreement. Once this proposal is passed bridge state will roll back events 
 /// to the nonce provided in target_nonce if and only if those events have not yet been observed (executed on the Cosmos chain). This allows for easy
@@ -344,22 +367,23 @@ pub struct IbcMetadataProposal {
     #[prost(string, tag="4")]
     pub ibc_denom: ::prost::alloc::string::String,
 }
-/// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
-/// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
+/// SetMonitoredTokenAddressesProposal defines a custom governance proposal type that allows governance to set the
+/// list of ERC20 tokens that orchestrators are required to monitor the Gravity.sol balance of. This controls the
+/// Cross-Bridge Balances security feature, whereby if there is an unexplained difference in any balance between the
+/// Cosmos and Ethereum sides of the bridge, the Cosmos side will halt all operations automatically.
+/// Orchestrators which fail to submit these Gravity.sol balances when the Monitored Token Addresses list has been set
+/// will not have any of their claims processed.
+/// This feature is vulnerable to malicious ERC20 tokens which perform undesireable behavior (e.g. returning a random
+/// value from balanceOf(address)), and thus this list is used rather than monitoring every possible token held by
+/// Gravity.sol.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PendingIbcAutoForward {
-    /// the destination address. sdk.AccAddress does not preserve foreign prefixes
+pub struct SetMonitoredTokenAddressesProposal {
     #[prost(string, tag="1")]
-    pub foreign_receiver: ::prost::alloc::string::String,
-    /// the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
-    #[prost(message, optional, tag="2")]
-    pub token: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
-    /// the IBC channel to send `Amount` over via ibc-transfer module
-    #[prost(string, tag="3")]
-    pub ibc_channel: ::prost::alloc::string::String,
-    /// the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
-    #[prost(uint64, tag="4")]
-    pub event_nonce: u64,
+    pub title: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag="3")]
+    pub tokens: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// MsgSetOrchestratorAddress
 /// this message allows validators to delegate their voting responsibilities
@@ -518,7 +542,16 @@ pub struct MsgConfirmLogicCallResponse {
 /// When more than 66% of the active validator set has
 /// claimed to have seen the deposit enter the ethereum blockchain coins are
 /// issued to the Cosmos address in question
-/// -------------
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// TOKEN_CONTRACT: The ERC20 token to send to cosmos
+/// AMOUNT: The amount of the token to send to cosmos
+/// ETHEREUM_SENDER: The ethereum address of the send to cosmos initiator
+/// COSMOS_RECEIVER: The cosmos address of the token receiver, potentially this is a foreign cosmos address and the token
+///  will be automatically forwarded to that foreign chain over IBC.
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgSendToCosmosClaim {
     #[prost(uint64, tag="1")]
@@ -535,6 +568,8 @@ pub struct MsgSendToCosmosClaim {
     pub cosmos_receiver: ::prost::alloc::string::String,
     #[prost(string, tag="7")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="8")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgSendToCosmosClaimResponse {
@@ -557,6 +592,13 @@ pub struct MsgExecuteIbcAutoForwardsResponse {
 }
 /// BatchSendToEthClaim claims that a batch of send to eth
 /// operations on the bridge contract was executed.
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// BATCH_NONCE: The unique nonce for the batch submitted to ethereum, this must match a batch in the cosmos store
+/// TOKEN_CONTRACT: The ERC20 token address for all the transactions in this batch
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgBatchSendToEthClaim {
     #[prost(uint64, tag="1")]
@@ -569,6 +611,8 @@ pub struct MsgBatchSendToEthClaim {
     pub token_contract: ::prost::alloc::string::String,
     #[prost(string, tag="5")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="6")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgBatchSendToEthClaimResponse {
@@ -576,6 +620,16 @@ pub struct MsgBatchSendToEthClaimResponse {
 /// ERC20DeployedClaim allows the Cosmos module
 /// to learn about an ERC20 that someone deployed
 /// to represent a Cosmos asset
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// COSMOS_DENOM: The cosmos asset that the deployed ERC20 represents
+/// TOKEN_CONTRACT: The ERC20 token address deployed by Gravity.sol
+/// NAME: The ERC20 name metadata
+/// SYMBOL: The ERC20 symbol metadata
+/// DECIMALS: The ERC20 decimals metadata
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgErc20DeployedClaim {
     #[prost(uint64, tag="1")]
@@ -594,12 +648,20 @@ pub struct MsgErc20DeployedClaim {
     pub decimals: u64,
     #[prost(string, tag="8")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="9")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgErc20DeployedClaimResponse {
 }
 /// This informs the Cosmos module that a logic
 /// call has been executed
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// INVALIDATION_ID and INVALIDATION_NONCE: See the docs describing arbitrary logic for this functionality
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgLogicCallExecutedClaim {
     #[prost(uint64, tag="1")]
@@ -612,12 +674,23 @@ pub struct MsgLogicCallExecutedClaim {
     pub invalidation_nonce: u64,
     #[prost(string, tag="5")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="6")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgLogicCallExecutedClaimResponse {
 }
 /// This informs the Cosmos module that a validator
 /// set has been updated.
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// VALSET_NONCE: The unique nonce for the valset submitted to ethereum, this must match a valset in the store
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// MEMBERS: The members of the valset, stored with their power
+/// REWARD_AMOUNT: The reward amount to be minted and paid to the relayer for this valset
+/// REWARD_TOKEN: The reward token contract address
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgValsetUpdatedClaim {
     #[prost(uint64, tag="1")]
@@ -634,6 +707,8 @@ pub struct MsgValsetUpdatedClaim {
     pub reward_token: ::prost::alloc::string::String,
     #[prost(string, tag="7")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="8")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgValsetUpdatedClaimResponse {
@@ -1219,6 +1294,10 @@ pub mod msg_client {
 /// min_chain_fee_basis_points
 ///
 /// The minimum SendToEth `chain_fee` amount, in terms of basis points. e.g. 10% fee = 1000, and 0.02% fee = 2
+///
+/// ethereum_blacklist
+///
+/// Addresses on this blacklist are forbidden from bridging to or from Ethereum
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Params {
     #[prost(string, tag="1")]
@@ -1255,8 +1334,6 @@ pub struct Params {
     pub valset_reward: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
     #[prost(bool, tag="18")]
     pub bridge_active: bool,
-    /// addresses on this blacklist are forbidden from depositing or withdrawing
-    /// from Ethereum to the bridge
     #[prost(string, repeated, tag="19")]
     pub ethereum_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(uint64, tag="20")]
@@ -1631,6 +1708,14 @@ pub struct QueryPendingIbcAutoForwards {
 pub struct QueryPendingIbcAutoForwardsResponse {
     #[prost(message, repeated, tag="1")]
     pub pending_ibc_auto_forwards: ::prost::alloc::vec::Vec<PendingIbcAutoForward>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct QueryMonitoredTokenAddresses {
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct QueryMonitoredTokenAddressesResponse {
+    #[prost(string, repeated, tag="1")]
+    pub monitored_token_addresses: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// Generated client implementations.
 pub mod query_client {
@@ -2243,6 +2328,28 @@ pub mod query_client {
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/gravity.v1.Query/GetPendingIbcAutoForwards",
+            );
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+        pub async fn get_monitored_token_addresses(
+            &mut self,
+            request: impl tonic::IntoRequest<super::QueryMonitoredTokenAddresses>,
+        ) -> Result<
+            tonic::Response<super::QueryMonitoredTokenAddressesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/gravity.v1.Query/GetMonitoredTokenAddresses",
             );
             self.inner.unary(request.into_request(), path, codec).await
         }

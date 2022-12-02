@@ -36,6 +36,11 @@ func RegisterProposalTypes() {
 		govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
 		govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
 	}
+	monitoredTokens := "gravity/SetMonitoredTokenAddresses"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(monitoredTokens, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeSetMonitoredTokenAddresses)
+		govtypes.RegisterProposalTypeCodec(&types.SetMonitoredTokenAddressesProposal{}, monitoredTokens)
+	}
 }
 
 func NewGravityProposalHandler(k Keeper) govtypes.Handler {
@@ -47,6 +52,8 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 			return k.HandleAirdropProposal(ctx, c)
 		case *types.IBCMetadataProposal:
 			return k.HandleIBCMetadataProposal(ctx, c)
+		case *types.SetMonitoredTokenAddressesProposal:
+			return k.HandleSetMonitoredTokenAddressesProposal(ctx, c)
 
 		default:
 			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
@@ -247,6 +254,38 @@ func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataP
 
 	// write out metadata, this will update existing metadata if no erc20 has been deployed
 	k.bankKeeper.SetDenomMetaData(ctx, p.Metadata)
+
+	return nil
+}
+
+// handles a governance proposal for controlling the Cross-Bridge Balances security feature, setting the list of ERC20
+// balances to monitor across the bridge. Once the Monitored Token Addresses have been set, orchestrators are required
+// to query the Gravity.sol balance of every token on the list for each claim they submit to Gravity Bridge Chain.
+// Since there are likely in-progress attestations at the time the list is decided, all unobserved attestations must
+// be rolled back and orchestrators must resubmit their claims with balances attached.
+func (k Keeper) HandleSetMonitoredTokenAddressesProposal(ctx sdk.Context, p *types.SetMonitoredTokenAddressesProposal) error {
+	ctx.Logger().Info("Gov vote passed: Setting Monitored Token Addresses", "tokens", p.Tokens)
+
+	addresses, err := types.NewEthAddressesFromStrings(p.Tokens)
+	if err != nil {
+		errMsg := fmt.Sprint("invalid tokens for monitored token addresses proposal", "err", err, "tokens", p.Tokens)
+		ctx.Logger().Info(errMsg)
+		return sdkerrors.Wrap(types.ErrInvalid, errMsg)
+	}
+
+	// Set the new addresses
+	err = k.setMonitoredTokenAddresses(ctx, addresses)
+	if err != nil {
+		errMsg := fmt.Sprint("unable to update the monitored token addresses", "err", err, "addresses", addresses)
+		ctx.Logger().Info(errMsg)
+		return sdkerrors.Wrap(types.ErrInvalid, errMsg)
+	}
+
+	// Roll back any unobserved attestations, also resetting last event nonce by validator indices
+	lastNonce := uint64(k.GetLastObservedEventNonce(ctx))
+	pruneAttestationsAfterNonce(ctx, k, lastNonce)
+
+	ctx.Logger().Info("Successfully updated the Monitored Token Addresses")
 
 	return nil
 }

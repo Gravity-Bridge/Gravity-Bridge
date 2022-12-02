@@ -4,7 +4,7 @@
 use clarity::Error as ClarityError;
 use deep_space::error::AddressError as CosmosAddressError;
 use deep_space::error::CosmosGrpcError;
-use num_bigint::ParseBigIntError;
+use num256::ParseError;
 use std::fmt::{self, Debug};
 use tokio::time::error::Elapsed;
 use tonic::Status;
@@ -13,7 +13,6 @@ use web30::jsonrpc::error::Web3Error;
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum GravityError {
-    InvalidBigInt(ParseBigIntError),
     CosmosGrpcError(CosmosGrpcError),
     CosmosAddressError(CosmosAddressError),
     EthereumRestError(Web3Error),
@@ -26,7 +25,7 @@ pub enum GravityError {
     InvalidEventLogError(String),
     GravityGrpcError(Status),
     InsufficientVotingPowerToPass(String),
-    ParseBigIntError(ParseBigIntError),
+    ParseError(ParseError),
     ValsetUpToDate,
 }
 
@@ -35,9 +34,6 @@ impl fmt::Display for GravityError {
         match self {
             GravityError::GravityGrpcError(val) => write!(f, "Gravity gRPC error {}", val),
             GravityError::CosmosGrpcError(val) => write!(f, "Cosmos gRPC error {}", val),
-            GravityError::InvalidBigInt(val) => {
-                write!(f, "Got invalid BigInt from cosmos! {}", val)
-            }
             GravityError::CosmosAddressError(val) => write!(f, "Cosmos Address error {}", val),
             GravityError::EthereumRestError(val) => write!(f, "Ethereum REST error {}", val),
             GravityError::InvalidOptionsError(val) => {
@@ -56,7 +52,7 @@ impl fmt::Display for GravityError {
             GravityError::InsufficientVotingPowerToPass(val) => {
                 write!(f, "{}", val)
             }
-            GravityError::ParseBigIntError(val) => write!(f, "Failed to parse big integer {}", val),
+            GravityError::ParseError(val) => write!(f, "Failed to parse big integer {}", val),
             GravityError::ValsetUpToDate => {
                 write!(
                     f,
@@ -102,8 +98,8 @@ impl From<CosmosAddressError> for GravityError {
         GravityError::CosmosAddressError(error)
     }
 }
-impl From<ParseBigIntError> for GravityError {
-    fn from(error: ParseBigIntError) -> Self {
-        GravityError::InvalidBigInt(error)
+impl From<ParseError> for GravityError {
+    fn from(error: ParseError) -> Self {
+        GravityError::ParseError(error)
     }
 }
