@@ -12,10 +12,11 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::get_with_retry::get_net_version_with_retry;
 use gravity_utils::get_with_retry::{get_block_number_with_retry, get_finalized_block_with_retry};
 use gravity_utils::types::event_signatures::*;
+use gravity_utils::types::EthereumEvent;
 use gravity_utils::{
     error::GravityError,
     types::{
-        Erc20DeployedEvent, EthereumEvent, LogicCallExecutedEvent, SendToCosmosEvent,
+        Erc20DeployedEvent, LogicCallExecutedEvent, SendToCosmosEvent,
         TransactionBatchExecutedEvent, ValsetUpdatedEvent,
     },
 };
@@ -188,6 +189,10 @@ pub async fn check_for_events(
             )
         }
 
+        let no_changes = Ok(CheckedNonces {
+            block_number: latest_block,
+            event_nonce: last_event_nonce.into(),
+        });
         if !deposits.is_empty()
             || !withdraws.is_empty()
             || !erc20_deploys.is_empty()
@@ -195,7 +200,9 @@ pub async fn check_for_events(
             || !valsets.is_empty()
         {
             let res = send_ethereum_claims(
+                web3,
                 contact,
+                gravity_contract_address,
                 our_private_key,
                 deposits.clone(),
                 withdraws.clone(),
@@ -205,6 +212,11 @@ pub async fn check_for_events(
                 fee,
             )
             .await?;
+            if res.is_none() {
+                // Unable to submit claims due to Eth connection, retry later
+                return no_changes;
+            }
+            let res = res.unwrap();
             let new_event_nonce = get_last_event_nonce_for_validator(
                 grpc_client,
                 our_cosmos_address,
@@ -248,11 +260,8 @@ pub async fn check_for_events(
                 event_nonce: new_event_nonce.into(),
             })
         } else {
-            // no changes
-            Ok(CheckedNonces {
-                block_number: latest_block,
-                event_nonce: last_event_nonce.into(),
-            })
+            // Nothing changed
+            return no_changes;
         }
     } else {
         error!("Failed to get events");
