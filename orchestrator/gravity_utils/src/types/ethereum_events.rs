@@ -15,8 +15,8 @@ use clarity::Address as EthAddress;
 use deep_space::utils::bytes_to_hex_str;
 use deep_space::{Address as CosmosAddress, Address, Msg};
 use gravity_proto::gravity::{
-    MsgBatchSendToEthClaim, MsgErc20DeployedClaim, MsgLogicCallExecutedClaim, MsgSendToCosmosClaim,
-    MsgValsetUpdatedClaim,
+    Erc20Token, MsgBatchSendToEthClaim, MsgErc20DeployedClaim, MsgLogicCallExecutedClaim,
+    MsgSendToCosmosClaim, MsgValsetUpdatedClaim,
 };
 use num256::Uint256;
 use std::unimplemented;
@@ -50,7 +50,7 @@ where
     /// If the event with the given `event_nonce` is in `input`, returns the block that occurred on
     fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256>;
     /// Creates the associated Msg for the given claim, e.g. ValsetUpdated -> MsgValsetUpdatedClaim
-    fn to_claim_msg(self, orchestrator: Address) -> Msg;
+    fn to_claim_msg(self, orchestrator: Address, bridge_balances: Vec<Erc20Token>) -> Msg;
 }
 
 /// A parsed struct representing the Ethereum event fired by the Gravity contract
@@ -296,7 +296,7 @@ impl EthereumEvent for ValsetUpdatedEvent {
         None
     }
 
-    fn to_claim_msg(self, orchestrator: Address) -> Msg {
+    fn to_claim_msg(self, orchestrator: Address, bridge_balances: Vec<Erc20Token>) -> Msg {
         let claim = MsgValsetUpdatedClaim {
             event_nonce: self.event_nonce,
             valset_nonce: self.valset_nonce,
@@ -305,6 +305,7 @@ impl EthereumEvent for ValsetUpdatedEvent {
             reward_amount: self.reward_amount.to_string(),
             reward_token: self.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),
             orchestrator: orchestrator.to_string(),
+            bridge_balances,
         };
         Msg::new(MSG_VALSET_UPDATED_CLAIM_TYPE_URL, claim)
     }
@@ -410,13 +411,14 @@ impl EthereumEvent for TransactionBatchExecutedEvent {
         None
     }
 
-    fn to_claim_msg(self, orchestrator: Address) -> Msg {
+    fn to_claim_msg(self, orchestrator: Address, bridge_balances: Vec<Erc20Token>) -> Msg {
         let claim = MsgBatchSendToEthClaim {
             event_nonce: self.event_nonce,
             eth_block_height: self.get_block_height(),
             token_contract: self.erc20.to_string(),
             batch_nonce: self.batch_nonce,
             orchestrator: orchestrator.to_string(),
+            bridge_balances,
         };
         Msg::new(MSG_BATCH_SEND_TO_ETH_TYPE_URL, claim)
     }
@@ -619,7 +621,7 @@ impl EthereumEvent for SendToCosmosEvent {
         None
     }
 
-    fn to_claim_msg(self, orchestrator: Address) -> Msg {
+    fn to_claim_msg(self, orchestrator: Address, bridge_balances: Vec<Erc20Token>) -> Msg {
         let claim = MsgSendToCosmosClaim {
             event_nonce: self.event_nonce,
             eth_block_height: self.get_block_height(),
@@ -628,6 +630,7 @@ impl EthereumEvent for SendToCosmosEvent {
             cosmos_receiver: self.destination,
             ethereum_sender: self.sender.to_string(),
             orchestrator: orchestrator.to_string(),
+            bridge_balances,
         };
         Msg::new(MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL, claim)
     }
@@ -938,7 +941,7 @@ impl EthereumEvent for Erc20DeployedEvent {
         None
     }
 
-    fn to_claim_msg(self, orchestrator: Address) -> Msg {
+    fn to_claim_msg(self, orchestrator: Address, bridge_balances: Vec<Erc20Token>) -> Msg {
         let claim = MsgErc20DeployedClaim {
             event_nonce: self.event_nonce,
             eth_block_height: self.get_block_height(),
@@ -948,6 +951,7 @@ impl EthereumEvent for Erc20DeployedEvent {
             symbol: self.symbol,
             decimals: self.decimals as u64,
             orchestrator: orchestrator.to_string(),
+            bridge_balances,
         };
         Msg::new(MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL, claim)
     }
@@ -1004,13 +1008,14 @@ impl EthereumEvent for LogicCallExecutedEvent {
         None
     }
 
-    fn to_claim_msg(self, orchestrator: Address) -> Msg {
+    fn to_claim_msg(self, orchestrator: Address, bridge_balances: Vec<Erc20Token>) -> Msg {
         let claim = MsgLogicCallExecutedClaim {
             event_nonce: self.event_nonce,
             eth_block_height: self.get_block_height(),
             invalidation_id: self.invalidation_id,
             invalidation_nonce: self.invalidation_nonce,
             orchestrator: orchestrator.to_string(),
+            bridge_balances,
         };
         Msg::new(MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, claim)
     }

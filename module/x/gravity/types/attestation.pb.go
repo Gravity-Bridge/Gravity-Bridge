@@ -70,20 +70,24 @@ func (ClaimType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e3205613bbab7525, []int{0}
 }
 
-// Attestation is an aggregate of `claims` that eventually becomes `observed` by
-// all orchestrators
+// Attestation is an aggregate of `claims` to an event which eventually becomes `observed` by
+// all orchestrators. Orchestrators submit Msg*Claim's (e.g. MsgSendToCosmosClaim) and
+// the chain uses an Attestation to track the in-progress claims made by all orchestrators.
+//
 // EVENT_NONCE:
-// EventNonce a nonce provided by the gravity contract that is unique per event fired
+// EventNonce is a nonce provided by the gravity contract that is unique per event fired
 // These event nonces must be relayed in order. This is a correctness issue,
 // if relaying out of order transaction replay attacks become possible
+// HEIGHT:
+// Height is the Cosmos block height when the first claim was submitted for this event
 // OBSERVED:
 // Observed indicates that >67% of validators have attested to the event,
 // and that the event should be executed by the gravity state machine
-//
+// CLAIM:
 // The actual content of the claims is passed in with the transaction making the claim
 // and then passed through the call stack alongside the attestation while it is processed
 // the key in which the attestation is stored is keyed on the exact details of the claim
-// but there is no reason to store those exact details becuause the next message sender
+// but there is no reason to store those exact details because the next message sender
 // will kindly provide you with them.
 type Attestation struct {
 	Observed bool       `protobuf:"varint,1,opt,name=observed,proto3" json:"observed,omitempty"`

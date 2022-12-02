@@ -63,17 +63,17 @@ var (
 	// ParamStoreSlashFractionBadEthSignature stores the amount by which a validator making a fraudulent eth signature will be slashed
 	ParamStoreSlashFractionBadEthSignature = []byte("SlashFractionBadEthSignature")
 
-	// ValsetRewardAmount the amount of the coin, both denom and amount to issue
+	// ParamStoreValsetRewardAmount the amount of the coin, both denom and amount to issue
 	// to a relayer when they relay a valset
 	ParamStoreValsetRewardAmount = []byte("ValsetReward")
 
-	// ResetBridgeState boolean indicates the oracle events of the bridge history should be reset
+	// ParamStoreResetBridgeState boolean indicates the oracle events of the bridge history should be reset
 	ParamStoreResetBridgeState = []byte("ResetBridgeState")
 
-	// ResetBridgeHeight stores the nonce after which oracle events should be discarded when resetting the bridge
+	// ParamStoreResetBridgeNonce stores the nonce after which oracle events should be discarded when resetting the bridge
 	ParamStoreResetBridgeNonce = []byte("ResetBridgeNonce")
 
-	// ParamBridgeActive allows governance to temporarily halt the bridge via vote, in this context halting
+	// ParamStoreBridgeActive allows governance to temporarily halt the bridge via vote, in this context halting
 	// means no more batches will be created and no oracle events executed. Valset creation will continue
 	// to be allowed as it must continue to ensure bridge continuity.
 	ParamStoreBridgeActive = []byte("BridgeActive")
@@ -81,6 +81,10 @@ var (
 	// ParamStoreEthereumBlacklist allows storage of blocked Ethereum addresses blocked for use with the bridge
 	// this could be for technical reasons (zero address) or non-technical reasons, these apply across all ERC20 tokens
 	ParamStoreEthereumBlacklist = []byte("EthereumBlacklist")
+
+	// ParamStoreMonitoredTokenAddresses holds a collection of (string) ERC20 token addresses to monitor for cross-bridge
+	// balance checks
+	ParamStoreMonitoredTokenAddresses = []byte("MonitoredTokenAddresses")
 
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
@@ -103,8 +107,9 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		BridgeActive:      true,
-		EthereumBlacklist: []string{},
+		BridgeActive:            true,
+		EthereumBlacklist:       []string{},
+		MonitoredTokenAddresses: []string{},
 	}
 )
 
@@ -157,6 +162,7 @@ func DefaultParams() *Params {
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
 		EthereumBlacklist:            []string{},
+		MonitoredTokenAddresses:      []string{},
 	}
 }
 
@@ -174,15 +180,6 @@ func (p Params) ValidateBasic() error {
 	if err := validateBridgeChainID(p.BridgeChainId); err != nil {
 		return sdkerrors.Wrap(err, "bridge chain id")
 	}
-	if err := validateTargetBatchTimeout(p.TargetBatchTimeout); err != nil {
-		return sdkerrors.Wrap(err, "Batch timeout")
-	}
-	if err := validateAverageBlockTime(p.AverageBlockTime); err != nil {
-		return sdkerrors.Wrap(err, "Block time")
-	}
-	if err := validateAverageEthereumBlockTime(p.AverageEthereumBlockTime); err != nil {
-		return sdkerrors.Wrap(err, "Ethereum block time")
-	}
 	if err := validateSignedValsetsWindow(p.SignedValsetsWindow); err != nil {
 		return sdkerrors.Wrap(err, "signed blocks window valsets")
 	}
@@ -191,6 +188,15 @@ func (p Params) ValidateBasic() error {
 	}
 	if err := validateSignedLogicCallsWindow(p.SignedLogicCallsWindow); err != nil {
 		return sdkerrors.Wrap(err, "signed blocks window logic calls")
+	}
+	if err := validateTargetBatchTimeout(p.TargetBatchTimeout); err != nil {
+		return sdkerrors.Wrap(err, "batch timeout")
+	}
+	if err := validateAverageBlockTime(p.AverageBlockTime); err != nil {
+		return sdkerrors.Wrap(err, "block time")
+	}
+	if err := validateAverageEthereumBlockTime(p.AverageEthereumBlockTime); err != nil {
+		return sdkerrors.Wrap(err, "ethereum block time")
 	}
 	if err := validateSlashFractionValset(p.SlashFractionValset); err != nil {
 		return sdkerrors.Wrap(err, "slash fraction valset")
@@ -201,14 +207,14 @@ func (p Params) ValidateBasic() error {
 	if err := validateSlashFractionLogicCall(p.SlashFractionLogicCall); err != nil {
 		return sdkerrors.Wrap(err, "slash fraction logic call")
 	}
-	if err := validateSlashFractionBadEthSignature(p.SlashFractionBadEthSignature); err != nil {
-		return sdkerrors.Wrap(err, "slash fraction BadEthSignature")
-	}
 	if err := validateUnbondSlashingValsetsWindow(p.UnbondSlashingValsetsWindow); err != nil {
-		return sdkerrors.Wrap(err, "unbond Slashing valset window")
+		return sdkerrors.Wrap(err, "unbond slashing valset window")
+	}
+	if err := validateSlashFractionBadEthSignature(p.SlashFractionBadEthSignature); err != nil {
+		return sdkerrors.Wrap(err, "slash fraction bad eth signature")
 	}
 	if err := validateValsetRewardAmount(p.ValsetReward); err != nil {
-		return sdkerrors.Wrap(err, "ValsetReward amount")
+		return sdkerrors.Wrap(err, "valset reward amount")
 	}
 	if err := validateBridgeActive(p.BridgeActive); err != nil {
 		return sdkerrors.Wrap(err, "bridge active parameter")
@@ -216,6 +222,10 @@ func (p Params) ValidateBasic() error {
 	if err := validateEthereumBlacklistAddresses(p.EthereumBlacklist); err != nil {
 		return sdkerrors.Wrap(err, "ethereum blacklist parameter")
 	}
+	if err := validateMonitoredTokenAddresses(p.MonitoredTokenAddresses); err != nil {
+		return sdkerrors.Wrap(err, "monitored token addresses")
+	}
+
 	return nil
 }
 
@@ -241,6 +251,9 @@ func ParamKeyTable() paramtypes.KeyTable {
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
+		BridgeActive:            true,
+		EthereumBlacklist:       []string{},
+		MonitoredTokenAddresses: []string{},
 	})
 }
 
@@ -265,6 +278,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
 		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
 		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
+		paramtypes.NewParamSetPair(ParamStoreMonitoredTokenAddresses, &p.MonitoredTokenAddresses, validateMonitoredTokenAddresses),
 	}
 }
 
@@ -435,6 +449,21 @@ func validateEthereumBlacklistAddresses(i interface{}) error {
 			if !strings.Contains(err.Error(), "empty, index is"+strconv.Itoa(index)) {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+func validateMonitoredTokenAddresses(i interface{}) error {
+	v, ok := i.([]string)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	for i, e := range v {
+		_, err := NewEthAddress(e)
+		if err != nil {
+			return sdkerrors.Wrapf(ErrInvalidEthAddress, "the %d-th monitored token address (%v) is invalid: %v", i, e, err)
 		}
 	}
 	return nil

@@ -625,6 +625,7 @@ dependencies = [
  "deep_space",
  "env_logger",
  "ethereum_gravity",
+ "futures",
  "gravity_proto",
  "gravity_utils",
  "log",
@@ -633,7 +634,7 @@ dependencies = [
  "prost-types 0.10.1",
  "rand",
  "serde",
- "serde_derive",
+ "serde_json",
  "sha3",
  "tokio",
  "tonic 0.7.2",
@@ -4044,9 +4045,9 @@ dependencies = [
 
 [[package]]
 name = "web30"
-version = "0.19.4"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d73009826c9697b91ba23ed6448e605db03db6472c18da6443a4cc34e36ded43"
+checksum = "8f88e9105094b3c4e320024fe491fd760df1671fca3823616bd06f4904d09374"
 dependencies = [
  "awc",
  "clarity",

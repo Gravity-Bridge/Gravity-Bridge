@@ -150,6 +150,140 @@ pub struct PendingIbcAutoForward {
     #[prost(uint64, tag="4")]
     pub event_nonce: u64,
 }
+/// Attestation is an aggregate of `claims` to an event which eventually becomes `observed` by
+/// all orchestrators. Orchestrators submit Msg*Claim's (e.g. MsgSendToCosmosClaim) and
+/// the chain uses an Attestation to track the in-progress claims made by all orchestrators.
+///
+/// EVENT_NONCE:
+/// EventNonce is a nonce provided by the gravity contract that is unique per event fired
+/// These event nonces must be relayed in order. This is a correctness issue,
+/// if relaying out of order transaction replay attacks become possible
+/// HEIGHT:
+/// Height is the Cosmos block height when the first claim was submitted for this event
+/// OBSERVED:
+/// Observed indicates that >67% of validators have attested to the event,
+/// and that the event should be executed by the gravity state machine
+/// CLAIM:
+/// The actual content of the claims is passed in with the transaction making the claim
+/// and then passed through the call stack alongside the attestation while it is processed
+/// the key in which the attestation is stored is keyed on the exact details of the claim
+/// but there is no reason to store those exact details because the next message sender
+/// will kindly provide you with them.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Attestation {
+    #[prost(bool, tag="1")]
+    pub observed: bool,
+    #[prost(string, repeated, tag="2")]
+    pub votes: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(uint64, tag="3")]
+    pub height: u64,
+    #[prost(message, optional, tag="4")]
+    pub claim: ::core::option::Option<::prost_types::Any>,
+}
+/// ERC20Token unique identifier for an Ethereum ERC20 token.
+/// CONTRACT:
+/// The contract address on ETH of the token, this could be a Cosmos
+/// originated token, if so it will be the ERC20 address of the representation
+/// (note: developers should look up the token symbol using the address on ETH to display for UI)
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct Erc20Token {
+    #[prost(string, tag="1")]
+    pub contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub amount: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct EventObservation {
+    #[prost(string, tag="1")]
+    pub attestation_type: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub attestation_id: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct EventInvalidSendToCosmosReceiver {
+    #[prost(string, tag="1")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub sender: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct EventSendToCosmos {
+    #[prost(string, tag="1")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct EventSendToCosmosLocal {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub receiver: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub amount: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct EventSendToCosmosPendingIbcAutoForward {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub receiver: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub channel: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct EventSendToCosmosExecutedIbcAutoForward {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub receiver: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub channel: ::prost::alloc::string::String,
+    #[prost(string, tag="6")]
+    pub timeout_time: ::prost::alloc::string::String,
+    #[prost(string, tag="7")]
+    pub timeout_height: ::prost::alloc::string::String,
+}
+/// ClaimType is the cosmos type of an event from the counterpart chain that can
+/// be handled
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ClaimType {
+    /// An unspecified claim type
+    Unspecified = 0,
+    /// A claim for a SendToCosmos transaction
+    SendToCosmos = 1,
+    /// A claim for when batches are relayed
+    BatchSendToEth = 2,
+    /// A claim for when an erc20 contract has been deployed
+    Erc20Deployed = 3,
+    /// A claim for when a logic call has been executed
+    LogicCallExecuted = 4,
+    /// A claim for when a valset update has happened
+    ValsetUpdated = 5,
+}
 /// MsgSetOrchestratorAddress
 /// this message allows validators to delegate their voting responsibilities
 /// to a given key. This key is then used as an optional authentication method
@@ -301,7 +435,16 @@ pub struct MsgConfirmLogicCallResponse {
 /// When more than 66% of the active validator set has
 /// claimed to have seen the deposit enter the ethereum blockchain coins are
 /// issued to the Cosmos address in question
-/// -------------
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// TOKEN_CONTRACT: The ERC20 token to send to cosmos
+/// AMOUNT: The amount of the token to send to cosmos
+/// ETHEREUM_SENDER: The ethereum address of the send to cosmos initiator
+/// COSMOS_RECEIVER: The cosmos address of the token receiver, potentially this is a foreign cosmos address and the token
+///  will be automatically forwarded to that foreign chain over IBC.
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgSendToCosmosClaim {
     #[prost(uint64, tag="1")]
@@ -318,6 +461,8 @@ pub struct MsgSendToCosmosClaim {
     pub cosmos_receiver: ::prost::alloc::string::String,
     #[prost(string, tag="7")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="8")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgSendToCosmosClaimResponse {
@@ -340,6 +485,13 @@ pub struct MsgExecuteIbcAutoForwardsResponse {
 }
 /// BatchSendToEthClaim claims that a batch of send to eth
 /// operations on the bridge contract was executed.
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// BATCH_NONCE: The unique nonce for the batch submitted to ethereum, this must match a batch in the cosmos store
+/// TOKEN_CONTRACT: The ERC20 token address for all the transactions in this batch
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgBatchSendToEthClaim {
     #[prost(uint64, tag="1")]
@@ -352,6 +504,8 @@ pub struct MsgBatchSendToEthClaim {
     pub token_contract: ::prost::alloc::string::String,
     #[prost(string, tag="5")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="6")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgBatchSendToEthClaimResponse {
@@ -359,6 +513,16 @@ pub struct MsgBatchSendToEthClaimResponse {
 /// ERC20DeployedClaim allows the Cosmos module
 /// to learn about an ERC20 that someone deployed
 /// to represent a Cosmos asset
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// COSMOS_DENOM: The cosmos asset that the deployed ERC20 represents
+/// TOKEN_CONTRACT: The ERC20 token address deployed by Gravity.sol
+/// NAME: The ERC20 name metadata
+/// SYMBOL: The ERC20 symbol metadata
+/// DECIMALS: The ERC20 decimals metadata
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgErc20DeployedClaim {
     #[prost(uint64, tag="1")]
@@ -377,12 +541,20 @@ pub struct MsgErc20DeployedClaim {
     pub decimals: u64,
     #[prost(string, tag="8")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="9")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgErc20DeployedClaimResponse {
 }
 /// This informs the Cosmos module that a logic
 /// call has been executed
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// INVALIDATION_ID and INVALIDATION_NONCE: See the docs describing arbitrary logic for this functionality
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgLogicCallExecutedClaim {
     #[prost(uint64, tag="1")]
@@ -395,12 +567,23 @@ pub struct MsgLogicCallExecutedClaim {
     pub invalidation_nonce: u64,
     #[prost(string, tag="5")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="6")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgLogicCallExecutedClaimResponse {
 }
 /// This informs the Cosmos module that a validator
 /// set has been updated.
+/// EVENT_NONCE: The unique nonce generated by Gravity.sol for this particular event
+/// VALSET_NONCE: The unique nonce for the valset submitted to ethereum, this must match a valset in the store
+/// ETH_BLOCK_HEIGHT: The EVM block when this event was committed to ethereum
+/// MEMBERS: The members of the valset, stored with their power
+/// REWARD_AMOUNT: The reward amount to be minted and paid to the relayer for this valset
+/// REWARD_TOKEN: The reward token contract address
+/// ORCHESTRATOR: The registered orchestrator claiming this batch was submitted on ethereum
+/// BRIDGE_BALANCES: An ordered (by contract address) collection of ERC20 tokens held by Gravity.sol at eth_block_height,
+///  orchestrators are expected to query the DenomToERC20 endpoint for a list of contracts to query on ethereum
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgValsetUpdatedClaim {
     #[prost(uint64, tag="1")]
@@ -417,6 +600,8 @@ pub struct MsgValsetUpdatedClaim {
     pub reward_token: ::prost::alloc::string::String,
     #[prost(string, tag="7")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag="8")]
+    pub bridge_balances: ::prost::alloc::vec::Vec<Erc20Token>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgValsetUpdatedClaimResponse {
@@ -900,136 +1085,6 @@ pub mod msg_client {
         }
     }
 }
-/// Attestation is an aggregate of `claims` that eventually becomes `observed` by
-/// all orchestrators
-/// EVENT_NONCE:
-/// EventNonce a nonce provided by the gravity contract that is unique per event fired
-/// These event nonces must be relayed in order. This is a correctness issue,
-/// if relaying out of order transaction replay attacks become possible
-/// OBSERVED:
-/// Observed indicates that >67% of validators have attested to the event,
-/// and that the event should be executed by the gravity state machine
-///
-/// The actual content of the claims is passed in with the transaction making the claim
-/// and then passed through the call stack alongside the attestation while it is processed
-/// the key in which the attestation is stored is keyed on the exact details of the claim
-/// but there is no reason to store those exact details becuause the next message sender
-/// will kindly provide you with them.
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Attestation {
-    #[prost(bool, tag="1")]
-    pub observed: bool,
-    #[prost(string, repeated, tag="2")]
-    pub votes: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(uint64, tag="3")]
-    pub height: u64,
-    #[prost(message, optional, tag="4")]
-    pub claim: ::core::option::Option<::prost_types::Any>,
-}
-/// ERC20Token unique identifier for an Ethereum ERC20 token.
-/// CONTRACT:
-/// The contract address on ETH of the token, this could be a Cosmos
-/// originated token, if so it will be the ERC20 address of the representation
-/// (note: developers should look up the token symbol using the address on ETH to display for UI)
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct Erc20Token {
-    #[prost(string, tag="1")]
-    pub contract: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub amount: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct EventObservation {
-    #[prost(string, tag="1")]
-    pub attestation_type: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub bridge_contract: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub bridge_chain_id: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub attestation_id: ::prost::alloc::string::String,
-    #[prost(string, tag="5")]
-    pub nonce: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct EventInvalidSendToCosmosReceiver {
-    #[prost(string, tag="1")]
-    pub amount: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub sender: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct EventSendToCosmos {
-    #[prost(string, tag="1")]
-    pub amount: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct EventSendToCosmosLocal {
-    #[prost(string, tag="1")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub receiver: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub amount: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct EventSendToCosmosPendingIbcAutoForward {
-    #[prost(string, tag="1")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub receiver: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub amount: ::prost::alloc::string::String,
-    #[prost(string, tag="5")]
-    pub channel: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct EventSendToCosmosExecutedIbcAutoForward {
-    #[prost(string, tag="1")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub receiver: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub amount: ::prost::alloc::string::String,
-    #[prost(string, tag="5")]
-    pub channel: ::prost::alloc::string::String,
-    #[prost(string, tag="6")]
-    pub timeout_time: ::prost::alloc::string::String,
-    #[prost(string, tag="7")]
-    pub timeout_height: ::prost::alloc::string::String,
-}
-/// ClaimType is the cosmos type of an event from the counterpart chain that can
-/// be handled
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum ClaimType {
-    /// An unspecified claim type
-    Unspecified = 0,
-    /// A claim for a SendToCosmos transaction
-    SendToCosmos = 1,
-    /// A claim for when batches are relayed
-    BatchSendToEth = 2,
-    /// A claim for when an erc20 contract has been deployed
-    Erc20Deployed = 3,
-    /// A claim for when a logic call has been executed
-    LogicCallExecuted = 4,
-    /// A claim for when a valset update has happened
-    ValsetUpdated = 5,
-}
 /// OutgoingTxBatch represents a batch of transactions going from gravity to ETH
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct OutgoingTxBatch {
@@ -1189,6 +1244,16 @@ pub struct EventOutgoingBatch {
 /// set and steal funds on Ethereum without consequence.
 /// The practical outcome of this flag being set to 'false' is that deposits from Ethereum will not show up and withdraws from
 /// Cosmos will not execute on Ethereum.
+///
+/// ethereum_blacklist
+///
+/// Addresses on this blacklist are forbidden from bridging to or from Ethereum
+///
+/// monitored_token_addresses
+///
+/// Addresses on this list will be monitored for cross-bridge balance checks. Orchestrators are required to collect the
+/// Gravity.sol contract's balance of each of these ERC20 tokens for each of their submitted claims at the event's
+/// ethereum block height
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Params {
     #[prost(string, tag="1")]
@@ -1225,10 +1290,10 @@ pub struct Params {
     pub valset_reward: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
     #[prost(bool, tag="18")]
     pub bridge_active: bool,
-    /// addresses on this blacklist are forbidden from depositing or withdrawing
-    /// from Ethereum to the bridge
     #[prost(string, repeated, tag="19")]
     pub ethereum_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag="20")]
+    pub monitored_token_addresses: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// GenesisState struct, containing all persistant data required by the Gravity module
 #[derive(Clone, PartialEq, ::prost::Message)]

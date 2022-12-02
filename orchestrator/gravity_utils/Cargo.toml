@@ -10,7 +10,7 @@ edition = "2018"
 gravity_proto = {path = "../gravity_proto/"}
 
 deep_space = "2.15"
-web30 = "0.19"
+web30 = "0.20"
 clarity = "0.5"
 num256 = "0.3"
 serde_derive = "1.0"

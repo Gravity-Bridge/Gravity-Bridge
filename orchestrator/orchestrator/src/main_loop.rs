@@ -65,6 +65,7 @@ pub async fn orchestrator_main_loop(
 
     let a = eth_oracle_main_loop(
         cosmos_key,
+        ethereum_key,
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
@@ -104,6 +105,7 @@ const DELAY: Duration = Duration::from_secs(5);
 /// and ferried over to Cosmos where they will be used to issue tokens or process batches.
 pub async fn eth_oracle_main_loop(
     cosmos_key: CosmosPrivateKey,
+    ethereum_key: EthPrivateKey,
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
@@ -212,6 +214,7 @@ pub async fn eth_oracle_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             cosmos_key,
+            ethereum_key,
             fee.clone(),
             last_checked_block.clone(),
             block_delay.clone(),

@@ -100,11 +100,13 @@ pub async fn happy_path_test(
     // long enough. TODO check for an error on the cosmos send response
     submit_duplicate_erc20_send(
         event_nonce, // Duplicate the current nonce
+        web30,
         contact,
         erc20_address,
         1u64.into(),
         user_keys.cosmos_address,
         &keys,
+        gravity_address,
     )
     .await;
 
@@ -600,11 +602,13 @@ async fn test_batch(
 #[allow(clippy::too_many_arguments)]
 async fn submit_duplicate_erc20_send(
     nonce: u64,
+    web30: &Web3,
     contact: &Contact,
     erc20_address: EthAddress,
     amount: Uint256,
     receiver: CosmosAddress,
     keys: &[ValidatorKeys],
+    gravity_contract: EthAddress,
 ) {
     let start_coin = contact
         .get_balance(receiver, format!("gravity{}", erc20_address))
@@ -630,8 +634,11 @@ async fn submit_duplicate_erc20_send(
     for k in keys.iter() {
         let c_key = k.orch_key;
         let res = send_ethereum_claims(
+            web30,
             contact,
+            gravity_contract,
             c_key,
+            *MINER_ADDRESS,
             vec![event.clone()],
             vec![],
             vec![],

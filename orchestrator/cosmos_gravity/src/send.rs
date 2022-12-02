@@ -1,8 +1,8 @@
-use clarity::Address as EthAddress;
+use clarity::{Address as EthAddress, Uint256};
 use clarity::{PrivateKey as EthPrivateKey, Signature};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::error::CosmosGrpcError;
-use deep_space::private_key::PrivateKey;
+use deep_space::private_key::PrivateKey as CosmosPrivateKey;
 use deep_space::Contact;
 use deep_space::Msg;
 use deep_space::{coin::Coin, utils::bytes_to_hex_str};
@@ -10,18 +10,20 @@ use ethereum_gravity::message_signatures::{
     encode_logic_call_confirm, encode_tx_batch_confirm, encode_valset_confirm,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
-
 use gravity_proto::gravity::{
-    MsgCancelSendToEth, MsgConfirmBatch, MsgConfirmLogicCall, MsgExecuteIbcAutoForwards,
-    MsgRequestBatch, MsgSendToEth, MsgSetOrchestratorAddress, MsgSubmitBadSignatureEvidence,
-    MsgValsetConfirm,
+    Erc20Token as ProtoErc20Token, MsgCancelSendToEth, MsgConfirmBatch, MsgConfirmLogicCall,
+    MsgExecuteIbcAutoForwards, MsgRequestBatch, MsgSendToEth, MsgSetOrchestratorAddress,
+    MsgSubmitBadSignatureEvidence, MsgValsetConfirm,
 };
-
+use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
-
 use std::{collections::HashMap, time::Duration};
+use web30::client::Web3;
+use web30::jsonrpc::error::Web3Error;
 
-use crate::utils::BadSignatureEvidence;
+use crate::utils::{
+    collect_eth_balances_for_claims, get_gravity_monitored_erc20s, BadSignatureEvidence,
+};
 
 pub const MEMO: &str = "Sent using Althea Gravity Bridge Orchestrator";
 pub const TIMEOUT: Duration = Duration::from_secs(60);
@@ -46,7 +48,7 @@ pub async fn set_gravity_delegate_addresses(
     contact: &Contact,
     delegate_eth_address: EthAddress,
     delegate_cosmos_address: CosmosAddress,
-    private_key: impl PrivateKey,
+    private_key: impl CosmosPrivateKey,
     fee: Coin,
 ) -> Result<TxResponse, CosmosGrpcError> {
     trace!("Updating Gravity Delegate addresses");
@@ -86,7 +88,7 @@ pub async fn send_valset_confirms(
     eth_private_key: EthPrivateKey,
     fee: Coin,
     valsets: Vec<Valset>,
-    private_key: impl PrivateKey,
+    private_key: impl CosmosPrivateKey,
     gravity_id: String,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
@@ -131,7 +133,7 @@ pub async fn send_batch_confirm(
     eth_private_key: EthPrivateKey,
     fee: Coin,
     transaction_batches: Vec<TransactionBatch>,
-    private_key: impl PrivateKey,
+    private_key: impl CosmosPrivateKey,
     gravity_id: String,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
@@ -175,7 +177,7 @@ pub async fn send_logic_call_confirm(
     eth_private_key: EthPrivateKey,
     fee: Coin,
     logic_calls: Vec<LogicCall>,
-    private_key: impl PrivateKey,
+    private_key: impl CosmosPrivateKey,
     gravity_id: String,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
@@ -214,18 +216,57 @@ pub async fn send_logic_call_confirm(
 }
 
 /// Creates and submits Ethereum event claims from the input EthereumEvent collections
+/// If Orchestrators are required to submit Gravity.sol balances, it is possible that not all claims
+/// will be submitted due to historical ERC20 balance query failures.
+/// If no claims are submitted due to lack of ERC20 balances, Ok(None) will be returned
 #[allow(clippy::too_many_arguments)]
 pub async fn send_ethereum_claims(
+    web3: &Web3,
     contact: &Contact,
-    our_cosmos_key: impl PrivateKey,
+    gravity_contract: EthAddress,
+    our_cosmos_key: impl CosmosPrivateKey,
+    our_eth_address: EthAddress,
     deposits: Vec<SendToCosmosEvent>,
     withdraws: Vec<TransactionBatchExecutedEvent>,
     erc20_deploys: Vec<Erc20DeployedEvent>,
     logic_calls: Vec<LogicCallExecutedEvent>,
     valsets: Vec<ValsetUpdatedEvent>,
     fee: Coin,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<Option<TxResponse>, GravityError> {
     let our_cosmos_address = our_cosmos_key.to_address(&contact.get_prefix()).unwrap();
+
+    let monitored_erc20s = get_gravity_monitored_erc20s(contact).await?;
+    let must_monitor_erc20s = !monitored_erc20s.is_empty();
+
+    // If the gov param is populated, Orchestrators are required to submit the Gravity.sol balances for various ERC20s
+    let eth_balances_by_block_height = if must_monitor_erc20s {
+        Some(
+            collect_eth_balances_for_claims(
+                web3,
+                our_eth_address,
+                gravity_contract,
+                monitored_erc20s,
+                &deposits,
+                &withdraws,
+                &erc20_deploys,
+                &logic_calls,
+                &valsets,
+            )
+            .await?,
+        )
+    } else {
+        None
+    };
+
+    // Error if ERC20s should be monitored but we have no balances to report
+    if must_monitor_erc20s
+        && (eth_balances_by_block_height.is_none()
+            || eth_balances_by_block_height.clone().unwrap().is_empty())
+    {
+        return Err(GravityError::EthereumRestError(Web3Error::BadResponse(
+            "Could not obtain historical Gravity.sol Eth balances to report in claims".to_string(),
+        )));
+    }
 
     // This sorts oracle messages by event nonce before submitting them. It's not a pretty implementation because
     // we're missing an intermediary layer of abstraction. We could implement 'EventTrait' and then implement sort
@@ -239,11 +280,31 @@ pub async fn send_ethereum_claims(
 
     // Create claim Msgs, keeping their event_nonces for insertion into unordered_msgs
 
-    let deposit_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(deposits, our_cosmos_address);
-    let withdraw_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(withdraws, our_cosmos_address);
-    let deploy_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(erc20_deploys, our_cosmos_address);
-    let logic_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(logic_calls, our_cosmos_address);
-    let valset_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(valsets, our_cosmos_address);
+    let deposit_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        deposits,
+        our_cosmos_address,
+        eth_balances_by_block_height.clone(),
+    );
+    let withdraw_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        withdraws,
+        our_cosmos_address,
+        eth_balances_by_block_height.clone(),
+    );
+    let deploy_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        erc20_deploys,
+        our_cosmos_address,
+        eth_balances_by_block_height.clone(),
+    );
+    let logic_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        logic_calls,
+        our_cosmos_address,
+        eth_balances_by_block_height.clone(),
+    );
+    let valset_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        valsets,
+        our_cosmos_address,
+        eth_balances_by_block_height.clone(),
+    );
 
     // Collect all of the claims into an iterator, then add them to unordered_msgs
     deposit_nonces_msgs
@@ -254,6 +315,15 @@ pub async fn send_ethereum_claims(
         .chain(valset_nonces_msgs.into_iter())
         .map(|(nonce, msg)| assert!(unordered_msgs.insert(nonce, msg).is_none()))
         .for_each(drop); // Exhaust the iterator so that `unordered_msgs` is populated from .map()
+
+    if unordered_msgs.is_empty() {
+        // No messages to send, return early
+        info!(concat!(
+            "Unable to send ethereum claims because monitored Gravity.sol balances could not be ",
+            "collected. If this message appears repeatedly, check your Eth connection."
+        ));
+        return Ok(None);
+    }
 
     let mut keys = Vec::new();
     for (key, _) in unordered_msgs.iter() {
@@ -278,18 +348,29 @@ pub async fn send_ethereum_claims(
     contact
         .send_message(&msgs, None, &[fee], Some(TIMEOUT), our_cosmos_key)
         .await
+        .map(Some)
+        .map_err(GravityError::CosmosGrpcError)
 }
 
 /// Creates the `Msg`s needed for `orchestrator` to attest to `events`
 /// Returns a Vec of (event_nonce: u64, Msg), which will contain one (nonce, msg) per event
+/// If `eth_balances_by_block_height` is None, the `Msg`s will have empty `bridge_balances`,
 fn create_claim_msgs(
     events: Vec<impl EthereumEvent>,
     orchestrator: CosmosAddress,
+    bridge_balances_by_height: Option<HashMap<Uint256, Vec<ProtoErc20Token>>>,
 ) -> Vec<(u64, Msg)> {
     let mut msgs = vec![];
     for event in events {
+        let bridge_balances = bridge_balances_by_height
+            .clone()
+            .and_then(|hmap| hmap.get(&event.get_block_height().into()).cloned())
+            .unwrap_or_default();
         // Create msg
-        msgs.push((event.get_event_nonce(), event.to_claim_msg(orchestrator)));
+        msgs.push((
+            event.get_event_nonce(),
+            event.to_claim_msg(orchestrator, bridge_balances),
+        ));
     }
     msgs
 }
@@ -299,7 +380,7 @@ fn create_claim_msgs(
 /// one is the fee to be sent to Ethereum, which must be the same denom as the amount
 /// the other is the Cosmos chain fee, which can be any allowed coin
 pub async fn send_to_eth(
-    private_key: impl PrivateKey,
+    private_key: impl CosmosPrivateKey,
     destination: EthAddress,
     amount: Coin,
     bridge_fee: Coin,
@@ -354,7 +435,7 @@ pub async fn send_to_eth(
 }
 
 pub async fn send_request_batch(
-    private_key: impl PrivateKey,
+    private_key: impl CosmosPrivateKey,
     denom: String,
     fee: Option<Coin>,
     contact: &Contact,
@@ -385,7 +466,7 @@ pub async fn send_request_batch(
 /// Sends evidence of a bad signature to the chain to slash the malicious validator
 /// who signed an invalid message with their Ethereum key
 pub async fn submit_bad_signature_evidence(
-    private_key: impl PrivateKey,
+    private_key: impl CosmosPrivateKey,
     fee: Coin,
     contact: &Contact,
     signed_object: BadSignatureEvidence,
@@ -419,7 +500,7 @@ pub async fn submit_bad_signature_evidence(
 /// Cancels a user provided SendToEth transaction, provided it's not already in a batch
 /// you should check with `QueryPendingSendToEth`
 pub async fn cancel_send_to_eth(
-    private_key: impl PrivateKey,
+    private_key: impl CosmosPrivateKey,
     fee: Coin,
     contact: &Contact,
     transaction_id: u64,
@@ -446,7 +527,7 @@ pub async fn cancel_send_to_eth(
 /// Executes a MsgExecuteIbcAutoForwards on the gravity chain, which will process forwards_to_clear number of pending ibc auto forwards
 pub async fn execute_pending_ibc_auto_forwards(
     contact: &Contact,
-    cosmos_key: impl PrivateKey,
+    cosmos_key: impl CosmosPrivateKey,
     fee: Coin,
     forwards_to_clear: u64,
 ) -> Result<(), CosmosGrpcError> {
