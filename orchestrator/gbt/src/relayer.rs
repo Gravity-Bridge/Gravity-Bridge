@@ -2,7 +2,7 @@ use crate::args::RelayerOpts;
 use crate::config::config_exists;
 use crate::config::load_keys;
 use crate::utils::print_relaying_explanation;
-use clarity::constants::ZERO_ADDRESS;
+use clarity::constants::zero_address;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::{CosmosPrivateKey, PrivateKey};
 use gravity_utils::connection_prep::check_for_fee;
@@ -90,7 +90,7 @@ pub async fn relayer(
 
         match c {
             Ok(v) => {
-                if v == *ZERO_ADDRESS {
+                if v == zero_address() {
                     error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
                     exit(1);
                 }

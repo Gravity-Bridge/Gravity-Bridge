@@ -9,6 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 )
 
 const OutgoingTxBatchSize = 100
@@ -268,8 +269,23 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 
 // IterateOutgoingTxBatches iterates through all outgoing batches in DESC order.
 func (k Keeper) IterateOutgoingTxBatches(ctx sdk.Context, cb func(key []byte, batch types.InternalOutgoingTxBatch) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.OutgoingTXBatchKey)
-	iter := prefixStore.ReverseIterator(nil, nil)
+	k.iterateOutgoingTxBatchesByPrefix(ctx, types.OutgoingTXBatchKey, true, cb)
+}
+
+// IterateOutgoingTxBatchesByTokenType iterates through all outgoing batches of a given token type in DESC order.
+func (k Keeper) IterateOutgoingTxBatchesByTokenType(ctx sdk.Context, token types.EthAddress, cb func(key []byte, batch types.InternalOutgoingTxBatch) bool) {
+	k.iterateOutgoingTxBatchesByPrefix(ctx, types.GetOutgoingTxBatchContractPrefix(token), true, cb)
+}
+
+// iterateOutgoingTxBatchesByPrefix iterates through all outgoing batches with a given prefix. Results may be reversed if reverse is true
+func (k Keeper) iterateOutgoingTxBatchesByPrefix(ctx sdk.Context, keyPrefix []byte, reverse bool, cb func(key []byte, batch types.InternalOutgoingTxBatch) (stop bool)) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), keyPrefix)
+	var iter storetypes.Iterator
+	if reverse {
+		iter = prefixStore.ReverseIterator(nil, nil)
+	} else {
+		iter = prefixStore.Iterator(nil, nil)
+	}
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var batch types.OutgoingTxBatch

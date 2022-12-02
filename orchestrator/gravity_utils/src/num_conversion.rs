@@ -24,7 +24,7 @@ pub fn downcast_uint256(input: Uint256) -> Option<u64> {
     if input >= U64MAX.into() {
         None
     } else {
-        let mut val = input.to_bytes_be();
+        let mut val = input.to_be_bytes().to_vec();
         // pad to 8 bytes
         while val.len() < 8 {
             val.insert(0, 0);
@@ -40,7 +40,7 @@ pub fn downcast_to_u128(input: Uint256) -> Option<u128> {
     if input >= U128MAX.into() {
         None
     } else {
-        let mut val = input.to_bytes_be();
+        let mut val = input.to_be_bytes().to_vec();
         // pad to 8 bytes
         while val.len() < 16 {
             val.insert(0, 0);
