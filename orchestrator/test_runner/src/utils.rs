@@ -22,6 +22,7 @@ use deep_space::{Address, Contact, EthermintPrivateKey, Fee, Msg};
 use ethereum_gravity::utils::get_event_nonce;
 use futures::future::join_all;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
+use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
     ParamChange, ParameterChangeProposal,
@@ -31,7 +32,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::{Plan, SoftwareUpgradeProposal};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::MsgSendToCosmosClaim;
+use gravity_proto::gravity::{Erc20Token, MsgSendToCosmosClaim};
 use gravity_utils::types::BatchRelayingMode;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
@@ -383,11 +384,14 @@ pub async fn start_orchestrators(
     }
 }
 
-// Submits a false send to cosmos for every orchestrator key in keys, sending amount of erc20_address
-// tokens to cosmos_receiver, claiming to come from ethereum_sender for the given fee.
-// If a timeout is supplied, contact.send_message() will block waiting for the tx to appear
-// Note: These sends to cosmos are false, meaning the ethereum side will have a lower nonce than the
-// cosmos side and the bridge will effectively break.
+/// Submits a false send to cosmos for every orchestrator key in keys, sending amount of erc20_address
+/// tokens to cosmos_receiver, claiming to come from ethereum_sender for the given fee. Panics on error
+///
+/// If a timeout is supplied, contact.send_message() will block waiting for the tx to appear
+/// If bridge_balances is None then an empty Vec will be used instead
+///
+/// Note: These sends to cosmos are false, meaning the ethereum side will have a lower nonce than the
+/// cosmos side and the bridge will effectively break.
 #[allow(clippy::too_many_arguments)]
 pub async fn submit_false_claims(
     keys: &[impl PrivateKey],
@@ -400,7 +404,44 @@ pub async fn submit_false_claims(
     contact: &Contact,
     fee: &Fee,
     timeout: Option<Duration>,
+    bridge_balances: Option<Vec<Erc20Token>>,
 ) {
+    let res = submit_false_claims_results(
+        keys,
+        nonce,
+        height,
+        amount,
+        cosmos_receiver,
+        ethereum_sender,
+        erc20_address,
+        contact,
+        fee,
+        timeout,
+        bridge_balances,
+    )
+    .await;
+    for r in res {
+        r.unwrap();
+    }
+}
+
+/// See submit_false_claims(): Returns the responses from each false claim rather than panicking
+#[allow(clippy::too_many_arguments)]
+pub async fn submit_false_claims_results(
+    keys: &[impl PrivateKey],
+    nonce: u64,
+    height: u64,
+    amount: Uint256,
+    cosmos_receiver: CosmosAddress,
+    ethereum_sender: EthAddress,
+    erc20_address: EthAddress,
+    contact: &Contact,
+    fee: &Fee,
+    timeout: Option<Duration>,
+    bridge_balances: Option<Vec<Erc20Token>>,
+) -> Vec<Result<TxResponse, CosmosGrpcError>> {
+    let bridge_balances = bridge_balances.unwrap_or_default();
+    let mut responses = vec![];
     for (i, k) in keys.iter().enumerate() {
         let orch_addr = k.to_address(&contact.get_prefix()).unwrap();
         let claim = MsgSendToCosmosClaim {
@@ -411,7 +452,7 @@ pub async fn submit_false_claims(
             cosmos_receiver: cosmos_receiver.to_string(),
             ethereum_sender: ethereum_sender.to_string(),
             orchestrator: orch_addr.to_string(),
-            bridge_balances: vec![],
+            bridge_balances: bridge_balances.clone(),
         };
         info!("Oracle number {} submitting false deposit {:?}", i, claim);
         let msg_url = "/gravity.v1.MsgSendToCosmosClaim";
@@ -424,10 +465,11 @@ pub async fn submit_false_claims(
                 timeout,
                 k.clone(),
             )
-            .await
-            .expect("Failed to submit false claim");
+            .await;
         info!("Oracle {} false claim response {:?}", i, res);
+        responses.push(res);
     }
+    responses
 }
 
 /// Creates a proposal to change the params of our test chain

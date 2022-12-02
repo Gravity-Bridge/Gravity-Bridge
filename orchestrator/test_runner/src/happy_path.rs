@@ -62,7 +62,7 @@ pub async fn happy_path_test(
     // with the first block) is successfully updated
     if !validator_out {
         for _ in 0u32..2 {
-            test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
+            test_valset_update(web30, contact, &grpc_client, &keys, gravity_address).await;
         }
     } else {
         wait_for_nonzero_valset(web30, gravity_address).await;
@@ -190,15 +190,15 @@ pub async fn wait_for_nonzero_valset(web30: &Web3, gravity_address: EthAddress) 
 pub async fn test_valset_update(
     web30: &Web3,
     contact: &Contact,
-    grpc_client: &mut GravityQueryClient<Channel>,
+    grpc_client: &GravityQueryClient<Channel>,
     keys: &[ValidatorKeys],
     gravity_address: EthAddress,
 ) {
+    let mut grpc_client = grpc_client.clone();
     get_valset_nonce(gravity_address, keys[0].eth_key.to_address(), web30)
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
-    let mut grpc_client = grpc_client.clone();
     // if we don't do this the orchestrators may run ahead of us and we'll be stuck here after
     // getting credit for two loops when we did one
     let starting_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
@@ -230,7 +230,7 @@ pub async fn test_valset_update(
 
     while starting_eth_valset_nonce == current_eth_valset_nonce {
         info!(
-            "Validator set is not yet updated to {}>, waiting",
+            "Validator set is still on valset nonce {}, waiting",
             starting_eth_valset_nonce
         );
         current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
@@ -241,7 +241,7 @@ pub async fn test_valset_update(
             panic!("Failed to update validator set");
         }
     }
-    assert!(starting_eth_valset_nonce != current_eth_valset_nonce);
+    assert_ne!(starting_eth_valset_nonce, current_eth_valset_nonce);
     info!("Validator set successfully updated!");
 }
 

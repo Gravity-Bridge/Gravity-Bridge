@@ -82,8 +82,8 @@ pub async fn slashing_delegation_test(
     // delegate to the validator that is about to be slashed from a new address
 
     // create two valsets for the validator to be slashed for
-    test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
-    test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
+    test_valset_update(web30, contact, &grpc_client, &keys, gravity_address).await;
+    test_valset_update(web30, contact, &grpc_client, &keys, gravity_address).await;
 
     for user in [user_a, user_b] {
         // delegate to validator that is not yet slashed

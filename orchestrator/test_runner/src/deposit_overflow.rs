@@ -91,6 +91,7 @@ pub async fn deposit_overflow_test(
         contact,
         &fee,
         Some(OPERATION_TIMEOUT),
+        None,
     )
     .await;
 
@@ -117,6 +118,7 @@ pub async fn deposit_overflow_test(
         contact,
         &fee,
         Some(OPERATION_TIMEOUT),
+        None,
     )
     .await;
     // NOTE: the dest user's balance should now be 2 * normal_amount of check_module_erc20 token and
@@ -145,6 +147,7 @@ pub async fn deposit_overflow_test(
         contact,
         &fee,
         Some(OPERATION_TIMEOUT),
+        None,
     )
     .await;
     // NOTE: the dest user's balance should still be 2 * normal_amount of check_module_erc20 token and
@@ -163,6 +166,7 @@ pub async fn deposit_overflow_test(
         contact,
         &fee,
         Some(OPERATION_TIMEOUT),
+        None,
     )
     .await;
     let dest2_bals = contact.get_balances(dest2).await.unwrap();

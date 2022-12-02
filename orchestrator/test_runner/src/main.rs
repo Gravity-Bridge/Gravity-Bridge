@@ -9,6 +9,7 @@ extern crate log;
 use crate::airdrop_proposal::airdrop_proposal_test;
 use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
+use crate::cross_bridge_balances::cross_bridge_balance_test;
 use crate::deposit_overflow::deposit_overflow_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
@@ -40,6 +41,7 @@ use orch_only::orch_only_test;
 use relay_market::relay_market_test;
 use std::{env, time::Duration};
 use tokio::time::sleep;
+
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
@@ -47,6 +49,7 @@ use valset_stress::validator_set_stress_test;
 mod airdrop_proposal;
 mod batch_timeout;
 mod bootstrapping;
+mod cross_bridge_balances;
 mod deposit_overflow;
 mod erc_721_happy_path;
 mod ethereum_blacklist_test;
@@ -78,6 +81,7 @@ const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
 const TOTAL_TIMEOUT: Duration = Duration::from_secs(300);
 // The config file location for hermes
 const HERMES_CONFIG: &str = "/gravity/tests/assets/ibc-relayer-config.toml";
+const GRAVITY_MODULE_ADDRESS: &str = "gravity16n3lc7cywa68mg50qhp847034w88pntqzx3ksm";
 
 // Retrieve values from runtime ENV vars
 lazy_static! {
@@ -201,6 +205,7 @@ pub async fn main() {
 
     info!("Waiting for Cosmos chain to come online");
     wait_for_cosmos_online(&contact, TOTAL_TIMEOUT).await;
+    info!("Cosmos chain is online!");
 
     let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
@@ -510,6 +515,18 @@ pub async fn main() {
             info!("Starting Vesting test");
             let vesting_keys = parse_vesting_keys();
             vesting_test(&contact, vesting_keys).await;
+            return;
+        } else if test_type == "CROSS_BRIDGE_BALANCES" {
+            cross_bridge_balance_test(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;

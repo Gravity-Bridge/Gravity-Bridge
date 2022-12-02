@@ -15,6 +15,7 @@ cosmos_gravity = {path = "../cosmos_gravity"}
 gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {path = "../gravity_proto/"}
 orchestrator = {path = "../orchestrator/"}
+relayer = {path = "../relayer/"}
 
 bytes = "1"
 prost = "0.10"
