@@ -1,4 +1,4 @@
-use clarity::{constants::ZERO_ADDRESS, Address as EthAddress};
+use clarity::Address as EthAddress;
 use clarity::{PrivateKey as EthPrivateKey, Signature};
 use deep_space::address::Address;
 use deep_space::error::CosmosGrpcError;
@@ -11,25 +11,20 @@ use ethereum_gravity::message_signatures::{
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::Erc20Token as ProtoErc20Token;
-use gravity_proto::gravity::MsgErc20DeployedClaim;
-use gravity_proto::gravity::MsgLogicCallExecutedClaim;
-use gravity_proto::gravity::MsgRequestBatch;
-use gravity_proto::gravity::MsgSendToCosmosClaim;
-use gravity_proto::gravity::MsgSendToEth;
-use gravity_proto::gravity::MsgSetOrchestratorAddress;
-use gravity_proto::gravity::MsgValsetConfirm;
-use gravity_proto::gravity::MsgValsetUpdatedClaim;
-use gravity_proto::gravity::{MsgBatchSendToEthClaim, MsgSubmitBadSignatureEvidence};
-use gravity_proto::gravity::{MsgCancelSendToEth, MsgConfirmBatch};
-use gravity_proto::gravity::{MsgConfirmLogicCall, MsgExecuteIbcAutoForwards};
+use gravity_proto::gravity::{
+    MsgCancelSendToEth, MsgConfirmBatch, MsgConfirmLogicCall, MsgExecuteIbcAutoForwards,
+    MsgRequestBatch, MsgSendToEth, MsgSetOrchestratorAddress, MsgSubmitBadSignatureEvidence,
+    MsgValsetConfirm,
+};
 use gravity_utils::error::GravityError;
-use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
 use num256::Uint256;
 use std::{collections::HashMap, time::Duration};
 use web30::client::Web3;
 
-use crate::utils::{collect_eth_balances_for_claims, BadSignatureEvidence};
+use crate::utils::{
+    collect_eth_balances_for_claims, get_gravity_monitored_erc20s, BadSignatureEvidence,
+};
 
 pub const MEMO: &str = "Sent using Althea Gravity Bridge Orchestrator";
 pub const TIMEOUT: Duration = Duration::from_secs(60);
@@ -39,11 +34,6 @@ pub const MSG_SET_ORCHESTRATOR_ADDRESS_TYPE_URL: &str = "/gravity.v1.MsgSetOrche
 pub const MSG_VALSET_CONFIRM_TYPE_URL: &str = "/gravity.v1.MsgValsetConfirm";
 pub const MSG_CONFIRM_BATCH_TYPE_URL: &str = "/gravity.v1.MsgConfirmBatch";
 pub const MSG_CONFIRM_LOGIC_CALL_TYPE_URL: &str = "/gravity.v1.MsgConfirmLogicCall";
-pub const MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgSendToCosmosClaim";
-pub const MSG_BATCH_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgBatchSendToEthClaim";
-pub const MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgERC20DeployedClaim";
-pub const MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgLogicCallExecutedClaim";
-pub const MSG_VALSET_UPDATED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgValsetUpdatedClaim";
 pub const MSG_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgSendToEth";
 pub const MSG_REQUEST_BATCH_TYPE_URL: &str = "/gravity.v1.MsgRequestBatch";
 pub const MSG_SUBMIT_BAD_SIGNATURE_EVIDENCE_TYPE_URL: &str =
@@ -226,6 +216,10 @@ pub async fn send_logic_call_confirm(
         .await
 }
 
+/// Creates and submits Ethereum event claims from the input EthereumEvent collections
+/// If Orchestrators are required to submit Gravity.sol balances, it is possible that not all claims
+/// will be submitted due to historical ERC20 balance query failures.
+/// If no claims are submitted due to lack of ERC20 balances, Ok(None) will be returned
 #[allow(clippy::too_many_arguments)]
 pub async fn send_ethereum_claims(
     web3: &Web3,
@@ -238,22 +232,30 @@ pub async fn send_ethereum_claims(
     logic_calls: Vec<LogicCallExecutedEvent>,
     valsets: Vec<ValsetUpdatedEvent>,
     fee: Coin,
-) -> Result<TxResponse, GravityError> {
+) -> Result<Option<TxResponse>, GravityError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
 
-    // Orchestrators are required to submit the Gravity.sol balances for various ERC20s
-    let eth_balances_by_block_height: HashMap<Uint256, Vec<ProtoErc20Token>> =
-        collect_eth_balances_for_claims(
-            web3,
-            contact,
-            gravity_contract,
-            &deposits,
-            &withdraws,
-            &erc20_deploys,
-            &logic_calls,
-            &valsets,
+    let monitored_erc20s = get_gravity_monitored_erc20s(contact).await?;
+    let must_monitor_erc20s = monitored_erc20s.is_empty();
+
+    // If the gov param is populated, Orchestrators are required to submit the Gravity.sol balances for various ERC20s
+    let eth_balances_by_block_height = if must_monitor_erc20s {
+        Some(
+            collect_eth_balances_for_claims(
+                web3,
+                gravity_contract,
+                monitored_erc20s,
+                &deposits,
+                &withdraws,
+                &erc20_deploys,
+                &logic_calls,
+                &valsets,
+            )
+            .await?,
         )
-        .await?;
+    } else {
+        None
+    };
 
     // This sorts oracle messages by event nonce before submitting them. It's not a pretty implementation because
     // we're missing an intermediary layer of abstraction. We could implement 'EventTrait' and then implement sort
@@ -264,89 +266,43 @@ pub async fn send_ethereum_claims(
     //
     // We index the events by event nonce in an unordered hashmap and then play them back in order into a vec
     let mut unordered_msgs = HashMap::new();
-    for deposit in deposits {
-        let eth_balances = eth_balances_by_block_height.get(&deposit.block_height);
-        if let Some(eth_bals) = eth_balances {
-            let claim = MsgSendToCosmosClaim {
-                event_nonce: deposit.event_nonce,
-                eth_block_height: downcast_uint256(deposit.block_height).unwrap(),
-                token_contract: deposit.erc20.to_string(),
-                amount: deposit.amount.to_string(),
-                cosmos_receiver: deposit.destination,
-                ethereum_sender: deposit.sender.to_string(),
-                orchestrator: our_address.to_string(),
-                bridge_balances: eth_bals.clone(),
-            };
-            let msg = Msg::new(MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL, claim);
-            assert!(unordered_msgs.insert(deposit.event_nonce, msg).is_none());
-        }
+
+    // Create claim Msgs, keeping their event_nonces for insertion into unordered_msgs
+    let deposit_nonces_msgs: Vec<(u64, Msg)> =
+        create_claim_msgs(eth_balances_by_block_height.clone(), deposits, our_address);
+    let withdraw_nonces_msgs: Vec<(u64, Msg)> =
+        create_claim_msgs(eth_balances_by_block_height.clone(), withdraws, our_address);
+    let deploy_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        eth_balances_by_block_height.clone(),
+        erc20_deploys,
+        our_address,
+    );
+    let logic_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        eth_balances_by_block_height.clone(),
+        logic_calls,
+        our_address,
+    );
+    let valset_nonces_msgs: Vec<(u64, Msg)> =
+        create_claim_msgs(eth_balances_by_block_height.clone(), valsets, our_address);
+
+    // Collect all of the claims into an iterator, then add them to unordered_msgs
+    let _: Vec<()> = deposit_nonces_msgs
+        .into_iter()
+        .chain(withdraw_nonces_msgs.into_iter())
+        .chain(deploy_nonces_msgs.into_iter())
+        .chain(logic_nonces_msgs.into_iter())
+        .chain(valset_nonces_msgs.into_iter())
+        .map(|(nonce, msg)| assert!(unordered_msgs.insert(nonce, msg).is_none()))
+        .collect();
+
+    if unordered_msgs.is_empty() {
+        // No messages to send, return early
+        info!(concat!(
+            "Unable to send ethereum claims because monitored Gravity.sol balances could not be ",
+            "collected. If this message appears repeatedly, check your Eth connection."
+        ));
+        return Ok(None);
     }
-    for withdraw in withdraws {
-        let eth_balances = eth_balances_by_block_height.get(&withdraw.block_height);
-        if let Some(eth_bals) = eth_balances {
-            let claim = MsgBatchSendToEthClaim {
-                event_nonce: withdraw.event_nonce,
-                eth_block_height: downcast_uint256(withdraw.block_height).unwrap(),
-                token_contract: withdraw.erc20.to_string(),
-                batch_nonce: withdraw.batch_nonce,
-                orchestrator: our_address.to_string(),
-                bridge_balances: eth_bals.clone(),
-            };
-            let msg = Msg::new(MSG_BATCH_SEND_TO_ETH_TYPE_URL, claim);
-            assert!(unordered_msgs.insert(withdraw.event_nonce, msg).is_none());
-        }
-    }
-    for deploy in erc20_deploys {
-        let eth_balances = eth_balances_by_block_height.get(&deploy.block_height);
-        if let Some(eth_bals) = eth_balances {
-            let claim = MsgErc20DeployedClaim {
-                event_nonce: deploy.event_nonce,
-                eth_block_height: downcast_uint256(deploy.block_height).unwrap(),
-                cosmos_denom: deploy.cosmos_denom,
-                token_contract: deploy.erc20_address.to_string(),
-                name: deploy.name,
-                symbol: deploy.symbol,
-                decimals: deploy.decimals as u64,
-                orchestrator: our_address.to_string(),
-                bridge_balances: eth_bals.clone(),
-            };
-            let msg = Msg::new(MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL, claim);
-            assert!(unordered_msgs.insert(deploy.event_nonce, msg).is_none());
-        }
-    }
-    for call in logic_calls {
-        let eth_balances = eth_balances_by_block_height.get(&call.block_height);
-        if let Some(eth_bals) = eth_balances {
-            let claim = MsgLogicCallExecutedClaim {
-                event_nonce: call.event_nonce,
-                eth_block_height: downcast_uint256(call.block_height).unwrap(),
-                invalidation_id: call.invalidation_id,
-                invalidation_nonce: call.invalidation_nonce,
-                orchestrator: our_address.to_string(),
-                bridge_balances: eth_bals.clone(),
-            };
-            let msg = Msg::new(MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, claim);
-            assert!(unordered_msgs.insert(call.event_nonce, msg).is_none());
-        }
-    }
-    for valset in valsets {
-        let eth_balances = eth_balances_by_block_height.get(&valset.block_height);
-        if let Some(eth_bals) = eth_balances {
-            let claim = MsgValsetUpdatedClaim {
-                event_nonce: valset.event_nonce,
-                valset_nonce: valset.valset_nonce,
-                eth_block_height: downcast_uint256(valset.block_height).unwrap(),
-                members: valset.members.iter().map(|v| v.into()).collect(),
-                reward_amount: valset.reward_amount.to_string(),
-                reward_token: valset.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),
-                orchestrator: our_address.to_string(),
-                bridge_balances: eth_bals.clone(),
-            };
-            let msg = Msg::new(MSG_VALSET_UPDATED_CLAIM_TYPE_URL, claim);
-            assert!(unordered_msgs.insert(valset.event_nonce, msg).is_none());
-        }
-    }
-    if unordered_msgs.is_empty() {}
     let mut keys = Vec::new();
     for (key, _) in unordered_msgs.iter() {
         keys.push(*key);
@@ -370,7 +326,46 @@ pub async fn send_ethereum_claims(
     contact
         .send_message(&msgs, None, &[fee], Some(TIMEOUT), private_key)
         .await
+        .map(|v| Some(v))
         .map_err(GravityError::CosmosGrpcError)
+}
+
+/// Creates the `Msg`s needed for `orchestrator` to attest to `events`
+/// If `eth_balances_by_block_height` is None, the `Msg`s will have empty `bridge_balances`,
+/// otherwise if no balances exist for any event's block_height, that event will be skipped
+/// Returns a Vec of (event_nonce: u64, Msg), which may be empty
+fn create_claim_msgs(
+    eth_balances_by_block_height: Option<HashMap<Uint256, Vec<ProtoErc20Token>>>,
+    events: Vec<impl EthereumEvent>,
+    orchestrator: Address,
+) -> Vec<(u64, Msg)> {
+    let mut msgs = vec![];
+    for event in events {
+        // Get the required eth balances for this height if they exist
+        let eth_balances: Option<Vec<ProtoErc20Token>> = if eth_balances_by_block_height.is_none() {
+            Some(vec![]) // Not required to submit balances
+        } else {
+            let height: Uint256 = event.get_block_height().into();
+            // Required to submit balances, None -> skip and try again later
+            eth_balances_by_block_height
+                .as_ref()
+                .unwrap()
+                .get(&height)
+                .map(|v| v.clone())
+        };
+
+        match eth_balances {
+            Some(eth_bals) => {
+                // Create msg
+                msgs.push((
+                    event.get_event_nonce(),
+                    event.to_claim_msg(orchestrator, eth_bals.clone()),
+                ));
+            }
+            None => continue,
+        }
+    }
+    msgs
 }
 
 /// Sends tokens from Cosmos to Ethereum. These tokens will not be sent immediately instead

@@ -74,41 +74,66 @@ impl BadSignatureEvidence {
 /// querying the ERC20 balances required, packing it all up into a Map
 pub async fn collect_eth_balances_for_claims(
     web3: &Web3,
-    contact: &Contact,
     gravity_contract: EthAddress,
+    monitored_erc20s: Vec<EthAddress>,
     deposits: &[SendToCosmosEvent],
     withdraws: &[TransactionBatchExecutedEvent],
     erc20_deploys: &[Erc20DeployedEvent],
     logic_calls: &[LogicCallExecutedEvent],
     valsets: &[ValsetUpdatedEvent],
 ) -> Result<HashMap<Uint256, Vec<ProtoErc20Token>>, GravityError> {
-    let erc20_results: Vec<String> = get_gravity_monitored_erc20s(contact).await?;
-    let mut erc20s = vec![];
-    for e in erc20_results {
-        erc20s.push(EthAddress::parse_and_validate(&e)?)
-    }
-
     let heights =
         get_heights_from_eth_claims(deposits, withdraws, erc20_deploys, logic_calls, valsets).await;
+    if heights.is_empty() {
+        return Ok(HashMap::new()); // return early
+    }
 
-    collect_eth_balances_at_heights(web3, gravity_contract, &erc20s, &heights).await
+    collect_eth_balances_at_heights(web3, gravity_contract, &monitored_erc20s, &heights).await
 }
 
 /// Fetches and parses the gravity MonitoredTokenAddresses governance param as a Vec
 pub async fn get_gravity_monitored_erc20s(
     contact: &Contact,
-) -> Result<Vec<String>, CosmosGrpcError> {
+) -> Result<Vec<EthAddress>, GravityError> {
     let erc20s = contact
         .get_param("gravity", "MonitoredTokenAddresses")
         .await?;
-    let erc20s = erc20s
+    let mut erc20s = erc20s
         .param
         .expect("No response for the gravity MonitoredTokenAddresses param!")
         .value;
+
+    // Remove [ and ] from the ends of the string, if present
+    if let Some(rest) = erc20s.strip_prefix('[') {
+        if let Some(middle) = rest.strip_suffix(']') {
+            erc20s = middle.to_string();
+        } else {
+            return Err(CosmosGrpcError::BadResponse(format!(
+                "MonitoredTokenAddresses begins with [ but does not end with ] :{}",
+                erc20s
+            ))
+            .into());
+        }
+    }
+
+    // Parse all members of the comma separated string, returning an error if any are invalid
     let erc20s = erc20s.split(',');
-    let mut results = vec![];
+    let mut results: Vec<EthAddress> = vec![];
     for e in erc20s {
-        results.push(e.to_string());
+        if e.is_empty() {
+            continue;
+        }
+        let addr = EthAddress::parse_and_validate(&e);
+        match addr {
+            Ok(address) => results.push(address),
+            Err(err) => {
+                error!(
+                    "Invalid erc20 {} found in gravity monitored erc20s: {}",
+                    e, err
+                );
+                return Err(err.into());
+            }
+        }
     }
     Ok(results)
 }
