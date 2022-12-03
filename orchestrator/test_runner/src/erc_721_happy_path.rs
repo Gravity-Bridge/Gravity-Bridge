@@ -70,7 +70,7 @@ pub async fn erc721_happy_path_test(
     }
 
     info!("testing ERC721 approval utility");
-    let token_id_for_approval: Uint256 = &203u32.into();
+    let token_id_for_approval: Uint256 = 203u32.into();
     test_erc721_transfer_utils(
         web30,
         gravity_erc721_address,
