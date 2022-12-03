@@ -17,6 +17,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	paramstypesproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -44,6 +45,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 		CmdGovIbcMetadataProposal(),
 		CmdGovAirdropProposal(),
 		CmdGovUnhaltBridgeProposal(),
+		CmdGovSetMonitoredTokenAddresses(),
 		CmdExecutePendingIbcAutoForwards(),
 	}...)
 
@@ -274,6 +276,67 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
 				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+			}
+
+			// Make the message
+			msg := govtypes.MsgSubmitProposal{
+				Proposer:       cosmosAddr.String(),
+				InitialDeposit: initialDeposit,
+				Content:        proposalAny,
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func CmdGovSetMonitoredTokenAddresses() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "gov-set-monitored-token-addresses [comma-separated-erc20-addresses] [title] [description] [initial-deposit]",
+		Short: "Creates a governance proposal to set the Gravity module's MonitoredTokenAddresses parameter",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			cosmosAddr := cliCtx.GetFromAddress()
+
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[3])
+			if err != nil {
+				return sdkerrors.Wrap(err, "bad initial deposit amount")
+			}
+
+			if len(initialDeposit) != 1 {
+				return fmt.Errorf("unexpected coin amounts, expecting just 1 coin amount for initialDeposit")
+			}
+
+			tokens := strings.TrimSpace(args[0])
+			for _, token := range strings.Split(tokens, ",") {
+				if _, err := types.NewEthAddress(token); err != nil {
+					return sdkerrors.Wrapf(err, "token %v is not a valid ERC20 address", token)
+				}
+			}
+
+			proposal := &paramstypesproposal.ParameterChangeProposal{
+				Title:       args[1],
+				Description: args[2],
+				Changes: []paramstypesproposal.ParamChange{{
+					Subspace: types.ModuleName,
+					Key:      string(types.ParamStoreMonitoredTokenAddresses),
+					Value:    tokens,
+				}},
+			}
+
+			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid proposal values")
 			}
 
 			// Make the message
