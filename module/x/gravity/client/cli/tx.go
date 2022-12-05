@@ -302,6 +302,9 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 	return cmd
 }
 
+// CmdGovSetMonitoredTokenAddresses sets the Gravity module's MonitoredTokenAddresses, a comma separated
+// list of ERC20 tokens to monitor for the Gravity.sol balance. This adds security by shutting down the Cosmos chain if
+// any imbalances are detected between Ethereum and Cosmos
 func CmdGovSetMonitoredTokenAddresses() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
