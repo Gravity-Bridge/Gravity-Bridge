@@ -175,10 +175,14 @@ func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim ty
 			cosmosBal = k.bankKeeper.GetSupply(ctx, denom)
 
 		} else { // Cosmos originated
-			// In the event of a cosmos-based asset, we want the ethereum balance to be gravity module balance less pending txs + unconfirmed batches
-			// since new txs could have come in - inflating the gravity module's balance
+			// In the event of a cosmos-based asset, we want the ethereum balance to be gravity module balance
+			// less pending txs + unconfirmed batches + pending IBC auto-forwards since new txs could have come in
+			// and thereby inflating the gravity module's balance
 
-			// Check the Ethereum balance against the locked up tokens in the gravity module less any unobserved batches and unbatched transaction amounts
+			// Check the Ethereum balance against the locked up tokens in the gravity module less:
+			// * any unobserved batch totals
+			// * unbatched transaction amounts
+			// * pending IBC auto-forward amounts
 			acct := k.accountKeeper.GetModuleAddress(types.ModuleName)
 			cosmosBal = k.bankKeeper.GetBalance(ctx, acct, denom)
 			unconfirmedBatchTotal := sdk.ZeroInt()
@@ -212,8 +216,17 @@ func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim ty
 				unbatchedTxTotal = unbatchedTxTotal.Add(tx.Erc20Token.Amount)
 				return false // continue looping until all unbatched txs of this contract type are accounted for
 			})
+			pendingForwardTotal := sdk.ZeroInt()
+			k.IteratePendingIbcAutoForwards(ctx, func(key []byte, forward *types.PendingIbcAutoForward) (stop bool) {
+				fwdDenom := forward.Token.Denom
+				if fwdDenom != denom {
+					return false // skip this one, keep searching
+				}
+				pendingForwardTotal = pendingForwardTotal.Add(forward.Token.Amount)
+				return false // accounted for this one, keep searching
+			})
 
-			cosmosBal.Amount = cosmosBal.Amount.Sub(unconfirmedBatchTotal).Sub(unbatchedTxTotal)
+			cosmosBal.Amount = cosmosBal.Amount.Sub(unconfirmedBatchTotal).Sub(unbatchedTxTotal).Sub(pendingForwardTotal)
 		}
 
 		// There are a few ways that the Gravity.sol balance (Ethereum-side) can be updated:
@@ -224,6 +237,7 @@ func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim ty
 		// There are a few ways that the Gravity module balance (Cosmos-side) can be updated:
 		// 1. A user attempts to send their tokens to Ethereum, increasing the balance (expected)
 		// 2. A user receives funds from Ethereum, reducing the balance (expected)
+		// 3. A user has pending IBC Auto Forward tokens (locked in Gravity module), increasing the balance (expected)
 		// X. It is NOT possible to send the Gravity module a balance it should not receive, because of app.BlockedAddrs()
 
 		// We want to make meaningful assertions about the Ethereum balance and the Gravity module balance while not
