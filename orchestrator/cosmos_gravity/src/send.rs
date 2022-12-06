@@ -291,7 +291,7 @@ pub async fn send_ethereum_claims(
     let valset_nonces_msgs: Vec<(u64, Msg)> =
         create_claim_msgs(eth_balances_by_block_height.clone(), valsets, our_address);
 
-    // Collect all of the claims into an iterator, then add them to unordered_msgs
+    // Collect all of the (nonces, claims) into an iterator, then add them to unordered_msgs
     deposit_nonces_msgs
         .into_iter()
         .chain(withdraw_nonces_msgs.into_iter())
@@ -357,7 +357,8 @@ fn create_claim_msgs(
             eth_balances_by_block_height
                 .as_ref()
                 .unwrap()
-                .get(&height).cloned()
+                .get(&height)
+                .cloned()
         };
 
         match eth_balances {
