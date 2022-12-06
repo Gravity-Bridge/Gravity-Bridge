@@ -635,7 +635,6 @@ dependencies = [
  "prost-types 0.10.1",
  "rand",
  "serde",
- "serde_derive",
  "sha3",
  "tokio",
  "tonic 0.7.2",

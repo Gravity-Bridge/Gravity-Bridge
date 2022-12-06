@@ -1,9 +1,10 @@
 //! This file handles submitting and querying governance proposals custom to Gravity bridge
 
+use clarity::Address as EthAddress;
 use deep_space::error::AddressError;
 use deep_space::error::CosmosGrpcError;
 use deep_space::utils::encode_any;
-use deep_space::Address;
+use deep_space::Address as CosmosAddress;
 use deep_space::Coin;
 use deep_space::Contact;
 use deep_space::PrivateKey;
@@ -16,6 +17,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradePr
 use gravity_proto::gravity::AirdropProposal as AirdropProposalMsg;
 use gravity_proto::gravity::IbcMetadataProposal;
 use gravity_proto::gravity::UnhaltBridgeProposal;
+use itertools::Itertools;
 use serde::Deserialize;
 use serde::Serialize;
 use std::convert::TryFrom;
@@ -43,7 +45,7 @@ pub struct AirdropProposalJson {
     pub denom: String,
     pub description: String,
     pub amounts: Vec<u64>,
-    pub recipients: Vec<Address>,
+    pub recipients: Vec<CosmosAddress>,
 }
 
 /// The proposal.json representation for the airdrop proposal
@@ -61,7 +63,7 @@ impl TryFrom<AirdropProposalJsonUnparsed> for AirdropProposalJson {
     fn try_from(value: AirdropProposalJsonUnparsed) -> Result<Self, Self::Error> {
         let mut parsed = Vec::new();
         for i in value.recipients {
-            let a: Address = i.parse()?;
+            let a: CosmosAddress = i.parse()?;
             parsed.push(a);
         }
         Ok(AirdropProposalJson {
@@ -258,6 +260,8 @@ impl From<DenomUnitJson> for DenomUnit {
     }
 }
 
+/// Encodes and submits an IBC Metadata proposal, to register an IBC token before an ERC20 representation
+/// can be deployed
 pub async fn submit_ibc_metadata_proposal(
     proposal: IbcMetadataProposal,
     deposit: Coin,
@@ -271,4 +275,40 @@ pub async fn submit_ibc_metadata_proposal(
     contact
         .create_gov_proposal(any, deposit, fee, key, wait_timeout)
         .await
+}
+
+pub struct SetMonitoredTokenAddressesProposal {
+    pub title: String,
+    pub description: String,
+    pub monitored_addresses: Vec<EthAddress>,
+}
+
+/// Encodes and submits a proposal to set the MonitoredTokenAddresses parameter for cross-bridge
+/// balance checking
+pub async fn submit_set_monitored_token_addresses_proposal(
+    proposal: SetMonitoredTokenAddressesProposal,
+    deposit: Coin,
+    fee: Coin,
+    contact: &Contact,
+    key: impl PrivateKey,
+    wait_timeout: Option<Duration>,
+) -> Result<TxResponse, CosmosGrpcError> {
+    let monitored_erc20s: String = proposal
+        .monitored_addresses
+        .into_iter()
+        .map(|a| a.to_string())
+        .join(",");
+    let mut params_to_change = Vec::new();
+    let set_erc20s = ParamChange {
+        subspace: "gravity".to_string(),
+        key: "MonitoredTokenAddresses".to_string(),
+        value: format!("{}", monitored_erc20s),
+    };
+    params_to_change.push(set_erc20s);
+    let proposal = ParameterChangeProposal {
+        title: proposal.title,
+        description: proposal.description,
+        changes: params_to_change,
+    };
+    submit_parameter_change_proposal(proposal, deposit, fee, contact, key, wait_timeout).await
 }
