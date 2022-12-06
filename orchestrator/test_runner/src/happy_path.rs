@@ -330,7 +330,7 @@ pub async fn test_erc20_deposit_result(
     expected_change: Option<Uint256>, // provide an expected change when multiple transactions will take place at once
 ) -> Result<(), GravityError> {
     let start_coin = contact
-        .get_balance(dest, format!("gravity{}", erc20_address))
+        .get_balance(dest, format!("gravity{erc20_address}"))
         .await
         .unwrap();
 
@@ -340,7 +340,7 @@ pub async fn test_erc20_deposit_result(
         dest,
         gravity_address,
         erc20_address,
-        amount.clone(),
+        amount,
     )
     .await?;
 
@@ -353,15 +353,15 @@ pub async fn test_erc20_deposit_result(
         match (
             start_coin.clone(),
             contact
-                .get_balance(dest, format!("gravity{}", erc20_address))
+                .get_balance(dest, format!("gravity{erc20_address}"))
                 .await
                 .unwrap(),
         ) {
             (Some(start_coin), Some(end_coin)) => {
                 // When a bridge governance vote happens, the orchestrator will replay all incomplete
                 // sends to cosmos on the next send to cosmos transaction, so we need to use expected_change
-                if let Some(expected) = expected_change.clone() {
-                    if end_coin.amount.clone() - start_coin.amount.clone() == expected
+                if let Some(expected) = expected_change {
+                    if end_coin.amount - start_coin.amount == expected
                         && start_coin.denom == end_coin.denom
                     {
                         info!(
@@ -378,7 +378,7 @@ pub async fn test_erc20_deposit_result(
                             start_coin.amount,
                             amount.clone()
                         );
-                    } else if start_coin.amount + amount.clone() == end_coin.amount
+                    } else if start_coin.amount + amount == end_coin.amount
                         && start_coin.denom == end_coin.denom
                     {
                         info!(
@@ -392,7 +392,7 @@ pub async fn test_erc20_deposit_result(
             (None, Some(end_coin)) => {
                 // When a bridge governance vote happens, the orchestrator will replay all incomplete
                 // sends to cosmos on the next send to cosmos transaction, so we need to use expected_change
-                if let Some(expected) = expected_change.clone() {
+                if let Some(expected) = expected_change {
                     if end_coin.amount == expected {
                         info!(
                             "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
@@ -446,7 +446,7 @@ pub async fn send_erc20_deposit(
     let tx_id = send_to_cosmos(
         erc20_address,
         gravity_address,
-        amount.clone(),
+        amount,
         dest,
         *MINER_PRIVATE_KEY,
         None,
@@ -519,7 +519,7 @@ async fn test_batch(
         .to_address(&contact.get_prefix())
         .unwrap();
     let coin = contact
-        .get_balance(dest_cosmos_address, format!("gravity{}", erc20_contract))
+        .get_balance(dest_cosmos_address, format!("gravity{erc20_contract}"))
         .await
         .unwrap()
         .unwrap();
@@ -541,7 +541,7 @@ async fn test_batch(
         dest_eth_address,
         Coin {
             denom: token_name.clone(),
-            amount: amount.clone(),
+            amount,
         },
         bridge_denom_fee.clone(),
         None,
@@ -591,7 +591,7 @@ async fn test_batch(
         send_one_eth(dest_eth_address, web30).await;
     }
 
-    check_erc20_balance(erc20_contract, amount.clone(), dest_eth_address, web30).await;
+    check_erc20_balance(erc20_contract, amount, dest_eth_address, web30).await;
     info!(
         "Successfully updated txbatch nonce to {} and sent {}{} tokens to Ethereum!",
         current_eth_batch_nonce, amount, token_name
@@ -612,7 +612,7 @@ async fn submit_duplicate_erc20_send(
     gravity_contract: EthAddress,
 ) {
     let start_coin = contact
-        .get_balance(receiver, format!("gravity{}", erc20_address))
+        .get_balance(receiver, format!("gravity{erc20_address}"))
         .await
         .unwrap()
         .unwrap();
@@ -653,7 +653,7 @@ async fn submit_duplicate_erc20_send(
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
     let end_coin = contact
-        .get_balance(receiver, format!("gravity{}", erc20_address))
+        .get_balance(receiver, format!("gravity{erc20_address}"))
         .await
         .unwrap()
         .unwrap();

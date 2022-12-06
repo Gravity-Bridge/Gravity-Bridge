@@ -38,7 +38,7 @@ pub async fn invalid_events(
     grpc_client: GravityQueryClient<Channel>,
 ) {
     let mut grpc_client = grpc_client;
-    let erc20_denom = format!("gravity{}", erc20_address);
+    let erc20_denom = format!("gravity{erc20_address}");
 
     // figure out how many of a given erc20 we already have on startup so that we can
     // keep track of incrementation. This makes it possible to run this test again without
@@ -265,7 +265,7 @@ pub async fn send_to_cosmos_invalid(
             .eth_get_transaction_count(*MINER_ADDRESS)
             .await
             .unwrap();
-        let options = vec![SendTxOption::Nonce(nonce.clone())];
+        let options = vec![SendTxOption::Nonce(nonce)];
         approve_nonce = Some(nonce);
         let txid = web3
             .approve_erc20_transfers(erc20, *MINER_PRIVATE_KEY, gravity_contract, None, options)
@@ -298,7 +298,7 @@ pub async fn send_to_cosmos_invalid(
                 &[
                     erc20.into(),
                     encoded_destination_address,
-                    one_eth().clone().into(),
+                    one_eth().into(),
                 ],
             )
             .unwrap(),
@@ -310,7 +310,7 @@ pub async fn send_to_cosmos_invalid(
         .await
         .unwrap();
 
-    web3.wait_for_transaction(tx_hash.clone(), TOTAL_TIMEOUT, None)
+    web3.wait_for_transaction(tx_hash, TOTAL_TIMEOUT, None)
         .await
         .unwrap();
 }
@@ -355,7 +355,7 @@ async fn deploy_invalid_erc20(
         .unwrap();
 
     web30
-        .wait_for_transaction(tx_hash.clone(), TOTAL_TIMEOUT, None)
+        .wait_for_transaction(tx_hash, TOTAL_TIMEOUT, None)
         .await
         .unwrap();
 

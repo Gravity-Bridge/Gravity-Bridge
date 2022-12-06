@@ -146,7 +146,7 @@ pub async fn unhalt_bridge_test(
         bridge_user.cosmos_address,
         gravity_address,
         erc20_address,
-        halted_bridge_amt.clone(),
+        halted_bridge_amt,
         Some(Duration::from_secs(30)),
         None,
     )
@@ -173,7 +173,7 @@ pub async fn unhalt_bridge_test(
     let balance_after_halt = contact
         .get_balance(
             bridge_user.cosmos_address,
-            format!("gravity{}", erc20_address),
+            format!("gravity{erc20_address}"),
         )
         .await
         .unwrap()
@@ -221,7 +221,7 @@ pub async fn unhalt_bridge_test(
         bridge_user.cosmos_address,
         gravity_address,
         erc20_address,
-        fixed_bridge_amt.clone(),
+        fixed_bridge_amt,
         None,
         None,
     )
@@ -312,7 +312,7 @@ async fn wait_for_balance_increase(
     let start = Instant::now();
     while Instant::now() - start < TOTAL_TIMEOUT {
         if let Some(new_balance) = contact
-            .get_balance(destination, format!("gravity{}", erc20_address))
+            .get_balance(destination, format!("gravity{erc20_address}"))
             .await
             .unwrap()
         {

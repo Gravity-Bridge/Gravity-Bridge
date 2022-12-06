@@ -163,8 +163,7 @@ pub async fn get_gravity_monitored_erc20s(
             erc20s = middle.to_string();
         } else {
             return Err(CosmosGrpcError::BadResponse(format!(
-                "MonitoredTokenAddresses begins with [ but does not end with ] :{}",
-                erc20s
+                "MonitoredTokenAddresses begins with [ but does not end with ] :{erc20s}"
             ))
             .into());
         }
@@ -177,7 +176,7 @@ pub async fn get_gravity_monitored_erc20s(
         if e.is_empty() {
             continue;
         }
-        let addr = EthAddress::parse_and_validate(&e);
+        let addr = EthAddress::parse_and_validate(e);
         match addr {
             Ok(address) => results.push(address),
             Err(err) => {
@@ -202,19 +201,19 @@ pub async fn get_heights_from_eth_claims(
 ) -> Vec<Uint256> {
     let mut heights = HashSet::new();
     for d in deposits {
-        heights.insert(d.block_height.clone());
+        heights.insert(d.block_height);
     }
     for w in withdraws {
-        heights.insert(w.block_height.clone());
+        heights.insert(w.block_height);
     }
     for e in erc20_deploys {
-        heights.insert(e.block_height.clone());
+        heights.insert(e.block_height);
     }
     for l in logic_calls {
-        heights.insert(l.block_height.clone());
+        heights.insert(l.block_height);
     }
     for v in valsets {
-        heights.insert(v.block_height.clone());
+        heights.insert(v.block_height);
     }
 
     heights.into_iter().collect::<Vec<Uint256>>()
@@ -230,7 +229,7 @@ pub async fn collect_eth_balances_at_heights(
 ) -> Result<HashMap<Uint256, Vec<ProtoErc20Token>>, GravityError> {
     let mut balances_by_height = HashMap::new();
     for h in heights {
-        let bals = collect_eth_balances_at_height(web3, gravity_contract, erc20s, h.clone()).await;
+        let bals = collect_eth_balances_at_height(web3, gravity_contract, erc20s, *h).await;
         if bals.is_err() {
             info!(
                 "Could not query gravity eth balances at height {}",
@@ -238,7 +237,7 @@ pub async fn collect_eth_balances_at_heights(
             );
             continue;
         }
-        balances_by_height.insert(h.clone(), bals.unwrap());
+        balances_by_height.insert(*h, bals.unwrap());
     }
 
     Ok(balances_by_height)
@@ -254,7 +253,7 @@ pub async fn collect_eth_balances_at_height(
 ) -> Result<Vec<ProtoErc20Token>, GravityError> {
     let mut futs = vec![];
     for e in erc20s {
-        futs.push(web3.get_erc20_balance_at_height(*e, gravity_contract, Some(height.clone())));
+        futs.push(web3.get_erc20_balance_at_height(*e, gravity_contract, Some(height)));
     }
     let res = join_all(futs).await;
     let mut results = vec![];

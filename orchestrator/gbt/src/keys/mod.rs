@@ -148,16 +148,15 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
             chain_fee
         } else {
             info!("Calculating a reasonable chain fee to pay to Gravity Bridge stakers...");
-            let chain_fee_amount = get_reasonable_send_to_eth_fee(&contact, amount.amount.clone())
+            let chain_fee_amount = get_reasonable_send_to_eth_fee(&contact, amount.amount)
                 .await
                 .map_err(|e| {
                     format!(
-                        "Unable to get a reasonable chain fee due to communication error: {}",
-                        e
+                        "Unable to get a reasonable chain fee due to communication error: {e}"
                     )
                 })
                 .unwrap();
-            amount.amount -= chain_fee_amount.clone();
+            amount.amount -= chain_fee_amount;
             info!("Chain fee calculated ({}), your amount to bridge has been reduced to {} accordingly!", chain_fee_amount, amount.amount);
             Coin {
                 amount: chain_fee_amount,
