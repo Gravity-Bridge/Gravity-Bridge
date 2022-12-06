@@ -99,13 +99,12 @@ pub async fn relayer_main_loop(
             current_gas_price.map(print_gwei),
             ideal_gas.map(print_gwei)
         );
-        let should_relay_altruistic = if let (Some(current_price), Some(good_price)) =
-            (current_gas_price, ideal_gas)
-        {
-            current_price <= good_price
-        } else {
-            false
-        };
+        let should_relay_altruistic =
+            if let (Some(current_price), Some(good_price)) = (current_gas_price, ideal_gas) {
+                current_price <= good_price
+            } else {
+                false
+            };
 
         single_relayer_iteration(
             ethereum_key,
@@ -147,10 +146,10 @@ pub async fn single_relayer_iteration(
     if let (Some(cosmos_key), Some(cosmos_fee)) = (cosmos_key, cosmos_fee.clone()) {
         // Batches are only requested if it is a good time to do so, no checks needed here
         request_batches(
-            contact,
-            web3,
+            &contact,
+            &web3,
             &mut grpc_client,
-            relayer_config,
+            &relayer_config,
             ethereum_key.to_address(),
             cosmos_key,
             cosmos_fee,
@@ -165,7 +164,8 @@ pub async fn single_relayer_iteration(
     let should_relay_batches = relayer_config.batch_relaying_mode != BatchRelayingMode::Altruistic
         || should_relay_altruistic;
 
-    let current_valset = find_latest_valset(&mut grpc_client, gravity_contract_address, web3).await;
+    let current_valset =
+        find_latest_valset(&mut grpc_client, gravity_contract_address, &web3).await;
     if current_valset.is_err() {
         error!("Could not get current valset! {:?}", current_valset);
         return;
@@ -176,7 +176,7 @@ pub async fn single_relayer_iteration(
         relay_valsets(
             current_valset.clone(),
             ethereum_key,
-            web3,
+            &web3,
             &mut grpc_client,
             gravity_contract_address,
             gravity_id.to_string(),
@@ -200,7 +200,7 @@ pub async fn single_relayer_iteration(
         relay_batches(
             current_valset.clone(),
             ethereum_key,
-            web3,
+            &web3,
             &mut grpc_client,
             gravity_contract_address,
             gravity_id.to_string(),
@@ -212,7 +212,7 @@ pub async fn single_relayer_iteration(
     relay_logic_calls(
         current_valset,
         ethereum_key,
-        web3,
+        &web3,
         &mut grpc_client,
         gravity_contract_address,
         gravity_id.to_string(),
