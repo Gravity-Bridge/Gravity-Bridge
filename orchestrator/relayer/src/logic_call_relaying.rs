@@ -27,7 +27,7 @@ async fn should_relay_logic_call(
     for fee in &logic_call.fees {
         let zero: Uint256 = 0u8.into();
         let reward_token = fee.token_contract_address;
-        let reward_amount = fee.amount.clone();
+        let reward_amount = fee.amount;
         *rewards.entry(reward_token).or_insert(zero) += reward_amount;
     }
     // Check the values in the map to see if we have enough to relay
@@ -35,11 +35,11 @@ async fn should_relay_logic_call(
     for (token, total) in rewards.iter() {
         if *token == *WETH_CONTRACT_ADDRESS {
             // WETH directly counts as ETH
-            total_weth_reward += (*total).clone();
+            total_weth_reward += *total;
         } else {
             // Get the token's value in ETH as of the current moment
             let weth_equiv =
-                get_weth_price_with_retries(our_address, *token, (*total).clone(), web3).await;
+                get_weth_price_with_retries(our_address, *token, *total, web3).await;
             if weth_equiv.is_err() {
                 // Can't get the price so we ignore it
                 info!(
@@ -153,7 +153,7 @@ pub async fn relay_logic_calls(
                 latest_cosmos_call_nonce,
                 latest_ethereum_call,
                 cost.gas.clone(),
-                print_gwei(cost.gas_price.clone()),
+                print_gwei(cost.gas_price),
                 print_eth(cost.get_total())
             );
 

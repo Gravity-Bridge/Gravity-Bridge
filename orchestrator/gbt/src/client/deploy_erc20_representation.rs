@@ -206,7 +206,7 @@ mod tests {
                     buf.extend_from_slice(&claim.value);
                     let claim_contents =
                         MsgErc20DeployedClaim::decode(buf).expect("Failed to decode claim");
-                    println!("Got claim {:?}", claim_contents);
+                    println!("Got claim {claim_contents:?}");
                 }
             }
         }

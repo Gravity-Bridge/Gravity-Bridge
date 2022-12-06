@@ -78,7 +78,7 @@ pub async fn setup_ethermint_test(
     let output = contact
         .send_coins(
             Coin {
-                amount: send_amount.clone(),
+                amount: send_amount,
                 denom: denom.clone(),
             },
             None,
@@ -112,7 +112,7 @@ pub async fn setup_ethermint_test(
         user_address,
         gravity_address,
         erc20_address,
-        send_amount.clone(),
+        send_amount,
     )
     .await
     .unwrap();
@@ -149,7 +149,7 @@ pub async fn example_ethermint_key_usage(
     let user_send = contact
         .send_coins(
             Coin {
-                amount: send_amount.clone(),
+                amount: send_amount,
                 denom: denom.clone(),
             },
             None,
@@ -163,7 +163,7 @@ pub async fn example_ethermint_key_usage(
         .await;
     debug!("user_send is {:?}", user_send);
 
-    let expected_balance = start_balance.amount.clone() - send_amount.clone();
+    let expected_balance = start_balance.amount - send_amount;
     let balance = contact
         .get_balance(user_cosmos_address, denom.clone())
         .await
@@ -363,15 +363,13 @@ pub async fn example_ethermint_key_usage(
         (None, Some(rewarded)) => {
             assert!(
                 rewarded.amount > 0u8.into(),
-                "Unexpected reward amount {}",
-                rewarded
+                "{}", "Unexpected reward amount {rewarded}"
             )
         }
         (Some(unrewarded), Some(rewarded)) => {
             let positive_reward = rewarded.amount > unrewarded.amount;
             assert!(positive_reward,
-                "Unexpected negative reward amount: balance after withdrawal {}, balance before withdrawal {}",
-                rewarded, unrewarded,
+                "{}", "Unexpected negative reward amount: balance after withdrawal {rewarded}, balance before withdrawal {unrewarded}",
             );
         }
         (_, _) => {

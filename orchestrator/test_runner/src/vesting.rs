@@ -70,7 +70,7 @@ pub async fn vesting_test(contact: &Contact, vesting_keys: Vec<CosmosPrivateKey>
     let mut lo_in_progress = zero_stake.clone();
     lo_in_progress.amount = "1".to_string();
     let mut hi_in_progress = zero_stake.clone();
-    hi_in_progress.amount = (expected_amount.clone() - 1u8.into()).to_string();
+    hi_in_progress.amount = (expected_amount - 1u8.into()).to_string();
     let _ = check_vesting_accounts_at_height(
         contact,
         &bank_qc,

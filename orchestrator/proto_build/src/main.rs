@@ -141,7 +141,7 @@ fn copy_generated_files(from_dir: &Path, to_dir: &Path) {
 
     if !errors.is_empty() {
         for e in errors {
-            eprintln!("[error] Error while copying compiled file: {}", e);
+            eprintln!("[error] Error while copying compiled file: {e}");
         }
 
         panic!("[error] Aborted.");
@@ -152,7 +152,7 @@ fn copy_and_patch(src: impl AsRef<Path>, dest: impl AsRef<Path>) -> io::Result<(
     // Skip proto files belonging to `EXCLUDED_PROTO_PACKAGES`
     for package in EXCLUDED_PROTO_PACKAGES {
         if let Some(filename) = src.as_ref().file_name().and_then(OsStr::to_str) {
-            if filename.starts_with(&format!("{}.", package)) {
+            if filename.starts_with(&format!("{package}.")) {
                 return Ok(());
             }
         }

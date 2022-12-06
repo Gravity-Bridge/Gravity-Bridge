@@ -27,7 +27,7 @@ pub async fn get_weth_price_with_retries(
             pubkey,
             token,
             *WETH_CONTRACT_ADDRESS,
-            amount.clone(),
+            amount,
             Some(FIVE_PERCENT),
             None,
         )
@@ -63,7 +63,7 @@ pub async fn get_weth_price(
             token,
             *WETH_CONTRACT_ADDRESS,
             None,
-            amount.clone(),
+            amount,
             Some(slippage_sqrt_price),
             None,
         )
@@ -98,7 +98,7 @@ pub async fn get_dai_price(
             token,
             *DAI_CONTRACT_ADDRESS,
             None,
-            amount.clone(),
+            amount,
             Some(slippage_sqrt_price),
             None,
         )

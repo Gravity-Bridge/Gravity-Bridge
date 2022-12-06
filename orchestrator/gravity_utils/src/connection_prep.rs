@@ -61,8 +61,8 @@ pub async fn create_rpc_connections(
                     let port = url.port().unwrap_or(80);
                     // this should be http or https
                     let prefix = url.scheme();
-                    let ipv6_url = format!("{}://::1:{}", prefix, port);
-                    let ipv4_url = format!("{}://127.0.0.1:{}", prefix, port);
+                    let ipv6_url = format!("{prefix}://::1:{port}");
+                    let ipv4_url = format!("{prefix}://127.0.0.1:{port}");
                     let ipv6 = GravityQueryClient::connect(ipv6_url.clone()).await;
                     let ipv4 = GravityQueryClient::connect(ipv4_url.clone()).await;
                     warn!("Trying fallback urls {} {}", ipv6_url, ipv4_url);
@@ -85,8 +85,8 @@ pub async fn create_rpc_connections(
                         panic!("Cosmos gRPC url contains no host? {}", grpc_url)
                     });
                     // transparently upgrade to https if available, we can't transparently downgrade for obvious security reasons
-                    let https_on_80_url = format!("https://{}:80", body);
-                    let https_on_443_url = format!("https://{}:443", body);
+                    let https_on_80_url = format!("https://{body}:80");
+                    let https_on_443_url = format!("https://{body}:443");
                     let https_on_80 = GravityQueryClient::connect(https_on_80_url.clone()).await;
                     let https_on_443 = GravityQueryClient::connect(https_on_443_url.clone()).await;
                     warn!(
@@ -133,8 +133,8 @@ pub async fn create_rpc_connections(
                     let port = url.port().unwrap_or(80);
                     // this should be http or https
                     let prefix = url.scheme();
-                    let ipv6_url = format!("{}://::1:{}", prefix, port);
-                    let ipv4_url = format!("{}://127.0.0.1:{}", prefix, port);
+                    let ipv6_url = format!("{prefix}://::1:{port}");
+                    let ipv4_url = format!("{prefix}://127.0.0.1:{port}");
                     let ipv6_web3 = Web3::new(&ipv6_url, timeout);
                     let ipv4_web3 = Web3::new(&ipv4_url, timeout);
                     let ipv6_test = ipv6_web3.eth_block_number().await;
@@ -157,8 +157,8 @@ pub async fn create_rpc_connections(
                         panic!("Ethereum rpc url contains no host? {}", eth_rpc_url)
                     });
                     // transparently upgrade to https if available, we can't transparently downgrade for obvious security reasons
-                    let https_on_80_url = format!("https://{}:80", body);
-                    let https_on_443_url = format!("https://{}:443", body);
+                    let https_on_80_url = format!("https://{body}:80");
+                    let https_on_443_url = format!("https://{body}:443");
                     let https_on_80_web3 = Web3::new(&https_on_80_url, timeout);
                     let https_on_443_web3 = Web3::new(&https_on_443_url, timeout);
                     let https_on_80_test = https_on_80_web3.eth_block_number().await;

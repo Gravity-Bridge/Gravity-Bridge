@@ -208,19 +208,19 @@ pub async fn get_heights_from_eth_claims(
 ) -> Vec<Uint256> {
     let mut heights = HashSet::new();
     for d in deposits {
-        heights.insert(d.block_height.clone());
+        heights.insert(d.block_height);
     }
     for w in withdraws {
-        heights.insert(w.block_height.clone());
+        heights.insert(w.block_height);
     }
     for e in erc20_deploys {
-        heights.insert(e.block_height.clone());
+        heights.insert(e.block_height);
     }
     for l in logic_calls {
-        heights.insert(l.block_height.clone());
+        heights.insert(l.block_height);
     }
     for v in valsets {
-        heights.insert(v.block_height.clone());
+        heights.insert(v.block_height);
     }
 
     heights.into_iter().collect::<Vec<Uint256>>()
@@ -248,7 +248,7 @@ pub async fn collect_eth_balances_at_heights(
             );
             continue;
         }
-        balances_by_height.insert(h.clone(), bals.unwrap());
+        balances_by_height.insert(*h, bals.unwrap());
     }
     if balances_by_height.is_empty() {
         return Err(GravityError::EthereumRestError(Web3Error::BadResponse(

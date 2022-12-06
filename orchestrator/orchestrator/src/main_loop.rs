@@ -119,7 +119,7 @@ pub async fn test_eth_connection(web3: Web3) {
         match (latest_res, finalized_res) {
             (Ok(latest), Ok(finalized)) => {
                 if latest.number < finalized.number
-                    || finalized.number.clone() + 32u8.into() > latest.number
+                    || finalized.number + 32u8.into() > latest.number
                 {
                     panic!(
                         "Ethereum RPC returned an invalid 'finalized' block, expecting at least a 32 block difference but found latest block ({}) and 'finalized' block ({})",
@@ -256,7 +256,7 @@ pub async fn eth_oracle_main_loop(
             cosmos_key,
             eth_address,
             fee.clone(),
-            last_checked_block.clone(),
+            last_checked_block,
         )
         .await
         {
