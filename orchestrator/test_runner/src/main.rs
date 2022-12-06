@@ -32,7 +32,7 @@ use deep_space::Contact;
 use deep_space::{CosmosPrivateKey, PrivateKey};
 use erc_721_happy_path::erc721_happy_path_test;
 use evidence_based_slashing::evidence_based_slashing;
-use gravity_proto::gravity::query_client::{QueryClient as GravityQueryClient};
+use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
 use lazy_static::lazy_static;
@@ -45,7 +45,6 @@ use tokio::time::sleep;
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
-
 
 mod airdrop_proposal;
 mod batch_timeout;
@@ -207,6 +206,7 @@ pub async fn main() {
 
     info!("Waiting for Cosmos chain to come online");
     wait_for_cosmos_online(&contact, TOTAL_TIMEOUT).await;
+    info!("Cosmos chain is online!");
 
     let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
