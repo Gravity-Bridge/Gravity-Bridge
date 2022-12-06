@@ -85,7 +85,7 @@ pub async fn relayer_main_loop(
     gravity_id: String,
     relayer_config: RelayerConfig,
 ) {
-    let mut grpc_client = grpc_client;
+    let grpc_client = grpc_client;
 
     loop {
         let loop_start = Instant::now();
@@ -107,86 +107,118 @@ pub async fn relayer_main_loop(
             false
         };
 
-        if let (Some(cosmos_key), Some(cosmos_fee)) = (cosmos_key, cosmos_fee.clone()) {
-            // Batches are only requested if it is a good time to do so, no checks needed here
-            request_batches(
-                &contact,
-                &web3,
-                &mut grpc_client,
-                &relayer_config,
-                ethereum_key.to_address(),
-                cosmos_key,
-                cosmos_fee,
-            )
-            .await
-        }
-
-        // we should relay if we're not altruistic or if we are and the gas price is good
-        let should_relay_valsets = relayer_config.valset_relaying_mode
-            != ValsetRelayingMode::Altruistic
-            || should_relay_altruistic;
-        let should_relay_batches = relayer_config.batch_relaying_mode
-            != BatchRelayingMode::Altruistic
-            || should_relay_altruistic;
-
-        let current_valset =
-            find_latest_valset(&mut grpc_client, gravity_contract_address, &web3).await;
-        if current_valset.is_err() {
-            error!("Could not get current valset! {:?}", current_valset);
-            continue;
-        }
-        let current_valset = current_valset.unwrap();
-
-        if should_relay_valsets {
-            relay_valsets(
-                current_valset.clone(),
-                ethereum_key,
-                &web3,
-                &mut grpc_client,
-                gravity_contract_address,
-                gravity_id.clone(),
-                relayer_config.clone(),
-            )
-            .await;
-        }
-        let current_gas_samples = get_num_gas_tracker_samples();
-        let delay_altruistic_relayer = relayer_config.batch_relaying_mode
-            == BatchRelayingMode::Altruistic
-            && current_gas_samples.is_some()
-            && current_gas_samples.unwrap()
-                < relayer_config.altruistic_batch_relaying_samples_delay as usize;
-        if delay_altruistic_relayer {
-            info!(
-                "Delaying relayer because the gas tracker has not collected {} samples",
-                relayer_config.altruistic_batch_relaying_samples_delay
-            )
-        }
-        if should_relay_batches && !delay_altruistic_relayer {
-            relay_batches(
-                current_valset.clone(),
-                ethereum_key,
-                &web3,
-                &mut grpc_client,
-                gravity_contract_address,
-                gravity_id.clone(),
-                relayer_config.clone(),
-            )
-            .await;
-        }
-
-        relay_logic_calls(
-            current_valset,
+        single_relayer_iteration(
             ethereum_key,
+            cosmos_key,
+            cosmos_fee.clone(),
+            &contact,
             &web3,
-            &mut grpc_client,
+            &grpc_client,
             gravity_contract_address,
-            gravity_id.clone(),
-            relayer_config.clone(),
+            &gravity_id,
+            &relayer_config,
+            should_relay_altruistic,
         )
         .await;
 
         delay_until_next_iteration(loop_start, relayer_config.relayer_loop_speed).await;
     }
+}
+
+/// Performs a single execution of all the main_loop relayer functions:
+/// * Batch Requests
+/// * Valset Relaying
+/// * Batch Relaying
+/// * Logic Call Relaying
+#[allow(clippy::too_many_arguments)]
+pub async fn single_relayer_iteration(
+    ethereum_key: EthPrivateKey,
+    cosmos_key: Option<CosmosPrivateKey>,
+    cosmos_fee: Option<Coin>,
+    contact: &Contact,
+    web3: &Web3,
+    grpc_client: &GravityQueryClient<Channel>,
+    gravity_contract_address: EthAddress,
+    gravity_id: &str,
+    relayer_config: &RelayerConfig,
+    should_relay_altruistic: bool,
+) {
+    let mut grpc_client: GravityQueryClient<Channel> = grpc_client.clone();
+    if let (Some(cosmos_key), Some(cosmos_fee)) = (cosmos_key, cosmos_fee.clone()) {
+        // Batches are only requested if it is a good time to do so, no checks needed here
+        request_batches(
+            contact,
+            web3,
+            &mut grpc_client,
+            relayer_config,
+            ethereum_key.to_address(),
+            cosmos_key,
+            cosmos_fee,
+        )
+        .await
+    }
+
+    // we should relay if we're not altruistic or if we are and the gas price is good
+    let should_relay_valsets = relayer_config.valset_relaying_mode
+        != ValsetRelayingMode::Altruistic
+        || should_relay_altruistic;
+    let should_relay_batches = relayer_config.batch_relaying_mode != BatchRelayingMode::Altruistic
+        || should_relay_altruistic;
+
+    let current_valset = find_latest_valset(&mut grpc_client, gravity_contract_address, web3).await;
+    if current_valset.is_err() {
+        error!("Could not get current valset! {:?}", current_valset);
+        return;
+    }
+    let current_valset = current_valset.unwrap();
+
+    if should_relay_valsets {
+        relay_valsets(
+            current_valset.clone(),
+            ethereum_key,
+            web3,
+            &mut grpc_client,
+            gravity_contract_address,
+            gravity_id.to_string(),
+            relayer_config.clone(),
+        )
+        .await;
+    }
+    let current_gas_samples = get_num_gas_tracker_samples();
+    let delay_altruistic_relayer = relayer_config.batch_relaying_mode
+        == BatchRelayingMode::Altruistic
+        && current_gas_samples.is_some()
+        && current_gas_samples.unwrap()
+            < relayer_config.altruistic_batch_relaying_samples_delay as usize;
+    if delay_altruistic_relayer {
+        info!(
+            "Delaying relayer because the gas tracker has not collected {} samples",
+            relayer_config.altruistic_batch_relaying_samples_delay
+        )
+    }
+    if should_relay_batches && !delay_altruistic_relayer {
+        relay_batches(
+            current_valset.clone(),
+            ethereum_key,
+            web3,
+            &mut grpc_client,
+            gravity_contract_address,
+            gravity_id.to_string(),
+            relayer_config.clone(),
+        )
+        .await;
+    }
+
+    relay_logic_calls(
+        current_valset,
+        ethereum_key,
+        web3,
+        &mut grpc_client,
+        gravity_contract_address,
+        gravity_id.to_string(),
+        relayer_config.clone(),
+    )
+    .await;
 }
 
 /// a bit of logic that tries to keep things running every relayer_loop_speed seconds exactly
