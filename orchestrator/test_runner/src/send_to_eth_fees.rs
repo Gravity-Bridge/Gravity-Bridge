@@ -845,8 +845,8 @@ fn setup_transactions(
     let curr_fee_basis_points = Uint256::from(min_fee_basis_points);
     let erc20_bridge_amount: Uint256 = one_eth();
     let erc20_min_fee =
-        get_min_send_to_eth_fee(erc20_bridge_amount.clone(), curr_fee_basis_points.clone());
-    let erc20_success_fees: Vec<Uint256> = get_success_test_fees(erc20_min_fee.clone());
+        get_min_send_to_eth_fee(erc20_bridge_amount, curr_fee_basis_points);
+    let erc20_success_fees: Vec<Uint256> = get_success_test_fees(erc20_min_fee);
     let erc20_fail_fees: Vec<Uint256> = get_fail_test_fees(erc20_min_fee);
     info!(
         "setup_transactions: Created erc20 fees: \nSuccess [{:?}]\nFailure[{:?}]",
@@ -856,8 +856,8 @@ fn setup_transactions(
     // ... and for a send of one atom (1 * 10^6)
     let cosmos_bridge_amount = one_atom();
     let cosmos_min_fee =
-        get_min_send_to_eth_fee(cosmos_bridge_amount.clone(), curr_fee_basis_points);
-    let cosmos_success_fees: Vec<Uint256> = get_success_test_fees(cosmos_min_fee.clone());
+        get_min_send_to_eth_fee(cosmos_bridge_amount, curr_fee_basis_points);
+    let cosmos_success_fees: Vec<Uint256> = get_success_test_fees(cosmos_min_fee);
     let cosmos_fail_fees: Vec<Uint256> = get_fail_test_fees(cosmos_min_fee);
     info!(
         "setup_transactions: Created footoken fees: \nSuccess [{:?}]\nFailure[{:?}]",
@@ -877,7 +877,7 @@ fn setup_transactions(
     // Create some footoken success test cases from the above generated values
     queue_sends_to_eth(
         tests_per_fee_amount,
-        cosmos_bridge_amount.clone(),
+        cosmos_bridge_amount,
         cosmos_success_fees,
         &mut cosmos_good_amounts,
         &mut cosmos_good_fees,
@@ -893,7 +893,7 @@ fn setup_transactions(
     // Create some erc20 success test cases from the above generated values
     queue_sends_to_eth(
         tests_per_fee_amount,
-        erc20_bridge_amount.clone(),
+        erc20_bridge_amount,
         erc20_good_fees.clone(),
         &mut erc20_good_amounts,
         &mut erc20_good_fees,
@@ -958,8 +958,8 @@ fn queue_sends_to_eth(
 ) {
     for fee in fee_amounts {
         for _ in 0..tests_per_fee_amount {
-            bridge_collection.push(bridge_amount.clone());
-            fee_collection.push(fee.clone());
+            bridge_collection.push(bridge_amount);
+            fee_collection.push(fee);
         }
     }
 }
@@ -967,7 +967,7 @@ pub fn get_success_test_fees(min_fee: Uint256) -> Vec<Uint256> {
     if min_fee == 0u8.into() {
         vec![0u8.into(), 1u8.into()]
     } else {
-        vec![min_fee.clone(), min_fee + 10u8.into()]
+        vec![min_fee, min_fee + 10u8.into()]
     }
 }
 
@@ -986,8 +986,7 @@ pub async fn submit_and_pass_send_to_eth_fees_proposal(
 ) {
     let proposal_content = SendToEthFeesProposalJson {
         title: format!(
-            "Set MinChainFeeBasisPoints to {}",
-            min_chain_fee_basis_points
+            "Set MinChainFeeBasisPoints to {min_chain_fee_basis_points}"
         ),
         description: "MinChainFeeBasisPoints!".to_string(),
         min_chain_fee_basis_points,

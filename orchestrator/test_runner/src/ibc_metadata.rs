@@ -130,7 +130,7 @@ pub async fn submit_and_pass_ibc_metadata_proposal(
     keys: &[ValidatorKeys],
 ) {
     let proposal_content = IbcMetadataProposal {
-        title: format!("Proposal to set metadata on {}", denom),
+        title: format!("Proposal to set metadata on {denom}"),
         description: "IBC METADATA!".to_string(),
         ibc_denom: denom,
         metadata: Some(metadata),
@@ -156,7 +156,7 @@ async fn submit_and_fail_ibc_metadata_proposal(
     keys: &[ValidatorKeys],
 ) {
     let proposal_content = IbcMetadataProposal {
-        title: format!("Proposal to set metadata on {}", denom),
+        title: format!("Proposal to set metadata on {denom}"),
         description: "IBC METADATA!".to_string(),
         ibc_denom: denom,
         metadata: Some(metadata),

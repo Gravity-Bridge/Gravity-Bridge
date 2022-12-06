@@ -124,7 +124,7 @@ async fn relay_valid_valset(
        "We have detected that valset {} is valid to submit. Latest on Ethereum is {} This update is estimated to cost {} Gas @ {} Gwei/ {:.4} ETH to submit",
         valset_to_relay.nonce, current_valset.nonce,
         cost.gas.clone(),
-        print_gwei(cost.gas_price.clone()),
+        print_gwei(cost.gas_price),
         print_eth(cost.get_total())
     );
 
@@ -232,7 +232,7 @@ async fn should_relay_valset(
                 let price = get_weth_price_with_retries(
                     pubkey,
                     reward_token,
-                    valset.reward_amount.clone(),
+                    valset.reward_amount,
                     web3,
                 )
                 .await;

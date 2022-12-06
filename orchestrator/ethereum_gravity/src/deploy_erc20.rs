@@ -47,7 +47,7 @@ pub async fn deploy_erc20(
         .await?;
 
     if let Some(timeout) = wait_timeout {
-        web3.wait_for_transaction(tx_hash.clone(), timeout, None)
+        web3.wait_for_transaction(tx_hash, timeout, None)
             .await?;
     }
 

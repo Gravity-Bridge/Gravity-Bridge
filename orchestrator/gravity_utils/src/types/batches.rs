@@ -53,8 +53,8 @@ impl TransactionBatch {
         let mut destinations = Vec::new();
         let mut fees = Vec::new();
         for item in self.transactions.iter() {
-            amounts.push(Token::Uint(item.erc20_token.amount.clone()));
-            fees.push(Token::Uint(item.erc20_fee.amount.clone()));
+            amounts.push(Token::Uint(item.erc20_token.amount));
+            fees.push(Token::Uint(item.erc20_fee.amount));
             destinations.push(item.destination)
         }
         assert_eq!(amounts.len(), destinations.len());
@@ -76,15 +76,15 @@ impl TransactionBatch {
         }
 
         let token = self.token_contract;
-        let fee_total = self.total_fee.amount.clone();
+        let fee_total = self.total_fee.amount;
         let mut tx_total: Uint256 = 0u8.into();
         for tx in self.transactions.clone() {
-            tx_total += tx.erc20_token.amount.clone();
+            tx_total += tx.erc20_token.amount;
         }
-        let fee_value_weth = get_weth_price(pubkey, token, fee_total.clone(), web30);
-        let fee_value_dai = get_dai_price(pubkey, token, fee_total.clone(), web30);
-        let tx_value_weth = get_weth_price(pubkey, token, tx_total.clone(), web30);
-        let tx_value_dai = get_dai_price(pubkey, token, tx_total.clone(), web30);
+        let fee_value_weth = get_weth_price(pubkey, token, fee_total, web30);
+        let fee_value_dai = get_dai_price(pubkey, token, fee_total, web30);
+        let tx_value_weth = get_weth_price(pubkey, token, tx_total, web30);
+        let tx_value_dai = get_dai_price(pubkey, token, tx_total, web30);
         let token_symbol = web30.get_erc20_symbol(token, pubkey);
         let current_block = web30.eth_block_number();
         if let (
@@ -166,7 +166,7 @@ impl TryFrom<gravity_proto::gravity::OutgoingTxBatch> for TransactionBatch {
             if let Some(total_fee) = running_total_fee {
                 running_total_fee = Some(Erc20Token {
                     token_contract_address: total_fee.token_contract_address,
-                    amount: total_fee.amount + tx.erc20_fee.amount.clone(),
+                    amount: total_fee.amount + tx.erc20_fee.amount,
                 });
             } else {
                 running_total_fee = Some(tx.erc20_fee.clone())

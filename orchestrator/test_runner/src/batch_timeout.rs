@@ -128,7 +128,7 @@ pub async fn batch_timeout_test(
                 // we sent a random amount below 100 tokens to each user, now we're sending
                 // it all back, so we should only be down 500 and whatever ChainFees we paid
                 let min_expected_balance =
-                    starting_eth.clone() - 500u16.into() - max_nonrefundable_amount.clone();
+                    starting_eth - 500u16.into() - max_nonrefundable_amount;
 
                 if bal < min_expected_balance {
                     good = false;
@@ -163,7 +163,7 @@ async fn set_batch_timeout(
     let halt = ParamChange {
         subspace: "gravity".to_string(),
         key: "TargetBatchTimeout".to_string(),
-        value: format!("\"{}\"", timeout),
+        value: format!("\"{timeout}\""),
     };
     params_to_change.push(halt);
 

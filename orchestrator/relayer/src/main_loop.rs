@@ -96,11 +96,11 @@ pub async fn relayer_main_loop(
             get_acceptable_gas_price(relayer_config.altruistic_acceptable_gas_price_percentage);
         debug!(
             "current ethereum gas price: {:?}, ideal gas price: {:?}",
-            current_gas_price.clone().map(print_gwei),
-            ideal_gas.clone().map(print_gwei)
+            current_gas_price.map(print_gwei),
+            ideal_gas.map(print_gwei)
         );
         let should_relay_altruistic = if let (Some(current_price), Some(good_price)) =
-            (current_gas_price.clone(), ideal_gas.clone())
+            (current_gas_price, ideal_gas)
         {
             current_price <= good_price
         } else {

@@ -333,7 +333,7 @@ pub async fn send_ethereum_claims(
     contact
         .send_message(&msgs, None, &[fee], Some(TIMEOUT), private_key)
         .await
-        .map(|v| Some(v))
+        .map(Some)
         .map_err(GravityError::CosmosGrpcError)
 }
 
@@ -357,8 +357,7 @@ fn create_claim_msgs(
             eth_balances_by_block_height
                 .as_ref()
                 .unwrap()
-                .get(&height)
-                .map(|v| v.clone())
+                .get(&height).cloned()
         };
 
         match eth_balances {
@@ -401,7 +400,7 @@ pub async fn send_to_eth(
     let chain_fee = match chain_fee {
         Some(fee) => fee,
         None => Coin {
-            amount: get_reasonable_send_to_eth_fee(contact, amount.amount.clone())
+            amount: get_reasonable_send_to_eth_fee(contact, amount.amount)
                 .await
                 .expect("Unable to get reasonable SendToEth fee"),
             denom: amount.denom.clone(),
@@ -417,7 +416,7 @@ pub async fn send_to_eth(
     let mut found = false;
     for balance in balances {
         if balance.denom == amount.denom {
-            let total_amount = amount.amount.clone() + (fee.amount.clone() * 2u8.into());
+            let total_amount = amount.amount + (fee.amount * 2u8.into());
             if balance.amount < total_amount {
                 return Err(CosmosGrpcError::BadInput(format!(
                     "Insufficient balance of {} to send {}",

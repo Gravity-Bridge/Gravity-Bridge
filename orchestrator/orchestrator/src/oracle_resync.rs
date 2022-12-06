@@ -43,46 +43,46 @@ pub async fn get_last_checked_block(
         last_event_nonce = 1u8.into();
     }
 
-    let mut current_block: Uint256 = latest_block.clone();
+    let mut current_block: Uint256 = latest_block;
 
-    while current_block.clone() > 0u8.into() {
+    while current_block > 0u8.into() {
         info!(
             "Oracle is resyncing, looking back into the history to find our last event nonce {}, on block {}",
             last_event_nonce, current_block
         );
-        let end_search = if current_block.clone() < BLOCKS_TO_SEARCH.into() {
+        let end_search = if current_block < BLOCKS_TO_SEARCH.into() {
             0u8.into()
         } else {
-            current_block.clone() - BLOCKS_TO_SEARCH.into()
+            current_block - BLOCKS_TO_SEARCH.into()
         };
         let batch_events = web3
             .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
+                end_search,
+                Some(current_block),
                 vec![gravity_contract_address],
                 vec![TRANSACTION_BATCH_EXECUTED_EVENT_SIG],
             )
             .await;
         let send_to_cosmos_events = web3
             .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
+                end_search,
+                Some(current_block),
                 vec![gravity_contract_address],
                 vec![SENT_TO_COSMOS_EVENT_SIG],
             )
             .await;
         let erc20_deployed_events = web3
             .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
+                end_search,
+                Some(current_block),
                 vec![gravity_contract_address],
                 vec![ERC20_DEPLOYED_EVENT_SIG],
             )
             .await;
         let logic_call_executed_events = web3
             .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
+                end_search,
+                Some(current_block),
                 vec![gravity_contract_address],
                 vec![LOGIC_CALL_EVENT_SIG],
             )
@@ -95,8 +95,8 @@ pub async fn get_last_checked_block(
         // history
         let valset_events = web3
             .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
+                end_search,
+                Some(current_block),
                 vec![gravity_contract_address],
                 vec![VALSET_UPDATED_EVENT_SIG],
             )

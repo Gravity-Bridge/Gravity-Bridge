@@ -160,7 +160,7 @@ impl GasCost {
     /// Gets the total cost in Eth (or other EVM chain native token)
     /// of executing the batch
     pub fn get_total(&self) -> Uint256 {
-        self.gas.clone() * self.gas_price.clone()
+        self.gas * self.gas_price
     }
 }
 
@@ -176,7 +176,7 @@ impl GasCost {
 pub fn encode_valset_struct(valset: &Valset) -> Token {
     let (addresses, powers) = valset.to_arrays();
     let nonce = valset.nonce;
-    let reward_amount = valset.reward_amount.clone();
+    let reward_amount = valset.reward_amount;
     // the zero address represents 'no reward' in this case we have replaced it with a 'none'
     // so that it's easy to identify if this validator set has a reward or not. Now that we're
     // going to encode it for the contract call we need return it to the magic value the contract

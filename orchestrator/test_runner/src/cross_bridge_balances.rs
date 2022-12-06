@@ -6,13 +6,13 @@ use tonic::transport::Channel;
 use web30::client::Web3;
 
 pub async fn cross_bridge_balance_test(
-    web30: &Web3,
-    grpc: QueryClient<Channel>,
-    contact: &Contact,
-    keys: Vec<ValidatorKeys>,
-    ibc_keys: Vec<CosmosPrivateKey>,
-    gravity_address: EthAddress,
-    erc20_addresses: Vec<EthAddress>,
+    _web30: &Web3,
+    _grpc: QueryClient<Channel>,
+    _contact: &Contact,
+    _keys: Vec<ValidatorKeys>,
+    _ibc_keys: Vec<CosmosPrivateKey>,
+    _gravity_address: EthAddress,
+    _erc20_addresses: Vec<EthAddress>,
 ) {
     // FIRST: Set the MonitoredTokenAddresses governance parameter, create bridge activity, run the happy_path functions (SHOULD NOT HALT)
 
