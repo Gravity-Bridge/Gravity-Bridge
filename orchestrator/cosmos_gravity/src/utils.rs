@@ -23,11 +23,13 @@ use prost_types::Any;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Mul;
+use std::str::FromStr;
 use tokio::time::sleep;
 use tonic::metadata::AsciiMetadataValue;
 use tonic::transport::Channel;
 use tonic::{IntoRequest, Request};
 use web30::client::Web3;
+use web30::jsonrpc::error::Web3Error;
 
 const BASIS_POINT_DIVISOR: u64 = 10000;
 
@@ -128,6 +130,7 @@ pub fn get_min_send_to_eth_fee(bridge_amount: Uint256, min_fee_basis_points: Uin
 /// querying the ERC20 balances required, packing it all up into a Map
 pub async fn collect_eth_balances_for_claims(
     web3: &Web3,
+    querier_address: EthAddress,
     gravity_contract: EthAddress,
     monitored_erc20s: Vec<EthAddress>,
     deposits: &[SendToCosmosEvent],
@@ -138,45 +141,49 @@ pub async fn collect_eth_balances_for_claims(
 ) -> Result<HashMap<Uint256, Vec<ProtoErc20Token>>, GravityError> {
     let heights =
         get_heights_from_eth_claims(deposits, withdraws, erc20_deploys, logic_calls, valsets).await;
-    if heights.is_empty() {
-        return Ok(HashMap::new()); // return early
+    if heights.is_empty()
+        && !(withdraws.is_empty()
+            && erc20_deploys.is_empty()
+            && logic_calls.is_empty()
+            && valsets.is_empty())
+    {
+        return Err(GravityError::CosmosGrpcError(CosmosGrpcError::BadInput(
+            "Invalid claims to collect balances for!".to_string(),
+        )));
     }
-
-    collect_eth_balances_at_heights(web3, gravity_contract, &monitored_erc20s, &heights).await
+    info!("Collecting Eth balances at heights {:?}", heights);
+    collect_eth_balances_at_heights(
+        web3,
+        querier_address,
+        gravity_contract,
+        &monitored_erc20s,
+        &heights,
+    )
+    .await
 }
 
 /// Fetches and parses the gravity MonitoredTokenAddresses governance param as a Vec
 pub async fn get_gravity_monitored_erc20s(
     contact: &Contact,
 ) -> Result<Vec<EthAddress>, GravityError> {
-    let erc20s = contact
-        .get_param("gravity", "MonitoredTokenAddresses")
-        .await?;
-    let mut erc20s = erc20s
+    const PARAM: &str = "MonitoredTokenAddresses";
+    let erc20s = contact.get_param("gravity", PARAM).await?;
+    let erc20s = erc20s
         .param
         .expect("No response for the gravity MonitoredTokenAddresses param!")
         .value;
+    info!("Got parameter {}: {}", PARAM, erc20s);
 
-    // Remove [ and ] from the ends of the string, if present
-    if let Some(rest) = erc20s.strip_prefix('[') {
-        if let Some(middle) = rest.strip_suffix(']') {
-            erc20s = middle.to_string();
-        } else {
-            return Err(CosmosGrpcError::BadResponse(format!(
-                "MonitoredTokenAddresses begins with [ but does not end with ] :{erc20s}"
-            ))
-            .into());
-        }
-    }
+    // Decode ERC20s from string
+    let erc20_strings = serde_json::from_str::<Vec<String>>(&erc20s)
+        .expect("serde_json string -> Vec<String> failed");
 
-    // Parse all members of the comma separated string, returning an error if any are invalid
-    let erc20s = erc20s.split(',');
     let mut results: Vec<EthAddress> = vec![];
-    for e in erc20s {
+    for e in &erc20_strings {
         if e.is_empty() {
             continue;
         }
-        let addr = EthAddress::parse_and_validate(e);
+        let addr = EthAddress::from_str(e);
         match addr {
             Ok(address) => results.push(address),
             Err(err) => {
@@ -223,23 +230,36 @@ pub async fn get_heights_from_eth_claims(
 /// Does not populate the result for a height if any eth balance could not be obtained
 pub async fn collect_eth_balances_at_heights(
     web3: &Web3,
+    querier_address: EthAddress,
     gravity_contract: EthAddress,
     erc20s: &[EthAddress],
     heights: &[Uint256],
 ) -> Result<HashMap<Uint256, Vec<ProtoErc20Token>>, GravityError> {
     let mut balances_by_height = HashMap::new();
     for h in heights {
-        let bals = collect_eth_balances_at_height(web3, gravity_contract, erc20s, *h).await;
+        let bals = collect_eth_balances_at_height(
+            web3,
+            querier_address,
+            gravity_contract,
+            erc20s,
+            *h,
+        )
+        .await;
         if bals.is_err() {
             info!(
-                "Could not query gravity eth balances at height {}",
-                h.to_string()
+                "Could not query gravity eth balances at height {}: {:?}",
+                h.to_string(),
+                bals.unwrap_err(),
             );
             continue;
         }
         balances_by_height.insert(*h, bals.unwrap());
     }
-
+    if balances_by_height.is_empty() {
+        return Err(GravityError::EthereumRestError(Web3Error::BadResponse(
+            "Unable to collect ERC20 balances by height".to_string(),
+        )));
+    }
     Ok(balances_by_height)
 }
 
@@ -247,13 +267,19 @@ pub async fn collect_eth_balances_at_heights(
 /// Returns an error if any of the underlying queries return an error
 pub async fn collect_eth_balances_at_height(
     web3: &Web3,
+    querier_address: EthAddress,
     gravity_contract: EthAddress,
     erc20s: &[EthAddress],
     height: Uint256,
 ) -> Result<Vec<ProtoErc20Token>, GravityError> {
     let mut futs = vec![];
     for e in erc20s {
-        futs.push(web3.get_erc20_balance_at_height(*e, gravity_contract, Some(height)));
+        futs.push(web3.get_erc20_balance_at_height_as_address(
+            Some(querier_address),
+            *e,
+            gravity_contract,
+            Some(height),
+        ));
     }
     let res = join_all(futs).await;
     let mut results = vec![];

@@ -61,6 +61,7 @@ pub async fn orchestrator_main_loop(
     user_fee_amount: Coin,
     config: GravityBridgeToolsConfig,
 ) {
+    let eth_address = ethereum_key.to_address();
     let fee = user_fee_amount;
 
     if config.orchestrator.check_eth_rpc {
@@ -69,6 +70,7 @@ pub async fn orchestrator_main_loop(
 
     let a = eth_oracle_main_loop(
         cosmos_key,
+        eth_address,
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
@@ -143,6 +145,7 @@ pub async fn test_eth_connection(web3: Web3) {
 /// and ferried over to Cosmos where they will be used to issue tokens or process batches.
 pub async fn eth_oracle_main_loop(
     cosmos_key: CosmosPrivateKey,
+    eth_address: EthAddress,
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
@@ -251,6 +254,7 @@ pub async fn eth_oracle_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             cosmos_key,
+            eth_address,
             fee.clone(),
             last_checked_block,
         )

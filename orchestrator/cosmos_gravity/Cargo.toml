@@ -27,7 +27,6 @@ prost-types = "0.10"
 prost = "0.10"
 num = "0.4.0"
 futures = "0.3"
-itertools = "0.10"
 
 [dev-dependencies]
 env_logger = "0.10"

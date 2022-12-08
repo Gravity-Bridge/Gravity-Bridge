@@ -780,7 +780,6 @@ dependencies = [
  "futures",
  "gravity_proto",
  "gravity_utils",
- "itertools",
  "log",
  "num",
  "num256",

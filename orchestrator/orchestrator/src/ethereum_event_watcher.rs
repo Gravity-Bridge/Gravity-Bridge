@@ -38,11 +38,12 @@ pub async fn check_for_events(
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
-    our_private_key: CosmosPrivateKey,
+    our_cosmos_key: CosmosPrivateKey,
+    our_eth_address: EthAddress,
     fee: Coin,
     starting_block: Uint256,
 ) -> Result<CheckedNonces, GravityError> {
-    let our_cosmos_address = our_private_key.to_address(&contact.get_prefix()).unwrap();
+    let our_cosmos_address = our_cosmos_key.to_address(&contact.get_prefix()).unwrap();
     let latest_block = get_latest_safe_block(web3).await;
     trace!(
         "Checking for events starting {} safe {}",
@@ -203,7 +204,8 @@ pub async fn check_for_events(
                 web3,
                 contact,
                 gravity_contract_address,
-                our_private_key,
+                our_cosmos_key,
+                our_eth_address,
                 deposits.clone(),
                 withdraws.clone(),
                 erc20_deploys.clone(),
