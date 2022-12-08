@@ -3,4 +3,4 @@ members = ["orchestrator", "cosmos_gravity", "ethereum_gravity", "gravity_utils"
 default-members = ["gbt"]
 
 [patch.crates-io]
-web30 = {path="../../../../web30"}
+web30 = {path="../../../../web30", version="0.20"}
