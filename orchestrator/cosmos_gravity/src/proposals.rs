@@ -17,7 +17,6 @@ use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradePr
 use gravity_proto::gravity::AirdropProposal as AirdropProposalMsg;
 use gravity_proto::gravity::IbcMetadataProposal;
 use gravity_proto::gravity::UnhaltBridgeProposal;
-use itertools::Itertools;
 use serde::Deserialize;
 use serde::Serialize;
 use std::convert::TryFrom;
@@ -325,17 +324,21 @@ pub async fn submit_set_monitored_token_addresses_proposal(
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
-    let monitored_erc20s: String = proposal
+    let monitored_erc20s: Vec<String> = proposal
         .monitored_addresses
         .into_iter()
         .map(|a| a.to_string())
-        .join(",");
+        .collect();
     let mut params_to_change = Vec::new();
     let set_erc20s = ParamChange {
         subspace: "gravity".to_string(),
         key: "MonitoredTokenAddresses".to_string(),
-        value: monitored_erc20s.to_string(),
+        value: format!("{}", serde_json::to_string(&monitored_erc20s).unwrap()),
     };
+    info!(
+        "Setting parameter {} to {}",
+        set_erc20s.key, set_erc20s.value
+    );
     params_to_change.push(set_erc20s);
     let proposal = ParameterChangeProposal {
         title: proposal.title,
