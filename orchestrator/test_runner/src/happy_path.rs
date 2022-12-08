@@ -634,11 +634,13 @@ async fn submit_duplicate_erc20_send(
     // iterate through all validators and try to send an event with duplicate nonce
     for k in keys.iter() {
         let c_key = k.orch_key;
+        let e_addr = k.eth_key.to_address();
         let res = send_ethereum_claims(
             web30,
             contact,
             gravity_contract,
             c_key,
+            e_addr,
             vec![event.clone()],
             vec![],
             vec![],

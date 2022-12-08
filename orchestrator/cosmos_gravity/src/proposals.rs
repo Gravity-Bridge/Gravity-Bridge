@@ -333,7 +333,7 @@ pub async fn submit_set_monitored_token_addresses_proposal(
     let set_erc20s = ParamChange {
         subspace: "gravity".to_string(),
         key: "MonitoredTokenAddresses".to_string(),
-        value: format!("{}", serde_json::to_string(&monitored_erc20s).unwrap()),
+        value: serde_json::to_string(&monitored_erc20s).unwrap(),
     };
     info!(
         "Setting parameter {} to {}",
