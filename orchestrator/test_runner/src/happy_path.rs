@@ -230,7 +230,7 @@ pub async fn test_valset_update(
 
     while starting_eth_valset_nonce == current_eth_valset_nonce {
         info!(
-            "Validator set is not yet updated to {}>, waiting",
+            "Validator set is still on valset nonce {}, waiting",
             starting_eth_valset_nonce
         );
         current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
@@ -640,7 +640,11 @@ async fn submit_duplicate_erc20_send(
             contact,
             gravity_contract,
             c_key,
+<<<<<<< HEAD
             e_addr,
+=======
+            *MINER_ADDRESS,
+>>>>>>> 6892ebed (WIP: Lots of test fixes and updates)
             vec![event.clone()],
             vec![],
             vec![],

@@ -5,7 +5,7 @@ use crate::ibc_auto_forward::{get_channel_id, setup_gravity_auto_forwards};
 use crate::{
     create_default_test_config, footoken_metadata, get_ibc_chain_id, one_eth, start_orchestrators,
     vote_yes_on_proposals, CosmosAddress, EthPrivateKey, GravityQueryClient, ValidatorKeys,
-    ADDRESS_PREFIX, COSMOS_NODE_GRPC, ETH_NODE, IBC_ADDRESS_PREFIX, MINER_ADDRESS,
+    ADDRESS_PREFIX, COSMOS_NODE_GRPC, ETH_NODE, IBC_ADDRESS_PREFIX, MINER_PRIVATE_KEY,
     OPERATION_TIMEOUT, STAKING_TOKEN,
 };
 use actix_rt::System;
@@ -23,6 +23,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::query_client::QueryClient as IbcChannelQueryClient;
 use gravity_proto::gravity::query_client::QueryClient;
 
+use gravity_utils::num_conversion::one_atom;
 use gravity_utils::types::{
     BatchRelayingMode, BatchRequestMode, RelayerConfig, ValsetRelayingMode,
 };
@@ -34,6 +35,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::types::SendTxOption;
 
 const FOOTOKEN_ALLOCATION: u64 = 100u64; // Validators will have 100 FOO to spend
 
@@ -73,10 +75,19 @@ pub async fn cross_bridge_balance_test(
         validator_eth_addrs,
         footoken_metadata,
         footoken_erc20,
-    ) = setup(web30, contact, grpc.clone(), keys.clone(), gravity_address).await;
-    let mut monitored_erc20s = erc20_addresses.clone();
-    monitored_erc20s.push(footoken_erc20);
+    ) = setup(
+        web30,
+        contact,
+        grpc.clone(),
+        &no_relayer_config.relayer,
+        keys.clone(),
+        gravity_address,
+        &params.gravity_id,
+        erc20_addresses.clone(),
+    )
+    .await;
 
+    info!("\n\n\n CREATING COSMOS -> ETH ACTIVITY \n\n\n");
     create_send_to_eth_activity(
         web30,
         grpc.clone(),
@@ -84,8 +95,8 @@ pub async fn cross_bridge_balance_test(
         gravity_address,
         params.gravity_id.clone(),
         single_iteration_relayer_config.clone(),
-        monitored_erc20s.clone(),
-        footoken_metadata.base,
+        erc20_addresses.clone(),
+        footoken_metadata.base.clone(),
         validator_cosmos_keys.clone(),
         validator_eth_addrs.clone(),
         validator_eth_keys[0],
@@ -93,17 +104,16 @@ pub async fn cross_bridge_balance_test(
     )
     .await;
 
+    info!("\n\n\n CREATING COSMOS -> ETH ACTIVITY \n\n\n");
     create_send_to_cosmos_activity(
         web30,
-        grpc.clone(),
         contact,
-        params.gravity_id.clone(),
-        single_iteration_relayer_config.clone(),
         keys.clone(),
         validator_cosmos_keys.clone(),
         validator_eth_keys.clone(),
         gravity_address,
-        monitored_erc20s.clone(),
+        erc20_addresses.clone(),
+        footoken_erc20,
     )
     .await;
 
@@ -117,7 +127,7 @@ pub async fn cross_bridge_balance_test(
     valset_relaying_only_config.valset_relaying_mode = ValsetRelayingMode::EveryValset;
     valset_relaying_only_config.batch_request_mode = BatchRequestMode::None;
     valset_relaying_only_config.batch_relaying_mode = BatchRelayingMode::Altruistic;
-    valset_relaying_only_config.altruistic_batch_relaying_samples_delay = 10000000u64;
+    valset_relaying_only_config.relayer_loop_speed = 10u64;
     let relayer_halter = haltable_relayer(
         validator_eth_keys[0],
         Some(validator_cosmos_keys[0]),
@@ -129,6 +139,7 @@ pub async fn cross_bridge_balance_test(
         &no_relayer_config.relayer, // haltable relayer ignores the relayer enabled flag
         true,
     );
+    info!("\n\n\n CREATING VALSETS TO TEST BALANCES\n\n\n");
     test_valset_update(web30, contact, &mut grpc, &keys, gravity_address).await;
     test_valset_update(web30, contact, &mut grpc, &keys, gravity_address).await;
     test_valset_update(web30, contact, &mut grpc, &keys, gravity_address).await;
@@ -153,8 +164,11 @@ pub async fn setup(
     web30: &Web3,
     contact: &Contact,
     grpc: GravityQueryClient<Channel>,
+    relayer_config: &RelayerConfig,
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
+    gravity_id: &str,
+    erc20_addresses: Vec<EthAddress>,
 ) -> (
     Vec<CosmosPrivateKey>, // Vec<Validator Cosmos Keys>
     Vec<EthPrivateKey>,    // Vec<Validator Eth Keys>
@@ -163,17 +177,18 @@ pub async fn setup(
     EthAddress,            // New ERC20 deployed
 ) {
     let mut grpc = grpc;
-    let ibc_metadata = footoken_metadata(contact).await;
+    let footoken_metadata = footoken_metadata(contact).await;
 
+    info!("\n\n\n DEPLOYING FOOTOKEN \n\n\n");
     // Deploy an ERC20 for Cosmos-originated IBC auto-forwards + donations to Gravity.sol
     // This call does not depend on an active relayer
-    let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
+    let footoken_erc20 = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,
         None, // Already started the orchestrators with custom config
         &mut grpc,
         false,
-        ibc_metadata.clone(),
+        footoken_metadata.clone(),
     )
     .await;
 
@@ -190,58 +205,74 @@ pub async fn setup(
         })
         .collect::<Vec<()>>();
     let coin_to_send = Coin {
-        denom: ibc_metadata.base.clone(),
-        amount: one_eth().mul(FOOTOKEN_ALLOCATION.into()),
+        denom: footoken_metadata.base.clone(),
+        amount: one_atom().mul(FOOTOKEN_ALLOCATION.into()),
     };
     let fee_coin = Coin {
-        denom: ibc_metadata.base.clone(),
+        denom: footoken_metadata.base.clone(),
         amount: 1u8.into(),
     };
+    info!("\n\n\n SENDING FOOTOKEN FROM COSMOS TO VALIDATORS ON ETHEREUM\n\n\n");
+    // This will need a relayer to run
     send_tokens_to_eth(
         contact,
-        validator_cosmos_keys.clone(),
+        validator_cosmos_keys[0],
         validator_eth_addrs.clone(),
         coin_to_send.clone(),
         fee_coin.clone(),
     )
     .await;
-    send_tokens_to_eth(
-        contact,
-        vec![validator_cosmos_keys[0]],
-        vec![(*MINER_ADDRESS)],
-        coin_to_send.clone(),
-        fee_coin.clone(),
-    )
-    .await;
+    info!("\n\n\n SENDING ERC20S FROM MINER TO VALIDATORS ON ETHEREUM\n\n\n");
+    for eth_addr in &validator_eth_addrs {
+        for erc20 in &erc20_addresses {
+            info!(
+                "Sending 10^18 of {} to {}",
+                erc20.to_string(),
+                eth_addr.to_string()
+            );
+            let res = web30
+                .erc20_send(
+                    one_eth(),
+                    eth_addr.clone(),
+                    erc20.clone(),
+                    *MINER_PRIVATE_KEY,
+                    Some(Duration::from_secs(30)),
+                    vec![
+                        SendTxOption::GasLimitMultiplier(2.0),
+                        SendTxOption::GasPriceMultiplier(2.0),
+                    ],
+                )
+                .await;
+            info!("Sent tokens to validator with res {:?}", res);
+        }
+    }
 
-    (
-        validator_cosmos_keys,
-        validator_eth_keys,
-        validator_eth_addrs,
-        ibc_metadata,
-        erc20_contract,
-    )
-}
+    info!("\n\n\n SENDING ERC20S FROM ETHEREUM TO VALIDATORS ON COSMOS\n\n\n");
+    // These will make their way to cosmos without an orchestrator
+    let mut sends: Vec<SendToCosmosArgs> = vec![];
+    for erc20 in &erc20_addresses {
+        sends.push(SendToCosmosArgs {
+            sender: *MINER_PRIVATE_KEY,
+            dest: validator_cosmos_keys[0]
+                .to_address(&ADDRESS_PREFIX)
+                .unwrap(),
+            amount: one_eth(),
+            contract: *erc20,
+        });
+    }
+    sends.push(SendToCosmosArgs {
+        sender: validator_eth_keys[0].clone(),
+        dest: validator_cosmos_keys[0]
+            .to_address(&ADDRESS_PREFIX)
+            .unwrap(),
+        amount: one_atom(),
+        contract: footoken_erc20,
+    });
 
-#[allow(clippy::too_many_arguments)]
-pub async fn create_send_to_cosmos_activity(
-    web30: &Web3,
-    grpc: QueryClient<Channel>,
-    contact: &Contact,
-    gravity_id: String,
-    relayer_config: RelayerConfig,
-    keys: Vec<ValidatorKeys>,
-    validator_cosmos_keys: Vec<CosmosPrivateKey>,
-    validator_eth_keys: Vec<EthPrivateKey>,
-    gravity_address: EthAddress,
-    erc20_addresses: Vec<EthAddress>,
-) {
-    let fee_coin = Coin {
-        denom: (*STAKING_TOKEN).clone(),
-        amount: 0u8.into(),
-    };
-    // Run the relayer so that the batches can make their way to Ethereum
-    for _ in 0..5 {
+    send_erc20s_to_cosmos(web30, gravity_address, sends).await;
+
+    // Run the relayer for a bit to clear any pending work
+    for _ in 0..10 {
         single_relayer_iteration(
             validator_eth_keys[0],
             Some(validator_cosmos_keys[0]),
@@ -258,6 +289,26 @@ pub async fn create_send_to_cosmos_activity(
         sleep(Duration::from_secs(5)).await;
     }
 
+    (
+        validator_cosmos_keys,
+        validator_eth_keys,
+        validator_eth_addrs,
+        footoken_metadata,
+        footoken_erc20,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn create_send_to_cosmos_activity(
+    web30: &Web3,
+    contact: &Contact,
+    keys: Vec<ValidatorKeys>,
+    validator_cosmos_keys: Vec<CosmosPrivateKey>,
+    validator_eth_keys: Vec<EthPrivateKey>,
+    gravity_address: EthAddress,
+    erc20_addresses: Vec<EthAddress>,
+    footoken_erc20: EthAddress,
+) {
     submit_and_pass_set_monitored_token_addresses_proposal(
         contact,
         keys.clone(),
@@ -265,18 +316,27 @@ pub async fn create_send_to_cosmos_activity(
     )
     .await;
 
+    info!("\n\n\n SENDING ERC20S FROM ETHEREUM TO VALIDATORS ON COSMOS\n\n\n");
     // Send tokens to Gravity addresses:
     let mut sends: Vec<SendToCosmosArgs> = vec![];
     for erc20 in &erc20_addresses {
         sends.push(SendToCosmosArgs {
-            sender: validator_eth_keys[0],
+            sender: *MINER_PRIVATE_KEY,
             dest: validator_cosmos_keys[0]
                 .to_address(&ADDRESS_PREFIX)
                 .unwrap(),
-            amount: one_eth(),
+            amount: one_atom(),
             contract: *erc20,
         });
     }
+    sends.push(SendToCosmosArgs {
+        sender: validator_eth_keys[0].clone(),
+        dest: validator_cosmos_keys[0]
+            .to_address(&ADDRESS_PREFIX)
+            .unwrap(),
+        amount: 10u16.into(),
+        contract: footoken_erc20,
+    });
 
     send_erc20s_to_cosmos(web30, gravity_address, sends).await;
 
@@ -291,6 +351,7 @@ pub async fn create_send_to_cosmos_activity(
     )
     .await
     .expect("Could not find gravity-test-1 channel");
+    info!("\n\n\n SETTING UP IBC AUTO FORWARDING \n\n\n");
     setup_gravity_auto_forwards(
         contact,
         (*IBC_ADDRESS_PREFIX).clone(),
@@ -307,29 +368,29 @@ pub async fn create_send_to_cosmos_activity(
         sends.push(SendToCosmosArgs {
             sender: validator_eth_keys[0],
             dest: foreign_receiver,
-            amount: one_eth(),
+            amount: one_atom(),
             contract: erc20,
         });
     }
+    info!("\n\n\n SENDING ERC20S BACK TO ETHEREUM \n\n\n");
     send_erc20s_to_cosmos(web30, gravity_address, sends).await;
 }
 
 /// Sends `coin_to_send` from `sender_keys[i]` to `reciever_addrs[i]` for all i, paying `fee_coin` to bridge
 pub async fn send_tokens_to_eth(
     contact: &Contact,
-    sender_keys: Vec<CosmosPrivateKey>,
+    sender_key: CosmosPrivateKey,
     receiver_addrs: Vec<EthAddress>,
     coin_to_send: Coin,
     fee_coin: Coin,
 ) {
-    for (i, sender) in sender_keys.into_iter().enumerate() {
-        let sender_addr = sender.to_address(&ADDRESS_PREFIX).unwrap().to_string();
-        let receiver = receiver_addrs
-            .get(i)
-            .expect("Make sure senders and receivers have the same length!");
+    let sender_addr = sender_key
+        .to_address(&*ADDRESS_PREFIX.as_str())
+        .expect("Invalid sender!");
+    for receiver in receiver_addrs {
         let res = send_to_eth(
-            sender,
-            *receiver,
+            sender_key.clone(),
+            receiver,
             coin_to_send.clone(),
             fee_coin.clone(),       // Bridge fee
             Some(fee_coin.clone()), // Chain fee
@@ -362,7 +423,7 @@ pub async fn submit_and_pass_set_monitored_token_addresses_proposal(
         },
         Coin {
             // deposit
-            amount: one_eth().mul(1000u64.into()),
+            amount: one_atom().mul(1000u64.into()),
             denom: (*STAKING_TOKEN).clone(),
         },
         Coin {
@@ -376,9 +437,9 @@ pub async fn submit_and_pass_set_monitored_token_addresses_proposal(
     )
     .await;
 
+    info!("Gov proposal executed with {:?}", res);
     vote_yes_on_proposals(contact, &keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-    trace!("Gov proposal executed with {:?}", res);
 
     let actual_erc20s = get_gravity_monitored_erc20s(contact)
         .await
@@ -400,6 +461,12 @@ pub async fn send_erc20s_to_cosmos(
     send_args: Vec<SendToCosmosArgs>,
 ) {
     for send in send_args {
+        info!(
+            "Sending {} of {} to {}",
+            send.amount.to_string(),
+            send.contract.to_string(),
+            send.dest.to_string()
+        );
         let tx_id = send_to_cosmos(
             send.contract,
             gravity_contract,
@@ -431,7 +498,7 @@ pub async fn create_send_to_eth_activity(
     gravity_id: String,
     relayer_config: RelayerConfig,
     erc20_addresses: Vec<EthAddress>,
-    ibc_denom: String,
+    footoken_denom: String,
     validator_cosmos_keys: Vec<CosmosPrivateKey>,
     validator_eth_addrs: Vec<EthAddress>,
     relayer_eth_key: EthPrivateKey,
@@ -441,7 +508,8 @@ pub async fn create_send_to_eth_activity(
         .into_iter()
         .map(|e| format!("{}{}", "gravity", e))
         .collect();
-    denoms.push(ibc_denom);
+    denoms.push(footoken_denom.clone());
+    info!("\n\n\n SENDING ERC20S TO ETH FOR BATCH CREATION\n\n\n");
     for denom in denoms {
         let coin_to_send = Coin {
             amount: 1u8.into(),
@@ -450,18 +518,32 @@ pub async fn create_send_to_eth_activity(
         let fee_coin = coin_to_send.clone();
         send_tokens_to_eth(
             contact,
-            validator_cosmos_keys.clone(),
+            validator_cosmos_keys[0].clone(),
             validator_eth_addrs.clone(),
             coin_to_send,
             fee_coin.clone(),
         )
         .await;
     }
+    let coin_to_send = Coin {
+        amount: 1u8.into(),
+        denom: footoken_denom.to_string(),
+    };
+    let fee_coin = coin_to_send.clone();
+    send_tokens_to_eth(
+        contact,
+        validator_cosmos_keys[0].clone(),
+        validator_eth_addrs.clone(),
+        coin_to_send,
+        fee_coin.clone(),
+    )
+    .await;
     let cosmos_fee = Coin {
         amount: 0u8.into(),
         denom: (*STAKING_TOKEN).clone(),
     };
 
+    info!("\n\n\n CREATING BATCHES \n\n\n");
     // Trigger batch creation
     let mut config = relayer_config.clone();
     config.batch_request_mode = BatchRequestMode::EveryBatch;
@@ -495,6 +577,7 @@ pub fn haltable_relayer(
     relayer_config: &RelayerConfig,
     should_relay_altruistic: bool,
 ) -> Sender<bool> {
+    info!("Starting haltable relayer");
     let contact = contact.clone();
     let grpc = grpc.clone();
     let gravity_id = gravity_id.to_string();
@@ -505,9 +588,11 @@ pub fn haltable_relayer(
         let rx = rx.clone();
         let system = System::new();
         loop {
+            info!("Start Relayer Iteration");
             let loop_start = Instant::now();
             let recv = rx.recv();
             if let Ok(true) = recv {
+                info!("Halting the haltable relayer!");
                 return;
             }
             let fut = single_relayer_iteration(
@@ -522,9 +607,19 @@ pub fn haltable_relayer(
                 &relayer_config,
                 should_relay_altruistic,
             );
+            info!("Halting the thread until the relayer iteration is done");
             system.block_on(fut);
+            info!("The relayer iteration is done!");
             let fut = delay_until_next_iteration(loop_start, relayer_config.relayer_loop_speed);
+            info!(
+                "Halting the thread until we have waited {} seconds",
+                relayer_config.relayer_loop_speed
+            );
             system.block_on(fut);
+            info!(
+                "We have waited {} seconds!",
+                relayer_config.relayer_loop_speed
+            );
         }
     });
     tx

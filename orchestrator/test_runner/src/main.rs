@@ -205,6 +205,7 @@ pub async fn main() {
 
     info!("Waiting for Cosmos chain to come online");
     wait_for_cosmos_online(&contact, TOTAL_TIMEOUT).await;
+    info!("Cosmos chain is online!");
 
     let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
