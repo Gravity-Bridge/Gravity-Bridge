@@ -12,6 +12,7 @@ import (
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
+	"golang.org/x/exp/slices"
 )
 
 // TODO-JT: carefully look at atomicity of this function
@@ -159,11 +160,39 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 // WARNING: These assertions must be run AFTER applying state, or the chain will halt
 func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
 	ethBals := claim.GetBridgeBalances()
+	monitoredTokens := k.GetParams(ctx).MonitoredTokenAddresses
+
+	if len(ethBals) != len(monitoredTokens) {
+		k.logger(ctx).Error(
+			"Invalid claim observed, expected number of reported balances to equal number of monitored tokens",
+			"reportedBalances", ethBals,
+			"monitoredTokens", monitoredTokens,
+			"eventNonce", claim.GetEventNonce(),
+		)
+		panic("Invalid claim observed, expected number of reported balances to equal number of monitored tokens")
+	}
+
 	for _, v := range ethBals {
+		if !slices.Contains(monitoredTokens, v.Contract) {
+			k.logger(ctx).Error(
+				"Invalid claim observed, reported balance is not one of the monitored tokens",
+				"reportedBalance", v,
+				"monitoredTokens", monitoredTokens,
+				"eventNonce", claim.GetEventNonce(),
+			)
+			panic("Invalid claim observed, reported balance is not one of the monitored tokens")
+		}
 		ethBal := v.Amount
 		contract, err := types.NewEthAddress(v.Contract)
 		if err != nil {
-			panic(fmt.Sprintf("observed attestation for event %d with bad bridge balances: %v", claim.GetEventNonce(), err))
+			k.logger(ctx).Error(
+				"Invalid claim observed, reported balance is invalid",
+				"reportedBalance", v,
+				"monitoredTokens", monitoredTokens,
+				"eventNonce", claim.GetEventNonce(),
+				"err", err,
+			)
+			panic("observed attestation for event with bad bridge balances")
 		}
 		cosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
 		var cosmosBal sdk.Coin
@@ -173,7 +202,6 @@ func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim ty
 
 			// Check the Ethereum balance against the bank supply
 			cosmosBal = k.bankKeeper.GetSupply(ctx, denom)
-
 		} else { // Cosmos originated
 			// In the event of a cosmos-based asset, we want the ethereum balance to be gravity module balance
 			// less pending txs + unconfirmed batches + pending IBC auto-forwards since new txs could have come in
@@ -252,7 +280,7 @@ func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim ty
 				"ethereumContract", contract,
 				"cosmosOriginated", cosmosOriginated,
 			)
-			panic("Ethereum balance of a token is too low!")
+			panic("Unexpected Ethereum balance! The ethereum balance should be no less than the cosmos balance for this coin.")
 		}
 	}
 }
