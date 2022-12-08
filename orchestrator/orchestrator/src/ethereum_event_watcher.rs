@@ -1,7 +1,9 @@
 //! Ethereum Event watcher watches for events such as a deposit to the Gravity Ethereum contract or a validator set update
 //! or a transaction batch update. It then responds to these events by performing actions on the Cosmos chain if required
 
-use clarity::{utils::bytes_to_hex_str, Address as EthAddress, Uint256};
+use clarity::{
+    utils::bytes_to_hex_str, Address as EthAddress, PrivateKey as EthPrivateKey, Uint256,
+};
 use cosmos_gravity::{query::get_last_event_nonce_for_validator, send::send_ethereum_claims};
 use deep_space::Contact;
 use deep_space::{
@@ -38,12 +40,16 @@ pub async fn check_for_events(
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
-    our_private_key: CosmosPrivateKey,
+    cosmos_private_key: CosmosPrivateKey,
+    eth_private_key: EthPrivateKey,
     fee: Coin,
     starting_block: Uint256,
     block_delay: Uint256,
 ) -> Result<CheckedNonces, GravityError> {
-    let our_cosmos_address = our_private_key.to_address(&contact.get_prefix()).unwrap();
+    let our_cosmos_address = cosmos_private_key
+        .to_address(&contact.get_prefix())
+        .unwrap();
+    let our_eth_address = eth_private_key.to_address();
     let latest_block = get_block_number_with_retry(web3).await;
     let latest_block = latest_block - block_delay;
 
@@ -200,7 +206,8 @@ pub async fn check_for_events(
                 web3,
                 contact,
                 gravity_contract_address,
-                our_private_key,
+                cosmos_private_key,
+                our_eth_address,
                 deposits.clone(),
                 withdraws.clone(),
                 erc20_deploys.clone(),
