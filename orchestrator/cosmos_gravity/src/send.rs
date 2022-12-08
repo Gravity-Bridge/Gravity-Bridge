@@ -21,6 +21,7 @@ use gravity_utils::types::*;
 use num256::Uint256;
 use std::{collections::HashMap, time::Duration};
 use web30::client::Web3;
+use web30::jsonrpc::error::Web3Error;
 
 use crate::utils::{
     collect_eth_balances_for_claims, get_gravity_monitored_erc20s, BadSignatureEvidence,
@@ -225,7 +226,8 @@ pub async fn send_ethereum_claims(
     web3: &Web3,
     contact: &Contact,
     gravity_contract: EthAddress,
-    private_key: impl PrivateKey,
+    cosmos_private_key: impl PrivateKey,
+    our_eth_address: EthAddress,
     deposits: Vec<SendToCosmosEvent>,
     withdraws: Vec<TransactionBatchExecutedEvent>,
     erc20_deploys: Vec<Erc20DeployedEvent>,
@@ -233,16 +235,19 @@ pub async fn send_ethereum_claims(
     valsets: Vec<ValsetUpdatedEvent>,
     fee: Coin,
 ) -> Result<Option<TxResponse>, GravityError> {
-    let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
+    let our_cosmos_address = cosmos_private_key
+        .to_address(&contact.get_prefix())
+        .unwrap();
 
     let monitored_erc20s = get_gravity_monitored_erc20s(contact).await?;
-    let must_monitor_erc20s = monitored_erc20s.is_empty();
+    let must_monitor_erc20s = !monitored_erc20s.is_empty();
 
     // If the gov param is populated, Orchestrators are required to submit the Gravity.sol balances for various ERC20s
     let eth_balances_by_block_height = if must_monitor_erc20s {
         Some(
             collect_eth_balances_for_claims(
                 web3,
+                our_eth_address,
                 gravity_contract,
                 monitored_erc20s,
                 &deposits,
@@ -257,6 +262,16 @@ pub async fn send_ethereum_claims(
         None
     };
 
+    // Error if ERC20s should be monitored but we have no balances to report
+    if must_monitor_erc20s
+        && (eth_balances_by_block_height.is_none()
+            || eth_balances_by_block_height.clone().unwrap().is_empty())
+    {
+        return Err(GravityError::EthereumRestError(Web3Error::BadResponse(
+            "Could not obtain historical Gravity.sol Eth balances to report in claims".to_string(),
+        )));
+    }
+
     // This sorts oracle messages by event nonce before submitting them. It's not a pretty implementation because
     // we're missing an intermediary layer of abstraction. We could implement 'EventTrait' and then implement sort
     // for it, but then when we go to transform 'EventTrait' objects into GravityMsg enum values we'll have all sorts
@@ -268,22 +283,31 @@ pub async fn send_ethereum_claims(
     let mut unordered_msgs = HashMap::new();
 
     // Create claim Msgs, keeping their event_nonces for insertion into unordered_msgs
-    let deposit_nonces_msgs: Vec<(u64, Msg)> =
-        create_claim_msgs(eth_balances_by_block_height.clone(), deposits, our_address);
-    let withdraw_nonces_msgs: Vec<(u64, Msg)> =
-        create_claim_msgs(eth_balances_by_block_height.clone(), withdraws, our_address);
+    let deposit_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        eth_balances_by_block_height.clone(),
+        deposits,
+        our_cosmos_address,
+    );
+    let withdraw_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        eth_balances_by_block_height.clone(),
+        withdraws,
+        our_cosmos_address,
+    );
     let deploy_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
         eth_balances_by_block_height.clone(),
         erc20_deploys,
-        our_address,
+        our_cosmos_address,
     );
     let logic_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
         eth_balances_by_block_height.clone(),
         logic_calls,
-        our_address,
+        our_cosmos_address,
     );
-    let valset_nonces_msgs: Vec<(u64, Msg)> =
-        create_claim_msgs(eth_balances_by_block_height.clone(), valsets, our_address);
+    let valset_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(
+        eth_balances_by_block_height.clone(),
+        valsets,
+        our_cosmos_address,
+    );
 
     // Collect all of the (nonces, claims) into an iterator, then add them to unordered_msgs
     let _: Vec<()> = deposit_nonces_msgs
@@ -324,7 +348,7 @@ pub async fn send_ethereum_claims(
     }
 
     contact
-        .send_message(&msgs, None, &[fee], Some(TIMEOUT), private_key)
+        .send_message(&msgs, None, &[fee], Some(TIMEOUT), cosmos_private_key)
         .await
         .map(|v| Some(v))
         .map_err(GravityError::CosmosGrpcError)
@@ -356,6 +380,7 @@ fn create_claim_msgs(
 
         match eth_balances {
             Some(eth_bals) => {
+                info!("Adding bridge_balances to Msg: {:?}", eth_bals);
                 // Create msg
                 msgs.push((
                     event.get_event_nonce(),
