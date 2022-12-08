@@ -1,7 +1,9 @@
 //! Ethereum Event watcher watches for events such as a deposit to the Gravity Ethereum contract or a validator set update
 //! or a transaction batch update. It then responds to these events by performing actions on the Cosmos chain if required
 
-use clarity::{utils::bytes_to_hex_str, Address as EthAddress, Uint256};
+use clarity::{
+    utils::bytes_to_hex_str, Address as EthAddress, PrivateKey as EthPrivateKey, Uint256,
+};
 use cosmos_gravity::{query::get_last_event_nonce_for_validator, send::send_ethereum_claims};
 use deep_space::Contact;
 use deep_space::{
@@ -39,11 +41,12 @@ pub async fn check_for_events(
     grpc_client: &mut GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
     our_cosmos_key: CosmosPrivateKey,
-    our_eth_address: EthAddress,
+    our_eth_key: EthPrivateKey,
     fee: Coin,
     starting_block: Uint256,
 ) -> Result<CheckedNonces, GravityError> {
     let our_cosmos_address = our_cosmos_key.to_address(&contact.get_prefix()).unwrap();
+    let our_eth_address = our_eth_key.to_address();
     let latest_block = get_latest_safe_block(web3).await;
     trace!(
         "Checking for events starting {} safe {}",
