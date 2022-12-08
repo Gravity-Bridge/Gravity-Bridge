@@ -70,7 +70,7 @@ pub async fn orchestrator_main_loop(
 
     let a = eth_oracle_main_loop(
         cosmos_key,
-        eth_address,
+        ethereum_key,
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
@@ -145,7 +145,7 @@ pub async fn test_eth_connection(web3: Web3) {
 /// and ferried over to Cosmos where they will be used to issue tokens or process batches.
 pub async fn eth_oracle_main_loop(
     cosmos_key: CosmosPrivateKey,
-    eth_address: EthAddress,
+    ethereum_key: EthPrivateKey,
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
@@ -254,7 +254,7 @@ pub async fn eth_oracle_main_loop(
             &mut grpc_client,
             gravity_contract_address,
             cosmos_key,
-            eth_address,
+            ethereum_key,
             fee.clone(),
             last_checked_block,
         )
