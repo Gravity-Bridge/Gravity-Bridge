@@ -31,7 +31,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::{Plan, SoftwareUpgradeProposal};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::MsgSendToCosmosClaim;
+use gravity_proto::gravity::{Erc20Token, MsgSendToCosmosClaim};
 use gravity_utils::types::BatchRelayingMode;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
@@ -400,7 +400,9 @@ pub async fn submit_false_claims(
     contact: &Contact,
     fee: &Fee,
     timeout: Option<Duration>,
+    bridge_balances: Option<Vec<Erc20Token>>,
 ) {
+    let bridge_balances = bridge_balances.unwrap_or(vec![]);
     for (i, k) in keys.iter().enumerate() {
         let orch_addr = k.to_address(&contact.get_prefix()).unwrap();
         let claim = MsgSendToCosmosClaim {
@@ -411,7 +413,7 @@ pub async fn submit_false_claims(
             cosmos_receiver: cosmos_receiver.to_string(),
             ethereum_sender: ethereum_sender.to_string(),
             orchestrator: orch_addr.to_string(),
-            bridge_balances: vec![],
+            bridge_balances: bridge_balances.clone(),
         };
         info!("Oracle number {} submitting false deposit {:?}", i, claim);
         let msg_url = "/gravity.v1.MsgSendToCosmosClaim";
