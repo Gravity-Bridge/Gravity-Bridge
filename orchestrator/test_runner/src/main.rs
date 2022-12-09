@@ -83,6 +83,7 @@ const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
 const TOTAL_TIMEOUT: Duration = Duration::from_secs(300);
 // The config file location for hermes
 const HERMES_CONFIG: &str = "/gravity/tests/assets/ibc-relayer-config.toml";
+const GRAVITY_MODULE_ADDRESS: &str = "gravity16n3lc7cywa68mg50qhp847034w88pntqzx3ksm";
 
 // Retrieve values from runtime ENV vars
 lazy_static! {
