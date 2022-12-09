@@ -127,6 +127,7 @@ pub async fn unhalt_bridge_test(
         contact,
         &fee,
         Some(OPERATION_TIMEOUT),
+        None,
     )
     .await;
 
