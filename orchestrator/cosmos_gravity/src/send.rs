@@ -1,6 +1,6 @@
-use clarity::{constants::ZERO_ADDRESS, Address as EthAddress};
+use clarity::Address as EthAddress;
 use clarity::{PrivateKey as EthPrivateKey, Signature};
-use deep_space::address::Address;
+use deep_space::address::Address as CosmosAddress;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey;
 use deep_space::Contact;
@@ -10,19 +10,15 @@ use ethereum_gravity::message_signatures::{
     encode_logic_call_confirm, encode_tx_batch_confirm, encode_valset_confirm,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
-use gravity_proto::gravity::MsgErc20DeployedClaim;
-use gravity_proto::gravity::MsgLogicCallExecutedClaim;
-use gravity_proto::gravity::MsgRequestBatch;
-use gravity_proto::gravity::MsgSendToCosmosClaim;
-use gravity_proto::gravity::MsgSendToEth;
-use gravity_proto::gravity::MsgSetOrchestratorAddress;
-use gravity_proto::gravity::MsgValsetConfirm;
-use gravity_proto::gravity::MsgValsetUpdatedClaim;
-use gravity_proto::gravity::{MsgBatchSendToEthClaim, MsgSubmitBadSignatureEvidence};
-use gravity_proto::gravity::{MsgCancelSendToEth, MsgConfirmBatch};
-use gravity_proto::gravity::{MsgConfirmLogicCall, MsgExecuteIbcAutoForwards};
-use gravity_utils::num_conversion::downcast_uint256;
+
+use gravity_proto::gravity::{
+    MsgCancelSendToEth, MsgConfirmBatch, MsgConfirmLogicCall, MsgExecuteIbcAutoForwards,
+    MsgRequestBatch, MsgSendToEth, MsgSetOrchestratorAddress, MsgSubmitBadSignatureEvidence,
+    MsgValsetConfirm,
+};
+
 use gravity_utils::types::*;
+
 use std::{collections::HashMap, time::Duration};
 
 use crate::utils::BadSignatureEvidence;
@@ -35,11 +31,6 @@ pub const MSG_SET_ORCHESTRATOR_ADDRESS_TYPE_URL: &str = "/gravity.v1.MsgSetOrche
 pub const MSG_VALSET_CONFIRM_TYPE_URL: &str = "/gravity.v1.MsgValsetConfirm";
 pub const MSG_CONFIRM_BATCH_TYPE_URL: &str = "/gravity.v1.MsgConfirmBatch";
 pub const MSG_CONFIRM_LOGIC_CALL_TYPE_URL: &str = "/gravity.v1.MsgConfirmLogicCall";
-pub const MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgSendToCosmosClaim";
-pub const MSG_BATCH_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgBatchSendToEthClaim";
-pub const MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgERC20DeployedClaim";
-pub const MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgLogicCallExecutedClaim";
-pub const MSG_VALSET_UPDATED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgValsetUpdatedClaim";
 pub const MSG_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgSendToEth";
 pub const MSG_REQUEST_BATCH_TYPE_URL: &str = "/gravity.v1.MsgRequestBatch";
 pub const MSG_SUBMIT_BAD_SIGNATURE_EVIDENCE_TYPE_URL: &str =
@@ -54,7 +45,7 @@ pub const MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL: &str = "/gravity.v1.MsgExecute
 pub async fn set_gravity_delegate_addresses(
     contact: &Contact,
     delegate_eth_address: EthAddress,
-    delegate_cosmos_address: Address,
+    delegate_cosmos_address: CosmosAddress,
     private_key: impl PrivateKey,
     fee: Coin,
 ) -> Result<TxResponse, CosmosGrpcError> {
@@ -222,10 +213,11 @@ pub async fn send_logic_call_confirm(
         .await
 }
 
+/// Creates and submits Ethereum event claims from the input EthereumEvent collections
 #[allow(clippy::too_many_arguments)]
 pub async fn send_ethereum_claims(
     contact: &Contact,
-    private_key: impl PrivateKey,
+    our_cosmos_key: impl PrivateKey,
     deposits: Vec<SendToCosmosEvent>,
     withdraws: Vec<TransactionBatchExecutedEvent>,
     erc20_deploys: Vec<Erc20DeployedEvent>,
@@ -233,7 +225,7 @@ pub async fn send_ethereum_claims(
     valsets: Vec<ValsetUpdatedEvent>,
     fee: Coin,
 ) -> Result<TxResponse, CosmosGrpcError> {
-    let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
+    let our_cosmos_address = our_cosmos_key.to_address(&contact.get_prefix()).unwrap();
 
     // This sorts oracle messages by event nonce before submitting them. It's not a pretty implementation because
     // we're missing an intermediary layer of abstraction. We could implement 'EventTrait' and then implement sort
@@ -244,68 +236,25 @@ pub async fn send_ethereum_claims(
     //
     // We index the events by event nonce in an unordered hashmap and then play them back in order into a vec
     let mut unordered_msgs = HashMap::new();
-    for deposit in deposits {
-        let claim = MsgSendToCosmosClaim {
-            event_nonce: deposit.event_nonce,
-            eth_block_height: downcast_uint256(deposit.block_height).unwrap(),
-            token_contract: deposit.erc20.to_string(),
-            amount: deposit.amount.to_string(),
-            cosmos_receiver: deposit.destination,
-            ethereum_sender: deposit.sender.to_string(),
-            orchestrator: our_address.to_string(),
-        };
-        let msg = Msg::new(MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL, claim);
-        assert!(unordered_msgs.insert(deposit.event_nonce, msg).is_none());
-    }
-    for withdraw in withdraws {
-        let claim = MsgBatchSendToEthClaim {
-            event_nonce: withdraw.event_nonce,
-            eth_block_height: downcast_uint256(withdraw.block_height).unwrap(),
-            token_contract: withdraw.erc20.to_string(),
-            batch_nonce: withdraw.batch_nonce,
-            orchestrator: our_address.to_string(),
-        };
-        let msg = Msg::new(MSG_BATCH_SEND_TO_ETH_TYPE_URL, claim);
-        assert!(unordered_msgs.insert(withdraw.event_nonce, msg).is_none());
-    }
-    for deploy in erc20_deploys {
-        let claim = MsgErc20DeployedClaim {
-            event_nonce: deploy.event_nonce,
-            eth_block_height: downcast_uint256(deploy.block_height).unwrap(),
-            cosmos_denom: deploy.cosmos_denom,
-            token_contract: deploy.erc20_address.to_string(),
-            name: deploy.name,
-            symbol: deploy.symbol,
-            decimals: deploy.decimals as u64,
-            orchestrator: our_address.to_string(),
-        };
-        let msg = Msg::new(MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL, claim);
-        assert!(unordered_msgs.insert(deploy.event_nonce, msg).is_none());
-    }
-    for call in logic_calls {
-        let claim = MsgLogicCallExecutedClaim {
-            event_nonce: call.event_nonce,
-            eth_block_height: downcast_uint256(call.block_height).unwrap(),
-            invalidation_id: call.invalidation_id,
-            invalidation_nonce: call.invalidation_nonce,
-            orchestrator: our_address.to_string(),
-        };
-        let msg = Msg::new(MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, claim);
-        assert!(unordered_msgs.insert(call.event_nonce, msg).is_none());
-    }
-    for valset in valsets {
-        let claim = MsgValsetUpdatedClaim {
-            event_nonce: valset.event_nonce,
-            valset_nonce: valset.valset_nonce,
-            eth_block_height: downcast_uint256(valset.block_height).unwrap(),
-            members: valset.members.iter().map(|v| v.into()).collect(),
-            reward_amount: valset.reward_amount.to_string(),
-            reward_token: valset.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),
-            orchestrator: our_address.to_string(),
-        };
-        let msg = Msg::new(MSG_VALSET_UPDATED_CLAIM_TYPE_URL, claim);
-        assert!(unordered_msgs.insert(valset.event_nonce, msg).is_none());
-    }
+
+    // Create claim Msgs, keeping their event_nonces for insertion into unordered_msgs
+
+    let deposit_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(deposits, our_cosmos_address);
+    let withdraw_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(withdraws, our_cosmos_address);
+    let deploy_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(erc20_deploys, our_cosmos_address);
+    let logic_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(logic_calls, our_cosmos_address);
+    let valset_nonces_msgs: Vec<(u64, Msg)> = create_claim_msgs(valsets, our_cosmos_address);
+
+    // Collect all of the claims into an iterator, then add them to unordered_msgs
+    deposit_nonces_msgs
+        .into_iter()
+        .chain(withdraw_nonces_msgs.into_iter())
+        .chain(deploy_nonces_msgs.into_iter())
+        .chain(logic_nonces_msgs.into_iter())
+        .chain(valset_nonces_msgs.into_iter())
+        .map(|(nonce, msg)| assert!(unordered_msgs.insert(nonce, msg).is_none()))
+        .for_each(drop); // Exhaust the iterator so that `unordered_msgs` is populated from .map()
+
     let mut keys = Vec::new();
     for (key, _) in unordered_msgs.iter() {
         keys.push(*key);
@@ -327,8 +276,22 @@ pub async fn send_ethereum_claims(
     }
 
     contact
-        .send_message(&msgs, None, &[fee], Some(TIMEOUT), private_key)
+        .send_message(&msgs, None, &[fee], Some(TIMEOUT), our_cosmos_key)
         .await
+}
+
+/// Creates the `Msg`s needed for `orchestrator` to attest to `events`
+/// Returns a Vec of (event_nonce: u64, Msg), which will contain one (nonce, msg) per event
+fn create_claim_msgs(
+    events: Vec<impl EthereumEvent>,
+    orchestrator: CosmosAddress,
+) -> Vec<(u64, Msg)> {
+    let mut msgs = vec![];
+    for event in events {
+        // Create msg
+        msgs.push((event.get_event_nonce(), event.to_claim_msg(orchestrator)));
+    }
+    msgs
 }
 
 /// Sends tokens from Cosmos to Ethereum. These tokens will not be sent immediately instead
