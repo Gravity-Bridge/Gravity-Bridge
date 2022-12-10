@@ -141,13 +141,19 @@ pub async fn get_gravity_monitored_erc20s(
     contact: &Contact,
 ) -> Result<Vec<EthAddress>, GravityError> {
     const PARAM: &str = "MonitoredTokenAddresses";
-    let erc20s = contact.get_param("gravity", PARAM).await?;
-    let erc20s = erc20s
-        .param
-        .expect("No response for the gravity MonitoredTokenAddresses param!")
-        .value;
-    info!("Got parameter {}: {}", PARAM, erc20s);
-
+    let res = contact.get_param("gravity", PARAM).await;
+    if res.is_err() {
+        return Ok(vec![]); // The parameter has not yet been added, return an empty collection
+    }
+    let erc20s = res.unwrap().param;
+    if erc20s.is_none() {
+        return Ok(vec![]); // The parameter has not yet been added, return an empty collection
+    }
+    let erc20s = erc20s.unwrap().value;
+    info!("Got parameter {}: '{}'", PARAM, erc20s);
+    if erc20s.is_empty() {
+        return Ok(vec![]); // The parameter has not yet been added, return an empty collection
+    }
     // Decode ERC20s from string
     let erc20_strings = serde_json::from_str::<Vec<String>>(&erc20s)
         .expect("serde_json string -> Vec<String> failed");
