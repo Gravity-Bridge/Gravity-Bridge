@@ -1,11 +1,6 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
 use crate::{happy_path_test, happy_path_test_v2, utils::*};
 use clarity::Address as EthAddress;
-use cosmos_gravity::send::{
-    MSG_BATCH_SEND_TO_ETH_TYPE_URL, MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL,
-    MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL,
-    MSG_VALSET_UPDATED_CLAIM_TYPE_URL,
-};
 use deep_space::client::ChainStatus;
 use deep_space::utils::decode_any;
 use deep_space::{Contact, CosmosPrivateKey};
@@ -15,6 +10,11 @@ use gravity_proto::gravity::{
     ClaimType, EthereumClaim, MsgBatchSendToEthClaim, MsgErc20DeployedClaim,
     MsgLogicCallExecutedClaim, MsgSendToCosmosClaim, MsgValsetUpdatedClaim,
     QueryAttestationsRequest,
+};
+use gravity_utils::types::{
+    MSG_BATCH_SEND_TO_ETH_TYPE_URL, MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL,
+    MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL,
+    MSG_VALSET_UPDATED_CLAIM_TYPE_URL,
 };
 use std::time::Duration;
 use tokio::time::sleep as delay_for;
