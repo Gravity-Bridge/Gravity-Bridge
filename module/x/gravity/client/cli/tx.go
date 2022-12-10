@@ -300,6 +300,7 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 	return cmd
 }
 
+// CmdSendToEth sends tokens to Ethereum. Locks Cosmos-side tokens into the Transaction pool for batching.
 func CmdSendToEth() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -385,11 +386,13 @@ func CmdCancelSendToEth() *cobra.Command {
 	return cmd
 }
 
+// CmdRequestBatch requests that the validators create and confirm a batch to be sent to Ethereum. This
+// is a manual command which duplicates the efforts of the Ethereum Relayer, likely not to be used often
 func CmdRequestBatch() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "build-batch [token_contract_address]",
-		Short: "Build a new batch on the cosmos side for pooled withdrawal transactions",
+		Use:   "request-batch [token_contract_address]",
+		Short: "Request a new batch on the cosmos side for pooled withdrawal transactions",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
