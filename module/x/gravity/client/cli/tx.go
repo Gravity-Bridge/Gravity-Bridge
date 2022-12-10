@@ -22,6 +22,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
+// GetTxCmd bundles all the subcmds together so they appear under `gravity tx`
 func GetTxCmd(storeKey string) *cobra.Command {
 	// needed for governance proposal txs in cli case
 	// internal check prevents double registration in node case
@@ -50,6 +51,8 @@ func GetTxCmd(storeKey string) *cobra.Command {
 	return gravityTxCmd
 }
 
+// CmdGovIbcMetadataProposal enables users to easily submit json file proposals for IBC Metadata registration, needed to
+// send Cosmos tokens over to Ethereum
 func CmdGovIbcMetadataProposal() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -146,7 +149,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 	return cmd
 }
 
-// AirDropProposalPlain is a struct with plaintext recipients so that the proposal.json can be readable
+// AirdropProposalPlain is a struct with plaintext recipients so that the proposal.json can be readable
 // and not subject to the strange encoding of the airdrop proposal tx where the recipients are packed as 20
 // byte sets
 type AirdropProposalPlain struct {
@@ -157,6 +160,8 @@ type AirdropProposalPlain struct {
 	Amounts     []uint64
 }
 
+// CmdGovAirdropProposal enables users to easily submit json file proposals for token airdrops, eliminating the need for
+// users to claim their airdrops / a custom on-chain module
 func CmdGovAirdropProposal() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -236,6 +241,8 @@ func CmdGovAirdropProposal() *cobra.Command {
 	return cmd
 }
 
+// CmdGovUnhaltBridgeProposal enables users to easily submit json file proposals to set the Gravity module parameters
+// which account for Ethereum forks, "rewinding" state and letting the chain achieve consensus after the fork is settled
 func CmdGovUnhaltBridgeProposal() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -342,6 +349,8 @@ func CmdSendToEth() *cobra.Command {
 	return cmd
 }
 
+// CmdCancelSendToEth enables users to take their Transaction out of the pool. Note that this cannot be done if it is
+// locked up in a pending batch or if it has already been executed on Ethereum
 func CmdCancelSendToEth() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -405,6 +414,8 @@ func CmdRequestBatch() *cobra.Command {
 	return cmd
 }
 
+// CmdSetOrchestratorAddress registers delegate keys for a validator so that their Orchestrator has authority to perform
+// its responsibility
 func CmdSetOrchestratorAddress() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -432,6 +443,11 @@ func CmdSetOrchestratorAddress() *cobra.Command {
 	return cmd
 }
 
+// CmdExecutePendingIbcAutoForwards Executes a number of queued IBC Auto Forwards. When users perform a Send to Cosmos
+// with a registered foreign address prefix (e.g. canto1... cre1...), their funds will be locked in the Gravity module
+// until their pending forward is executed. This will send the funds to the equivalent gravity-prefixed account and then
+// immediately create an IBC transfer to the destination chain to the original foreign account. If there is an IBC
+// failure, the funds will be deposited on the gravity-prefixed account.
 func CmdExecutePendingIbcAutoForwards() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
