@@ -554,14 +554,14 @@ func CheckValsets(ctx sdk.Context, k Keeper) error {
 		}
 		// we found the valset for the claim, check that the valset powers match
 		var currBvs types.BridgeValidators = storedVs.Members
-		currIntBvs, err := currBvs.ToInternal()
-		if err != nil {
+		currIntBvs, er := currBvs.ToInternal()
+		if er != nil {
 			err = fmt.Errorf("invalid bridge validators in store for valset nonce %d", storedVs.Nonce)
 			return true
 		}
 		var claimBvs types.BridgeValidators = claimVs.Members
-		claimIntBvs, err := claimBvs.ToInternal()
-		if err != nil {
+		claimIntBvs, er := claimBvs.ToInternal()
+		if er != nil {
 			err = fmt.Errorf("invalid valset updated claim in store for event nonce %d, valset nonce %d", claimVs.EventNonce, claimVs.ValsetNonce)
 			return true
 		}
