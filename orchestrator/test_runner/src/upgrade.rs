@@ -81,10 +81,10 @@ pub async fn upgrade_part_1(
     let upgrade_height = (curr_height + 40) as i64;
     let upgrade_prop_params = UpgradeProposalParams {
         upgrade_height,
-        plan_name: "pleiades".to_string(),
-        plan_info: "Pleiades upgrade info here".to_string(),
-        proposal_title: "Pleiades upgrade proposal title here".to_string(),
-        proposal_desc: "Pleiades upgrade proposal description here".to_string(),
+        plan_name: "pleiades2".to_string(),
+        plan_info: "Pleiades part 2 upgrade info here".to_string(),
+        proposal_title: "Pleiades part 2 upgrade proposal title here".to_string(),
+        proposal_desc: "Pleiades part 2 upgrade proposal description here".to_string(),
     };
     info!(
         "Starting upgrade vote with params name: {}, height: {}",

@@ -315,7 +315,7 @@ jobs:
           restore-keys: |
             integration-test-cache-
       - name: Test Pleiades upgrade
-        run: tests/run-upgrade-test.sh v1.6.5
+        run: tests/run-upgrade-test.sh v1.7.2
         env:
           NO_IMAGE_BUILD: True
   ibc_auto_forward_test:
