@@ -52,4 +52,10 @@ func RegisterUpgradeHandlers(
 		pleiades.PolarisToPleiadesPlanName,
 		pleiades.GetPleiadesUpgradeHandler(mm, configurator, crisisKeeper),
 	)
+
+	// Pleiades part 2 aka v3->v4 UPGRADE HANDLER SETUP
+	upgradeKeeper.SetUpgradeHandler(
+		pleiades.PleiadesPart1ToPart2PlanName,
+		pleiades.GetPleiades2UpgradeHandler(mm, configurator, crisisKeeper),
+	)
 }
