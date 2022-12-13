@@ -1,26 +1,27 @@
-package app
+package ante
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/authz"
+	"github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	ibcante "github.com/cosmos/ibc-go/v3/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 )
 
-// Constructs a new sdk.AnteHandler for the Gravity app.
+// NewAnteHandler Constructs a new sdk.AnteHandler for the Gravity app.
 // AnteHandlers are functions which validate Txs before their contained Msgs are executed, AnteHandlers are constructed
-// from a chain of AnteDecorators, the final AnteDecorator in the chain being ante.Terminator.
+// from a chain of AnteDecorators, the final AnteDecorator in the chain being sdkante.Terminator.
 // This custom AnteHandler constructor loosely chains together the pre-Terminator-ed default sdk AnteHandler
 // with additional AnteDecorators. This complicated process is desirable because:
 // 1. the default sdk AnteHandler can change on any upgrade (so we do not want to have a stale list of AnteDecorators),
 // 2. it is not possible to modify an AnteHandler once it is constructed
-func newAnteHandler(options ante.HandlerOptions, ibcKeeper *ibckeeper.Keeper, cdc codec.BinaryCodec) (*sdk.AnteHandler, error) {
+func NewAnteHandler(options sdkante.HandlerOptions, ibcKeeper *ibckeeper.Keeper, cdc codec.BinaryCodec) (*sdk.AnteHandler, error) {
 	// Call the default sdk antehandler constructor to avoid auditing our changes in the future
-	baseAnteHandler, err := ante.NewAnteHandler(options)
+	baseAnteHandler, err := sdkante.NewAnteHandler(options)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Unable to create baseAnteHanlder")
 	}
