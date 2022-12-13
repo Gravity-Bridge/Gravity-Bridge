@@ -135,6 +135,7 @@ pub async fn send_to_eth_and_confirm(
         eth_receiver,
         send_to_eth_coin,
         bridge_fee_coin,
+        None,
         cosmos_fee_coin,
         contact,
     )

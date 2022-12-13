@@ -295,22 +295,36 @@ fn create_claim_msgs(
 }
 
 /// Sends tokens from Cosmos to Ethereum. These tokens will not be sent immediately instead
-/// they will require some time to be included in a batch. Note that there are two fees
-/// one is the fee to be sent to Ethereum, which must be the same denom as the amount
-/// the other is the Cosmos chain fee, which can be any allowed coin
+/// they will require some time to be included in a batch. Note that there are three fees:
+/// bridge_fee: the fee to be sent to Ethereum, which must be the same denom as the amount
+/// chain_fee: the Gravity chain fee, which must be the same denom as the amount and which
+///     must also meet the governance-defined minimum percentage of the amount
+/// cosmos_fee: the Cosmos anti-spam fee set by each Validator which is required for any Tx
+///     to be considered for the mempool.
 pub async fn send_to_eth(
     private_key: impl PrivateKey,
     destination: EthAddress,
     amount: Coin,
     bridge_fee: Coin,
+    chain_fee: Option<Coin>,
     fee: Coin,
     contact: &Contact,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
     if amount.denom != bridge_fee.denom {
         return Err(CosmosGrpcError::BadInput(format!(
-            "{} {} is an invalid denom set for SendToEth you must pay fees in the same token your sending",
+            "{} {} is an invalid denom set for SendToEth you must pay ethereum fees in the same token your sending",
             amount.denom, bridge_fee.denom,
+        )));
+    }
+    let chain_fee = chain_fee.unwrap_or(Coin {
+        amount: 0u8.into(),
+        denom: amount.denom.clone(),
+    });
+    if amount.denom != chain_fee.denom {
+        return Err(CosmosGrpcError::BadInput(format!(
+            "{} {} is an invalid denom set for SendToEth you must pay chain fees in the same token your sending",
+            amount.denom, chain_fee.denom,
         )));
     }
     let balances = contact.get_balances(our_address).await.unwrap();
@@ -338,7 +352,8 @@ pub async fn send_to_eth(
         sender: our_address.to_string(),
         eth_dest: destination.to_string(),
         amount: Some(amount.into()),
-        bridge_fee: Some(bridge_fee.clone().into()),
+        bridge_fee: Some(bridge_fee.into()),
+        chain_fee: Some(chain_fee.into()),
     };
 
     let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);

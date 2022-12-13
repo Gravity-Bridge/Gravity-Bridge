@@ -397,6 +397,7 @@ pub async fn lock_funds_in_pool(
                 e_dest_addr,
                 send_coin,
                 send_fee.clone(),
+                None,
                 send_fee,
                 contact,
             );

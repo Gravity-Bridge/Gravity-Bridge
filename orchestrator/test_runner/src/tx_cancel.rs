@@ -61,6 +61,7 @@ pub async fn send_to_eth_and_cancel(
             amount: amount.clone(),
         },
         bridge_denom_fee.clone(),
+        None,
         bridge_denom_fee.clone(),
         contact,
     )

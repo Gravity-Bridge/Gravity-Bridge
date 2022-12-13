@@ -212,10 +212,14 @@ pub struct MsgValsetConfirmResponse {
 /// AMOUNT:
 /// the coin to send across the bridge, note the restriction that this is a
 /// single coin not a set of coins that is normal in other Cosmos messages
-/// FEE:
+/// BRIDGE_FEE:
 /// the fee paid for the bridge, distinct from the fee paid to the chain to
 /// actually send this message in the first place. So a successful send has
 /// two layers of fees for the user
+/// CHAIN_FEE:
+/// the fee paid to the chain for handling the request, which must be a
+/// certain percentage of the AMOUNT, as determined by governance.
+/// This Msg will be rejected if CHAIN_FEE is insufficient.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgSendToEth {
     #[prost(string, tag="1")]
@@ -226,6 +230,8 @@ pub struct MsgSendToEth {
     pub amount: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
     #[prost(message, optional, tag="4")]
     pub bridge_fee: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+    #[prost(message, optional, tag="5")]
+    pub chain_fee: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgSendToEthResponse {

@@ -200,6 +200,7 @@ async fn setup_batch_test(
             amount: send_amount.clone(),
         },
         bridge_denom_fee.clone(),
+        None,
         bridge_denom_fee.clone(),
         contact,
     )

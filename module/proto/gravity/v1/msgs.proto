@@ -109,10 +109,14 @@ message MsgValsetConfirmResponse {}
 // AMOUNT:
 // the coin to send across the bridge, note the restriction that this is a
 // single coin not a set of coins that is normal in other Cosmos messages
-// FEE:
+// BRIDGE_FEE:
 // the fee paid for the bridge, distinct from the fee paid to the chain to
 // actually send this message in the first place. So a successful send has
 // two layers of fees for the user
+// CHAIN_FEE:
+// the fee paid to the chain for handling the request, which must be a
+// certain percentage of the AMOUNT, as determined by governance.
+// This Msg will be rejected if CHAIN_FEE is insufficient.
 message MsgSendToEth {
   string                   sender   = 1;
   string                   eth_dest = 2;
@@ -120,6 +124,9 @@ message MsgSendToEth {
     (gogoproto.nullable) = false
   ];
   cosmos.base.v1beta1.Coin bridge_fee = 4 [
+    (gogoproto.nullable) = false
+  ];
+  cosmos.base.v1beta1.Coin chain_fee = 5 [
     (gogoproto.nullable) = false
   ];
 }
