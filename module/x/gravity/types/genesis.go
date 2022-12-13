@@ -82,6 +82,10 @@ var (
 	// this could be for technical reasons (zero address) or non-technical reasons, these apply across all ERC20 tokens
 	ParamStoreEthereumBlacklist = []byte("EthereumBlacklist")
 
+	// ParamStoreMinChainFeeBasisPoints allows governance to set the minimum SendToEth `ChainFee` in terms of basis points
+	// or hundredths of a percent, e.g. 10% fee = 1000 and 0.02% fee = 2
+	ParamStoreMinChainFeeBasisPoints = []byte("MinChainFeeBasisPoints")
+
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
 		GravityId:                    "",
@@ -103,8 +107,9 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		BridgeActive:      true,
-		EthereumBlacklist: []string{},
+		BridgeActive:           true,
+		EthereumBlacklist:      []string{},
+		MinChainFeeBasisPoints: 0,
 	}
 )
 
@@ -157,6 +162,7 @@ func DefaultParams() *Params {
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
 		EthereumBlacklist:            []string{},
+		MinChainFeeBasisPoints:       0,
 	}
 }
 
@@ -216,6 +222,9 @@ func (p Params) ValidateBasic() error {
 	if err := validateEthereumBlacklistAddresses(p.EthereumBlacklist); err != nil {
 		return sdkerrors.Wrap(err, "ethereum blacklist parameter")
 	}
+	if err := validateMinChainFeeBasisPoints(p.MinChainFeeBasisPoints); err != nil {
+		return sdkerrors.Wrap(err, "min chain fee basis points parameter")
+	}
 	return nil
 }
 
@@ -241,6 +250,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
+		MinChainFeeBasisPoints: 0,
 	})
 }
 
@@ -265,6 +275,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
 		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
 		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
+		paramtypes.NewParamSetPair(ParamStoreMinChainFeeBasisPoints, &p.MinChainFeeBasisPoints, validateMinChainFeeBasisPoints),
 	}
 }
 
@@ -436,6 +447,13 @@ func validateEthereumBlacklistAddresses(i interface{}) error {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func validateMinChainFeeBasisPoints(i interface{}) error {
+	if _, ok := i.(uint64); !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 	return nil
 }
