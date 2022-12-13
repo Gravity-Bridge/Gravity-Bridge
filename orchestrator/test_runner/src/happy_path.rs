@@ -542,6 +542,7 @@ async fn test_batch(
             amount: amount.clone(),
         },
         bridge_denom_fee.clone(),
+        None,
         bridge_denom_fee.clone(),
         contact,
     )
