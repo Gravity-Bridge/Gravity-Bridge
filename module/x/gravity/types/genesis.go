@@ -83,7 +83,8 @@ var (
 	ParamStoreEthereumBlacklist = []byte("EthereumBlacklist")
 
 	// ParamStoreMinChainFeeBasisPoints allows governance to set the minimum SendToEth `ChainFee` in terms of basis points
-	// or hundredths of a percent, e.g. 10% fee = 1000 and 0.02% fee = 2
+	// or hundredths of a percent, e.g. 10% fee = 1000 and 0.02% fee = 2. If this is set > 0 and a MsgSendToEth is
+	// submitted with too low of a ChainFee value, it will be rejected in the AnteHandler
 	ParamStoreMinChainFeeBasisPoints = []byte("MinChainFeeBasisPoints")
 
 	// Ensure that params implements the proper interface
@@ -162,7 +163,7 @@ func DefaultParams() *Params {
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
 		EthereumBlacklist:            []string{},
-		MinChainFeeBasisPoints:       0,
+		MinChainFeeBasisPoints:       2,
 	}
 }
 
@@ -246,11 +247,10 @@ func ParamKeyTable() paramtypes.KeyTable {
 		SlashFractionLogicCall:       sdk.Dec{},
 		UnbondSlashingValsetsWindow:  0,
 		SlashFractionBadEthSignature: sdk.Dec{},
-		ValsetReward: sdk.Coin{
-			Denom:  "",
-			Amount: sdk.Int{},
-		},
-		MinChainFeeBasisPoints: 0,
+		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.Int{}},
+		BridgeActive:                 false,
+		EthereumBlacklist:            []string{},
+		MinChainFeeBasisPoints:       0,
 	})
 }
 
@@ -452,8 +452,12 @@ func validateEthereumBlacklistAddresses(i interface{}) error {
 }
 
 func validateMinChainFeeBasisPoints(i interface{}) error {
-	if _, ok := i.(uint64); !ok {
+	v, ok := i.(uint64)
+	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	if v >= 10000 {
+		return fmt.Errorf("MinChainFeeBasisPoints is set to 10000 or more, this is an unreasonable fee amount")
 	}
 	return nil
 }

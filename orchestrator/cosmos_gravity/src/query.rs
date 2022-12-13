@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use clarity::Address as EthAddress;
 use deep_space::address::Address;
+use deep_space::Contact;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::Params;
 use gravity_proto::gravity::QueryAttestationsRequest;
@@ -332,4 +333,26 @@ pub async fn get_all_pending_ibc_auto_forwards(
 
     let pending_forwards = pending_forwards.unwrap();
     pending_forwards.into_inner().pending_ibc_auto_forwards
+}
+
+// Fetches the MinChainFeeBasisPoints param from the Gravity module, parsing into a u64.
+// If no value is set, returns 0. Panics if an invalid value is set.
+pub async fn get_min_chain_fee_basis_points(contact: &Contact) -> u64 {
+    // Get the current minimum fee parameter
+    let fee_param = contact
+        .get_param("gravity", "MinChainFeeBasisPoints")
+        .await
+        .expect("Could not get the MinChainFeeBasisPoints param!")
+        .param;
+    match fee_param {
+        Some(param) => {
+            let v = param.value.trim_matches('"');
+            if v.is_empty() {
+                0u64
+            } else {
+                serde_json::from_str(v).unwrap()
+            }
+        }
+        None => 0u64,
+    }
 }

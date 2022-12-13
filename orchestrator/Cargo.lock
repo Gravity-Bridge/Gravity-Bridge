@@ -634,6 +634,7 @@ dependencies = [
  "rand",
  "serde",
  "serde_derive",
+ "serde_json",
  "sha3",
  "tokio",
  "tonic 0.7.2",
