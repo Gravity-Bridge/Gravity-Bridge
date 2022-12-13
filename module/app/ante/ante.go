@@ -1,10 +1,14 @@
 package ante
 
 import (
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	ibcante "github.com/cosmos/ibc-go/v3/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 )
@@ -16,7 +20,15 @@ import (
 // with additional AnteDecorators. This complicated process is desirable because:
 // 1. the default sdk AnteHandler can change on any upgrade (so we do not want to have a stale list of AnteDecorators),
 // 2. it is not possible to modify an AnteHandler once it is constructed
-func NewAnteHandler(options sdkante.HandlerOptions, ibcKeeper *ibckeeper.Keeper, cdc codec.BinaryCodec) (*sdk.AnteHandler, error) {
+func NewAnteHandler(
+	options sdkante.HandlerOptions,
+	gravityKeeper *keeper.Keeper,
+	accountKeeper *authkeeper.AccountKeeper,
+	bankKeeper *bankkeeper.BaseKeeper,
+	feegrantKeeper *feegrantkeeper.Keeper,
+	ibcKeeper *ibckeeper.Keeper,
+	cdc codec.BinaryCodec,
+) (*sdk.AnteHandler, error) {
 	// Call the default sdk antehandler constructor to avoid auditing our changes in the future
 	baseAnteHandler, err := sdkante.NewAnteHandler(options)
 	if err != nil {
@@ -26,8 +38,9 @@ func NewAnteHandler(options sdkante.HandlerOptions, ibcKeeper *ibckeeper.Keeper,
 	// Create additional AnteDecorators to chain together
 	ibcAnteDecorator := ibcante.NewAnteDecorator(ibcKeeper)
 	minCommissionDecorator := NewMinCommissionDecorator(cdc)
+	bridgeFeeDecorator := NewBridgeFeeDecorator(gravityKeeper, accountKeeper, bankKeeper, feegrantKeeper)
 
-	addlDecorators := []sdk.AnteDecorator{ibcAnteDecorator, minCommissionDecorator}
+	addlDecorators := []sdk.AnteDecorator{ibcAnteDecorator, minCommissionDecorator, bridgeFeeDecorator}
 	// Chain together and terminate the input decorators array
 	customHandler := sdk.ChainAnteDecorators(addlDecorators...)
 

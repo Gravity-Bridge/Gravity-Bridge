@@ -123,8 +123,8 @@ func NewMsgSendToEth(sender sdk.AccAddress, destAddress EthAddress, send sdk.Coi
 		Sender:    sender.String(),
 		EthDest:   destAddress.GetAddress().Hex(),
 		Amount:    send,
-		BridgeFee: bridgeFee,
-		ChainFee:  chainFee,
+		BridgeFee: bridgeFee, // This is paid to the Ethereum Relayer
+		ChainFee:  chainFee,  // This is paid to Cosmos stakers
 	}
 }
 
@@ -141,15 +141,15 @@ func (msg MsgSendToEth) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Sender)
 	}
 
-	// bridge fee and send must be of the same denom
+	// bridge fee (paid to relayers) and send must be of the same denom
 	if msg.Amount.Denom != msg.BridgeFee.Denom {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins,
-			fmt.Sprintf("bridge fee and amount must be the same type %s != %s", msg.Amount.Denom, msg.BridgeFee.Denom))
+			fmt.Sprintf("bridge fee (paid to relayers) and amount must be the same type %s != %s", msg.Amount.Denom, msg.BridgeFee.Denom))
 	}
-	// chain fee and send must be of the same denom
+	// chain fee (paid to cosmos stakers) and send must be of the same denom
 	if msg.Amount.Denom != msg.ChainFee.Denom {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins,
-			fmt.Sprintf("chain fee and amount must be the same type %s != %s", msg.Amount.Denom, msg.ChainFee.Denom))
+			fmt.Sprintf("chain fee (paid to stakers) and amount must be the same type %s != %s", msg.Amount.Denom, msg.ChainFee.Denom))
 	}
 
 	if !msg.Amount.IsValid() || msg.Amount.IsZero() {
