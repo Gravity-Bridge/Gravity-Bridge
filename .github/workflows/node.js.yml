@@ -5,9 +5,9 @@ name: Solidity contract build and test
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, 'ethernal-tech/**']
   pull_request:
-    branches: [master, main]
+    branches: [master, main, 'ethernal-tech/**']
 
 jobs:
   core-tests:
