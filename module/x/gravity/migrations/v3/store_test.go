@@ -210,7 +210,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 		{
 			"ValidatorByEthAddressKey",
 			v2.GetValidatorByEthAddressKey(*ethAddr),
-			types.GetValidatorByEvmAddressKey(*ethAddr),
+			types.GetValidatorByEthAddressKey(*ethAddr),
 			validatorAddr.Bytes(),
 		},
 		{
@@ -240,7 +240,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 		{
 			"EthAddressByValidatorKey",
 			v2.GetEthAddressByValidatorKey(validatorAddr),
-			types.GetEvmAddressByValidatorKey(validatorAddr),
+			types.GetEthAddressByValidatorKey(validatorAddr),
 			ethAddr.GetAddress().Bytes(),
 		},
 		{
@@ -250,7 +250,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 			ethAddr.GetAddress().Bytes(),
 		},
 		{
-			"OutgoingTXBatchKey",
+			"OutgoingTxBatchKey",
 			v2.GetOutgoingTxBatchKey(*ethAddr, dummyOutgoingTxBatch.BatchNonce),
 			types.GetOutgoingTxBatchKey(v3.EthereumChainPrefix, *ethAddr, dummyOutgoingTxBatch.BatchNonce),
 			marshaler.MustMarshal(&dummyOutgoingTxBatch),

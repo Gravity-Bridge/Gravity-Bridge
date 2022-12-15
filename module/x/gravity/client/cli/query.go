@@ -34,7 +34,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetValsetRequest(),
 		CmdGetValsetConfirm(),
 		CmdGetPendingValsetRequest(),
-		CmdGetPendingOutgoingTXBatchRequest(),
+		CmdGetPendingOutgoingTxBatchRequest(),
 		CmdGetPendingSendToEth(),
 		GetCmdPendingIbcAutoForwards(),
 		CmdGetAttestations(),
@@ -171,7 +171,7 @@ func CmdGetPendingValsetRequest() *cobra.Command {
 	return cmd
 }
 
-func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
+func CmdGetPendingOutgoingTxBatchRequest() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-batch-request [bech32 orchestrator address]",

@@ -666,7 +666,7 @@ func (t TestInput) AssertInvariants() {
 	bankInvariantFunc := bankkeeper.AllInvariants(t.BankKeeper)
 	govInvariantFunc := govkeeper.AllInvariants(t.GovKeeper, t.BankKeeper)
 	stakeInvariantFunc := stakingkeeper.AllInvariants(t.StakingKeeper)
-	gravInvariantFunc := AllInvariants(t.GravityKeeper)
+	gravInvariantFunc := AllInvariants(t.GravityKeeper, EthChainPrefix)
 
 	invariantStr, invariantViolated := distrInvariantFunc(t.Context)
 	if invariantViolated {

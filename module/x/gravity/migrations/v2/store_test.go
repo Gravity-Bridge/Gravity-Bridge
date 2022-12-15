@@ -58,7 +58,7 @@ func oldGetOutgoingTxPoolKey(fee types.InternalERC20Token, id uint64) string {
 }
 
 func oldGetOutgoingTxBatchKey(tokenContract string, nonce uint64) string {
-	return v1.OutgoingTXBatchKey + tokenContract + v1.ConvertByteArrToString(v2.UInt64Bytes(nonce))
+	return v1.OutgoingTxBatchKey + tokenContract + v1.ConvertByteArrToString(v2.UInt64Bytes(nonce))
 }
 
 func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
@@ -647,13 +647,13 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 		value        []byte
 	}{
 		{
-			"OutgoingTXBatchKey",
+			"OutgoingTxBatchKey",
 			v1.GetOutgoingTxBatchKey(*ethAddr, dummyOutgoingTxBatch.BatchNonce),
 			v2.GetOutgoingTxBatchKey(*ethAddr, dummyOutgoingTxBatch.BatchNonce),
 			marshaler.MustMarshal(&dummyOutgoingTxBatch),
 		},
 		{
-			"OutgoingTXBatchKey - Bytes Corner case",
+			"OutgoingTxBatchKey - Bytes Corner case",
 			v1.GetOutgoingTxBatchKey(*ethAddr, dummyCornerCaseBatch.BatchNonce),
 			v2.GetOutgoingTxBatchKey(*ethAddr, dummyCornerCaseBatch.BatchNonce),
 			marshaler.MustMarshal(&dummyCornerCaseBatch),
@@ -754,8 +754,8 @@ func TestMigrateInvalidStore(t *testing.T) {
 		value        []byte
 	}{
 		{
-			"OutgoingTXBatchKey - Invalid Ethereum address",
-			v1.OutgoingTXBatchKey + invalidEthAddress + v1.ConvertByteArrToString(v2.UInt64Bytes(dummyOutgoingTxBatch.BatchNonce)),
+			"OutgoingTxBatchKey - Invalid Ethereum address",
+			v1.OutgoingTxBatchKey + invalidEthAddress + v1.ConvertByteArrToString(v2.UInt64Bytes(dummyOutgoingTxBatch.BatchNonce)),
 			marshaler.MustMarshal(&dummyOutgoingTxBatch),
 		},
 		{

@@ -156,7 +156,7 @@ func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper, evmChainPrefix str
 	batches := k.GetOutgoingTxBatches(ctx, evmChainPrefix)
 	for _, batch := range batches {
 		if batch.BatchTimeout < evmChainHeight {
-			err := k.CancelOutgoingTXBatch(ctx, evmChainPrefix, batch.TokenContract, batch.BatchNonce)
+			err := k.CancelOutgoingTxBatch(ctx, evmChainPrefix, batch.TokenContract, batch.BatchNonce)
 			if err != nil {
 				panic("Failed to cancel outgoing txbatch!")
 			}

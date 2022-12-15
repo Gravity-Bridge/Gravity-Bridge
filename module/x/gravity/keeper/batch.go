@@ -13,14 +13,14 @@ import (
 
 const OutgoingTxBatchSize = 100
 
-// BuildOutgoingTXBatch starts the following process chain:
+// BuildOutgoingTxBatch starts the following process chain:
 // - find bridged denominator for given voucher type
 // - determine if an unexecuted batch is already waiting for this token type, if so confirm the new batch would
 // have a higher total fees. If not exit without creating a batch
 // - select available transactions from the outgoing transaction pool sorted by fee desc
 // - persist an outgoing batch object with an incrementing ID = nonce
 // - emit an event
-func (k Keeper) BuildOutgoingTXBatch(
+func (k Keeper) BuildOutgoingTxBatch(
 	ctx sdk.Context,
 	evmChainPrefix string,
 	contract types.EthAddress,
@@ -106,12 +106,12 @@ func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) ui
 // It frees all the transactions in the batch, then cancels all earlier batches, this function panics instead
 // of returning errors because any failure will cause a double spend.
 func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, tokenContract types.EthAddress, claim types.MsgBatchSendToEthClaim) {
-	b := k.GetOutgoingTXBatch(ctx, evmChainPrefix, tokenContract, claim.BatchNonce)
+	b := k.GetOutgoingTxBatch(ctx, evmChainPrefix, tokenContract, claim.BatchNonce)
 	if b == nil {
 		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract.GetAddress().Hex(), claim.BatchNonce))
 	}
-	if b.BatchTimeout <= claim.BlockHeight {
-		panic(fmt.Sprintf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", claim.BatchNonce, claim.BlockHeight, b.BatchTimeout))
+	if b.BatchTimeout <= claim.EthBlockHeight {
+		panic(fmt.Sprintf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", claim.BatchNonce, claim.EthBlockHeight, b.BatchTimeout))
 	}
 	contract := b.TokenContract
 	// Burn tokens if they're evm chain originated
@@ -135,7 +135,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, 
 	k.IterateOutgoingTxBatches(ctx, evmChainPrefix, func(key []byte, batch types.InternalOutgoingTxBatch) bool {
 		// If the iterated batches nonce is lower than the one that was just executed, cancel it
 		if batch.BatchNonce < b.BatchNonce && batch.TokenContract.GetAddress() == tokenContract.GetAddress() {
-			err := k.CancelOutgoingTXBatch(ctx, evmChainPrefix, tokenContract, batch.BatchNonce)
+			err := k.CancelOutgoingTxBatch(ctx, evmChainPrefix, tokenContract, batch.BatchNonce)
 			if err != nil {
 				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s",
 					tokenContract.GetAddress().Hex(), batch.BatchNonce,
@@ -218,8 +218,8 @@ func (k Keeper) pickUnbatchedTxs(
 	return selectedTxs, err
 }
 
-// GetOutgoingTXBatch loads a batch object. Returns nil when not exists.
-func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, evmChainPrefix string, tokenContract types.EthAddress, nonce uint64) *types.InternalOutgoingTxBatch {
+// GetOutgoingTxBatch loads a batch object. Returns nil when not exists.
+func (k Keeper) GetOutgoingTxBatch(ctx sdk.Context, evmChainPrefix string, tokenContract types.EthAddress, nonce uint64) *types.InternalOutgoingTxBatch {
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetOutgoingTxBatchKey(evmChainPrefix, tokenContract, nonce)
 	bz := store.Get(key)
@@ -239,9 +239,9 @@ func (k Keeper) GetOutgoingTXBatch(ctx sdk.Context, evmChainPrefix string, token
 	return ret
 }
 
-// CancelOutgoingTXBatch releases all TX in the batch and deletes the batch
-func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, evmChainPrefix string, tokenContract types.EthAddress, nonce uint64) error {
-	batch := k.GetOutgoingTXBatch(ctx, evmChainPrefix, tokenContract, nonce)
+// CancelOutgoingTxBatch releases all TX in the batch and deletes the batch
+func (k Keeper) CancelOutgoingTxBatch(ctx sdk.Context, evmChainPrefix string, tokenContract types.EthAddress, nonce uint64) error {
+	batch := k.GetOutgoingTxBatch(ctx, evmChainPrefix, tokenContract, nonce)
 	if batch == nil {
 		return types.ErrUnknown
 	}
@@ -270,7 +270,7 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, evmChainPrefix string, to
 
 // IterateOutgoingTxBatches iterates through all outgoing batches in DESC order.
 func (k Keeper) IterateOutgoingTxBatches(ctx sdk.Context, evmChainPrefix string, cb func(key []byte, batch types.InternalOutgoingTxBatch) bool) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.AppendChainPrefix(types.OutgoingTXBatchKey, evmChainPrefix))
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.AppendChainPrefix(types.OutgoingTxBatchKey, evmChainPrefix))
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {

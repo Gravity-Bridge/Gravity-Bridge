@@ -22,15 +22,15 @@ const (
 )
 
 var (
-	// EvmAddressByValidatorKey indexes cosmos validator account addresses
+	// EthAddressByValidatorKey indexes cosmos validator account addresses
 	// i.e. gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm
 	// [0xe1c9f604d2a57a4242caa326f86c192e]
-	EvmAddressByValidatorKey = HashString("EvmAddressValidatorKey")
+	EthAddressByValidatorKey = HashString("EvmAddressValidatorKey")
 
-	// ValidatorByEvmAddressKey indexes ethereum addresses
+	// ValidatorByEthAddressKey indexes ethereum addresses
 	// i.e. 0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B
 	// [0xf0ff4297406d79f5a44a28503b68ca3e]
-	ValidatorByEvmAddressKey = HashString("ValidatorByEvmAddressKey")
+	ValidatorByEthAddressKey = HashString("ValidatorByEthAddressKey")
 
 	// ValsetRequestKey indexes valset requests by nonce
 	// [0xa318dca6c74494c2fac1841c9e2454fe]
@@ -66,9 +66,9 @@ var (
 	// [0x44f7816ec23d990ee39d9ed4609bbd4d]
 	OutgoingTXPoolKey = HashString("OutgoingTXPoolKey")
 
-	// OutgoingTXBatchKey indexes outgoing tx batches under a nonce and token address
+	// OutgoingTxBatchKey indexes outgoing tx batches under a nonce and token address
 	// [0x54e2db44755d8865b1ff4227402e204f]
-	OutgoingTXBatchKey = HashString("OutgoingTXBatchKey")
+	OutgoingTxBatchKey = HashString("OutgoingTxBatchKey")
 
 	// BatchConfirmKey indexes validator confirmations by token contract address
 	// [0x75b935a854d50880236724b9c4822daf]
@@ -176,21 +176,21 @@ func GetOrchestratorAddressKey(orc sdk.AccAddress) []byte {
 	return AppendBytes(KeyOrchestratorAddress, orc.Bytes())
 }
 
-// GetEvmAddressByValidatorKey returns the following key format
+// GetEthAddressByValidatorKey returns the following key format
 // prefix              cosmos-validator
 // [0x0][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
-func GetEvmAddressByValidatorKey(validator sdk.ValAddress) []byte {
+func GetEthAddressByValidatorKey(validator sdk.ValAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
-	return AppendBytes(EvmAddressByValidatorKey, validator.Bytes())
+	return AppendBytes(EthAddressByValidatorKey, validator.Bytes())
 }
 
-// GetValidatorByEvmAddressKey returns the following key format
+// GetValidatorByEthAddressKey returns the following key format
 // prefix              cosmos-validator
 // [0x0][0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B]
-func GetValidatorByEvmAddressKey(evmAddress EthAddress) []byte {
-	return AppendBytes(ValidatorByEvmAddressKey, evmAddress.GetAddress().Bytes())
+func GetValidatorByEthAddressKey(evmAddress EthAddress) []byte {
+	return AppendBytes(ValidatorByEthAddressKey, evmAddress.GetAddress().Bytes())
 }
 
 // GetValsetKey returns the following key format
@@ -250,7 +250,7 @@ func GetOutgoingTxPoolKey(evmChainPrefix string, fee InternalERC20Token, id uint
 // prefix  chain			evm-contract-address
 // [0x0][xyzchain][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 func GetOutgoingTxBatchContractPrefix(evmChainPrefix string, tokenContract EthAddress) []byte {
-	return AppendBytes(OutgoingTXBatchKey, []byte(evmChainPrefix), tokenContract.GetAddress().Bytes())
+	return AppendBytes(OutgoingTxBatchKey, []byte(evmChainPrefix), tokenContract.GetAddress().Bytes())
 }
 
 // GetOutgoingTxBatchKey returns the following key format

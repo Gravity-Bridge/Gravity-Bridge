@@ -142,10 +142,10 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 		// when
 		ctx = ctx.WithBlockTime(now)
 		// tx batch size is 3, so that some of them stay behind
-		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, tok.Contract, 3)
+		batch, err := input.GravityKeeper.BuildOutgoingTxBatch(ctx, evmChain.EvmChainPrefix, tok.Contract, 3)
 		require.NoError(t, err)
 		// then check the batch persists
-		gotBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, batch.TokenContract, batch.BatchNonce)
+		gotBatch := input.GravityKeeper.GetOutgoingTxBatch(ctx, evmChain.EvmChainPrefix, batch.TokenContract, batch.BatchNonce)
 		require.NotNil(t, gotBatch)
 		batches[i] = gotBatch
 		// The module should be balanced with the new unobserved batch + leftover unbatched txs

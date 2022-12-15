@@ -165,7 +165,7 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 		return nil, sdkerrors.Wrap(err, "Could not look up erc 20 denominator")
 	}
 
-	batch, err := k.BuildOutgoingTXBatch(ctx, EthChainPrefix, *tokenContract, OutgoingTxBatchSize)
+	batch, err := k.BuildOutgoingTxBatch(ctx, EthChainPrefix, *tokenContract, OutgoingTxBatchSize)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not build outgoing tx batch")
 	}
@@ -193,7 +193,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	ctx := sdk.UnwrapSDKContext(c)
 
 	// fetch the outgoing batch given the nonce
-	batch := k.GetOutgoingTXBatch(ctx, EthChainPrefix, *contract, msg.Nonce)
+	batch := k.GetOutgoingTxBatch(ctx, EthChainPrefix, *contract, msg.Nonce)
 	if batch == nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find batch")
 	}
@@ -403,6 +403,7 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 	/* Perform some additional checks on the input to determine if it is valid before allowing it on the chain
 	   Note that because of the gas meter we must avoid calls which consume gas, like fetching data from the keeper
 	*/
+
 	additionalPatchChecks(ctx, k, msg)
 
 	msgAny, err := codectypes.NewAnyWithValue(msg)
@@ -427,7 +428,7 @@ func additionalPatchChecks(ctx sdk.Context, k msgServer, msg *types.MsgBatchSend
 	}
 
 	// Replicate the following but without using a gas meter:
-	b := k.GetOutgoingTXBatch(ctx, *contractAddress, msg.BatchNonce)
+	b := k.GetOutgoingTxBatch(ctx, msg.EvmChainPrefix, *contractAddress, msg.BatchNonce)
 	if b == nil {
 		// Batch deleted, just add the vote to the stored attestation
 		return

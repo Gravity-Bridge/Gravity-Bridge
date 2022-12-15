@@ -165,9 +165,9 @@ func migrateOutgoingTxs(store storetypes.KVStore) error {
 }
 
 func migrateOutgoingTxBatches(store storetypes.KVStore) error {
-	// OutgoingTXBatchKey + tokenContract.GetAddress() + ConvertByteArrToString(UInt64Bytes(nonce))
-	// OutgoingTXBatchKey + string(tokenContract.GetAddress().Bytes()) + ConvertByteArrToString(UInt64Bytes(nonce))
-	prefixStore := prefix.NewStore(store, []byte(v1.OutgoingTXBatchKey))
+	// OutgoingTxBatchKey + tokenContract.GetAddress() + ConvertByteArrToString(UInt64Bytes(nonce))
+	// OutgoingTxBatchKey + string(tokenContract.GetAddress().Bytes()) + ConvertByteArrToString(UInt64Bytes(nonce))
+	prefixStore := prefix.NewStore(store, []byte(v1.OutgoingTxBatchKey))
 	iterator := prefixStore.Iterator(nil, nil)
 	defer iterator.Close()
 
@@ -189,7 +189,7 @@ func migrateOutgoingTxBatches(store storetypes.KVStore) error {
 // hash(string_prefix) | key_part1 | key_part2 ...
 func migrateKeys(store sdk.KVStore, cdc codec.BinaryCodec) error {
 	fmt.Println("Mercury Upgrade: Enter migrateKeys")
-	if err := migrateKeysFromValues(store, cdc, v1.OutgoingTXBatchKey, convertBatchKey); err != nil {
+	if err := migrateKeysFromValues(store, cdc, v1.OutgoingTxBatchKey, convertBatchKey); err != nil {
 		return err
 	}
 	if err := migrateKeysFromValues(store, cdc, v1.ValsetRequestKey, convertValsetKey); err != nil {

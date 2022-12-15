@@ -280,7 +280,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
-	// OutgoingTXBatchKey
+	// OutgoingTxBatchKey
 	k.IterateOutgoingTxBatches(ctx, evmChainPrefix, func(key []byte, batch types.InternalOutgoingTxBatch) (stop bool) {
 		err = batch.ValidateBasic()
 		if err != nil {

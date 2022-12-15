@@ -60,7 +60,7 @@ Implemented in `AttestationHandler.Handle`.
 
 ## MsgWithdrawClaim
 
-This event is fired when a `OutgoingTxBatch` is executed on Ethereum, sending the tokens in that `OutgoingTXBatch` to their destinations on Ethereum.
+This event is fired when a `OutgoingTxBatch` is executed on Ethereum, sending the tokens in that `OutgoingTxBatch` to their destinations on Ethereum.
 
 ### On event observed:
 
@@ -86,7 +86,7 @@ Implemented in `AttestationHandler.Handle`.
 
 ### Batch creation
 
-Implemented in `Keeper.BuildOutgoingTXBatch`
+Implemented in `Keeper.BuildOutgoingTxBatch`
 
 To create a new batch for a given token type:
 

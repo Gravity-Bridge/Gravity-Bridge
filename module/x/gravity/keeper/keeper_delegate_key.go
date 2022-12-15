@@ -136,8 +136,8 @@ func (k Keeper) SetEvmAddressForValidator(ctx sdk.Context, validator sdk.ValAddr
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetEvmAddressByValidatorKey(validator), evmAddr.GetAddress().Bytes())
-	store.Set(types.GetValidatorByEvmAddressKey(evmAddr), []byte(validator))
+	store.Set(types.GetEthAddressByValidatorKey(validator), evmAddr.GetAddress().Bytes())
+	store.Set(types.GetValidatorByEthAddressKey(evmAddr), []byte(validator))
 }
 
 // GetEvmAddressByValidator returns the evm address for a given gravity validator
@@ -146,7 +146,7 @@ func (k Keeper) GetEvmAddressByValidator(ctx sdk.Context, validator sdk.ValAddre
 		panic(sdkerrors.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
-	evmAddr := store.Get(types.GetEvmAddressByValidatorKey(validator))
+	evmAddr := store.Get(types.GetEthAddressByValidatorKey(validator))
 	if evmAddr == nil {
 		return nil, false
 	}
@@ -161,7 +161,7 @@ func (k Keeper) GetEvmAddressByValidator(ctx sdk.Context, validator sdk.ValAddre
 // GetValidatorByEvmAddress returns the validator for a given evm address
 func (k Keeper) GetValidatorByEvmAddress(ctx sdk.Context, evmAddr types.EthAddress) (validator stakingtypes.Validator, found bool) {
 	store := ctx.KVStore(k.storeKey)
-	valAddr := store.Get([]byte(types.GetValidatorByEvmAddressKey(evmAddr)))
+	valAddr := store.Get([]byte(types.GetValidatorByEthAddressKey(evmAddr)))
 	if valAddr == nil {
 		return stakingtypes.Validator{
 			OperatorAddress: "",

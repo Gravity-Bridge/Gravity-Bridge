@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bytes"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -60,7 +61,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	// when
 	ctx = ctx.WithBlockTime(now)
 
-	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, *tokenContract, 2)
+	goodBatch, err := input.GravityKeeper.BuildOutgoingTxBatch(ctx, evmChain.EvmChainPrefix, *tokenContract, 2)
 	goodBatchExternal := goodBatch.ToExternal()
 	require.NoError(t, err)
 

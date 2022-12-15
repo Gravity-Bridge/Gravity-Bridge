@@ -149,8 +149,8 @@ func TestAttestationIterator(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, cd := range input.GravityKeeper.GetEvmChains(ctx) {
-		input.GravityKeeper.SetAttestation(ctx, cd.EvmChainPrefix, dep1.EventNonce, hash1, att1)
-		input.GravityKeeper.SetAttestation(ctx, cd.EvmChainPrefix, dep2.EventNonce, hash2, att2)
+		input.GravityKeeper.SetAttestation(ctx, cd.EvmChainPrefix, claim1.EventNonce, hash1, att1)
+		input.GravityKeeper.SetAttestation(ctx, cd.EvmChainPrefix, claim2.EventNonce, hash2, att2)
 
 		atts := []types.Attestation{}
 		input.GravityKeeper.IterateAttestations(ctx, cd.EvmChainPrefix, false, func(_ []byte, att types.Attestation) bool {

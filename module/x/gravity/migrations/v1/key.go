@@ -47,8 +47,8 @@ var (
 	// DenomiatorPrefix indexes token contract addresses from ETH on gravity
 	DenomiatorPrefix = "DenomiatorPrefix"
 
-	// OutgoingTXBatchKey indexes outgoing tx batches under a nonce and token address
-	OutgoingTXBatchKey = "OutgoingTXBatchKey"
+	// OutgoingTxBatchKey indexes outgoing tx batches under a nonce and token address
+	OutgoingTxBatchKey = "OutgoingTxBatchKey"
 
 	// BatchConfirmKey indexes validator confirmations by token contract address
 	BatchConfirmKey = "BatchConfirmKey"
@@ -181,7 +181,7 @@ func GetERC20ToDenomKey(erc20 types.EthAddress) string {
 // prefix     eth-contract-address
 // [0xa][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 func GetOutgoingTxBatchContractPrefix(tokenContract types.EthAddress) string {
-	return OutgoingTXBatchKey + tokenContract.GetAddress().String()
+	return OutgoingTxBatchKey + tokenContract.GetAddress().String()
 }
 
 // GetOutgoingTxBatchKey returns the following key format

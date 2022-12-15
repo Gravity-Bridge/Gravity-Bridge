@@ -65,9 +65,9 @@ var (
 	// [0x44f7816ec23d990ee39d9ed4609bbd4d]
 	OutgoingTXPoolKey = HashString("OutgoingTXPoolKey")
 
-	// OutgoingTXBatchKey indexes outgoing tx batches under a nonce and token address
+	// OutgoingTxBatchKey indexes outgoing tx batches under a nonce and token address
 	// [0x54e2db44755d8865b1ff4227402e204f]
-	OutgoingTXBatchKey = HashString("OutgoingTXBatchKey")
+	OutgoingTxBatchKey = HashString("OutgoingTxBatchKey")
 
 	// BatchConfirmKey indexes validator confirmations by token contract address
 	// [0x75b935a854d50880236724b9c4822daf]
@@ -233,7 +233,7 @@ func GetOutgoingTxPoolKey(fee types.InternalERC20Token, id uint64) []byte {
 // prefix     eth-contract-address
 // [0x0][0xc783df8a850f42e7F7e57013759C285caa701eB6]
 func GetOutgoingTxBatchContractPrefix(tokenContract types.EthAddress) []byte {
-	return AppendBytes(OutgoingTXBatchKey, tokenContract.GetAddress().Bytes())
+	return AppendBytes(OutgoingTxBatchKey, tokenContract.GetAddress().Bytes())
 }
 
 // GetOutgoingTxBatchKey returns the following key format

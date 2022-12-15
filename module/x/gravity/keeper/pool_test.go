@@ -539,7 +539,7 @@ func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, f
 	currentBal := input.BankKeeper.GetBalance(ctx, mySender, myTokenDenom).Amount.Uint64()
 	require.Equal(t, currentBal, originalBal-*feesAndAmounts)
 	expectedKey := myTokenContractAddr + fmt.Sprint(fee) + fmt.Sprint(id)
-	input.GravityKeeper.IterateUnbatchedTransactions(ctx, types.AppendChainPrefix(types.OutgoingTXPoolKey, evmChainPrefix), func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
+	input.GravityKeeper.filterAndIterateUnbatchedTransactions(ctx, types.AppendChainPrefix(types.OutgoingTXPoolKey, evmChainPrefix), func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotEqual(t, []byte(expectedKey), key)
 		found := id == tx.Id &&
 			fee == tx.Erc20Fee.Amount.Uint64() &&
@@ -921,7 +921,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	}
 	// filterAndIterateUnbatchedTransactions
 	anotherFoundMap := make(map[uint64]bool)
-	input.GravityKeeper.IterateUnbatchedTransactions(ctx, types.AppendChainPrefix(types.OutgoingTXPoolKey, evmChain.EvmChainPrefix), func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
+	input.GravityKeeper.filterAndIterateUnbatchedTransactions(ctx, types.AppendChainPrefix(types.OutgoingTXPoolKey, evmChain.EvmChainPrefix), func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
 		fTx := idToTxMap[tx.Id]
 		require.NotNil(t, fTx)

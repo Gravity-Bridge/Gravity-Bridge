@@ -199,7 +199,7 @@ func TestValsetSort(t *testing.T) {
 
 func TestAppendBytes(t *testing.T) {
 	// Prefix
-	prefix := EvmAddressByValidatorKey
+	prefix := EthAddressByValidatorKey
 	// EthAddress
 	ethAddrBytes := []byte("0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B")
 	// Nonce

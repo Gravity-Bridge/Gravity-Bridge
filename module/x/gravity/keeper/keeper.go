@@ -231,7 +231,7 @@ func (k Keeper) UnpackAttestationClaim(att *types.Attestation) (types.EthereumCl
 // For the time being this will serve
 func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddress {
 	store := ctx.KVStore(k.storeKey)
-	prefix := types.EvmAddressByValidatorKey
+	prefix := types.EthAddressByValidatorKey
 	iter := store.Iterator(prefixRange(prefix))
 	defer iter.Close()
 
@@ -242,7 +242,7 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 		// to cut off the starting bytes, if you don't do this a valid
 		// cosmos key will be made out of EthAddressByValidatorKey + the starting bytes
 		// of the actual key
-		key := iter.Key()[len(types.EvmAddressByValidatorKey):]
+		key := iter.Key()[len(types.EthAddressByValidatorKey):]
 		value := iter.Value()
 		evmAddress, err := types.NewEthAddressFromBytes(value)
 		if err != nil {

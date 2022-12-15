@@ -46,7 +46,7 @@ The user may call [MsgCancelSendToEth](/module/proto/gravity/v1/msgs.proto) whic
 
 Alternatively a relayer using the [BatchFees](/module/proto/gravity/v1/query.proto) query endpoint may decide to call [MsgRequestBatch](/module/proto/gravity/v1/msgs.proto). Note automatic execution of request batch is not currently implemented and is in issue #305
 
-RequestBatch in [msg_server.go](/module/x/gravity/keeper/msg_server.go) calls [BuildOutgoingTXBatch](/module/x/gravity/keeper/batch.go) which implements the protocol defined in the [batch creation spec](/spec/batch-creation-spec.md). Creating a batch of up to `OutgoingTxBatchSize` number of withdraws in order of descending fee amounts.
+RequestBatch in [msg_server.go](/module/x/gravity/keeper/msg_server.go) calls [BuildOutgoingTxBatch](/module/x/gravity/keeper/batch.go) which implements the protocol defined in the [batch creation spec](/spec/batch-creation-spec.md). Creating a batch of up to `OutgoingTxBatchSize` number of withdraws in order of descending fee amounts.
 
 Now the resulting batch is made available to [Ethereum signers](/docs/design/ethereum-signing.md) via the [LastPendingBatchRequestByAddr](/module/proto/gravity/v1/query.proto) endpoint. The [LastPendingBatchRequestsByAddr](/module/x/gravity/keeper/grpc_query.go) endpoint looks up for the Ethereum signer what batches it has not yet signed that it must sign to avoid slashing see [slashing spec](/spec/slashing-spec.md).
 

@@ -33,14 +33,14 @@ func getAllKeys() [][]byte {
 
 	keys := make([][]byte, 47)
 
-	keys[i] = EvmAddressByValidatorKey
-	keys[*inc(&i)] = ValidatorByEvmAddressKey
+	keys[i] = EthAddressByValidatorKey
+	keys[*inc(&i)] = ValidatorByEthAddressKey
 	keys[*inc(&i)] = ValsetRequestKey
 	keys[*inc(&i)] = ValsetConfirmKey
 	keys[*inc(&i)] = LEGACYOracleClaimKey
 	keys[*inc(&i)] = OracleAttestationKey
 	keys[*inc(&i)] = OutgoingTXPoolKey
-	keys[*inc(&i)] = OutgoingTXBatchKey
+	keys[*inc(&i)] = OutgoingTxBatchKey
 	keys[*inc(&i)] = BatchConfirmKey
 	keys[*inc(&i)] = LastEventNonceByValidatorKey
 	keys[*inc(&i)] = LastObservedEventNonceKey
@@ -78,8 +78,8 @@ func getAllKeys() [][]byte {
 	dummyDenom := "footoken"
 
 	keys[*inc(&i)] = GetOrchestratorAddressKey(dummyAddr)
-	keys[*inc(&i)] = GetEvmAddressByValidatorKey(dummyAddr)
-	keys[*inc(&i)] = GetValidatorByEvmAddressKey(dummyEthAddr)
+	keys[*inc(&i)] = GetEthAddressByValidatorKey(dummyAddr)
+	keys[*inc(&i)] = GetValidatorByEthAddressKey(dummyEthAddr)
 	keys[*inc(&i)] = GetValsetKey(dummyPrefix, dummyNonce)
 	keys[*inc(&i)] = GetValsetConfirmNoncePrefix(dummyPrefix, dummyNonce)
 	keys[*inc(&i)] = GetValsetConfirmKey(dummyPrefix, dummyNonce, dummyAddr)

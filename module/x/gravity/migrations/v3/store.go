@@ -25,7 +25,7 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 	updateKeysWithEthPrefix(store, v2.ValsetConfirmKey)
 	updateKeysWithEthPrefix(store, v2.OracleAttestationKey)
 	updateKeysWithEthPrefix(store, v2.OutgoingTXPoolKey)
-	updateKeysWithEthPrefix(store, v2.OutgoingTXBatchKey)
+	updateKeysWithEthPrefix(store, v2.OutgoingTxBatchKey)
 	updateKeysWithEthPrefix(store, v2.BatchConfirmKey)
 	updateKeysWithEthPrefix(store, v2.LastEventNonceByValidatorKey)
 	updateKeysWithEthPrefix(store, v2.LastObservedEventNonceKey)
@@ -42,8 +42,8 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 	updateKeysWithEthPrefix(store, v2.LastObservedValsetKey)
 
 	updateKeysPrefixToEvm(store, v2.PastEthSignatureCheckpointKey, types.PastEvmSignatureCheckpointKey)
-	updateKeysPrefixToEvmWithoutChain(store, v2.ValidatorByEthAddressKey, types.ValidatorByEvmAddressKey)
-	updateKeysPrefixToEvmWithoutChain(store, v2.EthAddressByValidatorKey, types.EvmAddressByValidatorKey)
+	updateKeysPrefixToEvmWithoutChain(store, v2.ValidatorByEthAddressKey, types.ValidatorByEthAddressKey)
+	updateKeysPrefixToEvmWithoutChain(store, v2.EthAddressByValidatorKey, types.EthAddressByValidatorKey)
 	updateKeyPrefixToEvm(store, v2.LastObservedEthereumBlockHeightKey, types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, EthereumChainPrefix))
 	updateKeyPrefixToEvm(store, v2.LastEventNonceByValidatorKey, types.AppendChainPrefix(types.LastEventNonceByValidatorKey, EthereumChainPrefix))
 

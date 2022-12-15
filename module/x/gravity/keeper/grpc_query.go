@@ -224,7 +224,7 @@ func (k Keeper) BatchRequestByNonce(
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, err.Error())
 	}
 
-	foundBatch := k.GetOutgoingTXBatch(sdk.UnwrapSDKContext(c), EthChainPrefix, *addr, req.Nonce)
+	foundBatch := k.GetOutgoingTxBatch(sdk.UnwrapSDKContext(c), EthChainPrefix, *addr, req.Nonce)
 	if foundBatch == nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "cannot find tx batch")
 	}
@@ -314,7 +314,6 @@ func (k Keeper) ERC20ToDenom(
 // GetLastObservedEthBlock queries the LastObservedEthereumBlockHeight
 func (k Keeper) GetLastObservedEthBlock(
 	c context.Context,
-	evmChainPrefix string,
 	req *types.QueryLastObservedEthBlockRequest,
 ) (*types.QueryLastObservedEthBlockResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -324,7 +323,7 @@ func (k Keeper) GetLastObservedEthBlock(
 	if req.UseV1Key {
 		ethHeight = k.GetOldLastObservedEthereumBlockHeight(ctx)
 	} else {
-		ethHeight = k.GetLastObservedEvmChainBlockHeight(ctx, evmChainPrefix)
+		ethHeight = k.GetLastObservedEvmChainBlockHeight(ctx, req.EvmChainPrefix)
 	}
 
 	return &types.QueryLastObservedEthBlockResponse{Block: ethHeight.EthereumBlockHeight}, nil
@@ -336,13 +335,13 @@ func (k Keeper) GetOldLastObservedEthereumBlockHeight(ctx sdk.Context) types.Las
 
 	if len(bytes) == 0 {
 		return types.LastObservedEthereumBlockHeight{
-			CosmosEthBlockHeight: 0,
-			EthereumBlockHeight:  0,
+			CosmosBlockHeight:   0,
+			EthereumBlockHeight: 0,
 		}
 	}
 	height := types.LastObservedEthereumBlockHeight{
-		CosmosEthBlockHeight: 0,
-		EthereumBlockHeight:  0,
+		CosmosBlockHeight:   0,
+		EthereumBlockHeight: 0,
 	}
 	k.cdc.MustUnmarshal(bytes, &height)
 	return height
@@ -351,7 +350,6 @@ func (k Keeper) GetOldLastObservedEthereumBlockHeight(ctx sdk.Context) types.Las
 // GetLastObservedEthNonce queries the LastObservedEventNonce
 func (k Keeper) GetLastObservedEthNonce(
 	c context.Context,
-	evmChainPrefix string,
 	req *types.QueryLastObservedEthNonceRequest,
 ) (*types.QueryLastObservedEthNonceResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -361,7 +359,7 @@ func (k Keeper) GetLastObservedEthNonce(
 	if req.UseV1Key {
 		nonce = k.GetOldLastObservedEventNonce(ctx)
 	} else {
-		nonce = k.GetLastObservedEventNonce(ctx, evmChainPrefix)
+		nonce = k.GetLastObservedEventNonce(ctx, req.EvmChainPrefix)
 	}
 
 	return &types.QueryLastObservedEthNonceResponse{Nonce: nonce}, nil

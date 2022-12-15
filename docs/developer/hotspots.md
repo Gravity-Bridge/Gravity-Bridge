@@ -30,7 +30,7 @@ The [batch creation spec](/spec/batch-creation-spec.md) is a good place to start
 
 The [batch creation spec](/spec/batch-creation-spec.md) is a good place to start for background here.
 
-[BuildOutgoingTXBatch](/module/x/gravity/keeper/batch.go) builds transaction batches out of the on-chain transaction pool of withdraws to Ethereum. Transactions must successfully be removed from the index, included only once, and returned properly in `OutgoingTxBatchExecuted`
+[BuildOutgoingTxBatch](/module/x/gravity/keeper/batch.go) builds transaction batches out of the on-chain transaction pool of withdraws to Ethereum. Transactions must successfully be removed from the index, included only once, and returned properly in `OutgoingTxBatchExecuted`
 
 ## Outgoing tx batch executed
 

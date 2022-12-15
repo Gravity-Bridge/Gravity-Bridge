@@ -597,7 +597,7 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint, evmChain
 	input.Context = input.Context.WithBlockTime(now)
 
 	// tx batch size is 2, so that some of them stay behind
-	_, err = input.GravityKeeper.BuildOutgoingTXBatch(input.Context, evmChainPrefix, *tokenContract, maxTxElements)
+	_, err = input.GravityKeeper.BuildOutgoingTxBatch(input.Context, evmChainPrefix, *tokenContract, maxTxElements)
 	require.NoError(t, err)
 	// Should have 2 and 3 from above
 	// 1 and 4 should be unbatched
@@ -1091,7 +1091,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 
 	// tx batch size is 2, so that some of them stay behind
 	// Should contain 2 and 3 from above
-	_, err = input.GravityKeeper.BuildOutgoingTXBatch(sdkCtx, evmChain.EvmChainPrefix, *tokenContract, 2)
+	_, err = input.GravityKeeper.BuildOutgoingTxBatch(sdkCtx, evmChain.EvmChainPrefix, *tokenContract, 2)
 	require.NoError(t, err)
 
 	// Should receive 1 and 4 unbatched, 2 and 3 batched in response

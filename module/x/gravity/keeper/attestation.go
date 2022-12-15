@@ -342,13 +342,13 @@ func (k Keeper) GetLastObservedEvmChainBlockHeight(ctx sdk.Context, evmChainPref
 
 	if len(bytes) == 0 {
 		return types.LastObservedEthereumBlockHeight{
-			CosmosEthBlockHeight: 0,
-			EthereumBlockHeight:  0,
+			CosmosBlockHeight:   0,
+			EthereumBlockHeight: 0,
 		}
 	}
 	height := types.LastObservedEthereumBlockHeight{
-		CosmosEthBlockHeight: 0,
-		EthereumBlockHeight:  0,
+		CosmosBlockHeight:   0,
+		EthereumBlockHeight: 0,
 	}
 	k.cdc.MustUnmarshal(bytes, &height)
 	return height

@@ -132,7 +132,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	// with 100 tx in each batch, 1000 txs per contract, we want 5 batches per contract to batch 500 txs per contract
 	batches := make([]*types.InternalOutgoingTxBatch, 5*len(contracts))
 	for i, v := range contracts {
-		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, *v, uint(batchSize))
+		batch, err := input.GravityKeeper.BuildOutgoingTxBatch(ctx, evmChain.EvmChainPrefix, *v, uint(batchSize))
 		require.NoError(t, err)
 		batches[i] = batch
 		ctx.Logger().Info(fmt.Sprintf("Created batch %v for contract %v with %v transactions", i, v.GetAddress(), batchSize))
