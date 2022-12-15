@@ -44,7 +44,9 @@ jq '.app_state.gov.voting_params.voting_period = "120s"' /gov-genesis.json > /co
 # of the sha256 hash of 'distribution' to create the address of the module
 jq '.app_state.distribution.fee_pool.community_pool = [{"denom": "stake", "amount": "1000000000000000000000000.0"}]' /community-pool-genesis.json > /community-pool2-genesis.json
 jq '.app_state.auth.accounts += [{"@type": "/cosmos.auth.v1beta1.ModuleAccount", "base_account": { "account_number": "0", "address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh","pub_key": null,"sequence": "0"},"name": "distribution","permissions": ["basic"]}]' /community-pool2-genesis.json > /community-pool3-genesis.json
-jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"amount": "1000000000000000000000000", "denom": "stake"}]}]' /community-pool3-genesis.json > /edited-genesis.json
+jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"amount": "1000000000000000000000000", "denom": "stake"}]}]' /community-pool3-genesis.json > /evm-chain-genesis.json
+
+jq '.app_state.gravity.evm_chains = [{"evm_chain": {"evm_chain_prefix": "gravity","evm_chain_name": "gravity"},"gravity_nonces": {"latest_valset_nonce": "0","last_observed_nonce": "0","last_slashed_valset_nonce": "0","last_slashed_batch_block": "0","last_slashed_logic_call_block": "0","last_tx_pool_id": "0","last_batch_id": "0"},"valsets": [],"valset_confirms": [],"batches": [],"batch_confirms": [],"logic_calls": [],"logic_call_confirms": [],"attestations": [],"delegate_keys": [],"erc20_to_denoms": [],"unbatched_transfers": []}]' /evm-chain-genesis.json > /edited-genesis.json
 
 mv /edited-genesis.json /genesis.json
 

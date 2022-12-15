@@ -237,6 +237,11 @@ var (
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
 	}
+
+	EvmChains = []types.EvmChain{
+		{EvmChainPrefix: "gravity", EvmChainName: "Main Ethereum network"},
+		{EvmChainPrefix: "dummy", EvmChainName: "Dummy EVM chain"},
+	}
 )
 
 // TestInput stores the various keepers required to test gravity
@@ -300,7 +305,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 		if err != nil {
 			panic("found invalid address in EthAddrs")
 		}
-		input.GravityKeeper.SetEthAddressForValidator(input.Context, addr, *ethAddr)
+		input.GravityKeeper.SetEvmAddressForValidator(input.Context, addr, *ethAddr)
 
 		input.GravityKeeper.SetOrchestratorValidator(input.Context, addr, OrchAddrs[i])
 	}
@@ -359,7 +364,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 			if err != nil {
 				panic("found invalid address in EthAddrs")
 			}
-			input.GravityKeeper.SetEthAddressForValidator(input.Context, valAddr, *ethAddr)
+			input.GravityKeeper.SetEvmAddressForValidator(input.Context, valAddr, *ethAddr)
 			input.GravityKeeper.SetOrchestratorValidator(input.Context, valAddr, accAddr)
 
 			// increase block height by 100 blocks
@@ -369,7 +374,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 			staking.EndBlocker(input.Context, input.StakingKeeper)
 
 			// set a request every time.
-			input.GravityKeeper.SetValsetRequest(input.Context)
+			input.GravityKeeper.SetValsetRequest(input.Context, EthChainPrefix)
 		}
 
 	}
@@ -621,13 +626,16 @@ func CreateTestEnv(t *testing.T) TestInput {
 	)
 
 	// set gravityIDs for batches and tx items, simulating genesis setup
-	k.SetLatestValsetNonce(ctx, 0)
-	k.setLastObservedEventNonce(ctx, 0)
-	k.SetLastSlashedValsetNonce(ctx, 0)
-	k.SetLastSlashedBatchBlock(ctx, 0)
-	k.SetLastSlashedLogicCallBlock(ctx, 0)
-	k.setID(ctx, 0, types.KeyLastTXPoolID)
-	k.setID(ctx, 0, types.KeyLastOutgoingBatchID)
+	for _, cd := range EvmChains {
+		k.SetLatestValsetNonce(ctx, cd.EvmChainPrefix, 0)
+		k.setLastObservedEventNonce(ctx, cd.EvmChainPrefix, 0)
+		k.SetLastSlashedValsetNonce(ctx, cd.EvmChainPrefix, 0)
+		k.SetLastSlashedBatchBlock(ctx, cd.EvmChainPrefix, 0)
+		k.SetLastSlashedLogicCallBlock(ctx, cd.EvmChainPrefix, 0)
+		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastTXPoolID, cd.EvmChainPrefix))
+		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, cd.EvmChainPrefix))
+		k.SetEvmChainData(ctx, cd)
+	}
 
 	k.SetParams(ctx, TestingGravityParams)
 

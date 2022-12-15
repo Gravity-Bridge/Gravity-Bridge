@@ -39,7 +39,7 @@ func NewInternalOutgoingTransferTx(
 	}
 	dest, err := NewEthAddress(destAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid eth destination")
+		return nil, sdkerrors.Wrap(err, "invalid evm destination")
 	}
 	token, err := erc20Token.ToInternal()
 	if err != nil {
@@ -122,7 +122,7 @@ func NewInternalOutgingTxBatch(
 func NewInternalOutgingTxBatchFromExternalBatch(batch OutgoingTxBatch) (*InternalOutgoingTxBatch, error) {
 	contractAddr, err := NewEthAddress(batch.TokenContract)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid eth address")
+		return nil, sdkerrors.Wrap(err, "invalid evm address")
 	}
 	txs := make([]*InternalOutgoingTransferTx, len(batch.Transactions))
 	for i, tx := range batch.Transactions {
@@ -194,7 +194,7 @@ func (i *InternalOutgoingTxBatch) ValidateBasic() error {
 	return nil
 }
 
-// Required for EthereumSigned interface
+// Required for EvmSigned interface
 func (o OutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 	i, err := o.ToInternal()
 	if err != nil {

@@ -141,6 +141,12 @@ message Params {
 // GenesisState struct, containing all persistant data required by the Gravity module
 message GenesisState {
   Params                             params              = 1;
+  repeated EvmChainData              evm_chains          = 2 [(gogoproto.nullable) = false];
+}
+
+// EvmChainData struct, containing all persistant data per EVM chain required by the Gravity module
+message EvmChainData {
+  EvmChain                           evm_chain           = 1 [(gogoproto.nullable) = false];
   GravityNonces                      gravity_nonces      = 2 [(gogoproto.nullable) = false];
   repeated Valset                    valsets             = 3 [(gogoproto.nullable) = false];
   repeated MsgValsetConfirm          valset_confirms     = 4 [(gogoproto.nullable) = false];
@@ -153,6 +159,12 @@ message GenesisState {
   repeated ERC20ToDenom              erc20_to_denoms     = 11 [(gogoproto.nullable) = false];
   repeated OutgoingTransferTx        unbatched_transfers = 12 [(gogoproto.nullable) = false];
   repeated PendingIbcAutoForward     pending_ibc_auto_forwards = 13 [(gogoproto.nullable) = false];
+}
+
+// EvmChain struct contains EVM chain specific data
+message EvmChain {
+  string evm_chain_prefix = 1;
+  string evm_chain_name   = 2;
 }
 
 // GravityCounters contains the many noces and counters required to maintain the bridge state in the genesis

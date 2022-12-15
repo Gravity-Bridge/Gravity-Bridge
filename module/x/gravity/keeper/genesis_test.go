@@ -24,6 +24,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	batchSize := 100
 	accAddresses := []string{ // Warning: this must match the length of ctrAddresses
 
@@ -110,7 +111,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// add transaction to the pool
-		id, err := input.GravityKeeper.AddToOutgoingPool(ctx, *sender, *receiver, amountToken.GravityCoin(), feeToken.GravityCoin())
+		id, err := input.GravityKeeper.AddToOutgoingPool(ctx, evmChain.EvmChainPrefix, *sender, *receiver, amountToken.GravityCoin(), feeToken.GravityCoin())
 		require.NoError(t, err)
 		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v of contract %v from %v to %v", i, amount, fee, contract, sender, receiver))
 
@@ -131,7 +132,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	// with 100 tx in each batch, 1000 txs per contract, we want 5 batches per contract to batch 500 txs per contract
 	batches := make([]*types.InternalOutgoingTxBatch, 5*len(contracts))
 	for i, v := range contracts {
-		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *v, uint(batchSize))
+		batch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, *v, uint(batchSize))
 		require.NoError(t, err)
 		batches[i] = batch
 		ctx.Logger().Info(fmt.Sprintf("Created batch %v for contract %v with %v transactions", i, v.GetAddress(), batchSize))
@@ -172,15 +173,15 @@ func TestBatchAndTxImportExport(t *testing.T) {
 			IbcChannel:      sourceChannel,
 			EventNonce:      uint64(i + 1),
 		}
-		input.GravityKeeper.setLastObservedEventNonce(ctx, fwd.EventNonce)
-		err = input.GravityKeeper.addPendingIbcAutoForward(ctx, fwd, stake)
+		input.GravityKeeper.setLastObservedEventNonce(ctx, evmChain.EvmChainPrefix, fwd.EventNonce)
+		err = input.GravityKeeper.addPendingIbcAutoForward(ctx, fwd, evmChain.EvmChainPrefix, stake)
 		require.NoError(t, err)
 		forwards[i] = &fwd
 	}
 
-	checkAllTransactionsExist(t, input.GravityKeeper, ctx, txs, forwards)
+	checkAllTransactionsExist(t, input.GravityKeeper, ctx, evmChain.EvmChainPrefix, txs, forwards)
 	exportImport(t, &input)
-	checkAllTransactionsExist(t, input.GravityKeeper, ctx, txs, forwards)
+	checkAllTransactionsExist(t, input.GravityKeeper, ctx, evmChain.EvmChainPrefix, txs, forwards)
 
 	// Clear the pending ibc auto forwards so the invariant won't fail
 	input.GravityKeeper.IteratePendingIbcAutoForwards(ctx, func(_ []byte, fwd *types.PendingIbcAutoForward) bool {
@@ -191,9 +192,9 @@ func TestBatchAndTxImportExport(t *testing.T) {
 }
 
 // Requires that all transactions in txs exist in keeper
-func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, txs []*types.InternalOutgoingTransferTx, forwards []*types.PendingIbcAutoForward) {
-	unbatched := keeper.GetUnbatchedTransactions(ctx)
-	batches := keeper.GetOutgoingTxBatches(ctx)
+func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, evmChainPrefix string, txs []*types.InternalOutgoingTransferTx, forwards []*types.PendingIbcAutoForward) {
+	unbatched := keeper.GetUnbatchedTransactions(ctx, evmChainPrefix)
+	batches := keeper.GetOutgoingTxBatches(ctx, evmChainPrefix)
 	// Collect all txs into an array
 	var gotTxs []*types.InternalOutgoingTransferTx
 	gotTxs = append(gotTxs, unbatched...)
@@ -232,13 +233,18 @@ func exportImport(t *testing.T, input *TestInput) {
 	genesisState := ExportGenesis(input.Context, input.GravityKeeper)
 	newEnv := CreateTestEnv(t)
 	input = &newEnv
-	unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context)
-	require.Empty(t, unbatched)
-	batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context)
-	require.Empty(t, batches)
-	forwards := input.GravityKeeper.PendingIbcAutoForwards(input.Context, 0)
-	require.Empty(t, forwards)
-	bech32ibc.InitGenesis(input.Context, *input.GravityKeeper.bech32IbcKeeper, *bech32ibcGenesis)
-	input.BankKeeper.InitGenesis(input.Context, bankGenesis)
+
+	for _, cd := range newEnv.GravityKeeper.GetEvmChains(newEnv.Context) {
+
+		unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context, cd.EvmChainPrefix)
+		require.Empty(t, unbatched)
+		batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context, cd.EvmChainPrefix)
+		require.Empty(t, batches)
+		forwards := input.GravityKeeper.PendingIbcAutoForwards(input.Context, 0)
+		require.Empty(t, forwards)
+		bech32ibc.InitGenesis(input.Context, *input.GravityKeeper.bech32IbcKeeper, *bech32ibcGenesis)
+		input.BankKeeper.InitGenesis(input.Context, bankGenesis)
+	}
+
 	InitGenesis(input.Context, input.GravityKeeper, genesisState)
 }

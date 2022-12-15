@@ -28,6 +28,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, err          = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
 	)
 	require.NoError(t, err)
 	receiver, err := types.NewEthAddress(myReceiver)
@@ -52,14 +53,14 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
-		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
+		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, evmChain.EvmChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 	}
 
 	// when
 	ctx = ctx.WithBlockTime(now)
 
-	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *tokenContract, 2)
+	goodBatch, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, evmChain.EvmChainPrefix, *tokenContract, 2)
 	goodBatchExternal := goodBatch.ToExternal()
 	require.NoError(t, err)
 
@@ -78,11 +79,12 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	// input := CreateTestEnv(t)
 	input, ctx := SetupFiveValChain(t)
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	// ctx := input.Context
 
-	valset := input.GravityKeeper.SetValsetRequest(ctx)
+	valset := input.GravityKeeper.SetValsetRequest(ctx, evmChain.EvmChainPrefix)
 
 	any, _ := codectypes.NewAnyWithValue(&valset)
 
@@ -101,6 +103,7 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
 
 	contract := common.BytesToAddress(bytes.Repeat([]byte{0x1}, 20)).String()
 	logicCall := types.OutgoingLogicCall{
@@ -114,7 +117,7 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 		CosmosBlockCreated:   0,
 	}
 
-	input.GravityKeeper.SetOutgoingLogicCall(ctx, logicCall)
+	input.GravityKeeper.SetOutgoingLogicCall(ctx, evmChain.EvmChainPrefix, logicCall)
 
 	any, _ := codectypes.NewAnyWithValue(&logicCall)
 
@@ -148,7 +151,7 @@ func TestSubmitBadSignatureEvidenceSlash(t *testing.T) {
 	ethAddress, err := types.NewEthAddress(crypto.PubkeyToAddress(privKey.PublicKey).String())
 	require.NoError(t, err)
 
-	input.GravityKeeper.SetEthAddressForValidator(ctx, ValAddrs[0], *ethAddress)
+	input.GravityKeeper.SetEvmAddressForValidator(ctx, ValAddrs[0], *ethAddress)
 
 	ethSignature, err := types.NewEthereumSignature(checkpoint, privKey)
 	require.NoError(t, err)

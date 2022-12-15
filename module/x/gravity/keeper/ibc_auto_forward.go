@@ -12,6 +12,8 @@ package keeper
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,18 +22,17 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
 	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
-	"time"
 )
 
 // ValidatePendingIbcAutoForward performs basic validation, asserts the nonce is not ahead of what gravity is aware of,
 // requires ForeignReceiver's bech32 prefix to be registered and match with IbcChannel, and gravity module must have the
 // funds to meet this forward amount
-func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, forward types.PendingIbcAutoForward) error {
+func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, evmChainPrefix string, forward types.PendingIbcAutoForward) error {
 	if err := forward.ValidateBasic(); err != nil {
 		return err
 	}
 
-	latestEventNonce := k.GetLastObservedEventNonce(ctx)
+	latestEventNonce := k.GetLastObservedEventNonce(ctx, evmChainPrefix)
 	if forward.EventNonce > latestEventNonce {
 		return sdkerrors.Wrap(types.ErrInvalid, "EventNonce must be <= latest observed event nonce")
 	}
@@ -114,8 +115,8 @@ func (k Keeper) IteratePendingIbcAutoForwards(ctx sdk.Context, cb func(key []byt
 
 // addPendingIbcAutoForward enqueues a single new pending IBC Auto-Forward send to an IBC-enabled chain
 // IbcAutoForwards are added to
-func (k Keeper) addPendingIbcAutoForward(ctx sdk.Context, forward types.PendingIbcAutoForward, token string) error {
-	if err := k.ValidatePendingIbcAutoForward(ctx, forward); err != nil {
+func (k Keeper) addPendingIbcAutoForward(ctx sdk.Context, forward types.PendingIbcAutoForward, evmChainPrefix string, token string) error {
+	if err := k.ValidatePendingIbcAutoForward(ctx, evmChainPrefix, forward); err != nil {
 		return err
 	}
 	store := ctx.KVStore(k.storeKey)
