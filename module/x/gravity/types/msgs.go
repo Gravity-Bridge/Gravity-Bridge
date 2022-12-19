@@ -311,6 +311,8 @@ type EthereumClaim interface {
 	// validators claims agree. Therefore it's extremely important that this include all elements of the claim
 	// with the exception of the orchestrator who sent it in, which will be used as a different part of the index
 	ClaimHash() ([]byte, error)
+
+	GetEvmChainPrefix() string
 }
 
 // nolint: exhaustruct
@@ -319,6 +321,7 @@ var (
 	_ EthereumClaim = &MsgBatchSendToEthClaim{}
 	_ EthereumClaim = &MsgERC20DeployedClaim{}
 	_ EthereumClaim = &MsgLogicCallExecutedClaim{}
+	_ EthereumClaim = &MsgValsetUpdatedClaim{}
 )
 
 // GetType returns the type of the claim

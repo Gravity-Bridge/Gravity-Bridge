@@ -86,7 +86,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 // ValsetConfirm handles MsgValsetConfirm
 func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm) (*types.MsgValsetConfirmResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	valset := k.GetValset(ctx, EthChainPrefix, msg.Nonce)
+	valset := k.GetValset(ctx, msg.EvmChainPrefix, msg.Nonce)
 	if valset == nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find valset")
 	}
@@ -103,10 +103,10 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 	}
 
 	// persist signature
-	if k.GetValsetConfirm(ctx, EthChainPrefix, msg.Nonce, orchaddr) != nil {
+	if k.GetValsetConfirm(ctx, msg.EvmChainPrefix, msg.Nonce, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "signature duplicate")
 	}
-	key := k.SetValsetConfirm(ctx, EthChainPrefix, *msg)
+	key := k.SetValsetConfirm(ctx, msg.EvmChainPrefix, *msg)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventValsetConfirmKey{
@@ -130,7 +130,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid eth dest")
 	}
-	_, erc20, err := k.DenomToERC20Lookup(ctx, EthChainPrefix, msg.Amount.Denom)
+	_, erc20, err := k.DenomToERC20Lookup(ctx, msg.EvmChainPrefix, msg.Amount.Denom)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid denom")
 	}
@@ -139,7 +139,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted")
 	}
 
-	txID, err := k.AddToOutgoingPool(ctx, EthChainPrefix, sender, *dest, msg.Amount, msg.BridgeFee)
+	txID, err := k.AddToOutgoingPool(ctx, msg.EvmChainPrefix, sender, *dest, msg.Amount, msg.BridgeFee)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not add to outgoing pool")
 	}
@@ -160,12 +160,12 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 
 	// Check if the denom is a gravity coin, if not, check if there is a deployed ERC20 representing it.
 	// If not, error out
-	_, tokenContract, err := k.DenomToERC20Lookup(ctx, EthChainPrefix, msg.Denom)
+	_, tokenContract, err := k.DenomToERC20Lookup(ctx, msg.EvmChainPrefix, msg.Denom)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not look up erc 20 denominator")
 	}
 
-	batch, err := k.BuildOutgoingTxBatch(ctx, EthChainPrefix, *tokenContract, OutgoingTxBatchSize)
+	batch, err := k.BuildOutgoingTxBatch(ctx, msg.EvmChainPrefix, *tokenContract, OutgoingTxBatchSize)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not build outgoing tx batch")
 	}
@@ -193,7 +193,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	ctx := sdk.UnwrapSDKContext(c)
 
 	// fetch the outgoing batch given the nonce
-	batch := k.GetOutgoingTxBatch(ctx, EthChainPrefix, *contract, msg.Nonce)
+	batch := k.GetOutgoingTxBatch(ctx, msg.EvmChainPrefix, *contract, msg.Nonce)
 	if batch == nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find batch")
 	}
@@ -211,10 +211,10 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	}
 
 	// check if we already have this confirm
-	if k.GetBatchConfirm(ctx, EthChainPrefix, msg.Nonce, *contract, orchaddr) != nil {
+	if k.GetBatchConfirm(ctx, msg.EvmChainPrefix, msg.Nonce, *contract, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
-	key := k.SetBatchConfirm(ctx, EthChainPrefix, msg)
+	key := k.SetBatchConfirm(ctx, msg.EvmChainPrefix, msg)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventBatchConfirmKey{
@@ -235,7 +235,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 	}
 
 	// fetch the outgoing logic given the nonce
-	logic := k.GetOutgoingLogicCall(ctx, EthChainPrefix, invalidationIdBytes, msg.InvalidationNonce)
+	logic := k.GetOutgoingLogicCall(ctx, msg.EvmChainPrefix, invalidationIdBytes, msg.InvalidationNonce)
 	if logic == nil {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find logic")
 	}
@@ -252,11 +252,11 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 	}
 
 	// check if we already have this confirm
-	if k.GetLogicCallConfirm(ctx, EthChainPrefix, invalidationIdBytes, msg.InvalidationNonce, orchaddr) != nil {
+	if k.GetLogicCallConfirm(ctx, msg.EvmChainPrefix, invalidationIdBytes, msg.InvalidationNonce, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
 
-	k.SetLogicCallConfirm(ctx, EthChainPrefix, msg)
+	k.SetLogicCallConfirm(ctx, msg.EvmChainPrefix, msg)
 
 	return nil, nil
 }
@@ -286,7 +286,7 @@ func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator
 // translated from the message to the evm chain claim interface
 func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, msg types.EthereumClaim) error {
 	// Add the claim to the store
-	_, err := k.Attest(ctx, EthChainPrefix, msg, msgAny)
+	_, err := k.Attest(ctx, msg.GetEvmChainPrefix(), msg, msgAny)
 	if err != nil {
 		return sdkerrors.Wrap(err, "create attestation")
 	}
@@ -300,7 +300,7 @@ func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, m
 		&types.EventClaim{
 			Message:       string(msg.GetType()),
 			ClaimHash:     string(hash),
-			AttestationId: string(types.GetAttestationKey(EthChainPrefix, msg.GetEventNonce(), hash)),
+			AttestationId: string(types.GetAttestationKey(msg.GetEvmChainPrefix(), msg.GetEventNonce(), hash)),
 		},
 	)
 
@@ -505,7 +505,7 @@ func (k msgServer) CancelSendToEth(c context.Context, msg *types.MsgCancelSendTo
 	if err != nil {
 		return nil, err
 	}
-	err = k.RemoveFromOutgoingPoolAndRefund(ctx, EthChainPrefix, msg.TransactionId, sender)
+	err = k.RemoveFromOutgoingPoolAndRefund(ctx, msg.EvmChainPrefix, msg.TransactionId, sender)
 	if err != nil {
 		return nil, err
 	}

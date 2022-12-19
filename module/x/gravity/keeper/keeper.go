@@ -26,12 +26,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
-const (
-	// Hardcoded prefix used until full multiple evm chain support is finished
-	// TODO: Delete
-	EthChainPrefix = "gravity"
-)
-
 // Check that our expected keeper types are implemented
 var _ types.StakingKeeper = (*stakingkeeper.Keeper)(nil)
 var _ types.SlashingKeeper = (*slashingkeeper.Keeper)(nil)
@@ -54,7 +48,7 @@ type Keeper struct {
 	bech32IbcKeeper   *bech32ibckeeper.Keeper
 
 	AttestationHandler interface {
-		Handle(sdk.Context, types.Attestation, types.EthereumClaim) error
+		Handle(sdk.Context, string, types.Attestation, types.EthereumClaim) error
 	}
 }
 

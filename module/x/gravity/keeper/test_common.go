@@ -71,6 +71,10 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
+const (
+	EthChainPrefix = "bsc mainnet"
+)
+
 var (
 	// ModuleBasics is a mock module basic manager for testing
 	ModuleBasics = module.NewBasicManager(
@@ -201,7 +205,6 @@ var (
 
 	// InitCoins holds the number of coins to initialize an account with
 	InitCoins = sdk.NewCoins(sdk.NewCoin(TestingStakeParams.BondDenom, InitTokens))
-
 	// StakingAmount holds the staking power to start a validator with
 	StakingAmount = sdk.TokensFromConsensusPower(10, sdk.DefaultPowerReduction)
 
@@ -239,7 +242,7 @@ var (
 	}
 
 	EvmChains = []types.EvmChain{
-		{EvmChainPrefix: "gravity", EvmChainName: "Main Ethereum network"},
+		{EvmChainPrefix: EthChainPrefix, EvmChainName: "Main Ethereum network"},
 		{EvmChainPrefix: "dummy", EvmChainName: "Dummy EVM chain"},
 	}
 )
@@ -666,7 +669,7 @@ func (t TestInput) AssertInvariants() {
 	bankInvariantFunc := bankkeeper.AllInvariants(t.BankKeeper)
 	govInvariantFunc := govkeeper.AllInvariants(t.GovKeeper, t.BankKeeper)
 	stakeInvariantFunc := stakingkeeper.AllInvariants(t.StakingKeeper)
-	gravInvariantFunc := AllInvariants(t.GravityKeeper, EthChainPrefix)
+	gravInvariantFunc := AllInvariants(t.GravityKeeper)
 
 	invariantStr, invariantViolated := distrInvariantFunc(t.Context)
 	if invariantViolated {

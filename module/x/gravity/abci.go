@@ -136,7 +136,7 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 			// If no attestation becomes observed, when we get to the next nonce, every attestation in
 			// it will be skipped. The same will happen for every nonce after that.
 			if nonce == uint64(k.GetLastObservedEventNonce(ctx, evmChainPrefix))+1 {
-				k.TryAttestation(ctx, &att)
+				k.TryAttestation(ctx, evmChainPrefix, &att)
 			}
 		}
 	}

@@ -20,13 +20,14 @@ import (
 */
 
 // AllInvariants collects any defined invariants below
-func AllInvariants(k Keeper, evmChainPrefix string) sdk.Invariant {
+func AllInvariants(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 
-		res, stop := StoreValidityInvariant(k, evmChainPrefix)(ctx)
+		res, stop := StoreValidityInvariant(k)(ctx)
 		if stop {
 			return res, stop
 		}
+
 		return ModuleBalanceInvariant(k)(ctx)
 
 		/*
@@ -44,39 +45,45 @@ func AllInvariants(k Keeper, evmChainPrefix string) sdk.Invariant {
 // Note that the returned bool should be true if there is an error, e.g. an unexpected module balance
 func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
-		modAcc := k.accountKeeper.GetModuleAddress(types.ModuleName)
-		actualBals := k.bankKeeper.GetAllBalances(ctx, modAcc)
-		expectedBals := make(map[string]*sdk.Int, len(actualBals)) // Collect balances by contract
-		for _, v := range actualBals {
-			newInt := sdk.NewInt(0)
-			expectedBals[v.Denom] = &newInt
-		}
-		expectedBals = sumUnconfirmedBatchModuleBalances(ctx, EthChainPrefix, k, expectedBals)
-		expectedBals = sumUnbatchedTxModuleBalances(ctx, EthChainPrefix, k, expectedBals)
-		expectedBals = sumPendingIbcAutoForwards(ctx, k, expectedBals)
+		evmChains := k.GetEvmChains(ctx)
 
-		// Compare actual vs expected balances
-		for _, actual := range actualBals {
-			denom := actual.GetDenom()
-			cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, EthChainPrefix, denom)
-			if err != nil {
-				// Here we do not return because a user could halt the chain by gifting gravity a cosmos asset with no erc20 repr
-				ctx.Logger().Error("Unexpected gravity module balance of cosmos-originated asset with no erc20 representation", "asset", denom)
-				continue
-			}
-			expected, ok := expectedBals[denom]
-			if !ok {
-				return fmt.Sprint("Could not find expected balance for actual module balance of ", actual), true
-			}
+		for _, cd := range evmChains {
 
-			if cosmosOriginated { // Cosmos originated mismatched balance
-				// We cannot make any assertions about cosmosOriginated assets because we do not have enough information.
-				// There is no index of denom => amount bridged, which would force us to parse all logs in existence
-			} else if !actual.Amount.Equal(*expected) { // Eth originated mismatched balance
-				return fmt.Sprint("Mismatched balance of eth-originated ", denom, ": actual balance ", actual.Amount, " != expected balance ", expected), true
+			modAcc := k.accountKeeper.GetModuleAddress(types.ModuleName)
+			actualBals := k.bankKeeper.GetAllBalances(ctx, modAcc)
+			expectedBals := make(map[string]*sdk.Int, len(actualBals)) // Collect balances by contract
+			for _, v := range actualBals {
+				newInt := sdk.NewInt(0)
+				expectedBals[v.Denom] = &newInt
+			}
+			expectedBals = sumUnconfirmedBatchModuleBalances(ctx, cd.EvmChainPrefix, k, expectedBals)
+			expectedBals = sumUnbatchedTxModuleBalances(ctx, cd.EvmChainPrefix, k, expectedBals)
+			expectedBals = sumPendingIbcAutoForwards(ctx, k, expectedBals)
+
+			// Compare actual vs expected balances
+			for _, actual := range actualBals {
+				denom := actual.GetDenom()
+				cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, cd.EvmChainPrefix, denom)
+				if err != nil {
+					// Here we do not return because a user could halt the chain by gifting gravity a cosmos asset with no erc20 repr
+					ctx.Logger().Error("Unexpected gravity module balance of cosmos-originated asset with no erc20 representation", "asset", denom)
+					continue
+				}
+				expected, ok := expectedBals[denom]
+				if !ok {
+					return fmt.Sprint("Could not find expected balance for actual module balance of ", actual), true
+				}
+
+				if cosmosOriginated { // Cosmos originated mismatched balance
+					// We cannot make any assertions about cosmosOriginated assets because we do not have enough information.
+					// There is no index of denom => amount bridged, which would force us to parse all logs in existence
+				} else if !actual.Amount.Equal(*expected) { // Eth originated mismatched balance
+					return fmt.Sprint("Mismatched balance of eth-originated ", denom, ": actual balance ", actual.Amount, " != expected balance ", expected), true
+				}
 			}
 		}
 		return "", false
+
 	}
 }
 
@@ -145,28 +152,32 @@ func sumPendingIbcAutoForwards(ctx sdk.Context, k Keeper, expectedBals map[strin
 
 // StoreValidityInvariant checks that the currently stored objects are not corrupted and all pass ValidateBasic checks
 // Note that the returned bool should be true if there is an error, e.g. an unexpected batch was processed
-func StoreValidityInvariant(k Keeper, evmChainPrefix string) sdk.Invariant {
+func StoreValidityInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
-		err := ValidateStore(ctx, evmChainPrefix, k)
-		if err != nil {
-			return err.Error(), true
-		}
-		// Assert that batch metadata is consistent and expected
-		err = CheckBatches(ctx, evmChainPrefix, k)
-		if err != nil {
-			return err.Error(), true
-		}
+		evmChains := k.GetEvmChains(ctx)
 
-		// Assert that valsets have been updated in the expected manner
-		err = CheckValsets(ctx, evmChainPrefix, k)
-		if err != nil {
-			return err.Error(), true
-		}
+		for _, cd := range evmChains {
+			err := ValidateStore(ctx, cd.EvmChainPrefix, k)
+			if err != nil {
+				return err.Error(), true
+			}
+			// Assert that batch metadata is consistent and expected
+			err = CheckBatches(ctx, cd.EvmChainPrefix, k)
+			if err != nil {
+				return err.Error(), true
+			}
 
-		// Assert that pending ibc auto-forwards are only outgoing
-		err = CheckPendingIbcAutoForwards(ctx, k)
-		if err != nil {
-			return err.Error(), true
+			// Assert that valsets have been updated in the expected manner
+			err = CheckValsets(ctx, cd.EvmChainPrefix, k)
+			if err != nil {
+				return err.Error(), true
+			}
+
+			// Assert that pending ibc auto-forwards are only outgoing
+			err = CheckPendingIbcAutoForwards(ctx, k)
+			if err != nil {
+				return err.Error(), true
+			}
 		}
 
 		// SUCCESS: If execution made it here, everything passes the sanity checks
@@ -206,6 +217,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// ValsetRequestKey
 	var actualLatestValsetNonce uint64 = 0
 	k.IterateValsets(ctx, evmChainPrefix, func(key []byte, valset *types.Valset) (stop bool) {
@@ -223,6 +235,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// ValsetConfirmKey
 	k.IterateValsetConfirms(ctx, func(key []byte, confirms []types.MsgValsetConfirm, nonce uint64) (stop bool) {
 		for _, confirm := range confirms {
@@ -249,14 +262,15 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	k.IterateAttestations(ctx, evmChainPrefix, false, func(key []byte, att types.Attestation) (stop bool) {
 		err = att.ValidateBasic(k.cdc)
 		if err != nil {
+
 			err = fmt.Errorf("Invalid attestation %v in IterateAttestations: %v", att, err)
 			return true
 		}
 		claim, _ := k.UnpackAttestationClaim(&att) // Already unpacked in ValidateBasic
 		if att.Observed {
 			if claim.GetEventNonce() > lastObservedEventNonce {
-				err = fmt.Errorf("last observed event nonce <> observed attestation nonce mismatch (%v < %v)", lastObservedEventNonce, claim.GetEventNonce())
-				err = types.ErrInvalidAttestation // signal by setting err non-nil
+				err = fmt.Errorf("%s: last observed event nonce <> observed attestation nonce mismatch (%v < %v)", types.ErrInvalidAttestation, lastObservedEventNonce, claim.GetEventNonce())
+				// err = types.ErrInvalidAttestation // signal by setting err non-nil
 				return true
 			}
 			claimHeight := claim.GetEthBlockHeight()
@@ -269,6 +283,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// OutgoingTXPoolKey
 	k.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) (stop bool) {
 		err = tx.ValidateBasic()
@@ -293,6 +308,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// BatchConfirmKey
 	k.IterateBatchConfirms(ctx, evmChainPrefix, func(key []byte, confirm types.MsgConfirmBatch) (stop bool) {
 		err = confirm.ValidateBasic()
@@ -306,6 +322,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// LastEventNonceByValidatorKey (type checked when fetching)
 	k.IterateValidatorLastEventNonces(ctx, func(key []byte, nonce uint64) (stop bool) {
 		return false
@@ -331,6 +348,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// KeyOutgoingLogicCall
 	k.IterateOutgoingLogicCalls(ctx, evmChainPrefix, func(key []byte, logicCall types.OutgoingLogicCall) (stop bool) {
 		err = logicCall.ValidateBasic()
@@ -343,6 +361,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// KeyOutgoingLogicConfirm
 	k.IterateLogicConfirms(ctx, func(key []byte, confirm *types.MsgConfirmLogicCall) (stop bool) {
 		err = confirm.ValidateBasic()
@@ -367,6 +386,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// DenomToERC20Key
 	k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) (stop bool) {
 		if err = erc20.ValidateBasic(); err != nil {
@@ -378,6 +398,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// ERC20ToDenomKey
 	k.IterateERC20ToDenom(ctx, evmChainPrefix, func(key []byte, erc20ToDenom *types.ERC20ToDenom) (stop bool) {
 		if err = erc20ToDenom.ValidateBasic(); err != nil {
@@ -389,6 +410,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return err
 	}
+
 	// LastSlashedValsetNonce (type is checked when fetching)
 	_ = k.GetLastSlashedValsetNonce(ctx, evmChainPrefix)
 
@@ -401,6 +423,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 			actualLatestValsetNonce,
 		)
 	}
+
 	// LastSlashedBatchBlock (type is checked when fetching)
 	_ = k.GetLastSlashedBatchBlock(ctx, evmChainPrefix)
 
@@ -582,6 +605,7 @@ func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 	nativeHrp := sdk.GetConfig().GetBech32AccountAddrPrefix()
 	pendingForwards := k.PendingIbcAutoForwards(ctx, 0)
 	minXferModBals := make(map[string]sdk.Int)
+
 	for _, fwd := range pendingForwards {
 		// Check the foreign address
 		hrp, _, err := bech32.DecodeAndConvert(fwd.ForeignReceiver)

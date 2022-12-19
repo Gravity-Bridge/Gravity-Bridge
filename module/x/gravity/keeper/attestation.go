@@ -35,7 +35,7 @@ func (k Keeper) Attest(
 	// and prevents validators from submitting two claims with the same nonce.
 	// This prevents there being two attestations with the same nonce that get 2/3s of the votes
 	// in the endBlocker.
-	lastEventNonce := k.GetLastEventNonceByValidator(ctx, EthChainPrefix, valAddr)
+	lastEventNonce := k.GetLastEventNonceByValidator(ctx, evmChainPrefix, valAddr)
 	if claim.GetEventNonce() != lastEventNonce+1 {
 		return nil, fmt.Errorf(types.ErrNonContiguousEventNonce.Error(), lastEventNonce+1, claim.GetEventNonce())
 	}
@@ -67,8 +67,8 @@ func (k Keeper) Attest(
 		// Add the validator's vote to this attestation
 		att.Votes = append(att.Votes, valAddr.String())
 
-		k.SetAttestation(ctx, EthChainPrefix, claim.GetEventNonce(), hash, att)
-		k.SetLastEventNonceByValidator(ctx, EthChainPrefix, valAddr, claim.GetEventNonce())
+		k.SetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash, att)
+		k.SetLastEventNonceByValidator(ctx, evmChainPrefix, valAddr, claim.GetEventNonce())
 
 		return att, nil
 	} else {
@@ -79,7 +79,8 @@ func (k Keeper) Attest(
 // TryAttestation checks if an attestation has enough votes to be applied to the consensus state
 // and has not already been marked Observed, then calls processAttestation to actually apply it to the state,
 // and then marks it Observed and emits an event.
-func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
+func (k Keeper) TryAttestation(ctx sdk.Context, evmChainPrefix string, att *types.Attestation) {
+
 	claim, err := k.UnpackAttestationClaim(att)
 	if err != nil {
 		panic("could not cast to claim")
@@ -107,20 +108,21 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 			// If the power of all the validators that have voted on the attestation is higher or equal to the threshold,
 			// process the attestation, set Observed to true, and break
 			if attestationPower.GTE(requiredPower) {
-				lastEventNonce := k.GetLastObservedEventNonce(ctx, EthChainPrefix)
+				lastEventNonce := k.GetLastObservedEventNonce(ctx, evmChainPrefix)
 				// this check is performed at the next level up so this should never panic
 				// outside of programmer error.
 				if claim.GetEventNonce() != lastEventNonce+1 {
 					panic("attempting to apply events to state out of order")
 				}
-				k.setLastObservedEventNonce(ctx, EthChainPrefix, claim.GetEventNonce())
-				k.SetLastObservedEvmChainBlockHeight(ctx, EthChainPrefix, claim.GetEthBlockHeight())
+
+				k.setLastObservedEventNonce(ctx, evmChainPrefix, claim.GetEventNonce())
+				k.SetLastObservedEvmChainBlockHeight(ctx, evmChainPrefix, claim.GetEthBlockHeight())
 
 				att.Observed = true
-				k.SetAttestation(ctx, EthChainPrefix, claim.GetEventNonce(), hash, att)
+				k.SetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash, att)
 
-				k.processAttestation(ctx, EthChainPrefix, att, claim)
-				k.emitObservedEvent(ctx, EthChainPrefix, att, claim)
+				k.processAttestation(ctx, evmChainPrefix, att, claim)
+				k.emitObservedEvent(ctx, evmChainPrefix, att, claim)
 
 				break
 			}
@@ -139,7 +141,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, evmChainPrefix string, att *
 	}
 	// then execute in a new Tx so that we can store state on failure
 	xCtx, commit := ctx.CacheContext()
-	if err := k.AttestationHandler.Handle(xCtx, *att, claim); err != nil { // execute with a transient storage
+	if err := k.AttestationHandler.Handle(xCtx, evmChainPrefix, *att, claim); err != nil { // execute with a transient storage
 		// If the attestation fails, something has gone wrong and we can't recover it. Log and move on
 		// The attestation will still be marked "Observed", allowing the oracle to progress properly
 		k.logger(ctx).Error("attestation failed",
@@ -331,6 +333,7 @@ func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context, evmChainPrefix string
 	if len(bytes) > 8 {
 		panic("Last observed event nonce is not a uint64!")
 	}
+
 	return types.UInt64FromBytesUnsafe(bytes)
 }
 

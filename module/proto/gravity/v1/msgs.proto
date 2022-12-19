@@ -104,6 +104,7 @@ message MsgValsetConfirm {
   string orchestrator = 2;
   string eth_address = 3;
   string signature = 4;
+  string evm_chain_prefix = 5;
 }
 
 message MsgValsetConfirmResponse {}
@@ -125,6 +126,7 @@ message MsgSendToEth {
   string eth_dest = 2;
   cosmos.base.v1beta1.Coin amount = 3 [ (gogoproto.nullable) = false ];
   cosmos.base.v1beta1.Coin bridge_fee = 4 [ (gogoproto.nullable) = false ];
+  string evm_chain_prefix = 5;
 }
 
 message MsgSendToEthResponse {}
@@ -141,6 +143,7 @@ message MsgSendToEthResponse {}
 message MsgRequestBatch {
   string sender = 1;
   string denom = 2;
+  string evm_chain_prefix = 3;
 }
 
 message MsgRequestBatchResponse {}
@@ -159,6 +162,7 @@ message MsgConfirmBatch {
   string eth_signer = 3;
   string orchestrator = 4;
   string signature = 5;
+  string evm_chain_prefix = 6;
 }
 
 message MsgConfirmBatchResponse {}
@@ -177,6 +181,7 @@ message MsgConfirmLogicCall {
   string eth_signer = 3;
   string orchestrator = 4;
   string signature = 5;
+  string evm_chain_prefix = 6;
 }
 
 message MsgConfirmLogicCallResponse {}
@@ -197,6 +202,7 @@ message MsgSendToCosmosClaim {
   string ethereum_sender = 5;
   string cosmos_receiver = 6;
   string orchestrator = 7;
+  string evm_chain_prefix = 8;
 }
 
 message MsgSendToCosmosClaimResponse {}
@@ -239,6 +245,7 @@ message MsgERC20DeployedClaim {
   string symbol = 6;
   uint64 decimals = 7;
   string orchestrator = 8;
+  string evm_chain_prefix = 9;
 }
 
 message MsgERC20DeployedClaimResponse {}
@@ -251,6 +258,7 @@ message MsgLogicCallExecutedClaim {
   bytes invalidation_id = 3;
   uint64 invalidation_nonce = 4;
   string orchestrator = 5;
+  string evm_chain_prefix = 6;
 }
 
 message MsgLogicCallExecutedClaimResponse {}
@@ -268,6 +276,7 @@ message MsgValsetUpdatedClaim {
   ];
   string reward_token = 6;
   string orchestrator = 7;
+  string evm_chain_prefix = 8;
 }
 
 message MsgValsetUpdatedClaimResponse {}
@@ -278,6 +287,7 @@ message MsgValsetUpdatedClaimResponse {}
 message MsgCancelSendToEth {
   uint64 transaction_id = 1;
   string sender = 2;
+  string evm_chain_prefix = 3;
 }
 
 message MsgCancelSendToEthResponse {}
@@ -291,6 +301,7 @@ message MsgSubmitBadSignatureEvidence {
       [ (cosmos_proto.accepts_interface) = "EthereumSigned" ];
   string signature = 2;
   string sender = 3;
+  string evm_chain_prefix = 4;
 }
 
 message MsgSubmitBadSignatureEvidenceResponse {}

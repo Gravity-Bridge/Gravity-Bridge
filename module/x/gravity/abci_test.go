@@ -1,6 +1,7 @@
 package gravity
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -491,7 +492,10 @@ func TestBatchTimeout(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	evmChain := pk.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
+	evmChain := pk.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
+	fmt.Println(evmChain)
+
 	params := pk.GetParams(ctx)
 	var (
 		now                 = time.Now().UTC()

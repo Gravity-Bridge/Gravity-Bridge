@@ -60,7 +60,7 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 // history, we roll back oracle history and reset the parameters
 func (k Keeper) HandleUnhaltBridgeProposal(ctx sdk.Context, p *types.UnhaltBridgeProposal) error {
 	ctx.Logger().Info("Gov vote passed: Resetting oracle history", "nonce", p.TargetNonce)
-	pruneAttestationsAfterNonce(ctx, EthChainPrefix, k, p.TargetNonce)
+	pruneAttestationsAfterNonce(ctx, p.EvmChainPrefix, k, p.TargetNonce)
 	return nil
 }
 
@@ -238,7 +238,7 @@ func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataP
 	// if metadata already exists then changing it is only a good idea if we have not already deployed an ERC20
 	// for this denom if we have we can't change it
 	_, metadataExists := k.bankKeeper.GetDenomMetaData(ctx, p.IbcDenom)
-	_, erc20RepresentationExists := k.GetCosmosOriginatedERC20(ctx, EthChainPrefix, p.IbcDenom)
+	_, erc20RepresentationExists := k.GetCosmosOriginatedERC20(ctx, p.EvmChainPrefix, p.IbcDenom)
 	if metadataExists && erc20RepresentationExists {
 		ctx.Logger().Info("invalid trying to set metadata when ERC20 has already been deployed")
 		return sdkerrors.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")

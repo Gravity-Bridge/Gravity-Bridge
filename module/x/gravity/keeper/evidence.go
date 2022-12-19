@@ -25,11 +25,11 @@ func (k Keeper) CheckBadSignatureEvidence(
 
 	switch subject := subject.(type) {
 	case *types.OutgoingTxBatch:
-		return k.checkBadSignatureEvidenceInternal(ctx, EthChainPrefix, subject, msg.Signature)
+		return k.checkBadSignatureEvidenceInternal(ctx, msg.EvmChainPrefix, subject, msg.Signature)
 	case *types.Valset:
-		return k.checkBadSignatureEvidenceInternal(ctx, EthChainPrefix, subject, msg.Signature)
+		return k.checkBadSignatureEvidenceInternal(ctx, msg.EvmChainPrefix, subject, msg.Signature)
 	case *types.OutgoingLogicCall:
-		return k.checkBadSignatureEvidenceInternal(ctx, EthChainPrefix, subject, msg.Signature)
+		return k.checkBadSignatureEvidenceInternal(ctx, msg.EvmChainPrefix, subject, msg.Signature)
 
 	default:
 		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Bad signature must be over a batch, valset, or logic call got %s", subject))
