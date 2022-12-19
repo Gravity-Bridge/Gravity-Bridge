@@ -241,7 +241,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		}
 
 		// export erc20 to denom relations
-		k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
+		k.IterateERC20ToDenom(ctx, cd.EvmChainPrefix, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
 			erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
 			return false
 		})

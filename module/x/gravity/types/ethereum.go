@@ -48,6 +48,7 @@ func (ea *EthAddress) SetAddress(address string) error {
 }
 
 func NewEthAddressFromBytes(address []byte) (*EthAddress, error) {
+
 	if err := ValidateEthAddress(hex.EncodeToString(address)); err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid input address")
 	}
@@ -74,6 +75,7 @@ func ZeroAddress() EthAddress {
 // Validates the input string as an Ethereum Address
 // Addresses must not be empty, have 42 character length, start with 0x and have 40 remaining characters in [0-9a-fA-F]
 func ValidateEthAddress(address string) error {
+
 	if address == "" {
 		return fmt.Errorf("empty")
 	}

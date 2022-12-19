@@ -22,6 +22,7 @@ import (
 // AllInvariants collects any defined invariants below
 func AllInvariants(k Keeper, evmChainPrefix string) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
+
 		res, stop := StoreValidityInvariant(k, evmChainPrefix)(ctx)
 		if stop {
 			return res, stop
@@ -315,9 +316,9 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	// SequenceKeyPrefix HAS BEEN REMOVED
 
 	// KeyLastTXPoolID (type checked when fetching)
-	_ = k.getID(ctx, types.KeyLastTXPoolID)
+	_ = k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, evmChainPrefix))
 	// KeyLastOutgoingBatchID (type checked when fetching)
-	_ = k.getID(ctx, types.KeyLastOutgoingBatchID)
+	_ = k.getID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, evmChainPrefix))
 	// KeyOrchestratorAddress
 	k.IterateValidatorsByOrchestratorAddress(ctx, func(key []byte, addr sdk.ValAddress) (stop bool) {
 		bech := addr.String()
@@ -378,7 +379,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 		return err
 	}
 	// ERC20ToDenomKey
-	k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) (stop bool) {
+	k.IterateERC20ToDenom(ctx, evmChainPrefix, func(key []byte, erc20ToDenom *types.ERC20ToDenom) (stop bool) {
 		if err = erc20ToDenom.ValidateBasic(); err != nil {
 			err = fmt.Errorf("Discovered invalid ERC20ToDenom %v under key %v: %v", erc20ToDenom, key, err)
 			return true
