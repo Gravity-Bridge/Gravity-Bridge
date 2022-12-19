@@ -630,6 +630,7 @@ async fn submit_duplicate_erc20_send(
     for k in keys.iter() {
         let c_key = k.orch_key;
         let res = send_ethereum_claims(
+            "gravity",
             contact,
             c_key,
             vec![event.clone()],

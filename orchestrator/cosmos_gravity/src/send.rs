@@ -224,6 +224,7 @@ pub async fn send_logic_call_confirm(
 
 #[allow(clippy::too_many_arguments)]
 pub async fn send_ethereum_claims(
+    evm_chain_prefix: &str,
     contact: &Contact,
     private_key: impl PrivateKey,
     deposits: Vec<SendToCosmosEvent>,
@@ -264,6 +265,7 @@ pub async fn send_ethereum_claims(
             token_contract: withdraw.erc20.to_string(),
             batch_nonce: withdraw.batch_nonce,
             orchestrator: our_address.to_string(),
+            evm_chain_prefix: evm_chain_prefix.to_string(),
         };
         let msg = Msg::new(MSG_BATCH_SEND_TO_ETH_TYPE_URL, claim);
         assert!(unordered_msgs.insert(withdraw.event_nonce, msg).is_none());

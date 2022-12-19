@@ -254,7 +254,11 @@ func TestInvalidHeight(t *testing.T) {
 		BatchNonce:     uint64(lastBatchNonce + 1),
 		TokenContract:  tokenContract,
 		Orchestrator:   orch0.String(),
+		EvmChainPrefix: EthChainPrefix,
 	}
+	err = bad.ValidateBasic()
+	require.NoError(t, err)
+
 	context := sdktypes.WrapSDKContext(ctx)
 	log.Info("Submitting bad eth claim from orchestrator 0", "orch", orch0.String(), "val", val0.String())
 

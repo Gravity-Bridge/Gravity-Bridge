@@ -34,6 +34,7 @@ pub struct CheckedNonces {
 #[allow(clippy::too_many_arguments)]
 pub async fn check_for_events(
     web3: &Web3,
+    evm_chain_prefix: &str,
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
@@ -192,6 +193,7 @@ pub async fn check_for_events(
             || !valsets.is_empty()
         {
             let res = send_ethereum_claims(
+                evm_chain_prefix,
                 contact,
                 our_private_key,
                 deposits.clone(),
@@ -281,9 +283,7 @@ pub async fn check_for_events(
 /// https://hackmd.io/@prysmaticlabs/finality
 ///
 ///
-pub async fn get_block_delay(web3: &Web3) -> Uint256 {
-    let net_version = get_net_version_with_retry(web3).await;
-
+pub fn get_block_delay(net_version: u64) -> Uint256 {
     match net_version {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
         // all Ethereum proof of stake Chains
@@ -297,5 +297,28 @@ pub async fn get_block_delay(web3: &Web3) -> Uint256 {
         4 | 5 => 10u8.into(),
         // assume the safe option where we don't know
         _ => 96u8.into(),
+    }
+}
+
+/// must be constant string
+pub fn get_evm_chain_prefix(net_version: u64) -> String {
+    match net_version {
+        // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
+        // all Ethereum proof of stake Chains
+        1 => "ethereum mainnet".to_string(),
+        2 => "morden testnet".to_string(),
+        3 => "ropsten testnet".to_string(),
+        4 => "rinkeby testnet".to_string(),
+        5 => "goerli testnet".to_string(),
+        11155111 => "sepolia testnet".to_string(),
+        10 => "optimism mainnet".to_string(),
+        69 => "optimism kovan testnet".to_string(),
+        42 => "kovan testnet".to_string(),
+        137 => "polygon mainnet".to_string(),
+        80001 => "polygon mumbai testnet".to_string(),
+        250 => "fantom mainnet".to_string(),
+        100 => "xdai mainnet".to_string(),
+        56 => "bsc mainnet".to_string(),
+        _ => net_version.to_string(),
     }
 }

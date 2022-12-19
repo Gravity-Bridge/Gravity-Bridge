@@ -429,6 +429,9 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 	if e.BatchNonce == 0 {
 		return fmt.Errorf("batch_nonce == 0")
 	}
+	if e.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty")
+	}
 	if err := ValidateEthAddress(e.TokenContract); err != nil {
 		return sdkerrors.Wrap(err, "erc20 token")
 	}
@@ -438,9 +441,9 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 	return nil
 }
 
-// Hash implements WithdrawBatch.Hash
+// Hash implements WithdrawBatch.Hash, add evm chain prefix at top
 func (msg *MsgBatchSendToEthClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%d/%s", msg.EventNonce, msg.EthBlockHeight, msg.BatchNonce, msg.TokenContract)
+	path := fmt.Sprintf("%s/%d/%d/%d/%s", msg.EvmChainPrefix, msg.EventNonce, msg.EthBlockHeight, msg.BatchNonce, msg.TokenContract)
 	return tmhash.Sum([]byte(path)), nil
 }
 

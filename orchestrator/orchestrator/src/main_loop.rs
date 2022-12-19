@@ -2,7 +2,7 @@
 //! that can only be run by a validator. This single binary the 'Orchestrator' runs not only these two rules but also the untrusted role of a relayer, that does not need any permissions and has it's
 //! own crate and binary so that anyone may run it.
 
-use crate::ethereum_event_watcher::get_block_delay;
+use crate::ethereum_event_watcher::{get_block_delay, get_evm_chain_prefix};
 use crate::{ethereum_event_watcher::check_for_events, oracle_resync::get_last_checked_block};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{address::Address as EthAddress, Uint256};
@@ -25,6 +25,7 @@ use deep_space::{
 use futures::future::{join, join3};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_utils::get_with_retry::get_net_version_with_retry;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
 use relayer::main_loop::all_relayer_loops;
@@ -112,7 +113,9 @@ pub async fn eth_oracle_main_loop(
 ) {
     let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
     let long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
-    let block_delay = get_block_delay(&web3).await;
+    let net_version = get_net_version_with_retry(&web3).await;
+    let block_delay = get_block_delay(net_version);
+    let emv_chain_prefix = get_evm_chain_prefix(net_version);
     let mut last_checked_block: Uint256 = get_last_checked_block(
         grpc_client.clone(),
         our_cosmos_address,
@@ -208,6 +211,7 @@ pub async fn eth_oracle_main_loop(
         // Relays events from Ethereum -> Cosmos
         match check_for_events(
             &web3,
+            &emv_chain_prefix,
             &contact,
             &mut grpc_client,
             gravity_contract_address,
