@@ -72,16 +72,19 @@ func (msg *MsgSetOrchestratorAddress) GetSigners() []sdk.AccAddress {
 
 // NewMsgValsetConfirm returns a new msgValsetConfirm
 func NewMsgValsetConfirm(
+	evmChainPrefix string,
 	nonce uint64,
 	ethAddress EthAddress,
 	validator sdk.AccAddress,
 	signature string,
+
 ) *MsgValsetConfirm {
 	return &MsgValsetConfirm{
-		Nonce:        nonce,
-		Orchestrator: validator.String(),
-		EthAddress:   ethAddress.GetAddress().Hex(),
-		Signature:    signature,
+		Nonce:          nonce,
+		Orchestrator:   validator.String(),
+		EthAddress:     ethAddress.GetAddress().Hex(),
+		Signature:      signature,
+		EvmChainPrefix: evmChainPrefix,
 	}
 }
 
@@ -118,12 +121,13 @@ func (msg *MsgValsetConfirm) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgSendToEth returns a new msgSendToEth
-func NewMsgSendToEth(sender sdk.AccAddress, destAddress EthAddress, send sdk.Coin, bridgeFee sdk.Coin) *MsgSendToEth {
+func NewMsgSendToEth(evmChainPrefix string, sender sdk.AccAddress, destAddress EthAddress, send sdk.Coin, bridgeFee sdk.Coin) *MsgSendToEth {
 	return &MsgSendToEth{
-		Sender:    sender.String(),
-		EthDest:   destAddress.GetAddress().Hex(),
-		Amount:    send,
-		BridgeFee: bridgeFee,
+		Sender:         sender.String(),
+		EthDest:        destAddress.GetAddress().Hex(),
+		Amount:         send,
+		BridgeFee:      bridgeFee,
+		EvmChainPrefix: evmChainPrefix,
 	}
 }
 
@@ -138,6 +142,10 @@ func (msg MsgSendToEth) Type() string { return "send_to_eth" }
 func (msg MsgSendToEth) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Sender)
+	}
+
+	if msg.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty MsgSendToEth")
 	}
 
 	// fee and send must be of the same denom
@@ -155,6 +163,7 @@ func (msg MsgSendToEth) ValidateBasic() error {
 	if err := ValidateEthAddress(msg.EthDest); err != nil {
 		return sdkerrors.Wrap(err, "ethereum address")
 	}
+
 	// TODO validate fee is sufficient, fixed fee to start
 	return nil
 }
@@ -175,10 +184,11 @@ func (msg MsgSendToEth) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgRequestBatch returns a new msgRequestBatch
-func NewMsgRequestBatch(orchestrator sdk.AccAddress) *MsgRequestBatch {
+func NewMsgRequestBatch(evmChainPrefix string, orchestrator sdk.AccAddress) *MsgRequestBatch {
 	return &MsgRequestBatch{
-		Sender: orchestrator.String(),
-		Denom:  "",
+		Sender:         orchestrator.String(),
+		Denom:          "",
+		EvmChainPrefix: evmChainPrefix,
 	}
 }
 
@@ -190,9 +200,15 @@ func (msg MsgRequestBatch) Type() string { return "request_batch" }
 
 // ValidateBasic performs stateless checks
 func (msg MsgRequestBatch) ValidateBasic() error {
+
+	if msg.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty MsgRequestBatch")
+	}
+
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Sender)
 	}
+
 	return nil
 }
 
@@ -219,6 +235,11 @@ func (msg MsgConfirmBatch) Type() string { return "confirm_batch" }
 
 // ValidateBasic performs stateless checks
 func (msg MsgConfirmBatch) ValidateBasic() error {
+
+	if msg.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty MsgConfirmBatch")
+	}
+
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Orchestrator)
 	}
@@ -257,6 +278,11 @@ func (msg MsgConfirmLogicCall) Type() string { return "confirm_logic" }
 
 // ValidateBasic performs stateless checks
 func (msg MsgConfirmLogicCall) ValidateBasic() error {
+
+	if msg.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty MsgConfirmLogicCall")
+	}
+
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Orchestrator)
 	}
@@ -324,6 +350,18 @@ var (
 	_ EthereumClaim = &MsgValsetUpdatedClaim{}
 )
 
+func NewMsgSendToCosmosClaim(evmChainPrefix string, eventNonce uint64, ethBlockHeight uint64, contract string, amount sdk.Int, etherumSender string, cosmosReceiver string, orchestrator string) *MsgSendToCosmosClaim {
+	return &MsgSendToCosmosClaim{
+		EventNonce:     eventNonce,
+		EthBlockHeight: ethBlockHeight,
+		TokenContract:  contract,
+		Amount:         amount,
+		EthereumSender: etherumSender,
+		CosmosReceiver: cosmosReceiver,
+		Orchestrator:   orchestrator,
+	}
+}
+
 // GetType returns the type of the claim
 func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
 	return CLAIM_TYPE_SEND_TO_COSMOS
@@ -331,6 +369,11 @@ func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
 
 // ValidateBasic performs stateless checks
 func (msg *MsgSendToCosmosClaim) ValidateBasic() error {
+
+	if msg.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty MsgSendToCosmosClaim")
+	}
+
 	if err := ValidateEthAddress(msg.EthereumSender); err != nil {
 		return sdkerrors.Wrap(err, "eth sender")
 	}
@@ -433,7 +476,7 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 		return fmt.Errorf("batch_nonce == 0")
 	}
 	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty")
+		return fmt.Errorf("evm_chain_prefix is empty MsgBatchSendToEthClaim")
 	}
 	if err := ValidateEthAddress(e.TokenContract); err != nil {
 		return sdkerrors.Wrap(err, "erc20 token")
@@ -503,6 +546,9 @@ func (e *MsgERC20DeployedClaim) ValidateBasic() error {
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
 	}
+	if e.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty MsgERC20DeployedClaim")
+	}
 	return nil
 }
 
@@ -562,6 +608,9 @@ func (e *MsgLogicCallExecutedClaim) ValidateBasic() error {
 	}
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
+	}
+	if e.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty MsgLogicCallExecutedClaim")
 	}
 	return nil
 }
@@ -623,7 +672,9 @@ func (e *MsgValsetUpdatedClaim) ValidateBasic() error {
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
 	}
-
+	if e.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty MsgValsetUpdatedClaim")
+	}
 	err := ValidateEthAddress(e.RewardToken)
 	if err != nil {
 		return err
@@ -687,10 +738,11 @@ func (b *MsgValsetUpdatedClaim) ClaimHash() ([]byte, error) {
 }
 
 // NewMsgCancelSendToEth returns a new msgSetOrchestratorAddress
-func NewMsgCancelSendToEth(user sdk.AccAddress, id uint64) *MsgCancelSendToEth {
+func NewMsgCancelSendToEth(evmChainPrefix string, user sdk.AccAddress, id uint64) *MsgCancelSendToEth {
 	return &MsgCancelSendToEth{
-		Sender:        user.String(),
-		TransactionId: id,
+		Sender:         user.String(),
+		TransactionId:  id,
+		EvmChainPrefix: evmChainPrefix,
 	}
 }
 

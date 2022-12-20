@@ -33,19 +33,19 @@ func TestIterateEvmChainsData(t *testing.T) {
 	evmChainsFromGet := []types.EvmChain{}
 
 	// Check EVM chains from test environment
-	for _, cp := range evmChainsFromTestEnv {
-		chain := k.GetEvmChainData(ctx, cp.EvmChainPrefix)
+	for _, evmChain := range evmChainsFromTestEnv {
+		chain := k.GetEvmChainData(ctx, evmChain.EvmChainPrefix)
 		evmChainsFromGet = append(evmChainsFromGet, *chain)
-		require.Equal(t, cp.EvmChainPrefix, chain.EvmChainPrefix)
-		require.Equal(t, cp.EvmChainName, chain.EvmChainName)
+		require.Equal(t, evmChain.EvmChainPrefix, chain.EvmChainPrefix)
+		require.Equal(t, evmChain.EvmChainName, chain.EvmChainName)
 	}
 
 	// Check newly added EVM chains
-	for _, cp := range newEvmChains {
-		chain := k.GetEvmChainData(ctx, cp.EvmChainPrefix)
+	for _, evmChain := range newEvmChains {
+		chain := k.GetEvmChainData(ctx, evmChain.EvmChainPrefix)
 		evmChainsFromGet = append(evmChainsFromGet, *chain)
-		require.Equal(t, cp.EvmChainPrefix, chain.EvmChainPrefix)
-		require.Equal(t, cp.EvmChainName, chain.EvmChainName)
+		require.Equal(t, evmChain.EvmChainPrefix, chain.EvmChainPrefix)
+		require.Equal(t, evmChain.EvmChainName, chain.EvmChainName)
 	}
 
 	// Check if GetEvmChains matches

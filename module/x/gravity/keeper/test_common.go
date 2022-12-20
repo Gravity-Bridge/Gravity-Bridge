@@ -72,7 +72,10 @@ import (
 )
 
 const (
-	EthChainPrefix = "bsc mainnet"
+	// some popular networks
+	EthChainPrefix     = "ethereum"
+	PolygonChainPrefix = "polygon"
+	BscChainPrefix     = "bsc"
 )
 
 var (
@@ -242,8 +245,8 @@ var (
 	}
 
 	EvmChains = []types.EvmChain{
-		{EvmChainPrefix: EthChainPrefix, EvmChainName: "Main Ethereum network"},
-		{EvmChainPrefix: "dummy", EvmChainName: "Dummy EVM chain"},
+		{EvmChainPrefix: EthChainPrefix, EvmChainName: "Ethereum Mainnet"},
+		{EvmChainPrefix: BscChainPrefix, EvmChainName: "BSC Mainnet"},
 	}
 )
 
@@ -629,15 +632,15 @@ func CreateTestEnv(t *testing.T) TestInput {
 	)
 
 	// set gravityIDs for batches and tx items, simulating genesis setup
-	for _, cd := range EvmChains {
-		k.SetLatestValsetNonce(ctx, cd.EvmChainPrefix, 0)
-		k.setLastObservedEventNonce(ctx, cd.EvmChainPrefix, 0)
-		k.SetLastSlashedValsetNonce(ctx, cd.EvmChainPrefix, 0)
-		k.SetLastSlashedBatchBlock(ctx, cd.EvmChainPrefix, 0)
-		k.SetLastSlashedLogicCallBlock(ctx, cd.EvmChainPrefix, 0)
-		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastTXPoolID, cd.EvmChainPrefix))
-		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, cd.EvmChainPrefix))
-		k.SetEvmChainData(ctx, cd)
+	for _, evmChain := range EvmChains {
+		k.SetLatestValsetNonce(ctx, evmChain.EvmChainPrefix, 0)
+		k.setLastObservedEventNonce(ctx, evmChain.EvmChainPrefix, 0)
+		k.SetLastSlashedValsetNonce(ctx, evmChain.EvmChainPrefix, 0)
+		k.SetLastSlashedBatchBlock(ctx, evmChain.EvmChainPrefix, 0)
+		k.SetLastSlashedLogicCallBlock(ctx, evmChain.EvmChainPrefix, 0)
+		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastTXPoolID, evmChain.EvmChainPrefix))
+		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, evmChain.EvmChainPrefix))
+		k.SetEvmChainData(ctx, evmChain)
 	}
 
 	k.SetParams(ctx, TestingGravityParams)
@@ -734,8 +737,8 @@ func MakeTestEncodingConfig() gravityparams.EncodingConfig {
 }
 
 // MintVouchersFromAir creates new gravity vouchers given erc20tokens
-func MintVouchersFromAir(t *testing.T, ctx sdk.Context, k Keeper, dest sdk.AccAddress, amount types.InternalERC20Token) sdk.Coin {
-	coin := amount.GravityCoin()
+func MintVouchersFromAir(t *testing.T, ctx sdk.Context, k Keeper, emvChainPrefix string, dest sdk.AccAddress, amount types.InternalERC20Token) sdk.Coin {
+	coin := amount.GravityCoin(emvChainPrefix)
 	vouchers := sdk.Coins{coin}
 	err := k.bankKeeper.MintCoins(ctx, types.ModuleName, vouchers)
 	require.NoError(t, err)

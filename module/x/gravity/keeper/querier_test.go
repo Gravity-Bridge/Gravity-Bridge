@@ -56,7 +56,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 
 			// expResp:  []byte(`{"type":"gravity/MsgValsetConfirm", "value":{"eth_address":"0x3232323232323232323232323232323232323232", "nonce": "1", "orchestrator": "cosmos1ees2tqhhhm9ahlhceh2zdguww9lqn2ckukn86l",  "signature": "alksdjhflkasjdfoiasjdfiasjdfoiasdj"}}`),
 			expResp: types.QueryValsetConfirmResponse{
-				Confirm: types.NewMsgValsetConfirm(1, *myValidatorEthereumAddr, myValidatorCosmosAddr, "abcdef123456789")},
+				Confirm: types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, 1, *myValidatorEthereumAddr, myValidatorCosmosAddr, "abcdef123456789")},
 			expErr: false,
 		},
 		"unknown nonce": {
@@ -130,9 +130,9 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		"all good": {
 			src: types.QueryValsetConfirmsByNonceRequest{Nonce: 1},
 			expResp: types.QueryValsetConfirmsByNonceResponse{Confirms: []types.MsgValsetConfirm{
-				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr2, myValidatorCosmosAddr2, "d34db33f1"),
-				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr3, myValidatorCosmosAddr3, "d34db33f2"),
-				*types.NewMsgValsetConfirm(nonce, *myValidatorEthereumAddr1, myValidatorCosmosAddr1, "d34db33f0"),
+				*types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, nonce, *myValidatorEthereumAddr2, myValidatorCosmosAddr2, "d34db33f1"),
+				*types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, nonce, *myValidatorEthereumAddr3, myValidatorCosmosAddr3, "d34db33f2"),
+				*types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, nonce, *myValidatorEthereumAddr1, myValidatorCosmosAddr1, "d34db33f0"),
 			}},
 		},
 		"unknown nonce": {
@@ -568,7 +568,7 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint, evmChain
 	// mint some voucher first
 	token, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 	require.NoError(t, err)
-	allVouchers := sdk.Coins{token.GravityCoin()}
+	allVouchers := sdk.Coins{token.GravityCoin(evmChainPrefix)}
 	err = input.BankKeeper.MintCoins(input.Context, types.ModuleName, allVouchers)
 	require.NoError(t, err)
 
@@ -581,10 +581,10 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint, evmChain
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := amountToken.GravityCoin(evmChainPrefix)
 		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := feeToken.GravityCoin(evmChainPrefix)
 		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, evmChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:
@@ -620,24 +620,26 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	require.NoError(t, err)
 
 	input.GravityKeeper.SetBatchConfirm(sdkCtx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
-		Nonce:         1,
-		TokenContract: tokenContract,
-		EthSigner:     "0xf35e2cc8e6523d683ed44870f5b7cc785051a77d",
-		Orchestrator:  validatorAddr.String(),
-		Signature:     "d34db33f",
+		Nonce:          1,
+		TokenContract:  tokenContract,
+		EthSigner:      "0xf35e2cc8e6523d683ed44870f5b7cc785051a77d",
+		Orchestrator:   validatorAddr.String(),
+		Signature:      "d34db33f",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	})
 
-	batchConfirms, err := k.BatchConfirms(ctx, &types.QueryBatchConfirmsRequest{Nonce: 1, ContractAddress: tokenContract})
+	batchConfirms, err := k.BatchConfirms(ctx, &types.QueryBatchConfirmsRequest{Nonce: 1, ContractAddress: tokenContract, EvmChainPrefix: evmChain.EvmChainPrefix})
 	require.NoError(t, err)
 
 	expectedRes := types.QueryBatchConfirmsResponse{
 		Confirms: []types.MsgConfirmBatch{
 			{
-				Nonce:         1,
-				TokenContract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-				EthSigner:     "0xf35e2cc8e6523d683ed44870f5b7cc785051a77d",
-				Orchestrator:  "gravity1mgamdcs9dah0vn0gqupl05up7pedg2mvc3tzjl",
-				Signature:     "d34db33f",
+				Nonce:          1,
+				TokenContract:  "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+				EthSigner:      "0xf35e2cc8e6523d683ed44870f5b7cc785051a77d",
+				Orchestrator:   "gravity1mgamdcs9dah0vn0gqupl05up7pedg2mvc3tzjl",
+				Signature:      "d34db33f",
+				EvmChainPrefix: evmChain.EvmChainPrefix,
 			},
 		},
 	}
@@ -976,8 +978,8 @@ func TestQueryCurrentValset(t *testing.T) {
 
 	sdkCtx := input.Context
 
-	for _, cd := range input.GravityKeeper.GetEvmChains(sdkCtx) {
-		currentValset, err := input.GravityKeeper.GetCurrentValset(sdkCtx, cd.EvmChainPrefix)
+	for _, evmChain := range input.GravityKeeper.GetEvmChains(sdkCtx) {
+		currentValset, err := input.GravityKeeper.GetCurrentValset(sdkCtx, evmChain.EvmChainPrefix)
 		require.NoError(t, err)
 
 		assert.Equal(t, expectedValset, currentValset)
@@ -1050,8 +1052,8 @@ func TestQueryPendingSendToEth(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, err2         = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
-		allVouchers         = sdk.NewCoins(token.GravityCoin())
 		evmChain            = k.GetEvmChainData(sdkCtx, EthChainPrefix)
+		allVouchers         = sdk.NewCoins(token.GravityCoin(evmChain.EvmChainPrefix))
 	)
 	require.NoError(t, err1)
 	require.NoError(t, err2)
@@ -1073,10 +1075,10 @@ func TestQueryPendingSendToEth(t *testing.T) {
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := amountToken.GravityCoin(evmChain.EvmChainPrefix)
 		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := feeToken.GravityCoin(evmChain.EvmChainPrefix)
 		_, err = input.GravityKeeper.AddToOutgoingPool(sdkCtx, evmChain.EvmChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:

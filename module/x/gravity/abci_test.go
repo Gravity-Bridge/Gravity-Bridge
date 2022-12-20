@@ -26,9 +26,9 @@ func TestValsetCreationIfNotAvailable(t *testing.T) {
 
 	// EndBlocker should set a new validator set if not available
 	EndBlocker(ctx, pk)
-	for _, cd := range input.GravityKeeper.GetEvmChains(input.Context) {
-		require.NotNil(t, pk.GetValset(ctx, cd.EvmChainPrefix, uint64(pk.GetLatestValsetNonce(ctx, cd.EvmChainPrefix))))
-		valsets := pk.GetValsets(ctx, cd.EvmChainPrefix)
+	for _, evmChain := range input.GravityKeeper.GetEvmChains(input.Context) {
+		require.NotNil(t, pk.GetValset(ctx, evmChain.EvmChainPrefix, uint64(pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix))))
+		valsets := pk.GetValsets(ctx, evmChain.EvmChainPrefix)
 		require.True(t, len(valsets) == 1)
 	}
 }
@@ -37,7 +37,7 @@ func TestValsetCreationUponUnbonding(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 	pk := input.GravityKeeper
-	evmChain := pk.GetEvmChains(ctx)[0]
+	evmChain := pk.GetEvmChainData(ctx, keeper.EthChainPrefix)
 
 	currentValsetNonce := pk.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix)
 	pk.SetValsetRequest(ctx, evmChain.EvmChainPrefix)
@@ -109,7 +109,7 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
 		require.NoError(t, err)
 
-		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
+		conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, vs.Nonce, *ethAddr, orch, "dummysig")
 		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 	}
 
@@ -198,11 +198,11 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
 		require.NoError(t, err)
 
-		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
+		conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, vs.Nonce, *ethAddr, orch, "dummysig")
 		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 	}
 
-	conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, accAddr, "dummysig")
+	conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, vs.Nonce, *ethAddr, accAddr, "dummysig")
 	pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 
 	// Now remove all the stake
@@ -259,7 +259,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
 		require.NoError(t, err)
 
-		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
+		conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, vs.Nonce, *ethAddr, orch, "dummysig")
 		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 	}
 	staking.EndBlocker(input.Context, input.StakingKeeper)
@@ -503,7 +503,7 @@ func TestBatchTimeout(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, err          = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
-		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		allVouchers         = sdk.NewCoins(token.GravityCoin(evmChain.EvmChainPrefix))
 	)
 	require.NoError(t, err)
 	receiver, err := types.NewEthAddress(myReceiver)
@@ -524,10 +524,10 @@ func TestBatchTimeout(t *testing.T) {
 	for i, v := range []uint64{4, 3, 3, 4, 5, 6} {
 		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := amountToken.GravityCoin(evmChain.EvmChainPrefix)
 		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := feeToken.GravityCoin(evmChain.EvmChainPrefix)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, evmChain.EvmChainPrefix, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
@@ -630,7 +630,7 @@ func TestValsetPruning(t *testing.T) {
 		ethAddr, err := types.NewEthAddress(keeper.EthAddrs[i].String())
 		require.NoError(t, err)
 
-		conf := types.NewMsgValsetConfirm(firstValsetNonce, *ethAddr, orch, "dummysig")
+		conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, firstValsetNonce, *ethAddr, orch, "dummysig")
 		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
 	}
 

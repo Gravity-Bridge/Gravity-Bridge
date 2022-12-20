@@ -9,11 +9,11 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, cd types.EvmChainData) {
+func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainData) {
 	// reset valsets in state
-	chainPrefix := cd.EvmChain.EvmChainPrefix
+	chainPrefix := data.EvmChain.EvmChainPrefix
 	highest := uint64(0)
-	for _, vs := range cd.Valsets {
+	for _, vs := range data.Valsets {
 		if vs.Nonce > highest {
 			highest = vs.Nonce
 		}
@@ -22,12 +22,12 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, cd types.EvmChainData)
 	k.SetLatestValsetNonce(ctx, chainPrefix, highest)
 
 	// reset valset confirmations in state
-	for _, conf := range cd.ValsetConfirms {
+	for _, conf := range data.ValsetConfirms {
 		k.SetValsetConfirm(ctx, chainPrefix, conf)
 	}
 
 	// reset batches in state
-	for _, batch := range cd.Batches {
+	for _, batch := range data.Batches {
 		// TODO: block height?
 		intBatch, err := batch.ToInternal()
 		if err != nil {
@@ -37,18 +37,18 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, cd types.EvmChainData)
 	}
 
 	// reset batch confirmations in state
-	for _, conf := range cd.BatchConfirms {
+	for _, conf := range data.BatchConfirms {
 		conf := conf
 		k.SetBatchConfirm(ctx, chainPrefix, &conf)
 	}
 
 	// reset logic calls in state
-	for _, call := range cd.LogicCalls {
+	for _, call := range data.LogicCalls {
 		k.SetOutgoingLogicCall(ctx, chainPrefix, call)
 	}
 
 	// reset logic call confirmations in state
-	for _, conf := range cd.LogicCallConfirms {
+	for _, conf := range data.LogicCallConfirms {
 		conf := conf
 		k.SetLogicCallConfirm(ctx, chainPrefix, &conf)
 	}
@@ -58,22 +58,22 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, cd types.EvmChainData)
 func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	k.SetParams(ctx, *data.Params)
 
-	for _, cd := range data.EvmChains {
+	for _, evmChain := range data.EvmChains {
 		// restore various nonces, this MUST match GravityNonces in genesis
-		chainPrefix := cd.EvmChain.EvmChainPrefix
-		k.SetLatestValsetNonce(ctx, chainPrefix, cd.GravityNonces.LatestValsetNonce)
-		k.setLastObservedEventNonce(ctx, chainPrefix, cd.GravityNonces.LastObservedNonce)
-		k.SetLastSlashedValsetNonce(ctx, chainPrefix, cd.GravityNonces.LastSlashedValsetNonce)
-		k.SetLastSlashedBatchBlock(ctx, chainPrefix, cd.GravityNonces.LastSlashedBatchBlock)
-		k.SetLastSlashedLogicCallBlock(ctx, chainPrefix, cd.GravityNonces.LastSlashedLogicCallBlock)
-		k.setID(ctx, cd.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, chainPrefix))
-		k.setID(ctx, cd.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, chainPrefix))
-		k.SetEvmChainData(ctx, cd.EvmChain)
+		chainPrefix := evmChain.EvmChain.EvmChainPrefix
+		k.SetLatestValsetNonce(ctx, chainPrefix, evmChain.GravityNonces.LatestValsetNonce)
+		k.setLastObservedEventNonce(ctx, chainPrefix, evmChain.GravityNonces.LastObservedNonce)
+		k.SetLastSlashedValsetNonce(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedValsetNonce)
+		k.SetLastSlashedBatchBlock(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedBatchBlock)
+		k.SetLastSlashedLogicCallBlock(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedLogicCallBlock)
+		k.setID(ctx, evmChain.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, chainPrefix))
+		k.setID(ctx, evmChain.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, chainPrefix))
+		k.SetEvmChainData(ctx, evmChain.EvmChain)
 
-		initBridgeDataFromGenesis(ctx, k, cd)
+		initBridgeDataFromGenesis(ctx, k, evmChain)
 
 		// reset pool transactions in state
-		for _, tx := range cd.UnbatchedTransfers {
+		for _, tx := range evmChain.UnbatchedTransfers {
 			intTx, err := tx.ToInternal()
 			if err != nil {
 				panic(sdkerrors.Wrapf(err, "invalid unbatched tx: %v", tx))
@@ -84,7 +84,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		}
 
 		// reset attestations in state
-		for _, att := range cd.Attestations {
+		for _, att := range evmChain.Attestations {
 			att := att
 			claim, err := k.UnpackAttestationClaim(&att)
 			if err != nil {
@@ -101,7 +101,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 
 		// reset attestation state of specific validators
 		// this must be done after the above to be correct
-		for _, att := range cd.Attestations {
+		for _, att := range evmChain.Attestations {
 			att := att
 			claim, err := k.UnpackAttestationClaim(&att)
 			if err != nil {
@@ -129,10 +129,10 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		}
 
 		// reset delegate keys in state
-		if hasDuplicates(cd.DelegateKeys) {
+		if hasDuplicates(evmChain.DelegateKeys) {
 			panic("Duplicate delegate key found in Genesis!")
 		}
-		for _, keys := range cd.DelegateKeys {
+		for _, keys := range evmChain.DelegateKeys {
 			err := keys.ValidateBasic()
 			if err != nil {
 				panic("Invalid delegate key in Genesis!")
@@ -158,7 +158,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		}
 
 		// populate state with cosmos originated denom-erc20 mapping
-		for i, item := range cd.Erc20ToDenoms {
+		for i, item := range evmChain.Erc20ToDenoms {
 			ethAddr, err := types.NewEthAddress(item.Erc20)
 			if err != nil {
 				panic(fmt.Errorf("invalid erc20 address in Erc20ToDenoms for item %d: %s", i, item.Erc20))
@@ -199,23 +199,23 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	chains := k.GetEvmChains(ctx)
 	evmChains := make([]types.EvmChainData, len(chains))
 
-	for ci, cd := range chains {
-		calls := k.GetOutgoingLogicCalls(ctx, cd.EvmChainPrefix)
-		batches := k.GetOutgoingTxBatches(ctx, cd.EvmChainPrefix)
-		valsets := k.GetValsets(ctx, cd.EvmChainPrefix)
-		attmap, attKeys := k.GetAttestationMapping(ctx, cd.EvmChainPrefix)
+	for ci, evmChain := range chains {
+		calls := k.GetOutgoingLogicCalls(ctx, evmChain.EvmChainPrefix)
+		batches := k.GetOutgoingTxBatches(ctx, evmChain.EvmChainPrefix)
+		valsets := k.GetValsets(ctx, evmChain.EvmChainPrefix)
+		attmap, attKeys := k.GetAttestationMapping(ctx, evmChain.EvmChainPrefix)
 		vsconfs := []types.MsgValsetConfirm{}
 		batchconfs := []types.MsgConfirmBatch{}
 		callconfs := []types.MsgConfirmLogicCall{}
 		attestations := []types.Attestation{}
 		delegates := k.GetDelegateKeys(ctx)
 		erc20ToDenoms := []types.ERC20ToDenom{}
-		unbatchedTransfers := k.GetUnbatchedTransactions(ctx, cd.EvmChainPrefix)
+		unbatchedTransfers := k.GetUnbatchedTransactions(ctx, evmChain.EvmChainPrefix)
 
 		// export valset confirmations from state
 		for _, vs := range valsets {
 			// TODO: set height = 0?
-			vsconfs = append(vsconfs, k.GetValsetConfirms(ctx, cd.EvmChainPrefix, vs.Nonce)...)
+			vsconfs = append(vsconfs, k.GetValsetConfirms(ctx, evmChain.EvmChainPrefix, vs.Nonce)...)
 		}
 
 		// export batch confirmations from state
@@ -223,7 +223,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		for i, batch := range batches {
 			// TODO: set height = 0?
 			batchconfs = append(batchconfs,
-				k.GetBatchConfirmByNonceAndTokenContract(ctx, cd.EvmChainPrefix, batch.BatchNonce, batch.TokenContract)...)
+				k.GetBatchConfirmByNonceAndTokenContract(ctx, evmChain.EvmChainPrefix, batch.BatchNonce, batch.TokenContract)...)
 			extBatches[i] = batch.ToExternal()
 		}
 
@@ -231,7 +231,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		for _, call := range calls {
 			// TODO: set height = 0?
 			callconfs = append(callconfs,
-				k.GetLogicConfirmsByInvalidationIDAndNonce(ctx, cd.EvmChainPrefix, call.InvalidationId, call.InvalidationNonce)...)
+				k.GetLogicConfirmsByInvalidationIDAndNonce(ctx, evmChain.EvmChainPrefix, call.InvalidationId, call.InvalidationNonce)...)
 		}
 
 		// export attestations from state
@@ -241,7 +241,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		}
 
 		// export erc20 to denom relations
-		k.IterateERC20ToDenom(ctx, cd.EvmChainPrefix, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
+		k.IterateERC20ToDenom(ctx, evmChain.EvmChainPrefix, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
 			erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
 			return false
 		})
@@ -253,17 +253,17 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 
 		evmChains[ci] = types.EvmChainData{
 			EvmChain: types.EvmChain{
-				EvmChainPrefix: cd.EvmChainPrefix,
-				EvmChainName:   cd.EvmChainName,
+				EvmChainPrefix: evmChain.EvmChainPrefix,
+				EvmChainName:   evmChain.EvmChainName,
 			},
 			GravityNonces: types.GravityNonces{
-				LatestValsetNonce:         k.GetLatestValsetNonce(ctx, cd.EvmChainPrefix),
-				LastObservedNonce:         k.GetLastObservedEventNonce(ctx, cd.EvmChainPrefix),
-				LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx, cd.EvmChainPrefix),
-				LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx, cd.EvmChainPrefix),
-				LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx, cd.EvmChainPrefix),
-				LastTxPoolId:              k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, cd.EvmChainPrefix)),
-				LastBatchId:               k.getID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, cd.EvmChainPrefix)),
+				LatestValsetNonce:         k.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix),
+				LastObservedNonce:         k.GetLastObservedEventNonce(ctx, evmChain.EvmChainPrefix),
+				LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx, evmChain.EvmChainPrefix),
+				LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx, evmChain.EvmChainPrefix),
+				LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx, evmChain.EvmChainPrefix),
+				LastTxPoolId:              k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, evmChain.EvmChainPrefix)),
+				LastBatchId:               k.getID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, evmChain.EvmChainPrefix)),
 			},
 			Valsets:            valsets,
 			ValsetConfirms:     vsconfs,

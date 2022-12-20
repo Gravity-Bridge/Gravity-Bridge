@@ -141,6 +141,7 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, evmChain
 			EthereumSender: "0x00000000000000000002",
 			CosmosReceiver: "0x00000000000000000003",
 			Orchestrator:   "0x00000000000000000004",
+			EvmChainPrefix: evmChainPrefix,
 		}
 
 		any, err := codectypes.NewAnyWithValue(&msg)

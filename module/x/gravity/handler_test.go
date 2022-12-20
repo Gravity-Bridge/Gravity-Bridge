@@ -127,6 +127,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 			EthereumSender: anyETHAddr,
 			CosmosReceiver: myCosmosAddr.String(),
 			Orchestrator:   v.String(),
+			EvmChainPrefix: evmChain.EvmChainPrefix,
 		}
 		// each msg goes into it's own block
 		ctx = ctx.WithBlockTime(myBlockTime)
@@ -163,6 +164,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 			EthereumSender: anyETHAddr,
 			CosmosReceiver: myCosmosAddr.String(),
 			Orchestrator:   v.String(),
+			EvmChainPrefix: evmChain.EvmChainPrefix,
 		}
 
 		// when
@@ -186,6 +188,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 			EthereumSender: anyETHAddr,
 			CosmosReceiver: myCosmosAddr.String(),
 			Orchestrator:   v.String(),
+			EvmChainPrefix: evmChain.EvmChainPrefix,
 		}
 
 		// when
@@ -241,6 +244,7 @@ func TestEthereumBlacklist(t *testing.T) {
 			EthereumSender: anyETHSender,
 			CosmosReceiver: myCosmosAddr.String(),
 			Orchestrator:   v.String(),
+			EvmChainPrefix: evmChain.EvmChainPrefix,
 		}
 		// each msg goes into it's own block
 		ctx = ctx.WithBlockTime(myBlockTime)
@@ -299,6 +303,13 @@ func sendSendToCosmosClaim(msg types.MsgSendToCosmosClaim, ctx sdk.Context, h sd
 
 func TestMsgSendToCosmosOverflow(t *testing.T) {
 	const grandeInt = "115792089237316195423570985008687907853269984665640564039457584007913129639835" // 2^256 - 101
+
+	// Setup
+	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
+
 	var (
 		biggestBigInt, _    = new(big.Int).SetString(biggestInt, 10)
 		grandeBigInt, _     = new(big.Int).SetString(grandeInt, 10)
@@ -310,8 +321,8 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 		myBlockTime         = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		tokenEthAddress1, _ = types.NewEthAddress(tokenETHAddr1)
 		tokenEthAddress2, _ = types.NewEthAddress(tokenETHAddr2)
-		denom1              = types.GravityDenom(*tokenEthAddress1)
-		denom2              = types.GravityDenom(*tokenEthAddress2)
+		denom1              = types.GravityDenom(evmChain.EvmChainPrefix, *tokenEthAddress1)
+		denom2              = types.GravityDenom(evmChain.EvmChainPrefix, *tokenEthAddress2)
 	)
 
 	// Totally valid, but we're 101 away from the supply limit
@@ -331,6 +342,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myCosmosAddr.String(),
 		Orchestrator:   "",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	exactlyTooMuchClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 1,
@@ -339,6 +351,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myCosmosAddr.String(),
 		Orchestrator:   "",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	// Absoulte max value of 2^256 - 1. Previous versions (v0.43 or v0.44) of cosmos-sdk did not support sdk.Int of this size
 	maxSend := types.ERC20Token{
@@ -352,10 +365,8 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myCosmosAddr.String(),
 		Orchestrator:   "",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
-	// Setup
-	input, ctx := keeper.SetupFiveValChain(t)
-	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	h := NewHandler(input.GravityKeeper)
 
@@ -425,6 +436,7 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myCosmosAddr.String(),
 		Orchestrator:   "",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 
 	for i := range []int{0, 1, 2} {
@@ -517,6 +529,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myForeignAddr.String(),
 		Orchestrator:   "",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 
 	nativeEthClaim := types.MsgSendToCosmosClaim{
@@ -526,6 +539,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 		EthereumSender: anyETHAddr,
 		CosmosReceiver: myNativeAddr.String(),
 		Orchestrator:   "",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	fmt.Println("myForeignAddr initial balance:", input.BankKeeper.GetAllBalances(ctx, myForeignAddr))
 	fmt.Println("myNativeAddr initial balance:", input.BankKeeper.GetAllBalances(ctx, myNativeAddr))

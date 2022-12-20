@@ -590,6 +590,7 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 		EthereumSender: "0x00000000000000000002",
 		CosmosReceiver: "0x00000000000000000003",
 		Orchestrator:   "0x00000000000000000004",
+		EvmChainPrefix: keeper.EthChainPrefix,
 	}
 	any, _ := codectypes.NewAnyWithValue(&msg)
 

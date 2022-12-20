@@ -10,7 +10,6 @@ use deep_space::{
 };
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::get_with_retry::get_block_number_with_retry;
-use gravity_utils::get_with_retry::get_net_version_with_retry;
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::{
     error::GravityError,
@@ -305,20 +304,50 @@ pub fn get_evm_chain_prefix(net_version: u64) -> String {
     match net_version {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
         // all Ethereum proof of stake Chains
-        1 => "ethereum mainnet".to_string(),
-        2 => "morden testnet".to_string(),
-        3 => "ropsten testnet".to_string(),
-        4 => "rinkeby testnet".to_string(),
-        5 => "goerli testnet".to_string(),
-        11155111 => "sepolia testnet".to_string(),
-        10 => "optimism mainnet".to_string(),
-        69 => "optimism kovan testnet".to_string(),
-        42 => "kovan testnet".to_string(),
-        137 => "polygon mainnet".to_string(),
-        80001 => "polygon mumbai testnet".to_string(),
-        250 => "fantom mainnet".to_string(),
-        100 => "xdai mainnet".to_string(),
-        56 => "bsc mainnet".to_string(),
-        _ => net_version.to_string(),
+        1 => "ethereum".to_string(),
+        2 => "morden-testnet".to_string(),
+        3 => "ropsten-testnet".to_string(),
+        4 => "rinkeby-testnet".to_string(),
+        5 => "goerli-testnet".to_string(),
+        11155111 => "sepolia-testnet".to_string(),
+        10 => "optimism".to_string(),
+        69 => "optimism-kovan-testnet".to_string(),
+        42 => "kovan-testnet".to_string(),
+        137 => "polygon".to_string(),
+        80001 => "polygon-mumbai-testnet".to_string(),
+        250 => "fantom".to_string(),
+        100 => "xdai".to_string(),
+        56 => "bsc".to_string(),
+        _ => format!("chain-{}", net_version),
     }
+}
+
+pub fn get_evm_chain_name(net_version: u64) -> String {
+    match net_version {
+        // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
+        // all Ethereum proof of stake Chains
+        1 => "Ethereum Mainnet".to_string(),
+        2 => "Morden Testnet".to_string(),
+        3 => "Ropsten Testnet".to_string(),
+        4 => "Rinkeby Testnet".to_string(),
+        5 => "Goerli Testnet".to_string(),
+        11155111 => "Sepolia Testnet".to_string(),
+        10 => "Optimism Mainnet".to_string(),
+        69 => "Optimism Kovan Testnet".to_string(),
+        42 => "Kovan Testnet".to_string(),
+        137 => "Polygon Mainnet".to_string(),
+        80001 => "Polygon Mumbai Testnet".to_string(),
+        250 => "Fantom Mainnet".to_string(),
+        100 => "XDai Mainnet".to_string(),
+        56 => "BSC Mainnet".to_string(),
+        _ => format!("Chain {}", net_version),
+    }
+}
+
+#[test]
+fn get_chain_prefix() {
+    assert_eq!(get_evm_chain_prefix(1), "0000000000000001");
+    assert_eq!(get_evm_chain_prefix(137), "0000000000000089");
+    assert_eq!(get_evm_chain_prefix(56), "0000000000000038");
+    assert_eq!(get_evm_chain_prefix(11155111), "0000000000aa36a7")
 }

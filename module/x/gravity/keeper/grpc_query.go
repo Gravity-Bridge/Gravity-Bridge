@@ -236,6 +236,7 @@ func (k Keeper) BatchRequestByNonce(
 func (k Keeper) BatchConfirms(
 	c context.Context,
 	req *types.QueryBatchConfirmsRequest) (*types.QueryBatchConfirmsResponse, error) {
+
 	var confirms []types.MsgConfirmBatch
 	contract, err := types.NewEthAddress(req.ContractAddress)
 	if err != nil {

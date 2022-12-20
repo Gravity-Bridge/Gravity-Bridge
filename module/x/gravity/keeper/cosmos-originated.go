@@ -68,7 +68,7 @@ func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, evmChainPrefix 
 // in an index of ERC20 contracts deployed on evm chain to serve as synthetic Cosmos assets.
 func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, evmChainPrefix string, denom string) (bool, *types.EthAddress, error) {
 	// First try parsing the ERC20 out of the denom
-	tc1, err := types.GravityDenomToERC20(denom)
+	tc1, err := types.GravityDenomToERC20(evmChainPrefix, denom)
 
 	if err != nil {
 		// Look up ERC20 contract in index and error if it's not in there.
@@ -118,7 +118,7 @@ func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, evmChainPrefix string, token
 	}
 
 	// If it is not in there, it is not a cosmos originated token, turn the ERC20 into a gravity denom
-	return false, types.GravityDenom(tokenContract)
+	return false, types.GravityDenom(evmChainPrefix, tokenContract)
 }
 
 // IterateERC20ToDenom iterates over erc20 to denom relations

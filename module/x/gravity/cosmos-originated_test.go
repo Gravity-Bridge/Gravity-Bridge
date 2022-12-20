@@ -181,6 +181,7 @@ func acceptDepositEvent(tv *testingVars) {
 			EthereumSender: anyETHAddr,
 			CosmosReceiver: myCosmosAddr.String(),
 			Orchestrator:   v.String(),
+			EvmChainPrefix: tv.evm.EvmChainPrefix,
 		}
 
 		_, err := tv.h(tv.ctx, &ethClaim)

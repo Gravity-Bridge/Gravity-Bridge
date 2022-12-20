@@ -15,7 +15,7 @@ import (
 )
 
 // change this to your current evm mainnet
-const EthereumChainPrefix string = "bsc mainnet"
+const EthereumChainPrefix string = "bsc"
 
 // MigrateStore performs in-place store migrations from v2 to v3. The migration
 // includes:

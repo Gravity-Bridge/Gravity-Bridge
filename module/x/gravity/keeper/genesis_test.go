@@ -76,7 +76,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	for i, v := range contracts {
 		token, err := types.NewInternalERC20Token(sdk.NewInt(99999999), v.GetAddress().Hex())
 		tokens[i] = token
-		allVouchers := sdk.NewCoins(token.GravityCoin())
+		allVouchers := sdk.NewCoins(token.GravityCoin(evmChain.EvmChainPrefix))
 		vouchers[i] = &allVouchers
 		require.NoError(t, err)
 
@@ -111,7 +111,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		require.NoError(t, err)
 
 		// add transaction to the pool
-		id, err := input.GravityKeeper.AddToOutgoingPool(ctx, evmChain.EvmChainPrefix, *sender, *receiver, amountToken.GravityCoin(), feeToken.GravityCoin())
+		id, err := input.GravityKeeper.AddToOutgoingPool(ctx, evmChain.EvmChainPrefix, *sender, *receiver, amountToken.GravityCoin(evmChain.EvmChainPrefix), feeToken.GravityCoin(evmChain.EvmChainPrefix))
 		require.NoError(t, err)
 		ctx.Logger().Info(fmt.Sprintf("Created transaction %v with amount %v and fee %v of contract %v from %v to %v", i, amount, fee, contract, sender, receiver))
 
@@ -164,7 +164,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		c := contracts[i%len(contracts)]
 		token, err := types.NewInternalERC20Token(sdk.NewInt(99999999), c.GetAddress().Hex())
 		require.NoError(t, err)
-		coins := sdk.NewCoins(token.GravityCoin())
+		coins := sdk.NewCoins(token.GravityCoin(evmChain.EvmChainPrefix))
 		// Mint the coins to be forwarded, since the gravity module should already hold the tokens
 		require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, coins))
 		fwd := types.PendingIbcAutoForward{
@@ -234,11 +234,11 @@ func exportImport(t *testing.T, input *TestInput) {
 	newEnv := CreateTestEnv(t)
 	input = &newEnv
 
-	for _, cd := range newEnv.GravityKeeper.GetEvmChains(newEnv.Context) {
+	for _, evmChain := range newEnv.GravityKeeper.GetEvmChains(newEnv.Context) {
 
-		unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context, cd.EvmChainPrefix)
+		unbatched := input.GravityKeeper.GetUnbatchedTransactions(input.Context, evmChain.EvmChainPrefix)
 		require.Empty(t, unbatched)
-		batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context, cd.EvmChainPrefix)
+		batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context, evmChain.EvmChainPrefix)
 		require.Empty(t, batches)
 		forwards := input.GravityKeeper.PendingIbcAutoForwards(input.Context, 0)
 		require.Empty(t, forwards)
