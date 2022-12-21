@@ -110,10 +110,12 @@ func TestIBCMetadataProposal(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
 	goodProposal := types.IBCMetadataProposal{
-		Title:       "test tile",
-		Description: "test description",
+		Title:          "test tile",
+		Description:    "test description",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 		Metadata: banktypes.Metadata{
 			Description: "Atom",
 			Name:        "Atom",

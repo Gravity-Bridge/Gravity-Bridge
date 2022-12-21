@@ -342,18 +342,15 @@ func (k Keeper) GetLastObservedEventNonce(ctx sdk.Context, evmChainPrefix string
 func (k Keeper) GetLastObservedEvmChainBlockHeight(ctx sdk.Context, evmChainPrefix string) types.LastObservedEthereumBlockHeight {
 	store := ctx.KVStore(k.storeKey)
 	bytes := store.Get(types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, evmChainPrefix))
-
-	if len(bytes) == 0 {
-		return types.LastObservedEthereumBlockHeight{
-			CosmosBlockHeight:   0,
-			EthereumBlockHeight: 0,
-		}
-	}
 	height := types.LastObservedEthereumBlockHeight{
 		CosmosBlockHeight:   0,
 		EthereumBlockHeight: 0,
 	}
-	k.cdc.MustUnmarshal(bytes, &height)
+
+	if len(bytes) > 0 {
+		k.cdc.MustUnmarshal(bytes, &height)
+	}
+
 	return height
 }
 

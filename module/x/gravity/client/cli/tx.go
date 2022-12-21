@@ -87,6 +87,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 			if proposal.IbcDenom == "" ||
 				proposal.Title == "" ||
 				proposal.Description == "" ||
+				proposal.EvmChainPrefix == "" ||
 				proposal.Metadata.Base == "" ||
 				proposal.Metadata.Name == "" ||
 				proposal.Metadata.Display == "" ||
