@@ -51,18 +51,20 @@ func TestMigrateStoreKeys(t *testing.T) {
 	}
 
 	dummyValsetConfirm := types.MsgValsetConfirm{
-		Nonce:        1,
-		Orchestrator: accAddr.String(),
-		EthAddress:   ethAddr.GetAddress().String(),
-		Signature:    "dummySignature",
+		Nonce:          1,
+		Orchestrator:   accAddr.String(),
+		EthAddress:     ethAddr.GetAddress().String(),
+		Signature:      "dummySignature",
+		EvmChainPrefix: keeper.EthChainPrefix,
 	}
 
 	dummyBatchConfirm := types.MsgConfirmBatch{
-		Nonce:         1,
-		TokenContract: tokenContract.GetAddress().String(),
-		EthSigner:     ethAddr.GetAddress().String(),
-		Orchestrator:  accAddr.String(),
-		Signature:     "dummySignature",
+		Nonce:          1,
+		TokenContract:  tokenContract.GetAddress().String(),
+		EthSigner:      ethAddr.GetAddress().String(),
+		Orchestrator:   accAddr.String(),
+		Signature:      "dummySignature",
+		EvmChainPrefix: keeper.EthChainPrefix,
 	}
 
 	// additional data for creating InternalOutgoingTransferTx

@@ -133,6 +133,7 @@ func (k Keeper) GetLogicCallConfirm(ctx sdk.Context, evmChainPrefix string, inva
 		EthSigner:         "",
 		Orchestrator:      "",
 		Signature:         "",
+		EvmChainPrefix:    evmChainPrefix,
 	}
 	k.cdc.MustUnmarshal(data, &out)
 	return &out

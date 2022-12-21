@@ -38,6 +38,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 	h := NewHandler(input.GravityKeeper)
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, startingCoins))
 	input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, userCosmosAddr, startingCoins)
@@ -46,10 +47,13 @@ func TestHandleMsgSendToEth(t *testing.T) {
 
 	// send some coins
 	msg := &types.MsgSendToEth{
-		Sender:    userCosmosAddr.String(),
-		EthDest:   ethDestination,
-		Amount:    sendingCoin,
-		BridgeFee: feeCoin}
+		Sender:         userCosmosAddr.String(),
+		EthDest:        ethDestination,
+		Amount:         sendingCoin,
+		BridgeFee:      feeCoin,
+		EvmChainPrefix: evmChain.EvmChainPrefix,
+	}
+
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err := h(ctx, msg)
 	require.NoError(t, err)
@@ -58,10 +62,12 @@ func TestHandleMsgSendToEth(t *testing.T) {
 
 	// do the same thing again and make sure it works twice
 	msg1 := &types.MsgSendToEth{
-		Sender:    userCosmosAddr.String(),
-		EthDest:   ethDestination,
-		Amount:    sendingCoin,
-		BridgeFee: feeCoin}
+		Sender:         userCosmosAddr.String(),
+		EthDest:        ethDestination,
+		Amount:         sendingCoin,
+		BridgeFee:      feeCoin,
+		EvmChainPrefix: evmChain.EvmChainPrefix,
+	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err1 := h(ctx, msg1)
 	require.NoError(t, err1)
@@ -71,10 +77,12 @@ func TestHandleMsgSendToEth(t *testing.T) {
 
 	// now we should be out of coins and error
 	msg2 := &types.MsgSendToEth{
-		Sender:    userCosmosAddr.String(),
-		EthDest:   ethDestination,
-		Amount:    sendingCoin,
-		BridgeFee: feeCoin}
+		Sender:         userCosmosAddr.String(),
+		EthDest:        ethDestination,
+		Amount:         sendingCoin,
+		BridgeFee:      feeCoin,
+		EvmChainPrefix: evmChain.EvmChainPrefix,
+	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err2 := h(ctx, msg2)
 	require.Error(t, err2)
@@ -84,10 +92,12 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	// these should all produce an error
 	for _, val := range invalidEthDestinations {
 		msg := &types.MsgSendToEth{
-			Sender:    userCosmosAddr.String(),
-			EthDest:   val,
-			Amount:    sendingCoin,
-			BridgeFee: feeCoin}
+			Sender:         userCosmosAddr.String(),
+			EthDest:        val,
+			Amount:         sendingCoin,
+			BridgeFee:      feeCoin,
+			EvmChainPrefix: evmChain.EvmChainPrefix,
+		}
 		ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 		_, err := h(ctx, msg)
 		require.Error(t, err)
@@ -108,7 +118,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 		amountB, _      = sdk.NewIntFromString("100000000000000000000") // 100 ETH
 	)
 	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	h := NewHandler(input.GravityKeeper)
@@ -215,7 +225,7 @@ func TestEthereumBlacklist(t *testing.T) {
 		amountA, _      = sdk.NewIntFromString("50000000000000000000") // 50 ETH
 	)
 	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	h := NewHandler(input.GravityKeeper)
@@ -308,7 +318,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 
 	var (
 		biggestBigInt, _    = new(big.Int).SetString(biggestInt, 10)
@@ -419,7 +429,7 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 	)
 	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	h := NewHandler(input.GravityKeeper)
@@ -635,7 +645,7 @@ func TestMsgValsetConfirm(t *testing.T) {
 	require.NoError(t, err)
 
 	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	k := input.GravityKeeper
@@ -652,10 +662,11 @@ func TestMsgValsetConfirm(t *testing.T) {
 
 	// try wrong eth address
 	msg := &types.MsgValsetConfirm{
-		Nonce:        1,
-		Orchestrator: keeper.OrchAddrs[0].String(),
-		EthAddress:   wrongAddress,
-		Signature:    signature,
+		Nonce:          1,
+		Orchestrator:   keeper.OrchAddrs[0].String(),
+		EthAddress:     wrongAddress,
+		Signature:      signature,
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err = h(ctx, msg)
@@ -663,10 +674,11 @@ func TestMsgValsetConfirm(t *testing.T) {
 
 	// try a nonexisting valset
 	msg = &types.MsgValsetConfirm{
-		Nonce:        10,
-		Orchestrator: keeper.OrchAddrs[0].String(),
-		EthAddress:   ethAddress,
-		Signature:    signature,
+		Nonce:          10,
+		Orchestrator:   keeper.OrchAddrs[0].String(),
+		EthAddress:     ethAddress,
+		Signature:      signature,
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err = h(ctx, msg)
@@ -674,20 +686,22 @@ func TestMsgValsetConfirm(t *testing.T) {
 
 	// try a bad signature
 	msg = &types.MsgValsetConfirm{
-		Nonce:        1,
-		Orchestrator: keeper.OrchAddrs[0].String(),
-		EthAddress:   ethAddress,
-		Signature:    badSignature,
+		Nonce:          1,
+		Orchestrator:   keeper.OrchAddrs[0].String(),
+		EthAddress:     ethAddress,
+		Signature:      badSignature,
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err = h(ctx, msg)
 	require.Error(t, err)
 
 	msg = &types.MsgValsetConfirm{
-		Nonce:        1,
-		Orchestrator: keeper.OrchAddrs[0].String(),
-		EthAddress:   ethAddress,
-		Signature:    signature,
+		Nonce:          1,
+		Orchestrator:   keeper.OrchAddrs[0].String(),
+		EthAddress:     ethAddress,
+		Signature:      signature,
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err = h(ctx, msg)

@@ -23,7 +23,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 
 	// reset valset confirmations in state
 	for _, conf := range data.ValsetConfirms {
-		k.SetValsetConfirm(ctx, chainPrefix, conf)
+		k.SetValsetConfirm(ctx, conf)
 	}
 
 	// reset batches in state

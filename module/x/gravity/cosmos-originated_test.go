@@ -53,7 +53,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 	tv.denom = "ugraviton"
 
 	tv.input, tv.ctx = keeper.SetupFiveValChain(t)
-	tv.evm = *tv.input.GravityKeeper.GetEvmChainData(tv.ctx, keeper.EthChainPrefix) // Works only with "gravity"
+	tv.evm = *tv.input.GravityKeeper.GetEvmChainData(tv.ctx, keeper.EthChainPrefix)
 	tv.h = NewHandler(tv.input.GravityKeeper)
 
 	return &tv
@@ -88,6 +88,7 @@ func addDenomToERC20Relation(tv *testingVars) {
 			Symbol:         "GRAV",
 			Decimals:       6,
 			Orchestrator:   v.String(),
+			EvmChainPrefix: tv.evm.EvmChainPrefix,
 		}
 		_, err := tv.h(tv.ctx, &ethClaim)
 		require.NoError(tv.t, err)
@@ -137,10 +138,11 @@ func lockCoinsInModule(tv *testingVars) {
 
 	// send some coins
 	msg := &types.MsgSendToEth{
-		Sender:    userCosmosAddr.String(),
-		EthDest:   ethDestination,
-		Amount:    sendingCoin,
-		BridgeFee: feeCoin,
+		Sender:         userCosmosAddr.String(),
+		EthDest:        ethDestination,
+		Amount:         sendingCoin,
+		BridgeFee:      feeCoin,
+		EvmChainPrefix: tv.evm.EvmChainPrefix,
 	}
 
 	_, err = tv.h(tv.ctx, msg)
@@ -246,6 +248,7 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 			Symbol:         "ATOM",
 			Decimals:       6,
 			Orchestrator:   v.String(),
+			EvmChainPrefix: tv.evm.EvmChainPrefix,
 		}
 		_, err := tv.h(tv.ctx, &ethClaim)
 		require.NoError(tv.t, err)

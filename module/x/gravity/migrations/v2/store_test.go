@@ -165,6 +165,8 @@ func TestMigrateBatchConfirms(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
+	evmChain := input.GravityKeeper.GetEvmChainData(input.Context, keeper.EthChainPrefix)
+
 	orch, err := sdk.AccAddressFromBech32("gravity1jpz0ahls2chajf78nkqczdwwuqcu97w6r48jzw")
 	assert.NoError(t, err)
 	ethAddr := "0x2a24af0501a534fca004ee1bd667b783f205a546"
@@ -173,11 +175,12 @@ func TestMigrateBatchConfirms(t *testing.T) {
 	signer := gethcommon.BytesToAddress(bytes.Repeat([]byte{0x1}, 20)).String()
 
 	confirm := &types.MsgConfirmBatch{
-		Nonce:         123,
-		TokenContract: ethAddr,
-		EthSigner:     signer,
-		Orchestrator:  orch.String(),
-		Signature:     "d34db33f",
+		Nonce:          123,
+		TokenContract:  ethAddr,
+		EthSigner:      signer,
+		Orchestrator:   orch.String(),
+		Signature:      "d34db33f",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	confirmBytes := input.Marshaler.MustMarshal(confirm)
 	input.Context.KVStore(input.GravityStoreKey).
@@ -550,18 +553,20 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 	}
 
 	dummyValsetConfirm := types.MsgValsetConfirm{
-		Nonce:        1,
-		Orchestrator: accAddr.String(),
-		EthAddress:   ethAddr.GetAddress().String(),
-		Signature:    "dummySignature",
+		Nonce:          1,
+		Orchestrator:   accAddr.String(),
+		EthAddress:     ethAddr.GetAddress().String(),
+		Signature:      "dummySignature",
+		EvmChainPrefix: keeper.EthChainPrefix,
 	}
 
 	dummyBatchConfirm := types.MsgConfirmBatch{
-		Nonce:         1,
-		TokenContract: tokenContract.GetAddress().String(),
-		EthSigner:     ethAddr.GetAddress().String(),
-		Orchestrator:  accAddr.String(),
-		Signature:     "dummySignature",
+		Nonce:          1,
+		TokenContract:  tokenContract.GetAddress().String(),
+		EthSigner:      ethAddr.GetAddress().String(),
+		Orchestrator:   accAddr.String(),
+		Signature:      "dummySignature",
+		EvmChainPrefix: keeper.EthChainPrefix,
 	}
 
 	// additional data for creating InternalOutgoingTransferTx
@@ -634,6 +639,7 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 		EthSigner:         "dummySignature",
 		Orchestrator:      valAddr.String(),
 		Signature:         "dummySignature",
+		EvmChainPrefix:    keeper.EthChainPrefix,
 	}
 	decInvalidationId, err := hex.DecodeString(confirm.InvalidationId)
 	require.NoError(t, err)
@@ -742,10 +748,11 @@ func TestMigrateInvalidStore(t *testing.T) {
 		CosmosBlockCreated: 123,
 	}
 	dummyValsetConfirm := types.MsgValsetConfirm{
-		Nonce:        1,
-		Orchestrator: invalidAccAddress,
-		EthAddress:   ethAddr.GetAddress().String(),
-		Signature:    "dummySignature",
+		Nonce:          1,
+		Orchestrator:   invalidAccAddress,
+		EthAddress:     ethAddr.GetAddress().String(),
+		Signature:      "dummySignature",
+		EvmChainPrefix: keeper.EthChainPrefix,
 	}
 
 	// creating test cases

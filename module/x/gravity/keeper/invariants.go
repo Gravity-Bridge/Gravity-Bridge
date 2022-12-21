@@ -237,7 +237,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	}
 
 	// ValsetConfirmKey
-	k.IterateValsetConfirms(ctx, func(key []byte, confirms []types.MsgValsetConfirm, nonce uint64) (stop bool) {
+	k.IterateValsetConfirms(ctx, evmChainPrefix, func(key []byte, confirms []types.MsgValsetConfirm, nonce uint64) (stop bool) {
 		for _, confirm := range confirms {
 			err = confirm.ValidateBasic()
 			if err != nil {

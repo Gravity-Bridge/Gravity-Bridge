@@ -296,9 +296,9 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 func CmdSendToEth() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "send-to-eth [eth-dest] [amount] [bridge-fee]",
+		Use:   "send-to-eth [eth-dest] [amount] [bridge-fee] [evm chain prefix]",
 		Short: "Adds a new entry to the transaction pool to withdraw an amount from the Ethereum bridge contract. This will not execute until a batch is requested and then actually relayed. Your funds can be reclaimed using cancel-send-to-eth so long as they remain in the pool",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -326,10 +326,11 @@ func CmdSendToEth() *cobra.Command {
 
 			// Make the message
 			msg := types.MsgSendToEth{
-				Sender:    cosmosAddr.String(),
-				EthDest:   ethAddr.GetAddress().Hex(),
-				Amount:    amount[0],
-				BridgeFee: bridgeFee[0],
+				Sender:         cosmosAddr.String(),
+				EthDest:        ethAddr.GetAddress().Hex(),
+				Amount:         amount[0],
+				BridgeFee:      bridgeFee[0],
+				EvmChainPrefix: args[3],
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -345,9 +346,9 @@ func CmdSendToEth() *cobra.Command {
 func CmdCancelSendToEth() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "cancel-send-to-eth [transaction id]",
+		Use:   "cancel-send-to-eth [transaction id] [emv chain prefix]",
 		Short: "Removes an entry from the transaction pool, preventing your tokens from going to Ethereum and refunding the send.",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -362,8 +363,9 @@ func CmdCancelSendToEth() *cobra.Command {
 
 			// Make the message
 			msg := types.MsgCancelSendToEth{
-				Sender:        cosmosAddr.String(),
-				TransactionId: txId,
+				Sender:         cosmosAddr.String(),
+				TransactionId:  txId,
+				EvmChainPrefix: args[1],
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err

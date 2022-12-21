@@ -33,11 +33,12 @@ func TestQueryValsetConfirm(t *testing.T) {
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 	evmChain := k.GetEvmChainData(sdkCtx, EthChainPrefix)
-	input.GravityKeeper.SetValsetConfirm(sdkCtx, evmChain.EvmChainPrefix, types.MsgValsetConfirm{
-		Nonce:        nonce,
-		Orchestrator: myValidatorCosmosAddr.String(),
-		EthAddress:   myValidatorEthereumAddr.GetAddress().Hex(),
-		Signature:    "abcdef123456789",
+	input.GravityKeeper.SetValsetConfirm(sdkCtx, types.MsgValsetConfirm{
+		Nonce:          nonce,
+		Orchestrator:   myValidatorCosmosAddr.String(),
+		EthAddress:     myValidatorEthereumAddr.GetAddress().Hex(),
+		Signature:      "abcdef123456789",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	})
 
 	specs := map[string]struct {
@@ -52,7 +53,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 		}*/
 
 		"all good": {
-			src: types.QueryValsetConfirmRequest{Nonce: 1, Address: myValidatorCosmosAddr.String()},
+			src: types.QueryValsetConfirmRequest{Nonce: 1, Address: myValidatorCosmosAddr.String(), EvmChainPrefix: evmChain.EvmChainPrefix},
 
 			// expResp:  []byte(`{"type":"gravity/MsgValsetConfirm", "value":{"eth_address":"0x3232323232323232323232323232323232323232", "nonce": "1", "orchestrator": "cosmos1ees2tqhhhm9ahlhceh2zdguww9lqn2ckukn86l",  "signature": "alksdjhflkasjdfoiasjdfiasjdfoiasdj"}}`),
 			expResp: types.QueryValsetConfirmResponse{
@@ -60,11 +61,11 @@ func TestQueryValsetConfirm(t *testing.T) {
 			expErr: false,
 		},
 		"unknown nonce": {
-			src:     types.QueryValsetConfirmRequest{Nonce: 999999, Address: myValidatorCosmosAddr.String()},
+			src:     types.QueryValsetConfirmRequest{Nonce: 999999, Address: myValidatorCosmosAddr.String(), EvmChainPrefix: evmChain.EvmChainPrefix},
 			expResp: types.QueryValsetConfirmResponse{Confirm: nil},
 		},
 		"invalid address": {
-			src:    types.QueryValsetConfirmRequest{Nonce: 1, Address: "not a valid addr"},
+			src:    types.QueryValsetConfirmRequest{Nonce: 1, Address: "not a valid addr", EvmChainPrefix: evmChain.EvmChainPrefix},
 			expErr: true,
 		},
 	}
@@ -114,12 +115,12 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 	// seed confirmations
 	for i := 0; i < 3; i++ {
 		addr, _ := sdk.AccAddressFromBech32(addrs[i])
-		msg := types.MsgValsetConfirm{}
+		msg := types.MsgValsetConfirm{EvmChainPrefix: evmChain.EvmChainPrefix}
 		msg.EthAddress = gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(i + 1)}, 20)).String()
 		msg.Nonce = uint64(1)
 		msg.Orchestrator = addr.String()
-		msg.Signature = fmt.Sprintf("signature %d", i+1)
-		input.GravityKeeper.SetValsetConfirm(sdkCtx, evmChain.EvmChainPrefix, msg)
+		msg.Signature = fmt.Sprintf("d34db33f%d", i)
+		input.GravityKeeper.SetValsetConfirm(sdkCtx, msg)
 	}
 
 	specs := map[string]struct {
@@ -128,7 +129,7 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		expResp types.QueryValsetConfirmsByNonceResponse
 	}{
 		"all good": {
-			src: types.QueryValsetConfirmsByNonceRequest{Nonce: 1},
+			src: types.QueryValsetConfirmsByNonceRequest{Nonce: 1, EvmChainPrefix: evmChain.EvmChainPrefix},
 			expResp: types.QueryValsetConfirmsByNonceResponse{Confirms: []types.MsgValsetConfirm{
 				*types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, nonce, *myValidatorEthereumAddr2, myValidatorCosmosAddr2, "d34db33f1"),
 				*types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, nonce, *myValidatorEthereumAddr3, myValidatorCosmosAddr3, "d34db33f2"),
@@ -136,13 +137,13 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 			}},
 		},
 		"unknown nonce": {
-			src:     types.QueryValsetConfirmsByNonceRequest{Nonce: 999999},
+			src:     types.QueryValsetConfirmsByNonceRequest{Nonce: 999999, EvmChainPrefix: evmChain.EvmChainPrefix},
 			expResp: types.QueryValsetConfirmsByNonceResponse{},
 		},
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			got, err := k.ValsetConfirmsByNonce(ctx, &types.QueryValsetConfirmsByNonceRequest{Nonce: spec.src.Nonce})
+			got, err := k.ValsetConfirmsByNonce(ctx, &types.QueryValsetConfirmsByNonceRequest{Nonce: spec.src.Nonce, EvmChainPrefix: evmChain.EvmChainPrefix})
 			if spec.expErr {
 				require.Error(t, err)
 				return
@@ -767,6 +768,7 @@ func TestQueryLogicCallConfirms(t *testing.T) {
 		EthSigner:         ethSigner,
 		Orchestrator:      valAddr.String(),
 		Signature:         "d34db33f",
+		EvmChainPrefix:    evmChain.EvmChainPrefix,
 	}
 
 	k.SetLogicCallConfirm(sdkCtx, evmChain.EvmChainPrefix, &confirm)
@@ -792,7 +794,7 @@ func TestQueryBatch(t *testing.T) {
 
 	createTestBatch(t, input, 2, evmChain.EvmChainPrefix)
 
-	batch, err := k.BatchRequestByNonce(ctx, &types.QueryBatchRequestByNonceRequest{Nonce: 1, ContractAddress: tokenContract})
+	batch, err := k.BatchRequestByNonce(ctx, &types.QueryBatchRequestByNonceRequest{Nonce: 1, ContractAddress: tokenContract, EvmChainPrefix: evmChain.EvmChainPrefix})
 	require.NoError(t, err)
 
 	expectedRes := types.QueryBatchRequestByNonceResponse{
@@ -1006,7 +1008,7 @@ func TestQueryERC20ToDenom(t *testing.T) {
 	evmChain := k.GetEvmChainData(input.Context, EthChainPrefix)
 	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, evmChain.EvmChainPrefix, denom, *erc20)
 
-	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{Erc20: erc20.GetAddress().Hex()})
+	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{Erc20: erc20.GetAddress().Hex(), EvmChainPrefix: evmChain.EvmChainPrefix})
 	require.NoError(t, err)
 
 	assert.Equal(t, &response, queriedDenom)
@@ -1032,7 +1034,7 @@ func TestQueryDenomToERC20(t *testing.T) {
 	evmChain := k.GetEvmChainData(input.Context, EthChainPrefix)
 	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, evmChain.EvmChainPrefix, denom, *erc20)
 
-	queriedERC20, err := k.DenomToERC20(ctx, &types.QueryDenomToERC20Request{Denom: denom})
+	queriedERC20, err := k.DenomToERC20(ctx, &types.QueryDenomToERC20Request{Denom: denom, EvmChainPrefix: evmChain.EvmChainPrefix})
 	require.NoError(t, err)
 
 	assert.Equal(t, &response, queriedERC20)

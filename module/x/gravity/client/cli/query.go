@@ -110,9 +110,9 @@ func CmdGetValsetRequest() *cobra.Command {
 func CmdGetValsetConfirm() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "valset-confirm [nonce] [bech32 validator address]",
+		Use:   "valset-confirm [nonce] [bech32 validator address] [evm chain prefix]",
 		Short: "Get valset confirmation with a particular nonce from a particular validator",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -126,8 +126,9 @@ func CmdGetValsetConfirm() *cobra.Command {
 			}
 
 			req := &types.QueryValsetConfirmRequest{
-				Nonce:   nonce,
-				Address: args[1],
+				Nonce:          nonce,
+				Address:        args[1],
+				EvmChainPrefix: args[2],
 			}
 
 			res, err := queryClient.ValsetConfirm(cmd.Context(), req)

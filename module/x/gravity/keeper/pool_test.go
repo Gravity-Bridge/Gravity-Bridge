@@ -396,8 +396,8 @@ func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
-		myTokenDenom        = "gravity" + myTokenContractAddr
 		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
+		myTokenDenom        = evmChain.EvmChainPrefix + myTokenContractAddr
 	)
 	receiver, err := types.NewEthAddress(myReceiver)
 	require.NoError(t, err)

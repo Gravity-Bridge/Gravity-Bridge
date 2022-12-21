@@ -24,11 +24,12 @@ func (k Keeper) GetBatchConfirm(ctx sdk.Context, evmChainPrefix string, nonce ui
 		return nil
 	}
 	confirm := types.MsgConfirmBatch{
-		Nonce:         nonce,
-		TokenContract: tokenContract.GetAddress().Hex(),
-		EthSigner:     "",
-		Orchestrator:  "",
-		Signature:     "",
+		Nonce:          nonce,
+		TokenContract:  tokenContract.GetAddress().Hex(),
+		EthSigner:      "",
+		Orchestrator:   "",
+		Signature:      "",
+		EvmChainPrefix: evmChainPrefix,
 	}
 	k.cdc.MustUnmarshal(entity, &confirm)
 	return &confirm
@@ -76,11 +77,12 @@ func (k Keeper) IterateBatchConfirmByNonceAndTokenContract(ctx sdk.Context, evmC
 
 	for ; iter.Valid(); iter.Next() {
 		confirm := types.MsgConfirmBatch{
-			Nonce:         nonce,
-			TokenContract: tokenContract.GetAddress().Hex(),
-			EthSigner:     "",
-			Orchestrator:  "",
-			Signature:     "",
+			Nonce:          nonce,
+			TokenContract:  tokenContract.GetAddress().Hex(),
+			EthSigner:      "",
+			Orchestrator:   "",
+			Signature:      "",
+			EvmChainPrefix: evmChainPrefix,
 		}
 		k.cdc.MustUnmarshal(iter.Value(), &confirm)
 		// cb returns true to stop early

@@ -105,8 +105,8 @@ func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) ui
 // OutgoingTxBatchExecuted is run when the Cosmos chain detects that a batch has been executed on evm chain
 // It frees all the transactions in the batch, then cancels all earlier batches, this function panics instead
 // of returning errors because any failure will cause a double spend.
-func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, tokenContract types.EthAddress, claim types.MsgBatchSendToEthClaim) {
-	b := k.GetOutgoingTxBatch(ctx, evmChainPrefix, tokenContract, claim.BatchNonce)
+func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.EthAddress, claim types.MsgBatchSendToEthClaim) {
+	b := k.GetOutgoingTxBatch(ctx, claim.EvmChainPrefix, tokenContract, claim.BatchNonce)
 	if b == nil {
 		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract.GetAddress().Hex(), claim.BatchNonce))
 	}
@@ -115,7 +115,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, 
 	}
 	contract := b.TokenContract
 	// Burn tokens if they're evm chain originated
-	if isCosmosOriginated, _ := k.ERC20ToDenomLookup(ctx, evmChainPrefix, contract); !isCosmosOriginated {
+	if isCosmosOriginated, _ := k.ERC20ToDenomLookup(ctx, claim.EvmChainPrefix, contract); !isCosmosOriginated {
 		totalToBurn := sdk.NewInt(0)
 		for _, tx := range b.Transactions {
 			totalToBurn = totalToBurn.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
@@ -125,17 +125,17 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, 
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "invalid ERC20 address in executed batch"))
 		}
-		burnVouchers := sdk.NewCoins(erc20.GravityCoin(evmChainPrefix))
+		burnVouchers := sdk.NewCoins(erc20.GravityCoin(claim.EvmChainPrefix))
 		if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, burnVouchers); err != nil {
 			panic(err)
 		}
 	}
 
 	// Iterate through remaining batches
-	k.IterateOutgoingTxBatches(ctx, evmChainPrefix, func(key []byte, batch types.InternalOutgoingTxBatch) bool {
+	k.IterateOutgoingTxBatches(ctx, claim.EvmChainPrefix, func(key []byte, batch types.InternalOutgoingTxBatch) bool {
 		// If the iterated batches nonce is lower than the one that was just executed, cancel it
 		if batch.BatchNonce < b.BatchNonce && batch.TokenContract.GetAddress() == tokenContract.GetAddress() {
-			err := k.CancelOutgoingTxBatch(ctx, evmChainPrefix, tokenContract, batch.BatchNonce)
+			err := k.CancelOutgoingTxBatch(ctx, claim.EvmChainPrefix, tokenContract, batch.BatchNonce)
 			if err != nil {
 				panic(fmt.Sprintf("Failed cancel out batch %s %d while trying to execute %s %d with %s",
 					tokenContract.GetAddress().Hex(), batch.BatchNonce,
@@ -146,9 +146,9 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, evmChainPrefix string, 
 	})
 
 	// Delete batch since it is finished
-	k.DeleteBatch(ctx, evmChainPrefix, *b)
+	k.DeleteBatch(ctx, claim.EvmChainPrefix, *b)
 	// Delete it's confirmations as well
-	k.DeleteBatchConfirms(ctx, evmChainPrefix, *b)
+	k.DeleteBatchConfirms(ctx, claim.EvmChainPrefix, *b)
 }
 
 // StoreBatch stores a transaction batch, it will refuse to overwrite an existing

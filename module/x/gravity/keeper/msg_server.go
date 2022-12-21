@@ -106,7 +106,7 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 	if k.GetValsetConfirm(ctx, msg.EvmChainPrefix, msg.Nonce, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "signature duplicate")
 	}
-	key := k.SetValsetConfirm(ctx, msg.EvmChainPrefix, *msg)
+	key := k.SetValsetConfirm(ctx, *msg)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventValsetConfirmKey{

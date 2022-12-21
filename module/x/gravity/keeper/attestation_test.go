@@ -210,13 +210,14 @@ func TestInvalidHeight(t *testing.T) {
 	pk := input.GravityKeeper
 	msgServer := NewMsgServerImpl(pk)
 	log := ctx.Logger()
+	evmChain := pk.GetEvmChainData(ctx, EthChainPrefix)
 
 	val0 := ValAddrs[0]
 	orch0 := OrchAddrs[0]
 	sender := AccAddrs[0]
 	receiver := EthAddrs[0]
-	lastNonce := pk.GetLastObservedEventNonce(ctx, EthChainPrefix)
-	lastEthHeight := pk.GetLastObservedEvmChainBlockHeight(ctx, EthChainPrefix).EthereumBlockHeight
+	lastNonce := pk.GetLastObservedEventNonce(ctx, evmChain.EvmChainPrefix)
+	lastEthHeight := pk.GetLastObservedEvmChainBlockHeight(ctx, evmChain.EvmChainPrefix).EthereumBlockHeight
 	lastBatchNonce := 0
 	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
 	goodHeight := lastEthHeight + 1
@@ -245,7 +246,7 @@ func TestInvalidHeight(t *testing.T) {
 	}
 	b, err := batch.ToInternal()
 	require.NoError(t, err)
-	pk.StoreBatch(ctx, EthChainPrefix, *b)
+	pk.StoreBatch(ctx, evmChain.EvmChainPrefix, *b)
 
 	// Submit a bad claim with BlockHeight >= timeout
 
@@ -255,7 +256,7 @@ func TestInvalidHeight(t *testing.T) {
 		BatchNonce:     uint64(lastBatchNonce + 1),
 		TokenContract:  tokenContract,
 		Orchestrator:   orch0.String(),
-		EvmChainPrefix: EthChainPrefix,
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	err = bad.ValidateBasic()
 	require.NoError(t, err)
@@ -289,6 +290,7 @@ func TestInvalidHeight(t *testing.T) {
 			BatchNonce:     uint64(lastBatchNonce + 1),
 			TokenContract:  tokenContract,
 			Orchestrator:   orch.String(),
+			EvmChainPrefix: evmChain.EvmChainPrefix,
 		}
 		_, err := msgServer.BatchSendToEthClaim(context, &good)
 		require.NoError(t, err)

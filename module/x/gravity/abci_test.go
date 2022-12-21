@@ -110,7 +110,7 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 		require.NoError(t, err)
 
 		conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, vs.Nonce, *ethAddr, orch, "dummysig")
-		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
+		pk.SetValsetConfirm(ctx, *conf)
 	}
 
 	EndBlocker(ctx, pk)
@@ -199,11 +199,11 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 		require.NoError(t, err)
 
 		conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, vs.Nonce, *ethAddr, orch, "dummysig")
-		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
+		pk.SetValsetConfirm(ctx, *conf)
 	}
 
 	conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, vs.Nonce, *ethAddr, accAddr, "dummysig")
-	pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
+	pk.SetValsetConfirm(ctx, *conf)
 
 	// Now remove all the stake
 	_, err = sh(
@@ -260,7 +260,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 		require.NoError(t, err)
 
 		conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, vs.Nonce, *ethAddr, orch, "dummysig")
-		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
+		pk.SetValsetConfirm(ctx, *conf)
 	}
 	staking.EndBlocker(input.Context, input.StakingKeeper)
 
@@ -350,22 +350,24 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 
 	for i, orch := range keeper.OrchAddrs {
 		pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
-			Nonce:         batch.BatchNonce,
-			TokenContract: keeper.TokenContractAddrs[0],
-			EthSigner:     keeper.EthAddrs[i].String(),
-			Orchestrator:  orch.String(),
-			Signature:     "",
+			Nonce:          batch.BatchNonce,
+			TokenContract:  keeper.TokenContractAddrs[0],
+			EthSigner:      keeper.EthAddrs[i].String(),
+			Orchestrator:   orch.String(),
+			Signature:      "",
+			EvmChainPrefix: evmChain.EvmChainPrefix,
 		})
 	}
 
 	// Sign using our not nice validator
 	// This is not really possible if we use confirmHandlerCommon
 	pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
-		Nonce:         batch.BatchNonce,
-		TokenContract: keeper.TokenContractAddrs[0],
-		EthSigner:     ethAddr.GetAddress().Hex(),
-		Orchestrator:  accAddr.String(),
-		Signature:     "",
+		Nonce:          batch.BatchNonce,
+		TokenContract:  keeper.TokenContractAddrs[0],
+		EthSigner:      ethAddr.GetAddress().Hex(),
+		Orchestrator:   accAddr.String(),
+		Signature:      "",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	})
 
 	// Now remove all the stake
@@ -424,11 +426,12 @@ func TestBatchSlashing(t *testing.T) {
 		}
 
 		pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
-			Nonce:         batch.BatchNonce,
-			TokenContract: keeper.TokenContractAddrs[0],
-			EthSigner:     keeper.EthAddrs[i].String(),
-			Orchestrator:  orch.String(),
-			Signature:     "",
+			Nonce:          batch.BatchNonce,
+			TokenContract:  keeper.TokenContractAddrs[0],
+			EthSigner:      keeper.EthAddrs[i].String(),
+			Orchestrator:   orch.String(),
+			Signature:      "",
+			EvmChainPrefix: evmChain.EvmChainPrefix,
 		})
 	}
 
@@ -562,11 +565,12 @@ func TestBatchTimeout(t *testing.T) {
 		require.NoError(t, err)
 
 		conf := &types.MsgConfirmBatch{
-			Nonce:         b2.BatchNonce,
-			TokenContract: b2.TokenContract.GetAddress().Hex(),
-			EthSigner:     ethAddr.GetAddress().Hex(),
-			Orchestrator:  orch.String(),
-			Signature:     "dummysig",
+			Nonce:          b2.BatchNonce,
+			TokenContract:  b2.TokenContract.GetAddress().Hex(),
+			EthSigner:      ethAddr.GetAddress().Hex(),
+			Orchestrator:   orch.String(),
+			Signature:      "dummysig",
+			EvmChainPrefix: evmChain.EvmChainPrefix,
 		}
 
 		input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf)
@@ -631,7 +635,7 @@ func TestValsetPruning(t *testing.T) {
 		require.NoError(t, err)
 
 		conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, firstValsetNonce, *ethAddr, orch, "dummysig")
-		pk.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
+		pk.SetValsetConfirm(ctx, *conf)
 	}
 
 	require.True(t, len(pk.GetValsetConfirms(ctx, evmChain.EvmChainPrefix, firstValsetNonce)) == len(keeper.OrchAddrs))

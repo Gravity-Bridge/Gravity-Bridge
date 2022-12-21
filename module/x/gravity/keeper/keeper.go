@@ -48,7 +48,7 @@ type Keeper struct {
 	bech32IbcKeeper   *bech32ibckeeper.Keeper
 
 	AttestationHandler interface {
-		Handle(sdk.Context, string, types.Attestation, types.EthereumClaim) error
+		Handle(sdk.Context, types.Attestation, types.EthereumClaim) error
 	}
 }
 

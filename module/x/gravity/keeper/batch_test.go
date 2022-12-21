@@ -256,8 +256,8 @@ func TestBatches(t *testing.T) {
 
 		// Execute the batch
 		fakeBlock := secondBatch.CosmosBlockCreated // A fake ethereum block used for testing only
-		msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce}
-		input.GravityKeeper.OutgoingTxBatchExecuted(ctx, evmChain.EvmChainPrefix, secondBatch.TokenContract, msg)
+		msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce, EvmChainPrefix: evmChain.EvmChainPrefix}
+		input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
 
 		// check batch has been deleted
 		gotSecondBatch := input.GravityKeeper.GetOutgoingTxBatch(ctx, evmChain.EvmChainPrefix, secondBatch.TokenContract, secondBatch.BatchNonce)
@@ -330,7 +330,7 @@ func TestBatchesFullCoins(t *testing.T) {
 		oneEth, _           = sdk.NewIntFromString("1000000000000000000")
 		token, err          = types.NewInternalERC20Token(totalCoins, myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin(EthChainPrefix))
-		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
+		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	)
 	require.NoError(t, err)
 	tokenContract, err := types.NewEthAddress(myTokenContractAddr)
@@ -484,8 +484,8 @@ func TestBatchesFullCoins(t *testing.T) {
 
 	// Execute the batch
 	fakeBlock := secondBatch.CosmosBlockCreated // A fake ethereum block used for testing only
-	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce}
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, evmChain.EvmChainPrefix, secondBatch.TokenContract, msg)
+	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce, EvmChainPrefix: evmChain.EvmChainPrefix}
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
 
 	// check batch has been deleted
 	gotSecondBatch := input.GravityKeeper.GetOutgoingTxBatch(ctx, evmChain.EvmChainPrefix, secondBatch.TokenContract, secondBatch.BatchNonce)
@@ -550,7 +550,7 @@ func TestManyBatches(t *testing.T) {
 		token2, err2       = types.NewInternalERC20Token(totalCoins, tokenContractAddr2)
 		token3, err3       = types.NewInternalERC20Token(totalCoins, tokenContractAddr3)
 		token4, err4       = types.NewInternalERC20Token(totalCoins, tokenContractAddr4)
-		evmChain           = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
+		evmChain           = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 		allVouchers        = sdk.NewCoins(
 			token1.GravityCoin(EthChainPrefix),
 			token2.GravityCoin(EthChainPrefix),
@@ -627,8 +627,8 @@ func TestManyBatches(t *testing.T) {
 		// we may have already deleted some of the batches in this list by executing later ones
 		if gotBatch != nil {
 			fakeBlock := batch.CosmosBlockCreated // A fake ethereum block used for testing only
-			msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: batch.BatchNonce}
-			input.GravityKeeper.OutgoingTxBatchExecuted(ctx, evmChain.EvmChainPrefix, *contractAddr, msg)
+			msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: batch.BatchNonce, EvmChainPrefix: evmChain.EvmChainPrefix}
+			input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *contractAddr, msg)
 		}
 	}
 }
@@ -649,7 +649,7 @@ func TestPoolTxRefund(t *testing.T) {
 		allVouchers         = sdk.NewCoins(token.GravityCoin(EthChainPrefix))
 		denomToken, dErr    = types.NewInternalERC20Token(sdk.NewInt(1), myTokenContractAddr)
 		myDenom             = denomToken.GravityCoin(EthChainPrefix).Denom
-		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
+		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	)
 	require.NoError(t, err)
 	require.NoError(t, dErr)
@@ -729,7 +729,7 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 		myTokenContractAddr, _ = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5") // Pickle
 		token, err             = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr.GetAddress().Hex())
 		allVouchers            = sdk.NewCoins(token.GravityCoin(EthChainPrefix))
-		evmChain               = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
+		evmChain               = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	)
 	require.NoError(t, err)
 
@@ -803,7 +803,7 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 		myTokenContractAddr, _ = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5") // Pickle
 		token, err             = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr.GetAddress().Hex())
 		allVouchers            = sdk.NewCoins(token.GravityCoin(EthChainPrefix))
-		evmChain               = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
+		evmChain               = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	)
 	require.NoError(t, err)
 
@@ -965,11 +965,12 @@ func TestBatchConfirms(t *testing.T) {
 			require.NoError(t, err)
 
 			conf := &types.MsgConfirmBatch{
-				Nonce:         batch.BatchNonce,
-				TokenContract: batch.TokenContract.GetAddress().Hex(),
-				EthSigner:     ethAddr.GetAddress().Hex(),
-				Orchestrator:  orch.String(),
-				Signature:     "dummysig",
+				Nonce:          batch.BatchNonce,
+				TokenContract:  batch.TokenContract.GetAddress().Hex(),
+				EthSigner:      ethAddr.GetAddress().Hex(),
+				Orchestrator:   orch.String(),
+				Signature:      "dummysig",
+				EvmChainPrefix: evmChain.EvmChainPrefix,
 			}
 
 			input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf)
@@ -978,21 +979,23 @@ func TestBatchConfirms(t *testing.T) {
 
 	// try to set connfirm with invalid address
 	conf := &types.MsgConfirmBatch{
-		Nonce:         outogoingBatches[0].BatchNonce,
-		TokenContract: outogoingBatches[0].TokenContract.GetAddress().Hex(),
-		EthSigner:     EthAddrs[0].String(),
-		Orchestrator:  "invalid address",
-		Signature:     "dummysig",
+		Nonce:          outogoingBatches[0].BatchNonce,
+		TokenContract:  outogoingBatches[0].TokenContract.GetAddress().Hex(),
+		EthSigner:      EthAddrs[0].String(),
+		Orchestrator:   "invalid address",
+		Signature:      "dummysig",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf) })
 
 	// try to set connfirm with invalid token contract
 	conf = &types.MsgConfirmBatch{
-		Nonce:         outogoingBatches[0].BatchNonce,
-		TokenContract: "invalid token",
-		EthSigner:     EthAddrs[0].String(),
-		Orchestrator:  OrchAddrs[0].String(),
-		Signature:     "dummysig",
+		Nonce:          outogoingBatches[0].BatchNonce,
+		TokenContract:  "invalid token",
+		EthSigner:      EthAddrs[0].String(),
+		Orchestrator:   OrchAddrs[0].String(),
+		Signature:      "dummysig",
+		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
 	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf) })
 

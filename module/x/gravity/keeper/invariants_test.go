@@ -22,7 +22,7 @@ func TestModuleBalanceUnbatchedTxs(t *testing.T) {
 		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
-		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
+		evmChain            = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	)
 	receiver, err := types.NewEthAddress(myReceiver)
 	require.NoError(t, err)
@@ -84,7 +84,7 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 		myReceiver, _           = types.NewEthAddress("0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7")
 		myTokenContractAddr1, _ = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")
 		myTokenContractAddr2, _ = types.NewEthAddress("0xF815240800ddf3E0be80e0d848B13ecaa504BF37")
-		evmChain                = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix) // Works only with "gravity"
+		evmChain                = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	)
 	tokens := make([]*types.InternalERC20Token, 2)
 	tokens[0], _ = types.NewInternalERC20Token(sdk.NewInt(150000000000000), myTokenContractAddr1.GetAddress().Hex())
@@ -165,8 +165,8 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 
 	// Simulate one batch being relayed and observed
 	fakeBlock := batches[1].CosmosBlockCreated // A fake ethereum block used for the test only
-	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: batches[1].BatchNonce}
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, evmChain.EvmChainPrefix, batches[1].TokenContract, msg)
+	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: batches[1].BatchNonce, EvmChainPrefix: evmChain.EvmChainPrefix}
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, batches[1].TokenContract, msg)
 	// The module should be balanced with the batch now being observed + one leftover unbatched tx still in the pool
 	checkInvariant(t, ctx, input.GravityKeeper, true)
 	checkImbalancedModule(t, ctx, input.GravityKeeper, input.BankKeeper, mySender, voucherCoins[0])

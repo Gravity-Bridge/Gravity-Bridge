@@ -346,23 +346,24 @@ func (k Keeper) GetValsetConfirm(ctx sdk.Context, evmChainPrefix string, nonce u
 		return nil
 	}
 	confirm := types.MsgValsetConfirm{
-		Nonce:        nonce,
-		Orchestrator: "",
-		EthAddress:   "",
-		Signature:    "",
+		Nonce:          nonce,
+		Orchestrator:   "",
+		EthAddress:     "",
+		Signature:      "",
+		EvmChainPrefix: evmChainPrefix,
 	}
 	k.cdc.MustUnmarshal(entity, &confirm)
 	return &confirm
 }
 
 // SetValsetConfirm sets a valset confirmation
-func (k Keeper) SetValsetConfirm(ctx sdk.Context, evmChainPrefix string, valsetConf types.MsgValsetConfirm) []byte {
+func (k Keeper) SetValsetConfirm(ctx sdk.Context, valsetConf types.MsgValsetConfirm) []byte {
 	store := ctx.KVStore(k.storeKey)
 	addr, err := sdk.AccAddressFromBech32(valsetConf.Orchestrator)
 	if err != nil {
 		panic(err)
 	}
-	key := types.GetValsetConfirmKey(evmChainPrefix, valsetConf.Nonce, addr)
+	key := types.GetValsetConfirmKey(valsetConf.EvmChainPrefix, valsetConf.Nonce, addr)
 	store.Set(key, k.cdc.MustMarshal(&valsetConf))
 	return key
 }
@@ -377,10 +378,11 @@ func (k Keeper) GetValsetConfirms(ctx sdk.Context, evmChainPrefix string, nonce 
 
 	for ; iterator.Valid(); iterator.Next() {
 		confirm := types.MsgValsetConfirm{
-			Nonce:        nonce,
-			Orchestrator: "",
-			EthAddress:   "",
-			Signature:    "",
+			Nonce:          nonce,
+			Orchestrator:   "",
+			EthAddress:     "",
+			Signature:      "",
+			EvmChainPrefix: evmChainPrefix,
 		}
 		k.cdc.MustUnmarshal(iterator.Value(), &confirm)
 		confirms = append(confirms, confirm)
@@ -390,8 +392,8 @@ func (k Keeper) GetValsetConfirms(ctx sdk.Context, evmChainPrefix string, nonce 
 }
 
 // IterateValsetConfirms returns all valset confirms in reverse order by nonce, aka most recent valset nonce first
-func (k Keeper) IterateValsetConfirms(ctx sdk.Context, cb func(key []byte, confirms []types.MsgValsetConfirm, nonce uint64) (stop bool)) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ValsetConfirmKey)
+func (k Keeper) IterateValsetConfirms(ctx sdk.Context, evmChainPrefix string, cb func(key []byte, confirms []types.MsgValsetConfirm, nonce uint64) (stop bool)) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.AppendChainPrefix(types.ValsetConfirmKey, evmChainPrefix))
 	iter := prefixStore.ReverseIterator(nil, nil)
 	defer iter.Close()
 

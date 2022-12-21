@@ -18,7 +18,7 @@ func TestQueryGetAttestations(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	k := input.GravityKeeper
 	ctx := input.Context
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix) // Works only with "gravity"
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 
 	// Some query functions use additional logic to determine if they should look up values using the v1 key, or the new
 	// hashed bytes keys used post-Mercury, so we must set the block height high enough here for the correct data to be found

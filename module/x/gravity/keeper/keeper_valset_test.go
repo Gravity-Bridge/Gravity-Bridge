@@ -81,7 +81,7 @@ func TestValsets(t *testing.T) {
 				require.NoError(t, err)
 
 				conf := types.NewMsgValsetConfirm(evmChain.EvmChainPrefix, uint64(i), *ethAddr, orch, "dummysig")
-				k.SetValsetConfirm(ctx, evmChain.EvmChainPrefix, *conf)
+				k.SetValsetConfirm(ctx, *conf)
 
 				// verify that valset confirm was stored successfully
 				require.NotNil(t, k.GetValsetConfirm(ctx, evmChain.EvmChainPrefix, conf.Nonce, orch))
@@ -152,7 +152,7 @@ func TestIterateValsetConfirms(t *testing.T) {
 
 		noncesToAvoid := []uint64{2, 4, 5, 6, 8, 10}
 		// verify that confirms appear in the IterateValsetClaims function
-		k.IterateValsetConfirms(ctx, func(key []byte, confirms []types.MsgValsetConfirm, nonce uint64) (stop bool) {
+		k.IterateValsetConfirms(ctx, evmChain.EvmChainPrefix, func(key []byte, confirms []types.MsgValsetConfirm, nonce uint64) (stop bool) {
 			require.False(t, slices.Contains(noncesToAvoid, nonce), "IterateValsetConfirms returned confirms for a nonce which should not exist")
 
 			expectedConfirms := confirmsByNonce[nonce]
@@ -185,13 +185,14 @@ func createConfirmsForValset(ctx sdk.Context, k Keeper, evmChainPrefix string, o
 		ethAddr := EthAddrs[i]
 
 		confirm := types.MsgValsetConfirm{
-			Nonce:        valset.Nonce,
-			Orchestrator: orch.String(),
-			EthAddress:   ethAddr.String(),
-			Signature:    "d34db33f",
+			Nonce:          valset.Nonce,
+			Orchestrator:   orch.String(),
+			EthAddress:     ethAddr.String(),
+			Signature:      "d34db33f",
+			EvmChainPrefix: evmChainPrefix,
 		}
 
-		k.SetValsetConfirm(ctx, evmChainPrefix, confirm)
+		k.SetValsetConfirm(ctx, confirm)
 		confirms[i] = confirm
 	}
 

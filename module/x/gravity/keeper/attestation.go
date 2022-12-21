@@ -115,14 +115,14 @@ func (k Keeper) TryAttestation(ctx sdk.Context, evmChainPrefix string, att *type
 					panic("attempting to apply events to state out of order")
 				}
 
-				k.setLastObservedEventNonce(ctx, evmChainPrefix, claim.GetEventNonce())
-				k.SetLastObservedEvmChainBlockHeight(ctx, evmChainPrefix, claim.GetEthBlockHeight())
+				k.setLastObservedEventNonce(ctx, claim.GetEvmChainPrefix(), claim.GetEventNonce())
+				k.SetLastObservedEvmChainBlockHeight(ctx, claim.GetEvmChainPrefix(), claim.GetEthBlockHeight())
 
 				att.Observed = true
-				k.SetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash, att)
+				k.SetAttestation(ctx, claim.GetEvmChainPrefix(), claim.GetEventNonce(), hash, att)
 
-				k.processAttestation(ctx, evmChainPrefix, att, claim)
-				k.emitObservedEvent(ctx, evmChainPrefix, att, claim)
+				k.processAttestation(ctx, att, claim)
+				k.emitObservedEvent(ctx, att, claim)
 
 				break
 			}
@@ -134,20 +134,20 @@ func (k Keeper) TryAttestation(ctx sdk.Context, evmChainPrefix string, att *type
 }
 
 // processAttestation actually applies the attestation to the consensus state
-func (k Keeper) processAttestation(ctx sdk.Context, evmChainPrefix string, att *types.Attestation, claim types.EthereumClaim) {
+func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
 	hash, err := claim.ClaimHash()
 	if err != nil {
 		panic("unable to compute claim hash")
 	}
 	// then execute in a new Tx so that we can store state on failure
 	xCtx, commit := ctx.CacheContext()
-	if err := k.AttestationHandler.Handle(xCtx, evmChainPrefix, *att, claim); err != nil { // execute with a transient storage
+	if err := k.AttestationHandler.Handle(xCtx, *att, claim); err != nil { // execute with a transient storage
 		// If the attestation fails, something has gone wrong and we can't recover it. Log and move on
 		// The attestation will still be marked "Observed", allowing the oracle to progress properly
 		k.logger(ctx).Error("attestation failed",
 			"cause", err.Error(),
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(evmChainPrefix, claim.GetEventNonce(), hash),
+			"id", types.GetAttestationKey(claim.GetEvmChainPrefix(), claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 	} else {
@@ -157,7 +157,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, evmChainPrefix string, att *
 
 // emitObservedEvent emits an event with information about an attestation that has been applied to
 // consensus state.
-func (k Keeper) emitObservedEvent(ctx sdk.Context, evmChainPrefix string, att *types.Attestation, claim types.EthereumClaim) {
+func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
 	hash, err := claim.ClaimHash()
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
@@ -168,7 +168,7 @@ func (k Keeper) emitObservedEvent(ctx sdk.Context, evmChainPrefix string, att *t
 			AttestationType: string(claim.GetType()),
 			BridgeContract:  k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:   strconv.Itoa(int(k.GetBridgeChainID(ctx))),
-			AttestationId:   string(types.GetAttestationKey(evmChainPrefix, claim.GetEventNonce(), hash)),
+			AttestationId:   string(types.GetAttestationKey(claim.GetEvmChainPrefix(), claim.GetEventNonce(), hash)),
 			Nonce:           fmt.Sprint(claim.GetEventNonce()),
 		},
 	)
