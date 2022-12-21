@@ -63,7 +63,9 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			// Compare actual vs expected balances
 			for _, actual := range actualBals {
 				denom := actual.GetDenom()
+
 				cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, evmChain.EvmChainPrefix, denom)
+
 				if err != nil {
 					// Here we do not return because a user could halt the chain by gifting gravity a cosmos asset with no erc20 repr
 					ctx.Logger().Error("Unexpected gravity module balance of cosmos-originated asset with no erc20 representation", "asset", denom)
@@ -78,7 +80,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 					// We cannot make any assertions about cosmosOriginated assets because we do not have enough information.
 					// There is no index of denom => amount bridged, which would force us to parse all logs in existence
 				} else if !actual.Amount.Equal(*expected) { // Eth originated mismatched balance
-					// return fmt.Sprint("Mismatched balance of eth-originated ", denom, ": actual balance ", actual.Amount, " != expected balance ", expected), true
+					return fmt.Sprint("Mismatched balance of eth-originated ", denom, ": actual balance ", actual.Amount, " != expected balance ", expected), true
 				}
 			}
 		}
