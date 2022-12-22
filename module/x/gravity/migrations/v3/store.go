@@ -1,17 +1,18 @@
 package v3
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"reflect"
 
+	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
-
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 // change this to your current evm mainnet
@@ -24,6 +25,34 @@ const EthereumChainPrefix string = "bsc"
 func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.BinaryCodec) error {
 	ctx.Logger().Info("Pleiades Upgrade: Beginning the migrations for the gravity module")
 	store := ctx.KVStore(storeKey)
+
+	// TODO: insert Eth into new key for chain info, currently using bsc
+	updateKeysWithEthPrefix(store, v2.ValsetRequestKey)
+	updateKeysWithEthPrefix(store, v2.ValsetConfirmKey)
+	updateKeysWithEthPrefix(store, v2.OracleAttestationKey)
+	updateKeysWithEthPrefix(store, v2.OutgoingTXPoolKey)
+	updateKeysWithEthPrefix(store, v2.OutgoingTxBatchKey)
+	updateKeysWithEthPrefix(store, v2.BatchConfirmKey)
+	updateKeysWithEthPrefix(store, v2.LastEventNonceByValidatorKey)
+	updateKeysWithEthPrefix(store, v2.LastObservedEventNonceKey)
+	updateKeysWithEthPrefix(store, v2.KeyLastTXPoolID)
+	updateKeysWithEthPrefix(store, v2.KeyLastOutgoingBatchID)
+	updateKeysWithEthPrefix(store, v2.KeyOutgoingLogicCall)
+	updateKeysWithEthPrefix(store, v2.KeyOutgoingLogicConfirm)
+	updateKeysWithEthPrefix(store, v2.DenomToERC20Key)
+	updateKeysWithEthPrefix(store, v2.ERC20ToDenomKey)
+	updateKeysWithEthPrefix(store, v2.LastSlashedValsetNonce)
+	updateKeysWithEthPrefix(store, v2.LatestValsetNonce)
+	updateKeysWithEthPrefix(store, v2.LastSlashedBatchBlock)
+	updateKeysWithEthPrefix(store, v2.LastSlashedLogicCallBlock)
+	updateKeysWithEthPrefix(store, v2.LastObservedValsetKey)
+
+	updateKeysPrefixToEvm(store, v2.PastEthSignatureCheckpointKey, types.PastEvmSignatureCheckpointKey)
+	updateKeysPrefixToEvmWithoutChain(store, v2.ValidatorByEthAddressKey, types.ValidatorByEthAddressKey)
+	updateKeysPrefixToEvmWithoutChain(store, v2.EthAddressByValidatorKey, types.EthAddressByValidatorKey)
+	updateKeyPrefixToEvm(store, v2.LastUnBondingBlockHeight, types.LastUnBondingBlockHeight)
+	updateKeyPrefixToEvm(store, v2.LastObservedEthereumBlockHeightKey, types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, EthereumChainPrefix))
+	updateKeyPrefixToEvm(store, v2.LastEventNonceByValidatorKey, types.AppendChainPrefix(types.LastEventNonceByValidatorKey, EthereumChainPrefix))
 
 	convertAttestationKey := getAttestationConverter(ctx.Logger())
 	// Migrate all stored attestations by iterating over everything stored under the OracleAttestationKey
@@ -76,6 +105,7 @@ func getAttestationConverter(logger log.Logger) func([]byte, codec.BinaryCodec, 
 	// Unmarshal the old Attestation, unpack its claim, recompute the key using the new ClaimHash
 	// Note: The oldKey will contain the implicitPrefix, but the return key should **NOT** have the prefix
 	return func(oldValue []byte, cdc codec.BinaryCodec, oldKey []byte, implicitPrefix []byte) ([]byte, error) {
+
 		var att types.Attestation
 		cdc.MustUnmarshal(oldValue, &att)
 		claim, err := unpackAttestationClaim(&att, cdc)
@@ -137,4 +167,64 @@ func unpackAttestationClaim(att *types.Attestation, cdc codec.BinaryCodec) (type
 	} else {
 		return msg, nil
 	}
+}
+
+func updateKeysWithEthPrefix(store storetypes.KVStore, keyPrefix []byte) {
+	prefixStore := prefix.NewStore(store, keyPrefix)
+	oldStoreIter := prefixStore.Iterator(nil, nil)
+	defer oldStoreIter.Close()
+
+	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
+		// Set new oldKey on store. Values don't change.
+		oldKey := oldStoreIter.Key()
+		newKey := types.AppendBytes([]byte(EthereumChainPrefix), oldKey)
+		prefixStore.Set(newKey, oldStoreIter.Value())
+		prefixStore.Delete(oldKey)
+	}
+}
+
+func updateKeysPrefixToEvm(store storetypes.KVStore, oldKeyPrefix, newKeyPrefix []byte) {
+	oldPrefixStore := prefix.NewStore(store, oldKeyPrefix)
+	oldStoreIter := oldPrefixStore.Iterator(nil, nil)
+	defer oldStoreIter.Close()
+
+	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
+		// Set new oldKey on store. Values don't change.
+		oldKey := oldStoreIter.Key()
+		newKey := types.AppendBytes(newKeyPrefix, []byte(EthereumChainPrefix), oldKey)
+		store.Set(newKey, oldStoreIter.Value())
+		oldPrefixStore.Delete(oldKey)
+	}
+}
+
+func updateKeysPrefixToEvmWithoutChain(store storetypes.KVStore, oldKeyPrefix, newKeyPrefix []byte) {
+	// nothing change
+	if bytes.Equal(oldKeyPrefix, newKeyPrefix) {
+		return
+	}
+	oldPrefixStore := prefix.NewStore(store, oldKeyPrefix)
+	oldStoreIter := oldPrefixStore.Iterator(nil, nil)
+	defer oldStoreIter.Close()
+
+	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
+		// Set new oldKey on store. Values don't change.
+		oldKey := oldStoreIter.Key()
+		newKey := types.AppendBytes(newKeyPrefix, oldKey)
+		store.Set(newKey, oldStoreIter.Value())
+		oldPrefixStore.Delete(oldKey)
+	}
+}
+
+func updateKeyPrefixToEvm(store sdk.KVStore, oldKey, newKey []byte) {
+	// nothing change
+	if bytes.Equal(oldKey, newKey) {
+		return
+	}
+	value := store.Get(oldKey)
+	if len(value) == 0 {
+		return
+	}
+	store.Set(newKey, value)
+	store.Delete(oldKey)
+
 }

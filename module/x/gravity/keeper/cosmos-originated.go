@@ -124,7 +124,7 @@ func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, evmChainPrefix string, token
 // IterateERC20ToDenom iterates over erc20 to denom relations
 func (k Keeper) IterateERC20ToDenom(ctx sdk.Context, evmChainPrefix string, cb func([]byte, *types.ERC20ToDenom) bool) {
 
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.AppendBytes(types.ERC20ToDenomKey, []byte(evmChainPrefix)))
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.AppendChainPrefix(types.ERC20ToDenomKey, evmChainPrefix))
 
 	iter := prefixStore.Iterator(nil, nil)
 	defer iter.Close()

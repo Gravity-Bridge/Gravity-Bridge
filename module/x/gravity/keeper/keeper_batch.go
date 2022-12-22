@@ -104,7 +104,7 @@ func (k Keeper) GetBatchConfirmByNonceAndTokenContract(ctx sdk.Context, evmChain
 // IterateBatchConfirms iterates through all batch confirmations
 func (k Keeper) IterateBatchConfirms(ctx sdk.Context, evmChainPrefix string, cb func([]byte, types.MsgConfirmBatch) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	prefixStore := prefix.NewStore(store, types.AppendBytes([]byte(evmChainPrefix), types.BatchConfirmKey))
+	prefixStore := prefix.NewStore(store, types.AppendChainPrefix(types.BatchConfirmKey, evmChainPrefix))
 
 	iter := prefixStore.Iterator(nil, nil)
 
