@@ -101,7 +101,8 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	assert.Equal(t, denom, storedDenom)
 
 	var erc20ToDenoms = []types.ERC20ToDenom{}
-	input.GravityKeeper.IterateERC20ToDenom(input.Context, keeper.EthChainPrefix, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
+	// empty evm chain prefix, because v2 use the single erc20 token for single network
+	input.GravityKeeper.IterateERC20ToDenom(input.Context, "", func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
 		erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
 		return false
 	})
