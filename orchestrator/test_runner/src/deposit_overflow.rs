@@ -4,8 +4,8 @@
 //! therefore adding new tests at the end of this one may fail.
 use crate::unhalt_bridge::get_nonces;
 use crate::utils::{check_cosmos_balances, get_user_key, submit_false_claims, ValidatorKeys};
-use crate::OPERATION_TIMEOUT;
 use crate::{get_fee, MINER_ADDRESS};
+use crate::{EVM_CHAIN_PREFIX, OPERATION_TIMEOUT};
 use clarity::{Address as EthAddress, Uint256};
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::{Coin, Contact, Fee};
@@ -41,6 +41,7 @@ pub async fn deposit_overflow_test(
     let overflowing_denom = grpc_client
         .erc20_to_denom(QueryErc20ToDenomRequest {
             erc20: overflowing_erc20.clone().to_string(),
+            evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
         })
         .await
         .unwrap()
@@ -49,6 +50,7 @@ pub async fn deposit_overflow_test(
     let check_module_denom = grpc_client
         .erc20_to_denom(QueryErc20ToDenomRequest {
             erc20: check_module_erc20.clone().to_string(),
+            evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
         })
         .await
         .unwrap()

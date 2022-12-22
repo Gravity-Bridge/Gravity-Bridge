@@ -12,6 +12,7 @@ use gravity_utils::connection_prep::{check_for_fee, create_rpc_connections};
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::metrics_server;
+use orchestrator::ethereum_event_watcher::get_evm_chain_prefix;
 use orchestrator::main_loop::orchestrator_main_loop;
 use orchestrator::main_loop::{ETH_ORACLE_LOOP_SPEED, ETH_SIGNER_LOOP_SPEED};
 use std::cmp::min;
@@ -22,6 +23,7 @@ use std::time::Duration;
 pub async fn orchestrator(
     args: OrchestratorOpts,
     address_prefix: String,
+    evm_chain_prefix: Option<String>,
     home_dir: &Path,
     config: GravityBridgeToolsConfig,
 ) {
@@ -88,6 +90,11 @@ pub async fn orchestrator(
     let mut grpc = connections.grpc.clone().unwrap();
     let contact = connections.contact.clone().unwrap();
     let web3 = connections.web3.clone().unwrap();
+
+    let evm_chain_prefix = match evm_chain_prefix {
+        Some(val) => val,
+        None => get_evm_chain_prefix(&web3).await,
+    };
 
     let public_eth_key = ethereum_key.to_address();
     let public_cosmos_key = cosmos_key.to_address(&contact.get_prefix()).unwrap();
@@ -162,6 +169,7 @@ pub async fn orchestrator(
         connections.web3.unwrap(),
         connections.contact.unwrap(),
         connections.grpc.unwrap(),
+        &evm_chain_prefix,
         contract_address,
         params.gravity_id,
         fee,

@@ -9,7 +9,7 @@ use deep_space::{
     private_key::{CosmosPrivateKey, PrivateKey},
 };
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::get_with_retry::get_block_number_with_retry;
+use gravity_utils::get_with_retry::{get_block_number_with_retry, get_net_version_with_retry};
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::{
     error::GravityError,
@@ -133,6 +133,7 @@ pub async fn check_for_events(
             grpc_client,
             our_cosmos_address,
             contact.get_prefix(),
+            evm_chain_prefix.to_string(),
         )
         .await?;
         let valsets = ValsetUpdatedEvent::filter_by_event_nonce(last_event_nonce, &valsets);
@@ -207,6 +208,7 @@ pub async fn check_for_events(
                 grpc_client,
                 our_cosmos_address,
                 contact.get_prefix(),
+                evm_chain_prefix.to_string(),
             )
             .await?;
 
@@ -299,8 +301,13 @@ pub fn get_block_delay(net_version: u64) -> Uint256 {
     }
 }
 
+pub async fn get_evm_chain_prefix(web3: &Web3) -> String {
+    let net_version = get_net_version_with_retry(&web3).await;
+    get_evm_chain_prefix_from_net_version(net_version)
+}
+
 /// must be constant string
-pub fn get_evm_chain_prefix(net_version: u64) -> String {
+pub fn get_evm_chain_prefix_from_net_version(net_version: u64) -> String {
     match net_version {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
         // all Ethereum proof of stake Chains
@@ -346,8 +353,15 @@ pub fn get_evm_chain_name(net_version: u64) -> String {
 
 #[test]
 fn get_chain_prefix() {
-    assert_eq!(get_evm_chain_prefix(1), "0000000000000001");
-    assert_eq!(get_evm_chain_prefix(137), "0000000000000089");
-    assert_eq!(get_evm_chain_prefix(56), "0000000000000038");
-    assert_eq!(get_evm_chain_prefix(11155111), "0000000000aa36a7")
+    assert_eq!(get_evm_chain_prefix_from_net_version(1), "ethereum");
+    assert_eq!(get_evm_chain_prefix_from_net_version(137), "polygon");
+    assert_eq!(get_evm_chain_prefix_from_net_version(56), "bsc");
+    assert_eq!(
+        get_evm_chain_prefix_from_net_version(11155111),
+        "sepolia-testnet"
+    );
+    assert_eq!(
+        get_evm_chain_prefix_from_net_version(234567),
+        "chain-234567"
+    );
 }

@@ -25,6 +25,7 @@ pub async fn request_batches(
     contact: &Contact,
     web30: &Web3,
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     config: &RelayerConfig,
     eth_address: EthAddress,
     private_key: impl PrivateKey,
@@ -50,7 +51,7 @@ pub async fn request_batches(
     }
     let eth_gas_price = eth_gas_price.unwrap();
 
-    let batch_fees = get_pending_batch_fees(grpc_client).await;
+    let batch_fees = get_pending_batch_fees(grpc_client, evm_chain_prefix).await;
     if let Err(e) = batch_fees {
         warn!("Failed to get batch fees with {:?}", e);
         return;
@@ -64,7 +65,7 @@ pub async fn request_batches(
     for fee in batch_fees.batch_fees {
         let total_fee: Uint256 = fee.total_fees.parse().unwrap();
         let token: EthAddress = fee.token.parse().unwrap();
-        let denom = get_erc20_to_denom(grpc_client, token).await;
+        let denom = get_erc20_to_denom(grpc_client, evm_chain_prefix, token).await;
         if let Err(e) = denom {
             error!(
                 "Failed to lookup erc20 {} for batch with {:?}",
@@ -85,6 +86,7 @@ pub async fn request_batches(
                                 fee.token, print_eth(weth_cost_estimate), print_eth(price)
                             );
                             let res = send_request_batch(
+                                evm_chain_prefix,
                                 private_key.clone(),
                                 denom,
                                 request_fee.clone(),
@@ -122,6 +124,7 @@ pub async fn request_batches(
                         fee.token, eth_gas_price,
                     );
                     let res = send_request_batch(
+                        evm_chain_prefix,
                         private_key.clone(),
                         denom,
                         request_fee.clone(),
@@ -137,9 +140,14 @@ pub async fn request_batches(
             }
             BatchRequestMode::EveryBatch => {
                 info!("Requesting batch for {}", fee.token);
-                let res =
-                    send_request_batch(private_key.clone(), denom, request_fee.clone(), contact)
-                        .await;
+                let res = send_request_batch(
+                    evm_chain_prefix,
+                    private_key.clone(),
+                    denom,
+                    request_fee.clone(),
+                    contact,
+                )
+                .await;
                 if let Err(e) = res {
                     warn!("Failed to request batch with {:?}", e);
                 } else {

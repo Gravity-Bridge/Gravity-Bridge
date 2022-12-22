@@ -2,6 +2,7 @@
 //! we don't launch the orchestrators here as they are not required.
 
 use crate::utils::ValidatorKeys;
+use crate::EVM_CHAIN_PREFIX;
 use crate::STAKING_TOKEN;
 use crate::STARTING_STAKE_PER_VALIDATOR;
 use crate::TOTAL_TIMEOUT;
@@ -73,6 +74,7 @@ pub async fn evidence_based_slashing(
     info!("Submitting Evidence");
     // submit the evidence
     let res = submit_bad_signature_evidence(
+        EVM_CHAIN_PREFIX.as_str(),
         submitter_private_key,
         get_fee(None),
         contact,

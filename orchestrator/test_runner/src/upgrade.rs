@@ -1,5 +1,5 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
-use crate::{happy_path_test, happy_path_test_v2, utils::*};
+use crate::{happy_path_test, happy_path_test_v2, utils::*, EVM_CHAIN_PREFIX};
 use clarity::Address as EthAddress;
 use cosmos_gravity::send::{
     MSG_BATCH_SEND_TO_ETH_TYPE_URL, MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL,
@@ -243,6 +243,7 @@ async fn check_attestations(grpc_client: QueryClient<Channel>, expected_attestat
             nonce: 0,
             height: 0,
             use_v1_key: false,
+            evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
         })
         .await
         .expect("Failed to get attestations pre-upgrade")

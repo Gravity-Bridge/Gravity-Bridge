@@ -65,13 +65,14 @@ pub async fn relay_logic_calls(
     ethereum_key: EthPrivateKey,
     web3: &Web3,
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_contract_address: EthAddress,
     gravity_id: String,
     config: RelayerConfig,
 ) {
     let our_ethereum_address = ethereum_key.to_address();
 
-    let latest_calls = get_latest_logic_calls(grpc_client).await;
+    let latest_calls = get_latest_logic_calls(grpc_client, evm_chain_prefix).await;
     trace!("Latest Logic calls {:?}", latest_calls);
     if latest_calls.is_err() {
         return;
@@ -82,6 +83,7 @@ pub async fn relay_logic_calls(
     for call in latest_calls {
         let sigs = get_logic_call_signatures(
             grpc_client,
+            evm_chain_prefix,
             call.invalidation_id.clone(),
             call.invalidation_nonce,
         )

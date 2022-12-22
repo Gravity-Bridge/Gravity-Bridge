@@ -6,6 +6,7 @@ use gravity_proto::gravity::{
     MsgErc20DeployedClaim, QueryAttestationsRequest, QueryDenomToErc20Request,
 };
 use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
+use orchestrator::ethereum_event_watcher::get_evm_chain_prefix;
 use prost::{bytes::BytesMut, Message};
 use std::{
     process::exit,
@@ -17,6 +18,7 @@ use web30::types::SendTxOption;
 pub async fn deploy_erc20_representation(
     args: DeployErc20RepresentationOpts,
     address_prefix: String,
+    evm_chain_prefix: Option<String>,
 ) {
     let grpc_url = args.cosmos_grpc;
     let ethereum_rpc = args.ethereum_rpc;
@@ -26,6 +28,10 @@ pub async fn deploy_erc20_representation(
     let connections =
         create_rpc_connections(address_prefix, Some(grpc_url), Some(ethereum_rpc), TIMEOUT).await;
     let web3 = connections.web3.unwrap();
+    let evm_chain_prefix = match evm_chain_prefix {
+        Some(val) => val,
+        None => get_evm_chain_prefix(&web3).await,
+    };
     let contact = connections.contact.unwrap();
 
     let mut grpc = connections.grpc.unwrap();
@@ -47,6 +53,7 @@ pub async fn deploy_erc20_representation(
 
     let res = grpc
         .denom_to_erc20(QueryDenomToErc20Request {
+            evm_chain_prefix: evm_chain_prefix.to_string(),
             denom: denom.clone(),
         })
         .await;
@@ -95,6 +102,7 @@ pub async fn deploy_erc20_representation(
             loop {
                 let res = grpc
                     .denom_to_erc20(QueryDenomToErc20Request {
+                        evm_chain_prefix: evm_chain_prefix.to_string(),
                         denom: denom.clone(),
                     })
                     .await;
@@ -119,6 +127,7 @@ pub async fn deploy_erc20_representation(
                             nonce: 0,
                             height: 0,
                             use_v1_key: false,
+                            evm_chain_prefix: evm_chain_prefix.to_string(),
                         })
                         .await;
                     match attestations {
@@ -191,6 +200,7 @@ mod tests {
                 nonce: 0,
                 height: 0,
                 use_v1_key: false,
+                evm_chain_prefix: "bsc".to_string(),
             })
             .await
             .unwrap();

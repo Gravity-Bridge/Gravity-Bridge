@@ -110,6 +110,7 @@ pub struct UnhaltBridgeProposalJson {
     pub title: String,
     pub description: String,
     pub target_nonce: u64,
+    pub evm_chain_prefix: String,
 }
 impl From<UnhaltBridgeProposalJson> for UnhaltBridgeProposal {
     fn from(v: UnhaltBridgeProposalJson) -> Self {
@@ -117,6 +118,7 @@ impl From<UnhaltBridgeProposalJson> for UnhaltBridgeProposal {
             title: v.title,
             description: v.description,
             target_nonce: v.target_nonce,
+            evm_chain_prefix: v.evm_chain_prefix,
         }
     }
 }
@@ -210,6 +212,7 @@ pub struct IbcMetadataProposalJson {
     description: String,
     metadata: MetadataJson,
     ibc_denom: String,
+    evm_chain_prefix: String,
 }
 impl From<IbcMetadataProposalJson> for IbcMetadataProposal {
     fn from(v: IbcMetadataProposalJson) -> Self {
@@ -218,6 +221,7 @@ impl From<IbcMetadataProposalJson> for IbcMetadataProposal {
             description: v.description,
             ibc_denom: v.ibc_denom,
             metadata: Some(v.metadata.into()),
+            evm_chain_prefix: v.evm_chain_prefix,
         }
     }
 }

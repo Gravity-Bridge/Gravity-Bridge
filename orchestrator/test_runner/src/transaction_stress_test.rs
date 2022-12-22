@@ -1,4 +1,6 @@
-use crate::{get_fee, one_eth, one_eth_128, one_hundred_eth, utils::*, TOTAL_TIMEOUT};
+use crate::{
+    get_fee, one_eth, one_eth_128, one_hundred_eth, utils::*, EVM_CHAIN_PREFIX, TOTAL_TIMEOUT,
+};
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::{
     query::get_pending_send_to_eth,
@@ -80,9 +82,13 @@ pub async fn transaction_stress_test(
     // we make sure that this user withdraws absolutely zero tokens
     let mut rng = rand::thread_rng();
     let user_who_cancels = user_keys.choose(&mut rng).unwrap();
-    let pending = get_pending_send_to_eth(&mut grpc_client, user_who_cancels.cosmos_address)
-        .await
-        .unwrap();
+    let pending = get_pending_send_to_eth(
+        &mut grpc_client,
+        EVM_CHAIN_PREFIX.as_str(),
+        user_who_cancels.cosmos_address,
+    )
+    .await
+    .unwrap();
     // if batch creation is made automatic this becomes a race condition we'll have to consider
     assert!(pending.transfers_in_batches.is_empty());
     assert!(!pending.unbatched_transfers.is_empty());
@@ -95,6 +101,7 @@ pub async fn transaction_stress_test(
     // cancel all outgoing transactions for this user
     for tx in pending.unbatched_transfers {
         let res = cancel_send_to_eth(
+            EVM_CHAIN_PREFIX.as_str(),
             user_who_cancels.cosmos_key,
             bridge_fee.clone(),
             contact,
@@ -108,9 +115,13 @@ pub async fn transaction_stress_test(
     contact.wait_for_next_block(TIMEOUT).await.unwrap();
 
     // check that the cancelation worked
-    let pending = get_pending_send_to_eth(&mut grpc_client, user_who_cancels.cosmos_address)
-        .await
-        .unwrap();
+    let pending = get_pending_send_to_eth(
+        &mut grpc_client,
+        EVM_CHAIN_PREFIX.as_str(),
+        user_who_cancels.cosmos_address,
+    )
+    .await
+    .unwrap();
     info!("{:?}", pending);
     assert!(pending.transfers_in_batches.is_empty());
     assert!(pending.unbatched_transfers.is_empty());
@@ -123,12 +134,17 @@ pub async fn transaction_stress_test(
             break;
         }
     }
-    let pending = get_pending_send_to_eth(&mut grpc_client, victim.unwrap().cosmos_address)
-        .await
-        .unwrap();
+    let pending = get_pending_send_to_eth(
+        &mut grpc_client,
+        EVM_CHAIN_PREFIX.as_str(),
+        victim.unwrap().cosmos_address,
+    )
+    .await
+    .unwrap();
     // try to cancel the victims transactions and ensure failure
     for tx in pending.unbatched_transfers {
         let res = cancel_send_to_eth(
+            EVM_CHAIN_PREFIX.as_str(),
             user_who_cancels.cosmos_key,
             bridge_fee.clone(),
             contact,
@@ -140,9 +156,15 @@ pub async fn transaction_stress_test(
 
     for denom in denoms {
         info!("Requesting batch for {}", denom);
-        let res = send_request_batch(keys[0].validator_key, denom, Some(get_fee(None)), contact)
-            .await
-            .unwrap();
+        let res = send_request_batch(
+            EVM_CHAIN_PREFIX.as_str(),
+            keys[0].validator_key,
+            denom,
+            Some(get_fee(None)),
+            contact,
+        )
+        .await
+        .unwrap();
         info!("batch request response is {:?}", res);
     }
 
@@ -393,6 +415,7 @@ pub async fn lock_funds_in_pool(
                 amount: 1u8.into(),
             };
             let res = send_to_eth(
+                EVM_CHAIN_PREFIX.as_str(),
                 c_key,
                 e_dest_addr,
                 send_coin,
@@ -415,6 +438,7 @@ pub async fn lock_funds_in_pool(
 
                 info!("Requesting batch for {}", denom);
                 let res = send_request_batch(
+                    EVM_CHAIN_PREFIX.as_str(),
                     validator_keys[0].validator_key,
                     denom,
                     Some(get_fee(None)),

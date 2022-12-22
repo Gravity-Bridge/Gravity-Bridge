@@ -7,7 +7,7 @@ use crate::{
         lock_funds_in_pool, prep_users_for_deposit, test_bulk_send_to_cosmos,
     },
     utils::*,
-    TOTAL_TIMEOUT,
+    EVM_CHAIN_PREFIX, TOTAL_TIMEOUT,
 };
 use clarity::Address as EthAddress;
 use cosmos_gravity::{query::get_gravity_params, send::send_request_batch};
@@ -102,9 +102,15 @@ pub async fn batch_timeout_test(
 
     for denom in denoms {
         info!("Requesting batch for {}", denom);
-        let res = send_request_batch(keys[0].validator_key, denom, Some(get_fee(None)), contact)
-            .await
-            .unwrap();
+        let res = send_request_batch(
+            EVM_CHAIN_PREFIX.as_str(),
+            keys[0].validator_key,
+            denom,
+            Some(get_fee(None)),
+            contact,
+        )
+        .await
+        .unwrap();
         info!("batch request response is {:?}", res);
     }
 

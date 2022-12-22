@@ -3,7 +3,7 @@
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{vote_yes_on_proposals, ValidatorKeys};
-use crate::{get_deposit, get_fee, TOTAL_TIMEOUT};
+use crate::{get_deposit, get_fee, EVM_CHAIN_PREFIX, TOTAL_TIMEOUT};
 use clarity::Address;
 use cosmos_gravity::proposals::submit_ibc_metadata_proposal;
 use deep_space::Contact;
@@ -134,6 +134,7 @@ pub async fn submit_and_pass_ibc_metadata_proposal(
         description: "IBC METADATA!".to_string(),
         ibc_denom: denom,
         metadata: Some(metadata),
+        evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
     };
     let res = submit_ibc_metadata_proposal(
         proposal_content,
@@ -160,6 +161,7 @@ async fn submit_and_fail_ibc_metadata_proposal(
         description: "IBC METADATA!".to_string(),
         ibc_denom: denom,
         metadata: Some(metadata),
+        evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
     };
     let res = submit_ibc_metadata_proposal(
         proposal_content,

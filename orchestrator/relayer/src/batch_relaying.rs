@@ -38,12 +38,18 @@ pub async fn relay_batches(
     ethereum_key: EthPrivateKey,
     web3: &Web3,
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_contract_address: EthAddress,
     gravity_id: String,
     config: RelayerConfig,
 ) {
-    let possible_batches =
-        get_batches_and_signatures(current_valset.clone(), grpc_client, gravity_id.clone()).await;
+    let possible_batches = get_batches_and_signatures(
+        current_valset.clone(),
+        grpc_client,
+        evm_chain_prefix,
+        gravity_id.clone(),
+    )
+    .await;
 
     trace!("possible batches {:?}", possible_batches);
 
@@ -70,19 +76,26 @@ pub async fn relay_batches(
 async fn get_batches_and_signatures(
     current_valset: Valset,
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_id: String,
 ) -> HashMap<EthAddress, Vec<SubmittableBatch>> {
-    let latest_batches = if let Ok(lb) = get_latest_transaction_batches(grpc_client).await {
-        lb
-    } else {
-        return HashMap::new();
-    };
+    let latest_batches =
+        if let Ok(lb) = get_latest_transaction_batches(grpc_client, evm_chain_prefix).await {
+            lb
+        } else {
+            return HashMap::new();
+        };
     trace!("Latest batches {:?}", latest_batches);
 
     let mut possible_batches = HashMap::new();
     for batch in latest_batches {
-        let sigs =
-            get_transaction_batch_signatures(grpc_client, batch.nonce, batch.token_contract).await;
+        let sigs = get_transaction_batch_signatures(
+            grpc_client,
+            evm_chain_prefix,
+            batch.nonce,
+            batch.token_contract,
+        )
+        .await;
         trace!("Got sigs {:?}", sigs);
         if let Ok(sigs) = sigs {
             // this checks that the signatures for the batch are actually possible to submit to the chain

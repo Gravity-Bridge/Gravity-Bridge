@@ -95,6 +95,8 @@ pub struct UnhaltBridgeProposal {
     pub description: ::prost::alloc::string::String,
     #[prost(uint64, tag = "4")]
     pub target_nonce: u64,
+    #[prost(string, tag = "5")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 /// AirdropProposal defines a custom governance proposal type that allows an airdrop to occur in a decentralized
 /// fashion. A list of destination addresses and an amount per airdrop recipient is provided. The funds for this
@@ -132,6 +134,8 @@ pub struct IbcMetadataProposal {
     pub metadata: ::core::option::Option<cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata>,
     #[prost(string, tag = "4")]
     pub ibc_denom: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 /// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
 /// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
@@ -199,6 +203,8 @@ pub struct MsgValsetConfirm {
     pub eth_address: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
     pub signature: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgValsetConfirmResponse {}
@@ -224,6 +230,8 @@ pub struct MsgSendToEth {
     pub amount: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
     #[prost(message, optional, tag = "4")]
     pub bridge_fee: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+    #[prost(string, tag = "5")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgSendToEthResponse {}
@@ -242,6 +250,8 @@ pub struct MsgRequestBatch {
     pub sender: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub denom: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgRequestBatchResponse {}
@@ -265,6 +275,8 @@ pub struct MsgConfirmBatch {
     pub orchestrator: ::prost::alloc::string::String,
     #[prost(string, tag = "5")]
     pub signature: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgConfirmBatchResponse {}
@@ -288,6 +300,8 @@ pub struct MsgConfirmLogicCall {
     pub orchestrator: ::prost::alloc::string::String,
     #[prost(string, tag = "5")]
     pub signature: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgConfirmLogicCallResponse {}
@@ -312,6 +326,8 @@ pub struct MsgSendToCosmosClaim {
     pub cosmos_receiver: ::prost::alloc::string::String,
     #[prost(string, tag = "7")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgSendToCosmosClaimResponse {}
@@ -370,6 +386,8 @@ pub struct MsgErc20DeployedClaim {
     pub decimals: u64,
     #[prost(string, tag = "8")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgErc20DeployedClaimResponse {}
@@ -387,6 +405,8 @@ pub struct MsgLogicCallExecutedClaim {
     pub invalidation_nonce: u64,
     #[prost(string, tag = "5")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgLogicCallExecutedClaimResponse {}
@@ -408,6 +428,8 @@ pub struct MsgValsetUpdatedClaim {
     pub reward_token: ::prost::alloc::string::String,
     #[prost(string, tag = "7")]
     pub orchestrator: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgValsetUpdatedClaimResponse {}
@@ -420,6 +442,8 @@ pub struct MsgCancelSendToEth {
     pub transaction_id: u64,
     #[prost(string, tag = "2")]
     pub sender: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgCancelSendToEthResponse {}
@@ -435,6 +459,8 @@ pub struct MsgSubmitBadSignatureEvidence {
     pub signature: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub sender: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct MsgSubmitBadSignatureEvidenceResponse {}
@@ -1197,7 +1223,10 @@ pub struct QueryParamsResponse {
     pub params: ::core::option::Option<Params>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct QueryCurrentValsetRequest {}
+pub struct QueryCurrentValsetRequest {
+    #[prost(string, tag = "1")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
+}
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryCurrentValsetResponse {
     #[prost(message, optional, tag = "1")]
@@ -1207,6 +1236,8 @@ pub struct QueryCurrentValsetResponse {
 pub struct QueryValsetRequestRequest {
     #[prost(uint64, tag = "1")]
     pub nonce: u64,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryValsetRequestResponse {
@@ -1219,6 +1250,8 @@ pub struct QueryValsetConfirmRequest {
     pub nonce: u64,
     #[prost(string, tag = "2")]
     pub address: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryValsetConfirmResponse {
@@ -1229,6 +1262,8 @@ pub struct QueryValsetConfirmResponse {
 pub struct QueryValsetConfirmsByNonceRequest {
     #[prost(uint64, tag = "1")]
     pub nonce: u64,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryValsetConfirmsByNonceResponse {
@@ -1236,7 +1271,10 @@ pub struct QueryValsetConfirmsByNonceResponse {
     pub confirms: ::prost::alloc::vec::Vec<MsgValsetConfirm>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct QueryLastValsetRequestsRequest {}
+pub struct QueryLastValsetRequestsRequest {
+    #[prost(string, tag = "1")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
+}
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryLastValsetRequestsResponse {
     #[prost(message, repeated, tag = "1")]
@@ -1246,14 +1284,21 @@ pub struct QueryLastValsetRequestsResponse {
 pub struct QueryLastPendingValsetRequestByAddrRequest {
     #[prost(string, tag = "1")]
     pub address: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryLastPendingValsetRequestByAddrResponse {
     #[prost(message, repeated, tag = "1")]
     pub valsets: ::prost::alloc::vec::Vec<Valset>,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct QueryBatchFeeRequest {}
+pub struct QueryBatchFeeRequest {
+    #[prost(string, tag = "1")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
+}
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryBatchFeeResponse {
     #[prost(message, repeated, tag = "1")]
@@ -1263,6 +1308,8 @@ pub struct QueryBatchFeeResponse {
 pub struct QueryLastPendingBatchRequestByAddrRequest {
     #[prost(string, tag = "1")]
     pub address: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryLastPendingBatchRequestByAddrResponse {
@@ -1273,6 +1320,8 @@ pub struct QueryLastPendingBatchRequestByAddrResponse {
 pub struct QueryLastPendingLogicCallByAddrRequest {
     #[prost(string, tag = "1")]
     pub address: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryLastPendingLogicCallByAddrResponse {
@@ -1280,14 +1329,20 @@ pub struct QueryLastPendingLogicCallByAddrResponse {
     pub call: ::prost::alloc::vec::Vec<OutgoingLogicCall>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct QueryOutgoingTxBatchesRequest {}
+pub struct QueryOutgoingTxBatchesRequest {
+    #[prost(string, tag = "1")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
+}
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryOutgoingTxBatchesResponse {
     #[prost(message, repeated, tag = "1")]
     pub batches: ::prost::alloc::vec::Vec<OutgoingTxBatch>,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
-pub struct QueryOutgoingLogicCallsRequest {}
+pub struct QueryOutgoingLogicCallsRequest {
+    #[prost(string, tag = "1")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
+}
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryOutgoingLogicCallsResponse {
     #[prost(message, repeated, tag = "1")]
@@ -1299,6 +1354,8 @@ pub struct QueryBatchRequestByNonceRequest {
     pub nonce: u64,
     #[prost(string, tag = "2")]
     pub contract_address: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryBatchRequestByNonceResponse {
@@ -1311,6 +1368,8 @@ pub struct QueryBatchConfirmsRequest {
     pub nonce: u64,
     #[prost(string, tag = "2")]
     pub contract_address: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryBatchConfirmsResponse {
@@ -1323,6 +1382,8 @@ pub struct QueryLogicConfirmsRequest {
     pub invalidation_id: ::prost::alloc::vec::Vec<u8>,
     #[prost(uint64, tag = "2")]
     pub invalidation_nonce: u64,
+    #[prost(string, tag = "3")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryLogicConfirmsResponse {
@@ -1333,16 +1394,22 @@ pub struct QueryLogicConfirmsResponse {
 pub struct QueryLastEventNonceByAddrRequest {
     #[prost(string, tag = "1")]
     pub address: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryLastEventNonceByAddrResponse {
     #[prost(uint64, tag = "1")]
     pub event_nonce: u64,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryErc20ToDenomRequest {
     #[prost(string, tag = "1")]
     pub erc20: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryErc20ToDenomResponse {
@@ -1355,6 +1422,8 @@ pub struct QueryErc20ToDenomResponse {
 pub struct QueryDenomToErc20Request {
     #[prost(string, tag = "1")]
     pub denom: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryDenomToErc20Response {
@@ -1373,6 +1442,8 @@ pub struct QueryLastObservedEthBlockRequest {
     /// Note that queries before the Mercury upgrade at height 1282013 must set this to true
     #[prost(bool, tag = "1")]
     pub use_v1_key: bool,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryLastObservedEthBlockResponse {
@@ -1391,6 +1462,8 @@ pub struct QueryLastObservedEthNonceRequest {
     /// Note that queries before the Mercury upgrade at height 1282013 must set this to true
     #[prost(bool, tag = "1")]
     pub use_v1_key: bool,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryLastObservedEthNonceResponse {
@@ -1398,6 +1471,8 @@ pub struct QueryLastObservedEthNonceResponse {
     /// the bridge is inactive
     #[prost(uint64, tag = "1")]
     pub nonce: u64,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 /// QueryAttestationsRequest defines the request structure for getting recent
 /// attestations with optional query parameters. By default, a limited set of
@@ -1429,6 +1504,8 @@ pub struct QueryAttestationsRequest {
     /// Note that queries before the Mercury upgrade at height 1282013 must set this to true
     #[prost(bool, tag = "6")]
     pub use_v1_key: bool,
+    #[prost(string, tag = "7")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryAttestationsResponse {
@@ -1475,6 +1552,8 @@ pub struct QueryDelegateKeysByOrchestratorAddressResponse {
 pub struct QueryPendingSendToEth {
     #[prost(string, tag = "1")]
     pub sender_address: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct QueryPendingSendToEthResponse {

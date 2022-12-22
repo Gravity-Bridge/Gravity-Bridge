@@ -25,6 +25,9 @@ pub struct Opts {
     /// Set the address prefix for the Cosmos chain
     #[clap(short, long, default_value = "gravity")]
     pub address_prefix: String,
+    /// optional evm_chain_prefix, this can be set from querying chain_id
+    #[clap(short, long)]
+    pub evm_chain_prefix: Option<String>,
     #[clap(subcommand)]
     pub subcmd: SubCommand,
 }

@@ -3,9 +3,9 @@
 //!
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::{test_erc20_deposit_panic, test_erc20_deposit_result};
-use crate::utils::*;
 use crate::MINER_ADDRESS;
 use crate::{get_fee, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
+use crate::{utils::*, EVM_CHAIN_PREFIX};
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
@@ -122,6 +122,7 @@ pub async fn pause_bridge_test(
     };
     let amount = amount - 5u64.into();
     send_to_eth(
+        EVM_CHAIN_PREFIX.as_str(),
         user_keys.cosmos_key,
         user_keys.eth_address,
         Coin {
@@ -135,6 +136,7 @@ pub async fn pause_bridge_test(
     .await
     .unwrap();
     let res = send_request_batch(
+        EVM_CHAIN_PREFIX.as_str(),
         keys[0].orch_key,
         token_name.clone(),
         Some(get_fee(None)),
@@ -204,6 +206,7 @@ pub async fn pause_bridge_test(
 
     // now we make sure our tokens in the batch queue make it across
     send_request_batch(
+        EVM_CHAIN_PREFIX.as_str(),
         keys[0].orch_key,
         token_name.clone(),
         Some(get_fee(None)),

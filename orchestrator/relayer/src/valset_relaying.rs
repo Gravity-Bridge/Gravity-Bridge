@@ -32,6 +32,7 @@ pub async fn relay_valsets(
     ethereum_key: EthPrivateKey,
     web3: &Web3,
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_contract_address: EthAddress,
     gravity_id: String,
     config: RelayerConfig,
@@ -43,10 +44,11 @@ pub async fn relay_valsets(
     // power we actually need to submit validator set B with validators x/y/e in
     // order to know exactly which one we must iterate over the history in find_latest_valid_valset()
 
-    let latest_cosmos_valset_nonce = match get_latest_cosmos_valset_nonce(grpc_client).await {
-        Some(n) => n,
-        None => return,
-    };
+    let latest_cosmos_valset_nonce =
+        match get_latest_cosmos_valset_nonce(grpc_client, evm_chain_prefix).await {
+            Some(n) => n,
+            None => return,
+        };
 
     // the latest cosmos validator set that it is possible to submit given the constraints
     // of the validator set currently in the bridge
@@ -54,6 +56,7 @@ pub async fn relay_valsets(
         latest_cosmos_valset_nonce,
         &current_valset,
         grpc_client,
+        evm_chain_prefix,
         &gravity_id,
     )
     .await
@@ -160,6 +163,7 @@ async fn find_latest_valid_valset(
     latest_nonce_on_cosmos: u64,
     current_valset: &Valset,
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_id: &str,
 ) -> Result<(Valset, Vec<ValsetConfirmResponse>), GravityError> {
     // we only use the latest valsets endpoint to get a starting point, from there we will iterate
@@ -172,11 +176,12 @@ async fn find_latest_valid_valset(
     // this is used to display the state of the last validator set to fail signature checks
     let mut last_error = None;
     while latest_nonce > current_valset.nonce {
-        let valset = get_valset(grpc_client, latest_nonce).await;
+        let valset = get_valset(grpc_client, evm_chain_prefix, latest_nonce).await;
         if let Ok(Some(valset)) = valset {
             // check that we got the right valset, should never occur
             assert_eq!(valset.nonce, latest_nonce);
-            let confirms = get_all_valset_confirms(grpc_client, latest_nonce).await;
+            let confirms =
+                get_all_valset_confirms(grpc_client, evm_chain_prefix, latest_nonce).await;
             if let Ok(confirms) = confirms {
                 // search for invalid confirms, should never occur
                 for confirm in confirms.iter() {
@@ -278,8 +283,9 @@ async fn should_relay_valset(
 /// backwards from, that is provided by getting the latest 5 and going from there
 async fn get_latest_cosmos_valset_nonce(
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
 ) -> Option<u64> {
-    let latest_valsets = get_latest_valsets(grpc_client).await;
+    let latest_valsets = get_latest_valsets(grpc_client, evm_chain_prefix).await;
     match latest_valsets {
         Ok(latest_valsets) => {
             if latest_valsets.is_empty() {

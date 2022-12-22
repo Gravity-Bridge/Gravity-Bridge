@@ -4,6 +4,7 @@ use crate::get_fee;
 use crate::ADDRESS_PREFIX;
 use crate::COSMOS_NODE_GRPC;
 use crate::ETH_NODE;
+use crate::EVM_CHAIN_PREFIX;
 use crate::STAKING_TOKEN;
 use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_PRIVATE_KEY};
@@ -366,6 +367,7 @@ pub async fn start_orchestrators(
                 web30,
                 contact,
                 grpc_client,
+                EVM_CHAIN_PREFIX.as_str(),
                 gravity_address,
                 params.gravity_id,
                 get_fee(None),
@@ -411,6 +413,7 @@ pub async fn submit_false_claims(
             cosmos_receiver: cosmos_receiver.to_string(),
             ethereum_sender: ethereum_sender.to_string(),
             orchestrator: orch_addr.to_string(),
+            evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
         };
         info!("Oracle number {} submitting false deposit {:?}", i, claim);
         let msg_url = "/gravity.v1.MsgSendToCosmosClaim";

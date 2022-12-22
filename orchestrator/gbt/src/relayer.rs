@@ -11,6 +11,7 @@ use gravity_utils::connection_prep::{
 };
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::RelayerConfig;
+use orchestrator::ethereum_event_watcher::get_evm_chain_prefix;
 use relayer::main_loop::all_relayer_loops;
 use relayer::main_loop::TIMEOUT;
 use std::path::Path;
@@ -19,6 +20,7 @@ use std::process::exit;
 pub async fn relayer(
     args: RelayerOpts,
     address_prefix: String,
+    evm_chain_prefix: Option<String>,
     home_dir: &Path,
     config: RelayerConfig,
 ) {
@@ -69,6 +71,10 @@ pub async fn relayer(
 
     let contact = connections.contact.clone().unwrap();
     let web3 = connections.web3.unwrap();
+    let evm_chain_prefix = match evm_chain_prefix {
+        Some(val) => val,
+        None => get_evm_chain_prefix(&web3).await,
+    };
     let mut grpc = connections.grpc.unwrap();
 
     // check if the cosmos node is syncing, if so wait for it
@@ -124,6 +130,7 @@ pub async fn relayer(
         web3,
         contact,
         grpc,
+        &evm_chain_prefix,
         contract_address,
         params.gravity_id,
         args.fees,

@@ -104,6 +104,9 @@ lazy_static! {
     // LOCAL ETHEREUM CONSTANTS
     static ref ETH_NODE: String =
         env::var("ETH_NODE").unwrap_or_else(|_| "http://localhost:8545".to_owned());
+
+    static ref EVM_CHAIN_PREFIX: String =
+        env::var("EVM_CHAIN_PREFIX").unwrap_or_else(|_| "bsc".to_owned());
 }
 
 /// this value reflects the contents of /tests/container-scripts/setup-validator.sh
@@ -331,7 +334,15 @@ pub async fn main() {
             return;
         } else if test_type == "RELAY_MARKET" {
             info!("Starting relay market tests!");
-            relay_market_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            relay_market_test(
+                &web30,
+                grpc_client,
+                EVM_CHAIN_PREFIX.as_str(),
+                &contact,
+                keys,
+                gravity_address,
+            )
+            .await;
             return;
         } else if test_type == "ORCHESTRATOR_KEYS" {
             info!("Starting orchestrator key update tests!");

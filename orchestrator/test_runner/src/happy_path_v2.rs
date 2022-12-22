@@ -8,6 +8,7 @@ use crate::utils::get_event_nonce_safe;
 use crate::utils::get_user_key;
 use crate::utils::send_one_eth;
 use crate::utils::start_orchestrators;
+use crate::EVM_CHAIN_PREFIX;
 use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
@@ -131,6 +132,7 @@ pub async fn send_to_eth_and_confirm(
 ) -> bool {
     let amount_to_bridge = send_to_eth_coin.amount.clone();
     let res = send_to_eth(
+        EVM_CHAIN_PREFIX.as_str(),
         cosmos_key,
         eth_receiver,
         send_to_eth_coin,
@@ -236,6 +238,7 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
         let res = grpc_client
             .denom_to_erc20(QueryDenomToErc20Request {
                 denom: token_metadata.base.clone(),
+                evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
             })
             .await;
         if let Ok(res) = res {

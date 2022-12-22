@@ -91,6 +91,7 @@ pub async fn set_gravity_delegate_addresses(
 /// as a single message
 #[allow(clippy::too_many_arguments)]
 pub async fn send_valset_confirms(
+    evm_chain_prefix: &str,
     contact: &Contact,
     eth_private_key: EthPrivateKey,
     fee: Coin,
@@ -117,6 +118,7 @@ pub async fn send_valset_confirms(
             eth_address: our_eth_address.to_string(),
             nonce: valset.nonce,
             signature: bytes_to_hex_str(&eth_signature.to_bytes()),
+            evm_chain_prefix: evm_chain_prefix.to_string(),
         };
         let msg = Msg::new(MSG_VALSET_CONFIRM_TYPE_URL, confirm);
         messages.push(msg);
@@ -136,6 +138,7 @@ pub async fn send_valset_confirms(
 
 /// Send in a confirmation for a specific transaction batch
 pub async fn send_batch_confirm(
+    evm_chain_prefix: &str,
     contact: &Contact,
     eth_private_key: EthPrivateKey,
     fee: Coin,
@@ -163,6 +166,7 @@ pub async fn send_batch_confirm(
             eth_signer: our_eth_address.to_string(),
             nonce: batch.nonce,
             signature: bytes_to_hex_str(&eth_signature.to_bytes()),
+            evm_chain_prefix: evm_chain_prefix.to_string(),
         };
         let msg = Msg::new(MSG_CONFIRM_BATCH_TYPE_URL, confirm);
         messages.push(msg);
@@ -180,6 +184,7 @@ pub async fn send_batch_confirm(
 
 /// Send in a confirmation for a specific logic call
 pub async fn send_logic_call_confirm(
+    evm_chain_prefix: &str,
     contact: &Contact,
     eth_private_key: EthPrivateKey,
     fee: Coin,
@@ -207,6 +212,7 @@ pub async fn send_logic_call_confirm(
             signature: bytes_to_hex_str(&eth_signature.to_bytes()),
             invalidation_id: bytes_to_hex_str(&call.invalidation_id),
             invalidation_nonce: call.invalidation_nonce,
+            evm_chain_prefix: evm_chain_prefix.to_string(),
         };
         let msg = Msg::new(MSG_CONFIRM_LOGIC_CALL_TYPE_URL, confirm);
         messages.push(msg);
@@ -254,6 +260,7 @@ pub async fn send_ethereum_claims(
             cosmos_receiver: deposit.destination,
             ethereum_sender: deposit.sender.to_string(),
             orchestrator: our_address.to_string(),
+            evm_chain_prefix: evm_chain_prefix.to_string(),
         };
         let msg = Msg::new(MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL, claim);
         assert!(unordered_msgs.insert(deposit.event_nonce, msg).is_none());
@@ -280,6 +287,7 @@ pub async fn send_ethereum_claims(
             symbol: deploy.symbol,
             decimals: deploy.decimals as u64,
             orchestrator: our_address.to_string(),
+            evm_chain_prefix: evm_chain_prefix.to_string(),
         };
         let msg = Msg::new(MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL, claim);
         assert!(unordered_msgs.insert(deploy.event_nonce, msg).is_none());
@@ -291,6 +299,7 @@ pub async fn send_ethereum_claims(
             invalidation_id: call.invalidation_id,
             invalidation_nonce: call.invalidation_nonce,
             orchestrator: our_address.to_string(),
+            evm_chain_prefix: evm_chain_prefix.to_string(),
         };
         let msg = Msg::new(MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, claim);
         assert!(unordered_msgs.insert(call.event_nonce, msg).is_none());
@@ -304,6 +313,7 @@ pub async fn send_ethereum_claims(
             reward_amount: valset.reward_amount.to_string(),
             reward_token: valset.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),
             orchestrator: our_address.to_string(),
+            evm_chain_prefix: evm_chain_prefix.to_string(),
         };
         let msg = Msg::new(MSG_VALSET_UPDATED_CLAIM_TYPE_URL, claim);
         assert!(unordered_msgs.insert(valset.event_nonce, msg).is_none());
@@ -338,6 +348,7 @@ pub async fn send_ethereum_claims(
 /// one is the fee to be sent to Ethereum, which must be the same denom as the amount
 /// the other is the Cosmos chain fee, which can be any allowed coin
 pub async fn send_to_eth(
+    evm_chain_prefix: &str,
     private_key: impl PrivateKey,
     destination: EthAddress,
     amount: Coin,
@@ -378,6 +389,7 @@ pub async fn send_to_eth(
         eth_dest: destination.to_string(),
         amount: Some(amount.into()),
         bridge_fee: Some(bridge_fee.clone().into()),
+        evm_chain_prefix: evm_chain_prefix.to_string(),
     };
 
     let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);
@@ -393,6 +405,7 @@ pub async fn send_to_eth(
 }
 
 pub async fn send_request_batch(
+    evm_chain_prefix: &str,
     private_key: impl PrivateKey,
     denom: String,
     fee: Option<Coin>,
@@ -403,6 +416,7 @@ pub async fn send_request_batch(
     let msg_request_batch = MsgRequestBatch {
         sender: our_address.to_string(),
         denom,
+        evm_chain_prefix: evm_chain_prefix.to_string(),
     };
     let msg = Msg::new(MSG_REQUEST_BATCH_TYPE_URL, msg_request_batch);
 
@@ -424,6 +438,7 @@ pub async fn send_request_batch(
 /// Sends evidence of a bad signature to the chain to slash the malicious validator
 /// who signed an invalid message with their Ethereum key
 pub async fn submit_bad_signature_evidence(
+    evm_chain_prefix: &str,
     private_key: impl PrivateKey,
     fee: Coin,
     contact: &Contact,
@@ -438,6 +453,7 @@ pub async fn submit_bad_signature_evidence(
         subject: Some(any),
         signature: bytes_to_hex_str(&signature.to_bytes()),
         sender: our_address.to_string(),
+        evm_chain_prefix: evm_chain_prefix.to_string(),
     };
 
     let msg = Msg::new(
@@ -458,6 +474,7 @@ pub async fn submit_bad_signature_evidence(
 /// Cancels a user provided SendToEth transaction, provided it's not already in a batch
 /// you should check with `QueryPendingSendToEth`
 pub async fn cancel_send_to_eth(
+    evm_chain_prefix: &str,
     private_key: impl PrivateKey,
     fee: Coin,
     contact: &Contact,
@@ -468,6 +485,7 @@ pub async fn cancel_send_to_eth(
     let msg_cancel_send_to_eth = MsgCancelSendToEth {
         transaction_id,
         sender: our_address.to_string(),
+        evm_chain_prefix: evm_chain_prefix.to_string(),
     };
 
     let msg = Msg::new(MSG_CANCEL_SEND_TO_ETH_TYPE_URL, msg_cancel_send_to_eth);

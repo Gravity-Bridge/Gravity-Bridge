@@ -22,6 +22,7 @@ pub const BLOCKS_TO_SEARCH: u128 = 5_000u128;
 /// it then uses the Ethereum indexes to determine what block the last entry
 pub async fn get_last_checked_block(
     grpc_client: GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     our_cosmos_address: CosmosAddress,
     prefix: String,
     gravity_contract_address: Address,
@@ -30,10 +31,14 @@ pub async fn get_last_checked_block(
     let mut grpc_client = grpc_client;
 
     let latest_block = get_block_number_with_retry(web3).await;
-    let mut last_event_nonce: Uint256 =
-        get_last_event_nonce_with_retry(&mut grpc_client, our_cosmos_address, prefix)
-            .await
-            .into();
+    let mut last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
+        &mut grpc_client,
+        our_cosmos_address,
+        prefix,
+        evm_chain_prefix.to_string(),
+    )
+    .await
+    .into();
 
     // zero indicates this oracle has never submitted an event before since there is no
     // zero event nonce (it's pre-incremented in the solidity contract) we have to go

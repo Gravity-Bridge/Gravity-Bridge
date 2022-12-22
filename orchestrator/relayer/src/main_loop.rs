@@ -33,6 +33,7 @@ pub async fn all_relayer_loops(
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_contract_address: EthAddress,
     gravity_id: String,
     fee: Option<Coin>,
@@ -55,6 +56,7 @@ pub async fn all_relayer_loops(
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
+        evm_chain_prefix,
         gravity_contract_address,
         gravity_id,
         config.clone(),
@@ -81,6 +83,7 @@ pub async fn relayer_main_loop(
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_contract_address: EthAddress,
     gravity_id: String,
     relayer_config: RelayerConfig,
@@ -113,6 +116,7 @@ pub async fn relayer_main_loop(
                 &contact,
                 &web3,
                 &mut grpc_client,
+                &evm_chain_prefix,
                 &relayer_config,
                 ethereum_key.to_address(),
                 cosmos_key,
@@ -129,8 +133,13 @@ pub async fn relayer_main_loop(
             != BatchRelayingMode::Altruistic
             || should_relay_altruistic;
 
-        let current_valset =
-            find_latest_valset(&mut grpc_client, gravity_contract_address, &web3).await;
+        let current_valset = find_latest_valset(
+            &mut grpc_client,
+            &evm_chain_prefix,
+            gravity_contract_address,
+            &web3,
+        )
+        .await;
         if current_valset.is_err() {
             error!("Could not get current valset! {:?}", current_valset);
             continue;
@@ -143,6 +152,7 @@ pub async fn relayer_main_loop(
                 ethereum_key,
                 &web3,
                 &mut grpc_client,
+                &evm_chain_prefix,
                 gravity_contract_address,
                 gravity_id.clone(),
                 relayer_config.clone(),
@@ -167,6 +177,7 @@ pub async fn relayer_main_loop(
                 ethereum_key,
                 &web3,
                 &mut grpc_client,
+                &evm_chain_prefix,
                 gravity_contract_address,
                 gravity_id.clone(),
                 relayer_config.clone(),
@@ -179,6 +190,7 @@ pub async fn relayer_main_loop(
             ethereum_key,
             &web3,
             &mut grpc_client,
+            &evm_chain_prefix,
             gravity_contract_address,
             gravity_id.clone(),
             relayer_config.clone(),

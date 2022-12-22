@@ -18,16 +18,28 @@ pub async fn get_last_event_nonce_with_retry(
     client: &mut GravityQueryClient<Channel>,
     our_cosmos_address: CosmosAddress,
     prefix: String,
+    evm_chain_prefix: String,
 ) -> u64 {
-    let mut res =
-        get_last_event_nonce_for_validator(client, our_cosmos_address, prefix.clone()).await;
+    let mut res = get_last_event_nonce_for_validator(
+        client,
+        our_cosmos_address,
+        prefix.clone(),
+        evm_chain_prefix.clone(),
+    )
+    .await;
     while res.is_err() {
         error!(
             "Failed to get last event nonce, is the Cosmos GRPC working? {:?}",
             res
         );
         sleep(RETRY_TIME).await;
-        res = get_last_event_nonce_for_validator(client, our_cosmos_address, prefix.clone()).await;
+        res = get_last_event_nonce_for_validator(
+            client,
+            our_cosmos_address,
+            prefix.clone(),
+            evm_chain_prefix.clone(),
+        )
+        .await;
     }
     res.unwrap()
 }

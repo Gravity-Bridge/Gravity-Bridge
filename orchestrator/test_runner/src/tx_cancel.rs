@@ -1,6 +1,7 @@
 use crate::happy_path::test_erc20_deposit_panic;
 use crate::one_eth;
 use crate::utils::*;
+use crate::EVM_CHAIN_PREFIX;
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_pending_send_to_eth;
 use cosmos_gravity::send::cancel_send_to_eth;
@@ -54,6 +55,7 @@ pub async fn send_to_eth_and_cancel(
 
     // Generate the tx (this part is working for me)
     let res = send_to_eth(
+        EVM_CHAIN_PREFIX.as_str(),
         user_keys.cosmos_key,
         user_keys.eth_address,
         Coin {
@@ -73,13 +75,18 @@ pub async fn send_to_eth_and_cancel(
         }
     }
 
-    let res = get_pending_send_to_eth(&mut grpc_client, user_keys.cosmos_address)
-        .await
-        .unwrap();
+    let res = get_pending_send_to_eth(
+        &mut grpc_client,
+        EVM_CHAIN_PREFIX.as_str(),
+        user_keys.cosmos_address,
+    )
+    .await
+    .unwrap();
 
     let send_to_eth_id = res.unbatched_transfers[0].id;
 
     cancel_send_to_eth(
+        EVM_CHAIN_PREFIX.as_str(),
         user_keys.cosmos_key,
         bridge_denom_fee,
         contact,
@@ -88,9 +95,13 @@ pub async fn send_to_eth_and_cancel(
     .await
     .unwrap();
 
-    let res = get_pending_send_to_eth(&mut grpc_client, user_keys.cosmos_address)
-        .await
-        .unwrap();
+    let res = get_pending_send_to_eth(
+        &mut grpc_client,
+        EVM_CHAIN_PREFIX.as_str(),
+        user_keys.cosmos_address,
+    )
+    .await
+    .unwrap();
 
     assert!(res.unbatched_transfers.is_empty());
     info!("Successfully canceled SendToEth!")

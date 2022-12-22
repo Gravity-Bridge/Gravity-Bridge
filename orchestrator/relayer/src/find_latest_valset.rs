@@ -13,6 +13,7 @@ use web30::client::Web3;
 /// this will take longer.
 pub async fn find_latest_valset(
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_contract_address: Address,
     web3: &Web3,
 ) -> Result<Valset, GravityError> {
@@ -54,9 +55,12 @@ pub async fn find_latest_valset(
                         reward_amount: event.reward_amount,
                         reward_token: event.reward_token,
                     };
-                    let cosmos_chain_valset =
-                        cosmos_gravity::query::get_valset(grpc_client, latest_eth_valset.nonce)
-                            .await?;
+                    let cosmos_chain_valset = cosmos_gravity::query::get_valset(
+                        grpc_client,
+                        evm_chain_prefix,
+                        latest_eth_valset.nonce,
+                    )
+                    .await?;
                     check_if_valsets_differ(cosmos_chain_valset, &latest_eth_valset);
                     return Ok(latest_eth_valset);
                 }

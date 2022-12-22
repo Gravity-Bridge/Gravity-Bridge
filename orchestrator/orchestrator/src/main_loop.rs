@@ -2,7 +2,7 @@
 //! that can only be run by a validator. This single binary the 'Orchestrator' runs not only these two rules but also the untrusted role of a relayer, that does not need any permissions and has it's
 //! own crate and binary so that anyone may run it.
 
-use crate::ethereum_event_watcher::{get_block_delay, get_evm_chain_prefix};
+use crate::ethereum_event_watcher::get_block_delay;
 use crate::{ethereum_event_watcher::check_for_events, oracle_resync::get_last_checked_block};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{address::Address as EthAddress, Uint256};
@@ -57,6 +57,7 @@ pub async fn orchestrator_main_loop(
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_contract_address: EthAddress,
     gravity_id: String,
     user_fee_amount: Coin,
@@ -69,10 +70,12 @@ pub async fn orchestrator_main_loop(
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
+        &evm_chain_prefix,
         gravity_contract_address,
         fee.clone(),
     );
     let b = eth_signer_main_loop(
+        &evm_chain_prefix,
         cosmos_key,
         ethereum_key,
         contact.clone(),
@@ -85,6 +88,7 @@ pub async fn orchestrator_main_loop(
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
+        &evm_chain_prefix,
         gravity_contract_address,
         gravity_id,
         Some(fee.clone()),
@@ -108,6 +112,7 @@ pub async fn eth_oracle_main_loop(
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     gravity_contract_address: EthAddress,
     fee: Coin,
 ) {
@@ -115,9 +120,9 @@ pub async fn eth_oracle_main_loop(
     let long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
     let net_version = get_net_version_with_retry(&web3).await;
     let block_delay = get_block_delay(net_version);
-    let emv_chain_prefix = get_evm_chain_prefix(net_version);
     let mut last_checked_block: Uint256 = get_last_checked_block(
         grpc_client.clone(),
+        evm_chain_prefix,
         our_cosmos_address,
         contact.get_prefix(),
         gravity_contract_address,
@@ -190,6 +195,7 @@ pub async fn eth_oracle_main_loop(
             &mut grpc_client,
             our_cosmos_address,
             contact.get_prefix().clone(),
+            evm_chain_prefix.to_string(),
         )
         .await
         .into();
@@ -200,6 +206,7 @@ pub async fn eth_oracle_main_loop(
             last_checked_event = last_event_nonce;
             last_checked_block = get_last_checked_block(
                 grpc_client.clone(),
+                evm_chain_prefix,
                 our_cosmos_address,
                 contact.get_prefix(),
                 gravity_contract_address,
@@ -211,7 +218,7 @@ pub async fn eth_oracle_main_loop(
         // Relays events from Ethereum -> Cosmos
         match check_for_events(
             &web3,
-            &emv_chain_prefix,
+            &evm_chain_prefix,
             &contact,
             &mut grpc_client,
             gravity_contract_address,
@@ -253,6 +260,7 @@ pub async fn eth_oracle_main_loop(
 /// since these are provided directly by a trusted Cosmsos node they can simply be assumed to be
 /// valid and signed off on.
 pub async fn eth_signer_main_loop(
+    evm_chain_prefix: &str,
     cosmos_key: CosmosPrivateKey,
     ethereum_key: EthPrivateKey,
     contact: Contact,
@@ -321,6 +329,7 @@ pub async fn eth_signer_main_loop(
             &mut grpc_client,
             our_cosmos_address,
             contact.get_prefix(),
+            evm_chain_prefix.to_string(),
         )
         .await
         {
@@ -334,6 +343,7 @@ pub async fn eth_signer_main_loop(
                         valsets[0].nonce
                     );
                     let res = send_valset_confirms(
+                        evm_chain_prefix,
                         &contact,
                         ethereum_key,
                         fee.clone(),
@@ -355,6 +365,7 @@ pub async fn eth_signer_main_loop(
         // sign the last unsigned batch, TODO check if we already have signed this
         match get_oldest_unsigned_transaction_batches(
             &mut grpc_client,
+            evm_chain_prefix,
             our_cosmos_address,
             contact.get_prefix(),
         )
@@ -371,6 +382,7 @@ pub async fn eth_signer_main_loop(
                     );
 
                     let res = send_batch_confirm(
+                        evm_chain_prefix,
                         &contact,
                         ethereum_key,
                         fee.clone(),
@@ -391,6 +403,7 @@ pub async fn eth_signer_main_loop(
 
         match get_oldest_unsigned_logic_calls(
             &mut grpc_client,
+            evm_chain_prefix,
             our_cosmos_address,
             contact.get_prefix(),
         )
@@ -406,6 +419,7 @@ pub async fn eth_signer_main_loop(
                         last_unsigned_calls[0].invalidation_nonce
                     );
                     let res = send_logic_call_confirm(
+                        evm_chain_prefix,
                         &contact,
                         ethereum_key,
                         fee.clone(),
