@@ -1,7 +1,7 @@
 use clarity::{Address, Uint256};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::event_signatures::*;
-use gravity_utils::types::ValsetUpdatedEvent;
+use gravity_utils::types::{EthereumEvent, ValsetUpdatedEvent};
 use gravity_utils::{error::GravityError, types::Valset};
 use tonic::transport::Channel;
 use web30::client::Web3;

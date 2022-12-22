@@ -242,13 +242,13 @@ func (k Keeper) GetAttestationMapping(ctx sdk.Context, evmChainPrefix string) (a
 // cb should return true to stop iteration, false to continue
 func (k Keeper) IterateAttestations(ctx sdk.Context, evmChainPrefix string, reverse bool, cb func([]byte, types.Attestation) bool) {
 	store := ctx.KVStore(k.storeKey)
-	prefix := types.AppendChainPrefix(types.OracleAttestationKey, evmChainPrefix)
+	keyPrefix := types.AppendChainPrefix(types.OracleAttestationKey, evmChainPrefix)
 
 	var iter storetypes.Iterator
 	if reverse {
-		iter = store.ReverseIterator(prefixRange(prefix))
+		iter = store.ReverseIterator(prefixRange(keyPrefix))
 	} else {
-		iter = store.Iterator(prefixRange(prefix))
+		iter = store.Iterator(prefixRange(keyPrefix))
 	}
 	defer func(iter storetypes.Iterator) {
 		err := iter.Close()

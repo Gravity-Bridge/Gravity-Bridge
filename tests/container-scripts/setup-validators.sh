@@ -50,6 +50,10 @@ jq '.app_state.gravity.evm_chains = [{"evm_chain": {"evm_chain_prefix": "gravity
 
 mv /edited-genesis.json /genesis.json
 
+VESTING_AMOUNT="1000000000stake"
+START_VESTING=$(expr $(date +%s) + 300) # Start vesting 5 minutes from now
+END_VESTING=$(expr $START_VESTING + 600) # End vesting 10 minutes from now, giving a 5 minute window for the test to work
+
 # Sets up an arbitrary number of validators on a single machine by manipulating
 # the --home parameter on gaiad
 for i in $(seq 1 $NODES);
@@ -70,6 +74,12 @@ mkdir -p /validator$i/config/
 mv /genesis.json /validator$i/config/genesis.json
 $BIN add-genesis-account $ARGS $VALIDATOR_KEY $ALLOCATION
 $BIN add-genesis-account $ARGS $ORCHESTRATOR_KEY $ALLOCATION
+
+# Add a vesting account
+$BIN keys add $ARGS vesting$i 2>> /vesting-phrases
+VESTING_KEY=$($BIN keys show vesting$i -a $ARGS)
+$BIN add-genesis-account $ARGS $VESTING_KEY --vesting-amount $VESTING_AMOUNT --vesting-start-time $START_VESTING --vesting-end-time $END_VESTING $VESTING_AMOUNT
+
 # move the genesis back out
 mv /validator$i/config/genesis.json /genesis.json
 done
