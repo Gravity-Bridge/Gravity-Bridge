@@ -20,6 +20,7 @@ const (
 	FlagUseV1Key  = "use-v1-key"
 )
 
+// GetQueryCmd bundles all the query subcmds together so they appear under `gravity query` or `gravity q`
 func GetQueryCmd() *cobra.Command {
 	// nolint: exhaustruct
 	gravityQueryCmd := &cobra.Command{
@@ -34,7 +35,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetValsetRequest(),
 		CmdGetValsetConfirm(),
 		CmdGetPendingValsetRequest(),
-		CmdGetPendingOutgoingTxBatchRequest(),
+		CmdGetPendingOutgoingTXBatchRequest(),
 		CmdGetPendingSendToEth(),
 		GetCmdPendingIbcAutoForwards(),
 		CmdGetAttestations(),
@@ -46,6 +47,7 @@ func GetQueryCmd() *cobra.Command {
 	return gravityQueryCmd
 }
 
+// CmdGetCurrentValset fetches the current validator set
 func CmdGetCurrentValset() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -73,6 +75,7 @@ func CmdGetCurrentValset() *cobra.Command {
 	return cmd
 }
 
+// CmdGetValsetRequest fetches a historical valset with the given valset nonce, for use in Ethereum relaying
 func CmdGetValsetRequest() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -108,6 +111,7 @@ func CmdGetValsetRequest() *cobra.Command {
 	return cmd
 }
 
+// CmdGetValsetConfirm fetches a confirm for the valset with the given nonce made by the given validator
 func CmdGetValsetConfirm() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -144,6 +148,7 @@ func CmdGetValsetConfirm() *cobra.Command {
 	return cmd
 }
 
+// CmdGetPendingValsetRequest fetches the valset to be confirmed next by the given validator, if any exists
 func CmdGetPendingValsetRequest() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -174,7 +179,8 @@ func CmdGetPendingValsetRequest() *cobra.Command {
 	return cmd
 }
 
-func CmdGetPendingOutgoingTxBatchRequest() *cobra.Command {
+// CmdGetPendingOutgoingTXBatchRequest fetches the batch to be confirmed next by the given validator, if any exists
+func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-batch-request [bech32 orchestrator address] [evm chain prefix]",
@@ -204,6 +210,7 @@ func CmdGetPendingOutgoingTxBatchRequest() *cobra.Command {
 	return cmd
 }
 
+// CmdGetPendingSendToEth fetches all pending Sends to Ethereum made by the given address
 func CmdGetPendingSendToEth() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -234,6 +241,7 @@ func CmdGetPendingSendToEth() *cobra.Command {
 	return cmd
 }
 
+// GetCmdPendingIbcAutoForwards fetches the next IBC auto forwards to be executed, up to an optional limit
 func GetCmdPendingIbcAutoForwards() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
@@ -269,6 +277,8 @@ func GetCmdPendingIbcAutoForwards() *cobra.Command {
 	return cmd
 }
 
+// CmdGetAttestations fetches the most recently created Attestations in the store (only the most recent 1000 are available)
+// up to an optional limit
 func CmdGetAttestations() *cobra.Command {
 	short := "Query gravity current and historical attestations (only the most recent 1000 are stored)"
 	long := short + "\n\n" + "Optionally provide a limit to reduce the number of attestations returned" + "\n" +
@@ -347,6 +357,8 @@ func CmdGetAttestations() *cobra.Command {
 	return cmd
 }
 
+// CmdGetLastObservedEthBlock fetches the Ethereum block height for the most recent "observed" Attestation, indicating
+// the state of Cosmos consensus on the submitted Ethereum events
 // nolint: dupl
 func CmdGetLastObservedEthBlock() *cobra.Command {
 	short := "Query the last observed Ethereum block height"
@@ -389,6 +401,8 @@ func CmdGetLastObservedEthBlock() *cobra.Command {
 	return cmd
 }
 
+// CmdGetLastObservedEthNonce fetches the Ethereum event nonce for the most recent "observed" Attestation, indicating
+// // the state of Cosmos consensus on the submitted Ethereum events
 // nolint: dupl
 func CmdGetLastObservedEthNonce() *cobra.Command {
 	short := "Query the last observed Ethereum event nonce"
@@ -431,6 +445,7 @@ func CmdGetLastObservedEthNonce() *cobra.Command {
 	return cmd
 }
 
+// GetCmdQueryParams fetches the current Gravity module params
 func GetCmdQueryParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "params",

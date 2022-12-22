@@ -9,17 +9,49 @@
 
 use super::ValsetMember;
 use crate::error::GravityError;
+use crate::num_conversion::downcast_uint256;
 use clarity::constants::ZERO_ADDRESS;
 use clarity::Address as EthAddress;
 use deep_space::utils::bytes_to_hex_str;
-use deep_space::Address as CosmosAddress;
+use deep_space::{Address as CosmosAddress, Address, Msg};
+use gravity_proto::gravity::{
+    MsgBatchSendToEthClaim, MsgErc20DeployedClaim, MsgLogicCallExecutedClaim, MsgSendToCosmosClaim,
+    MsgValsetUpdatedClaim,
+};
 use num256::Uint256;
 use std::unimplemented;
 use web30::types::Log;
 
+// gravity msg type urls
+pub const MSG_BATCH_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgBatchSendToEthClaim";
+pub const MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgSendToCosmosClaim";
+pub const MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgERC20DeployedClaim";
+pub const MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgLogicCallExecutedClaim";
+pub const MSG_VALSET_UPDATED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgValsetUpdatedClaim";
+
 /// Used to limit the length of variable length user provided inputs like
 /// ERC20 names and deposit destination strings
 const ONE_MEGABYTE: usize = 1000usize.pow(3);
+
+/// A type of event which must be sent to Gravity by Orchestrators in a claim, parsed from the
+/// ethereum logs
+pub trait EthereumEvent
+where
+    Self: Sized,
+{
+    fn get_block_height(&self) -> u64;
+    fn get_event_nonce(&self) -> u64;
+    /// Parses an event out of an Ethereum Log
+    fn from_log(input: &Log) -> Result<Self, GravityError>;
+    /// Parses multiple events of the same type out of an Ethereum Log
+    fn from_logs(input: &[Log]) -> Result<Vec<Self>, GravityError>;
+    /// Pares down a list of events to ones after the given `event_nonce`
+    fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self>;
+    /// If the event with the given `event_nonce` is in `input`, returns the block that occurred on
+    fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256>;
+    /// Creates the associated Msg for the given claim, e.g. ValsetUpdated -> MsgValsetUpdatedClaim
+    fn to_claim_msg(self, orchestrator: Address, evm_chain_prefix: String) -> Msg;
+}
 
 /// A parsed struct representing the Ethereum event fired by the Gravity contract
 /// when the validator set is updated.
@@ -179,10 +211,20 @@ impl ValsetUpdatedEvent {
             reward_token,
         })
     }
+}
+
+impl EthereumEvent for ValsetUpdatedEvent {
+    fn get_block_height(&self) -> u64 {
+        downcast_uint256(self.block_height.clone()).unwrap()
+    }
+
+    fn get_event_nonce(&self) -> u64 {
+        self.event_nonce
+    }
 
     /// This function is not an abi compatible bytes parser, but it's actually
     /// not hard at all to extract data like this by hand.
-    pub fn from_log(input: &Log) -> Result<ValsetUpdatedEvent, GravityError> {
+    fn from_log(input: &Log) -> Result<ValsetUpdatedEvent, GravityError> {
         // we have one indexed event so we should find two indexes, one the event itself
         // and one the indexed nonce
         if input.topics.get(1).is_none() {
@@ -226,7 +268,7 @@ impl ValsetUpdatedEvent {
         })
     }
 
-    pub fn from_logs(input: &[Log]) -> Result<Vec<ValsetUpdatedEvent>, GravityError> {
+    fn from_logs(input: &[Log]) -> Result<Vec<ValsetUpdatedEvent>, GravityError> {
         let mut res = Vec::new();
         for item in input {
             res.push(ValsetUpdatedEvent::from_log(item)?);
@@ -235,7 +277,7 @@ impl ValsetUpdatedEvent {
     }
     /// returns all values in the array with event nonces greater
     /// than the provided value
-    pub fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
+    fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
         let mut ret = Vec::new();
         for item in input {
             if item.event_nonce > event_nonce {
@@ -245,13 +287,27 @@ impl ValsetUpdatedEvent {
         ret
     }
     // gets the Ethereum block for the given nonce
-    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+    fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
                 return Some(item.block_height.clone());
             }
         }
         None
+    }
+
+    fn to_claim_msg(self, orchestrator: Address, evm_chain_prefix: String) -> Msg {
+        let claim = MsgValsetUpdatedClaim {
+            event_nonce: self.event_nonce,
+            valset_nonce: self.valset_nonce,
+            eth_block_height: self.get_block_height(),
+            members: self.members.iter().map(|v| v.into()).collect(),
+            reward_amount: self.reward_amount.to_string(),
+            reward_token: self.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),
+            orchestrator: orchestrator.to_string(),
+            evm_chain_prefix,
+        };
+        Msg::new(MSG_VALSET_UPDATED_CLAIM_TYPE_URL, claim)
     }
 }
 
@@ -273,8 +329,16 @@ pub struct TransactionBatchExecutedEvent {
     pub event_nonce: u64,
 }
 
-impl TransactionBatchExecutedEvent {
-    pub fn from_log(input: &Log) -> Result<TransactionBatchExecutedEvent, GravityError> {
+impl EthereumEvent for TransactionBatchExecutedEvent {
+    fn get_block_height(&self) -> u64 {
+        downcast_uint256(self.block_height.clone()).unwrap()
+    }
+
+    fn get_event_nonce(&self) -> u64 {
+        self.event_nonce
+    }
+
+    fn from_log(input: &Log) -> Result<TransactionBatchExecutedEvent, GravityError> {
         if let (Some(batch_nonce_data), Some(erc20_data)) =
             (input.topics.get(1), input.topics.get(2))
         {
@@ -318,7 +382,7 @@ impl TransactionBatchExecutedEvent {
             ))
         }
     }
-    pub fn from_logs(input: &[Log]) -> Result<Vec<TransactionBatchExecutedEvent>, GravityError> {
+    fn from_logs(input: &[Log]) -> Result<Vec<TransactionBatchExecutedEvent>, GravityError> {
         let mut res = Vec::new();
         for item in input {
             res.push(TransactionBatchExecutedEvent::from_log(item)?);
@@ -327,7 +391,7 @@ impl TransactionBatchExecutedEvent {
     }
     /// returns all values in the array with event nonces greater
     /// than the provided value
-    pub fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
+    fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
         let mut ret = Vec::new();
         for item in input {
             if item.event_nonce > event_nonce {
@@ -338,13 +402,25 @@ impl TransactionBatchExecutedEvent {
     }
 
     // gets the Ethereum block for the given nonce
-    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+    fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
                 return Some(item.block_height.clone());
             }
         }
         None
+    }
+
+    fn to_claim_msg(self, orchestrator: Address, evm_chain_prefix: String) -> Msg {
+        let claim = MsgBatchSendToEthClaim {
+            event_nonce: self.event_nonce,
+            eth_block_height: self.get_block_height(),
+            token_contract: self.erc20.to_string(),
+            batch_nonce: self.batch_nonce,
+            orchestrator: orchestrator.to_string(),
+            evm_chain_prefix,
+        };
+        Msg::new(MSG_BATCH_SEND_TO_ETH_TYPE_URL, claim)
     }
 }
 
@@ -386,60 +462,6 @@ struct SendToCosmosEventData {
 }
 
 impl SendToCosmosEvent {
-    pub fn from_log(input: &Log) -> Result<SendToCosmosEvent, GravityError> {
-        let topics = (input.topics.get(1), input.topics.get(2));
-        if let (Some(erc20_data), Some(sender_data)) = topics {
-            let erc20 = EthAddress::from_slice(&erc20_data[12..32])?;
-            let sender = EthAddress::from_slice(&sender_data[12..32])?;
-            let block_height = if let Some(bn) = input.block_number.clone() {
-                if bn > u64::MAX.into() {
-                    return Err(GravityError::InvalidEventLogError(
-                        "Block height overflow! probably incorrect parsing".to_string(),
-                    ));
-                } else {
-                    bn
-                }
-            } else {
-                return Err(GravityError::InvalidEventLogError(
-                    "Log does not have block number, we only search logs already in blocks?"
-                        .to_string(),
-                ));
-            };
-
-            let data = SendToCosmosEvent::decode_data_bytes(&input.data)?;
-            if data.event_nonce > u64::MAX.into() || block_height > u64::MAX.into() {
-                Err(GravityError::InvalidEventLogError(
-                    "Event nonce overflow, probably incorrect parsing".to_string(),
-                ))
-            } else {
-                let event_nonce: u64 = data.event_nonce.to_string().parse().unwrap();
-                let validated_destination = match data.destination.parse() {
-                    Ok(v) => Some(v),
-                    Err(_) => {
-                        if data.destination.len() < 1000 {
-                            warn!("Event nonce {} sends tokens to {} which is invalid bech32, these funds will be allocated to the community pool", event_nonce, data.destination);
-                        } else {
-                            warn!("Event nonce {} sends tokens to a destination which is invalid bech32, these funds will be allocated to the community pool", event_nonce);
-                        }
-                        None
-                    }
-                };
-                Ok(SendToCosmosEvent {
-                    erc20,
-                    sender,
-                    destination: data.destination,
-                    validated_destination,
-                    amount: data.amount,
-                    event_nonce,
-                    block_height,
-                })
-            }
-        } else {
-            Err(GravityError::InvalidEventLogError(
-                "Too few topics".to_string(),
-            ))
-        }
-    }
     fn decode_data_bytes(data: &[u8]) -> Result<SendToCosmosEventData, GravityError> {
         if data.len() < 4 * 32 {
             return Err(GravityError::InvalidEventLogError(
@@ -505,7 +527,72 @@ impl SendToCosmosEvent {
             })
         }
     }
-    pub fn from_logs(input: &[Log]) -> Result<Vec<SendToCosmosEvent>, GravityError> {
+}
+impl EthereumEvent for SendToCosmosEvent {
+    fn get_block_height(&self) -> u64 {
+        downcast_uint256(self.block_height.clone()).unwrap()
+    }
+
+    fn get_event_nonce(&self) -> u64 {
+        self.event_nonce
+    }
+
+    fn from_log(input: &Log) -> Result<SendToCosmosEvent, GravityError> {
+        let topics = (input.topics.get(1), input.topics.get(2));
+        if let (Some(erc20_data), Some(sender_data)) = topics {
+            let erc20 = EthAddress::from_slice(&erc20_data[12..32])?;
+            let sender = EthAddress::from_slice(&sender_data[12..32])?;
+            let block_height = if let Some(bn) = input.block_number.clone() {
+                if bn > u64::MAX.into() {
+                    return Err(GravityError::InvalidEventLogError(
+                        "Block height overflow! probably incorrect parsing".to_string(),
+                    ));
+                } else {
+                    bn
+                }
+            } else {
+                return Err(GravityError::InvalidEventLogError(
+                    "Log does not have block number, we only search logs already in blocks?"
+                        .to_string(),
+                ));
+            };
+
+            let data = SendToCosmosEvent::decode_data_bytes(&input.data)?;
+            if data.event_nonce > u64::MAX.into() || block_height > u64::MAX.into() {
+                Err(GravityError::InvalidEventLogError(
+                    "Event nonce overflow, probably incorrect parsing".to_string(),
+                ))
+            } else {
+                let event_nonce: u64 = data.event_nonce.to_string().parse().unwrap();
+                let validated_destination = match data.destination.parse() {
+                    Ok(v) => Some(v),
+                    Err(_) => {
+                        if data.destination.len() < 1000 {
+                            warn!("Event nonce {} sends tokens to {} which is invalid bech32, these funds will be allocated to the community pool", event_nonce, data.destination);
+                        } else {
+                            warn!("Event nonce {} sends tokens to a destination which is invalid bech32, these funds will be allocated to the community pool", event_nonce);
+                        }
+                        None
+                    }
+                };
+                Ok(SendToCosmosEvent {
+                    erc20,
+                    sender,
+                    destination: data.destination,
+                    validated_destination,
+                    amount: data.amount,
+                    event_nonce,
+                    block_height,
+                })
+            }
+        } else {
+            Err(GravityError::InvalidEventLogError(
+                "Too few topics".to_string(),
+            ))
+        }
+    }
+
+    fn from_logs(input: &[Log]) -> Result<Vec<SendToCosmosEvent>, GravityError> {
         let mut res = Vec::new();
         for item in input {
             res.push(SendToCosmosEvent::from_log(item)?);
@@ -514,7 +601,7 @@ impl SendToCosmosEvent {
     }
     /// returns all values in the array with event nonces greater
     /// than the provided value
-    pub fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
+    fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
         let mut ret = Vec::new();
         for item in input {
             if item.event_nonce > event_nonce {
@@ -525,13 +612,27 @@ impl SendToCosmosEvent {
     }
 
     // gets the Ethereum block for the given nonce
-    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+    fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
                 return Some(item.block_height.clone());
             }
         }
         None
+    }
+
+    fn to_claim_msg(self, orchestrator: Address, evm_chain_prefix: String) -> Msg {
+        let claim = MsgSendToCosmosClaim {
+            event_nonce: self.event_nonce,
+            eth_block_height: self.get_block_height(),
+            token_contract: self.erc20.to_string(),
+            amount: self.amount.to_string(),
+            cosmos_receiver: self.destination,
+            ethereum_sender: self.sender.to_string(),
+            orchestrator: orchestrator.to_string(),
+            evm_chain_prefix,
+        };
+        Msg::new(MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL, claim)
     }
 }
 
@@ -570,45 +671,7 @@ struct Erc20DeployedEventData {
     pub decimals: u8,
     pub event_nonce: u64,
 }
-
 impl Erc20DeployedEvent {
-    pub fn from_log(input: &Log) -> Result<Erc20DeployedEvent, GravityError> {
-        let token_contract = input.topics.get(1);
-        if let Some(new_token_contract_data) = token_contract {
-            let erc20 = EthAddress::from_slice(&new_token_contract_data[12..32])?;
-
-            let block_height = if let Some(bn) = input.block_number.clone() {
-                if bn > u64::MAX.into() {
-                    return Err(GravityError::InvalidEventLogError(
-                        "Event nonce overflow! probably incorrect parsing".to_string(),
-                    ));
-                } else {
-                    bn
-                }
-            } else {
-                return Err(GravityError::InvalidEventLogError(
-                    "Log does not have block number, we only search logs already in blocks?"
-                        .to_string(),
-                ));
-            };
-
-            let data = Erc20DeployedEvent::decode_data_bytes(&input.data)?;
-
-            Ok(Erc20DeployedEvent {
-                cosmos_denom: data.cosmos_denom,
-                name: data.name,
-                decimals: data.decimals,
-                event_nonce: data.event_nonce,
-                erc20_address: erc20,
-                symbol: data.symbol,
-                block_height,
-            })
-        } else {
-            Err(GravityError::InvalidEventLogError(
-                "Too few topics".to_string(),
-            ))
-        }
-    }
     fn decode_data_bytes(data: &[u8]) -> Result<Erc20DeployedEventData, GravityError> {
         if data.len() < 6 * 32 {
             return Err(GravityError::InvalidEventLogError(
@@ -800,7 +863,56 @@ impl Erc20DeployedEvent {
             event_nonce,
         })
     }
-    pub fn from_logs(input: &[Log]) -> Result<Vec<Erc20DeployedEvent>, GravityError> {
+}
+
+impl EthereumEvent for Erc20DeployedEvent {
+    fn get_block_height(&self) -> u64 {
+        downcast_uint256(self.block_height.clone()).unwrap()
+    }
+
+    fn get_event_nonce(&self) -> u64 {
+        self.event_nonce
+    }
+
+    fn from_log(input: &Log) -> Result<Erc20DeployedEvent, GravityError> {
+        let token_contract = input.topics.get(1);
+        if let Some(new_token_contract_data) = token_contract {
+            let erc20 = EthAddress::from_slice(&new_token_contract_data[12..32])?;
+
+            let block_height = if let Some(bn) = input.block_number.clone() {
+                if bn > u64::MAX.into() {
+                    return Err(GravityError::InvalidEventLogError(
+                        "Event nonce overflow! probably incorrect parsing".to_string(),
+                    ));
+                } else {
+                    bn
+                }
+            } else {
+                return Err(GravityError::InvalidEventLogError(
+                    "Log does not have block number, we only search logs already in blocks?"
+                        .to_string(),
+                ));
+            };
+
+            let data = Erc20DeployedEvent::decode_data_bytes(&input.data)?;
+
+            Ok(Erc20DeployedEvent {
+                cosmos_denom: data.cosmos_denom,
+                name: data.name,
+                decimals: data.decimals,
+                event_nonce: data.event_nonce,
+                erc20_address: erc20,
+                symbol: data.symbol,
+                block_height,
+            })
+        } else {
+            Err(GravityError::InvalidEventLogError(
+                "Too few topics".to_string(),
+            ))
+        }
+    }
+
+    fn from_logs(input: &[Log]) -> Result<Vec<Erc20DeployedEvent>, GravityError> {
         let mut res = Vec::new();
         for item in input {
             res.push(Erc20DeployedEvent::from_log(item)?);
@@ -809,7 +921,7 @@ impl Erc20DeployedEvent {
     }
     /// returns all values in the array with event nonces greater
     /// than the provided value
-    pub fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
+    fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
         let mut ret = Vec::new();
         for item in input {
             if item.event_nonce > event_nonce {
@@ -820,13 +932,28 @@ impl Erc20DeployedEvent {
     }
 
     // gets the Ethereum block for the given nonce
-    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+    fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
                 return Some(item.block_height.clone());
             }
         }
         None
+    }
+
+    fn to_claim_msg(self, orchestrator: Address, evm_chain_prefix: String) -> Msg {
+        let claim = MsgErc20DeployedClaim {
+            event_nonce: self.event_nonce,
+            eth_block_height: self.get_block_height(),
+            cosmos_denom: self.cosmos_denom,
+            token_contract: self.erc20_address.to_string(),
+            name: self.name,
+            symbol: self.symbol,
+            decimals: self.decimals as u64,
+            orchestrator: orchestrator.to_string(),
+            evm_chain_prefix,
+        };
+        Msg::new(MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL, claim)
     }
 }
 /// A parsed struct representing the Ethereum event fired when someone uses the Gravity
@@ -840,11 +967,19 @@ pub struct LogicCallExecutedEvent {
     pub block_height: Uint256,
 }
 
-impl LogicCallExecutedEvent {
-    pub fn from_log(_input: &Log) -> Result<LogicCallExecutedEvent, GravityError> {
+impl EthereumEvent for LogicCallExecutedEvent {
+    fn get_block_height(&self) -> u64 {
+        downcast_uint256(self.block_height.clone()).unwrap()
+    }
+
+    fn get_event_nonce(&self) -> u64 {
+        self.event_nonce
+    }
+
+    fn from_log(_input: &Log) -> Result<LogicCallExecutedEvent, GravityError> {
         unimplemented!()
     }
-    pub fn from_logs(input: &[Log]) -> Result<Vec<LogicCallExecutedEvent>, GravityError> {
+    fn from_logs(input: &[Log]) -> Result<Vec<LogicCallExecutedEvent>, GravityError> {
         let mut res = Vec::new();
         for item in input {
             res.push(LogicCallExecutedEvent::from_log(item)?);
@@ -853,7 +988,7 @@ impl LogicCallExecutedEvent {
     }
     /// returns all values in the array with event nonces greater
     /// than the provided value
-    pub fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
+    fn filter_by_event_nonce(event_nonce: u64, input: &[Self]) -> Vec<Self> {
         let mut ret = Vec::new();
         for item in input {
             if item.event_nonce > event_nonce {
@@ -864,13 +999,25 @@ impl LogicCallExecutedEvent {
     }
 
     // gets the Ethereum block for the given nonce
-    pub fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
+    fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
                 return Some(item.block_height.clone());
             }
         }
         None
+    }
+
+    fn to_claim_msg(self, orchestrator: Address, evm_chain_prefix: String) -> Msg {
+        let claim = MsgLogicCallExecutedClaim {
+            event_nonce: self.event_nonce,
+            eth_block_height: self.get_block_height(),
+            invalidation_id: self.invalidation_id,
+            invalidation_nonce: self.invalidation_nonce,
+            orchestrator: orchestrator.to_string(),
+            evm_chain_prefix,
+        };
+        Msg::new(MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, claim)
     }
 }
 

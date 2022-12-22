@@ -6,8 +6,8 @@ use gravity_utils::get_with_retry::get_block_number_with_retry;
 use gravity_utils::get_with_retry::RETRY_TIME;
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::types::{
-    Erc20DeployedEvent, LogicCallExecutedEvent, SendToCosmosEvent, TransactionBatchExecutedEvent,
-    ValsetUpdatedEvent,
+    Erc20DeployedEvent, EthereumEvent, LogicCallExecutedEvent, SendToCosmosEvent,
+    TransactionBatchExecutedEvent, ValsetUpdatedEvent,
 };
 use metrics_exporter::metrics_errors_counter;
 use tokio::time::sleep as delay_for;
