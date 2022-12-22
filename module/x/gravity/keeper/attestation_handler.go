@@ -389,7 +389,7 @@ func (a AttestationHandler) assertSentAmount(ctx sdk.Context, moduleAddr sdk.Acc
 	}
 }
 
-// mintEthereumOriginatedVouchers creates new "gravity0x..." vouchers for evm tokens and asserts both that the
+// mintEthereumOriginatedVouchers creates new "EvmChainPrefix0x..." vouchers for evm tokens and asserts both that the
 // supply of that voucher does not exceed Uint256 max value, and the minted balance is correct
 func (a AttestationHandler) mintEthereumOriginatedVouchers(
 	ctx sdk.Context, evmChainPrefix string, moduleAddr sdk.AccAddress, claim types.MsgSendToCosmosClaim, coin sdk.Coin,

@@ -18,11 +18,18 @@ import (
 
 // nolint: exhaustruct
 func TestHandleMsgSendToEth(t *testing.T) {
+
+	input := keeper.CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	ctx := input.Context
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
 	var (
 		userCosmosAddr, _                = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
 		blockTime                        = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		blockHeight            int64     = 200
-		denom                            = "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+		denom                            = evmChain.EvmChainPrefix + "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
 		startingCoinAmount, _            = sdk.NewIntFromString("150000000000000000000") // 150 ETH worth, required to reach above u64 limit (which is about 18 ETH)
 		sendAmount, _                    = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
 		feeAmount, _                     = sdk.NewIntFromString("5000000000000000000")   // 5 ETH
@@ -34,11 +41,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	)
 
 	// we start by depositing some funds into the users balance to send
-	input := keeper.CreateTestEnv(t)
-	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	ctx := input.Context
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 	h := NewHandler(input.GravityKeeper)
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, startingCoins))
 	input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, userCosmosAddr, startingCoins)
@@ -162,7 +165,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 
 	// and vouchers added to the account
 	balance := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountA)}, balance)
+	assert.Equal(t, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountA)}, balance)
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {
@@ -186,7 +189,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	}
 
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountA)}, balance)
+	assert.Equal(t, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountA)}, balance)
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {
@@ -211,21 +214,24 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	}
 
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountB)}, balance)
+	assert.Equal(t, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountB)}, balance)
 }
 
 // nolint: exhaustruct
 func TestEthereumBlacklist(t *testing.T) {
+
+	input, ctx := keeper.SetupFiveValChain(t)
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
 	var (
 		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		anyETHSender    = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
 		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		denom           = "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+		denom           = evmChain.EvmChainPrefix + "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
 		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		amountA, _      = sdk.NewIntFromString("50000000000000000000") // 50 ETH
 	)
-	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	h := NewHandler(input.GravityKeeper)
@@ -464,7 +470,7 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 		require.NotNil(t, a1)
 		// and vouchers not yet added to the account
 		balance1 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-		assert.NotEqual(t, sdk.Coins{sdk.NewInt64Coin("gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", 12)}, balance1)
+		assert.NotEqual(t, sdk.Coins{sdk.NewInt64Coin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", 12)}, balance1)
 	}
 
 	// when
@@ -481,7 +487,7 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 	require.NotNil(t, a2)
 	// and vouchers now added to the account
 	balance2 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewInt64Coin("gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", 12)}, balance2)
+	assert.Equal(t, sdk.Coins{sdk.NewInt64Coin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", 12)}, balance2)
 
 	// when
 	ctx = ctx.WithBlockTime(myBlockTime)
@@ -497,7 +503,7 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 	require.NotNil(t, a3)
 	// and no additional added to the account
 	balance3 := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewInt64Coin("gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", 12)}, balance3)
+	assert.Equal(t, sdk.Coins{sdk.NewInt64Coin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", 12)}, balance3)
 }
 
 // Tests sending funds to a native account and to that same account with a foreign prefix
