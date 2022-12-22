@@ -23,37 +23,45 @@ const EthereumChainPrefix string = "bsc"
 //
 // - Moving currently existing chain specific data to use the new keys that include chain prefix.
 func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.BinaryCodec) error {
+
 	ctx.Logger().Info("Pleiades Upgrade: Beginning the migrations for the gravity module")
 	store := ctx.KVStore(storeKey)
 
 	// TODO: insert Eth into new key for chain info, currently using bsc
-	updateKeysWithEthPrefix(store, v2.ValsetRequestKey)
-	updateKeysWithEthPrefix(store, v2.ValsetConfirmKey)
-	updateKeysWithEthPrefix(store, v2.OracleAttestationKey)
-	updateKeysWithEthPrefix(store, v2.OutgoingTXPoolKey)
-	updateKeysWithEthPrefix(store, v2.OutgoingTxBatchKey)
-	updateKeysWithEthPrefix(store, v2.BatchConfirmKey)
-	updateKeysWithEthPrefix(store, v2.LastEventNonceByValidatorKey)
-	updateKeysWithEthPrefix(store, v2.LastObservedEventNonceKey)
-	updateKeysWithEthPrefix(store, v2.KeyLastTXPoolID)
-	updateKeysWithEthPrefix(store, v2.KeyLastOutgoingBatchID)
-	updateKeysWithEthPrefix(store, v2.KeyOutgoingLogicCall)
-	updateKeysWithEthPrefix(store, v2.KeyOutgoingLogicConfirm)
-	updateKeysWithEthPrefix(store, v2.DenomToERC20Key)
-	updateKeysWithEthPrefix(store, v2.ERC20ToDenomKey)
-	updateKeysWithEthPrefix(store, v2.LastSlashedValsetNonce)
-	updateKeysWithEthPrefix(store, v2.LatestValsetNonce)
-	updateKeysWithEthPrefix(store, v2.LastSlashedBatchBlock)
-	updateKeysWithEthPrefix(store, v2.LastSlashedLogicCallBlock)
-	updateKeysWithEthPrefix(store, v2.LastObservedValsetKey)
 
+	// single key with chain
+	updateKeyPrefixToEvm(store, v2.KeyLastOutgoingBatchID, types.KeyLastOutgoingBatchID)
+	updateKeyPrefixToEvm(store, v2.LastObservedEventNonceKey, types.LastObservedEventNonceKey)
+	updateKeyPrefixToEvm(store, v2.LastObservedEthereumBlockHeightKey, types.LastObservedEvmBlockHeightKey)
+	updateKeyPrefixToEvm(store, v2.KeyLastTXPoolID, types.KeyLastTXPoolID)
+	updateKeyPrefixToEvm(store, v2.LastSlashedValsetNonce, types.LastSlashedValsetNonce)
+	updateKeyPrefixToEvm(store, v2.LatestValsetNonce, types.LatestValsetNonce)
+	updateKeyPrefixToEvm(store, v2.LastSlashedBatchBlock, types.LastSlashedBatchBlock)
+	updateKeyPrefixToEvm(store, v2.LastSlashedLogicCallBlock, types.LastSlashedLogicCallBlock)
+	updateKeyPrefixToEvm(store, v2.LastObservedValsetKey, types.LastObservedValsetKey)
+
+	// multi key with chain
+	updateKeysPrefixToEvm(store, v2.ValsetRequestKey, types.ValsetRequestKey)
+	updateKeysPrefixToEvm(store, v2.ValsetConfirmKey, types.ValsetConfirmKey)
+	updateKeysPrefixToEvm(store, v2.OracleAttestationKey, types.OracleAttestationKey)
+	updateKeysPrefixToEvm(store, v2.OutgoingTXPoolKey, types.OutgoingTXPoolKey)
+	updateKeysPrefixToEvm(store, v2.OutgoingTxBatchKey, types.OutgoingTxBatchKey)
+	updateKeysPrefixToEvm(store, v2.BatchConfirmKey, types.BatchConfirmKey)
+	updateKeysPrefixToEvm(store, v2.LastEventNonceByValidatorKey, types.LastEventNonceByValidatorKey)
+	updateKeysPrefixToEvm(store, v2.KeyOutgoingLogicCall, types.KeyOutgoingLogicCall)
+	updateKeysPrefixToEvm(store, v2.KeyOutgoingLogicConfirm, types.KeyOutgoingLogicConfirm)
+	updateKeysPrefixToEvm(store, v2.DenomToERC20Key, types.DenomToERC20Key)
+	updateKeysPrefixToEvm(store, v2.ERC20ToDenomKey, types.ERC20ToDenomKey)
 	updateKeysPrefixToEvm(store, v2.PastEthSignatureCheckpointKey, types.PastEvmSignatureCheckpointKey)
+
+	// single key no chain
+	updateKeyPrefixToEvmWithoutChain(store, v2.LastUnBondingBlockHeight, types.LastUnBondingBlockHeight)
+
+	// multi key no chain
 	updateKeysPrefixToEvmWithoutChain(store, v2.ValidatorByEthAddressKey, types.ValidatorByEthAddressKey)
 	updateKeysPrefixToEvmWithoutChain(store, v2.EthAddressByValidatorKey, types.EthAddressByValidatorKey)
-	updateKeyPrefixToEvm(store, v2.LastUnBondingBlockHeight, types.LastUnBondingBlockHeight)
-	updateKeyPrefixToEvm(store, v2.LastObservedEthereumBlockHeightKey, types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, EthereumChainPrefix))
-	updateKeyPrefixToEvm(store, v2.LastEventNonceByValidatorKey, types.AppendChainPrefix(types.LastEventNonceByValidatorKey, EthereumChainPrefix))
 
+	// attestion convert
 	convertAttestationKey := getAttestationConverter(ctx.Logger())
 	// Migrate all stored attestations by iterating over everything stored under the OracleAttestationKey
 	ctx.Logger().Info("Pleiades Upgrade: Beginning Attestation Upgrade")
@@ -169,32 +177,8 @@ func unpackAttestationClaim(att *types.Attestation, cdc codec.BinaryCodec) (type
 	}
 }
 
-func updateKeysWithEthPrefix(store storetypes.KVStore, keyPrefix []byte) {
-	prefixStore := prefix.NewStore(store, keyPrefix)
-	oldStoreIter := prefixStore.Iterator(nil, nil)
-	defer oldStoreIter.Close()
-
-	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
-		// Set new oldKey on store. Values don't change.
-		oldKey := oldStoreIter.Key()
-		newKey := types.AppendBytes([]byte(EthereumChainPrefix), oldKey)
-		prefixStore.Set(newKey, oldStoreIter.Value())
-		prefixStore.Delete(oldKey)
-	}
-}
-
 func updateKeysPrefixToEvm(store storetypes.KVStore, oldKeyPrefix, newKeyPrefix []byte) {
-	oldPrefixStore := prefix.NewStore(store, oldKeyPrefix)
-	oldStoreIter := oldPrefixStore.Iterator(nil, nil)
-	defer oldStoreIter.Close()
-
-	for ; oldStoreIter.Valid(); oldStoreIter.Next() {
-		// Set new oldKey on store. Values don't change.
-		oldKey := oldStoreIter.Key()
-		newKey := types.AppendBytes(newKeyPrefix, []byte(EthereumChainPrefix), oldKey)
-		store.Set(newKey, oldStoreIter.Value())
-		oldPrefixStore.Delete(oldKey)
-	}
+	updateKeysPrefixToEvmWithoutChain(store, oldKeyPrefix, types.AppendChainPrefix(newKeyPrefix, EthereumChainPrefix))
 }
 
 func updateKeysPrefixToEvmWithoutChain(store storetypes.KVStore, oldKeyPrefix, newKeyPrefix []byte) {
@@ -216,6 +200,10 @@ func updateKeysPrefixToEvmWithoutChain(store storetypes.KVStore, oldKeyPrefix, n
 }
 
 func updateKeyPrefixToEvm(store sdk.KVStore, oldKey, newKey []byte) {
+	updateKeyPrefixToEvmWithoutChain(store, oldKey, types.AppendChainPrefix(newKey, EthereumChainPrefix))
+}
+
+func updateKeyPrefixToEvmWithoutChain(store sdk.KVStore, oldKey, newKey []byte) {
 	// nothing change
 	if bytes.Equal(oldKey, newKey) {
 		return
