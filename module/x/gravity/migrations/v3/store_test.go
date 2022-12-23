@@ -39,6 +39,9 @@ import (
 const denom string = "graviton"
 
 func TestMigrateStoreKeys(t *testing.T) {
+
+	keeper.SetupTestConfig()
+
 	// create old prefixes KV store
 	gravityKey := sdk.NewKVStoreKey("gravity")
 	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))

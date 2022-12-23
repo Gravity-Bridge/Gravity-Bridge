@@ -37,6 +37,7 @@ import (
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
+	appconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 )
 
 // InvCheckPeriodPrimes A collection of all primes in (15, 200), for use with the crisis module's Invariant Check Period
@@ -52,7 +53,11 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := app.MakeEncodingConfig()
 
 	// prevent changing config
-	sdk.GetConfig().Seal()
+	cfg := sdk.GetConfig()
+	cfg.SetBech32PrefixForAccount(appconfig.Bech32PrefixAccAddr, appconfig.Bech32PrefixAccPub)
+	cfg.SetBech32PrefixForValidator(appconfig.Bech32PrefixValAddr, appconfig.Bech32PrefixValPub)
+	cfg.SetBech32PrefixForConsensusNode(appconfig.Bech32PrefixConsAddr, appconfig.Bech32PrefixConsPub)
+	cfg.Seal()
 
 	// nolint: exhaustruct
 	initClientCtx := client.Context{}.

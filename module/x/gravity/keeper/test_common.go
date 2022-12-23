@@ -397,9 +397,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 	return input, input.Context
 }
 
-// CreateTestEnv creates the keeper testing environment for gravity
-func CreateTestEnv(t *testing.T) TestInput {
-
+func SetupTestConfig() {
 	initConfig.Do(func() {
 		// Set config for testing only one
 		config := sdk.GetConfig()
@@ -408,6 +406,12 @@ func CreateTestEnv(t *testing.T) TestInput {
 		config.SetBech32PrefixForConsensusNode("gravityvalcons", "gravityvalconspub")
 		config.Seal()
 	})
+}
+
+// CreateTestEnv creates the keeper testing environment for gravity
+func CreateTestEnv(t *testing.T) TestInput {
+
+	SetupTestConfig()
 
 	t.Helper()
 
