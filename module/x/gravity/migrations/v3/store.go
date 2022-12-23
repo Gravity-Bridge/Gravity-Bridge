@@ -15,8 +15,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
-// change this to your current evm mainnet
-const EthereumChainPrefix string = "bsc"
+// change this to your current evm mainnet, by default it is your prev GravityDenomPrefix
+const EthereumChainPrefix string = types.GravityDenomPrefix
 
 // MigrateStore performs in-place store migrations from v2 to v3. The migration
 // includes:

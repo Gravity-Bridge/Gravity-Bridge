@@ -33,9 +33,10 @@ import (
 	ethermint "github.com/evmos/ethermint/crypto/hd"
 
 	"fmt"
+	"math/rand"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
-	"math/rand"
 )
 
 // InvCheckPeriodPrimes A collection of all primes in (15, 200), for use with the crisis module's Invariant Check Period
@@ -49,6 +50,10 @@ var InvCheckPeriodPrimes = []uint{17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := app.MakeEncodingConfig()
+
+	// prevent changing config
+	sdk.GetConfig().Seal()
+
 	// nolint: exhaustruct
 	initClientCtx := client.Context{}.
 		WithCodec(encodingConfig.Marshaler).

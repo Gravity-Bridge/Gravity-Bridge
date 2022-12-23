@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"bytes"
+	"sync"
 	"testing"
 	"time"
 
@@ -98,6 +99,8 @@ var (
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 	)
+
+	initConfig sync.Once
 )
 
 var (
@@ -396,6 +399,16 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 
 // CreateTestEnv creates the keeper testing environment for gravity
 func CreateTestEnv(t *testing.T) TestInput {
+
+	initConfig.Do(func() {
+		// Set config for testing only one
+		config := sdk.GetConfig()
+		config.SetBech32PrefixForAccount("gravity", "gravitypub")
+		config.SetBech32PrefixForValidator("gravityvaloper", "gravityvaloperpub")
+		config.SetBech32PrefixForConsensusNode("gravityvalcons", "gravityvalconspub")
+		config.Seal()
+	})
+
 	t.Helper()
 
 	// Initialize store keys
@@ -614,6 +627,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 		ibcKeeper.ChannelKeeper, marshaler, keyBech32Ibc,
 		ibcTransferKeeper,
 	)
+
 	// Set the native prefix to the "gravity" value we like in module/config/config.go
 	err = bech32IbcKeeper.SetNativeHrp(ctx, sdk.GetConfig().GetBech32AccountAddrPrefix())
 	if err != nil {
@@ -661,6 +675,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	// check invariants before starting
 	testInput.Context.Logger().Info("Asserting invariants on new test env")
 	testInput.AssertInvariants()
+
 	return testInput
 }
 

@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	// // GravityDenomPrefix indicates the prefix for all assets minted by this module
-	// GravityDenomPrefix = ModuleName
+	// GravityDenomPrefix indicates the prefix for all assets minted by this module
+	GravityDenomPrefix = "oraib"
 
 	// GravityDenomSeparator is the separator for gravity denoms
 	GravityDenomSeparator = ""
