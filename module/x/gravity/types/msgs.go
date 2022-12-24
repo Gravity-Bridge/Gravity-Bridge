@@ -350,18 +350,6 @@ var (
 	_ EthereumClaim = &MsgValsetUpdatedClaim{}
 )
 
-func NewMsgSendToCosmosClaim(evmChainPrefix string, eventNonce uint64, ethBlockHeight uint64, contract string, amount sdk.Int, etherumSender string, cosmosReceiver string, orchestrator string) *MsgSendToCosmosClaim {
-	return &MsgSendToCosmosClaim{
-		EventNonce:     eventNonce,
-		EthBlockHeight: ethBlockHeight,
-		TokenContract:  contract,
-		Amount:         amount,
-		EthereumSender: etherumSender,
-		CosmosReceiver: cosmosReceiver,
-		Orchestrator:   orchestrator,
-	}
-}
-
 // GetType returns the type of the claim
 func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
 	return CLAIM_TYPE_SEND_TO_COSMOS
