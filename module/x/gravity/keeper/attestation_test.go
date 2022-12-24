@@ -356,7 +356,7 @@ func TestDiffAttestationsWithDiffEvmChainPrefixClaimHash(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, tmhash.Sum([]byte(fmt.Sprintf("%s/%d/%d/%s/%s/%s/%s", bscPrefixMsg.EvmChainPrefix, bscPrefixMsg.EventNonce, bscPrefixMsg.EthBlockHeight, bscPrefixMsg.TokenContract, bscPrefixMsg.Amount.String(), bscPrefixMsg.EthereumSender, bscPrefixMsg.CosmosReceiver))), bscHash)
 
-	k.SetAttestation(ctx, ethEvmPrefix, nonce, hash, att)
+	k.SetAttestation(ctx, ethEvmPrefix, nonce, bscHash, att)
 
 	// when we get attestation, two hashes should return two different attestations
 	evmAtt := k.GetAttestation(ctx, ethEvmPrefix, nonce, hash)
