@@ -7,8 +7,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -305,4 +307,60 @@ func TestInvalidHeight(t *testing.T) {
 		require.Equal(t, len(att.Votes), i+1) // Only these good orchestrators votes should be counted
 	}
 
+}
+
+func TestDiffAttestationsWithDiffEvmChainPrefixClaimHash(t *testing.T) {
+	input := CreateTestEnv(t)
+	k := input.GravityKeeper
+	ctx := input.Context
+
+	ethEvmPrefix := "ethereum"
+	bscEvmPrefix := "bsc"
+
+	nonce := uint64(1)
+	evmPrefixMsg := types.MsgSendToCosmosClaim{
+		EventNonce:     nonce,
+		EthBlockHeight: 1,
+		TokenContract:  "0x00000000000000000001",
+		Amount:         sdk.NewInt(10000000000 + int64(1)),
+		EthereumSender: "0x00000000000000000002",
+		CosmosReceiver: "0x00000000000000000003",
+		Orchestrator:   "0x00000000000000000004",
+		EvmChainPrefix: ethEvmPrefix,
+	}
+
+	bscPrefixMsg := evmPrefixMsg
+	bscPrefixMsg.EvmChainPrefix = bscEvmPrefix
+
+	any, err := codectypes.NewAnyWithValue(&evmPrefixMsg)
+	require.NoError(t, err)
+
+	att := &types.Attestation{
+		Observed: false,
+		Height:   uint64(ctx.BlockHeight()),
+		Claim:    any,
+	}
+
+	hash, err := evmPrefixMsg.ClaimHash()
+	require.NoError(t, err)
+	require.Equal(t, tmhash.Sum([]byte(fmt.Sprintf("%s/%d/%d/%s/%s/%s/%s", evmPrefixMsg.EvmChainPrefix, evmPrefixMsg.EventNonce, evmPrefixMsg.EthBlockHeight, evmPrefixMsg.TokenContract, evmPrefixMsg.Amount.String(), evmPrefixMsg.EthereumSender, evmPrefixMsg.CosmosReceiver))), hash)
+
+	k.SetAttestation(ctx, ethEvmPrefix, nonce, hash, att)
+
+	any, err = codectypes.NewAnyWithValue(&bscPrefixMsg)
+	require.NoError(t, err)
+
+	att.Claim = any
+
+	bscHash, err := bscPrefixMsg.ClaimHash()
+	require.NoError(t, err)
+	require.Equal(t, tmhash.Sum([]byte(fmt.Sprintf("%s/%d/%d/%s/%s/%s/%s", bscPrefixMsg.EvmChainPrefix, bscPrefixMsg.EventNonce, bscPrefixMsg.EthBlockHeight, bscPrefixMsg.TokenContract, bscPrefixMsg.Amount.String(), bscPrefixMsg.EthereumSender, bscPrefixMsg.CosmosReceiver))), bscHash)
+
+	k.SetAttestation(ctx, ethEvmPrefix, nonce, hash, att)
+
+	// when we get attestation, two hashes should return two different attestations
+	evmAtt := k.GetAttestation(ctx, ethEvmPrefix, nonce, hash)
+	bscAtt := k.GetAttestation(ctx, ethEvmPrefix, nonce, bscHash)
+
+	require.NotEqual(t, evmAtt, bscAtt)
 }
