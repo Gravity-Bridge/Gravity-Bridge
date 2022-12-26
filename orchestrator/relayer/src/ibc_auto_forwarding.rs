@@ -32,7 +32,7 @@ pub async fn ibc_auto_forward_loop(
     let fee = match fee {
         None => Coin {
             amount: 0u8.into(),
-            denom: "ugraviton".to_string(),
+            denom: "uoraib".to_string(),
         },
         Some(f) => f,
     };

@@ -127,7 +127,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String, evm_c
         let sender_address = args.ethereum_key.to_address(&address_prefix).unwrap();
         let cosmos_fee = args.cosmos_fee.unwrap_or_else(|| Coin {
             amount: 0u8.into(),
-            denom: "ugraviton".to_string(),
+            denom: "uoraib".to_string(),
         });
         if args.eth_bridge_fee.is_none() {
             error!("--eth-bridge-fee must be provided with --send-to-eth!");
