@@ -215,7 +215,8 @@ message MsgSendToCosmosClaimResponse {}
 message MsgExecuteIbcAutoForwards {
   uint64 forwards_to_clear =
       1; // How many queued forwards to clear, be careful about gas limits
-  string executor = 2; // This message's sender
+  string executor = 2;         // This message's sender
+  string evm_chain_prefix = 3; // auto forward for a specific chain
 }
 
 message MsgExecuteIbcAutoForwardsResponse {}

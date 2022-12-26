@@ -62,9 +62,9 @@ func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, evmChainPrefix st
 }
 
 // GetNextPendingIbcAutoForward returns the first pending IBC Auto-Forward in the queue
-func (k Keeper) GetNextPendingIbcAutoForward(ctx sdk.Context) *types.PendingIbcAutoForward {
+func (k Keeper) GetNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix string) *types.PendingIbcAutoForward {
 	store := ctx.KVStore(k.storeKey)
-	prefix := types.PendingIbcAutoForwards
+	prefix := types.AppendChainPrefix(types.PendingIbcAutoForwards, evmChainPrefix)
 	iter := store.Iterator(prefixRange(prefix))
 	defer iter.Close()
 	if iter.Valid() {
@@ -82,10 +82,10 @@ func (k Keeper) GetNextPendingIbcAutoForward(ctx sdk.Context) *types.PendingIbcA
 }
 
 // PendingIbcAutoForwards returns an ordered slice of the queued IBC Auto-Forward sends to IBC-enabled chains
-func (k Keeper) PendingIbcAutoForwards(ctx sdk.Context, limit uint64) []*types.PendingIbcAutoForward {
+func (k Keeper) PendingIbcAutoForwards(ctx sdk.Context, evmChainPrefix string, limit uint64) []*types.PendingIbcAutoForward {
 	forwards := make([]*types.PendingIbcAutoForward, 0)
 
-	k.IteratePendingIbcAutoForwards(ctx, func(key []byte, forward *types.PendingIbcAutoForward) (stop bool) {
+	k.IteratePendingIbcAutoForwards(ctx, evmChainPrefix, func(key []byte, forward *types.PendingIbcAutoForward) (stop bool) {
 		forwards = append(forwards, forward)
 		if limit != 0 && uint64(len(forwards)) >= limit {
 			return true
@@ -98,9 +98,9 @@ func (k Keeper) PendingIbcAutoForwards(ctx sdk.Context, limit uint64) []*types.P
 
 // IteratePendingIbcAutoForwards executes the given callback on each PendingIbcAutoForward in the store
 // cb should return true to stop iteration, false to continue
-func (k Keeper) IteratePendingIbcAutoForwards(ctx sdk.Context, cb func(key []byte, forward *types.PendingIbcAutoForward) (stop bool)) {
+func (k Keeper) IteratePendingIbcAutoForwards(ctx sdk.Context, evmChainPrefix string, cb func(key []byte, forward *types.PendingIbcAutoForward) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	prefixStore := prefix.NewStore(store, types.PendingIbcAutoForwards)
+	prefixStore := prefix.NewStore(store, types.AppendChainPrefix(types.PendingIbcAutoForwards, evmChainPrefix))
 	iter := prefixStore.Iterator(nil, nil)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -120,7 +120,7 @@ func (k Keeper) addPendingIbcAutoForward(ctx sdk.Context, forward types.PendingI
 		return err
 	}
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetPendingIbcAutoForwardKey(forward.EventNonce)
+	key := types.GetPendingIbcAutoForwardKey(evmChainPrefix, forward.EventNonce)
 
 	if store.Has(key) {
 		return sdkerrors.Wrapf(types.ErrDuplicate,
@@ -146,9 +146,9 @@ func (k Keeper) addPendingIbcAutoForward(ctx sdk.Context, forward types.PendingI
 
 // deletePendingIbcAutoForward removes a single pending IBC Auto-Forward send to an IBC-enabled chain from the store
 // WARNING: this should only be called while clearing the queue in ClearNextPendingIbcAutoForward
-func (k Keeper) deletePendingIbcAutoForward(ctx sdk.Context, eventNonce uint64) error {
+func (k Keeper) deletePendingIbcAutoForward(ctx sdk.Context, evmChainPrefix string, eventNonce uint64) error {
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetPendingIbcAutoForwardKey(eventNonce)
+	key := types.GetPendingIbcAutoForwardKey(evmChainPrefix, eventNonce)
 	if !store.Has(key) {
 		return sdkerrors.Wrapf(types.ErrInvalid, "No PendingIbcAutoForward with nonce %v in the store", eventNonce)
 	}
@@ -159,9 +159,9 @@ func (k Keeper) deletePendingIbcAutoForward(ctx sdk.Context, eventNonce uint64) 
 // ProcessPendingIbcAutoForwards processes and dequeues many pending IBC Auto-Forwards, either sending the funds to their
 // respective destination chains or on error sending the funds to the local gravity-prefixed account
 // See ProcessNextPendingIbcAutoForward for more details
-func (k Keeper) ProcessPendingIbcAutoForwards(ctx sdk.Context, forwardsToClear uint64) error {
+func (k Keeper) ProcessPendingIbcAutoForwards(ctx sdk.Context, evmChainPrefix string, forwardsToClear uint64) error {
 	for i := uint64(0); i < forwardsToClear; i++ {
-		stop, err := k.ProcessNextPendingIbcAutoForward(ctx)
+		stop, err := k.ProcessNextPendingIbcAutoForward(ctx, evmChainPrefix)
 		if err != nil {
 			return sdkerrors.Wrapf(err, "unable to process Pending IBC Auto-Forward number %v", i)
 		}
@@ -180,8 +180,8 @@ func (k Keeper) ProcessPendingIbcAutoForwards(ctx sdk.Context, forwardsToClear u
 // the gravity chain directly.
 // Return: stop - true if there are no items to process
 // Return: err  - nil if successful, non-nil if there was an issue sending funds to the user
-func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context) (stop bool, err error) {
-	forward := k.GetNextPendingIbcAutoForward(ctx)
+func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix string) (stop bool, err error) {
+	forward := k.GetNextPendingIbcAutoForward(ctx, evmChainPrefix)
 	if forward == nil {
 		return true, nil // No forwards to process, exit early
 	}
@@ -190,7 +190,7 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context) (stop bool, er
 		panic(fmt.Sprintf("Invalid forward found in Pending IBC Auto-Forward queue: %s", err.Error()))
 	}
 	// Point of no return: the funds will be sent somewhere, either the IBC address, local address or the community pool
-	err = k.deletePendingIbcAutoForward(ctx, forward.EventNonce)
+	err = k.deletePendingIbcAutoForward(ctx, evmChainPrefix, forward.EventNonce)
 	if err != nil {
 		// Fail this tx
 		panic(fmt.Sprintf("Discovered nonexistent Pending IBC Auto-Forward in the queue %s", forward.String()))

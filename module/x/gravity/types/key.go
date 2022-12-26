@@ -328,8 +328,8 @@ func GetPastEvmSignatureCheckpointKey(evmChainPrefix string, checkpoint []byte) 
 // GetPendingIbcAutoForwardKey returns the following key format
 // prefix	EventNonce
 // [0x0][0 0 0 0 0 0 0 1]
-func GetPendingIbcAutoForwardKey(eventNonce uint64) []byte {
-	return AppendBytes(PendingIbcAutoForwards, UInt64Bytes(eventNonce))
+func GetPendingIbcAutoForwardKey(evmChainPrefix string, eventNonce uint64) []byte {
+	return AppendBytes(PendingIbcAutoForwards, []byte(evmChainPrefix), UInt64Bytes(eventNonce))
 }
 
 // GetEvmChainKey returns the following key format

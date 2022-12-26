@@ -1,6 +1,7 @@
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::send_erc20_deposit;
 use crate::utils::*;
+use crate::EVM_CHAIN_PREFIX;
 use crate::OPERATION_TIMEOUT;
 use crate::{
     get_ibc_chain_id, one_eth, ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC,
@@ -507,6 +508,7 @@ pub async fn test_ibc_auto_forward_happy_path(
         let msg_execute_forwards = Msg::new(
             MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL,
             MsgExecuteIbcAutoForwards {
+                evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
                 forwards_to_clear: 1,
                 executor: forwarder.to_address(&ADDRESS_PREFIX).unwrap().to_string(),
             },
@@ -600,7 +602,10 @@ pub async fn wait_for_pending_ibc_auto_forwards(
     let start = Instant::now();
     while Instant::now() - start < timeout {
         let res = gravity_client
-            .get_pending_ibc_auto_forwards(QueryPendingIbcAutoForwards { limit: 0 })
+            .get_pending_ibc_auto_forwards(QueryPendingIbcAutoForwards {
+                evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
+                limit: 0,
+            })
             .await?
             .into_inner();
         if res.pending_ibc_auto_forwards.is_empty()

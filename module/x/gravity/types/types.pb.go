@@ -406,17 +406,13 @@ func (m *IBCMetadataProposal) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_IBCMetadataProposal proto.InternalMessageInfo
 
-// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign
-// CosmosReceiver which will be added to the PendingIbcAutoForward queue in
-// attestation_handler and sent over IBC on some submission of a
-// MsgExecuteIbcAutoForwards
+// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
+// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
 type PendingIbcAutoForward struct {
-	ForeignReceiver string `protobuf:"bytes,1,opt,name=foreign_receiver,json=foreignReceiver,proto3" json:"foreign_receiver,omitempty"`
-	// not preserve foreign prefixes
-	Token *types1.Coin `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
-	// ibc-enabled chain over `IbcChannel`
-	IbcChannel string `protobuf:"bytes,3,opt,name=ibc_channel,json=ibcChannel,proto3" json:"ibc_channel,omitempty"`
-	EventNonce uint64 `protobuf:"varint,4,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	ForeignReceiver string       `protobuf:"bytes,1,opt,name=foreign_receiver,json=foreignReceiver,proto3" json:"foreign_receiver,omitempty"`
+	Token           *types1.Coin `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	IbcChannel      string       `protobuf:"bytes,3,opt,name=ibc_channel,json=ibcChannel,proto3" json:"ibc_channel,omitempty"`
+	EventNonce      uint64       `protobuf:"varint,4,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
 }
 
 func (m *PendingIbcAutoForward) Reset()         { *m = PendingIbcAutoForward{} }

@@ -65,6 +65,7 @@ pub async fn all_relayer_loops(
         cosmos_key,
         &contact,
         grpc_client.clone(),
+        evm_chain_prefix,
         fee.clone(),
         config.clone(),
     );

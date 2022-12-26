@@ -555,6 +555,9 @@ pub struct MsgExecuteIbcAutoForwards {
     /// This message's sender
     #[prost(string, tag="2")]
     pub executor: ::prost::alloc::string::String,
+    /// auto forward for a specific chain
+    #[prost(string, tag="3")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgExecuteIbcAutoForwardsResponse {
@@ -1691,6 +1694,8 @@ pub struct QueryPendingIbcAutoForwards {
     /// SendToCosmos.EventNonce
     #[prost(uint64, tag="1")]
     pub limit: u64,
+    #[prost(string, tag="2")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryPendingIbcAutoForwardsResponse {

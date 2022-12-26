@@ -363,9 +363,13 @@ pub async fn get_pending_batch_fees(
 /// Queries the Gravity chain for Pending Ibc Auto Forwards, returning an empty vec if there is an error
 pub async fn get_all_pending_ibc_auto_forwards(
     grpc_client: &mut GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
 ) -> Vec<PendingIbcAutoForward> {
     let pending_forwards = grpc_client
-        .get_pending_ibc_auto_forwards(QueryPendingIbcAutoForwards { limit: 0 })
+        .get_pending_ibc_auto_forwards(QueryPendingIbcAutoForwards {
+            evm_chain_prefix: evm_chain_prefix.to_string(),
+            limit: 0,
+        })
         .await;
     if let Err(status) = pending_forwards {
         // don't print errors during the upgrade test, which involves running

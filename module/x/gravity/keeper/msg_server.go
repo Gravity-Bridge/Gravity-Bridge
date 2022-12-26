@@ -381,7 +381,7 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 func (k msgServer) ExecuteIbcAutoForwards(c context.Context, msg *types.MsgExecuteIbcAutoForwards) (*types.MsgExecuteIbcAutoForwardsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if err := k.ProcessPendingIbcAutoForwards(ctx, msg.GetForwardsToClear()); err != nil {
+	if err := k.ProcessPendingIbcAutoForwards(ctx, msg.EvmChainPrefix, msg.GetForwardsToClear()); err != nil {
 		return nil, err
 	}
 

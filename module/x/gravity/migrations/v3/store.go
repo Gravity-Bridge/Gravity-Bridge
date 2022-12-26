@@ -27,8 +27,6 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 	ctx.Logger().Info("Pleiades Upgrade: Beginning the migrations for the gravity module")
 	store := ctx.KVStore(storeKey)
 
-	// TODO: insert Eth into new key for chain info, currently using bsc
-
 	// single key with chain
 	updateKeyPrefixToEvm(store, v2.KeyLastOutgoingBatchID, types.KeyLastOutgoingBatchID)
 	updateKeyPrefixToEvm(store, v2.LastObservedEventNonceKey, types.LastObservedEventNonceKey)
@@ -53,6 +51,8 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 	updateKeysPrefixToEvm(store, v2.DenomToERC20Key, types.DenomToERC20Key)
 	updateKeysPrefixToEvm(store, v2.ERC20ToDenomKey, types.ERC20ToDenomKey)
 	updateKeysPrefixToEvm(store, v2.PastEthSignatureCheckpointKey, types.PastEvmSignatureCheckpointKey)
+	// PendingIbcAutoForwards is only existed in v3
+	updateKeysPrefixToEvm(store, types.PendingIbcAutoForwards, types.PendingIbcAutoForwards)
 
 	// single key no chain
 	updateKeyPrefixToEvmWithoutChain(store, v2.LastUnBondingBlockHeight, types.LastUnBondingBlockHeight)

@@ -18,6 +18,7 @@ pub async fn ibc_auto_forward_loop(
     cosmos_key: Option<CosmosPrivateKey>,
     contact: &Contact,
     grpc_client: GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     fee: Option<Coin>,
     relayer_config: RelayerConfig,
 ) {
@@ -39,7 +40,8 @@ pub async fn ibc_auto_forward_loop(
 
     loop {
         let loop_start = Instant::now();
-        let pending_forwards = get_all_pending_ibc_auto_forwards(&mut grpc_client).await;
+        let pending_forwards =
+            get_all_pending_ibc_auto_forwards(&mut grpc_client, evm_chain_prefix).await;
         let should_execute_pending_ibc_auto_forwards = !pending_forwards.is_empty();
 
         if should_execute_pending_ibc_auto_forwards {
@@ -50,6 +52,7 @@ pub async fn ibc_auto_forward_loop(
             );
 
             let res = execute_pending_ibc_auto_forwards(
+                evm_chain_prefix,
                 contact,
                 cosmos_key,
                 fee.clone(),

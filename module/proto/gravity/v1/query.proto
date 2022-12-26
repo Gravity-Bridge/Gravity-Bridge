@@ -352,6 +352,7 @@ message QueryPendingIbcAutoForwards {
   // limit defines the number of pending forwards to return, in order of their
   // SendToCosmos.EventNonce
   uint64 limit = 1;
+  string evm_chain_prefix = 2;
 }
 
 message QueryPendingIbcAutoForwardsResponse {

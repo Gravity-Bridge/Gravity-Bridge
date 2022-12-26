@@ -153,7 +153,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	hrpRecords := input.GravityKeeper.bech32IbcKeeper.GetHrpIbcRecords(ctx)
 	require.Equal(t, len(hrpRecords), 1)
 	require.Equal(t, hrpRecords[0], rec)
-	forwards := input.GravityKeeper.PendingIbcAutoForwards(ctx, 0)
+	forwards := input.GravityKeeper.PendingIbcAutoForwards(ctx, evmChain.EvmChainPrefix, 0)
 	require.Equal(t, 0, len(forwards))
 
 	// Create pending forwards which must be preserved
@@ -184,8 +184,8 @@ func TestBatchAndTxImportExport(t *testing.T) {
 	checkAllTransactionsExist(t, input.GravityKeeper, ctx, evmChain.EvmChainPrefix, txs, forwards)
 
 	// Clear the pending ibc auto forwards so the invariant won't fail
-	input.GravityKeeper.IteratePendingIbcAutoForwards(ctx, func(_ []byte, fwd *types.PendingIbcAutoForward) bool {
-		require.NoError(t, input.GravityKeeper.deletePendingIbcAutoForward(ctx, fwd.EventNonce))
+	input.GravityKeeper.IteratePendingIbcAutoForwards(ctx, evmChain.EvmChainPrefix, func(_ []byte, fwd *types.PendingIbcAutoForward) bool {
+		require.NoError(t, input.GravityKeeper.deletePendingIbcAutoForward(ctx, evmChain.EvmChainPrefix, fwd.EventNonce))
 		require.NoError(t, input.BankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(*fwd.Token)))
 		return false
 	})
@@ -218,7 +218,7 @@ func checkAllTransactionsExist(t *testing.T, keeper Keeper, ctx sdk.Context, evm
 		require.Equal(t, exp.Sender.String(), gotTxs[i].Sender.String())
 	}
 
-	gotFwds := keeper.PendingIbcAutoForwards(ctx, 0)
+	gotFwds := keeper.PendingIbcAutoForwards(ctx, evmChainPrefix, 0)
 	require.Equal(t, len(forwards), len(gotFwds))
 	for i, fwd := range gotFwds {
 		// The order should be preserved because of the type of iterator and the construction of `forwards`
@@ -240,7 +240,7 @@ func exportImport(t *testing.T, input *TestInput) {
 		require.Empty(t, unbatched)
 		batches := input.GravityKeeper.GetOutgoingTxBatches(input.Context, evmChain.EvmChainPrefix)
 		require.Empty(t, batches)
-		forwards := input.GravityKeeper.PendingIbcAutoForwards(input.Context, 0)
+		forwards := input.GravityKeeper.PendingIbcAutoForwards(input.Context, evmChain.EvmChainPrefix, 0)
 		require.Empty(t, forwards)
 		bech32ibc.InitGenesis(input.Context, *input.GravityKeeper.bech32IbcKeeper, *bech32ibcGenesis)
 		input.BankKeeper.InitGenesis(input.Context, bankGenesis)

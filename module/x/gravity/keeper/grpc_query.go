@@ -583,6 +583,6 @@ func (k Keeper) GetPendingIbcAutoForwards(
 	req *types.QueryPendingIbcAutoForwards,
 ) (*types.QueryPendingIbcAutoForwardsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	pendingForwards := k.PendingIbcAutoForwards(ctx, req.Limit)
+	pendingForwards := k.PendingIbcAutoForwards(ctx, req.EvmChainPrefix, req.Limit)
 	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
 }

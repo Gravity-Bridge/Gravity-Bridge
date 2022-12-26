@@ -165,6 +165,13 @@ func TestMigrateStoreKeys(t *testing.T) {
 	decInvalidationId, err := hex.DecodeString(confirm.InvalidationId)
 	require.NoError(t, err)
 
+	dummyPendingIbcAutoForward := types.PendingIbcAutoForward{
+		ForeignReceiver: "0x00000000000000000001",
+		Token:           &sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
+		IbcChannel:      "channel-0",
+		EventNonce:      0,
+	}
+
 	// creating test cases
 	// OLD key: []byte prefix key + some value (address, nonce....)
 	// NEW key: []byte prefix key + chain prefix + some value (address, nonce....)
@@ -323,6 +330,12 @@ func TestMigrateStoreKeys(t *testing.T) {
 			v2.GetLogicConfirmKey(decInvalidationId, confirm.InvalidationNonce, valAccAdd),
 			types.GetLogicConfirmKey(v3.EthereumChainPrefix, decInvalidationId, confirm.InvalidationNonce, valAccAdd),
 			marshaler.MustMarshal(&confirm),
+		},
+		{
+			"PendingIbcAutoForwards",
+			types.GetPendingIbcAutoForwardKey("", dummyPendingIbcAutoForward.EventNonce),
+			types.GetPendingIbcAutoForwardKey(v3.EthereumChainPrefix, dummyPendingIbcAutoForward.EventNonce),
+			marshaler.MustMarshal(&dummyPendingIbcAutoForward),
 		},
 	}
 

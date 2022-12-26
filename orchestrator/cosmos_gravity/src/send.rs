@@ -469,6 +469,7 @@ pub async fn cancel_send_to_eth(
 
 /// Executes a MsgExecuteIbcAutoForwards on the gravity chain, which will process forwards_to_clear number of pending ibc auto forwards
 pub async fn execute_pending_ibc_auto_forwards(
+    evm_chain_prefix: &str,
     contact: &Contact,
     cosmos_key: impl PrivateKey,
     fee: Coin,
@@ -479,6 +480,7 @@ pub async fn execute_pending_ibc_auto_forwards(
     let msg = Msg::new(
         MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL,
         MsgExecuteIbcAutoForwards {
+            evm_chain_prefix: evm_chain_prefix.to_string(),
             forwards_to_clear,
             executor: cosmos_addr.to_string(),
         },

@@ -58,7 +58,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			}
 			expectedBals = sumUnconfirmedBatchModuleBalances(ctx, evmChain.EvmChainPrefix, k, expectedBals)
 			expectedBals = sumUnbatchedTxModuleBalances(ctx, evmChain.EvmChainPrefix, k, expectedBals)
-			expectedBals = sumPendingIbcAutoForwards(ctx, k, expectedBals)
+			expectedBals = sumPendingIbcAutoForwards(ctx, evmChain.EvmChainPrefix, k, expectedBals)
 
 			// Compare actual vs expected balances
 			for _, actual := range actualBals {
@@ -139,8 +139,8 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, evmChainPrefix string, k Keep
 	return expectedBals
 }
 
-func sumPendingIbcAutoForwards(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
-	for _, forward := range k.PendingIbcAutoForwards(ctx, uint64(0)) {
+func sumPendingIbcAutoForwards(ctx sdk.Context, evmChainPrefix string, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+	for _, forward := range k.PendingIbcAutoForwards(ctx, evmChainPrefix, uint64(0)) {
 		if _, ok := expectedBals[forward.Token.Denom]; !ok {
 			zero := sdk.ZeroInt()
 			expectedBals[forward.Token.Denom] = &zero
@@ -176,7 +176,7 @@ func StoreValidityInvariant(k Keeper) sdk.Invariant {
 			}
 
 			// Assert that pending ibc auto-forwards are only outgoing
-			err = CheckPendingIbcAutoForwards(ctx, k)
+			err = CheckPendingIbcAutoForwards(ctx, evmChain.EvmChainPrefix, k)
 			if err != nil {
 				return err.Error(), true
 			}
@@ -451,7 +451,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	})
 
 	// PendingIbcAutoForwards
-	k.IteratePendingIbcAutoForwards(ctx, func(key []byte, forward *types.PendingIbcAutoForward) (stop bool) {
+	k.IteratePendingIbcAutoForwards(ctx, evmChainPrefix, func(key []byte, forward *types.PendingIbcAutoForward) (stop bool) {
 		if err = forward.ValidateBasic(); err != nil {
 			err = fmt.Errorf("Discovered invalid PendingIbcAutoForward %v under key %v: %v", forward, key, err)
 			return true
@@ -603,9 +603,9 @@ func CheckValsets(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 }
 
 // CheckPendingIbcAutoForwards checks each forward is appropriate and also that the transfer module holds enough of each token
-func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
+func CheckPendingIbcAutoForwards(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	nativeHrp := sdk.GetConfig().GetBech32AccountAddrPrefix()
-	pendingForwards := k.PendingIbcAutoForwards(ctx, 0)
+	pendingForwards := k.PendingIbcAutoForwards(ctx, evmChainPrefix, 0)
 	minXferModBals := make(map[string]sdk.Int)
 
 	for _, fwd := range pendingForwards {
