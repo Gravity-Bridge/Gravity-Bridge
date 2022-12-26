@@ -97,7 +97,7 @@ func getAllKeys() [][]byte {
 	keys[*inc(&i)] = GetLogicConfirmNonceInvalidationIdPrefix(dummyPrefix, dummyBytes, dummyNonce)
 	keys[*inc(&i)] = GetLogicConfirmKey(dummyPrefix, dummyBytes, dummyNonce, dummyAddr)
 	keys[*inc(&i)] = GetPastEvmSignatureCheckpointKey(dummyPrefix, dummyBytes)
-	keys[*inc(&i)] = GetPendingIbcAutoForwardKey(dummyNonce)
+	keys[*inc(&i)] = GetPendingIbcAutoForwardKey(dummyPrefix, dummyNonce)
 	keys[*inc(&i)] = GetEvmChainKey(dummyPrefix)
 
 	return keys
