@@ -38,6 +38,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetPendingOutgoingTXBatchRequest(),
 		CmdGetPendingSendToEth(),
 		GetCmdPendingIbcAutoForwards(),
+		GetCmdListEvmChains(),
 		CmdGetAttestations(),
 		CmdGetLastObservedEthBlock(),
 		CmdGetLastObservedEthNonce(),
@@ -266,6 +267,42 @@ func GetCmdPendingIbcAutoForwards() *cobra.Command {
 
 			req := &types.QueryPendingIbcAutoForwards{Limit: limit}
 			res, err := queryClient.GetPendingIbcAutoForwards(cmd.Context(), req)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdPendingIbcAutoForwards fetches the next IBC auto forwards to be executed, up to an optional limit
+func GetCmdListEvmChains() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "evm-chains [optional limit]",
+		Short: "Query list evm chains",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			var limit uint64 = 0
+			if len(args) == 1 {
+				var err error
+				limit, err = strconv.ParseUint(args[0], 10, 0)
+				if err != nil {
+					return sdkerrors.Wrapf(err, "Unable to parse limit from %v", args[0])
+				}
+			}
+
+			req := &types.QueryListEvmChains{Limit: limit}
+			res, err := queryClient.GetListEvmChains(cmd.Context(), req)
 			if err != nil {
 				return err
 			}

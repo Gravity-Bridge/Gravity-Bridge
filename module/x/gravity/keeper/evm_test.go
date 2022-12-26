@@ -22,6 +22,23 @@ func TestGetSetEvmChainData(t *testing.T) {
 	}
 }
 
+func TestGetEvmChainDataWithLimit(t *testing.T) {
+	input := CreateTestEnv(t)
+	k := input.GravityKeeper
+	ctx := input.Context
+
+	chains := addEvmChainsToStore(t, ctx, k)
+
+	evmChains := k.GetEvmChainsWithLimit(ctx, 1)
+	require.Equal(t, len(evmChains), 1)
+	require.Equal(t, evmChains[0].EvmChainPrefix, "bsc") // we already init 2 evm chains in CreateTestEnv, so the first index should be bsc
+
+	evmChains = k.GetEvmChainsWithLimit(ctx, 4)
+
+	require.Equal(t, len(evmChains), 4)
+	require.Equal(t, evmChains[2].EvmChainPrefix, chains[0].EvmChainPrefix)
+}
+
 func TestIterateEvmChainsData(t *testing.T) {
 	input := CreateTestEnv(t)
 	k := input.GravityKeeper

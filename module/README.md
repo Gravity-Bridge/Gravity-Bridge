@@ -23,3 +23,11 @@ To update protos after editing .proto files
 ```
 make proto-gen
 ```
+
+## Test
+
+go test ./x/gravity/migrations/v2/... -v --count=1
+
+go test ./x/gravity/migrations/v3/... -v --count=1
+
+go test ./x/gravity/keeper/... -v --count=1

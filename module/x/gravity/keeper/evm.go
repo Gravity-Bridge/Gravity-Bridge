@@ -45,3 +45,33 @@ func (k Keeper) GetEvmChains(ctx sdk.Context) []types.EvmChain {
 
 	return evmChains
 }
+
+func (k Keeper) IterateEvmChains(ctx sdk.Context, cb func(key []byte, evmChain *types.EvmChain) (stop bool)) {
+	store := ctx.KVStore(k.storeKey)
+	prefix := types.EvmChainKey
+	iter := store.Iterator(prefixRange(prefix))
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		evmChain := new(types.EvmChain)
+		value := iter.Value()
+		k.cdc.MustUnmarshal(value, evmChain)
+		if cb(iter.Key(), evmChain) {
+			break
+		}
+	}
+}
+
+func (k Keeper) GetEvmChainsWithLimit(ctx sdk.Context, limit uint64) []types.EvmChain {
+	evmChains := []types.EvmChain{}
+
+	k.IterateEvmChains(ctx, func(key []byte, evmChain *types.EvmChain) (stop bool) {
+		evmChains = append(evmChains, *evmChain)
+		if limit != 0 && uint64(len(evmChains)) >= limit {
+			return true
+		}
+		return false
+	})
+
+	return evmChains
+}

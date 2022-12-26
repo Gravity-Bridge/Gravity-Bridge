@@ -586,3 +586,12 @@ func (k Keeper) GetPendingIbcAutoForwards(
 	pendingForwards := k.PendingIbcAutoForwards(ctx, req.EvmChainPrefix, req.Limit)
 	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
 }
+
+func (k Keeper) GetListEvmChains(
+	c context.Context,
+	req *types.QueryListEvmChains,
+) (*types.QueryListEvmChainsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	evmChains := k.GetEvmChainsWithLimit(ctx, req.Limit)
+	return &types.QueryListEvmChainsResponse{EvmChains: evmChains}, nil
+}

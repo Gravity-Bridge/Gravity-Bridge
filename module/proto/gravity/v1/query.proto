@@ -127,6 +127,12 @@ service Query {
     option (google.api.http).get =
         "/gravity/v1beta/query_pending_ibc_auto_forwards";
   }
+
+  rpc GetListEvmChains(QueryListEvmChains)
+      returns (QueryListEvmChainsResponse) {
+    option (google.api.http).get =
+        "/gravity/v1beta/query_list_evm_chains";
+  }
 }
 
 message QueryParamsRequest {}
@@ -357,4 +363,14 @@ message QueryPendingIbcAutoForwards {
 
 message QueryPendingIbcAutoForwardsResponse {
   repeated PendingIbcAutoForward pending_ibc_auto_forwards = 1;
+}
+
+message QueryListEvmChains {
+  // limit defines the number of pending forwards to return, in order of their
+  // SendToCosmos.EventNonce
+  uint64 limit = 1;
+}
+
+message QueryListEvmChainsResponse {
+  repeated EvmChain evm_chains = 1 [ (gogoproto.nullable) = false ];
 }

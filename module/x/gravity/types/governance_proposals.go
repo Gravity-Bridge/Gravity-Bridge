@@ -12,6 +12,7 @@ const (
 	ProposalTypeUnhaltBridge = "UnhaltBridge"
 	ProposalTypeAirdrop      = "Airdrop"
 	ProposalTypeIBCMetadata  = "IBCMetadata"
+	ProposalTypeAddEvmChain  = "AddEvmChain"
 )
 
 func (p *UnhaltBridgeProposal) GetTitle() string { return p.Title }
