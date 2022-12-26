@@ -145,7 +145,7 @@ func (msg MsgSendToEth) ValidateBasic() error {
 	}
 
 	if msg.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgSendToEth")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 
 	// fee and send must be of the same denom
@@ -202,7 +202,7 @@ func (msg MsgRequestBatch) Type() string { return "request_batch" }
 func (msg MsgRequestBatch) ValidateBasic() error {
 
 	if msg.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgRequestBatch")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
@@ -237,7 +237,7 @@ func (msg MsgConfirmBatch) Type() string { return "confirm_batch" }
 func (msg MsgConfirmBatch) ValidateBasic() error {
 
 	if msg.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgConfirmBatch")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
@@ -280,7 +280,7 @@ func (msg MsgConfirmLogicCall) Type() string { return "confirm_logic" }
 func (msg MsgConfirmLogicCall) ValidateBasic() error {
 
 	if msg.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgConfirmLogicCall")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
@@ -359,7 +359,7 @@ func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
 func (msg *MsgSendToCosmosClaim) ValidateBasic() error {
 
 	if msg.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgSendToCosmosClaim")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 
 	if err := ValidateEthAddress(msg.EthereumSender); err != nil {
@@ -438,6 +438,11 @@ func (msg *MsgExecuteIbcAutoForwards) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Executor); err != nil {
 		return sdkerrors.Wrap(err, "Unable to parse executor as a valid bech32 address")
 	}
+
+	if msg.EvmChainPrefix == "" {
+		return fmt.Errorf("evm_chain_prefix is empty")
+	}
+
 	return nil
 }
 
@@ -464,7 +469,7 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 		return fmt.Errorf("batch_nonce == 0")
 	}
 	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgBatchSendToEthClaim")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 	if err := ValidateEthAddress(e.TokenContract); err != nil {
 		return sdkerrors.Wrap(err, "erc20 token")
@@ -535,7 +540,7 @@ func (e *MsgERC20DeployedClaim) ValidateBasic() error {
 		return fmt.Errorf("nonce == 0")
 	}
 	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgERC20DeployedClaim")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 	return nil
 }
@@ -598,7 +603,7 @@ func (e *MsgLogicCallExecutedClaim) ValidateBasic() error {
 		return fmt.Errorf("nonce == 0")
 	}
 	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgLogicCallExecutedClaim")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 	return nil
 }
@@ -661,7 +666,7 @@ func (e *MsgValsetUpdatedClaim) ValidateBasic() error {
 		return fmt.Errorf("nonce == 0")
 	}
 	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty MsgValsetUpdatedClaim")
+		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 	err := ValidateEthAddress(e.RewardToken)
 	if err != nil {

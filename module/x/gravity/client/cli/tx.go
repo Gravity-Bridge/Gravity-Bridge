@@ -457,9 +457,9 @@ func CmdSetOrchestratorAddress() *cobra.Command {
 func CmdExecutePendingIbcAutoForwards() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "execute-pending-ibc-auto-forwards [forwards-to-execute]",
+		Use:   "execute-pending-ibc-auto-forwards [forwards-to-execute] [evm chain prefix]",
 		Short: "Executes a given number of IBC Auto-Forwards",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -476,6 +476,7 @@ func CmdExecutePendingIbcAutoForwards() *cobra.Command {
 			msg := types.MsgExecuteIbcAutoForwards{
 				ForwardsToClear: forwardsToClear,
 				Executor:        cliCtx.GetFromAddress().String(),
+				EvmChainPrefix:  args[1],
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
