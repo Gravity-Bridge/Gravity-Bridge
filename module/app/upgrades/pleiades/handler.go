@@ -27,10 +27,6 @@ func GetPleiadesUpgradeHandler(
 				EvmChainPrefix: "oraib",
 				EvmChainName:   "Binance Smart Chain",
 			},
-			{
-				EvmChainPrefix: "eth",
-				EvmChainName:   "Ethereum",
-			},
 		}
 
 		for _, evmChain := range evmChains {
