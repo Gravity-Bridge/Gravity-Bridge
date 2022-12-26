@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -15,6 +16,12 @@ func (app *Gravity) assertBech32PrefixMatches(ctx sdk.Context) {
 	if app == nil || config == nil || app.bech32IbcKeeper == nil {
 		panic("Invalid app/config/keeper state")
 	}
+
+	err := app.bech32IbcKeeper.SetNativeHrp(ctx, config.GetBech32AccountAddrPrefix())
+	if err != nil {
+		panic(sdkerrors.Wrap(err, "Unable to start, bech32ibc module not initialized to the correct prefix"))
+	}
+
 	nativePrefix, err := app.bech32IbcKeeper.GetNativeHrp(ctx)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "Error obtaining bech32ibc NativeHrp"))
