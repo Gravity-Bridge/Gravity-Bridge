@@ -64,13 +64,13 @@ func TestOnRecvPacket(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		malleate    func() channeltypes.Packet
+		getPacket   func() channeltypes.Packet
 		ackSuccess  bool
 		expectedRes types.QueryPendingSendToEthResponse
 	}{
 		{
 			name: "ibc conversion - auto forward to evm chain",
-			malleate: func() channeltypes.Packet {
+			getPacket: func() channeltypes.Packet {
 				// Send bsc from Oraichain to OraiBridge in SendPacket method, the denom is extracted by calling DenomPathFromHash()
 				transfer := transfertypes.NewFungibleTokenPacketData(myTokenDenom, "100", oraiAddr, gravityAddr.String())
 				// set destination in memo
@@ -105,7 +105,7 @@ func TestOnRecvPacket(t *testing.T) {
 
 	for _, tc := range testCases {
 
-		packet := tc.malleate()
+		packet := tc.getPacket()
 
 		// Set Denom Trace
 		denomTrace := transfertypes.DenomTrace{
