@@ -263,6 +263,7 @@ type TestInput struct {
 	BankKeeper        bankkeeper.BaseKeeper
 	GovKeeper         govkeeper.Keeper
 	IbcTransferKeeper ibctransferkeeper.Keeper
+	IBCKeeper         *ibckeeper.Keeper
 	Context           sdk.Context
 	Marshaler         codec.Codec
 	LegacyAmino       *codec.LegacyAmino
@@ -664,17 +665,19 @@ func CreateTestEnv(t *testing.T) TestInput {
 	k.SetParams(ctx, TestingGravityParams)
 
 	testInput := TestInput{
-		GravityKeeper:   k,
-		AccountKeeper:   accountKeeper,
-		BankKeeper:      bankKeeper,
-		StakingKeeper:   stakingKeeper,
-		SlashingKeeper:  slashingKeeper,
-		DistKeeper:      distKeeper,
-		GovKeeper:       govKeeper,
-		Context:         ctx,
-		Marshaler:       marshaler,
-		LegacyAmino:     cdc,
-		GravityStoreKey: gravityKey,
+		GravityKeeper:     k,
+		AccountKeeper:     accountKeeper,
+		BankKeeper:        bankKeeper,
+		StakingKeeper:     stakingKeeper,
+		SlashingKeeper:    slashingKeeper,
+		IbcTransferKeeper: ibcTransferKeeper,
+		IBCKeeper:         &ibcKeeper,
+		DistKeeper:        distKeeper,
+		GovKeeper:         govKeeper,
+		Context:           ctx,
+		Marshaler:         marshaler,
+		LegacyAmino:       cdc,
+		GravityStoreKey:   gravityKey,
 	}
 	// check invariants before starting
 	testInput.Context.Logger().Info("Asserting invariants on new test env")

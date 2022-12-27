@@ -120,17 +120,6 @@ func (msg *MsgValsetConfirm) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{acc}
 }
 
-// NewMsgSendToEth returns a new msgSendToEth
-func NewMsgSendToEth(evmChainPrefix string, sender sdk.AccAddress, destAddress EthAddress, send sdk.Coin, bridgeFee sdk.Coin) *MsgSendToEth {
-	return &MsgSendToEth{
-		Sender:         sender.String(),
-		EthDest:        destAddress.GetAddress().Hex(),
-		Amount:         send,
-		BridgeFee:      bridgeFee,
-		EvmChainPrefix: evmChainPrefix,
-	}
-}
-
 // Route should return the name of the module
 func (msg MsgSendToEth) Route() string { return RouterKey }
 
