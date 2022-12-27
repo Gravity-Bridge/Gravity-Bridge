@@ -51,3 +51,14 @@ pub async fn get_net_version_with_retry(web3: &Web3) -> u64 {
     }
     res.unwrap()
 }
+
+/// gets the latest finalized block number, no matter how long it takes
+pub async fn get_finalized_block_with_retry(web3: &Web3) -> Uint256 {
+    let mut res = web3.eth_get_finalized_block().await;
+    while res.is_err() {
+        error!("Failed to get finalized block! Is your Eth node working? Does it suppport the 'finalized' param?");
+        delay_for(RETRY_TIME).await;
+        res = web3.eth_get_finalized_block().await;
+    }
+    res.unwrap().number
+}
