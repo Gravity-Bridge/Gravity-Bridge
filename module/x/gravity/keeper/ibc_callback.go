@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -65,10 +66,7 @@ func GetReceivedCoin(srcPort, srcChannel, dstPort, dstChannel, rawDenom, rawAmt 
 	}
 }
 
-type MemoSendToEth struct {
-	EthDest        string `json:"eth_dest,omitempty"`
-	EvmChainPrefix string `json:"evm_chain_prefix,omitempty"`
-}
+var memoSendToEthRegexp = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9_-]+)0x[0-9a-fA-F]{40}$`)
 
 // OnRecvPacket performs the ICS20 middleware receive callback for automatically
 // converting an IBC Coin to their ERC20 representation.
@@ -93,13 +91,16 @@ func (k Keeper) OnRecvPacket(
 	if len(data.Memo) == 0 {
 		return ack
 	}
-	var msg MemoSendToEth
-	// try to decode to MsgSendtoEth, but with default as well
-	if err := types.ModuleCdc.UnmarshalJSON([]byte(data.Memo), &msg); err != nil {
+
+	// check memo format
+	var match []string
+	if match = memoSendToEthRegexp.FindStringSubmatch(data.Memo); len(match) == 0 {
 		return ack
 	}
+	evmChainPrefix := match[1]
+	ethDest := data.Memo[len(evmChainPrefix):]
 
-	// Receiver become sender when send evm_prefix contract_address token to evm
+	// Receiver become sender when send evm_prefix + contract_address token to evm
 	sender, err := sdk.AccAddressFromBech32(data.Receiver)
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(err.Error())
@@ -119,11 +120,11 @@ func (k Keeper) OnRecvPacket(
 		data.Denom, data.Amount,
 	)
 
-	dest, err := types.NewEthAddress(msg.EthDest)
+	dest, err := types.NewEthAddress(ethDest)
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(err.Error())
 	}
-	_, erc20, err := k.DenomToERC20Lookup(ctx, msg.EvmChainPrefix, coin.Denom)
+	_, erc20, err := k.DenomToERC20Lookup(ctx, evmChainPrefix, coin.Denom)
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(err.Error())
 	}
@@ -132,7 +133,8 @@ func (k Keeper) OnRecvPacket(
 		return channeltypes.NewErrorAcknowledgement(sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted").Error())
 	}
 
-	txID, err := k.AddToOutgoingPool(ctx, msg.EvmChainPrefix, sender, *dest, coin, sdk.Coin{Denom: coin.Denom, Amount: sdk.ZeroInt()})
+	// finally add to outgoing pool and waiting for gbt to submit it via MsgRequestBatch
+	txID, err := k.AddToOutgoingPool(ctx, evmChainPrefix, sender, *dest, coin, sdk.Coin{Denom: coin.Denom, Amount: sdk.ZeroInt()})
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(err.Error())
 	}

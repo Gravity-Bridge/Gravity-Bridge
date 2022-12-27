@@ -1,13 +1,12 @@
 package gravity
 
 import (
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	porttypes "github.com/cosmos/ibc-go/v3/modules/core/05-port/types"
 	"github.com/cosmos/ibc-go/v3/modules/core/exported"
-
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 )
 
 var _ porttypes.Middleware = &IBCMiddleware{}
@@ -36,6 +35,7 @@ func (im IBCMiddleware) OnRecvPacket(
 ) exported.Acknowledgement {
 	// check if packet has memo then create MsgSendToEth, otherwise just call underlying
 	// this middleware is for IBC transfer
+
 	ack := im.app.OnRecvPacket(ctx, packet, relayer)
 
 	// return if the acknowledgement is an error ACK

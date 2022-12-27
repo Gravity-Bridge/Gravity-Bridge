@@ -10,7 +10,6 @@ import (
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -322,7 +321,7 @@ func TestDiffAttestationsWithDiffEvmChainPrefixClaimHash(t *testing.T) {
 		EventNonce:     nonce,
 		EthBlockHeight: 1,
 		TokenContract:  "0x00000000000000000001",
-		Amount:         sdk.NewInt(10000000000 + int64(1)),
+		Amount:         sdktypes.NewInt(10000000000 + int64(1)),
 		EthereumSender: "0x00000000000000000002",
 		CosmosReceiver: "0x00000000000000000003",
 		Orchestrator:   "0x00000000000000000004",

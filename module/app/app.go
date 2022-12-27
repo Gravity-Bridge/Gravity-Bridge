@@ -541,7 +541,7 @@ func NewGravityApp(
 	// create IBC module from top to bottom of stack
 	var transferStack porttypes.IBCModule
 	transferStack = transfer.NewIBCModule(ibcTransferKeeper)
-	// transferStack = claims.NewIBCMiddleware(transferStack, *app.gravityKeeper)
+	transferStack = gravity.NewIBCMiddleware(transferStack, *app.gravityKeeper)
 
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferStack)
