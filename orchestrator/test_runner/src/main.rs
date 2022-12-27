@@ -20,7 +20,7 @@ use crate::send_to_eth_fees::send_to_eth_fees_test;
 use crate::signature_slashing::signature_slashing_test;
 use crate::slashing_delegation::slashing_delegation_test;
 use crate::tx_cancel::send_to_eth_and_cancel;
-use crate::upgrade::{upgrade_part_1, upgrade_part_2};
+use crate::upgrade::{run_upgrade, upgrade_part_1, upgrade_part_2};
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
 use crate::vesting::vesting_test;
@@ -467,6 +467,17 @@ pub async fn main() {
                 erc20_addresses,
             )
             .await;
+            return;
+        } else if test_type == "UPGRADE_ONLY" {
+            info!("Running a gravity upgrade with no assertions");
+            let contact = Contact::new(
+                COSMOS_NODE_GRPC.as_str(),
+                TOTAL_TIMEOUT,
+                ADDRESS_PREFIX.as_str(),
+            )
+            .unwrap();
+            let plan_name = env::var("UPGRADE_NAME").unwrap_or_else(|_| "upgrade".to_owned());
+            run_upgrade(&contact, keys, plan_name, true).await;
             return;
         } else if test_type == "IBC_AUTO_FORWARD" {
             info!("Starting IBC Auto-Forward test");
