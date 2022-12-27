@@ -484,6 +484,7 @@ func NewGravityApp(
 		&accountKeeper,
 		&ibcTransferKeeper,
 		&bech32IbcKeeper,
+		ibcKeeper.ChannelKeeper, // interface default is reference
 	)
 	app.gravityKeeper = &gravityKeeper
 
@@ -536,10 +537,14 @@ func NewGravityApp(
 	app.govKeeper = &govKeeper
 
 	ibcTransferAppModule := transfer.NewAppModule(ibcTransferKeeper)
-	ibcTransferIBCModule := transfer.NewIBCModule(ibcTransferKeeper)
+
+	// create IBC module from top to bottom of stack
+	var transferStack porttypes.IBCModule
+	transferStack = transfer.NewIBCModule(ibcTransferKeeper)
+	// transferStack = claims.NewIBCMiddleware(transferStack, *app.gravityKeeper)
 
 	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibcTransferIBCModule)
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferStack)
 	ibcKeeper.SetRouter(ibcRouter)
 
 	evidenceKeeper := *evidencekeeper.NewKeeper(

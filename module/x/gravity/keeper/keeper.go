@@ -20,10 +20,10 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	"github.com/tendermint/tendermint/libs/log"
 
-	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
-
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
+	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/core/05-port/types"
+	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 )
 
 // Check that our expected keeper types are implemented
@@ -46,6 +46,7 @@ type Keeper struct {
 	accountKeeper     *authkeeper.AccountKeeper
 	ibcTransferKeeper *ibctransferkeeper.Keeper
 	bech32IbcKeeper   *bech32ibckeeper.Keeper
+	ics4Wrapper       ibctransfertypes.ICS4Wrapper
 
 	AttestationHandler interface {
 		Handle(sdk.Context, types.Attestation, types.EthereumClaim) error
@@ -89,6 +90,7 @@ func NewKeeper(
 	accKeeper *authkeeper.AccountKeeper,
 	ibcTransferKeeper *ibctransferkeeper.Keeper,
 	bech32IbcKeeper *bech32ibckeeper.Keeper,
+	ics4Wrapper ibctransfertypes.ICS4Wrapper,
 ) Keeper {
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
@@ -107,6 +109,7 @@ func NewKeeper(
 		accountKeeper:      accKeeper,
 		ibcTransferKeeper:  ibcTransferKeeper,
 		bech32IbcKeeper:    bech32IbcKeeper,
+		ics4Wrapper:        ics4Wrapper,
 		AttestationHandler: nil,
 	}
 	attestationHandler := AttestationHandler{keeper: &k}
