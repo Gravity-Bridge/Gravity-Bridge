@@ -193,3 +193,32 @@ func TestIBCMetadataProposal(t *testing.T) {
 	require.Error(t, err)
 
 }
+
+// nolint: exhaustruct
+func TestAddEvmChainProposal(t *testing.T) {
+	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	ctx := input.Context
+	goodProposal := types.AddEvmChainProposal{
+		Title:          "test tile",
+		Description:    "test description",
+		EvmChainPrefix: "dummy",
+		EvmChainName:   "Dummy",
+	}
+
+	gk := input.GravityKeeper
+
+	err := gk.HandleAddEvmChainProposal(ctx, &goodProposal)
+	require.NoError(t, err)
+
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, "dummy")
+	require.NotNil(t, evmChain)
+
+	// does not have a zero base unit
+	badEvmChainPrefix := "dummy" // already exists above
+	goodProposal.EvmChainPrefix = badEvmChainPrefix
+
+	err = gk.HandleAddEvmChainProposal(ctx, &goodProposal)
+	require.Error(t, err)
+}

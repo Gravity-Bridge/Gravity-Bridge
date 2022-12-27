@@ -36,6 +36,11 @@ func RegisterProposalTypes() {
 		govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
 		govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
 	}
+	addEvmChain := "gravity/AddEvmChain"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(addEvmChain, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeAddEvmChain)
+		govtypes.RegisterProposalTypeCodec(&types.AddEvmChainProposal{}, addEvmChain)
+	}
 }
 
 func NewGravityProposalHandler(k Keeper) govtypes.Handler {
@@ -47,6 +52,8 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 			return k.HandleAirdropProposal(ctx, c)
 		case *types.IBCMetadataProposal:
 			return k.HandleIBCMetadataProposal(ctx, c)
+		case *types.AddEvmChainProposal:
+			return k.HandleAddEvmChainProposal(ctx, c)
 
 		default:
 			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
@@ -61,6 +68,45 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 func (k Keeper) HandleUnhaltBridgeProposal(ctx sdk.Context, p *types.UnhaltBridgeProposal) error {
 	ctx.Logger().Info("Gov vote passed: Resetting oracle history", "nonce", p.TargetNonce)
 	pruneAttestationsAfterNonce(ctx, p.EvmChainPrefix, k, p.TargetNonce)
+	return nil
+}
+
+// In the event we need to add new evm chains, we can create a new proposal
+func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainProposal) error {
+
+	isEvmChainExist := k.GetEvmChainData(ctx, p.EvmChainPrefix)
+	if isEvmChainExist != nil {
+		return sdkerrors.Wrap(types.ErrInvalid, "The proposed EVM Chain already exists on-chain. Cannot re-add it!")
+	}
+
+	ctx.Logger().Info("Gov vote passed: Adding new EVM chain", "evm chain prefix", p.EvmChainPrefix)
+	evmChain := types.EvmChainData{
+		EvmChain:           types.EvmChain{EvmChainPrefix: p.EvmChainPrefix, EvmChainName: p.EvmChainName},
+		GravityNonces:      types.GravityNonces{},
+		Valsets:            []types.Valset{},
+		ValsetConfirms:     []types.MsgValsetConfirm{},
+		Batches:            []types.OutgoingTxBatch{},
+		BatchConfirms:      []types.MsgConfirmBatch{},
+		LogicCalls:         []types.OutgoingLogicCall{},
+		LogicCallConfirms:  []types.MsgConfirmLogicCall{},
+		Attestations:       []types.Attestation{},
+		DelegateKeys:       []types.MsgSetOrchestratorAddress{},
+		Erc20ToDenoms:      []types.ERC20ToDenom{},
+		UnbatchedTransfers: []types.OutgoingTransferTx{},
+	}
+	k.SetEvmChainData(ctx, evmChain.EvmChain)
+
+	chainPrefix := p.EvmChainPrefix
+	k.SetLatestValsetNonce(ctx, chainPrefix, evmChain.GravityNonces.LatestValsetNonce)
+	k.setLastObservedEventNonce(ctx, chainPrefix, evmChain.GravityNonces.LastObservedNonce)
+	k.SetLastSlashedValsetNonce(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedValsetNonce)
+	k.SetLastSlashedBatchBlock(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedBatchBlock)
+	k.SetLastSlashedLogicCallBlock(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedLogicCallBlock)
+	k.setID(ctx, evmChain.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, chainPrefix))
+	k.setID(ctx, evmChain.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, chainPrefix))
+	k.SetEvmChainData(ctx, evmChain.EvmChain)
+
+	initBridgeDataFromGenesis(ctx, k, evmChain)
 	return nil
 }
 

@@ -46,6 +46,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 		CmdGovAirdropProposal(),
 		CmdGovUnhaltBridgeProposal(),
 		CmdExecutePendingIbcAutoForwards(),
+		CmdAddEvmChainProposal(),
 	}...)
 
 	return gravityTxCmd
@@ -279,6 +280,55 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 				return sdkerrors.Wrap(err, "proposal json file is not valid json")
 			}
 
+			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+			}
+
+			// Make the message
+			msg := govtypes.MsgSubmitProposal{
+				Proposer:       cosmosAddr.String(),
+				InitialDeposit: initialDeposit,
+				Content:        proposalAny,
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdAddEvmChainProposal enables users to create a proposal to add new EVM chains
+func CmdAddEvmChainProposal() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "add-evm-chain [evm-chain-name] [evm-chain-prefix] [title] [initial-deposit] [description]",
+		Short: "Creates a governance proposal to support a new EVM chain on the network",
+		Args:  cobra.ExactArgs(5),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			cosmosAddr := cliCtx.GetFromAddress()
+
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[3])
+			if err != nil {
+				return sdkerrors.Wrap(err, "bad initial deposit amount")
+			}
+
+			if len(initialDeposit) != 1 {
+				return fmt.Errorf("unexpected coin amounts, expecting just 1 coin amount for initialDeposit")
+			}
+
+			evmChainName := args[0]
+			evmChainPrefix := args[1]
+
+			proposal := &types.AddEvmChainProposal{EvmChainName: evmChainName, EvmChainPrefix: evmChainPrefix, Title: args[2], Description: args[4]}
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
 				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
