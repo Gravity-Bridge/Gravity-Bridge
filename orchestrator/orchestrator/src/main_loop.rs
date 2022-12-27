@@ -2,7 +2,6 @@
 //! that can only be run by a validator. This single binary the 'Orchestrator' runs not only these two rules but also the untrusted role of a relayer, that does not need any permissions and has it's
 //! own crate and binary so that anyone may run it.
 
-use crate::ethereum_event_watcher::get_block_delay;
 use crate::{ethereum_event_watcher::check_for_events, oracle_resync::get_last_checked_block};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{address::Address as EthAddress, Uint256};
@@ -112,7 +111,6 @@ pub async fn eth_oracle_main_loop(
 ) {
     let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
     let long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
-    let block_delay = get_block_delay(&web3).await;
     let mut last_checked_block: Uint256 = get_last_checked_block(
         grpc_client.clone(),
         our_cosmos_address,
@@ -214,7 +212,6 @@ pub async fn eth_oracle_main_loop(
             cosmos_key,
             fee.clone(),
             last_checked_block.clone(),
-            block_delay.clone(),
         )
         .await
         {
