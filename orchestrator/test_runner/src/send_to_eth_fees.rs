@@ -12,18 +12,18 @@ use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::{submit_send_to_eth_fees_proposal, SendToEthFeesProposalJson};
 use cosmos_gravity::query::get_min_chain_fee_basis_points;
 use cosmos_gravity::send::MSG_SEND_TO_ETH_TYPE_URL;
+use cosmos_gravity::utils::get_min_send_to_eth_fee;
 use deep_space::{Coin, Contact, CosmosPrivateKey, Fee, MessageArgs, Msg, PrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::gravity::{query_client::QueryClient as GravityQueryClient, MsgSendToEth};
 use gravity_utils::num_conversion::one_atom;
-use num::{Integer, ToPrimitive};
+use num::ToPrimitive;
 use num256::Uint256;
 use std::ops::Mul;
 use std::time::{Duration, Instant};
 use tonic::transport::Channel;
 use web30::client::Web3;
 
-const BASIS_POINT_DIVISOR: u64 = 10000;
 // The voting period, in seconds. This is set in tests/container-scripts/setup-validators.sh
 const GOVERNANCE_VOTING_PERIOD: u64 = 120;
 
@@ -292,7 +292,9 @@ pub async fn send_to_eth_one_msg_txs(
     cosmos_denom: String,
 ) -> SendToEthFeeExpectations {
     info!("send_to_eth_one_msg_txs: Getting chain fee param");
-    let current_fee_basis_points = get_min_chain_fee_basis_points(contact).await;
+    let current_fee_basis_points = get_min_chain_fee_basis_points(contact)
+        .await
+        .expect("Unable to get MinChainFeeBasisPoints");
     info!("send_to_eth_one_msg_txs: setting up transactions");
     // Create the test transactions
     let queued_transactions = setup_transactions(current_fee_basis_points, 1);
@@ -427,7 +429,9 @@ pub async fn send_to_eth_multi_msg_txs(
     cosmos_denom: String,
 ) -> SendToEthFeeExpectations {
     info!("send_to_eth_multi_msg_txs: Getting chain param");
-    let current_fee_basis_points = get_min_chain_fee_basis_points(contact).await;
+    let current_fee_basis_points = get_min_chain_fee_basis_points(contact)
+        .await
+        .expect("Unable to get MinChainFeeBasisPoints");
     info!("send_to_eth_multi_msg_txs: setting up transactions");
     // Create the test transactions
     let queued_transactions = setup_transactions(
@@ -603,7 +607,9 @@ pub async fn send_to_eth_while_changing_params(
     cosmos_denom: String,
 ) -> SendToEthFeeExpectations {
     info!("send_to_eth_while_changing_params: Getting chain param");
-    let current_fee_basis_points = get_min_chain_fee_basis_points(contact).await;
+    let current_fee_basis_points = get_min_chain_fee_basis_points(contact)
+        .await
+        .expect("Unable to get MinChainFeeBasisPoints");
 
     assert!(
         current_fee_basis_points != 0,
@@ -838,7 +844,8 @@ fn setup_transactions(
     // Convert the minimum fee param to a useable fee for a send of one eth (1 * 10^18)
     let curr_fee_basis_points = Uint256::from(min_fee_basis_points);
     let erc20_bridge_amount: Uint256 = one_eth();
-    let erc20_min_fee = get_min_fee(erc20_bridge_amount.clone(), curr_fee_basis_points.clone());
+    let erc20_min_fee =
+        get_min_send_to_eth_fee(erc20_bridge_amount.clone(), curr_fee_basis_points.clone());
     let erc20_success_fees: Vec<Uint256> = get_success_test_fees(erc20_min_fee.clone());
     let erc20_fail_fees: Vec<Uint256> = get_fail_test_fees(erc20_min_fee);
     info!(
@@ -848,7 +855,8 @@ fn setup_transactions(
 
     // ... and for a send of one atom (1 * 10^6)
     let cosmos_bridge_amount = one_atom();
-    let cosmos_min_fee = get_min_fee(cosmos_bridge_amount.clone(), curr_fee_basis_points);
+    let cosmos_min_fee =
+        get_min_send_to_eth_fee(cosmos_bridge_amount.clone(), curr_fee_basis_points);
     let cosmos_success_fees: Vec<Uint256> = get_success_test_fees(cosmos_min_fee.clone());
     let cosmos_fail_fees: Vec<Uint256> = get_fail_test_fees(cosmos_min_fee);
     info!(
@@ -955,15 +963,6 @@ fn queue_sends_to_eth(
         }
     }
 }
-
-pub fn get_min_fee(bridge_amount: Uint256, min_fee_basis_points: Uint256) -> Uint256 {
-    Uint256(
-        bridge_amount
-            .div_floor(&Uint256::from(BASIS_POINT_DIVISOR).0)
-            .mul(min_fee_basis_points.0),
-    )
-}
-
 pub fn get_success_test_fees(min_fee: Uint256) -> Vec<Uint256> {
     if min_fee == 0u8.into() {
         vec![0u8.into(), 1u8.into()]
@@ -1008,7 +1007,9 @@ pub async fn submit_and_pass_send_to_eth_fees_proposal(
 
     let start = Instant::now();
     while Instant::now() - start < OPERATION_TIMEOUT {
-        let set_value = get_min_chain_fee_basis_points(contact).await;
+        let set_value = get_min_chain_fee_basis_points(contact)
+            .await
+            .expect("Unable to get MinChainFeeBasisPoints");
         if min_chain_fee_basis_points != set_value {
             continue;
         }

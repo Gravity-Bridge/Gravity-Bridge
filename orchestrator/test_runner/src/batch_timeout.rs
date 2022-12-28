@@ -4,13 +4,15 @@ use crate::{
     happy_path::test_erc20_deposit_panic,
     one_eth, one_hundred_eth,
     transaction_stress_test::{
-        lock_funds_in_pool, prep_users_for_deposit, test_bulk_send_to_cosmos,
+        lock_funds_in_pool, prep_users_for_deposit, test_bulk_send_to_cosmos, STARTING_ETH,
     },
     utils::*,
     TOTAL_TIMEOUT,
 };
 use clarity::Address as EthAddress;
-use cosmos_gravity::{query::get_gravity_params, send::send_request_batch};
+use cosmos_gravity::{
+    query::get_gravity_params, send::send_request_batch, utils::get_reasonable_send_to_eth_fee,
+};
 use deep_space::Contact;
 use gravity_proto::{
     cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange,
@@ -108,6 +110,10 @@ pub async fn batch_timeout_test(
         info!("batch request response is {:?}", res);
     }
 
+    let starting_eth = one_eth() * STARTING_ETH.into();
+    let max_nonrefundable_amount = get_reasonable_send_to_eth_fee(contact, one_hundred_eth())
+        .await
+        .expect("Unable to get reasonable fee!");
     let start = Instant::now();
     let mut good = true;
     while Instant::now() - start < TOTAL_TIMEOUT {
@@ -120,10 +126,11 @@ pub async fn batch_timeout_test(
                     .unwrap();
 
                 // we sent a random amount below 100 tokens to each user, now we're sending
-                // it all back, so we should only be down 500
-                let expected_balance = one_hundred_eth() - 500u16.into();
+                // it all back, so we should only be down 500 and whatever ChainFees we paid
+                let min_expected_balance =
+                    starting_eth.clone() - 500u16.into() - max_nonrefundable_amount.clone();
 
-                if bal != expected_balance.clone() {
+                if bal < min_expected_balance {
                     good = false;
                 }
             }
