@@ -628,6 +628,7 @@ dependencies = [
  "gravity_proto",
  "gravity_utils",
  "log",
+ "num 0.4.0",
  "num256",
  "prost 0.10.4",
  "prost-types 0.10.1",

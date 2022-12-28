@@ -34,7 +34,7 @@ pub async fn send_to_eth_and_cancel(
         user_keys.cosmos_address,
         gravity_address,
         erc20_address,
-        one_eth(),
+        one_eth() * 2u8.into(), // more than enough, including fees
         None,
         None,
     )

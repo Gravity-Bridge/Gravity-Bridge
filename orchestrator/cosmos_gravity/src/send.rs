@@ -21,7 +21,7 @@ use gravity_utils::types::*;
 
 use std::{collections::HashMap, time::Duration};
 
-use crate::utils::BadSignatureEvidence;
+use crate::utils::{get_reasonable_send_to_eth_fee, BadSignatureEvidence};
 
 pub const MEMO: &str = "Sent using Althea Gravity Bridge Orchestrator";
 pub const TIMEOUT: Duration = Duration::from_secs(60);
@@ -317,10 +317,15 @@ pub async fn send_to_eth(
             amount.denom, bridge_fee.denom,
         )));
     }
-    let chain_fee = chain_fee.unwrap_or(Coin {
-        amount: 0u8.into(),
-        denom: amount.denom.clone(),
-    });
+    let chain_fee = match chain_fee {
+        Some(fee) => fee,
+        None => Coin {
+            amount: get_reasonable_send_to_eth_fee(contact, amount.amount.clone())
+                .await
+                .expect("Unable to get reasonable SendToEth fee"),
+            denom: amount.denom.clone(),
+        },
+    };
     if amount.denom != chain_fee.denom {
         return Err(CosmosGrpcError::BadInput(format!(
             "{} {} is an invalid denom set for SendToEth you must pay chain fees in the same token your sending",
@@ -355,6 +360,10 @@ pub async fn send_to_eth(
         bridge_fee: Some(bridge_fee.into()),
         chain_fee: Some(chain_fee.into()),
     };
+    info!(
+        "Sending to Ethereum with MsgSendToEth: {:?}",
+        msg_send_to_eth
+    );
 
     let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);
     contact
