@@ -2,7 +2,7 @@ package keeper
 
 import (
 	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -66,8 +66,6 @@ func GetReceivedCoin(srcPort, srcChannel, dstPort, dstChannel, rawDenom, rawAmt 
 	}
 }
 
-var memoSendToEthRegexp = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9_-]+)0x[0-9a-fA-F]{40}$`)
-
 // OnRecvPacket performs the ICS20 middleware receive callback for automatically
 // converting an IBC Coin to their ERC20 representation.
 // For the conversion to succeed, the IBC denomination must have previously been
@@ -92,13 +90,14 @@ func (k Keeper) OnRecvPacket(
 		return ack
 	}
 
-	// check memo format
-	var match []string
-	if match = memoSendToEthRegexp.FindStringSubmatch(data.Memo); len(match) == 0 {
+	// check memo format is <evm chain prefix>0xabc...
+	var ind int
+	if ind = strings.Index(data.Memo, "0x"); ind == -1 {
 		return ack
 	}
-	evmChainPrefix := match[1]
-	ethDest := data.Memo[len(evmChainPrefix):]
+
+	evmChainPrefix := data.Memo[:ind]
+	ethDest := data.Memo[ind:]
 
 	// Receiver become sender when send evm_prefix + contract_address token to evm
 	sender, err := sdk.AccAddressFromBech32(data.Receiver)
