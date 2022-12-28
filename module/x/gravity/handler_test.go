@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // nolint: exhaustruct
@@ -221,7 +221,9 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountB)}, balance)
 
-	// send attestations from all five validators
+	// send attestations from all five validators with remote channel
+	// Mint the coins to be forwarded, since the gravity module should already hold the tokens
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, ibctransfertypes.ModuleName, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountA)}))
 	for _, v := range keeper.OrchAddrs {
 		// Test to finally accept consecutive nonce
 		ethClaim := types.MsgSendToCosmosClaim{
