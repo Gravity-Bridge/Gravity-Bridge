@@ -57,9 +57,12 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 // In the event of a native receiver, bank module handles the transfer, otherwise an IBC transfer is initiated
 // Note: Previously SendToCosmos was referred to as a bridge "Deposit", as tokens are deposited into the gravity contract
 func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgSendToCosmosClaim) error {
+
 	invalidAddress := false
 	// Validate the receiver as a valid bech32 address
-	receiverAddress, addressErr := types.IBCAddressFromBech32(claim.CosmosReceiver)
+	_, cosmosReceiver := claim.GetSourceChannelAndReceiver()
+
+	receiverAddress, addressErr := types.IBCAddressFromBech32(cosmosReceiver)
 
 	if addressErr != nil {
 		invalidAddress = true
@@ -463,13 +466,10 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 	if accountPrefix == nativePrefix { // Send to a native gravity account
 		return false, a.sendCoinToLocalAddress(ctx, claim, receiver, coin)
 	} else { // Try to send tokens to IBC chain, fall back to native send on errors
-		var sourceChannel string
-		var cosmosReceiver string
 		// get source channel from account prefix or from HrpIbcRecord
-		if ind := strings.Index(accountPrefix, "/"); ind != -1 {
-			sourceChannel = accountPrefix[:ind]
-			cosmosReceiver = claim.CosmosReceiver[ind+1:]
-		} else {
+		sourceChannel, cosmosReceiver := claim.GetSourceChannelAndReceiver()
+		// if sourceChannel is empty
+		if len(sourceChannel) == 0 {
 			hrpIbcRecord, err := a.keeper.bech32IbcKeeper.GetHrpIbcRecord(ctx, accountPrefix)
 			if err != nil {
 				hash, _ := claim.ClaimHash()
@@ -487,7 +487,6 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 				)
 			}
 			sourceChannel = hrpIbcRecord.SourceChannel
-			cosmosReceiver = claim.CosmosReceiver
 		}
 
 		// Add the SendToCosmos to the Pending IBC Auto-Forward Queue, which when processed will send the funds to a

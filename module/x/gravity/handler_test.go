@@ -112,6 +112,10 @@ func TestHandleMsgSendToEth(t *testing.T) {
 
 // nolint: exhaustruct
 func TestMsgSendToCosmosClaim(t *testing.T) {
+
+	input, ctx := keeper.SetupFiveValChain(t)
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
 	var (
 		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
@@ -119,9 +123,10 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		amountA, _      = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
 		amountB, _      = sdk.NewIntFromString("100000000000000000000") // 100 ETH
+		ibcChannel      = "channel-0"
+		myOraiAddr      = sdk.MustBech32ifyAddressBytes("orai", myCosmosAddr.Bytes())
 	)
-	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	h := NewHandler(input.GravityKeeper)
@@ -215,6 +220,29 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountB)}, balance)
+
+	// send attestations from all five validators
+	for _, v := range keeper.OrchAddrs {
+		// Test to finally accept consecutive nonce
+		ethClaim := types.MsgSendToCosmosClaim{
+			EventNonce:     uint64(3),
+			Amount:         amountA,
+			TokenContract:  tokenETHAddr,
+			EthereumSender: anyETHAddr,
+			CosmosReceiver: ibcChannel + "/" + myOraiAddr,
+			Orchestrator:   v.String(),
+			EvmChainPrefix: evmChain.EvmChainPrefix,
+		}
+
+		// when
+		ctx = ctx.WithBlockTime(myBlockTime)
+		_, err := h(ctx, &ethClaim)
+		EndBlocker(ctx, input.GravityKeeper)
+
+		// then
+		require.NoError(t, err)
+	}
+
 }
 
 // nolint: exhaustruct
@@ -427,6 +455,10 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 
 // nolint: exhaustruct
 func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
+
+	input, ctx := keeper.SetupFiveValChain(t)
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
 	var (
 		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		myNonce         = uint64(1)
@@ -434,8 +466,7 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
 		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 	)
-	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	h := NewHandler(input.GravityKeeper)
@@ -509,6 +540,10 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 // Tests sending funds to a native account and to that same account with a foreign prefix
 // The SendToCosmosClaims should modify the balance of the underlying account
 func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
+
+	input, ctx := keeper.SetupFiveValChain(t)
+	evmChain := input.GravityKeeper.GetEvmChains(ctx)[0]
+
 	var (
 		coreAddress          = "6ahjkfqxpp6lvfy9fpfnfjg39xr96qet"
 		myForeignBytes, err0 = types.IBCAddressFromBech32("levity1" + coreAddress + "vanuy5")
@@ -522,8 +557,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 	)
 	require.NoError(t, err0)
 	require.NoError(t, err1)
-	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChains(ctx)[0]
+
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	k := input.GravityKeeper
@@ -639,6 +673,10 @@ func TestMsgSetOrchestratorAddresses(t *testing.T) {
 // TestMsgValsetConfirm ensures that the valset confirm message sets a validator set confirm
 // in the store and validates the signature
 func TestMsgValsetConfirm(t *testing.T) {
+
+	input, ctx := keeper.SetupFiveValChain(t)
+	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
+
 	var (
 		blockTime          = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		blockHeight  int64 = 200
@@ -650,8 +688,6 @@ func TestMsgValsetConfirm(t *testing.T) {
 	ethAddressParsed, err := types.NewEthAddress(ethAddress)
 	require.NoError(t, err)
 
-	input, ctx := keeper.SetupFiveValChain(t)
-	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	k := input.GravityKeeper

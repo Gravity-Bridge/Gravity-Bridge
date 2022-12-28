@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -433,6 +434,14 @@ func (msg *MsgExecuteIbcAutoForwards) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+func (msg *MsgSendToCosmosClaim) GetSourceChannelAndReceiver() (string, string) {
+	if ind := strings.Index(msg.CosmosReceiver, "/"); ind != -1 {
+		return msg.CosmosReceiver[0:ind], msg.CosmosReceiver[ind+1:]
+	} else {
+		return "", msg.CosmosReceiver
+	}
 }
 
 func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {

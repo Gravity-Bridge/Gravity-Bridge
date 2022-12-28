@@ -17,6 +17,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
@@ -26,6 +27,7 @@ import (
 // requires ForeignReceiver's bech32 prefix to be registered and match with IbcChannel, and gravity module must have the
 // funds to meet this forward amount
 func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, evmChainPrefix string, forward types.PendingIbcAutoForward) error {
+
 	if err := forward.ValidateBasic(); err != nil {
 		return err
 	}
@@ -34,20 +36,13 @@ func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, evmChainPrefix st
 	if forward.EventNonce > latestEventNonce {
 		return sdkerrors.Wrap(types.ErrInvalid, "EventNonce must be <= latest observed event nonce")
 	}
+
 	// no need to validate again because IbcChannel can come from prefix of Cosmos address
-	// prefix, _, err := bech32.DecodeAndConvert(forward.ForeignReceiver)
-	// if err != nil { // Covered by ValidateBasic, but check anyway to avoid linter issues
-	// 	return sdkerrors.Wrapf(err, "ForeignReceiver %s is not a valid bech32 address", forward.ForeignReceiver)
-	// }
-	// hrpRecord, err := k.bech32IbcKeeper.GetHrpIbcRecord(ctx, prefix)
-	// if err != nil {
-	// 	return sdkerrors.Wrapf(bech32ibctypes.ErrInvalidHRP, "ForeignReciever %s has an invalid or unregistered prefix", forward.ForeignReceiver)
-	// }
-	// if forward.IbcChannel != hrpRecord.SourceChannel {
-	// 	return sdkerrors.Wrapf(types.ErrMismatched, "IbcChannel %s does not match the registered prefix's IBC channel %v",
-	// 		forward.IbcChannel, hrpRecord.String(),
-	// 	)
-	// }
+	_, _, err := bech32.DecodeAndConvert(forward.ForeignReceiver)
+	if err != nil { // Covered by ValidateBasic, but check anyway to avoid linter issues
+		return sdkerrors.Wrapf(err, "ForeignReceiver %s is not a valid bech32 address", forward.ForeignReceiver)
+	}
+
 	modAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName).GetAddress()
 	modBal := k.bankKeeper.GetBalance(ctx, modAcc, forward.Token.Denom)
 	if modBal.IsLT(*forward.Token) {
