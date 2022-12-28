@@ -125,6 +125,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 		amountB, _      = sdk.NewIntFromString("100000000000000000000") // 100 ETH
 		ibcChannel      = "channel-0"
 		myOraiAddr      = sdk.MustBech32ifyAddressBytes("orai", myCosmosAddr.Bytes())
+		erc20Denom      = evmChain.EvmChainPrefix + "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
 	)
 
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -170,7 +171,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 
 	// and vouchers added to the account
 	balance := input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountA)}, balance)
+	assert.Equal(t, sdk.Coins{sdk.NewCoin(erc20Denom, amountA)}, balance)
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {
@@ -194,7 +195,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	}
 
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountA)}, balance)
+	assert.Equal(t, sdk.Coins{sdk.NewCoin(erc20Denom, amountA)}, balance)
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {
@@ -219,11 +220,11 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	}
 
 	balance = input.BankKeeper.GetAllBalances(ctx, myCosmosAddr)
-	assert.Equal(t, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountB)}, balance)
+	assert.Equal(t, sdk.Coins{sdk.NewCoin(erc20Denom, amountB)}, balance)
 
 	// send attestations from all five validators with remote channel
 	// Mint the coins to be forwarded, since the gravity module should already hold the tokens
-	require.NoError(t, input.BankKeeper.MintCoins(ctx, ibctransfertypes.ModuleName, sdk.Coins{sdk.NewCoin(evmChain.EvmChainPrefix+"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountA)}))
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, ibctransfertypes.ModuleName, sdk.Coins{sdk.NewCoin(erc20Denom, amountA)}))
 	for _, v := range keeper.OrchAddrs {
 		// Test to finally accept consecutive nonce
 		ethClaim := types.MsgSendToCosmosClaim{
