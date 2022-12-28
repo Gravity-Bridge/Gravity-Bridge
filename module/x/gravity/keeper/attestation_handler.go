@@ -463,26 +463,36 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 	if accountPrefix == nativePrefix { // Send to a native gravity account
 		return false, a.sendCoinToLocalAddress(ctx, claim, receiver, coin)
 	} else { // Try to send tokens to IBC chain, fall back to native send on errors
-		hrpIbcRecord, err := a.keeper.bech32IbcKeeper.GetHrpIbcRecord(ctx, accountPrefix)
-		if err != nil {
-			hash, _ := claim.ClaimHash()
-			a.keeper.logger(ctx).Error("Unregistered foreign prefix",
-				"cause", err.Error(), "address", receiver,
-				"claim type", claim.GetType(),
-				"id", types.GetAttestationKey(claim.EvmChainPrefix, claim.GetEventNonce(), hash),
-				"nonce", fmt.Sprint(claim.GetEventNonce()),
-			)
+		var sourceChannel string
+		var cosmosReceiver string
+		// get source channel from account prefix or from HrpIbcRecord
+		if ind := strings.Index(accountPrefix, "/"); ind != -1 {
+			sourceChannel = accountPrefix[:ind]
+			cosmosReceiver = claim.CosmosReceiver[ind+1:]
+		} else {
+			hrpIbcRecord, err := a.keeper.bech32IbcKeeper.GetHrpIbcRecord(ctx, accountPrefix)
+			if err != nil {
+				hash, _ := claim.ClaimHash()
+				a.keeper.logger(ctx).Error("Unregistered foreign prefix",
+					"cause", err.Error(), "address", receiver,
+					"claim type", claim.GetType(),
+					"id", types.GetAttestationKey(claim.EvmChainPrefix, claim.GetEventNonce(), hash),
+					"nonce", fmt.Sprint(claim.GetEventNonce()),
+				)
 
-			// Fall back to sending tokens to native account
-			return false, sdkerrors.Wrap(
-				a.sendCoinToLocalAddress(ctx, claim, receiver, coin),
-				"Unregistered foreign prefix, send via x/bank",
-			)
+				// Fall back to sending tokens to native account
+				return false, sdkerrors.Wrap(
+					a.sendCoinToLocalAddress(ctx, claim, receiver, coin),
+					"Unregistered foreign prefix, send via x/bank",
+				)
+			}
+			sourceChannel = hrpIbcRecord.SourceChannel
+			cosmosReceiver = claim.CosmosReceiver
 		}
 
 		// Add the SendToCosmos to the Pending IBC Auto-Forward Queue, which when processed will send the funds to a
 		// local address before sending via IBC
-		err = a.addToIbcAutoForwardQueue(ctx, claim.EvmChainPrefix, receiver, accountPrefix, coin, hrpIbcRecord.SourceChannel, claim)
+		err = a.addToIbcAutoForwardQueue(ctx, claim.EvmChainPrefix, receiver, cosmosReceiver, coin, sourceChannel, claim)
 
 		if err != nil {
 			a.keeper.logger(ctx).Error(
@@ -541,21 +551,17 @@ func (a AttestationHandler) addToIbcAutoForwardQueue(
 	ctx sdk.Context,
 	evmChainPrefix string,
 	receiver sdk.AccAddress,
-	accountPrefix string,
+	cosmosReceiver string,
 	coin sdk.Coin,
 	channel string,
 	claim types.MsgSendToCosmosClaim,
 ) error {
-	if strings.TrimSpace(accountPrefix) == "" {
-		panic("invalid call to addToIbcAutoForwardQueue: provided accountPrefix is empty!")
-	}
-	acctPrefix, err := types.GetPrefixFromBech32(claim.CosmosReceiver)
-	if err != nil || acctPrefix != accountPrefix {
-		panic(fmt.Sprintf("invalid call to addToIbcAutoForwardQueue: invalid or inaccurate accountPrefix %s for receiver %s!", accountPrefix, claim.CosmosReceiver))
+	if strings.TrimSpace(cosmosReceiver) == "" {
+		panic(fmt.Sprintf("invalid call to addToIbcAutoForwardQueue: invalid or inaccurate receiver %s!", claim.CosmosReceiver))
 	}
 
 	forward := types.PendingIbcAutoForward{
-		ForeignReceiver: claim.CosmosReceiver,
+		ForeignReceiver: cosmosReceiver,
 		Token:           &coin,
 		IbcChannel:      channel,
 		EventNonce:      claim.EventNonce,
