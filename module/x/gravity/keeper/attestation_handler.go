@@ -122,7 +122,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 
 	moduleAddr := a.keeper.accountKeeper.GetModuleAddress(types.ModuleName)
 	if !isCosmosOriginated { // We need to mint evm-originated coins (aka vouchers)
-		if err := a.mintEthereumOriginatedVouchers(ctx, claim.EvmChainPrefix, moduleAddr, claim, coin); err != nil {
+		if err := a.mintEthereumOriginatedVouchers(ctx, moduleAddr, claim, coin); err != nil {
 			// TODO: Evaluate closely, if we can't mint an evm voucher, what should we do?
 			return err
 		}
@@ -395,7 +395,7 @@ func (a AttestationHandler) assertSentAmount(ctx sdk.Context, moduleAddr sdk.Acc
 // mintEthereumOriginatedVouchers creates new "EvmChainPrefix0x..." vouchers for evm tokens and asserts both that the
 // supply of that voucher does not exceed Uint256 max value, and the minted balance is correct
 func (a AttestationHandler) mintEthereumOriginatedVouchers(
-	ctx sdk.Context, evmChainPrefix string, moduleAddr sdk.AccAddress, claim types.MsgSendToCosmosClaim, coin sdk.Coin,
+	ctx sdk.Context, moduleAddr sdk.AccAddress, claim types.MsgSendToCosmosClaim, coin sdk.Coin,
 ) error {
 	preMintBalance := a.keeper.bankKeeper.GetBalance(ctx, moduleAddr, coin.Denom)
 	// Ensure that users are not bridging an impossible amount, only 2^256 - 1 tokens can exist on evm chain
@@ -418,7 +418,7 @@ func (a AttestationHandler) mintEthereumOriginatedVouchers(
 		a.keeper.logger(ctx).Error("Failed minting",
 			"cause", err.Error(),
 			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(evmChainPrefix, claim.GetEventNonce(), hash),
+			"id", types.GetAttestationKey(claim.EvmChainPrefix, claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
 		return sdkerrors.Wrapf(err, "mint vouchers coins: %s", coins)
@@ -491,7 +491,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 
 		// Add the SendToCosmos to the Pending IBC Auto-Forward Queue, which when processed will send the funds to a
 		// local address before sending via IBC
-		err = a.addToIbcAutoForwardQueue(ctx, claim.EvmChainPrefix, receiver, cosmosReceiver, coin, sourceChannel, claim)
+		err = a.addToIbcAutoForwardQueue(ctx, receiver, cosmosReceiver, coin, sourceChannel, claim)
 
 		if err != nil {
 			a.keeper.logger(ctx).Error(
@@ -548,7 +548,6 @@ func (a AttestationHandler) sendCoinToLocalAddress(
 // Note: This should only be used as part of SendToCosmos attestation handling and is not a good solution for general use
 func (a AttestationHandler) addToIbcAutoForwardQueue(
 	ctx sdk.Context,
-	evmChainPrefix string,
 	receiver sdk.AccAddress,
 	cosmosReceiver string,
 	coin sdk.Coin,
@@ -567,5 +566,5 @@ func (a AttestationHandler) addToIbcAutoForwardQueue(
 	}
 
 	// forward will be validated when adding to queue, error only returned if unable to send funds to local user
-	return a.keeper.addPendingIbcAutoForward(ctx, forward, evmChainPrefix, claim.TokenContract)
+	return a.keeper.addPendingIbcAutoForward(ctx, forward, claim.EvmChainPrefix, claim.TokenContract)
 }

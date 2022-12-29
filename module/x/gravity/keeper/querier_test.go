@@ -620,7 +620,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	input.GravityKeeper.SetBatchConfirm(sdkCtx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
+	input.GravityKeeper.SetBatchConfirm(sdkCtx, &types.MsgConfirmBatch{
 		Nonce:          1,
 		TokenContract:  tokenContract,
 		EthSigner:      "0xf35e2cc8e6523d683ed44870f5b7cc785051a77d",
@@ -771,7 +771,7 @@ func TestQueryLogicCallConfirms(t *testing.T) {
 		EvmChainPrefix:    evmChain.EvmChainPrefix,
 	}
 
-	k.SetLogicCallConfirm(sdkCtx, evmChain.EvmChainPrefix, &confirm)
+	k.SetLogicCallConfirm(sdkCtx, &confirm)
 
 	res := k.GetLogicConfirmsByInvalidationIDAndNonce(sdkCtx, evmChain.EvmChainPrefix, invalidationId, 1)
 	assert.Equal(t, len(res), 1)

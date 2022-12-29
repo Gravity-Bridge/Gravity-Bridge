@@ -128,7 +128,7 @@ func TestBatches(t *testing.T) {
 				EvmChainPrefix: evmChain.EvmChainPrefix,
 			}
 
-			input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf)
+			input.GravityKeeper.SetBatchConfirm(ctx, conf)
 		}
 
 		// verify that confirms are persisted
@@ -239,7 +239,7 @@ func TestBatches(t *testing.T) {
 				EvmChainPrefix: evmChain.EvmChainPrefix,
 			}
 
-			input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf)
+			input.GravityKeeper.SetBatchConfirm(ctx, conf)
 		}
 
 		// verify that confirms are persisted
@@ -973,7 +973,7 @@ func TestBatchConfirms(t *testing.T) {
 				EvmChainPrefix: evmChain.EvmChainPrefix,
 			}
 
-			input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf)
+			input.GravityKeeper.SetBatchConfirm(ctx, conf)
 		}
 	}
 
@@ -986,7 +986,7 @@ func TestBatchConfirms(t *testing.T) {
 		Signature:      "dummysig",
 		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
-	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf) })
+	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, conf) })
 
 	// try to set connfirm with invalid token contract
 	conf = &types.MsgConfirmBatch{
@@ -997,7 +997,7 @@ func TestBatchConfirms(t *testing.T) {
 		Signature:      "dummysig",
 		EvmChainPrefix: evmChain.EvmChainPrefix,
 	}
-	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf) })
+	assert.Panics(t, func() { input.GravityKeeper.SetBatchConfirm(ctx, conf) })
 
 	// verify that confirms are persisted for each orchestrator address
 	var batchConfirm *types.MsgConfirmBatch

@@ -17,7 +17,6 @@ import (
 // TODO-JT: carefully look at atomicity of this function
 func (k Keeper) Attest(
 	ctx sdk.Context,
-	evmChainPrefix string,
 	claim types.EthereumClaim,
 	anyClaim *codectypes.Any,
 ) (*types.Attestation, error) {
@@ -35,7 +34,7 @@ func (k Keeper) Attest(
 	// and prevents validators from submitting two claims with the same nonce.
 	// This prevents there being two attestations with the same nonce that get 2/3s of the votes
 	// in the endBlocker.
-	lastEventNonce := k.GetLastEventNonceByValidator(ctx, evmChainPrefix, valAddr)
+	lastEventNonce := k.GetLastEventNonceByValidator(ctx, claim.GetEvmChainPrefix(), valAddr)
 	if claim.GetEventNonce() != lastEventNonce+1 {
 		return nil, fmt.Errorf(types.ErrNonContiguousEventNonce.Error(), lastEventNonce+1, claim.GetEventNonce())
 	}
@@ -45,7 +44,7 @@ func (k Keeper) Attest(
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "unable to compute claim hash")
 	}
-	att := k.GetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash)
+	att := k.GetAttestation(ctx, claim.GetEvmChainPrefix(), claim.GetEventNonce(), hash)
 
 	// If it does not exist, create a new one.
 	if att == nil {
@@ -67,8 +66,8 @@ func (k Keeper) Attest(
 		// Add the validator's vote to this attestation
 		att.Votes = append(att.Votes, valAddr.String())
 
-		k.SetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash, att)
-		k.SetLastEventNonceByValidator(ctx, evmChainPrefix, valAddr, claim.GetEventNonce())
+		k.SetAttestation(ctx, claim.GetEvmChainPrefix(), claim.GetEventNonce(), hash, att)
+		k.SetLastEventNonceByValidator(ctx, claim.GetEvmChainPrefix(), valAddr, claim.GetEventNonce())
 
 		return att, nil
 	} else {
@@ -79,7 +78,7 @@ func (k Keeper) Attest(
 // TryAttestation checks if an attestation has enough votes to be applied to the consensus state
 // and has not already been marked Observed, then calls processAttestation to actually apply it to the state,
 // and then marks it Observed and emits an event.
-func (k Keeper) TryAttestation(ctx sdk.Context, evmChainPrefix string, att *types.Attestation) {
+func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 
 	claim, err := k.UnpackAttestationClaim(att)
 	if err != nil {
@@ -108,7 +107,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, evmChainPrefix string, att *type
 			// If the power of all the validators that have voted on the attestation is higher or equal to the threshold,
 			// process the attestation, set Observed to true, and break
 			if attestationPower.GTE(requiredPower) {
-				lastEventNonce := k.GetLastObservedEventNonce(ctx, evmChainPrefix)
+				lastEventNonce := k.GetLastObservedEventNonce(ctx, claim.GetEvmChainPrefix())
 				// this check is performed at the next level up so this should never panic
 				// outside of programmer error.
 				if claim.GetEventNonce() != lastEventNonce+1 {
@@ -195,7 +194,7 @@ func (k Keeper) GetAttestation(ctx sdk.Context, evmChainPrefix string, eventNonc
 }
 
 // DeleteAttestation deletes the given attestation
-func (k Keeper) DeleteAttestation(ctx sdk.Context, evmChainPrefix string, att types.Attestation) {
+func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 	claim, err := k.UnpackAttestationClaim(&att)
 	if err != nil {
 		panic("Bad Attestation in DeleteAttestation")
@@ -206,7 +205,7 @@ func (k Keeper) DeleteAttestation(ctx sdk.Context, evmChainPrefix string, att ty
 	}
 	store := ctx.KVStore(k.storeKey)
 
-	store.Delete(types.GetAttestationKey(evmChainPrefix, claim.GetEventNonce(), hash))
+	store.Delete(types.GetAttestationKey(claim.GetEvmChainPrefix(), claim.GetEventNonce(), hash))
 }
 
 // GetAttestationMapping returns a mapping of eventnonce -> attestations at that nonce

@@ -214,7 +214,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	if k.GetBatchConfirm(ctx, msg.EvmChainPrefix, msg.Nonce, *contract, orchaddr) != nil {
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
-	key := k.SetBatchConfirm(ctx, msg.EvmChainPrefix, msg)
+	key := k.SetBatchConfirm(ctx, msg)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventBatchConfirmKey{
@@ -256,7 +256,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 		return nil, sdkerrors.Wrap(types.ErrDuplicate, "duplicate signature")
 	}
 
-	k.SetLogicCallConfirm(ctx, msg.EvmChainPrefix, msg)
+	k.SetLogicCallConfirm(ctx, msg)
 
 	return nil, nil
 }
@@ -286,7 +286,7 @@ func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator
 // translated from the message to the evm chain claim interface
 func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, msg types.EthereumClaim) error {
 	// Add the claim to the store
-	_, err := k.Attest(ctx, msg.GetEvmChainPrefix(), msg, msgAny)
+	_, err := k.Attest(ctx, msg, msgAny)
 	if err != nil {
 		return sdkerrors.Wrap(err, "create attestation")
 	}

@@ -144,7 +144,7 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, evmChainPrefix string, k Keepe
 					}
 				}
 
-				k.DeleteAttestation(ctx, evmChainPrefix, att)
+				k.DeleteAttestation(ctx, att)
 			}
 		}
 	}
