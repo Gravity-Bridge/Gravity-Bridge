@@ -23,6 +23,7 @@ const args = commandLineArgs([
   { name: "contractERC721", type: String },
   // test mode, if enabled this script deploys three ERC20 contracts for testing
   { name: "test-mode", type: String },
+  { name: "evm-chain", type: String, defaultValue: "goerli-testnet" },
 ]);
 
 // 4. Now, the deployer script hits a full node api, gets the Eth signatures of the valset from the latest block, and deploys the Ethereum contract.
@@ -129,7 +130,7 @@ async function deploy() {
     const main_location_b = "/gravity/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json"
     const main_location_c = "/gravity/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json"
     const main_location_721_a = "/gravity/solidity/artifacts/contracts/TestERC721A.sol/TestERC721A.json"
-    
+
     const alt_location_1_a = "/solidity/TestERC20A.json"
     const alt_location_1_b = "/solidity/TestERC20B.json"
     const alt_location_1_c = "/solidity/TestERC20C.json"
@@ -181,7 +182,7 @@ async function deploy() {
     await testERC202.deployed();
     const erc20TestAddress2 = testERC202.address;
     console.log("ERC20 deployed at Address - ", erc20TestAddress2);
-    
+
     const { abi: abi3, bytecode: bytecode3 } = getContractArtifacts(erc721_a_path);
     const erc721Factory1 = new ethers.ContractFactory(abi3, bytecode3, wallet);
     const testERC721 = (await erc721Factory1.deploy(overrides)) as TestERC721A;
@@ -237,7 +238,7 @@ async function deploy() {
   await gravity.deployed();
   console.log("Gravity deployed at Address - ", gravity.address);
   await submitGravityAddress(gravity.address);
-  
+
   console.log("Starting Gravity ERC721 contract deploy");
   const { abi: abiERC721, bytecode: bytecodeERC721 } = getContractArtifacts(args["contractERC721"]);
   const factoryERC721 = new ethers.ContractFactory(abiERC721, bytecodeERC721, wallet);
@@ -268,7 +269,7 @@ async function getLatestValset(): Promise<Valset> {
   let request_string = args["cosmos-node"] + "/abci_query"
   let params = {
     params: {
-      path: "\"/custom/gravity/currentValset/\"",
+      path: `\"/custom/gravity/currentValset/${args['evm-chain']}\"`,
       height: block_height,
       prove: "false",
     }
@@ -299,6 +300,7 @@ async function getLatestValset(): Promise<Valset> {
     }
   }
 
+  console.log('val set: ', valsets.result)
 
   console.log(decode(valsets.result.response.value));
   let valset: ValsetTypeWrapper = JSON.parse(decode(valsets.result.response.value))

@@ -87,7 +87,7 @@ websocket_addr = 'ws://localhost:26657/websocket'
 # Hermes uses a large preconfigured timeout (on the order of minutes).
 rpc_timeout = '10s'
 # Specify the prefix used by the chain. Required
-account_prefix = 'gravity'
+account_prefix = 'oraib'
 # Specify the name of the private key to use for signing transactions. Required
 # See the Adding Keys chapter for more information about managing signing keys:
 #   https://hermes.informal.systems/commands/keys/index.html#adding-keys

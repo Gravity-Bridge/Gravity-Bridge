@@ -1,0 +1,38 @@
+# Orchestrator configuration options
+[orchestrator]
+# If the built-in relayer is enabled, this relayer is configured in the [relayer] section
+relayer_enabled = true
+
+# Relayer configuration options
+
+# requests for batches sent on the Gravity Bridge side, consumes bridge chain
+# tx fees
+[relayer]
+batch_request_mode = "EveryBatch"
+relayer_loop_speed = 10
+
+[relayer.valset_relaying_mode]
+mode = "EveryValset"
+# margin= 1.1
+
+# [relayer.valset_relaying_mode]
+# mode = "ProfitableOnly"
+# margin = 1.5
+
+[relayer.batch_relaying_mode]
+mode = "EveryBatch"
+# margin = 0.00001
+
+# Use whitelist mode to relay tokens which may not be listed
+# in Uniswap, or if you want to relay a specific type for free
+# you can set the amount to "0"
+#
+# [relayer.batch_relaying_mode]
+# mode = "ProfitableWithWhitelist"
+# margin = 1.5
+# [[relayer.batch_relaying_mode.whitelist]]
+# token = "0x6Bd41fCdF129297c3524395d669c0865b3CA85B2"
+# amount = "50000"
+[metrics]
+metrics_enabled = false
+metrics_bind = "127.0.0.1:6631"

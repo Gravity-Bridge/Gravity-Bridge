@@ -72,6 +72,7 @@ contract Gravity is ReentrancyGuard {
 
 	// These are updated often
 	bytes32 public state_lastValsetCheckpoint;
+	bytes32 public initial_state_lastValsetCheckpoint;
 	mapping(address => uint256) public state_lastBatchNonces;
 	mapping(bytes32 => uint256) public state_invalidationMapping;
 	uint256 public state_lastValsetNonce = 0;
@@ -587,6 +588,13 @@ contract Gravity is ReentrancyGuard {
 		);
 	}
 
+	// function resetState(address _tokenContract) public {
+	// 	state_lastValsetCheckpoint = initial_state_lastValsetCheckpoint;
+	// 	state_lastValsetNonce = 0;
+	// 	state_lastEventNonce = 1;
+	// 	state_lastBatchNonces[_tokenContract] = 0;
+	// }
+
 	function deployERC20(
 		string calldata _cosmosDenom,
 		string calldata _name,
@@ -648,6 +656,7 @@ contract Gravity is ReentrancyGuard {
 
 		state_gravityId = _gravityId;
 		state_lastValsetCheckpoint = newCheckpoint;
+		initial_state_lastValsetCheckpoint = newCheckpoint;
 
 		// LOGS
 
