@@ -39,7 +39,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 	// reset batch confirmations in state
 	for _, conf := range data.BatchConfirms {
 		conf := conf
-		k.SetBatchConfirm(ctx, chainPrefix, &conf)
+		k.SetBatchConfirm(ctx, &conf)
 	}
 
 	// reset logic calls in state
@@ -50,7 +50,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 	// reset logic call confirmations in state
 	for _, conf := range data.LogicCallConfirms {
 		conf := conf
-		k.SetLogicCallConfirm(ctx, chainPrefix, &conf)
+		k.SetLogicCallConfirm(ctx, &conf)
 	}
 
 	// reset pool transactions in state

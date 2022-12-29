@@ -38,7 +38,7 @@ func TestGetAndDeleteAttestation(t *testing.T) {
 		for i := 7; i < length; i++ {
 			nonce := uint64(1 + i)
 			att := k.GetAttestation(ctx, evmChain.EvmChainPrefix, nonce, hashes[i])
-			k.DeleteAttestation(ctx, evmChain.EvmChainPrefix, *att)
+			k.DeleteAttestation(ctx, *att)
 
 			att = k.GetAttestation(ctx, evmChain.EvmChainPrefix, nonce, hashes[i])
 			require.Equal(t, nilAtt, att)

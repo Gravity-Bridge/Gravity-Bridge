@@ -36,7 +36,7 @@ func (k Keeper) GetBatchConfirm(ctx sdk.Context, evmChainPrefix string, nonce ui
 }
 
 // SetBatchConfirm sets a batch confirmation by a validator
-func (k Keeper) SetBatchConfirm(ctx sdk.Context, evmChainPrefix string, batch *types.MsgConfirmBatch) []byte {
+func (k Keeper) SetBatchConfirm(ctx sdk.Context, batch *types.MsgConfirmBatch) []byte {
 	store := ctx.KVStore(k.storeKey)
 	acc, err := sdk.AccAddressFromBech32(batch.Orchestrator)
 	if err != nil {
@@ -46,7 +46,7 @@ func (k Keeper) SetBatchConfirm(ctx sdk.Context, evmChainPrefix string, batch *t
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "invalid TokenContract"))
 	}
-	key := types.GetBatchConfirmKey(evmChainPrefix, *contract, batch.Nonce, acc)
+	key := types.GetBatchConfirmKey(batch.EvmChainPrefix, *contract, batch.Nonce, acc)
 	store.Set(key, k.cdc.MustMarshal(batch))
 	return key
 }

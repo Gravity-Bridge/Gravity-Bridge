@@ -349,7 +349,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	assert.True(t, len(unslashedBatches) == 1 && unslashedBatches[0].BatchNonce == 1)
 
 	for i, orch := range keeper.OrchAddrs {
-		pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
+		pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
 			Nonce:          batch.BatchNonce,
 			TokenContract:  keeper.TokenContractAddrs[0],
 			EthSigner:      keeper.EthAddrs[i].String(),
@@ -361,7 +361,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 
 	// Sign using our not nice validator
 	// This is not really possible if we use confirmHandlerCommon
-	pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
+	pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
 		Nonce:          batch.BatchNonce,
 		TokenContract:  keeper.TokenContractAddrs[0],
 		EthSigner:      ethAddr.GetAddress().Hex(),
@@ -425,7 +425,7 @@ func TestBatchSlashing(t *testing.T) {
 			continue
 		}
 
-		pk.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, &types.MsgConfirmBatch{
+		pk.SetBatchConfirm(ctx, &types.MsgConfirmBatch{
 			Nonce:          batch.BatchNonce,
 			TokenContract:  keeper.TokenContractAddrs[0],
 			EthSigner:      keeper.EthAddrs[i].String(),
@@ -573,7 +573,7 @@ func TestBatchTimeout(t *testing.T) {
 			EvmChainPrefix: evmChain.EvmChainPrefix,
 		}
 
-		input.GravityKeeper.SetBatchConfirm(ctx, evmChain.EvmChainPrefix, conf)
+		input.GravityKeeper.SetBatchConfirm(ctx, conf)
 	}
 
 	// verify that confirms are persisted

@@ -160,30 +160,37 @@ pub async fn orchestrator(
 
     let mut grpc_client = connections.grpc.unwrap();
 
-    if let Ok(list_evm_chains) = grpc_client
+    let list_evm_chains = grpc_client
         .get_list_evm_chains(QueryListEvmChains { limit: 0 })
-        .await
-    {
-        let web3 = connections.web3.unwrap();
-        let contact = connections.contact.unwrap();
-        let list_evm_chains = list_evm_chains.into_inner().evm_chains;
-        let mut futures = vec![];
-        for evm_chain in &list_evm_chains {
-            futures.push(orchestrator_main_loop(
-                cosmos_key,
-                ethereum_key,
-                web3.clone(),
-                contact.clone(),
-                grpc_client.clone(),
-                &evm_chain.evm_chain_prefix,
-                contract_address,
-                params.gravity_id.clone(),
-                fee.clone(),
-                config.clone(),
-            ));
-        }
+        .await;
 
-        // join all process for all evm chains
-        join_all(futures).await;
+    if let Err(status) = list_evm_chains {
+        warn!(
+            "Received an error when querying for evm chains: {}",
+            status.message()
+        );
+        return;
     }
+
+    let web3 = connections.web3.unwrap();
+    let contact = connections.contact.unwrap();
+    let list_evm_chains = list_evm_chains.unwrap().into_inner().evm_chains;
+    let mut futures = vec![];
+    for evm_chain in &list_evm_chains {
+        futures.push(orchestrator_main_loop(
+            cosmos_key,
+            ethereum_key,
+            web3.clone(),
+            contact.clone(),
+            grpc_client.clone(),
+            &evm_chain.evm_chain_prefix,
+            contract_address,
+            params.gravity_id.clone(),
+            fee.clone(),
+            config.clone(),
+        ));
+    }
+
+    // join all process for all evm chains
+    join_all(futures).await;
 }

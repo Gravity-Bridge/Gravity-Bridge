@@ -136,7 +136,7 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 			// If no attestation becomes observed, when we get to the next nonce, every attestation in
 			// it will be skipped. The same will happen for every nonce after that.
 			if nonce == uint64(k.GetLastObservedEventNonce(ctx, evmChainPrefix))+1 {
-				k.TryAttestation(ctx, evmChainPrefix, &att)
+				k.TryAttestation(ctx, &att)
 			}
 		}
 	}
@@ -519,7 +519,7 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) 
 		for _, att := range attmap[nonce] {
 			// delete all before the cutoff
 			if nonce < cutoff {
-				k.DeleteAttestation(ctx, evmChainPrefix, att)
+				k.DeleteAttestation(ctx, att)
 			}
 		}
 	}
