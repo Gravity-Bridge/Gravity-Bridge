@@ -49,6 +49,8 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=gravity \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
 
+ldflags += -w -s # optimize reduce size	
+
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)' -gcflags="all=-N -l"
 
 all: install
