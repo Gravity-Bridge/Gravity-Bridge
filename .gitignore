@@ -26,4 +26,4 @@ data/validator*/data/*
 data/validator*/config/write-file*
 data/validator*_backup/
 data/validator*/U*
-!data/validator*/data/priv_validator_state.json
+data/validator*/config/addrbook.json

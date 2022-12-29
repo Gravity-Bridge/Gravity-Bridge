@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	clientconfig "github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -37,6 +38,7 @@ import (
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	appconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 )
 
@@ -69,13 +71,25 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastBlock).
 		WithHomeDir(app.DefaultNodeHome).
-		WithKeyringOptions(ethermint.EthSecp256k1Option())
+		WithKeyringOptions(ethermint.EthSecp256k1Option()).
+		WithViper(config.Bech32Prefix)
 
 	// nolint: exhaustruct
 	rootCmd := &cobra.Command{
 		Use:   "gravity",
 		Short: "Stargate Gravity App",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+
+			initClientCtx, err := client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			initClientCtx, err = clientconfig.ReadFromClientConfig(initClientCtx)
+			if err != nil {
+				return err
+			}
+
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
 				return err
 			}
