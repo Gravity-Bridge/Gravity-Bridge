@@ -341,6 +341,19 @@ pub struct IbcMetadataProposal {
     #[prost(string, tag="5")]
     pub evm_chain_prefix: ::prost::alloc::string::String,
 }
+/// AddEvmChainProposal
+/// this types allows users to add new EVM chain through gov proposal
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddEvmChainProposal {
+    #[prost(string, tag="1")]
+    pub title: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub evm_chain_name: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
+}
 /// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
 /// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1702,6 +1715,18 @@ pub struct QueryPendingIbcAutoForwardsResponse {
     #[prost(message, repeated, tag="1")]
     pub pending_ibc_auto_forwards: ::prost::alloc::vec::Vec<PendingIbcAutoForward>,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct QueryListEvmChains {
+    /// limit defines the number of pending forwards to return, in order of their
+    /// SendToCosmos.EventNonce
+    #[prost(uint64, tag="1")]
+    pub limit: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct QueryListEvmChainsResponse {
+    #[prost(message, repeated, tag="1")]
+    pub evm_chains: ::prost::alloc::vec::Vec<EvmChain>,
+}
 /// Generated client implementations.
 pub mod query_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -2313,6 +2338,25 @@ pub mod query_client {
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/gravity.v1.Query/GetPendingIbcAutoForwards",
+            );
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+        pub async fn get_list_evm_chains(
+            &mut self,
+            request: impl tonic::IntoRequest<super::QueryListEvmChains>,
+        ) -> Result<tonic::Response<super::QueryListEvmChainsResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/gravity.v1.Query/GetListEvmChains",
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
