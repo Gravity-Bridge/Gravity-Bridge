@@ -13,18 +13,14 @@ use gravity_utils::{
 use std::process::exit;
 use tonic::transport::Channel;
 
-pub async fn cosmos_to_eth_cmd(
-    args: CosmosToEthOpts,
-    address_prefix: String,
-    evm_chain_prefix: &str,
-) {
+pub async fn cosmos_to_eth_cmd(args: CosmosToEthOpts, address_prefix: String) {
     let cosmos_key = args.cosmos_phrase;
     let gravity_coin = args.amount;
     let fee = args.fee;
     let cosmos_grpc = args.cosmos_grpc;
     let eth_dest = args.eth_destination;
     let bridge_fee = args.bridge_fee;
-
+    let evm_chain_prefix = args.evm_chain_prefix;
     let cosmos_address = cosmos_key.to_address(&address_prefix).unwrap();
 
     info!("Sending from Cosmos address {}", cosmos_address);

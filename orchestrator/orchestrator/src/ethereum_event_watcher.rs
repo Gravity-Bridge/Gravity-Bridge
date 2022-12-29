@@ -9,7 +9,7 @@ use deep_space::{
     private_key::{CosmosPrivateKey, PrivateKey},
 };
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::get_with_retry::{get_block_number_with_retry, get_net_version_with_retry};
+use gravity_utils::get_with_retry::get_block_number_with_retry;
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::{
     error::GravityError,
@@ -299,70 +299,4 @@ pub fn get_block_delay(net_version: u64) -> Uint256 {
         // assume the safe option where we don't know
         _ => 96u8.into(),
     }
-}
-
-pub async fn get_evm_chain_prefix(web3: &Web3) -> String {
-    let net_version = get_net_version_with_retry(&web3).await;
-    get_evm_chain_prefix_from_net_version(net_version)
-}
-
-/// must be constant string
-pub fn get_evm_chain_prefix_from_net_version(net_version: u64) -> String {
-    match net_version {
-        // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
-        // all Ethereum proof of stake Chains
-        1 => "ethereum".to_string(),
-        2 => "morden-testnet".to_string(),
-        3 => "ropsten-testnet".to_string(),
-        4 => "rinkeby-testnet".to_string(),
-        5 => "goerli-testnet".to_string(),
-        11155111 => "sepolia-testnet".to_string(),
-        10 => "optimism".to_string(),
-        69 => "optimism-kovan-testnet".to_string(),
-        42 => "kovan-testnet".to_string(),
-        137 => "polygon".to_string(),
-        80001 => "polygon-mumbai-testnet".to_string(),
-        250 => "fantom".to_string(),
-        100 => "xdai".to_string(),
-        56 => "bsc".to_string(),
-        97 => "bsc-testnet".to_string(),
-        _ => format!("chain-{}", net_version),
-    }
-}
-
-pub fn get_evm_chain_name(net_version: u64) -> String {
-    match net_version {
-        // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
-        // all Ethereum proof of stake Chains
-        1 => "Ethereum Mainnet".to_string(),
-        2 => "Morden Testnet".to_string(),
-        3 => "Ropsten Testnet".to_string(),
-        4 => "Rinkeby Testnet".to_string(),
-        5 => "Goerli Testnet".to_string(),
-        11155111 => "Sepolia Testnet".to_string(),
-        10 => "Optimism Mainnet".to_string(),
-        69 => "Optimism Kovan Testnet".to_string(),
-        42 => "Kovan Testnet".to_string(),
-        137 => "Polygon Mainnet".to_string(),
-        80001 => "Polygon Mumbai Testnet".to_string(),
-        250 => "Fantom Mainnet".to_string(),
-        100 => "XDai Mainnet".to_string(),
-        56 => "BSC Mainnet".to_string(),
-        _ => format!("Chain {}", net_version),
-    }
-}
-
-#[test]
-fn get_chain_prefix() {
-    assert_eq!(get_evm_chain_prefix_from_net_version(1), "ethereum");
-    assert_eq!(get_evm_chain_prefix_from_net_version(137), "polygon");
-    assert_eq!(get_evm_chain_prefix_from_net_version(56), "bsc");
-    assert_eq!(
-        get_evm_chain_prefix_from_net_version(11155111),
-        "sepolia-testnet"
-    );
-    assert_eq!(
-        get_evm_chain_prefix_from_net_version(234567),
-        "chain-234567"
-    );
 }
