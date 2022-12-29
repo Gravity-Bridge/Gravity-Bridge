@@ -62,7 +62,7 @@ pub fn set_orchestrator_key(home_dir: &Path, opts: SetOrchestratorKeyOpts) {
     info!("Successfully updated Orchestrator Key")
 }
 
-pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String, evm_chain_prefix: &str) {
+pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
     let connections = create_rpc_connections(
         address_prefix.clone(),
         Some(args.cosmos_grpc.clone()),
@@ -140,7 +140,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String, evm_c
         cosmos_to_eth(
             &contact,
             grpc,
-            evm_chain_prefix,
+            &args.evm_chain_prefix,
             args.ethereum_key,
             sender_address,
             args.amount,

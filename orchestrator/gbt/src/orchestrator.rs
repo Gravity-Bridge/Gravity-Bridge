@@ -5,6 +5,8 @@ use crate::utils::print_relaying_explanation;
 use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::{CosmosPrivateKey, PrivateKey};
+use futures::future::join_all;
+use gravity_proto::gravity::QueryListEvmChains;
 use gravity_utils::connection_prep::{
     check_delegate_addresses, check_for_eth, wait_for_cosmos_node_ready,
 };
@@ -12,7 +14,6 @@ use gravity_utils::connection_prep::{check_for_fee, create_rpc_connections};
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::metrics_server;
-use orchestrator::ethereum_event_watcher::get_evm_chain_prefix;
 use orchestrator::main_loop::orchestrator_main_loop;
 use orchestrator::main_loop::{ETH_ORACLE_LOOP_SPEED, ETH_SIGNER_LOOP_SPEED};
 use std::cmp::min;
@@ -23,7 +24,6 @@ use std::time::Duration;
 pub async fn orchestrator(
     args: OrchestratorOpts,
     address_prefix: String,
-    evm_chain_prefix: Option<String>,
     home_dir: &Path,
     config: GravityBridgeToolsConfig,
 ) {
@@ -90,11 +90,6 @@ pub async fn orchestrator(
     let mut grpc = connections.grpc.clone().unwrap();
     let contact = connections.contact.clone().unwrap();
     let web3 = connections.web3.clone().unwrap();
-
-    let evm_chain_prefix = match evm_chain_prefix {
-        Some(val) => val,
-        None => get_evm_chain_prefix(&web3).await,
-    };
 
     let public_eth_key = ethereum_key.to_address();
     let public_cosmos_key = cosmos_key.to_address(&contact.get_prefix()).unwrap();
@@ -163,17 +158,32 @@ pub async fn orchestrator(
         metrics_server(&config.metrics);
     };
 
-    orchestrator_main_loop(
-        cosmos_key,
-        ethereum_key,
-        connections.web3.unwrap(),
-        connections.contact.unwrap(),
-        connections.grpc.unwrap(),
-        &evm_chain_prefix,
-        contract_address,
-        params.gravity_id,
-        fee,
-        config,
-    )
-    .await;
+    let mut grpc_client = connections.grpc.unwrap();
+
+    if let Ok(list_evm_chains) = grpc_client
+        .get_list_evm_chains(QueryListEvmChains { limit: 0 })
+        .await
+    {
+        let web3 = connections.web3.unwrap();
+        let contact = connections.contact.unwrap();
+        let list_evm_chains = list_evm_chains.into_inner().evm_chains;
+        let mut futures = vec![];
+        for evm_chain in &list_evm_chains {
+            futures.push(orchestrator_main_loop(
+                cosmos_key,
+                ethereum_key,
+                web3.clone(),
+                contact.clone(),
+                grpc_client.clone(),
+                &evm_chain.evm_chain_prefix,
+                contract_address,
+                params.gravity_id.clone(),
+                fee.clone(),
+                config.clone(),
+            ));
+        }
+
+        // join all process for all evm chains
+        join_all(futures).await;
+    }
 }

@@ -46,7 +46,6 @@ async fn main() {
 
     // handle global config here
     let address_prefix = opts.address_prefix;
-    let evm_chain_prefix = opts.evm_chain_prefix;
     let home_dir = get_home_dir(opts.home);
     let config = load_config(&home_dir);
 
@@ -57,16 +56,10 @@ async fn main() {
                 eth_to_cosmos(eth_to_cosmos_opts, address_prefix).await
             }
             ClientSubcommand::CosmosToEth(cosmos_to_eth_opts) => {
-                cosmos_to_eth_cmd(
-                    cosmos_to_eth_opts,
-                    address_prefix,
-                    &evm_chain_prefix.unwrap(),
-                )
-                .await
+                cosmos_to_eth_cmd(cosmos_to_eth_opts, address_prefix).await
             }
             ClientSubcommand::DeployErc20Representation(deploy_erc20_opts) => {
-                deploy_erc20_representation(deploy_erc20_opts, address_prefix, evm_chain_prefix)
-                    .await
+                deploy_erc20_representation(deploy_erc20_opts, address_prefix).await
             }
         },
         SubCommand::Keys(key_opts) => match key_opts.subcmd {
@@ -86,33 +79,14 @@ async fn main() {
                 set_orchestrator_key(&home_dir, set_orch_key_opts)
             }
             KeysSubcommand::RecoverFunds(recover_funds_opts) => {
-                recover_funds(
-                    recover_funds_opts,
-                    address_prefix,
-                    &evm_chain_prefix.unwrap(),
-                )
-                .await
+                recover_funds(recover_funds_opts, address_prefix).await
             }
         },
         SubCommand::Orchestrator(orchestrator_opts) => {
-            orchestrator(
-                orchestrator_opts,
-                address_prefix,
-                evm_chain_prefix,
-                &home_dir,
-                config,
-            )
-            .await
+            orchestrator(orchestrator_opts, address_prefix, &home_dir, config).await
         }
         SubCommand::Relayer(relayer_opts) => {
-            relayer(
-                relayer_opts,
-                address_prefix,
-                evm_chain_prefix,
-                &home_dir,
-                config.relayer,
-            )
-            .await
+            relayer(relayer_opts, address_prefix, &home_dir, config.relayer).await
         }
         SubCommand::Init(init_opts) => init_config(init_opts, home_dir),
         SubCommand::Gov(gov_opts) => match gov_opts.subcmd {
