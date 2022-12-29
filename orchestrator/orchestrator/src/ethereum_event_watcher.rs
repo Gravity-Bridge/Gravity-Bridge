@@ -325,6 +325,7 @@ pub fn get_evm_chain_prefix_from_net_version(net_version: u64) -> String {
         250 => "fantom".to_string(),
         100 => "xdai".to_string(),
         56 => "bsc".to_string(),
+        97 => "bsc-testnet".to_string(),
         _ => format!("chain-{}", net_version),
     }
 }
