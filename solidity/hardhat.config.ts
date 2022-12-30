@@ -36,6 +36,10 @@ module.exports = {
     }
   },
   networks: {
+    goerli: {
+      url: process.env.GOERLI_RPC || "https://goerli.optimism.io",
+      accounts: ["0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08"]
+    },
     hardhat: {
       mining: {
         auto: false,
