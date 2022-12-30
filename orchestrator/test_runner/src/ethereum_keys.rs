@@ -235,6 +235,7 @@ pub async fn example_ethermint_key_usage(
         user_eth_address,
         send_to_eth_coin.clone(),
         get_fee(Some(send_to_eth_coin.denom.clone())),
+        None, // Sending so little that the minimum chain fee does not apply
         get_fee(Some(send_to_eth_coin.denom.clone())),
         erc20_address,
     )

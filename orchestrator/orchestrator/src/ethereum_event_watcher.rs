@@ -9,7 +9,8 @@ use deep_space::{
     private_key::{CosmosPrivateKey, PrivateKey},
 };
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::get_with_retry::get_block_number_with_retry;
+use gravity_utils::get_with_retry::get_net_version_with_retry;
+use gravity_utils::get_with_retry::{get_block_number_with_retry, get_finalized_block_with_retry};
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::{
     error::GravityError,
@@ -40,11 +41,14 @@ pub async fn check_for_events(
     our_private_key: CosmosPrivateKey,
     fee: Coin,
     starting_block: Uint256,
-    block_delay: Uint256,
 ) -> Result<CheckedNonces, GravityError> {
     let our_cosmos_address = our_private_key.to_address(&contact.get_prefix()).unwrap();
-    let latest_block = get_block_number_with_retry(web3).await;
-    let latest_block = latest_block - block_delay;
+    let latest_block = get_latest_safe_block(web3).await;
+    trace!(
+        "Checking for events starting {} safe {}",
+        starting_block,
+        latest_block
+    );
 
     // if the latest block is more than BLOCKS_TO_SEARCH ahead do not search the full history
     // comparison only to prevent panic on underflow.
@@ -263,14 +267,16 @@ pub async fn check_for_events(
     }
 }
 
-/// The number of blocks behind the 'latest block' on Ethereum our event checking should be.
+/// The latest 'safe block' for Ethereum event checking. This is used to prevent the bridge from
+/// accepting deposits that are not finalized and may be subject to a re-org, resulting in the attacker
+/// recieving tokens that are not actually in the bridge contract.
+///
 /// Ethereum POS does have finality but is still subject to chain forks and re-orgs in complex
 /// ways. Finality can be delayed many hundreds of blocks and hours of wall time in the worst case
-/// scenario.
+/// scenario. This function simply asks the full node what the latest finalized block is.
 ///
-/// It is largely encouraged to consider 64 blocks final enough to avoid problems. Exchanges and most
-/// bridges will operate in this way. Ideally we will upgrade to checking actual finality on a beacon
-/// chain node
+/// This function makes an attempt at being safe across all chain-ids using 96 blocks as a conservative
+/// finality value in the case that we are unable to determine the consensus method of the chain.
 ///
 /// As a quick summary of 'why 96?' we summarize epoch and slot timing of Ethereum proof of
 /// stake consensus, each block is a slot, and each epoch is 32 slots. You are not garunteed
@@ -278,25 +284,30 @@ pub async fn check_for_events(
 /// epochs are not instantly final and become final only once the following epoch is 'justified'
 /// during normal protocol operation 3 epochs will always result in finalization.
 ///
+/// In the case that the unknown chain is a proof of work chain 96 blocks is extremely deep for a
+/// re-org but saftey will always be determined by mining power.
+///
 /// https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/
 /// https://arxiv.org/pdf/2003.03052.pdf
 /// https://eth2book.info/altair/part2/incentives/inactivity
 /// https://hackmd.io/@prysmaticlabs/finality
 ///
-///
-pub fn get_block_delay(net_version: u64) -> Uint256 {
+pub async fn get_latest_safe_block(web3: &Web3) -> Uint256 {
+    let net_version = get_net_version_with_retry(web3).await;
+    let block_number = get_block_number_with_retry(web3).await;
+
     match net_version {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
         // all Ethereum proof of stake Chains
-        1 | 3 | 6 | 7 => 96u8.into(),
+        1 | 3 | 6 | 7 => get_finalized_block_with_retry(web3).await,
         // Dev, our own Gravity Ethereum testnet, and Hardhat respectively
         // all single signer chains with no chance of any reorgs
-        2018 | 15 | 31337 => 0u8.into(),
+        2018 | 15 | 31337 => block_number,
         // Rinkeby and Goerli use Clique (POA) Consensus, finality takes
         // up to num validators blocks. Number is higher than Ethereum based
         // on experience with operational issues
-        4 | 5 => 10u8.into(),
+        4 | 5 => block_number - 10u8.into(),
         // assume the safe option where we don't know
-        _ => 96u8.into(),
+        _ => block_number - 96u8.into(),
     }
 }

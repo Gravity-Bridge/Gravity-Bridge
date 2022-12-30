@@ -2,7 +2,6 @@ use clarity::{Address, Uint256};
 use cosmos_gravity::utils::get_last_event_nonce_with_retry;
 use deep_space::address::Address as CosmosAddress;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::get_with_retry::get_block_number_with_retry;
 use gravity_utils::get_with_retry::RETRY_TIME;
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::types::{
@@ -13,6 +12,8 @@ use metrics_exporter::metrics_errors_counter;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+
+use crate::ethereum_event_watcher::get_latest_safe_block;
 
 /// This is roughly the maximum number of blocks a reasonable Ethereum node
 /// can search in a single request before it starts timing out or behaving badly
@@ -30,7 +31,7 @@ pub async fn get_last_checked_block(
 ) -> Uint256 {
     let mut grpc_client = grpc_client;
 
-    let latest_block = get_block_number_with_retry(web3).await;
+    let latest_block = get_latest_safe_block(web3).await;
     let mut last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
         &mut grpc_client,
         our_cosmos_address,

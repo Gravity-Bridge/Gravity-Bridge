@@ -72,26 +72,7 @@ pub async fn upgrade_part_1(
     )
     .await;
 
-    let curr_height = contact.get_chain_status().await.unwrap();
-    let curr_height = if let ChainStatus::Moving { block_height } = curr_height {
-        block_height
-    } else {
-        panic!("Chain is not moving!");
-    };
-    let upgrade_height = (curr_height + 40) as i64;
-    let upgrade_prop_params = UpgradeProposalParams {
-        upgrade_height,
-        plan_name: "pleiades".to_string(),
-        plan_info: "Pleiades upgrade info here".to_string(),
-        proposal_title: "Pleiades upgrade proposal title here".to_string(),
-        proposal_desc: "Pleiades upgrade proposal description here".to_string(),
-    };
-    info!(
-        "Starting upgrade vote with params name: {}, height: {}",
-        upgrade_prop_params.plan_name.clone(),
-        upgrade_height
-    );
-    execute_upgrade_proposal(contact, &keys, None, upgrade_prop_params).await;
+    let upgrade_height = run_upgrade(contact, keys, "pleiades2".to_string(), false).await;
 
     // Check that the expected attestations exist
     check_attestations(grpc_client.clone(), MINIMUM_ATTESTATIONS).await;
@@ -167,6 +148,54 @@ pub async fn upgrade_part_2(
         true,
     )
     .await;
+}
+
+pub async fn run_upgrade(
+    contact: &Contact,
+    keys: Vec<ValidatorKeys>,
+    plan_name: String,
+    wait_for_upgrade: bool,
+) -> i64 {
+    let curr_height = contact.get_chain_status().await.unwrap();
+    let curr_height = if let ChainStatus::Moving { block_height } = curr_height {
+        block_height
+    } else {
+        panic!("Chain is not moving!");
+    };
+    let upgrade_height = (curr_height + 40) as i64;
+    let upgrade_prop_params = UpgradeProposalParams {
+        upgrade_height,
+        plan_name,
+        plan_info: "upgrade info here".to_string(),
+        proposal_title: "proposal title here".to_string(),
+        proposal_desc: "proposal description here".to_string(),
+    };
+    info!(
+        "Starting upgrade vote with params name: {}, height: {}",
+        upgrade_prop_params.plan_name.clone(),
+        upgrade_height
+    );
+    execute_upgrade_proposal(contact, &keys, None, upgrade_prop_params).await;
+
+    if wait_for_upgrade {
+        info!(
+            "Ready to run the new binary, waiting for chain panic at upgrade height of {}!",
+            upgrade_height
+        );
+        // Wait for the block before the upgrade height, we won't get a response from the chain
+        let res = wait_for_block(contact, (upgrade_height - 1) as u64).await;
+        if res.is_err() {
+            panic!("Unable to wait for upgrade! {}", res.err().unwrap());
+        }
+
+        delay_for(Duration::from_secs(10)).await; // wait for the new block to halt the chain
+        let status = contact.get_chain_status().await;
+        info!(
+            "Done waiting, chain should be halted, status response: {:?}",
+            status
+        );
+    }
+    upgrade_height
 }
 
 /// Runs many integration tests, but only the ones which DO NOT corrupt state

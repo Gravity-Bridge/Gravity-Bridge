@@ -17,15 +17,19 @@ use clarity::Address as EthAddress;
 use clarity::Uint256;
 use cosmos_gravity::send::send_to_eth;
 use deep_space::coin::Coin;
+use deep_space::utils::decode_any;
 use deep_space::{Contact, PrivateKey};
 use ethereum_gravity::deploy_erc20::deploy_erc20;
 use ethereum_gravity::utils::get_valset_nonce;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
+use gravity_proto::gravity::MsgBatchSendToEthClaim;
+use gravity_proto::gravity::QueryAttestationsRequest;
 use gravity_proto::gravity::{
     query_client::QueryClient as GravityQueryClient, QueryDenomToErc20Request,
 };
+use gravity_utils::types::MSG_BATCH_SEND_TO_ETH_TYPE_URL;
 use std::time::{Duration, Instant};
-use tokio::time::sleep as delay_for;
+use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::types::SendTxOption;
@@ -60,13 +64,18 @@ pub async fn happy_path_test_v2(
 
     // one foo token
     let amount_to_bridge: Uint256 = 1_000_000u64.into();
+    let chain_fee: Uint256 = 500u64.into(); // A typical chain fee is 2 basis points, this gives us a bit of wiggle room
     let send_to_user_coin = Coin {
         denom: token_to_send_to_eth.clone(),
-        amount: amount_to_bridge.clone() + 100u8.into(),
+        amount: amount_to_bridge.clone() + chain_fee.clone() + 100u8.into(),
     };
     let send_to_eth_coin = Coin {
         denom: token_to_send_to_eth.clone(),
         amount: amount_to_bridge.clone(),
+    };
+    let chain_fee_coin = Coin {
+        denom: token_to_send_to_eth.clone(),
+        amount: chain_fee,
     };
 
     let user = get_user_key(None);
@@ -112,11 +121,49 @@ pub async fn happy_path_test_v2(
         user.eth_address,
         send_to_eth_coin,
         get_fee(Some(ibc_metadata.base.clone())),
+        Some(chain_fee_coin),
         get_fee(Some(ibc_metadata.base.clone())),
         erc20_contract,
     )
     .await;
-    assert!(success, "User's balance did not reach {}", amount_to_bridge)
+    assert!(success, "User's balance did not reach {}", amount_to_bridge);
+
+    // Await the Batch claim, takes the orchestrators a bit to confirm
+    let start = Instant::now();
+    while Instant::now() - start < TOTAL_TIMEOUT {
+        info!("Waiting for BatchSendToEth confirm");
+        let attestations = grpc_client
+            .get_attestations(QueryAttestationsRequest {
+                limit: 1,
+                order_by: "desc".to_string(),
+                claim_type: "".to_string(),
+                nonce: 0,
+                height: 0,
+                use_v1_key: false,
+            })
+            .await
+            .expect("Failed to get latest attestation pre-send to eth")
+            .into_inner()
+            .attestations;
+        assert!(
+            !attestations.is_empty(),
+            "Expected multiple claims to exist after happy_path_v2"
+        );
+        let latest_claim = &attestations[0].claim;
+        assert!(
+            latest_claim.is_some(),
+            "Expected nonempty claim from query attestations"
+        );
+        let latest_claim = latest_claim.clone().unwrap();
+        if latest_claim.type_url == MSG_BATCH_SEND_TO_ETH_TYPE_URL {
+            let msg = decode_any::<MsgBatchSendToEthClaim>(latest_claim)
+                .expect("Any was not decodeable into MsgBatchSendToEth!");
+            info!("Discovered the expected MsgBatchSendToEthClaim: {:?}", msg);
+            return;
+        }
+        sleep(Duration::from_secs(10)).await;
+    }
+    panic!("Never found the expected batch claim!");
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -126,10 +173,14 @@ pub async fn send_to_eth_and_confirm(
     cosmos_key: impl PrivateKey,
     eth_receiver: EthAddress,
     send_to_eth_coin: Coin,
-    cosmos_fee_coin: Coin,
+    cosmos_tx_fee_coin: Coin,
+    cosmos_chain_fee_coin: Option<Coin>,
     bridge_fee_coin: Coin,
     erc20_contract: EthAddress,
 ) -> bool {
+    let starting_balance = get_erc20_balance_safe(erc20_contract, web30, eth_receiver)
+        .await
+        .unwrap();
     let amount_to_bridge = send_to_eth_coin.amount.clone();
     let res = send_to_eth(
         EVM_CHAIN_PREFIX.as_str(),
@@ -137,7 +188,8 @@ pub async fn send_to_eth_and_confirm(
         eth_receiver,
         send_to_eth_coin,
         bridge_fee_coin,
-        cosmos_fee_coin,
+        cosmos_chain_fee_coin,
+        cosmos_tx_fee_coin,
         contact,
     )
     .await
@@ -158,15 +210,15 @@ pub async fn send_to_eth_and_confirm(
             continue;
         }
         let balance = new_balance.unwrap();
-        if balance == amount_to_bridge {
+        if balance.clone() - starting_balance.clone() == amount_to_bridge {
             info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
             assert!(balance == amount_to_bridge.clone());
             return true;
-        } else if balance != 0u8.into() {
+        } else if balance.clone() - starting_balance.clone() != 0u8.into() {
             error!("Expected {} but got {} instead", amount_to_bridge, balance);
             return false;
         }
-        delay_for(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(1)).await;
     }
     error!("Timed out waiting for ethereum balance");
     false
@@ -250,7 +302,7 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
             erc20_contract = Some(erc20);
             break;
         }
-        delay_for(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(1)).await;
     }
     if erc20_contract.is_none() {
         panic!(

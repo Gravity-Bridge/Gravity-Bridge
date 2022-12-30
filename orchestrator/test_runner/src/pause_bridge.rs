@@ -130,6 +130,7 @@ pub async fn pause_bridge_test(
             amount: amount.clone(),
         },
         bridge_denom_fee.clone(),
+        None,
         bridge_denom_fee.clone(),
         contact,
     )

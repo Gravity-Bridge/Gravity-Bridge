@@ -121,6 +121,18 @@ func (msg *MsgValsetConfirm) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{acc}
 }
 
+// NewMsgSendToEth returns a new msgSendToEth
+func NewMsgSendToEth(sender sdk.AccAddress, destAddress EthAddress, send sdk.Coin, bridgeFee sdk.Coin, chainFee sdk.Coin, evmChainPrefix string) *MsgSendToEth {
+	return &MsgSendToEth{
+		Sender:         sender.String(),
+		EthDest:        destAddress.GetAddress().Hex(),
+		Amount:         send,
+		BridgeFee:      bridgeFee, // This is paid to the Ethereum Relayer
+		ChainFee:       chainFee,  // This is paid to Cosmos stakers
+		EvmChainPrefix: evmChainPrefix,
+	}
+}
+
 // Route should return the name of the module
 func (msg MsgSendToEth) Route() string { return RouterKey }
 
@@ -139,16 +151,25 @@ func (msg MsgSendToEth) ValidateBasic() error {
 	}
 
 	// fee and send must be of the same denom
+	// bridge fee (paid to relayers) and send must be of the same denom
 	if msg.Amount.Denom != msg.BridgeFee.Denom {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins,
-			fmt.Sprintf("fee and amount must be the same type %s != %s", msg.Amount.Denom, msg.BridgeFee.Denom))
+			fmt.Sprintf("bridge fee (paid to relayers) and amount must be the same type %s != %s", msg.Amount.Denom, msg.BridgeFee.Denom))
+	}
+	// chain fee (paid to cosmos stakers) and send must be of the same denom
+	if msg.Amount.Denom != msg.ChainFee.Denom {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins,
+			fmt.Sprintf("chain fee (paid to stakers) and amount must be the same type %s != %s", msg.Amount.Denom, msg.ChainFee.Denom))
 	}
 
 	if !msg.Amount.IsValid() || msg.Amount.IsZero() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "amount")
 	}
 	if !msg.BridgeFee.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "fee")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "bridge fee")
+	}
+	if !msg.ChainFee.IsValid() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "chain fee")
 	}
 	if err := ValidateEthAddress(msg.EthDest); err != nil {
 		return sdkerrors.Wrap(err, "ethereum address")

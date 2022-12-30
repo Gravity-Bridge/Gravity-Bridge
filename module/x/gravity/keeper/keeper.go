@@ -142,6 +142,20 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 //////// PARAMETERS /////////
 /////////////////////////////
 
+// GetParamsIfSet returns the parameters from the store if they exist, or an error
+// This is useful for certain contexts where the store is not yet set up, like
+// in an AnteHandler during InitGenesis
+func (k Keeper) GetParamsIfSet(ctx sdk.Context) (params types.Params, err error) {
+	for _, pair := range params.ParamSetPairs() {
+		if !k.paramSpace.Has(ctx, pair.Key) {
+			return types.Params{}, sdkerrors.Wrapf(sdkerrors.ErrNotFound, "the param key %s has not been set", string(pair.Key))
+		}
+		k.paramSpace.Get(ctx, pair.Key, pair.Value)
+	}
+
+	return
+}
+
 // GetParams returns the parameters from the store
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.paramSpace.GetParamSet(ctx, &params)
