@@ -24,7 +24,6 @@ use deep_space::{
 use futures::future::{join, join3};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::get_with_retry::get_net_version_with_retry;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
 use relayer::main_loop::all_relayer_loops;

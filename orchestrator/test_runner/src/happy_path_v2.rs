@@ -140,6 +140,7 @@ pub async fn happy_path_test_v2(
                 nonce: 0,
                 height: 0,
                 use_v1_key: false,
+                evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
             })
             .await
             .expect("Failed to get latest attestation pre-send to eth")

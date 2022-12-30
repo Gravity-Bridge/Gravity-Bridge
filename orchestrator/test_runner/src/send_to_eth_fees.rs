@@ -5,7 +5,8 @@ use crate::utils::{
     footoken_metadata, get_user_key, vote_yes_on_proposals, BridgeUserKey, ValidatorKeys,
 };
 use crate::{
-    get_deposit, get_fee, one_eth, ADDRESS_PREFIX, OPERATION_TIMEOUT, STAKING_TOKEN, TOTAL_TIMEOUT,
+    get_deposit, get_fee, one_eth, ADDRESS_PREFIX, EVM_CHAIN_PREFIX, OPERATION_TIMEOUT,
+    STAKING_TOKEN, TOTAL_TIMEOUT,
 };
 use actix::clock::sleep;
 use clarity::Address as EthAddress;
@@ -399,6 +400,7 @@ async fn send_single_msg_txs(
             amount: Some(bridge_coin.into()),
             bridge_fee: Some(fee_for_relayer.clone().into()),
             chain_fee: Some(fee_coin.into()),
+            evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
         };
 
         let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);
@@ -560,6 +562,7 @@ async fn send_multi_msg_txs(
             amount: Some(bridge_coin.into()),
             bridge_fee: Some(fee_for_relayer.clone().into()),
             chain_fee: Some(fee_coin.into()),
+            evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
         };
 
         let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);
@@ -789,6 +792,7 @@ fn build_param_change_msgs(
         amount: Some(bridge_coin.into()),
         bridge_fee: Some(fee_for_relayer.into()),
         chain_fee: Some(fee_coin.into()),
+        evm_chain_prefix: EVM_CHAIN_PREFIX.to_string(),
     };
 
     let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);
