@@ -49,6 +49,8 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=gravity \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 	-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
 
+ldflags += -w -s # optimize reduce size	
+
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)' -gcflags="all=-N -l"
 
 all: install
@@ -57,6 +59,7 @@ install: go.sum
 		export GOFLAGS='-buildmode=pie'
 		export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
 		export CGO_LDFLAGS="-Wl,-z,relro,-z,now -fstack-protector"
+		export CGO_CFLAGS="-Wno-deprecated-declarations"
 		go install $(BUILD_FLAGS) ./cmd/gravity
 
 go.sum: go.mod
