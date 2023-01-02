@@ -21,7 +21,7 @@ use gravity_utils::types::*;
 
 use std::{collections::HashMap, time::Duration};
 
-use crate::utils::BadSignatureEvidence;
+use crate::utils::{get_reasonable_send_to_eth_fee, BadSignatureEvidence};
 
 pub const MEMO: &str = "Sent using Althea Gravity Bridge Orchestrator";
 pub const TIMEOUT: Duration = Duration::from_secs(60);
@@ -311,23 +311,42 @@ fn create_claim_msgs(
 }
 
 /// Sends tokens from Cosmos to Ethereum. These tokens will not be sent immediately instead
-/// they will require some time to be included in a batch. Note that there are two fees
-/// one is the fee to be sent to Ethereum, which must be the same denom as the amount
-/// the other is the Cosmos chain fee, which can be any allowed coin
+/// they will require some time to be included in a batch. Note that there are three fees:
+/// bridge_fee: the fee to be sent to Ethereum, which must be the same denom as the amount
+/// chain_fee: the Gravity chain fee, which must be the same denom as the amount and which
+///     must also meet the governance-defined minimum percentage of the amount
+/// cosmos_fee: the Cosmos anti-spam fee set by each Validator which is required for any Tx
+///     to be considered for the mempool.
 pub async fn send_to_eth(
     evm_chain_prefix: &str,
     private_key: impl PrivateKey,
     destination: EthAddress,
     amount: Coin,
     bridge_fee: Coin,
+    chain_fee: Option<Coin>,
     fee: Coin,
     contact: &Contact,
 ) -> Result<TxResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
     if amount.denom != bridge_fee.denom {
         return Err(CosmosGrpcError::BadInput(format!(
-            "{} {} is an invalid denom set for SendToEth you must pay fees in the same token your sending",
+            "{} {} is an invalid denom set for SendToEth you must pay ethereum fees in the same token your sending",
             amount.denom, bridge_fee.denom,
+        )));
+    }
+    let chain_fee = match chain_fee {
+        Some(fee) => fee,
+        None => Coin {
+            amount: get_reasonable_send_to_eth_fee(contact, amount.amount.clone())
+                .await
+                .expect("Unable to get reasonable SendToEth fee"),
+            denom: amount.denom.clone(),
+        },
+    };
+    if amount.denom != chain_fee.denom {
+        return Err(CosmosGrpcError::BadInput(format!(
+            "{} {} is an invalid denom set for SendToEth you must pay chain fees in the same token your sending",
+            amount.denom, chain_fee.denom,
         )));
     }
     let balances = contact.get_balances(our_address).await.unwrap();
@@ -355,9 +374,14 @@ pub async fn send_to_eth(
         sender: our_address.to_string(),
         eth_dest: destination.to_string(),
         amount: Some(amount.into()),
-        bridge_fee: Some(bridge_fee.clone().into()),
+        bridge_fee: Some(bridge_fee.into()),
+        chain_fee: Some(chain_fee.into()),
         evm_chain_prefix: evm_chain_prefix.to_string(),
     };
+    info!(
+        "Sending to Ethereum with MsgSendToEth: {:?}",
+        msg_send_to_eth
+    );
 
     let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);
     contact

@@ -122,6 +122,7 @@ pub async fn cosmos_to_eth(
         receiver_address,
         amount.clone(),
         bridge_fee.clone(),
+        None,
         cosmos_fee.clone(),
         contact,
     )

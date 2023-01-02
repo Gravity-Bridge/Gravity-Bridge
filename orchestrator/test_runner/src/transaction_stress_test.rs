@@ -5,6 +5,7 @@ use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::{
     query::get_pending_send_to_eth,
     send::{cancel_send_to_eth, send_request_batch, send_to_eth},
+    utils::get_reasonable_send_to_eth_fee,
 };
 use deep_space::coin::Coin;
 use deep_space::Contact;
@@ -32,6 +33,7 @@ const TIMEOUT: Duration = Duration::from_secs(120);
 /// Gravity Deposits = (erc20_addresses.len() * NUM_USERS)
 /// Batches executed = erc20_addresses.len() * (NUM_USERS / 100)
 const NUM_USERS: usize = 100;
+pub const STARTING_ETH: u64 = 200; // The starting ETH amount, in whole units of ETH
 
 /// Perform a stress test by sending thousands of
 /// transactions and producing large batches
@@ -168,6 +170,19 @@ pub async fn transaction_stress_test(
         info!("batch request response is {:?}", res);
     }
 
+    // we sent a random amount below 100 tokens to each user, now we're sending
+    // it all back, so we should only be down 500 + the ChainFee's paid
+    let starting_eth = one_eth() * STARTING_ETH.into();
+    let max_expected_sent = one_hundred_eth();
+    // Users are not refunded the ChainFee value they pay for the send
+    let max_nonrefundable_amount =
+        get_reasonable_send_to_eth_fee(contact, max_expected_sent.clone())
+            .await
+            .expect("Unable to get reasonable fee!");
+
+    let min_expected_balance =
+        starting_eth.clone() - 500u16.into() - max_nonrefundable_amount.clone();
+
     let start = Instant::now();
     let mut good = true;
     let mut found_canceled = false;
@@ -181,21 +196,17 @@ pub async fn transaction_stress_test(
                     .await
                     .unwrap();
 
-                // we sent a random amount below 100 tokens to each user, now we're sending
-                // it all back, so we should only be down 500
-                let expected_balance = one_hundred_eth() - 500u16.into();
-                let expected_canceled_balance =
-                    one_hundred_eth() - sent_amounts[keys][token].clone();
+                let min_expected_canceled_balance = starting_eth.clone()
+                    - sent_amounts[keys][token].clone()
+                    - max_nonrefundable_amount.clone();
 
-                if bal != expected_balance.clone() {
-                    if e_dest_addr == user_who_cancels.eth_address
-                        && bal == expected_canceled_balance
-                    {
+                if e_dest_addr == user_who_cancels.eth_address {
+                    if bal >= min_expected_canceled_balance {
                         info!("We successfully found the user who canceled their sends!");
                         found_canceled = true;
-                    } else {
-                        good = false;
                     }
+                } else if bal < min_expected_balance.clone() {
+                    good = false;
                 }
             }
         }
@@ -242,13 +253,15 @@ pub async fn prep_users_for_deposit(
     let mut eth_destinations = Vec::new();
     eth_destinations.extend(sending_eth_addresses.clone());
     eth_destinations.extend(dest_eth_addresses);
-    send_eth_bulk(one_eth(), &eth_destinations, web30).await;
-    info!("Sent {} addresses 1 ETH", NUM_USERS);
+    let start_amt: Uint256 = one_eth() * 2u8.into();
+    send_eth_bulk(start_amt.clone(), &eth_destinations, web30).await;
+    info!("Sent {} addresses {} ETH", NUM_USERS, start_amt);
 
     // now we need to send all the sending eth addresses erc20's to send
+    let starting_eth: Uint256 = one_eth() * STARTING_ETH.into();
     for token in erc20_addresses.iter() {
-        send_erc20_bulk(one_hundred_eth(), *token, &sending_eth_addresses, web30).await;
-        info!("Sent {} addresses 100 {}", NUM_USERS, token);
+        send_erc20_bulk(starting_eth.clone(), *token, &sending_eth_addresses, web30).await;
+        info!("Sent {} addresses {} {}", NUM_USERS, STARTING_ETH, token);
     }
     // wait one block to make sure all sends are processed
     web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
@@ -340,6 +353,7 @@ pub async fn test_bulk_send_to_cosmos(
         delay_for(Duration::from_secs(5)).await;
     }
     // check that balances on Ethereum have been decremented correctly
+    let starting_eth: Uint256 = one_eth() * STARTING_ETH.into();
     for keys in user_keys.iter() {
         let e_dest_addr = keys.eth_dest_address;
         for token in erc20_addresses.iter() {
@@ -347,7 +361,7 @@ pub async fn test_bulk_send_to_cosmos(
                 .await
                 .unwrap();
             let expected_balance =
-                one_hundred_eth() - amount_sent_per_token_type[keys][token].clone();
+                starting_eth.clone() - amount_sent_per_token_type[keys][token].clone();
             if bal != expected_balance.clone() {
                 panic!("Failed to decrement all balances on Ethereum!");
             }
@@ -406,7 +420,14 @@ pub async fn lock_funds_in_pool(
             let mut send_coin = send_coin.unwrap();
             let denom = send_coin.denom.clone();
 
-            let send_amount = sent_amounts[keys][token].clone() - 500u16.into();
+            // Get a sufficient fee for this Tx, and remove that from the amount to send so the address doesn't run out
+            // of funds
+            let chain_fee_amount =
+                get_reasonable_send_to_eth_fee(contact, sent_amounts[keys][token].clone())
+                    .await
+                    .expect("Unable to get reasonable fee!");
+            let send_amount =
+                sent_amounts[keys][token].clone() - 500u16.into() - chain_fee_amount.clone();
 
             send_coin.amount = send_amount.clone();
 
@@ -414,12 +435,17 @@ pub async fn lock_funds_in_pool(
                 denom: send_coin.denom.clone(),
                 amount: 1u8.into(),
             };
+            let chain_fee = Coin {
+                denom: send_coin.denom.clone(),
+                amount: chain_fee_amount,
+            };
             let res = send_to_eth(
                 EVM_CHAIN_PREFIX.as_str(),
                 c_key,
                 e_dest_addr,
                 send_coin,
                 send_fee.clone(),
+                Some(chain_fee),
                 send_fee,
                 contact,
             );

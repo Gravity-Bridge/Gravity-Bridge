@@ -36,7 +36,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
@@ -110,6 +110,7 @@ import (
 	// Tharsis Ethermint
 	ethante "github.com/evmos/ethermint/app/ante"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/ante"
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
@@ -738,15 +739,16 @@ func NewGravityApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 
-	options := ante.HandlerOptions{
+	options := sdkante.HandlerOptions{
 		AccountKeeper:   accountKeeper,
 		BankKeeper:      bankKeeper,
-		FeegrantKeeper:  nil,
+		FeegrantKeeper:  nil, // Note: If feegrant keeper is added, change the bridge_fees.go antehandler to use it as well
 		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
 		SigGasConsumer:  ethante.DefaultSigVerificationGasConsumer,
 	}
 
-	ah, err := newAnteHandler(options, &ibcKeeper, appCodec)
+	// Note: If feegrant keeper is added, add it to the NewAnteHandler call instead of nil
+	ah, err := ante.NewAnteHandler(options, &gravityKeeper, &accountKeeper, &bankKeeper, nil, &ibcKeeper, appCodec)
 	if err != nil {
 		panic("invalid antehandler created")
 	}

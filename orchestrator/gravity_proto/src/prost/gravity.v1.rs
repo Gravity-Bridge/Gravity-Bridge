@@ -200,10 +200,14 @@ pub struct MsgValsetConfirmResponse {
 /// AMOUNT:
 /// the coin to send across the bridge, note the restriction that this is a
 /// single coin not a set of coins that is normal in other Cosmos messages
-/// FEE:
+/// BRIDGE_FEE:
 /// the fee paid for the bridge, distinct from the fee paid to the chain to
 /// actually send this message in the first place. So a successful send has
 /// two layers of fees for the user
+/// CHAIN_FEE:
+/// the fee paid to the chain for handling the request, which must be a
+/// certain percentage of the AMOUNT, as determined by governance.
+/// This Msg will be rejected if CHAIN_FEE is insufficient.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgSendToEth {
     #[prost(string, tag="1")]
@@ -214,7 +218,9 @@ pub struct MsgSendToEth {
     pub amount: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
     #[prost(message, optional, tag="4")]
     pub bridge_fee: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
-    #[prost(string, tag="5")]
+    #[prost(message, optional, tag="5")]
+    pub chain_fee: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+    #[prost(string, tag="6")]
     pub evm_chain_prefix: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1203,6 +1209,10 @@ pub struct EventOutgoingBatch {
 /// set and steal funds on Ethereum without consequence.
 /// The practical outcome of this flag being set to 'false' is that deposits from Ethereum will not show up and withdraws from
 /// Cosmos will not execute on Ethereum.
+///
+/// min_chain_fee_basis_points
+///
+/// The minimum SendToEth `chain_fee` amount, in terms of basis points. e.g. 10% fee = 1000, and 0.02% fee = 2
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Params {
     #[prost(string, tag="1")]
@@ -1243,6 +1253,8 @@ pub struct Params {
     /// from Ethereum to the bridge
     #[prost(string, repeated, tag="19")]
     pub ethereum_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(uint64, tag="20")]
+    pub min_chain_fee_basis_points: u64,
 }
 /// GenesisState struct, containing all persistant data required by the Gravity module
 #[derive(Clone, PartialEq, ::prost::Message)]
