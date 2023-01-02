@@ -269,7 +269,15 @@
         {
           "evm_chain": {
             "evm_chain_prefix": "goerli-testnet",
-            "evm_chain_name": "goerli"
+            "evm_chain_name": "goerli testnet 1st fork",
+            "evm_chain_net_version": 420
+          }
+        },
+        {
+          "evm_chain": {
+            "evm_chain_prefix": "testnet-goerli-2",
+            "evm_chain_name": "goerli testnet 2nd fork",
+            "evm_chain_net_version": 421
           }
         }
       ]

@@ -1,240 +1,3 @@
-/// Attestation is an aggregate of `claims` that eventually becomes `observed` by
-/// all orchestrators
-/// EVENT_NONCE:
-/// EventNonce a nonce provided by the gravity contract that is unique per event fired
-/// These event nonces must be relayed in order. This is a correctness issue,
-/// if relaying out of order transaction replay attacks become possible
-/// OBSERVED:
-/// Observed indicates that >67% of validators have attested to the event,
-/// and that the event should be executed by the gravity state machine
-///
-/// The actual content of the claims is passed in with the transaction making the claim
-/// and then passed through the call stack alongside the attestation while it is processed
-/// the key in which the attestation is stored is keyed on the exact details of the claim
-/// but there is no reason to store those exact details becuause the next message sender
-/// will kindly provide you with them.
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Attestation {
-    #[prost(bool, tag="1")]
-    pub observed: bool,
-    #[prost(string, repeated, tag="2")]
-    pub votes: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(uint64, tag="3")]
-    pub height: u64,
-    #[prost(message, optional, tag="4")]
-    pub claim: ::core::option::Option<::prost_types::Any>,
-}
-/// ERC20Token unique identifier for an Ethereum ERC20 token.
-/// CONTRACT:
-/// The contract address on ETH of the token, this could be a Cosmos
-/// originated token, if so it will be the ERC20 address of the representation
-/// (note: developers should look up the token symbol using the address on ETH to display for UI)
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Erc20Token {
-    #[prost(string, tag="1")]
-    pub contract: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub amount: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventObservation {
-    #[prost(string, tag="1")]
-    pub attestation_type: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub bridge_contract: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub bridge_chain_id: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub attestation_id: ::prost::alloc::string::String,
-    #[prost(string, tag="5")]
-    pub nonce: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventInvalidSendToCosmosReceiver {
-    #[prost(string, tag="1")]
-    pub amount: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub sender: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventSendToCosmos {
-    #[prost(string, tag="1")]
-    pub amount: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventSendToCosmosLocal {
-    #[prost(string, tag="1")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub receiver: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub amount: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventSendToCosmosPendingIbcAutoForward {
-    #[prost(string, tag="1")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub receiver: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub amount: ::prost::alloc::string::String,
-    #[prost(string, tag="5")]
-    pub channel: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventSendToCosmosExecutedIbcAutoForward {
-    #[prost(string, tag="1")]
-    pub nonce: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub receiver: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub amount: ::prost::alloc::string::String,
-    #[prost(string, tag="5")]
-    pub channel: ::prost::alloc::string::String,
-    #[prost(string, tag="6")]
-    pub timeout_time: ::prost::alloc::string::String,
-    #[prost(string, tag="7")]
-    pub timeout_height: ::prost::alloc::string::String,
-}
-/// ClaimType is the cosmos type of an event from the counterpart chain that can
-/// be handled
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum ClaimType {
-    /// An unspecified claim type
-    Unspecified = 0,
-    /// A claim for a SendToCosmos transaction
-    SendToCosmos = 1,
-    /// A claim for when batches are relayed
-    BatchSendToEth = 2,
-    /// A claim for when an erc20 contract has been deployed
-    Erc20Deployed = 3,
-    /// A claim for when a logic call has been executed
-    LogicCallExecuted = 4,
-    /// A claim for when a valset update has happened
-    ValsetUpdated = 5,
-}
-/// IDSet represents a set of IDs
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct IdSet {
-    #[prost(uint64, repeated, tag="1")]
-    pub ids: ::prost::alloc::vec::Vec<u64>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchFees {
-    #[prost(string, tag="1")]
-    pub token: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub total_fees: ::prost::alloc::string::String,
-    #[prost(uint64, tag="3")]
-    pub tx_count: u64,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventWithdrawalReceived {
-    #[prost(string, tag="1")]
-    pub bridge_contract: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub bridge_chain_id: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub outgoing_tx_id: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub nonce: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventWithdrawCanceled {
-    #[prost(string, tag="1")]
-    pub sender: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub tx_id: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub bridge_contract: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub bridge_chain_id: ::prost::alloc::string::String,
-}
-/// OutgoingTxBatch represents a batch of transactions going from gravity to ETH
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct OutgoingTxBatch {
-    #[prost(uint64, tag="1")]
-    pub batch_nonce: u64,
-    #[prost(uint64, tag="2")]
-    pub batch_timeout: u64,
-    #[prost(message, repeated, tag="3")]
-    pub transactions: ::prost::alloc::vec::Vec<OutgoingTransferTx>,
-    #[prost(string, tag="4")]
-    pub token_contract: ::prost::alloc::string::String,
-    #[prost(uint64, tag="5")]
-    pub cosmos_block_created: u64,
-}
-/// OutgoingTransferTx represents an individual send from gravity to ETH
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct OutgoingTransferTx {
-    #[prost(uint64, tag="1")]
-    pub id: u64,
-    #[prost(string, tag="2")]
-    pub sender: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub dest_address: ::prost::alloc::string::String,
-    #[prost(message, optional, tag="4")]
-    pub erc20_token: ::core::option::Option<Erc20Token>,
-    #[prost(message, optional, tag="5")]
-    pub erc20_fee: ::core::option::Option<Erc20Token>,
-}
-/// OutgoingLogicCall represents an individual logic call from gravity to ETH
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct OutgoingLogicCall {
-    #[prost(message, repeated, tag="1")]
-    pub transfers: ::prost::alloc::vec::Vec<Erc20Token>,
-    #[prost(message, repeated, tag="2")]
-    pub fees: ::prost::alloc::vec::Vec<Erc20Token>,
-    #[prost(string, tag="3")]
-    pub logic_contract_address: ::prost::alloc::string::String,
-    #[prost(bytes="vec", tag="4")]
-    pub payload: ::prost::alloc::vec::Vec<u8>,
-    #[prost(uint64, tag="5")]
-    pub timeout: u64,
-    #[prost(bytes="vec", tag="6")]
-    pub invalidation_id: ::prost::alloc::vec::Vec<u8>,
-    #[prost(uint64, tag="7")]
-    pub invalidation_nonce: u64,
-    #[prost(uint64, tag="8")]
-    pub cosmos_block_created: u64,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventOutgoingBatchCanceled {
-    #[prost(string, tag="1")]
-    pub bridge_contract: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub bridge_chain_id: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub batch_id: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub nonce: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EventOutgoingBatch {
-    #[prost(string, tag="1")]
-    pub bridge_contract: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub bridge_chain_id: ::prost::alloc::string::String,
-    #[prost(string, tag="3")]
-    pub batch_id: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub nonce: ::prost::alloc::string::String,
-}
 /// BridgeValidator represents a validator's ETH address and its power
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BridgeValidator {
@@ -353,6 +116,8 @@ pub struct AddEvmChainProposal {
     pub evm_chain_name: ::prost::alloc::string::String,
     #[prost(string, tag="4")]
     pub evm_chain_prefix: ::prost::alloc::string::String,
+    #[prost(uint64, tag="5")]
+    pub evm_chain_net_version: u64,
 }
 /// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
 /// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
@@ -1149,6 +914,206 @@ pub mod msg_client {
         }
     }
 }
+/// Attestation is an aggregate of `claims` that eventually becomes `observed` by
+/// all orchestrators
+/// EVENT_NONCE:
+/// EventNonce a nonce provided by the gravity contract that is unique per event fired
+/// These event nonces must be relayed in order. This is a correctness issue,
+/// if relaying out of order transaction replay attacks become possible
+/// OBSERVED:
+/// Observed indicates that >67% of validators have attested to the event,
+/// and that the event should be executed by the gravity state machine
+///
+/// The actual content of the claims is passed in with the transaction making the claim
+/// and then passed through the call stack alongside the attestation while it is processed
+/// the key in which the attestation is stored is keyed on the exact details of the claim
+/// but there is no reason to store those exact details becuause the next message sender
+/// will kindly provide you with them.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Attestation {
+    #[prost(bool, tag="1")]
+    pub observed: bool,
+    #[prost(string, repeated, tag="2")]
+    pub votes: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(uint64, tag="3")]
+    pub height: u64,
+    #[prost(message, optional, tag="4")]
+    pub claim: ::core::option::Option<::prost_types::Any>,
+}
+/// ERC20Token unique identifier for an Ethereum ERC20 token.
+/// CONTRACT:
+/// The contract address on ETH of the token, this could be a Cosmos
+/// originated token, if so it will be the ERC20 address of the representation
+/// (note: developers should look up the token symbol using the address on ETH to display for UI)
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Erc20Token {
+    #[prost(string, tag="1")]
+    pub contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub amount: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventObservation {
+    #[prost(string, tag="1")]
+    pub attestation_type: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub attestation_id: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventInvalidSendToCosmosReceiver {
+    #[prost(string, tag="1")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub sender: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSendToCosmos {
+    #[prost(string, tag="1")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSendToCosmosLocal {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub receiver: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub amount: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSendToCosmosPendingIbcAutoForward {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub receiver: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub channel: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSendToCosmosExecutedIbcAutoForward {
+    #[prost(string, tag="1")]
+    pub nonce: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub receiver: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub amount: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub channel: ::prost::alloc::string::String,
+    #[prost(string, tag="6")]
+    pub timeout_time: ::prost::alloc::string::String,
+    #[prost(string, tag="7")]
+    pub timeout_height: ::prost::alloc::string::String,
+}
+/// ClaimType is the cosmos type of an event from the counterpart chain that can
+/// be handled
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ClaimType {
+    /// An unspecified claim type
+    Unspecified = 0,
+    /// A claim for a SendToCosmos transaction
+    SendToCosmos = 1,
+    /// A claim for when batches are relayed
+    BatchSendToEth = 2,
+    /// A claim for when an erc20 contract has been deployed
+    Erc20Deployed = 3,
+    /// A claim for when a logic call has been executed
+    LogicCallExecuted = 4,
+    /// A claim for when a valset update has happened
+    ValsetUpdated = 5,
+}
+/// OutgoingTxBatch represents a batch of transactions going from gravity to ETH
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct OutgoingTxBatch {
+    #[prost(uint64, tag="1")]
+    pub batch_nonce: u64,
+    #[prost(uint64, tag="2")]
+    pub batch_timeout: u64,
+    #[prost(message, repeated, tag="3")]
+    pub transactions: ::prost::alloc::vec::Vec<OutgoingTransferTx>,
+    #[prost(string, tag="4")]
+    pub token_contract: ::prost::alloc::string::String,
+    #[prost(uint64, tag="5")]
+    pub cosmos_block_created: u64,
+}
+/// OutgoingTransferTx represents an individual send from gravity to ETH
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct OutgoingTransferTx {
+    #[prost(uint64, tag="1")]
+    pub id: u64,
+    #[prost(string, tag="2")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub dest_address: ::prost::alloc::string::String,
+    #[prost(message, optional, tag="4")]
+    pub erc20_token: ::core::option::Option<Erc20Token>,
+    #[prost(message, optional, tag="5")]
+    pub erc20_fee: ::core::option::Option<Erc20Token>,
+}
+/// OutgoingLogicCall represents an individual logic call from gravity to ETH
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct OutgoingLogicCall {
+    #[prost(message, repeated, tag="1")]
+    pub transfers: ::prost::alloc::vec::Vec<Erc20Token>,
+    #[prost(message, repeated, tag="2")]
+    pub fees: ::prost::alloc::vec::Vec<Erc20Token>,
+    #[prost(string, tag="3")]
+    pub logic_contract_address: ::prost::alloc::string::String,
+    #[prost(bytes="vec", tag="4")]
+    pub payload: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="5")]
+    pub timeout: u64,
+    #[prost(bytes="vec", tag="6")]
+    pub invalidation_id: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="7")]
+    pub invalidation_nonce: u64,
+    #[prost(uint64, tag="8")]
+    pub cosmos_block_created: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventOutgoingBatchCanceled {
+    #[prost(string, tag="1")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub batch_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventOutgoingBatch {
+    #[prost(string, tag="1")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub batch_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub nonce: ::prost::alloc::string::String,
+}
 // Params represent the Gravity genesis and store parameters
 // gravity_id:
 // a random 32 byte value to prevent signature reuse, for example if the
@@ -1324,6 +1289,8 @@ pub struct EvmChain {
     pub evm_chain_prefix: ::prost::alloc::string::String,
     #[prost(string, tag="2")]
     pub evm_chain_name: ::prost::alloc::string::String,
+    #[prost(uint64, tag="3")]
+    pub evm_chain_net_version: u64,
 }
 /// GravityCounters contains the many noces and counters required to maintain the bridge state in the genesis
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1353,6 +1320,54 @@ pub struct GravityNonces {
     /// during chain upgrades
     #[prost(uint64, tag="7")]
     pub last_batch_id: u64,
+}
+/// SignType defines messages that have been signed by an orchestrator
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SignType {
+    /// An unspecified type
+    Unspecified = 0,
+    /// A type for multi-sig updates
+    OrchestratorSignedMultiSigUpdate = 1,
+    /// A type for batches
+    OrchestratorSignedWithdrawBatch = 2,
+}
+/// IDSet represents a set of IDs
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct IdSet {
+    #[prost(uint64, repeated, tag="1")]
+    pub ids: ::prost::alloc::vec::Vec<u64>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchFees {
+    #[prost(string, tag="1")]
+    pub token: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub total_fees: ::prost::alloc::string::String,
+    #[prost(uint64, tag="3")]
+    pub tx_count: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventWithdrawalReceived {
+    #[prost(string, tag="1")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub outgoing_tx_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub nonce: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventWithdrawCanceled {
+    #[prost(string, tag="1")]
+    pub sender: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub tx_id: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub bridge_contract: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub bridge_chain_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryParamsRequest {
@@ -2361,15 +2376,4 @@ pub mod query_client {
             self.inner.unary(request.into_request(), path, codec).await
         }
     }
-}
-/// SignType defines messages that have been signed by an orchestrator
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum SignType {
-    /// An unspecified type
-    Unspecified = 0,
-    /// A type for multi-sig updates
-    OrchestratorSignedMultiSigUpdate = 1,
-    /// A type for batches
-    OrchestratorSignedWithdrawBatch = 2,
 }

@@ -143,6 +143,9 @@ func (p *AddEvmChainProposal) ValidateBasic() error {
 	if err != nil {
 		return err
 	}
+	if p.EvmChainNetVersion == 0 {
+		return fmt.Errorf("EVM Chain net version cannot be zero")
+	}
 	return nil
 }
 

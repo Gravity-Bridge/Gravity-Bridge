@@ -79,9 +79,16 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 		return sdkerrors.Wrap(types.ErrInvalid, "The proposed EVM Chain already exists on-chain. Cannot re-add it!")
 	}
 
+	evmChains := k.GetEvmChains(ctx)
+	for _, chain := range evmChains {
+		if chain.EvmChainNetVersion == p.EvmChainNetVersion {
+			return sdkerrors.Wrap(types.ErrInvalid, "The proposed EVM Chain net version already exists on-chain. Cannot add a new chain with the same net version")
+		}
+	}
+
 	ctx.Logger().Info("Gov vote passed: Adding new EVM chain", "evm chain prefix", p.EvmChainPrefix)
 	evmChain := types.EvmChainData{
-		EvmChain:           types.EvmChain{EvmChainPrefix: p.EvmChainPrefix, EvmChainName: p.EvmChainName},
+		EvmChain:           types.EvmChain{EvmChainPrefix: p.EvmChainPrefix, EvmChainName: p.EvmChainName, EvmChainNetVersion: p.EvmChainNetVersion},
 		GravityNonces:      types.GravityNonces{},
 		Valsets:            []types.Valset{},
 		ValsetConfirms:     []types.MsgValsetConfirm{},

@@ -165,6 +165,7 @@ message EvmChainData {
 message EvmChain {
   string evm_chain_prefix = 1;
   string evm_chain_name   = 2;
+  uint64 evm_chain_net_version = 3;
 }
 
 // GravityCounters contains the many noces and counters required to maintain the bridge state in the genesis

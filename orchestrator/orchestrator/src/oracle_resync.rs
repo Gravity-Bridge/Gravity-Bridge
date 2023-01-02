@@ -10,6 +10,7 @@ use gravity_utils::types::{
     TransactionBatchExecutedEvent, ValsetUpdatedEvent,
 };
 use metrics_exporter::metrics_errors_counter;
+use std::env;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
@@ -17,6 +18,13 @@ use web30::client::Web3;
 /// This is roughly the maximum number of blocks a reasonable Ethereum node
 /// can search in a single request before it starts timing out or behaving badly
 pub const BLOCKS_TO_SEARCH: u128 = 5_000u128;
+
+pub fn convert_block_to_search() -> u128 {
+    env::var("BLOCK_TO_SEARCH")
+        .unwrap_or_else(|_| BLOCKS_TO_SEARCH.to_string())
+        .parse::<u128>()
+        .unwrap_or_else(|_| BLOCKS_TO_SEARCH)
+}
 
 /// This function retrieves the last event nonce this oracle has relayed to Cosmos
 /// it then uses the Ethereum indexes to determine what block the last entry
@@ -47,6 +55,8 @@ pub async fn get_last_checked_block(
         last_event_nonce = 1u8.into();
     }
 
+    let block_to_search = convert_block_to_search();
+
     let mut current_block: Uint256 = latest_block.clone();
 
     while current_block.clone() > 0u8.into() {
@@ -54,10 +64,10 @@ pub async fn get_last_checked_block(
             "Oracle is resyncing, looking back into the history to find our last event nonce {}, on block {}",
             last_event_nonce, current_block
         );
-        let end_search = if current_block.clone() < BLOCKS_TO_SEARCH.into() {
+        let end_search = if current_block.clone() < block_to_search.into() {
             0u8.into()
         } else {
-            current_block.clone() - BLOCKS_TO_SEARCH.into()
+            current_block.clone() - block_to_search.into()
         };
         let batch_events = web3
             .check_for_events(

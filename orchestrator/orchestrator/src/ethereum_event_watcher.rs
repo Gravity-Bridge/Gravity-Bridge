@@ -23,7 +23,7 @@ use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
 
-use crate::oracle_resync::BLOCKS_TO_SEARCH;
+use crate::oracle_resync::convert_block_to_search;
 
 pub struct CheckedNonces {
     pub block_number: Uint256,
@@ -45,13 +45,14 @@ pub async fn check_for_events(
     let our_cosmos_address = our_private_key.to_address(&contact.get_prefix()).unwrap();
     let latest_block = get_block_number_with_retry(web3).await;
     let latest_block = latest_block - block_delay;
+    let block_to_search = convert_block_to_search();
 
-    // if the latest block is more than BLOCKS_TO_SEARCH ahead do not search the full history
+    // if the latest block is more than block_to_search ahead do not search the full history
     // comparison only to prevent panic on underflow.
     let latest_block = if latest_block > starting_block
-        && latest_block.clone() - starting_block.clone() > BLOCKS_TO_SEARCH.into()
+        && latest_block.clone() - starting_block.clone() > block_to_search.into()
     {
-        starting_block.clone() + BLOCKS_TO_SEARCH.into()
+        starting_block.clone() + block_to_search.into()
     } else {
         latest_block
     };
@@ -290,8 +291,8 @@ pub fn get_block_delay(net_version: u64) -> Uint256 {
         // all Ethereum proof of stake Chains
         1 | 3 | 6 | 7 => 96u8.into(),
         // Dev, our own Gravity Ethereum testnet, and Hardhat respectively
-        // all single signer chains with no chance of any reorgs
-        2018 | 15 | 31337 => 0u8.into(),
+        // all single signer chains with no chance of any reorgs. 421 - goerli custom fork
+        2018 | 15 | 31337 | 97 | 420 | 421 => 0u8.into(),
         // Rinkeby and Goerli use Clique (POA) Consensus, finality takes
         // up to num validators blocks. Number is higher than Ethereum based
         // on experience with operational issues

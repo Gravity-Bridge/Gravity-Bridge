@@ -112,6 +112,7 @@ message AddEvmChainProposal {
   string description = 2;
   string evm_chain_name = 3;
   string evm_chain_prefix = 4;
+  uint64 evm_chain_net_version = 5;
 }
 
 // PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the

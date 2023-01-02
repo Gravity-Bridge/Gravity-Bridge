@@ -37,11 +37,11 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 420,
+      chainId: 421,
       accounts: [{ privateKey: "0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08", balance: "10000000000000000000000" }],
       forking: {
         url: "https://rpc.ankr.com/eth_goerli",
-        blockNumber: 8218229
+        blockNumber: 8218230
       },
       mining: {
         auto: false,

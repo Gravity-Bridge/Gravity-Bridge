@@ -6,11 +6,13 @@ use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::{CosmosPrivateKey, PrivateKey};
 use futures::future::join_all;
+use gravity_proto::gravity::EvmChain;
 use gravity_proto::gravity::QueryListEvmChains;
 use gravity_utils::connection_prep::{
     check_delegate_addresses, check_for_eth, wait_for_cosmos_node_ready,
 };
 use gravity_utils::connection_prep::{check_for_fee, create_rpc_connections};
+use gravity_utils::get_with_retry::get_net_version_with_retry;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::metrics_server;
@@ -90,6 +92,8 @@ pub async fn orchestrator(
     let mut grpc = connections.grpc.clone().unwrap();
     let contact = connections.contact.clone().unwrap();
     let web3 = connections.web3.clone().unwrap();
+    let net_version = get_net_version_with_retry(&web3).await;
+    info!("net version of the eth-rpc is: {}", net_version);
 
     let public_eth_key = ethereum_key.to_address();
     let public_cosmos_key = cosmos_key.to_address(&contact.get_prefix()).unwrap();
@@ -172,24 +176,35 @@ pub async fn orchestrator(
         return;
     }
 
-    let web3 = connections.web3.unwrap();
     let contact = connections.contact.unwrap();
     let list_evm_chains = list_evm_chains.unwrap().into_inner().evm_chains;
-    let mut futures = vec![];
-    for evm_chain in &list_evm_chains {
-        futures.push(orchestrator_main_loop(
-            cosmos_key,
-            ethereum_key,
-            web3.clone(),
-            contact.clone(),
-            grpc_client.clone(),
-            &evm_chain.evm_chain_prefix,
-            contract_address,
-            params.gravity_id.clone(),
-            fee.clone(),
-            config.clone(),
-        ));
+    let evm_chain_option = list_evm_chains
+        .into_iter()
+        .find(|chain: &EvmChain| -> bool {
+            if chain.evm_chain_net_version.eq(&net_version) {
+                return true;
+            }
+            false
+        });
+
+    if evm_chain_option.is_none() {
+        error!("Could not find the matching net version of evm chains on the network. Network from eth-rpc: {}", net_version);
+        return;
     }
+    let evm_chain = evm_chain_option.unwrap();
+    let mut futures = vec![];
+    futures.push(orchestrator_main_loop(
+        cosmos_key,
+        ethereum_key,
+        web3.clone(),
+        contact.clone(),
+        grpc_client.clone(),
+        &evm_chain.evm_chain_prefix,
+        contract_address,
+        params.gravity_id.clone(),
+        fee.clone(),
+        config.clone(),
+    ));
 
     // join all process for all evm chains
     join_all(futures).await;

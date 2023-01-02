@@ -238,6 +238,11 @@ pub async fn eth_oracle_main_loop(
                 if nonces.event_nonce > last_checked_event {
                     last_checked_event = nonces.event_nonce;
                 }
+                // let metrics = last_checked_event.to_u64_digits();
+                // if metrics.len() > 0 {
+                //     metrics_latest(metrics[0], "last_checked_event");
+                // }
+                // metrics_latest(0u64, "last_checked_event");
                 metrics_latest(last_checked_event.to_u64_digits()[0], "last_checked_event");
             }
             Err(e) => {

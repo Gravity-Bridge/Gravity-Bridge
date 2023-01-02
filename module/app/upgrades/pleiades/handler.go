@@ -26,6 +26,7 @@ func GetPleiadesUpgradeHandler(
 			{
 				EvmChainPrefix: "oraib",
 				EvmChainName:   "Binance Smart Chain",
+				EvmChainNetVersion: 5,
 			},
 		}
 
