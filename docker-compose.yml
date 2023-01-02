@@ -1,0 +1,45 @@
+version: '3.3'
+services:
+
+  gravity:
+    container_name: gravity
+    image: oraichain/foundation-gravity-module:0.0.1
+    working_dir: /workspace
+    restart: on-failure
+    ports:
+      - 26657:26657
+      - 26656:26656
+      - 1317:1317
+      - 9090:9090
+    environment:
+      - GRAVITY_HOME=data/validator1
+    volumes:
+      - ./module:/workspace
+      - ./data/validator1:/workspace/data/validator1
+    command: sh -c 'gravity tendermint unsafe-reset-all --home data/validator1 && gravity start --home data/validator1'
+
+  first_fork:
+    container_name: first_fork
+    image: oraichain/foundation-gravity-fork:0.0.1
+    working_dir: /workspace
+    restart: on-failure
+    ports:
+      - 8545:8545
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - ./solidity:/workspace
+    command: yarn hardhat node --config hardhat-first-fork.config.ts
+
+  second_fork:
+    container_name: second_fork
+    image: oraichain/foundation-gravity-fork:0.0.1
+    working_dir: /workspace
+    restart: on-failure
+    ports:
+      - 7545:8545
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - ./solidity:/workspace
+    command: yarn hardhat node --config hardhat-second-fork.config.ts

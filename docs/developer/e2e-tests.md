@@ -68,7 +68,7 @@ cd orchestrator && BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home ../data/.gbt/ 
 ## Send Dummy tokens from Goerli to gravity-test
 
 ```bash
-BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home ../data/.gbt/ --address-prefix oraib client eth-to-cosmos --amount 0.00000000000000001 --token-contract-address 0xf48007ea0F3AA4d2A59DFb4473dd30f90488c8Ef --ethereum-rpc https://rpc.ankr.com/eth_goerli --destination "oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4" --ethereum-key 0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08 --gravity-contract-address 0xa49e040d7b8F045B090306C88aEF48955404B2e8
+BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home ../data/.gbt/ --address-prefix oraib client eth-to-cosmos --amount 0.00000000000000001 --token-contract-address 0xf48007ea0F3AA4d2A59DFb4473dd30f90488c8Ef --ethereum-rpc http://localhost:8545 --destination "oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4" --ethereum-key 0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08 --gravity-contract-address 0xa49e040d7b8F045B090306C88aEF48955404B2e8
 ```
 
 ## Send back Dummy tokens to Goerli testnet
@@ -81,7 +81,7 @@ gravity tx gravity send-to-eth 0xc9B6f87d637d4774EEB54f8aC2b89dBC3D38226b 9goerl
 
 ```bash
 ## Deploy new contract
-npx ts-node contract-deployer.ts --cosmos-node="http://localhost:26657" --eth-node=https://rpc.ankr.com/eth_goerli --eth-privkey=0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08 --contract=artifacts/contracts/Gravity.sol/Gravity.json
+npx ts-node contract-deployer.ts --cosmos-node="http://localhost:26657" --eth-node=http://localhost:8545 --eth-privkey=0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08 --contract=artifacts/contracts/Gravity.sol/Gravity.json
 
 # fork Goerli. 8218229 is a block after the block of gravity contract & dummy token deployment. By doing this, we can re-play the network
 yarn hardhat node --fork https://rpc.ankr.com/eth_goerli --fork-block-number 8218229 --port 8545
