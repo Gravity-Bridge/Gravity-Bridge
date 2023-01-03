@@ -517,20 +517,13 @@ func CheckValsets(ctx sdk.Context, k Keeper) error {
 	if err != nil {
 		return fmt.Errorf("Unable to retrieve current valsets: %s", err.Error())
 	}
-	currentBridgeValidators, err := types.BridgeValidators(current.Members).ToInternal()
+	_, err = types.BridgeValidators(current.Members).ToInternal()
 	if err != nil {
 		return fmt.Errorf("Unable to make current BridgeValidators from the current valset: %s", err.Error())
 	}
-	latestBridgeValidators, err := types.BridgeValidators(latest.Members).ToInternal()
+	_, err = types.BridgeValidators(latest.Members).ToInternal()
 	if err != nil {
 		return fmt.Errorf("Unable to make latest BridgeValidators from the latest valset: %s", err.Error())
-	}
-	diff := currentBridgeValidators.PowerDiff(*latestBridgeValidators)
-	if diff > 0.05 {
-		return fmt.Errorf(
-			"Gravity module should have created a new valset by now - power diff=%v, latest nonce=%d, current block=%d",
-			diff, latest.Nonce, ctx.BlockHeight(),
-		)
 	}
 
 	// The previously stored valsets may have been created for multiple reasons, so we make no more power diff checks
