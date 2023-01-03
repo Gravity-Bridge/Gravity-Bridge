@@ -459,7 +459,6 @@ func CheckBatches(ctx sdk.Context, k Keeper) error {
 		sortedNonces = append(sortedNonces, k)
 	}
 	sort.Slice(sortedNonces, func(i int, j int) bool { return sortedNonces[i] < sortedNonces[j] })
-	minBatchNonce := sortedNonces[0]
 	// Now we can make assertions about the ordered batches
 	for i, nonce := range sortedNonces {
 		if i == 0 {
@@ -480,11 +479,14 @@ func CheckBatches(ctx sdk.Context, k Keeper) error {
 	var err error = nil
 	k.IterateClaims(ctx, true, types.CLAIM_TYPE_BATCH_SEND_TO_ETH, func(key []byte, att types.Attestation, claim types.EthereumClaim) (stop bool) {
 		batchClaim := claim.(*types.MsgBatchSendToEthClaim)
-		// Executed (aka observed) batches should have strictly lesser batch nonces than the in progress batches
+		// Executed (aka observed) batches should have strictly lesser batch nonces than the in progress batches for the same token contract
+		// note that batches for different tokens have the same nonce stream but don't invalidate each other (nonces should probably be separate per token type)
 		if att.Observed {
-			if batchClaim.BatchNonce >= minBatchNonce {
-				err = fmt.Errorf("in-progress batches have incorrect nonce, should be > %d", batchClaim.BatchNonce)
-				return true
+			for _, val := range inProgressBatches {
+				if batchClaim.BatchNonce >= val.BatchNonce && batchClaim.TokenContract == val.TokenContract.GetAddress().String() {
+					err = fmt.Errorf("in-progress batches have incorrect nonce, should be > %d", batchClaim.BatchNonce)
+					return true
+				}
 			}
 		}
 		return false
