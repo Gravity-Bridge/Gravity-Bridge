@@ -9,14 +9,14 @@ edition = "2018"
 [dependencies]
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = "2.15"
+deep_space = {git ="https://github.com/oraichain/deep_space.git"}
 web30 = "0.22"
 clarity = "0.5"
 num256 = "0.3"
 serde_derive = "1.0"
 serde = "1.0"
 tokio = "1.4"
-tonic = "0.7"
+tonic = "0.8"
 num-bigint = "0.4"
 log = "0.4"
 url = "2"
