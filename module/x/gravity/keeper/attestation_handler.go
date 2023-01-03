@@ -444,7 +444,9 @@ func (a AttestationHandler) mintEthereumOriginatedVouchers(
 func (a AttestationHandler) sendCoinToCosmosAccount(
 	ctx sdk.Context, claim types.MsgSendToCosmosClaim, receiver sdk.AccAddress, coin sdk.Coin,
 ) (ibcForwardQueued bool, err error) {
-	accountPrefix, err := types.GetPrefixFromBech32(claim.CosmosReceiver)
+	// get source channel from account prefix or from HrpIbcRecord
+	sourceChannel, cosmosReceiver := claim.GetSourceChannelAndReceiver()
+	accountPrefix, err := types.GetPrefixFromBech32(cosmosReceiver)
 	if err != nil {
 		hash, _ := claim.ClaimHash()
 		a.keeper.logger(ctx).Error("Invalid bech32 CosmosReceiver",
@@ -466,8 +468,6 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 	if accountPrefix == nativePrefix { // Send to a native gravity account
 		return false, a.sendCoinToLocalAddress(ctx, claim, receiver, coin)
 	} else { // Try to send tokens to IBC chain, fall back to native send on errors
-		// get source channel from account prefix or from HrpIbcRecord
-		sourceChannel, cosmosReceiver := claim.GetSourceChannelAndReceiver()
 		// if sourceChannel is empty
 		if len(sourceChannel) == 0 {
 			hrpIbcRecord, err := a.keeper.bech32IbcKeeper.GetHrpIbcRecord(ctx, accountPrefix)
@@ -495,7 +495,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 
 		if err != nil {
 			a.keeper.logger(ctx).Error(
-				"SendToCosmos IBC auto forwarding failed, sending to local gravity account instead",
+				"SendToCosmos IBC auto forwarding failed, sending to local gravity account instead with error: ", err.Error(),
 				"cosmos-receiver", claim.CosmosReceiver, "cosmos-denom", coin.Denom, "amount", coin.Amount.String(),
 				"ethereum-contract", claim.TokenContract, "sender", claim.EthereumSender, "event-nonce", claim.EventNonce,
 			)

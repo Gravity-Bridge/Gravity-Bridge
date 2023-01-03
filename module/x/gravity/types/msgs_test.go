@@ -66,3 +66,34 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 	}
 
 }
+
+func TestGetSourceChannelAndReceiver(t *testing.T) {
+	msgSendToCosmosNormal := MsgSendToCosmosClaim{
+		CosmosReceiver: "oraifoobar",
+	}
+
+	channel, receiver := msgSendToCosmosNormal.GetSourceChannelAndReceiver()
+
+	assert.Equal(t, "", channel)
+	assert.Equal(t, "oraifoobar", receiver)
+
+	// has channel case
+	msgSendToCosmosHasChannel := MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-1/oraifoobar",
+	}
+
+	channel, receiver = msgSendToCosmosHasChannel.GetSourceChannelAndReceiver()
+
+	assert.Equal(t, "channel-1", channel)
+	assert.Equal(t, "oraifoobar", receiver)
+
+	// special case with many / to test split
+	msgSendToCosmosWithSlashes := MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-1///oraifoobar",
+	}
+
+	channel, receiver = msgSendToCosmosWithSlashes.GetSourceChannelAndReceiver()
+
+	assert.Equal(t, "channel-1", channel)
+	assert.Equal(t, "//oraifoobar", receiver)
+}
