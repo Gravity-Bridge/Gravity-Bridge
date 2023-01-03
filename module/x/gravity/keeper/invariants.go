@@ -458,7 +458,7 @@ func CheckBatches(ctx sdk.Context, k Keeper) error {
 	for k := range inProgressBatches {
 		sortedNonces = append(sortedNonces, k)
 	}
-	sort.Slice(sortedNonces, func(i int, j int) bool { return i < j })
+	sort.Slice(sortedNonces, func(i int, j int) bool { return sortedNonces[i] < sortedNonces[j] })
 	minBatchNonce := sortedNonces[0]
 	// Now we can make assertions about the ordered batches
 	for i, nonce := range sortedNonces {
