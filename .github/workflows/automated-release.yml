@@ -69,6 +69,17 @@ jobs:
           asset_name: gbt
           asset_content_type: application/bin
 
+      - name: Upload Gravity Bridge test runner
+        id: upload-test-runner
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./orchestrator/target/x86_64-unknown-linux-musl/release/test-runner
+          asset_name: test-runner
+          asset_content_type: application/bin
+
       - name: Upload Gravity Bridge Build Report
         id: upload-gravity-bridge-build-report
         uses: actions/upload-release-asset@v1

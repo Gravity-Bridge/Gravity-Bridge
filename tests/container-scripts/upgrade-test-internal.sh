@@ -6,12 +6,13 @@ NODES=$1
 OLD_VERSION=$2
 
 echo "Downloading old gravity version at https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64"
-wget https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64
-mv gravity-linux-amd64 oldgravity
+wget https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64 -O oldgravity
+wget https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/test-runner -O oldtestrunner
 # Make old gravity executable
 chmod +x oldgravity
 
 export OLD_BINARY_LOCATION=/oldgravity
+export OLD_TESTRUNNER_LOCATION=/oldtestrunner
 
 # Prepare the contracts for later deployment
 pushd /gravity/solidity/
@@ -40,6 +41,7 @@ tests/container-scripts/integration-tests.sh $NODES UPGRADE_PART_1
 popd
 
 unset OLD_BINARY_LOCATION
+unset OLD_TESTRUNNER_LOCATION
 # Run the new binary
 pkill gravity || true # allowed to fail
 tests/container-scripts/run-testnet.sh $NODES
