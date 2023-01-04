@@ -455,3 +455,16 @@ func TestSendCoinToCosmosAccount(t *testing.T) {
 	queues := k.PendingIbcAutoForwards(ctx, claim.EvmChainPrefix, 2)
 	require.Equal(t, channel, queues[1].IbcChannel)
 }
+
+func TestGetPrefixFromBech32(t *testing.T) {
+	cosmosReceiver := "oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j"
+	accountPrefix, prefixErr := types.GetPrefixFromBech32(cosmosReceiver)
+	require.NoError(t, prefixErr)
+	require.Equal(t, "oraib", accountPrefix)
+
+	// if cosmos receiver has channel in front, then the prefix should be channel-x/oraib
+	cosmosReceiver = "channel-0/oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j"
+	accountPrefix, prefixErr = types.GetPrefixFromBech32(cosmosReceiver)
+	require.NoError(t, prefixErr)
+	require.Equal(t, "channel-0/oraib", accountPrefix)
+}
