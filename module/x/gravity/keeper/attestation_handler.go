@@ -446,7 +446,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 ) (ibcForwardQueued bool, err error) {
 	// get source channel from account prefix or from HrpIbcRecord
 	sourceChannel, cosmosReceiver := claim.GetSourceChannelAndReceiver()
-	accountPrefix, err := types.GetPrefixFromBech32(cosmosReceiver)
+	accountPrefix, err := types.GetPrefixFromBech32(claim.CosmosReceiver)
 	if err != nil {
 		hash, _ := claim.ClaimHash()
 		a.keeper.logger(ctx).Error("Invalid bech32 CosmosReceiver",
