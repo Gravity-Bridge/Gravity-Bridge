@@ -62,6 +62,8 @@ pub async fn orchestrator_main_loop(
 ) {
     let fee = user_fee_amount;
 
+    test_eth_connection(web3.clone()).await;
+
     let a = eth_oracle_main_loop(
         cosmos_key,
         web3.clone(),
@@ -98,6 +100,41 @@ pub async fn orchestrator_main_loop(
 }
 
 const DELAY: Duration = Duration::from_secs(5);
+
+/// Checks forever that the Ethereum RPC returns different results when querying for "finalized" vs "latest" blocks, as this is
+/// a critical feature
+pub async fn test_eth_connection(web3: Web3) {
+    loop {
+        let (finalized_res, latest_res) = join(
+            web3.eth_get_finalized_block_full(),
+            web3.eth_get_latest_block_full(),
+        )
+        .await;
+
+        match (latest_res, finalized_res) {
+            (Ok(latest), Ok(finalized)) => {
+                if latest.number < finalized.number
+                    || finalized.number.clone() + 32u8.into() > latest.number
+                {
+                    panic!(
+                        "Ethereum RPC returned an invalid 'finalized' block, expecting at least a 32 block difference but found latest block ({}) and 'finalized' block ({})",
+                        latest.number, finalized.number,
+                    );
+                }
+                info!("Ethereum RPC has returned an acceptable 'finalized' block ({}) behind the latest block ({}), starting the orchestrator!", finalized.number, latest.number);
+                return;
+            }
+            (_, _) => {
+                warn!(
+                    "Could not connect to Ethereum RPC, delaying {} seconds before trying again.",
+                    DELAY.as_secs()
+                );
+                delay_for(DELAY).await;
+                continue;
+            }
+        }
+    }
+}
 
 /// This function is responsible for making sure that Ethereum events are retrieved from the Ethereum blockchain
 /// and ferried over to Cosmos where they will be used to issue tokens or process batches.
