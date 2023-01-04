@@ -355,9 +355,9 @@ func CmdAddEvmChainProposal() *cobra.Command {
 func CmdSendToEth() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "send-to-eth [eth-dest] [amount] [bridge-fee] [evm chain prefix]",
-		Short: "Adds a new entry to the transaction pool to withdraw an amount from the Ethereum bridge contract. This will not execute until a batch is requested and then actually relayed. Your funds can be reclaimed using cancel-send-to-eth so long as they remain in the pool",
-		Args:  cobra.ExactArgs(4),
+		Use:   "send-to-eth [eth-dest] [amount] [bridge-fee] [chain-fee] [evm chain prefix]",
+		Short: "Adds a new entry to the transaction pool to withdraw an amount from the Ethereum bridge contract. This will not execute until a batch is requested and then actually relayed. Chain fee must be at least min_chain_fee_basis_points in `query gravity params`. Your funds can be reclaimed using cancel-send-to-eth so long as they remain in the pool",
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -373,13 +373,17 @@ func CmdSendToEth() *cobra.Command {
 			if err != nil {
 				return sdkerrors.Wrap(err, "bridge fee")
 			}
+			chainFee, err := sdk.ParseCoinsNormalized(args[3])
+			if err != nil {
+				return sdkerrors.Wrap(err, "chain fee")
+			}
 
 			ethAddr, err := types.NewEthAddress(args[0])
 			if err != nil {
 				return sdkerrors.Wrap(err, "invalid eth address")
 			}
 
-			if len(amount) != 1 || len(bridgeFee) != 1 {
+			if len(amount) != 1 || len(bridgeFee) != 1 || len(chainFee) != 1 {
 				return fmt.Errorf("unexpected coin amounts, expecting just 1 coin amount for both amount and bridgeFee")
 			}
 
@@ -389,6 +393,7 @@ func CmdSendToEth() *cobra.Command {
 				EthDest:        ethAddr.GetAddress().Hex(),
 				Amount:         amount[0],
 				BridgeFee:      bridgeFee[0],
+				ChainFee:       chainFee[0],
 				EvmChainPrefix: args[3],
 			}
 			if err := msg.ValidateBasic(); err != nil {

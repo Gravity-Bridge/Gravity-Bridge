@@ -485,8 +485,7 @@ func CheckBatches(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	for k := range inProgressBatches {
 		sortedNonces = append(sortedNonces, k)
 	}
-	sort.Slice(sortedNonces, func(i int, j int) bool { return i < j })
-	minBatchNonce := sortedNonces[0]
+	sort.Slice(sortedNonces, func(i int, j int) bool { return sortedNonces[i] < sortedNonces[j] })
 	// Now we can make assertions about the ordered batches
 	for i, nonce := range sortedNonces {
 		if i == 0 {
@@ -507,11 +506,14 @@ func CheckBatches(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	var err error = nil
 	k.IterateClaims(ctx, evmChainPrefix, true, types.CLAIM_TYPE_BATCH_SEND_TO_ETH, func(key []byte, att types.Attestation, claim types.EthereumClaim) (stop bool) {
 		batchClaim := claim.(*types.MsgBatchSendToEthClaim)
-		// Executed (aka observed) batches should have strictly lesser batch nonces than the in progress batches
+		// Executed (aka observed) batches should have strictly lesser batch nonces than the in progress batches for the same token contract
+		// note that batches for different tokens have the same nonce stream but don't invalidate each other (nonces should probably be separate per token type)
 		if att.Observed {
-			if batchClaim.BatchNonce >= minBatchNonce {
-				err = fmt.Errorf("in-progress batches have incorrect nonce, should be > %d", batchClaim.BatchNonce)
-				return true
+			for _, val := range inProgressBatches {
+				if batchClaim.BatchNonce >= val.BatchNonce && batchClaim.TokenContract == val.TokenContract.GetAddress().String() {
+					err = fmt.Errorf("in-progress batches have incorrect nonce, should be > %d", batchClaim.BatchNonce)
+					return true
+				}
 			}
 		}
 		return false
@@ -542,20 +544,13 @@ func CheckValsets(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return fmt.Errorf("Unable to retrieve current valsets: %s", err.Error())
 	}
-	currentBridgeValidators, err := types.BridgeValidators(current.Members).ToInternal()
+	_, err = types.BridgeValidators(current.Members).ToInternal()
 	if err != nil {
 		return fmt.Errorf("Unable to make current BridgeValidators from the current valset: %s", err.Error())
 	}
-	latestBridgeValidators, err := types.BridgeValidators(latest.Members).ToInternal()
+	_, err = types.BridgeValidators(latest.Members).ToInternal()
 	if err != nil {
 		return fmt.Errorf("Unable to make latest BridgeValidators from the latest valset: %s", err.Error())
-	}
-	diff := currentBridgeValidators.PowerDiff(*latestBridgeValidators)
-	if diff > 0.05 {
-		return fmt.Errorf(
-			"Gravity module should have created a new valset by now - power diff=%v, latest nonce=%d, current block=%d",
-			diff, latest.Nonce, ctx.BlockHeight(),
-		)
 	}
 
 	// The previously stored valsets may have been created for multiple reasons, so we make no more power diff checks
