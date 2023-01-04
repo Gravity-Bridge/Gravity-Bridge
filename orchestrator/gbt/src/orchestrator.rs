@@ -40,7 +40,7 @@ pub async fn orchestrator(
         if config_exists(home_dir) {
             let keys = load_keys(home_dir);
             if let Some(stored_key) = keys.orchestrator_phrase {
-                k = Some(CosmosPrivateKey::from_phrase(&stored_key, "").unwrap())
+                k = Some(CosmosPrivateKey::from_phrase(&stored_key, &args.passphrase).unwrap())
             }
         }
         if k.is_none() {
