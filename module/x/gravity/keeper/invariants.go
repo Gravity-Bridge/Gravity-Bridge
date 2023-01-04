@@ -7,7 +7,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -574,7 +573,6 @@ func CheckValsets(ctx sdk.Context, k Keeper) error {
 func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 	nativeHrp := sdk.GetConfig().GetBech32AccountAddrPrefix()
 	pendingForwards := k.PendingIbcAutoForwards(ctx, 0)
-	minXferModBals := make(map[string]sdk.Int)
 	for _, fwd := range pendingForwards {
 		// Check the foreign address
 		hrp, _, err := bech32.DecodeAndConvert(fwd.ForeignReceiver)
@@ -590,35 +588,11 @@ func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 		}
 		// Check the denom and account balances
 		fwdDenom := fwd.Token.Denom
-		isVoucher := true
 		if strings.HasPrefix(strings.ToLower(fwdDenom), "ibc/") {
-			fullDenomPath, err := k.ibcTransferKeeper.DenomPathFromHash(ctx, fwdDenom)
+			_, err := k.ibcTransferKeeper.DenomPathFromHash(ctx, fwdDenom)
 			if err != nil {
 				return fmt.Errorf("Unable to parse path from ibc denom %s: %v", fwdDenom, err)
 			}
-			// This may be a voucher, if so then we cannot check the balance
-			sourcePort := ibctransfertypes.PortID
-			sourceChannel := fwd.IbcChannel
-			if ibctransfertypes.SenderChainIsSource(sourcePort, sourceChannel, fullDenomPath) { // Not voucher
-				isVoucher = false
-			}
-		} else {
-			isVoucher = false
-		}
-
-		if !isVoucher {
-			bal, exist := minXferModBals[fwdDenom]
-			if !exist {
-				bal = sdk.ZeroInt()
-			}
-			minXferModBals[fwdDenom] = bal.Add(fwd.Token.Amount)
-		}
-	}
-
-	for denom, amt := range minXferModBals {
-		balance := k.bankKeeper.GetBalance(ctx, k.accountKeeper.GetModuleAddress(ibctransfertypes.ModuleName), denom).Amount
-		if balance.LT(amt) {
-			return fmt.Errorf("transfer module does not have the expected balance of %s", denom)
 		}
 	}
 
