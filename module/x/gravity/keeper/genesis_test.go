@@ -174,6 +174,7 @@ func TestBatchAndTxImportExport(t *testing.T) {
 			EventNonce:      uint64(i + 1),
 		}
 		input.GravityKeeper.setLastObservedEventNonce(ctx, evmChain.EvmChainPrefix, fwd.EventNonce)
+		input.GravityKeeper.SetLastObservedEvmChainBlockHeight(ctx, evmChain.EvmChainPrefix, 100)
 		err = input.GravityKeeper.addPendingIbcAutoForward(ctx, fwd, evmChain.EvmChainPrefix, stake)
 		require.NoError(t, err)
 		forwards[i] = &fwd
@@ -189,6 +190,10 @@ func TestBatchAndTxImportExport(t *testing.T) {
 		require.NoError(t, input.BankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(*fwd.Token)))
 		return false
 	})
+
+	// last observed evm chain block height must still be there with height 100
+	lastObservedHeight := input.GravityKeeper.GetLastObservedEvmChainBlockHeight(ctx, evmChain.EvmChainPrefix)
+	require.Equal(t, uint64(100), lastObservedHeight.EthereumBlockHeight)
 }
 
 // Requires that all transactions in txs exist in keeper

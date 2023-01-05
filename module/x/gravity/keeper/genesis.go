@@ -171,6 +171,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		k.SetLastSlashedValsetNonce(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedValsetNonce)
 		k.SetLastSlashedBatchBlock(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedBatchBlock)
 		k.SetLastSlashedLogicCallBlock(ctx, chainPrefix, evmChain.GravityNonces.LastSlashedLogicCallBlock)
+		k.SetLastObservedEvmChainBlockHeight(ctx, chainPrefix, evmChain.GravityNonces.LastObservedEvmBlockHeight)
 		k.setID(ctx, evmChain.GravityNonces.LastTxPoolId, types.AppendChainPrefix(types.KeyLastTXPoolID, chainPrefix))
 		k.setID(ctx, evmChain.GravityNonces.LastBatchId, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, chainPrefix))
 		k.SetEvmChainData(ctx, evmChain.EvmChain)
@@ -257,13 +258,14 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 				EvmChainName:   evmChain.EvmChainName,
 			},
 			GravityNonces: types.GravityNonces{
-				LatestValsetNonce:         k.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix),
-				LastObservedNonce:         k.GetLastObservedEventNonce(ctx, evmChain.EvmChainPrefix),
-				LastSlashedValsetNonce:    k.GetLastSlashedValsetNonce(ctx, evmChain.EvmChainPrefix),
-				LastSlashedBatchBlock:     k.GetLastSlashedBatchBlock(ctx, evmChain.EvmChainPrefix),
-				LastSlashedLogicCallBlock: k.GetLastSlashedLogicCallBlock(ctx, evmChain.EvmChainPrefix),
-				LastTxPoolId:              k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, evmChain.EvmChainPrefix)),
-				LastBatchId:               k.getID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, evmChain.EvmChainPrefix)),
+				LatestValsetNonce:          k.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix),
+				LastObservedNonce:          k.GetLastObservedEventNonce(ctx, evmChain.EvmChainPrefix),
+				LastSlashedValsetNonce:     k.GetLastSlashedValsetNonce(ctx, evmChain.EvmChainPrefix),
+				LastSlashedBatchBlock:      k.GetLastSlashedBatchBlock(ctx, evmChain.EvmChainPrefix),
+				LastSlashedLogicCallBlock:  k.GetLastSlashedLogicCallBlock(ctx, evmChain.EvmChainPrefix),
+				LastObservedEvmBlockHeight: k.GetLastObservedEvmChainBlockHeight(ctx, evmChain.EvmChainPrefix).EthereumBlockHeight,
+				LastTxPoolId:               k.getID(ctx, types.AppendChainPrefix(types.KeyLastTXPoolID, evmChain.EvmChainPrefix)),
+				LastBatchId:                k.getID(ctx, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, evmChain.EvmChainPrefix)),
 			},
 			Valsets:            valsets,
 			ValsetConfirms:     vsconfs,

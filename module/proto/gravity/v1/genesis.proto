@@ -193,4 +193,6 @@ message GravityNonces {
   // the last batch id from the Gravity batch pool, this prevents ID duplication
   // during chain upgrades
   uint64 last_batch_id = 7;
+  // last observed evm block height
+  uint64 last_observed_evm_block_height = 8;
 }
