@@ -13,13 +13,13 @@ path = "src/main.rs"
 ethereum_gravity = {path = "../ethereum_gravity"}
 cosmos_gravity = {path = "../cosmos_gravity"}
 gravity_utils = {path = "../gravity_utils"}
-gravity_proto = {path = "../gravity_proto/"}
+gravity_proto = {path = "../gravity_proto/", features = ["bech32ibc"]}
 orchestrator = {path = "../orchestrator/"}
 
 bytes = "1"
-prost = "0.10"
-prost-types = "0.10"
-deep_space = {version = "2.15", features = ["ethermint"]}
+prost = "0.11"
+prost-types = "0.11"
+deep_space = {git ="https://github.com/oraichain/deep_space.git", features = ["ethermint"]}
 serde_derive = "1.0"
 clarity = "0.5"
 docopt = "1"
@@ -35,7 +35,7 @@ log = "0.4"
 env_logger = "0.10"
 tokio = "1.4.0"
 rand = "0.8"
-tonic = "0.7"
+tonic = "0.8"
 futures = "0.3"
 serde_json = "1.0"
 ibc = "0.19.0"

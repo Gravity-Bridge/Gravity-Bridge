@@ -11,7 +11,7 @@ gravity_utils = {path = "../gravity_utils"}
 ethereum_gravity = {path = "../ethereum_gravity"}
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = "2.15"
+deep_space = {git ="https://github.com/oraichain/deep_space.git"}
 clarity = "0.5"
 serde = "1.0"
 serde_derive = "1.0"
@@ -21,10 +21,10 @@ log = "0.4"
 sha3 = "0.10"
 tokio = "1.4"
 web30 = "0.22"
-tonic = "0.7"
+tonic = "0.8"
 bytes = "1.1"
-prost-types = "0.10"
-prost = "0.10"
+prost-types = "0.11"
+prost = "0.11"
 num = "0.4.0"
 
 [dev-dependencies]

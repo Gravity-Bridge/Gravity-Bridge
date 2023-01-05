@@ -4,11 +4,15 @@ version = "0.1.0"
 authors = ["Justin Kilpatrick <justin@althea.net>"]
 edition = "2018"
 
+[features]
+bech32ibc = []
+ethermint = []
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-prost = "0.10"
-prost-types = "0.10"
-cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.13", features = ["bech32ibc", "ethermint"]}
-tonic = "0.7"
-deep_space = "2.14"
+prost = "0.11"
+prost-types = "0.11"
+cosmos-sdk-proto = {git = "https://github.com/cosmos/cosmos-rust.git", package = "cosmos-sdk-proto"}
+tonic = "0.8"
+deep_space = {git ="https://github.com/oraichain/deep_space.git"}

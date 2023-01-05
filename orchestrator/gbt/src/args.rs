@@ -62,6 +62,9 @@ pub struct OrchestratorOpts {
     /// The address fo the Gravity contract on Ethereum
     #[clap(short, long, parse(try_from_str))]
     pub gravity_contract_address: Option<EthAddress>,
+    /// (Optional) The passphrase that will be used to decrypt key
+    #[clap(long, default_value = "")]
+    pub passphrase: String,
 }
 
 /// The Gravity Bridge Relayer is an unpermissioned role that takes data from the Cosmos blockchain

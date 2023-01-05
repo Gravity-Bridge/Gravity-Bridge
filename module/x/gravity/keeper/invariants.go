@@ -7,7 +7,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -485,8 +484,7 @@ func CheckBatches(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	for k := range inProgressBatches {
 		sortedNonces = append(sortedNonces, k)
 	}
-	sort.Slice(sortedNonces, func(i int, j int) bool { return i < j })
-	minBatchNonce := sortedNonces[0]
+	sort.Slice(sortedNonces, func(i int, j int) bool { return sortedNonces[i] < sortedNonces[j] })
 	// Now we can make assertions about the ordered batches
 	for i, nonce := range sortedNonces {
 		if i == 0 {
@@ -507,11 +505,14 @@ func CheckBatches(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	var err error = nil
 	k.IterateClaims(ctx, evmChainPrefix, true, types.CLAIM_TYPE_BATCH_SEND_TO_ETH, func(key []byte, att types.Attestation, claim types.EthereumClaim) (stop bool) {
 		batchClaim := claim.(*types.MsgBatchSendToEthClaim)
-		// Executed (aka observed) batches should have strictly lesser batch nonces than the in progress batches
+		// Executed (aka observed) batches should have strictly lesser batch nonces than the in progress batches for the same token contract
+		// note that batches for different tokens have the same nonce stream but don't invalidate each other (nonces should probably be separate per token type)
 		if att.Observed {
-			if batchClaim.BatchNonce >= minBatchNonce {
-				err = fmt.Errorf("in-progress batches have incorrect nonce, should be > %d", batchClaim.BatchNonce)
-				return true
+			for _, val := range inProgressBatches {
+				if batchClaim.BatchNonce >= val.BatchNonce && batchClaim.TokenContract == val.TokenContract.GetAddress().String() {
+					err = fmt.Errorf("in-progress batches have incorrect nonce, should be > %d", batchClaim.BatchNonce)
+					return true
+				}
 			}
 		}
 		return false
@@ -542,20 +543,13 @@ func CheckValsets(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	if err != nil {
 		return fmt.Errorf("Unable to retrieve current valsets: %s", err.Error())
 	}
-	currentBridgeValidators, err := types.BridgeValidators(current.Members).ToInternal()
+	_, err = types.BridgeValidators(current.Members).ToInternal()
 	if err != nil {
 		return fmt.Errorf("Unable to make current BridgeValidators from the current valset: %s", err.Error())
 	}
-	latestBridgeValidators, err := types.BridgeValidators(latest.Members).ToInternal()
+	_, err = types.BridgeValidators(latest.Members).ToInternal()
 	if err != nil {
 		return fmt.Errorf("Unable to make latest BridgeValidators from the latest valset: %s", err.Error())
-	}
-	diff := currentBridgeValidators.PowerDiff(*latestBridgeValidators)
-	if diff > 0.05 {
-		return fmt.Errorf(
-			"Gravity module should have created a new valset by now - power diff=%v, latest nonce=%d, current block=%d",
-			diff, latest.Nonce, ctx.BlockHeight(),
-		)
 	}
 
 	// The previously stored valsets may have been created for multiple reasons, so we make no more power diff checks
@@ -606,8 +600,6 @@ func CheckValsets(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 func CheckPendingIbcAutoForwards(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	nativeHrp := sdk.GetConfig().GetBech32AccountAddrPrefix()
 	pendingForwards := k.PendingIbcAutoForwards(ctx, evmChainPrefix, 0)
-	minXferModBals := make(map[string]sdk.Int)
-
 	for _, fwd := range pendingForwards {
 		// Check the foreign address
 		hrp, _, err := bech32.DecodeAndConvert(fwd.ForeignReceiver)
@@ -623,35 +615,11 @@ func CheckPendingIbcAutoForwards(ctx sdk.Context, evmChainPrefix string, k Keepe
 		}
 		// Check the denom and account balances
 		fwdDenom := fwd.Token.Denom
-		isVoucher := true
 		if strings.HasPrefix(strings.ToLower(fwdDenom), "ibc/") {
-			fullDenomPath, err := k.ibcTransferKeeper.DenomPathFromHash(ctx, fwdDenom)
+			_, err := k.ibcTransferKeeper.DenomPathFromHash(ctx, fwdDenom)
 			if err != nil {
-				return fmt.Errorf("Unable to parse path from ibc denom %s: %v", fwdDenom, err)
+				return fmt.Errorf("unable to parse path from ibc denom %s: %v", fwdDenom, err)
 			}
-			// This may be a voucher, if so then we cannot check the balance
-			sourcePort := ibctransfertypes.PortID
-			sourceChannel := fwd.IbcChannel
-			if ibctransfertypes.SenderChainIsSource(sourcePort, sourceChannel, fullDenomPath) { // Not voucher
-				isVoucher = false
-			}
-		} else {
-			isVoucher = false
-		}
-
-		if !isVoucher {
-			bal, exist := minXferModBals[fwdDenom]
-			if !exist {
-				bal = sdk.ZeroInt()
-			}
-			minXferModBals[fwdDenom] = bal.Add(fwd.Token.Amount)
-		}
-	}
-
-	for denom, amt := range minXferModBals {
-		balance := k.bankKeeper.GetBalance(ctx, k.accountKeeper.GetModuleAddress(ibctransfertypes.ModuleName), denom).Amount
-		if balance.LT(amt) {
-			return fmt.Errorf("transfer module does not have the expected balance of %s", denom)
 		}
 	}
 

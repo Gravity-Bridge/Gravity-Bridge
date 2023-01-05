@@ -38,7 +38,6 @@ import (
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	appconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 )
 
@@ -72,7 +71,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithBroadcastMode(flags.BroadcastBlock).
 		WithHomeDir(app.DefaultNodeHome).
 		WithKeyringOptions(ethermint.EthSecp256k1Option()).
-		WithViper(config.Bech32Prefix)
+		WithViper(appconfig.Bech32Prefix)
 
 	// nolint: exhaustruct
 	rootCmd := &cobra.Command{

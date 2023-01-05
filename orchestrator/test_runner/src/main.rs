@@ -354,7 +354,7 @@ pub async fn main() {
             return;
         } else if test_type == "EVIDENCE" {
             info!("Starting evidence based slashing tests!");
-            evidence_based_slashing(&web30, &contact, keys, gravity_address).await;
+            evidence_based_slashing(&web30, grpc_client, &contact, keys, gravity_address).await;
             return;
         } else if test_type == "TXCANCEL" {
             info!("Starting SendToEth cancellation test!");

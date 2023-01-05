@@ -17,7 +17,7 @@ use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::utils::decode_any;
 use deep_space::utils::encode_any;
 use deep_space::{Coin as DSCoin, Contact, Msg};
-use gravity_proto::cosmos_sdk_proto::bech32ibc::bech32ibc::v1::UpdateHrpIbcChannelProposal;
+use gravity_proto::bech32ibc::bech32ibc::v1::UpdateHrpIbcChannelProposal;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::{
     v1beta1 as Bank, v1beta1::query_client::QueryClient as BankQueryClient,
 };

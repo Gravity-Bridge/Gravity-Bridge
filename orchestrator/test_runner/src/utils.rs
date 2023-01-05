@@ -505,6 +505,7 @@ pub async fn execute_upgrade_proposal(
         time: None,
         height: upgrade_params.upgrade_height,
         info: upgrade_params.plan_info,
+        upgraded_client_state: None,
     };
     let proposal = SoftwareUpgradeProposal {
         title: upgrade_params.proposal_title,
