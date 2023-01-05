@@ -215,9 +215,10 @@ func updateKeyPrefixToEvmWithoutChain(store sdk.KVStore, oldKey, newKey []byte) 
 	}
 	value := store.Get(oldKey)
 	if len(value) == 0 {
-		return
+		store.Set(newKey, []byte{})
+	} else {
+		store.Set(newKey, value)
 	}
-	store.Set(newKey, value)
 	store.Delete(oldKey)
 
 }

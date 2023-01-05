@@ -78,7 +78,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 		Orchestrator:   accAddr.String(),
 		EthAddress:     ethAddr.GetAddress().String(),
 		Signature:      "dummySignature",
-		EvmChainPrefix: keeper.EthChainPrefix,
+		EvmChainPrefix: v3.EthereumChainPrefix,
 	}
 
 	dummyBatchConfirm := types.MsgConfirmBatch{
@@ -87,7 +87,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 		EthSigner:      ethAddr.GetAddress().String(),
 		Orchestrator:   accAddr.String(),
 		Signature:      "dummySignature",
-		EvmChainPrefix: keeper.EthChainPrefix,
+		EvmChainPrefix: v3.EthereumChainPrefix,
 	}
 
 	// additional data for creating InternalOutgoingTransferTx
@@ -116,7 +116,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 		EthereumSender: "0x00000000000000000002",
 		CosmosReceiver: "0x00000000000000000003",
 		Orchestrator:   "0x00000000000000000004",
-		EvmChainPrefix: keeper.EthChainPrefix,
+		EvmChainPrefix: v3.EthereumChainPrefix,
 	}
 	any, _ := codectypes.NewAnyWithValue(&msg)
 
@@ -160,7 +160,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 		EthSigner:         "dummySignature",
 		Orchestrator:      valAddr.String(),
 		Signature:         "dummySignature",
-		EvmChainPrefix:    keeper.EthChainPrefix,
+		EvmChainPrefix:    v3.EthereumChainPrefix,
 	}
 	decInvalidationId, err := hex.DecodeString(confirm.InvalidationId)
 	require.NoError(t, err)
