@@ -366,6 +366,10 @@ func TestMigrateAttestation(t *testing.T) {
 
 	nonce := uint64(1)
 
+	// check last observed ethereum block. It should be empty initially
+	lastObservedHeightBytes := store.Get(v2.LastObservedEthereumBlockHeightKey)
+	require.Equal(t, 0, len(lastObservedHeightBytes))
+
 	// old claim do not have EvmChainPrefix
 	msg := types.MsgBatchSendToEthClaim{
 		EventNonce:     nonce,
@@ -421,7 +425,7 @@ func TestMigrateAttestation(t *testing.T) {
 	require.NoError(t, err)
 
 	dummyAttestation = &types.Attestation{
-		Observed: false,
+		Observed: true, // change to true to also test last observed evm block height
 		Height:   uint64(1),
 		Claim:    msgAny,
 	}
@@ -452,6 +456,17 @@ func TestMigrateAttestation(t *testing.T) {
 	marshaler.UnpackAny(att.Claim, &ethClaim)
 
 	require.Equal(t, ethClaim.GetEvmChainPrefix(), v3.EthereumChainPrefix)
+
+	// after migrating, the last observed evm block should increase to 1
+	// check last observed ethereum block. It should be empty initially
+	lastObservedHeightBytes = store.Get(types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, v3.EthereumChainPrefix))
+	require.NotEqual(t, 0, len(lastObservedHeightBytes))
+	lastObservedHeight := types.LastObservedEthereumBlockHeight{
+		CosmosBlockHeight:   0,
+		EthereumBlockHeight: 0,
+	}
+	marshaler.MustUnmarshal(lastObservedHeightBytes, &lastObservedHeight)
+	require.Equal(t, uint64(1), lastObservedHeight.EthereumBlockHeight)
 }
 
 // Need to duplicate these because of cyclical imports

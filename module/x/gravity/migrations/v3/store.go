@@ -13,7 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 )
 
 // change this to your current evm mainnet, by default it is your prev GravityDenomPrefix
@@ -63,7 +62,7 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 	updateKeysPrefixToEvmWithoutChain(store, v2.EthAddressByValidatorKey, types.EthAddressByValidatorKey)
 
 	// attestion convert
-	convertAttestationKeyValue := getAttestationConverter(ctx.Logger())
+	convertAttestationKeyValue := getAttestationConverter(ctx, store)
 	// Migrate all stored attestations by iterating over everything stored under the OracleAttestationKey
 	ctx.Logger().Info("Pleiades Upgrade: Beginning Attestation Upgrade")
 	if err := migrateKeysFromValues(store, cdc, types.OracleAttestationKey, convertAttestationKeyValue); err != nil {
@@ -109,7 +108,7 @@ func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix [
 }
 
 // Creates a closure with the current logger for the attestation key conversion function
-func getAttestationConverter(logger log.Logger) func([]byte, codec.BinaryCodec, []byte, []byte) ([]byte, []byte, error) {
+func getAttestationConverter(ctx sdk.Context, store sdk.KVStore) func([]byte, codec.BinaryCodec, []byte, []byte) ([]byte, []byte, error) {
 	// Unmarshal the old Attestation, unpack its claim, recompute the key using the new ClaimHash
 	// Note: The oldKey will contain the implicitPrefix, but the return key should **NOT** have the prefix
 	return func(oldValue []byte, cdc codec.BinaryCodec, oldKey []byte, implicitPrefix []byte) ([]byte, []byte, error) {
@@ -120,6 +119,10 @@ func getAttestationConverter(logger log.Logger) func([]byte, codec.BinaryCodec, 
 		if err != nil {
 			return nil, nil, err
 		}
+
+		// migrate last observed block height if needed because of the export genesis bug
+		migrateLastObservedEvmBlockHeight(ctx, store, cdc, att.Observed, claim.GetEthBlockHeight())
+
 		hash, err := claim.ClaimHash()
 		if err != nil {
 			return nil, nil, err
@@ -135,7 +138,7 @@ func getAttestationConverter(logger log.Logger) func([]byte, codec.BinaryCodec, 
 		if claim.GetType() != types.CLAIM_TYPE_BATCH_SEND_TO_ETH {
 			// Non-batch attestations should **not** be moved
 			if !reflect.DeepEqual(oldKey, newKey) {
-				logger.Error("Migrated an old attestaton to a new key!", "event-nonce", claim.GetEventNonce(),
+				ctx.Logger().Error("Migrated an old attestaton to a new key!", "event-nonce", claim.GetEventNonce(),
 					"eth-block-height", claim.GetEthBlockHeight(), "type", claim.GetType().String(),
 					"old-key", hex.EncodeToString(oldKey), "new-key", hex.EncodeToString(newKey),
 					"old-claim-hash", hex.EncodeToString(oldClaimHash), "new-claim-hash", hex.EncodeToString(hash),
@@ -145,7 +148,7 @@ func getAttestationConverter(logger log.Logger) func([]byte, codec.BinaryCodec, 
 		} else {
 			// Batch attestations **must** move, unless we have some sort of hash collision
 			if reflect.DeepEqual(oldKey, newKey) {
-				logger.Error("Failed to migrate an old batch!", "event-nonce", claim.GetEventNonce(),
+				ctx.Logger().Error("Failed to migrate an old batch!", "event-nonce", claim.GetEventNonce(),
 					"eth-block-height", claim.GetEthBlockHeight(), "type", claim.GetType().String(),
 					"old-key", hex.EncodeToString(oldKey), "new-key", hex.EncodeToString(newKey),
 					"old-claim-hash", hex.EncodeToString(oldClaimHash), "new-claim-hash", hex.EncodeToString(hash),
@@ -153,7 +156,7 @@ func getAttestationConverter(logger log.Logger) func([]byte, codec.BinaryCodec, 
 				panic("Failed to migrate an old batch!")
 			} else {
 				// Batch migrated to a new key!
-				logger.Info("Successfully moved a batch to a new key!", "event-nonce", claim.GetEventNonce(),
+				ctx.Logger().Info("Successfully moved a batch to a new key!", "event-nonce", claim.GetEventNonce(),
 					"eth-block-height", claim.GetEthBlockHeight(), "type", claim.GetType().String(),
 					"old-key", hex.EncodeToString(oldKey), "new-key", hex.EncodeToString(newKey),
 					"old-claim-hash", hex.EncodeToString(oldClaimHash), "new-claim-hash", hex.EncodeToString(hash),
@@ -221,4 +224,24 @@ func updateKeyPrefixToEvmWithoutChain(store sdk.KVStore, oldKey, newKey []byte) 
 	}
 	store.Delete(oldKey)
 
+}
+
+func migrateLastObservedEvmBlockHeight(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, observed bool, claimHeight uint64) {
+	key := types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, EthereumChainPrefix)
+	bytes := store.Get(key)
+	height := types.LastObservedEthereumBlockHeight{
+		CosmosBlockHeight:   0,
+		EthereumBlockHeight: 0,
+	}
+
+	if len(bytes) > 0 {
+		cdc.MustUnmarshal(bytes, &height)
+	}
+	if observed && claimHeight > height.EthereumBlockHeight {
+		height = types.LastObservedEthereumBlockHeight{
+			EthereumBlockHeight: claimHeight,
+			CosmosBlockHeight:   uint64(ctx.BlockHeight()),
+		}
+		store.Set(key, cdc.MustMarshal(&height))
+	}
 }
