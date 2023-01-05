@@ -35,6 +35,9 @@ func (min MinCommissionDecorator) AnteHandle(
 			if c.Rate.LT(minCommissionRate) {
 				return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "commission can't be lower than 10%")
 			}
+			if c.MaxRate.LT(minCommissionRate) {
+				return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "commission max rate can't be lower than 10%")
+			}
 		case *stakingtypes.MsgEditValidator:
 			// if commission rate is nil, it means only
 			// other fields are affected - skip
