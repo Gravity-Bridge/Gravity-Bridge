@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/gogo/protobuf/proto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
@@ -354,9 +355,7 @@ type EthereumClaim interface {
 	SetEvmChainPrefix(evmChainPrefix string)
 
 	// to be compartible with proto
-	String() string
-	ProtoMessage()
-	Reset()
+	proto.Message
 }
 
 // nolint: exhaustruct
