@@ -37,6 +37,10 @@ func ClaimValidateBasic(cdc codec.BinaryCodec, claim *codectypes.Any) error {
 		return sdkerrors.Wrap(ErrInvalidClaim, "decoded nil claim")
 	}
 
+	if ethClaim.GetEvmChainPrefix() == "" {
+		return sdkerrors.Wrap(ErrInvalidClaim, "evm_chain_prefix is empty")
+	}
+
 	// Returns nil on no error from ValidateBasic
 	err = ethClaim.ValidateBasic()
 	if err != nil {

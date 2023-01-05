@@ -379,10 +379,6 @@ func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
 // ValidateBasic performs stateless checks
 func (msg *MsgSendToCosmosClaim) ValidateBasic() error {
 
-	if msg.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty")
-	}
-
 	if err := ValidateEthAddress(msg.EthereumSender); err != nil {
 		return sdkerrors.Wrap(err, "eth sender")
 	}
