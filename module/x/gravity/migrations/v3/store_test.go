@@ -366,6 +366,7 @@ func TestMigrateAttestation(t *testing.T) {
 
 	nonce := uint64(1)
 
+	// old claim do not have EvmChainPrefix
 	msg := types.MsgBatchSendToEthClaim{
 		EventNonce:     nonce,
 		EthBlockHeight: 1,
@@ -404,6 +405,7 @@ func TestMigrateAttestation(t *testing.T) {
 	require.NotEmpty(t, newKeyEntry)
 
 	// other msg like send to cosmos has a different condition branch
+	// old claim do not have EvmChainPrefix
 	cosmosClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     nonce,
 		EthBlockHeight: 1,
@@ -412,7 +414,6 @@ func TestMigrateAttestation(t *testing.T) {
 		Amount:         sdk.NewInt(1),
 		EthereumSender: "0x00000000000000000002",
 		CosmosReceiver: "oraib01234",
-		EvmChainPrefix: v3.EthereumChainPrefix,
 	}
 	msgAny, _ = codectypes.NewAnyWithValue(&cosmosClaim)
 
@@ -443,6 +444,14 @@ func TestMigrateAttestation(t *testing.T) {
 	require.NotEqual(t, oldKeyEntry, newKeyEntry)
 	require.NotEqual(t, newKeyEntry, []byte(""))
 	require.NotEmpty(t, newKeyEntry)
+
+	// check EvmChainPrefix
+	var att types.Attestation
+	marshaler.MustUnmarshal(newKeyEntry, &att)
+	var ethClaim types.EthereumClaim
+	marshaler.UnpackAny(att.Claim, &ethClaim)
+
+	require.Equal(t, ethClaim.GetEvmChainPrefix(), v3.EthereumChainPrefix)
 }
 
 // Need to duplicate these because of cyclical imports

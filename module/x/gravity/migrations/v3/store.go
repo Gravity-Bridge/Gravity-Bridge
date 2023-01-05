@@ -91,10 +91,7 @@ func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix [
 		if err != nil {
 			return err
 		}
-		if reflect.DeepEqual(oldKey, newKey) {
-			// Nothing changed, don't write anything
-			continue
-		} else {
+		if !reflect.DeepEqual(oldKey, newKey) {
 			// The key has changed
 			if prefixStore.Has(newKey) {
 				// Collisions are not allowed
@@ -103,8 +100,10 @@ func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix [
 
 			// Delete the old key and replace it with the new key
 			prefixStore.Delete(oldKey)
-			prefixStore.Set(newKey, newValue)
 		}
+
+		// update new value
+		prefixStore.Set(newKey, newValue)
 	}
 	return nil
 }
