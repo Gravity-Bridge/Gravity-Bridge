@@ -402,6 +402,47 @@ func TestMigrateAttestation(t *testing.T) {
 	require.NotEqual(t, oldKeyEntry, newKeyEntry)
 	require.NotEqual(t, newKeyEntry, []byte(""))
 	require.NotEmpty(t, newKeyEntry)
+
+	// other msg like send to cosmos has a different condition branch
+	cosmosClaim := types.MsgSendToCosmosClaim{
+		EventNonce:     nonce,
+		EthBlockHeight: 1,
+		TokenContract:  "0x00000000000000000001",
+		Orchestrator:   "0x00000000000000000004",
+		Amount:         sdk.NewInt(1),
+		EthereumSender: "0x00000000000000000002",
+		CosmosReceiver: "oraib01234",
+		EvmChainPrefix: v3.EthereumChainPrefix,
+	}
+	msgAny, _ = codectypes.NewAnyWithValue(&cosmosClaim)
+
+	_, err = cosmosClaim.ClaimHash()
+	require.NoError(t, err)
+
+	dummyAttestation = &types.Attestation{
+		Observed: false,
+		Height:   uint64(1),
+		Claim:    msgAny,
+	}
+	oldClaimHash, err = v2.MsgSendToCosmosClaimHash(cosmosClaim)
+	require.NoError(t, err)
+	newClaimHash, err = cosmosClaim.ClaimHash()
+	require.NoError(t, err)
+	attestationOldKey = v2.GetAttestationKey(nonce, oldClaimHash)
+
+	store.Set(attestationOldKey, marshaler.MustMarshal(dummyAttestation))
+
+	// Run migrations
+	err = v3.MigrateStore(ctx, gravityKey, marshaler)
+	require.NoError(t, err)
+
+	oldKeyEntry = store.Get(attestationOldKey)
+	newKeyEntry = store.Get(types.GetAttestationKey(v3.EthereumChainPrefix, nonce, newClaimHash))
+	// Check migration results:
+	require.Empty(t, oldKeyEntry)
+	require.NotEqual(t, oldKeyEntry, newKeyEntry)
+	require.NotEqual(t, newKeyEntry, []byte(""))
+	require.NotEmpty(t, newKeyEntry)
 }
 
 // Need to duplicate these because of cyclical imports

@@ -1,0 +1,19 @@
+version: '3.3'
+services:
+  oraibridge:
+    container_name: oraibridge
+    image: orai/gravity-base-prod:0.2
+    command: tail -f /dev/null
+    environment:
+      - VALIDATOR=validator1
+      - CHAIN_ID=oraibridge-subnet-2
+      - GRAVITY_HOME=/workspace/data
+      - GRAVITY_CONTRACT=0xb40C364e70bbD98E8aaab707A41a52A2eAF5733f # new gravity contract with admin
+      - ETH_NODE=https://blue-floral-dream.bsc.quiknode.pro/0f52c70efc506a5883efa28d560f944efbbd83d2/
+      - TOKEN_CONTRACT=0xA325Ad6D9c92B55A3Fc5aD7e412B1518F96441C0
+      - ADDRESS_PREFIX=oraib
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+      # map first node data to .workspace folder
+    tty: true
