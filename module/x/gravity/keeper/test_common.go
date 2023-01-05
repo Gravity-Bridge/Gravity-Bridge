@@ -638,12 +638,6 @@ func CreateTestEnv(t *testing.T) TestInput {
 		panic("Test Env Creation failure, could not set native hrp")
 	}
 
-	bech32IbcKeeper.SetHrpIbcRecords(ctx, []bech32ibctypes.HrpIbcRecord{
-		{
-			Hrp:           "oraib",
-			SourceChannel: "channel-99",
-		},
-	})
 	if err != nil {
 		panic("Test Env Creation failure, could not set native hrp")
 	}
