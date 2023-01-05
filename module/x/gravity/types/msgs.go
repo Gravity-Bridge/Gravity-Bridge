@@ -350,6 +350,7 @@ type EthereumClaim interface {
 	ClaimHash() ([]byte, error)
 
 	GetEvmChainPrefix() string
+	SetEvmChainPrefix(evmChainPrefix string)
 }
 
 // nolint: exhaustruct
@@ -360,6 +361,10 @@ var (
 	_ EthereumClaim = &MsgLogicCallExecutedClaim{}
 	_ EthereumClaim = &MsgValsetUpdatedClaim{}
 )
+
+func (msg *MsgSendToCosmosClaim) SetEvmChainPrefix(evmChainPrefix string) {
+	msg.EvmChainPrefix = evmChainPrefix
+}
 
 // GetType returns the type of the claim
 func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
@@ -474,6 +479,10 @@ func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{acc}
 }
 
+func (msg *MsgBatchSendToEthClaim) SetEvmChainPrefix(evmChainPrefix string) {
+	msg.EvmChainPrefix = evmChainPrefix
+}
+
 // GetType returns the claim type
 func (msg *MsgBatchSendToEthClaim) GetType() ClaimType {
 	return CLAIM_TYPE_BATCH_SEND_TO_ETH
@@ -542,6 +551,10 @@ const (
 // EthereumClaim implementation for MsgERC20DeployedClaim
 // ======================================================
 
+func (msg *MsgERC20DeployedClaim) SetEvmChainPrefix(evmChainPrefix string) {
+	msg.EvmChainPrefix = evmChainPrefix
+}
+
 // GetType returns the type of the claim
 func (e *MsgERC20DeployedClaim) GetType() ClaimType {
 	return CLAIM_TYPE_ERC20_DEPLOYED
@@ -608,6 +621,10 @@ func (b *MsgERC20DeployedClaim) ClaimHash() ([]byte, error) {
 // EthereumClaim implementation for MsgLogicCallExecutedClaim
 // ======================================================
 
+func (msg *MsgLogicCallExecutedClaim) SetEvmChainPrefix(evmChainPrefix string) {
+	msg.EvmChainPrefix = evmChainPrefix
+}
+
 // GetType returns the type of the claim
 func (e *MsgLogicCallExecutedClaim) GetType() ClaimType {
 	return CLAIM_TYPE_LOGIC_CALL_EXECUTED
@@ -670,6 +687,10 @@ func (b *MsgLogicCallExecutedClaim) ClaimHash() ([]byte, error) {
 
 // EthereumClaim implementation for MsgValsetUpdatedClaim
 // ======================================================
+
+func (msg *MsgValsetUpdatedClaim) SetEvmChainPrefix(evmChainPrefix string) {
+	msg.EvmChainPrefix = evmChainPrefix
+}
 
 // GetType returns the type of the claim
 func (e *MsgValsetUpdatedClaim) GetType() ClaimType {
