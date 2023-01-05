@@ -6,7 +6,7 @@ services:
     command: tail -f /dev/null
     environment:
       - VALIDATOR=validator1
-      - CHAIN_ID=oraibridge-subnet-2
+      - CHAIN_ID=oraibridge-test
       - GRAVITY_HOME=/workspace/data
       - GRAVITY_CONTRACT=0xb40C364e70bbD98E8aaab707A41a52A2eAF5733f # new gravity contract with admin
       - ETH_NODE=https://blue-floral-dream.bsc.quiknode.pro/0f52c70efc506a5883efa28d560f944efbbd83d2/
