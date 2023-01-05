@@ -9,6 +9,7 @@ import (
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -163,6 +164,7 @@ func getAttestationConverter(logger log.Logger) func([]byte, codec.BinaryCodec, 
 
 		// update evm chain prefix for the value
 		claim.SetEvmChainPrefix(EthereumChainPrefix)
+		att.Claim = codectypes.UnsafePackAny(claim)
 		newValue := cdc.MustMarshal(&att)
 
 		// Reminder, the new key should **NOT** contain the prefix

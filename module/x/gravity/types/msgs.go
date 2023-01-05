@@ -349,8 +349,14 @@ type EthereumClaim interface {
 	// with the exception of the orchestrator who sent it in, which will be used as a different part of the index
 	ClaimHash() ([]byte, error)
 
+	// for get and set EvmChainPrefix
 	GetEvmChainPrefix() string
 	SetEvmChainPrefix(evmChainPrefix string)
+
+	// to be compartible with proto
+	String() string
+	ProtoMessage()
+	Reset()
 }
 
 // nolint: exhaustruct
