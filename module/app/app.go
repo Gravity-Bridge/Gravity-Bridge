@@ -105,7 +105,8 @@ import (
 	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
 
 	// unnamed import of statik for swagger UI support
-	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
+	// _ "github.com/cosmos/cosmos-sdk/client/docs/statik"
+	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/doc/statik"
 
 	// Tharsis Ethermint
 	ethante "github.com/evmos/ethermint/app/ante"

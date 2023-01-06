@@ -79,6 +79,9 @@ lint:
 ###                           Protobuf                                    ###
 ###############################################################################
 
+proto-swagger: 
+	./contrib/local/protocgen-swagger.sh $(SRC_DIR)
+
 proto-gen:
 	./contrib/local/protocgen.sh
 

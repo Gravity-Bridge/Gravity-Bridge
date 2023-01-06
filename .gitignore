@@ -30,3 +30,5 @@ data/validator*/config/addrbook.json
 
 upgrade-tests/data*
 upgrade-tests/exported-genesis-new.json
+
+tmp
