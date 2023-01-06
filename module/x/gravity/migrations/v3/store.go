@@ -235,6 +235,7 @@ func migrateLastObservedEvmBlockHeight(ctx sdk.Context, store sdk.KVStore, cdc c
 	}
 
 	if len(bytes) > 0 {
+		println("bytes", string(bytes))
 		cdc.MustUnmarshal(bytes, &height)
 	}
 	if observed && claimHeight > height.EthereumBlockHeight {

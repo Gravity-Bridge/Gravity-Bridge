@@ -172,6 +172,11 @@ func TestMigrateStoreKeys(t *testing.T) {
 		EventNonce:      0,
 	}
 
+	dummyLastObservedEthereumBlockHeight := types.LastObservedEthereumBlockHeight{
+		CosmosBlockHeight:   10,
+		EthereumBlockHeight: 10,
+	}
+
 	// creating test cases
 	// OLD key: []byte prefix key + some value (address, nonce....)
 	// NEW key: []byte prefix key + chain prefix + some value (address, nonce....)
@@ -203,7 +208,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 			"LastObservedEthereumBlockHeightKey",
 			v2.LastObservedEthereumBlockHeightKey,
 			types.AppendChainPrefix(types.LastObservedEvmBlockHeightKey, v3.EthereumChainPrefix),
-			dummyValue,
+			marshaler.MustMarshal(&dummyLastObservedEthereumBlockHeight),
 		},
 		{
 			"LastSlashedValsetNonce",
