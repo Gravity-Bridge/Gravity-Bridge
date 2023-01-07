@@ -17,18 +17,20 @@ func (app *Gravity) assertBech32PrefixMatches(ctx sdk.Context) {
 		panic("Invalid app/config/keeper state")
 	}
 
-	err := app.bech32IbcKeeper.SetNativeHrp(ctx, config.GetBech32AccountAddrPrefix())
-	if err != nil {
-		panic(sdkerrors.Wrap(err, "Unable to start, bech32ibc module not initialized to the correct prefix"))
-	}
-
 	nativePrefix, err := app.bech32IbcKeeper.GetNativeHrp(ctx)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "Error obtaining bech32ibc NativeHrp"))
 	}
 	configPrefix := config.GetBech32AccountAddrPrefix()
 	if nativePrefix != configPrefix {
-		panic(fmt.Sprintf("Mismatched bech32ibc NativeHrp (%v) and config Bech32 Account Prefix (%v)",
-			nativePrefix, configPrefix))
+		err := app.bech32IbcKeeper.SetNativeHrp(ctx, configPrefix)
+		if err != nil {
+			panic(sdkerrors.Wrap(err, "Unable to start, bech32ibc module not initialized to the correct prefix"))
+		}
+		nativePrefix, err := app.bech32IbcKeeper.GetNativeHrp(ctx)
+		if nativePrefix != configPrefix {
+			panic(fmt.Sprintf("Mismatched bech32ibc NativeHrp (%v) and config Bech32 Account Prefix (%v)",
+				nativePrefix, configPrefix))
+		}
 	}
 }
