@@ -81,10 +81,14 @@ pub struct Metadata {
     #[prost(string, tag = "4")]
     pub display: ::prost::alloc::string::String,
     /// name defines the name of the token (eg: Cosmos Atom)
+    ///
+    /// Since: cosmos-sdk 0.43
     #[prost(string, tag = "5")]
     pub name: ::prost::alloc::string::String,
     /// symbol is the token symbol usually shown on exchanges (eg: ATOM). This can
     /// be the same as the display.
+    ///
+    /// Since: cosmos-sdk 0.43
     #[prost(string, tag = "6")]
     pub symbol: ::prost::alloc::string::String,
 }

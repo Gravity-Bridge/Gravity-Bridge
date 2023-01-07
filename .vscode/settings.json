@@ -2,8 +2,7 @@
     "protoc": {
         "compile_on_save": false,
         "options": [
-            "--proto_path=${workspaceFolder}/module/proto",
-            "--proto_path=${workspaceFolder}/module/third_party/proto"
+            "--proto_path=${workspaceFolder}/module/proto"
         ]
     }
 }
