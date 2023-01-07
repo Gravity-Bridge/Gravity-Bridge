@@ -13,6 +13,7 @@ use std::{
     ffi::OsStr,
     fs::{self, create_dir_all, remove_dir_all},
     path::PathBuf,
+    process::Command,
 };
 use std::{io, path::Path};
 use walkdir::WalkDir;
@@ -62,18 +63,45 @@ fn compile_protos(out_dir: &Path, tmp_dir: &Path) {
     // this gives us the repo root by going up two levels from the module root
     let root = root.parent().unwrap().parent().unwrap().to_path_buf();
 
+    let mut module_dir = root.clone();
+    module_dir.push("module");
+
+    let go_list_result = Command::new("go")
+        .args(&[
+            "list",
+            "-f",
+            "{{ .Dir }}",
+            "-m",
+            "github.com/cosmos/cosmos-sdk",
+        ])
+        .current_dir(module_dir)
+        .output()
+        .expect("Failed to execute go list")
+        .stdout;
+
     let mut gravity_proto_dir = root.clone();
     gravity_proto_dir.push("module/proto/gravity/v1");
     let mut gravity_proto_include_dir = root.clone();
     gravity_proto_include_dir.push("module/proto");
-    let mut third_party_proto_include_dir = root;
-    third_party_proto_include_dir.push("module/third_party/proto");
+
+    // we need to have an include which is just the folder of our protos to satisfy protoc
+    // which insists that any passed file be included in a directory passed as an include
+    let go_list_dir: PathBuf = std::str::from_utf8(&go_list_result)
+        .expect("go list output wasn't utf8")
+        .trim()
+        .into();
+    let mut proto_include_dir = go_list_dir.clone();
+    proto_include_dir.push("proto");
+    let mut third_party_proto_include_dir = go_list_dir.clone();
+    third_party_proto_include_dir.push("third_party/proto");
 
     // Paths
     let proto_paths = [gravity_proto_dir];
-    // we need to have an include which is just the folder of our protos to satisfy protoc
-    // which insists that any passed file be included in a directory passed as an include
-    let proto_include_paths = [gravity_proto_include_dir, third_party_proto_include_dir];
+    let proto_include_paths = vec![
+        gravity_proto_include_dir,
+        proto_include_dir,
+        third_party_proto_include_dir,
+    ];
 
     // List available proto files
     let mut protos: Vec<PathBuf> = vec![];

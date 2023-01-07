@@ -1,28 +1,27 @@
 linters:
   enable:
-      - bodyclose
-      - deadcode
-      - depguard
-      - dogsled
-      - dupl
-      - goconst
-      - gocritic
-      - gocyclo
-      - gofmt
-      - gosimple
-      - govet
-      - ineffassign
-      - staticcheck
-      - structcheck
-      - typecheck
-      - unused
-      - varcheck
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
 
-      - exhaustruct
-      - errcheck
+    - exhaustruct
+    - errcheck
     # - gosec
     # - goimports
-
 
 linters-settings:
   govet:
@@ -53,10 +52,6 @@ issues:
         - exhaustruct
         - errcheck
     - path: proto/
-      linters:
-        - exhaustruct
-        - errcheck
-    - path: third_party/
       linters:
         - exhaustruct
         - errcheck

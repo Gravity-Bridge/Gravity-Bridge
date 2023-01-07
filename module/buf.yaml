@@ -3,7 +3,6 @@ version: v1beta1
 build:
   roots:
     - proto
-    - third_party/proto
 lint:
   allow_comment_ignores: true
   use:
@@ -26,7 +25,6 @@ lint:
     - gogoproto
     - cosmos_proto
     - google
-    - third_party
 breaking:
   use:
     - FILE
@@ -37,4 +35,3 @@ breaking:
     - gogoproto
     - cosmos_proto
     - google
-    - third_party

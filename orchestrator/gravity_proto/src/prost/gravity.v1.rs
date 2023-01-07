@@ -1402,6 +1402,9 @@ pub struct GravityNonces {
     /// during chain upgrades
     #[prost(uint64, tag = "7")]
     pub last_batch_id: u64,
+    /// last observed evm block height
+    #[prost(uint64, tag = "8")]
+    pub last_observed_evm_block_height: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
