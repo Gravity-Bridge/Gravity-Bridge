@@ -3,7 +3,7 @@ services:
 
   gravity:
     container_name: gravity
-    image: oraichain/foundation-gravity-module:0.0.1 # docker build -t oraichain/foundation-gravity-module:0.0.1 ./module
+    image: oraichain/foundation-oraibridge-module:0.0.1 # docker build -t oraichain/foundation-oraibridge-module:0.0.1 ./module
     working_dir: /workspace
     restart: on-failure
     ports:
@@ -20,7 +20,7 @@ services:
 
   first_fork:
     container_name: first_fork
-    image: oraichain/foundation-gravity-fork:0.0.1 # docker build -t oraichain/foundation-gravity-fork:0.0.1 ./solidity
+    image: oraichain/foundation-oraibridge-evmfork:0.0.1 # docker build -t oraichain/foundation-oraibridge-evmfork:0.0.1 ./solidity
     working_dir: /workspace
     restart: on-failure
     ports:
@@ -33,7 +33,7 @@ services:
 
   second_fork:
     container_name: second_fork
-    image: oraichain/foundation-gravity-fork:0.0.1
+    image: oraichain/foundation-oraibridge-evmfork:0.0.1
     working_dir: /workspace
     restart: on-failure
     ports:
