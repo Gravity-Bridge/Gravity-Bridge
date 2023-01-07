@@ -114,3 +114,20 @@ You can keep up with the latest development by watching our [public standups](ht
 
 - There must be a validator set update made on the Ethereum contract by calling the `updateValset` method at least once every Cosmos unbonding period (usually 2 weeks). This is because if there has not been an update for longer than the unbonding period, the validator set stored by the Ethereum contract could contain validators who cannot be slashed for misbehavior.
 - Cosmos full nodes do not verify events coming from Ethereum. These events are accepted into the Cosmos state based purely on the signatures of the current validator set. It is possible for the validators with >2/3 of the stake to put events into the Cosmos state which never happened on Ethereum. In this case observers of both chains will need to "raise the alarm". We have built this functionality into the relayer.
+
+## Build
+
+### Development
+
+```bash
+
+# OraiBridge core build
+docker build -t oraichain/foundation-oraibridge-module:0.0.1 ./module
+
+# EVM fork build with Hardhat environment
+docker build -t oraichain/foundation-oraibridge-evmfork:0.0.1 ./solidity
+
+# Production build
+docker build -t oraichain/foundation-oraibridge-module-prod:0.0.1 -f module/Dockerfile.prod ./module
+
+```
