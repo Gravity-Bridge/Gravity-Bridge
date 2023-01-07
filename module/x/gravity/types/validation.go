@@ -127,7 +127,7 @@ func (b InternalBridgeValidators) Sort() {
 // if the total on chain voting power increases by 1% due to inflation, we shouldn't have to generate a new validator
 // set, after all the validators retained their relative percentages during inflation and normalized Gravity bridge power
 // shows no difference.
-func (b InternalBridgeValidators) PowerDiff(c InternalBridgeValidators) float64 {
+func (b InternalBridgeValidators) PowerDiff(c InternalBridgeValidators) sdk.Dec {
 	powers := map[string]int64{}
 	// loop over b and initialize the map with their powers
 	for _, bv := range b {
@@ -144,13 +144,13 @@ func (b InternalBridgeValidators) PowerDiff(c InternalBridgeValidators) float64 
 		}
 	}
 
-	var delta float64
+	delta := sdk.NewDec(0)
 	for _, v := range powers {
 		// NOTE: we care about the absolute value of the changes
-		delta += math.Abs(float64(v))
+		delta = sdk.NewDec(v).Abs().Add(delta)
 	}
 
-	return math.Abs(delta / float64(math.MaxUint32))
+	return delta.Quo(sdk.NewDec(math.MaxUint32)).Abs()
 }
 
 // TotalPower returns the total power in the bridge validator set
