@@ -14,7 +14,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 	evmChains := k.GetEvmChains(ctx)
 
 	for _, evmChain := range evmChains {
-		slashing(ctx, k, evmChain.EvmChainPrefix)
+		slashing(ctx, k, params, evmChain.EvmChainPrefix)
 		attestationTally(ctx, k, evmChain.EvmChainPrefix)
 		cleanupTimedOutBatches(ctx, k, evmChain.EvmChainPrefix)
 		cleanupTimedOutLogicCalls(ctx, k, evmChain.EvmChainPrefix)
@@ -60,7 +60,7 @@ func createValsets(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 			panic(sdkerrors.Wrap(err, "invalid latest valset members"))
 		}
 
-		significantPowerDiff = intCurrMembers.PowerDiff(*intLatestMembers) > 0.05
+		significantPowerDiff = intCurrMembers.PowerDiff(*intLatestMembers).GT(sdk.NewDecWithPrec(5, 2))
 	}
 
 	if (latestValset == nil) || (lastUnbondingHeight == uint64(ctx.BlockHeight())) || significantPowerDiff {
@@ -90,9 +90,7 @@ func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChai
 	}
 }
 
-func slashing(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
-	params := k.GetParams(ctx)
-
+func slashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChainPrefix string) {
 	// Slash validator for not confirming valset requests, batch requests, logic call requests
 	valsetSlashing(ctx, k, params, evmChainPrefix)
 	batchSlashing(ctx, k, params, evmChainPrefix)

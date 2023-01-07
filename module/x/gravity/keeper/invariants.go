@@ -586,7 +586,7 @@ func CheckValsets(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 			err = fmt.Errorf("invalid valset updated claim in store for event nonce %d, valset nonce %d", claimVs.EventNonce, claimVs.ValsetNonce)
 			return true
 		}
-		if currIntBvs.PowerDiff(*claimIntBvs) > 0.0001 {
+		if currIntBvs.PowerDiff(*claimIntBvs).GT(sdk.NewDecWithPrec(1, 4)) {
 			err = fmt.Errorf("power difference discovered between stored valset %v and observed attestation valset %v", storedVs, claimVs)
 			return true
 		}

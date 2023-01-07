@@ -19,6 +19,10 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
+func TestDec(t *testing.T) {
+	require.Equal(t, sdk.NewDecWithPrec(5, 2).String(), "0.050000000000000000")
+}
+
 func TestValsetCreationIfNotAvailable(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()

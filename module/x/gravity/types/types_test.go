@@ -63,7 +63,7 @@ func TestValsetPowerDiff(t *testing.T) {
 	specs := map[string]struct {
 		start BridgeValidators
 		diff  BridgeValidators
-		exp   float64
+		exp   sdk.Dec
 	}{
 		"no diff": {
 			start: BridgeValidators{
@@ -76,7 +76,7 @@ func TestValsetPowerDiff(t *testing.T) {
 				{Power: 2, EthereumAddress: "0x8E91960d704Df3fF24ECAb78AB9df1B5D9144140"},
 				{Power: 3, EthereumAddress: "0xF14879a175A2F1cEFC7c616f35b6d9c2b0Fd8326"},
 			},
-			exp: 0.0,
+			exp: sdk.NewDecWithPrec(0, 1),
 		},
 		"one": {
 			start: BridgeValidators{
@@ -89,7 +89,7 @@ func TestValsetPowerDiff(t *testing.T) {
 				{Power: 858993459, EthereumAddress: "0x8E91960d704Df3fF24ECAb78AB9df1B5D9144140"},
 				{Power: 2576980377, EthereumAddress: "0xF14879a175A2F1cEFC7c616f35b6d9c2b0Fd8326"},
 			},
-			exp: 0.2,
+			exp: sdk.NewDecWithPrec(2, 1),
 		},
 		"real world": {
 			start: BridgeValidators{
@@ -112,7 +112,7 @@ func TestValsetPowerDiff(t *testing.T) {
 				{Power: 291759231, EthereumAddress: "0xF14879a175A2F1cEFC7c616f35b6d9c2b0Fd8326"},
 				{Power: 6785098, EthereumAddress: "0x37A0603dA2ff6377E5C7f75698dabA8EE4Ba97B8"},
 			},
-			exp: 0.010000000011641532,
+			exp: sdk.MustNewDecFromStr("0.010000000011641532"),
 		},
 	}
 	for msg, spec := range specs {
