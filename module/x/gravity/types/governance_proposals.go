@@ -5,13 +5,15 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
 const (
-	ProposalTypeUnhaltBridge = "UnhaltBridge"
-	ProposalTypeAirdrop      = "Airdrop"
-	ProposalTypeIBCMetadata  = "IBCMetadata"
+	ProposalTypeUnhaltBridge         = "UnhaltBridge"
+	ProposalTypeAirdrop              = "Airdrop"
+	ProposalTypeIBCMetadata          = "IBCMetadata"
+	ProposalTypeMonitoredERC20Tokens = "MonitoredERC20Tokens"
 )
 
 func (p *UnhaltBridgeProposal) GetTitle() string { return p.Title }
@@ -124,5 +126,38 @@ func (p IBCMetadataProposal) String() string {
   Token Decimals:    %d
   Token Description: %s
 `, p.Title, p.Description, p.Metadata.Name, p.Metadata.Symbol, p.Metadata.Display, decimals, p.Metadata.Description))
+	return b.String()
+}
+
+func (p *SetMonitoredERC20TokensProposal) GetTitle() string { return p.Title }
+
+func (p *SetMonitoredERC20TokensProposal) GetDescription() string { return p.Description }
+
+func (p *SetMonitoredERC20TokensProposal) ProposalRoute() string { return RouterKey }
+
+func (p *SetMonitoredERC20TokensProposal) ProposalType() string {
+	return ProposalTypeMonitoredERC20Tokens
+}
+
+func (p *SetMonitoredERC20TokensProposal) ValidateBasic() error {
+	err := govtypes.ValidateAbstract(p)
+	if err != nil {
+		return err
+	}
+	for _, address := range p.Erc20Tokens {
+		if _, err := NewEthAddress(address); err != nil {
+			return sdkerrors.Wrapf(err, "invalid ERC20 address (%v) provided", address)
+		}
+	}
+	return nil
+}
+
+func (p SetMonitoredERC20TokensProposal) String() string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf(`Set MonitoredERC20Tokens proposal:
+  Title:             %s
+  Description:       %s
+  Tokens:            [%s]
+`, p.Title, p.Description, strings.Join(p.Erc20Tokens, ", ")))
 	return b.String()
 }

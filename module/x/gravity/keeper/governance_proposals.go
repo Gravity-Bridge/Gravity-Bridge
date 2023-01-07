@@ -36,6 +36,11 @@ func RegisterProposalTypes() {
 		govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
 		govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
 	}
+	setMonitoredERC20Tokens := "gravity/SetMonitoredERC20Tokens"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(setMonitoredERC20Tokens, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeMonitoredERC20Tokens)
+		govtypes.RegisterProposalTypeCodec(&types.SetMonitoredERC20TokensProposal{}, setMonitoredERC20Tokens)
+	}
 }
 
 func NewGravityProposalHandler(k Keeper) govtypes.Handler {
@@ -47,6 +52,8 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 			return k.HandleAirdropProposal(ctx, c)
 		case *types.IBCMetadataProposal:
 			return k.HandleIBCMetadataProposal(ctx, c)
+		case *types.SetMonitoredERC20TokensProposal:
+			return k.HandleSetMonitoredERC20TokensProposal(ctx, c)
 
 		default:
 			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
@@ -249,4 +256,27 @@ func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataP
 	k.bankKeeper.SetDenomMetaData(ctx, p.Metadata)
 
 	return nil
+}
+
+// HandleSetMonitoredERC20TokensProposal handles a governance proposal for setting the MonitoredERC20Tokens value
+// All of the given ERC20 tokens will be validated before being serialized into bytes and saved to the store
+// Any in-progress attestations will immediately become invalid due to the new monitored ERC20 token requirement, so all
+// unobserved attestations will be deleted from the store at this time
+func (k Keeper) HandleSetMonitoredERC20TokensProposal(ctx sdk.Context, p *types.SetMonitoredERC20TokensProposal) error {
+	ctx.Logger().Info("Gov vote passed: Setting Monitored ERC20 Tokens", "tokens", p.Erc20Tokens)
+
+	ctx.Logger().Info("All in-progress attestations will now be dropped because they will be invalid after the monitored erc20 addresses update")
+	lastObservedEventNonce := k.GetLastObservedEventNonce(ctx)
+	k.DeleteAttestationsAfterNonce(ctx, lastObservedEventNonce)
+
+	var addresses []types.EthAddress
+	for _, address := range p.Erc20Tokens {
+		addr, err := types.NewEthAddress(address)
+		if err != nil {
+			ctx.Logger().Info("invalid address provided while setting the monitored erc20 tokens", "invalidAddress", address, "err", err)
+			return sdkerrors.Wrapf(types.ErrInvalid, "Invalid ERC20 token to monitor (%v)", address)
+		}
+		addresses = append(addresses, *addr)
+	}
+	return k.SetMonitoredERC20Tokens(ctx, addresses)
 }

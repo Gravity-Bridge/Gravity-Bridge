@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 
+	gethcommon "github.com/ethereum/go-ethereum/common"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -160,7 +162,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 // WARNING: These assertions must be run AFTER applying state, or the chain will halt
 func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
 	ethBals := claim.GetBridgeBalances()
-	monitoredTokens := k.GetParams(ctx).MonitoredTokenAddresses
+	monitoredTokens := types.EthAddresses(k.GetMonitoredTokenAddresses(ctx)).ToHexStrings()
 
 	if len(ethBals) != len(monitoredTokens) {
 		k.logger(ctx).Error(
@@ -589,4 +591,80 @@ func (k Keeper) IterateValidatorLastEventNonces(ctx sdk.Context, cb func(key []b
 			break
 		}
 	}
+}
+
+// DeleteAttestations will iterate through all attestations in the store in order by claim nonce and evaluate cond at
+// each attestation. The attestation will be deleted if cond returns (true, _), iteration will stop if cond returns (_, true)
+func (k Keeper) DeleteAttestations(ctx sdk.Context, cond func(att types.Attestation, nonce uint64) (delete bool, stop bool)) {
+	attmap, keys := k.GetAttestationMapping(ctx)
+
+	// This iterates over all keys (event nonces) in the attestation mapping. Each value contains
+	// a slice with one or more attestations at that event nonce. There can be multiple attestations
+	// at one event nonce when validators disagree about what event happened at that nonce.
+	for _, nonce := range keys {
+		// This iterates over all attestations at a particular event nonce.
+		// They are ordered by when the first attestation at the event nonce was received.
+		// This order is not important.
+		for _, att := range attmap[nonce] {
+			// delete all before the cutoff
+			delete, stop := cond(att, nonce)
+			if delete {
+				k.DeleteAttestation(ctx, att)
+			}
+			if stop {
+				return
+			}
+		}
+	}
+}
+
+// DeleteAttestationsBeforeNonce will delete every attestation in the store with a nonce less than the given cutoff
+func (k Keeper) DeleteAttestationsBeforeNonce(ctx sdk.Context, cutoff uint64) {
+	k.DeleteAttestations(ctx, func(att types.Attestation, nonce uint64) (delete bool, stop bool) {
+		if nonce < cutoff {
+			return true, false // Delete this one, keep iterating
+		}
+		return false, false // Do not delete this one, keep iterating
+	})
+}
+
+// DeleteAttestationsAfterNonce will delete every attestation in the store with a nonce greater than the given cutoff
+func (k Keeper) DeleteAttestationsAfterNonce(ctx sdk.Context, cutoff uint64) {
+	k.DeleteAttestations(ctx, func(att types.Attestation, nonce uint64) (delete bool, stop bool) {
+		if nonce > cutoff {
+			return true, false // Delete this one, keep iterating
+		}
+		return false, false // Do not delete this one, keep iterating
+	})
+}
+
+func (k Keeper) GetMonitoredTokenAddresses(ctx sdk.Context) (addresses []types.EthAddress) {
+	bytes := ctx.KVStore(k.storeKey).Get(types.MonitoredTokenAddresses)
+
+	if len(bytes)%gethcommon.AddressLength != 0 {
+		panic(fmt.Sprintf("MonitoredERC20Tokens set to incorrect bytes, expected length to be a multiple of %v but instead it is %v", gethcommon.AddressLength, len(bytes)))
+	}
+	numAddresses := len(bytes) / gethcommon.AddressLength
+	for i := 0; i < numAddresses; i++ {
+		start := i * gethcommon.AddressLength
+		newAddress, err := types.NewEthAddressFromBytes(bytes[start : start+gethcommon.AddressLength])
+		if err != nil {
+			panic(fmt.Sprintf("Discovered invalid monitored token address in store: %v", err))
+		}
+		addresses = append(addresses, *newAddress)
+	}
+
+	return addresses
+}
+
+func (k Keeper) SetMonitoredERC20Tokens(ctx sdk.Context, addresses []types.EthAddress) error {
+	var bytes []byte
+
+	for _, address := range addresses {
+		if err := address.ValidateBasic(); err != nil {
+			return sdkerrors.Wrapf(err, "Unable to set the MonitoredERC20Tokens due to invalid address %v", address.GetAddress().String())
+		}
+		bytes = append(bytes, address.GetAddress().Bytes()...)
+	}
+	return nil
 }

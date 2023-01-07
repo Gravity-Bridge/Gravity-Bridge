@@ -105,6 +105,18 @@ func EthAddrLessThan(e EthAddress, o EthAddress) bool {
 	return bytes.Compare([]byte(e.GetAddress().Hex()), []byte(o.GetAddress().Hex())) == -1
 }
 
+type EthAddresses []EthAddress
+
+func (a EthAddresses) ToHexStrings() []string {
+	var strings []string
+	for _, address := range a {
+		str := address.GetAddress().Hex()
+		strings = append(strings, str)
+	}
+
+	return strings
+}
+
 /////////////////////////
 // ERC20Token      //
 /////////////////////////

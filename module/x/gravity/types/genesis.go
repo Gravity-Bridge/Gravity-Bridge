@@ -107,9 +107,8 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		BridgeActive:            true,
-		EthereumBlacklist:       []string{},
-		MonitoredTokenAddresses: []string{},
+		BridgeActive:      true,
+		EthereumBlacklist: []string{},
 	}
 )
 
@@ -162,7 +161,6 @@ func DefaultParams() *Params {
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
 		EthereumBlacklist:            []string{},
-		MonitoredTokenAddresses:      []string{},
 	}
 }
 
@@ -222,9 +220,6 @@ func (p Params) ValidateBasic() error {
 	if err := validateEthereumBlacklistAddresses(p.EthereumBlacklist); err != nil {
 		return sdkerrors.Wrap(err, "ethereum blacklist parameter")
 	}
-	if err := validateMonitoredTokenAddresses(p.MonitoredTokenAddresses); err != nil {
-		return sdkerrors.Wrap(err, "monitored token addresses")
-	}
 
 	return nil
 }
@@ -251,9 +246,8 @@ func ParamKeyTable() paramtypes.KeyTable {
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		BridgeActive:            true,
-		EthereumBlacklist:       []string{},
-		MonitoredTokenAddresses: []string{},
+		BridgeActive:      true,
+		EthereumBlacklist: []string{},
 	})
 }
 
@@ -278,7 +272,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
 		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
 		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
-		paramtypes.NewParamSetPair(ParamStoreMonitoredTokenAddresses, &p.MonitoredTokenAddresses, validateMonitoredTokenAddresses),
 	}
 }
 
@@ -449,21 +442,6 @@ func validateEthereumBlacklistAddresses(i interface{}) error {
 			if !strings.Contains(err.Error(), "empty, index is"+strconv.Itoa(index)) {
 				return err
 			}
-		}
-	}
-	return nil
-}
-
-func validateMonitoredTokenAddresses(i interface{}) error {
-	v, ok := i.([]string)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	for i, e := range v {
-		_, err := NewEthAddress(e)
-		if err != nil {
-			return sdkerrors.Wrapf(ErrInvalidEthAddress, "the %d-th monitored token address (%v) is invalid: %v", i, e, err)
 		}
 	}
 	return nil

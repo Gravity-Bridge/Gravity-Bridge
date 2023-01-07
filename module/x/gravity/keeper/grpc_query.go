@@ -2,6 +2,8 @@ package keeper
 
 import (
 	"context"
+	"strings"
+
 	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -9,7 +11,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"strings"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -585,4 +586,13 @@ func (k Keeper) GetPendingIbcAutoForwards(
 	ctx := sdk.UnwrapSDKContext(c)
 	pendingForwards := k.PendingIbcAutoForwards(ctx, req.Limit)
 	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
+}
+
+func (k Keeper) MonitoredERC20Tokens(
+	c context.Context,
+	req *types.QueryMonitoredERC20Tokens,
+) (*types.QueryMonitoredERC20TokensResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	monitoredERC20Tokens := types.EthAddresses(k.GetMonitoredTokenAddresses(ctx)).ToHexStrings()
+	return &types.QueryMonitoredERC20TokensResponse{MonitoredErc20Tokens: monitoredERC20Tokens}, nil
 }

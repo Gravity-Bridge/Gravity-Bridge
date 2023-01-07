@@ -133,6 +133,17 @@ pub struct IbcMetadataProposal {
     #[prost(string, tag="4")]
     pub ibc_denom: ::prost::alloc::string::String,
 }
+/// SetMonitoredERC20TokensProposal defines a custom governance proposal to set the MonitoredERC20Tokens value in the
+/// store
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct SetMonitoredErc20TokensProposal {
+    #[prost(string, tag="1")]
+    pub title: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag="3")]
+    pub erc20_tokens: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
 /// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
 /// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1248,12 +1259,6 @@ pub struct EventOutgoingBatch {
 /// ethereum_blacklist
 ///
 /// Addresses on this blacklist are forbidden from bridging to or from Ethereum
-///
-/// monitored_token_addresses
-///
-/// Addresses on this list will be monitored for cross-bridge balance checks. Orchestrators are required to collect the
-/// Gravity.sol contract's balance of each of these ERC20 tokens for each of their submitted claims at the event's
-/// ethereum block height
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Params {
     #[prost(string, tag="1")]
@@ -1292,8 +1297,6 @@ pub struct Params {
     pub bridge_active: bool,
     #[prost(string, repeated, tag="19")]
     pub ethereum_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag="20")]
-    pub monitored_token_addresses: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// GenesisState struct, containing all persistant data required by the Gravity module
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1324,6 +1327,8 @@ pub struct GenesisState {
     pub unbatched_transfers: ::prost::alloc::vec::Vec<OutgoingTransferTx>,
     #[prost(message, repeated, tag="13")]
     pub pending_ibc_auto_forwards: ::prost::alloc::vec::Vec<PendingIbcAutoForward>,
+    #[prost(string, repeated, tag="14")]
+    pub monitored_token_addresses: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// GravityCounters contains the many noces and counters required to maintain the bridge state in the genesis
 #[derive(Clone, PartialEq, Eq, ::prost::Message)]
@@ -1664,6 +1669,14 @@ pub struct QueryPendingIbcAutoForwards {
 pub struct QueryPendingIbcAutoForwardsResponse {
     #[prost(message, repeated, tag="1")]
     pub pending_ibc_auto_forwards: ::prost::alloc::vec::Vec<PendingIbcAutoForward>,
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct QueryMonitoredErc20Tokens {
+}
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+pub struct QueryMonitoredErc20TokensResponse {
+    #[prost(string, repeated, tag="1")]
+    pub monitored_erc20_tokens: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// Generated client implementations.
 pub mod query_client {
@@ -2276,6 +2289,28 @@ pub mod query_client {
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/gravity.v1.Query/GetPendingIbcAutoForwards",
+            );
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+        pub async fn monitored_erc20_tokens(
+            &mut self,
+            request: impl tonic::IntoRequest<super::QueryMonitoredErc20Tokens>,
+        ) -> Result<
+            tonic::Response<super::QueryMonitoredErc20TokensResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/gravity.v1.Query/MonitoredERC20Tokens",
             );
             self.inner.unary(request.into_request(), path, codec).await
         }

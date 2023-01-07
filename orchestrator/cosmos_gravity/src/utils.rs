@@ -6,10 +6,10 @@ use deep_space::utils::encode_any;
 use deep_space::{Address as CosmosAddress, Contact};
 use futures::future::join_all;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::Erc20Token as ProtoErc20Token;
 use gravity_proto::gravity::OutgoingLogicCall as ProtoLogicCall;
 use gravity_proto::gravity::OutgoingTxBatch as ProtoBatch;
 use gravity_proto::gravity::Valset as ProtoValset;
+use gravity_proto::gravity::{Erc20Token as ProtoErc20Token, QueryMonitoredErc20Tokens};
 use gravity_utils::error::GravityError;
 use gravity_utils::get_with_retry::RETRY_TIME;
 use gravity_utils::types::{
@@ -138,28 +138,21 @@ pub async fn collect_eth_balances_for_claims(
 
 /// Fetches and parses the gravity MonitoredTokenAddresses governance param as a Vec
 pub async fn get_gravity_monitored_erc20s(
-    contact: &Contact,
+    grpc: GravityQueryClient<Channel>,
 ) -> Result<Vec<EthAddress>, GravityError> {
-    const PARAM: &str = "MonitoredTokenAddresses";
-    let res = contact.get_param("gravity", PARAM).await;
-    if res.is_err() {
-        return Ok(vec![]); // The parameter has not yet been added, return an empty collection
-    }
-    let erc20s = res.unwrap().param;
-    if erc20s.is_none() {
-        return Ok(vec![]); // The parameter has not yet been added, return an empty collection
-    }
-    let erc20s = erc20s.unwrap().value;
-    info!("Got parameter {}: '{}'", PARAM, erc20s);
+    let mut grpc = grpc;
+    let erc20s = grpc
+        .monitored_erc20_tokens(QueryMonitoredErc20Tokens {})
+        .await?
+        .into_inner()
+        .monitored_erc20_tokens;
+    info!("Got monitored ERC20 tokens {:?}", erc20s);
     if erc20s.is_empty() {
         return Ok(vec![]); // The parameter has not yet been added, return an empty collection
     }
-    // Decode ERC20s from string
-    let erc20_strings = serde_json::from_str::<Vec<String>>(&erc20s)
-        .expect("serde_json string -> Vec<String> failed");
 
     let mut results: Vec<EthAddress> = vec![];
-    for e in &erc20_strings {
+    for e in &erc20s {
         if e.is_empty() {
             continue;
         }

@@ -204,6 +204,7 @@ pub async fn check_for_events(
             let res = send_ethereum_claims(
                 web3,
                 contact,
+                grpc_client.clone(),
                 gravity_contract_address,
                 cosmos_private_key,
                 our_eth_address,

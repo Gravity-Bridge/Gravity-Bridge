@@ -16,6 +16,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangePro
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
 use gravity_proto::gravity::AirdropProposal as AirdropProposalMsg;
 use gravity_proto::gravity::IbcMetadataProposal;
+use gravity_proto::gravity::SetMonitoredErc20TokensProposal;
 use gravity_proto::gravity::UnhaltBridgeProposal;
 use serde::Deserialize;
 use serde::Serialize;
@@ -26,6 +27,8 @@ use std::time::Duration;
 pub const AIRDROP_PROPOSAL_TYPE_URL: &str = "/gravity.v1.AirdropProposal";
 pub const UNHALT_BRIDGE_PROPOSAL_TYPE_URL: &str = "/gravity.v1.UnhaltBridgeProposal";
 pub const IBC_METADATA_PROPOSAL_TYPE_URL: &str = "/gravity.v1.IBCMetadataProposal";
+pub const SET_MONITORED_ERC20_TOKENS_PROPOSAL_TYPE_URL: &str =
+    "/gravity.v1.SetMonitoredERC20TokensProposal";
 
 // cosmos-sdk proposals
 pub const PARAMETER_CHANGE_PROPOSAL_TYPE_URL: &str =
@@ -276,42 +279,40 @@ pub async fn submit_ibc_metadata_proposal(
         .await
 }
 
-pub struct SetMonitoredTokenAddressesProposal {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SetMonitoredERC20TokensProposalJson {
     pub title: String,
     pub description: String,
     pub monitored_addresses: Vec<EthAddress>,
 }
-
+impl From<SetMonitoredERC20TokensProposalJson> for SetMonitoredErc20TokensProposal {
+    fn from(v: SetMonitoredERC20TokensProposalJson) -> Self {
+        let mut tokens = vec![];
+        for token in v.monitored_addresses {
+            tokens.push(token.to_string())
+        }
+        SetMonitoredErc20TokensProposal {
+            title: v.title,
+            description: v.description,
+            erc20_tokens: tokens,
+        }
+    }
+}
 /// Encodes and submits a proposal to set the MonitoredTokenAddresses parameter for cross-bridge
 /// balance checking
-pub async fn submit_set_monitored_token_addresses_proposal(
-    proposal: SetMonitoredTokenAddressesProposal,
+pub async fn submit_set_monitored_erc20_tokens_proposal(
+    proposal: SetMonitoredErc20TokensProposal,
     deposit: Coin,
     fee: Coin,
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TxResponse, CosmosGrpcError> {
-    let monitored_erc20s: Vec<String> = proposal
-        .monitored_addresses
-        .into_iter()
-        .map(|a| a.to_string())
-        .collect();
-    let mut params_to_change = Vec::new();
-    let set_erc20s = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "MonitoredTokenAddresses".to_string(),
-        value: serde_json::to_string(&monitored_erc20s).unwrap(),
-    };
-    info!(
-        "Setting parameter {} to {}",
-        set_erc20s.key, set_erc20s.value
+    let any = encode_any(
+        proposal,
+        SET_MONITORED_ERC20_TOKENS_PROPOSAL_TYPE_URL.to_string(),
     );
-    params_to_change.push(set_erc20s);
-    let proposal = ParameterChangeProposal {
-        title: proposal.title,
-        description: proposal.description,
-        changes: params_to_change,
-    };
-    submit_parameter_change_proposal(proposal, deposit, fee, contact, key, wait_timeout).await
+    contact
+        .create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .await
 }

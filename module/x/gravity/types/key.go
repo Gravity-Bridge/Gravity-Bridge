@@ -1,9 +1,10 @@
 package types
 
 import (
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"strings"
 )
 
 const (
@@ -154,6 +155,10 @@ var (
 	// PendingIbcAutoForwards indexes pending SendToCosmos sends via IBC, queued by event nonce
 	// [0x5b89a7c5dc9abd2a7abc2560d6eb42ea]
 	PendingIbcAutoForwards = HashString("IbcAutoForwardQueue")
+
+	// PendingIbcAutoForwards indexes pending SendToCosmos sends via IBC, queued by event nonce
+	// [0x6e1fe30cc6c99ce11e9418cdafba578c]
+	MonitoredTokenAddresses = HashString("MonitoredTokenAddresses")
 )
 
 // GetOrchestratorAddressKey returns the following key format

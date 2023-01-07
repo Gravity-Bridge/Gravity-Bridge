@@ -10,6 +10,7 @@ use ethereum_gravity::message_signatures::{
     encode_logic_call_confirm, encode_tx_batch_confirm, encode_valset_confirm,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
+use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::{
     Erc20Token as ProtoErc20Token, MsgCancelSendToEth, MsgConfirmBatch, MsgConfirmLogicCall,
     MsgExecuteIbcAutoForwards, MsgRequestBatch, MsgSendToEth, MsgSetOrchestratorAddress,
@@ -18,6 +19,7 @@ use gravity_proto::gravity::{
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
 use std::{collections::HashMap, time::Duration};
+use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
 
@@ -223,6 +225,7 @@ pub async fn send_logic_call_confirm(
 pub async fn send_ethereum_claims(
     web3: &Web3,
     contact: &Contact,
+    grpc_client: GravityQueryClient<Channel>,
     gravity_contract: EthAddress,
     our_cosmos_key: impl CosmosPrivateKey,
     our_eth_address: EthAddress,
@@ -235,7 +238,7 @@ pub async fn send_ethereum_claims(
 ) -> Result<Option<TxResponse>, GravityError> {
     let our_cosmos_address = our_cosmos_key.to_address(&contact.get_prefix()).unwrap();
 
-    let monitored_erc20s = get_gravity_monitored_erc20s(contact).await?;
+    let monitored_erc20s = get_gravity_monitored_erc20s(grpc_client).await?;
     let must_monitor_erc20s = !monitored_erc20s.is_empty();
 
     // If the gov param is populated, Orchestrators are required to submit the Gravity.sol balances for various ERC20s

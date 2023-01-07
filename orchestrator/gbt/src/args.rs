@@ -409,3 +409,26 @@ pub struct OracleUnhaltProposalOpts {
     #[clap(short, long, parse(try_from_str))]
     pub fees: Coin,
 }
+
+/// The orchestrators can be required to submit Gravity.sol ERC20 balances via governance,
+/// since ERC20 tokens are arbitrary contracts implementing an interface it is critical that
+/// there be a carefully controlled whitelist of tokens to monitor. If an invalid token were
+/// added to the list, it would be trivial to halt the bridge.
+#[derive(Parser)]
+pub struct SetMonitoredERC20TokensProposalOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = "http://localhost:9090")]
+    pub cosmos_grpc: String,
+    /// The phrase for an address containing enough funds to submit the proposal.
+    #[clap(short, long, parse(try_from_str))]
+    pub cosmos_phrase: CosmosPrivateKey,
+    /// Path to the proposal.json
+    #[clap(short, long, parse(try_from_str))]
+    pub json: PathBuf,
+    /// The Cosmos Denom and amount to pay the governance proposal deposit
+    #[clap(short, long, parse(try_from_str))]
+    pub deposit: Coin,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Coin,
+}

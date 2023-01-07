@@ -98,6 +98,18 @@ message IBCMetadataProposal {
   string ibc_denom = 4;
 }
 
+// SetMonitoredERC20TokensProposal defines a custom governance proposal to set the MonitoredERC20Tokens value in the
+// store
+message SetMonitoredERC20TokensProposal {
+  option (gogoproto.equal) = true;
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  string title = 1;
+  string description = 2;
+  repeated string erc20_tokens = 3;
+}
+
 // PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
 // PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
 message PendingIbcAutoForward {

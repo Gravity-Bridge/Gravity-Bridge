@@ -102,6 +102,7 @@ pub async fn happy_path_test(
         event_nonce, // Duplicate the current nonce
         web30,
         contact,
+        grpc_client.clone(),
         erc20_address,
         1u64.into(),
         user_keys.cosmos_address,
@@ -604,6 +605,7 @@ async fn submit_duplicate_erc20_send(
     nonce: u64,
     web30: &Web3,
     contact: &Contact,
+    grpc_client: GravityQueryClient<Channel>,
     erc20_address: EthAddress,
     amount: Uint256,
     receiver: CosmosAddress,
@@ -636,6 +638,7 @@ async fn submit_duplicate_erc20_send(
         let res = send_ethereum_claims(
             web30,
             contact,
+            grpc_client,
             gravity_contract,
             c_key,
             *MINER_ADDRESS,

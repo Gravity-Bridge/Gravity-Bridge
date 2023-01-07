@@ -492,8 +492,6 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 // but (A) pruning keeps the iteration small in the first place and (B) there is
 // already enough nuance in the other handler that it's best not to complicate it further
 func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
-	attmap, keys := k.GetAttestationMapping(ctx)
-
 	// we delete all attestations earlier than the current event nonce
 	// minus some buffer value. This buffer value is purely to allow
 	// frontends and other UI components to view recent oracle history
@@ -506,18 +504,5 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 		cutoff = lastNonce - eventsToKeep
 	}
 
-	// This iterates over all keys (event nonces) in the attestation mapping. Each value contains
-	// a slice with one or more attestations at that event nonce. There can be multiple attestations
-	// at one event nonce when validators disagree about what event happened at that nonce.
-	for _, nonce := range keys {
-		// This iterates over all attestations at a particular event nonce.
-		// They are ordered by when the first attestation at the event nonce was received.
-		// This order is not important.
-		for _, att := range attmap[nonce] {
-			// delete all before the cutoff
-			if nonce < cutoff {
-				k.DeleteAttestation(ctx, att)
-			}
-		}
-	}
+	k.DeleteAttestationsBeforeNonce(ctx, cutoff)
 }

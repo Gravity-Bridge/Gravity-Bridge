@@ -92,12 +92,14 @@ service Query {
       returns (QueryDelegateKeysByOrchestratorAddressResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_delegate_keys_by_orchestrator";
   }
-
   rpc GetPendingSendToEth(QueryPendingSendToEth) returns (QueryPendingSendToEthResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_pending_send_to_eth";
   }
   rpc GetPendingIbcAutoForwards(QueryPendingIbcAutoForwards) returns (QueryPendingIbcAutoForwardsResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_pending_ibc_auto_forwards";
+  }
+  rpc MonitoredERC20Tokens(QueryMonitoredERC20Tokens) returns (QueryMonitoredERC20TokensResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_monitored_erc20_tokens";
   }
 }
 
@@ -314,4 +316,9 @@ message QueryPendingIbcAutoForwards{
 
 message QueryPendingIbcAutoForwardsResponse{
   repeated PendingIbcAutoForward pending_ibc_auto_forwards = 1;
+}
+
+message QueryMonitoredERC20Tokens {}
+message QueryMonitoredERC20TokensResponse {
+  repeated string monitored_erc20_tokens = 1;
 }

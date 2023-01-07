@@ -1,8 +1,11 @@
 use crate::args::AirdropProposalOpts;
 use crate::args::EmergencyBridgeHaltProposalOpts;
 use crate::args::IbcMetadataProposalOpts;
+use crate::args::SetMonitoredERC20TokensProposalOpts;
 use crate::{args::OracleUnhaltProposalOpts, utils::TIMEOUT};
+use cosmos_gravity::proposals::submit_set_monitored_erc20_tokens_proposal;
 use cosmos_gravity::proposals::AirdropProposalJsonUnparsed;
+use cosmos_gravity::proposals::SetMonitoredERC20TokensProposalJson;
 use cosmos_gravity::proposals::{
     submit_airdrop_proposal, submit_ibc_metadata_proposal, submit_pause_bridge_proposal,
     submit_unhalt_bridge_proposal, IbcMetadataProposalJson, PauseBridgeProposalJson,
@@ -161,6 +164,55 @@ pub async fn submit_oracle_unhalt(opts: OracleUnhaltProposalOpts, prefix: String
             match proposal {
                 Ok(proposal_json) => {
                     let res = submit_unhalt_bridge_proposal(
+                        proposal_json.into(),
+                        opts.deposit,
+                        opts.fees,
+                        &contact,
+                        opts.cosmos_phrase,
+                        Some(TIMEOUT),
+                    )
+                    .await;
+                    match res {
+                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash),
+                        Err(e) => {
+                            error!("Failed to submit proposal with {:?}", e);
+                            exit(1);
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!(
+                        "Failed to deserialize your proposal.json, check the contents! {:?}",
+                        e
+                    );
+                    exit(1);
+                }
+            }
+        }
+        Err(e) => {
+            error!(
+                "Failed to read your proposal.json check the file path! {:?}",
+                e
+            );
+            exit(1);
+        }
+    }
+}
+
+pub async fn submit_monitored_erc20_tokens_proposal(
+    opts: SetMonitoredERC20TokensProposalOpts,
+    prefix: String,
+) {
+    let connections = create_rpc_connections(prefix, Some(opts.cosmos_grpc), None, TIMEOUT).await;
+    let contact = connections.contact.unwrap();
+
+    match fs::read_to_string(opts.json) {
+        Ok(file_contents) => {
+            let proposal: Result<SetMonitoredERC20TokensProposalJson, _> =
+                serde_json::from_str(&file_contents);
+            match proposal {
+                Ok(proposal_json) => {
+                    let res = submit_set_monitored_erc20_tokens_proposal(
                         proposal_json.into(),
                         opts.deposit,
                         opts.fees,
