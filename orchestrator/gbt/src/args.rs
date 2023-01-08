@@ -127,10 +127,15 @@ pub struct CosmosToEthOpts {
     /// The Cosmos Denom and amount to pay Cosmos chain fees eg: 1ugraviton
     #[clap(short, long, parse(try_from_str))]
     pub fee: Coin,
-    /// The amount you want to pay in bridge fees, these are used to pay relayers
-    /// on Ethereum and must be of the same denomination as `amount`
+    /// The amount you want to pay in bridge fees, this is used to pay relayers
+    /// on Ethereum and must be of the same denomination as `amount` dependent on governance.
+    /// Please ask in the official discord for more information.
     #[clap(short, long, parse(try_from_str))]
     pub bridge_fee: Coin,
+    /// The amount you want to pay as a chain fee, this is used to pay Gravity Bridge
+    /// stakers and must be at least a certain percentage of `amount`
+    #[clap(short, long, parse(try_from_str))]
+    pub chain_fee: Coin,
     /// The destination address on the Ethereum chain
     #[clap(short, long, parse(try_from_str))]
     pub eth_destination: EthAddress,
@@ -262,9 +267,15 @@ pub struct RecoverFundsOpts {
     /// The Denom and amount you wish to send eg: 100ugraviton
     #[clap(short, long, parse(try_from_str))]
     pub amount: Coin,
-    /// The Cosmos Denom and amount to pay Cosmos chain fees eg: 1ugraviton
+    /// The Cosmos Denom and amount to pay for submitting a Cosmos Tx eg: 1ugraviton
     #[clap(long, parse(try_from_str))]
     pub cosmos_fee: Option<Coin>,
+    /// The Send to Eth ChainFee, which is paid to stakers on Gravity Bridge Chain.
+    /// If you leave this blank then a sensible amount will automatically be computed for you
+    /// and deducted from your `amount` value. If provided this must be the same denom as
+    /// the `amount` token.
+    #[clap(long, parse(try_from_str))]
+    pub chain_fee: Option<Coin>,
     /// The amount you want to pay in bridge fees, these are used to pay relayers
     /// on Ethereum and must be of the same denomination as `amount`
     /// **Only use this with the send-to-eth flag**

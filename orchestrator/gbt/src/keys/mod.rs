@@ -7,6 +7,7 @@ use crate::{
     args::{SetEthereumKeyOpts, SetOrchestratorKeyOpts},
     config::{config_exists, load_keys, save_keys},
 };
+use cosmos_gravity::utils::get_reasonable_send_to_eth_fee;
 use deep_space::{Coin, CosmosPrivateKey, PrivateKey};
 use gravity_utils::connection_prep::create_rpc_connections;
 use std::{path::Path, process::exit};
@@ -119,6 +120,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
             res.unwrap().txhash
         );
     } else if args.send_to_eth && !args.send_on_cosmos {
+        let mut amount = args.amount; // May need to reduce the amount bridged for the chain_fee
         if args.cosmos_destination.is_some() {
             error!("Unexpected --cosmos-destination with --send-to-eth");
             exit(1);
@@ -137,14 +139,40 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
             error!("--eth-destination must be provided with --send-to-eth!");
             exit(1);
         }
+        let chain_fee = if args.chain_fee.is_some() {
+            let chain_fee = args.chain_fee.unwrap();
+            if amount.denom != chain_fee.denom {
+                error!("--chain-fee value must be the same denom as the bridge amount!");
+                exit(1);
+            }
+            chain_fee
+        } else {
+            info!("Calculating a reasonable chain fee to pay to Gravity Bridge stakers...");
+            let chain_fee_amount = get_reasonable_send_to_eth_fee(&contact, amount.amount.clone())
+                .await
+                .map_err(|e| {
+                    format!(
+                        "Unable to get a reasonable chain fee due to communication error: {}",
+                        e
+                    )
+                })
+                .unwrap();
+            amount.amount -= chain_fee_amount.clone();
+            info!("Chain fee calculated ({}), your amount to bridge has been reduced to {} accordingly!", chain_fee_amount, amount.amount);
+            Coin {
+                amount: chain_fee_amount,
+                denom: amount.denom.clone(),
+            }
+        };
         cosmos_to_eth(
             &contact,
             grpc,
             &args.evm_chain_prefix,
             args.ethereum_key,
             sender_address,
-            args.amount,
+            amount,
             cosmos_fee,
+            chain_fee,
             args.eth_bridge_fee.unwrap(),
             args.eth_destination.unwrap(),
         )
