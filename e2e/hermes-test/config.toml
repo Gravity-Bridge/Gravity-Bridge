@@ -1,0 +1,31 @@
+[[chains]]
+id = 'gravity-test'
+rpc_addr = 'http://0.0.0.0:26657'
+grpc_addr = 'http://0.0.0.0:9090'
+websocket_addr = 'ws://0.0.0.0:26657/websocket'
+rpc_timeout = '20s'
+account_prefix = 'oraib'
+key_name = 'testkey'
+store_prefix = 'ibc'
+max_gas = 2000000
+gas_price = { price = 0.000, denom = 'uoraib' }
+gas_multiplier = 1.5
+clock_drift = '5s'
+trusting_period = '9days'
+trust_threshold = { numerator = '1', denominator = '3' }
+
+[[chains]]
+id = 'orai-test'
+rpc_addr = 'http://0.0.0.0:36657'
+grpc_addr = 'http://0.0.0.0:8090'
+websocket_addr = 'ws://0.0.0.0:36657/websocket'
+rpc_timeout = '20s'
+account_prefix = 'orai'
+key_name = 'testkey'
+store_prefix = 'ibc'
+max_gas = 2000000
+gas_price = { price = 0.000, denom = 'orai' }
+gas_multiplier = 1.5
+clock_drift = '5s'
+trusting_period = '9days'
+trust_threshold = { numerator = '1', denominator = '3' }

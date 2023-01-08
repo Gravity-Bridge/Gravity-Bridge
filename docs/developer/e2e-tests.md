@@ -96,3 +96,5 @@ npx ts-node scripts/get-dummy-balance.ts
 gravity tx gravity add-evm-chain "goerli network" foobar "add goerli network" 100000000uoraib "foobar" --from validator1 --home data/validator1/ -y
 gravity tx gov vote 1 yes --from validator1 --home data/validator1/ -y
 ```
+
+<!-- oraid tx ibc-transfer transfer transfer channel-0 oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4 1orai --from validator -y -->

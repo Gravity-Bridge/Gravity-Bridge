@@ -22,11 +22,15 @@ artifacts
 build
 
 # data folder 
-data/validator*/data/*
-data/validator*/config/write-file*
-data/validator*_backup/
-data/validator*/U*
-data/validator*/config/addrbook.json
+e2e/*/validator*/data/*
+e2e/*/validator*/config/write-file*
+e2e/*/validator*_backup/
+e2e/*/validator*/U*
+e2e/*/validator*/config/addrbook.json
+
+e2e/.*/data/*
+e2e/.*/config/write-file*
+e2e/.*/config/addrbook.json
 
 upgrade-tests/data*
 upgrade-tests/exported-genesis-new.json

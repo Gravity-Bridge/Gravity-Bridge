@@ -15,8 +15,8 @@ services:
       - GRAVITY_HOME=data/validator1
     volumes:
       - ./module:/workspace
-      - ./data/validator1:/workspace/data/validator1
-    command: sh -c 'gravity tendermint unsafe-reset-all --home data/validator1 && gravity start --home data/validator1'
+      - ./e2e/data/validator1:/workspace/e2e/data/validator1
+    command: sh -c 'gravity tendermint unsafe-reset-all --home ./e2e/data/validator1 && gravity start --home ./e2e/data/validator1'
 
   first_fork:
     container_name: first_fork
@@ -43,3 +43,40 @@ services:
     volumes:
       - ./solidity:/workspace
     command: yarn hardhat node --config hardhat-second-fork.config.ts
+
+  orchestrator:
+    image: oraichain/foundation-oraibridge-orchestrator:0.0.1-alpine # docker build -t oraichain/foundation-oraibridge-orchestrator:0.0.1-alpine -f orchestrator/Dockerfile ./orchestrator
+    # apk add make upx
+    # upx --best --lzma
+    working_dir: /workspace
+    tty: true
+    volumes:
+      - ./orchestrator:/orchestrator
+
+  orai:
+    container_name: orai_test
+    image: oraichain/foundation-orai:0.41.0-alpine-prod
+    working_dir: /workspace
+    tty: true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - 2317:1317
+      - 36656:26656
+      - 36657:26657
+      - 8090:9090
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - ./e2e:/workspace
+    command: sh -c 'oraid tendermint unsafe-reset-all && oraid start'
+
+  hermes:
+    image: informalsystems/hermes:1.2.0
+    working_dir: /workspace
+    tty: true
+    entrypoint: tail -f /dev/null
+    volumes:
+      - ./hermes-test:/workspace

@@ -112,7 +112,7 @@
       ]
     },
     "bech32ibc": {
-      "nativeHRP": "osmo",
+      "nativeHRP": "oraib",
       "hrpIBCRecords": []
     },
     "capability": {

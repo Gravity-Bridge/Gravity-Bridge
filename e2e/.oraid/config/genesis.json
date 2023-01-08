@@ -1,0 +1,816 @@
+{
+    "app_hash": "",
+    "app_state": {
+        "auth": {
+            "accounts": [
+                {
+                    "@type": "/cosmos.auth.v1beta1.ModuleAccount",
+                    "base_account": {
+                        "account_number": "7",
+                        "address": "orai1yl6hdjhmkf37639730gffanpzndzdpmhavq2ks",
+                        "pub_key": null,
+                        "sequence": "0"
+                    },
+                    "name": "transfer",
+                    "permissions": [
+                        "minter",
+                        "burner"
+                    ]
+                },
+                {
+                    "@type": "/cosmos.auth.v1beta1.ModuleAccount",
+                    "base_account": {
+                        "account_number": "3",
+                        "address": "orai1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3xglvcy",
+                        "pub_key": null,
+                        "sequence": "0"
+                    },
+                    "name": "bonded_tokens_pool",
+                    "permissions": [
+                        "burner",
+                        "staking"
+                    ]
+                },
+                {
+                    "@type": "/cosmos.auth.v1beta1.ModuleAccount",
+                    "base_account": {
+                        "account_number": "4",
+                        "address": "orai1tygms3xhhs3yv487phx3dw4a95jn7t7ljgraws",
+                        "pub_key": null,
+                        "sequence": "0"
+                    },
+                    "name": "not_bonded_tokens_pool",
+                    "permissions": [
+                        "burner",
+                        "staking"
+                    ]
+                },
+                {
+                    "@type": "/cosmos.auth.v1beta1.ModuleAccount",
+                    "base_account": {
+                        "account_number": "5",
+                        "address": "orai10d07y265gmmuvt4z0w9aw880jnsr700jf39xhq",
+                        "pub_key": null,
+                        "sequence": "0"
+                    },
+                    "name": "gov",
+                    "permissions": [
+                        "burner"
+                    ]
+                },
+                {
+                    "@type": "/cosmos.auth.v1beta1.ModuleAccount",
+                    "base_account": {
+                        "account_number": "2",
+                        "address": "orai1jv65s3grqf6v6jl3dp4t6c9t9rk99cd85vjlgv",
+                        "pub_key": null,
+                        "sequence": "0"
+                    },
+                    "name": "distribution",
+                    "permissions": []
+                },
+                {
+                    "@type": "/cosmos.auth.v1beta1.BaseAccount",
+                    "account_number": "0",
+                    "address": "orai1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2s9adp2k",
+                    "pub_key": {
+                        "@type": "/cosmos.crypto.secp256k1.PubKey",
+                        "key": "A1CJJusEvAYQ/pplo/tOUow1GMGBPl3olIN/xcGH99P3"
+                    },
+                    "sequence": "7"
+                },
+                {
+                    "@type": "/cosmos.auth.v1beta1.ModuleAccount",
+                    "base_account": {
+                        "account_number": "6",
+                        "address": "orai1m3h30wlvsf8llruxtpukdvsy0km2kum8mz3mxn",
+                        "pub_key": null,
+                        "sequence": "0"
+                    },
+                    "name": "mint",
+                    "permissions": [
+                        "minter"
+                    ]
+                },
+                {
+                    "@type": "/cosmos.auth.v1beta1.ModuleAccount",
+                    "base_account": {
+                        "account_number": "1",
+                        "address": "orai17xpfvakm2amg962yls6f84z3kell8c5lr24r2w",
+                        "pub_key": null,
+                        "sequence": "0"
+                    },
+                    "name": "fee_collector",
+                    "permissions": []
+                }
+            ],
+            "params": {
+                "max_memo_characters": "256",
+                "sig_verify_cost_ed25519": "590",
+                "sig_verify_cost_secp256k1": "1000",
+                "tx_sig_limit": "7",
+                "tx_size_cost_per_byte": "10"
+            }
+        },
+        "authz": {
+            "authorization": []
+        },
+        "bank": {
+            "balances": [
+                {
+                    "address": "orai1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3xglvcy",
+                    "coins": [
+                        {
+                            "amount": "100000000",
+                            "denom": "orai"
+                        }
+                    ]
+                },
+                {
+                    "address": "orai1jv65s3grqf6v6jl3dp4t6c9t9rk99cd85vjlgv",
+                    "coins": [
+                        {
+                            "amount": "391368419885119",
+                            "denom": "orai"
+                        }
+                    ]
+                },
+                {
+                    "address": "orai1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2s9adp2k",
+                    "coins": [
+                        {
+                            "amount": "999999999999900000000",
+                            "denom": "orai"
+                        }
+                    ]
+                }
+            ],
+            "denom_metadata": [],
+            "params": {
+                "default_send_enabled": true,
+                "send_enabled": []
+            },
+            "supply": [
+                {
+                    "amount": "1000000391368419885119",
+                    "denom": "orai"
+                }
+            ]
+        },
+        "capability": {
+            "index": "3",
+            "owners": [
+                {
+                    "index": "1",
+                    "index_owners": {
+                        "owners": [
+                            {
+                                "module": "ibc",
+                                "name": "ports/transfer"
+                            },
+                            {
+                                "module": "transfer",
+                                "name": "ports/transfer"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "index": "2",
+                    "index_owners": {
+                        "owners": [
+                            {
+                                "module": "ibc",
+                                "name": "capabilities/ports/transfer/channels/channel-0"
+                            },
+                            {
+                                "module": "transfer",
+                                "name": "capabilities/ports/transfer/channels/channel-0"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "crisis": {
+            "constant_fee": {
+                "amount": "10000000",
+                "denom": "orai"
+            }
+        },
+        "distribution": {
+            "delegator_starting_infos": [
+                {
+                    "delegator_address": "orai1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2s9adp2k",
+                    "starting_info": {
+                        "height": "0",
+                        "previous_period": "1",
+                        "stake": "100000000.000000000000000000"
+                    },
+                    "validator_address": "oraivaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2svhkgp3"
+                }
+            ],
+            "delegator_withdraw_infos": [],
+            "fee_pool": {
+                "community_pool": [
+                    {
+                        "amount": "7827368397702.380000000000000000",
+                        "denom": "orai"
+                    }
+                ]
+            },
+            "outstanding_rewards": [
+                {
+                    "outstanding_rewards": [
+                        {
+                            "amount": "383541051487416.620000000000000000",
+                            "denom": "orai"
+                        }
+                    ],
+                    "validator_address": "oraivaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2svhkgp3"
+                }
+            ],
+            "params": {
+                "base_proposer_reward": "0.010000000000000000",
+                "bonus_proposer_reward": "0.040000000000000000",
+                "community_tax": "0.020000000000000000",
+                "withdraw_addr_enabled": true
+            },
+            "previous_proposer": "oraivalcons1vtu5lhp8zvhtp5sdmt2wd3zt94prwqy6vjt2nx",
+            "validator_accumulated_commissions": [
+                {
+                    "accumulated": {
+                        "commission": [
+                            {
+                                "amount": "38354105148741.662000000000000000",
+                                "denom": "orai"
+                            }
+                        ]
+                    },
+                    "validator_address": "oraivaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2svhkgp3"
+                }
+            ],
+            "validator_current_rewards": [
+                {
+                    "rewards": {
+                        "period": "2",
+                        "rewards": [
+                            {
+                                "amount": "345186946338674.958000000000000000",
+                                "denom": "orai"
+                            }
+                        ]
+                    },
+                    "validator_address": "oraivaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2svhkgp3"
+                }
+            ],
+            "validator_historical_rewards": [
+                {
+                    "period": "1",
+                    "rewards": {
+                        "cumulative_reward_ratio": [],
+                        "reference_count": 2
+                    },
+                    "validator_address": "oraivaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2svhkgp3"
+                }
+            ],
+            "validator_slash_events": []
+        },
+        "evidence": {
+            "evidence": []
+        },
+        "feegrant": {
+            "allowances": []
+        },
+        "genutil": {
+            "gen_txs": []
+        },
+        "gov": {
+            "deposit_params": {
+                "max_deposit_period": "172800s",
+                "min_deposit": [
+                    {
+                        "amount": "10000000",
+                        "denom": "orai"
+                    }
+                ]
+            },
+            "deposits": [],
+            "proposals": [],
+            "starting_proposal_id": "1",
+            "tally_params": {
+                "quorum": "0.334000000000000000",
+                "threshold": "0.500000000000000000",
+                "veto_threshold": "0.334000000000000000"
+            },
+            "votes": [],
+            "voting_params": {
+                "voting_period": "30s"
+            }
+        },
+        "ibc": {
+            "channel_genesis": {
+                "ack_sequences": [
+                    {
+                        "channel_id": "channel-0",
+                        "port_id": "transfer",
+                        "sequence": "1"
+                    }
+                ],
+                "acknowledgements": [],
+                "channels": [
+                    {
+                        "channel_id": "channel-0",
+                        "connection_hops": [
+                            "connection-0"
+                        ],
+                        "counterparty": {
+                            "channel_id": "channel-0",
+                            "port_id": "transfer"
+                        },
+                        "ordering": "ORDER_UNORDERED",
+                        "port_id": "transfer",
+                        "state": "STATE_OPEN",
+                        "version": "ics20-1"
+                    }
+                ],
+                "commitments": [],
+                "next_channel_sequence": "1",
+                "receipts": [],
+                "recv_sequences": [
+                    {
+                        "channel_id": "channel-0",
+                        "port_id": "transfer",
+                        "sequence": "1"
+                    }
+                ],
+                "send_sequences": [
+                    {
+                        "channel_id": "channel-0",
+                        "port_id": "transfer",
+                        "sequence": "1"
+                    }
+                ]
+            },
+            "client_genesis": {
+                "clients": [
+                    {
+                        "client_id": "07-tendermint-0",
+                        "client_state": {
+                            "@type": "/ibc.lightclients.tendermint.v1.ClientState",
+                            "allow_update_after_expiry": true,
+                            "allow_update_after_misbehaviour": true,
+                            "chain_id": "gravity-test",
+                            "frozen_height": {
+                                "revision_height": "0",
+                                "revision_number": "0"
+                            },
+                            "latest_height": {
+                                "revision_height": "16",
+                                "revision_number": "0"
+                            },
+                            "max_clock_drift": "40s",
+                            "proof_specs": [
+                                {
+                                    "inner_spec": {
+                                        "child_order": [
+                                            0,
+                                            1
+                                        ],
+                                        "child_size": 33,
+                                        "empty_child": null,
+                                        "hash": "SHA256",
+                                        "max_prefix_length": 12,
+                                        "min_prefix_length": 4
+                                    },
+                                    "leaf_spec": {
+                                        "hash": "SHA256",
+                                        "length": "VAR_PROTO",
+                                        "prefix": "AA==",
+                                        "prehash_key": "NO_HASH",
+                                        "prehash_value": "SHA256"
+                                    },
+                                    "max_depth": 0,
+                                    "min_depth": 0
+                                },
+                                {
+                                    "inner_spec": {
+                                        "child_order": [
+                                            0,
+                                            1
+                                        ],
+                                        "child_size": 32,
+                                        "empty_child": null,
+                                        "hash": "SHA256",
+                                        "max_prefix_length": 1,
+                                        "min_prefix_length": 1
+                                    },
+                                    "leaf_spec": {
+                                        "hash": "SHA256",
+                                        "length": "VAR_PROTO",
+                                        "prefix": "AA==",
+                                        "prehash_key": "NO_HASH",
+                                        "prehash_value": "SHA256"
+                                    },
+                                    "max_depth": 0,
+                                    "min_depth": 0
+                                }
+                            ],
+                            "trust_level": {
+                                "denominator": "3",
+                                "numerator": "1"
+                            },
+                            "trusting_period": "777600s",
+                            "unbonding_period": "1814400s",
+                            "upgrade_path": [
+                                "upgrade",
+                                "upgradedIBCState"
+                            ]
+                        }
+                    }
+                ],
+                "clients_consensus": [
+                    {
+                        "client_id": "07-tendermint-0",
+                        "consensus_states": [
+                            {
+                                "consensus_state": {
+                                    "@type": "/ibc.lightclients.tendermint.v1.ConsensusState",
+                                    "next_validators_hash": "D1CA559D3D986C44676BB96DB3BAE336EF71F108F748C86EC4192F29E2E3D8E0",
+                                    "root": {
+                                        "hash": "oRXIr9MQ/eohcd3pnViNds6xh+jwiXzaRI7eugNUaL4="
+                                    },
+                                    "timestamp": "2023-01-08T22:28:01.827799670Z"
+                                },
+                                "height": {
+                                    "revision_height": "10",
+                                    "revision_number": "0"
+                                }
+                            },
+                            {
+                                "consensus_state": {
+                                    "@type": "/ibc.lightclients.tendermint.v1.ConsensusState",
+                                    "next_validators_hash": "D1CA559D3D986C44676BB96DB3BAE336EF71F108F748C86EC4192F29E2E3D8E0",
+                                    "root": {
+                                        "hash": "ieKo3M8jD9xZcIIcf1AkBY9Z4vGWNifsKPSaySbLur8="
+                                    },
+                                    "timestamp": "2023-01-08T22:28:16.880072042Z"
+                                },
+                                "height": {
+                                    "revision_height": "13",
+                                    "revision_number": "0"
+                                }
+                            },
+                            {
+                                "consensus_state": {
+                                    "@type": "/ibc.lightclients.tendermint.v1.ConsensusState",
+                                    "next_validators_hash": "D1CA559D3D986C44676BB96DB3BAE336EF71F108F748C86EC4192F29E2E3D8E0",
+                                    "root": {
+                                        "hash": "V6bnbNeqjbeBosnJLdHOD6McP4BMOkkkfVXLYsOu7sk="
+                                    },
+                                    "timestamp": "2023-01-08T22:28:31.926548616Z"
+                                },
+                                "height": {
+                                    "revision_height": "16",
+                                    "revision_number": "0"
+                                }
+                            },
+                            {
+                                "consensus_state": {
+                                    "@type": "/ibc.lightclients.tendermint.v1.ConsensusState",
+                                    "next_validators_hash": "D1CA559D3D986C44676BB96DB3BAE336EF71F108F748C86EC4192F29E2E3D8E0",
+                                    "root": {
+                                        "hash": "kely9RmutAuHHmhKHBrMD5DNcgDqXk5vkTrIIvN37LI="
+                                    },
+                                    "timestamp": "2023-01-08T22:27:26.726296669Z"
+                                },
+                                "height": {
+                                    "revision_height": "3",
+                                    "revision_number": "0"
+                                }
+                            },
+                            {
+                                "consensus_state": {
+                                    "@type": "/ibc.lightclients.tendermint.v1.ConsensusState",
+                                    "next_validators_hash": "D1CA559D3D986C44676BB96DB3BAE336EF71F108F748C86EC4192F29E2E3D8E0",
+                                    "root": {
+                                        "hash": "j7RyAUM6ffb86XyIN1rnGF5Adm/cYOempTzjn4DEE3Y="
+                                    },
+                                    "timestamp": "2023-01-08T22:27:41.771462340Z"
+                                },
+                                "height": {
+                                    "revision_height": "6",
+                                    "revision_number": "0"
+                                }
+                            },
+                            {
+                                "consensus_state": {
+                                    "@type": "/ibc.lightclients.tendermint.v1.ConsensusState",
+                                    "next_validators_hash": "D1CA559D3D986C44676BB96DB3BAE336EF71F108F748C86EC4192F29E2E3D8E0",
+                                    "root": {
+                                        "hash": "TPKFHiKBzvdTKo8zR/bYRSs5oeqRWOOo8iKhLifELmo="
+                                    },
+                                    "timestamp": "2023-01-08T22:27:46.781535510Z"
+                                },
+                                "height": {
+                                    "revision_height": "7",
+                                    "revision_number": "0"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "clients_metadata": [
+                    {
+                        "client_id": "07-tendermint-0",
+                        "client_metadata": [
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtMTAvcHJvY2Vzc2VkSGVpZ2h0",
+                                "value": "MC0xMg=="
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtMTAvcHJvY2Vzc2VkVGltZQ==",
+                                "value": "Fzh15FAwVl4="
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtMTMvcHJvY2Vzc2VkSGVpZ2h0",
+                                "value": "MC0xNQ=="
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtMTMvcHJvY2Vzc2VkVGltZQ==",
+                                "value": "Fzh159D3EXg="
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtMTYvcHJvY2Vzc2VkSGVpZ2h0",
+                                "value": "MC0xOA=="
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtMTYvcHJvY2Vzc2VkVGltZQ==",
+                                "value": "Fzh161Gn09I="
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtMy9wcm9jZXNzZWRIZWlnaHQ=",
+                                "value": "MC01"
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtMy9wcm9jZXNzZWRUaW1l",
+                                "value": "Fzh13CSsTls="
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtNi9wcm9jZXNzZWRIZWlnaHQ=",
+                                "value": "MC04"
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtNi9wcm9jZXNzZWRUaW1l",
+                                "value": "Fzh136UisTE="
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtNy9wcm9jZXNzZWRIZWlnaHQ=",
+                                "value": "MC05"
+                            },
+                            {
+                                "key": "Y29uc2Vuc3VzU3RhdGVzLzAtNy9wcm9jZXNzZWRUaW1l",
+                                "value": "Fzh14M+xR+k="
+                            },
+                            {
+                                "key": "aXRlcmF0ZUNvbnNlbnN1c1N0YXRlcwAAAAAAAAAAAAAAAAAAAAM=",
+                                "value": "Y29uc2Vuc3VzU3RhdGVzLzAtMw=="
+                            },
+                            {
+                                "key": "aXRlcmF0ZUNvbnNlbnN1c1N0YXRlcwAAAAAAAAAAAAAAAAAAAAY=",
+                                "value": "Y29uc2Vuc3VzU3RhdGVzLzAtNg=="
+                            },
+                            {
+                                "key": "aXRlcmF0ZUNvbnNlbnN1c1N0YXRlcwAAAAAAAAAAAAAAAAAAAAc=",
+                                "value": "Y29uc2Vuc3VzU3RhdGVzLzAtNw=="
+                            },
+                            {
+                                "key": "aXRlcmF0ZUNvbnNlbnN1c1N0YXRlcwAAAAAAAAAAAAAAAAAAAAo=",
+                                "value": "Y29uc2Vuc3VzU3RhdGVzLzAtMTA="
+                            },
+                            {
+                                "key": "aXRlcmF0ZUNvbnNlbnN1c1N0YXRlcwAAAAAAAAAAAAAAAAAAAA0=",
+                                "value": "Y29uc2Vuc3VzU3RhdGVzLzAtMTM="
+                            },
+                            {
+                                "key": "aXRlcmF0ZUNvbnNlbnN1c1N0YXRlcwAAAAAAAAAAAAAAAAAAABA=",
+                                "value": "Y29uc2Vuc3VzU3RhdGVzLzAtMTY="
+                            }
+                        ]
+                    }
+                ],
+                "create_localhost": false,
+                "next_client_sequence": "1",
+                "params": {
+                    "allowed_clients": [
+                        "06-solomachine",
+                        "07-tendermint"
+                    ]
+                }
+            },
+            "connection_genesis": {
+                "client_connection_paths": [
+                    {
+                        "client_id": "07-tendermint-0",
+                        "paths": [
+                            "connection-0"
+                        ]
+                    }
+                ],
+                "connections": [
+                    {
+                        "client_id": "07-tendermint-0",
+                        "counterparty": {
+                            "client_id": "07-tendermint-0",
+                            "connection_id": "connection-0",
+                            "prefix": {
+                                "key_prefix": "aWJj"
+                            }
+                        },
+                        "delay_period": "0",
+                        "id": "connection-0",
+                        "state": "STATE_OPEN",
+                        "versions": [
+                            {
+                                "features": [
+                                    "ORDER_ORDERED",
+                                    "ORDER_UNORDERED"
+                                ],
+                                "identifier": "1"
+                            }
+                        ]
+                    }
+                ],
+                "next_connection_sequence": "1",
+                "params": {
+                    "max_expected_time_per_block": "30000000000"
+                }
+            }
+        },
+        "mint": {
+            "minter": {
+                "annual_provisions": "130000439567978659934.547170232222422168",
+                "inflation": "0.130000391367727208"
+            },
+            "params": {
+                "blocks_per_year": "6311200",
+                "goal_bonded": "0.670000000000000000",
+                "inflation_max": "0.200000000000000000",
+                "inflation_min": "0.070000000000000000",
+                "inflation_rate_change": "0.130000000000000000",
+                "mint_denom": "orai"
+            }
+        },
+        "params": null,
+        "slashing": {
+            "missed_blocks": [
+                {
+                    "address": "oraivalcons1vtu5lhp8zvhtp5sdmt2wd3zt94prwqy6vjt2nx",
+                    "missed_blocks": []
+                }
+            ],
+            "params": {
+                "downtime_jail_duration": "600s",
+                "min_signed_per_window": "0.500000000000000000",
+                "signed_blocks_window": "100",
+                "slash_fraction_double_sign": "0.050000000000000000",
+                "slash_fraction_downtime": "0.010000000000000000"
+            },
+            "signing_infos": [
+                {
+                    "address": "oraivalcons1vtu5lhp8zvhtp5sdmt2wd3zt94prwqy6vjt2nx",
+                    "validator_signing_info": {
+                        "address": "oraivalcons1vtu5lhp8zvhtp5sdmt2wd3zt94prwqy6vjt2nx",
+                        "index_offset": "18",
+                        "jailed_until": "1970-01-01T00:00:00Z",
+                        "missed_blocks_counter": "0",
+                        "start_height": "0",
+                        "tombstoned": false
+                    }
+                }
+            ]
+        },
+        "staking": {
+            "delegations": [
+                {
+                    "delegator_address": "orai1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2s9adp2k",
+                    "shares": "100000000.000000000000000000",
+                    "validator_address": "oraivaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2svhkgp3"
+                }
+            ],
+            "exported": true,
+            "last_total_power": "100",
+            "last_validator_powers": [
+                {
+                    "address": "oraivaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2svhkgp3",
+                    "power": "100"
+                }
+            ],
+            "params": {
+                "bond_denom": "orai",
+                "historical_entries": 1000,
+                "max_entries": 7,
+                "max_validators": 100,
+                "unbonding_time": "1814400s"
+            },
+            "redelegations": [],
+            "unbonding_delegations": [],
+            "validators": [
+                {
+                    "commission": {
+                        "commission_rates": {
+                            "max_change_rate": "0.010000000000000000",
+                            "max_rate": "0.200000000000000000",
+                            "rate": "0.100000000000000000"
+                        },
+                        "update_time": "2023-01-08T19:05:52.464111135Z"
+                    },
+                    "consensus_pubkey": {
+                        "@type": "/cosmos.crypto.ed25519.PubKey",
+                        "key": "9j+EE0qqZXEvpyUnpCrWPVmi/YVEJjAM1rYxb6eW4ew="
+                    },
+                    "delegator_shares": "100000000.000000000000000000",
+                    "description": {
+                        "details": "",
+                        "identity": "",
+                        "moniker": "orai-test",
+                        "security_contact": "",
+                        "website": ""
+                    },
+                    "jailed": false,
+                    "min_self_delegation": "1",
+                    "operator_address": "oraivaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2svhkgp3",
+                    "status": "BOND_STATUS_BONDED",
+                    "tokens": "100000000",
+                    "unbonding_height": "0",
+                    "unbonding_time": "1970-01-01T00:00:00Z"
+                }
+            ]
+        },
+        "transfer": {
+            "denom_traces": [],
+            "params": {
+                "receive_enabled": true,
+                "send_enabled": true
+            },
+            "port_id": "transfer"
+        },
+        "upgrade": {},
+        "vesting": {},
+        "wasm": {
+            "codes": [],
+            "contracts": [],
+            "gen_msgs": [],
+            "params": {
+                "code_upload_access": {
+                    "address": "",
+                    "addresses": [],
+                    "permission": "Everybody"
+                },
+                "instantiate_default_permission": "Everybody"
+            },
+            "sequences": [
+                {
+                    "id_key": "BGxhc3RDb2RlSWQ=",
+                    "value": "1"
+                },
+                {
+                    "id_key": "BGxhc3RDb250cmFjdElk",
+                    "value": "1"
+                }
+            ]
+        }
+    },
+    "chain_id": "orai-test",
+    "consensus_params": {
+        "block": {
+            "max_bytes": "22020096",
+            "max_gas": "-1",
+            "time_iota_ms": "1000"
+        },
+        "evidence": {
+            "max_age_duration": "172800000000000",
+            "max_age_num_blocks": "100000",
+            "max_bytes": "1048576"
+        },
+        "validator": {
+            "pub_key_types": [
+                "ed25519"
+            ]
+        },
+        "version": {}
+    },
+    "genesis_time": "2023-01-08T19:05:52.464111135Z",
+    "initial_height": "15",
+    "validators": [
+        {
+            "address": "62F94FDC27132EB0D20DDAD4E6C44B2D4237009A",
+            "name": "orai-test",
+            "power": "100",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "9j+EE0qqZXEvpyUnpCrWPVmi/YVEJjAM1rYxb6eW4ew="
+            }
+        }
+    ]
+}
