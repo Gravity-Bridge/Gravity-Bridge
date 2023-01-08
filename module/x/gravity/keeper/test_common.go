@@ -399,7 +399,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 
 func SetupTestConfig() {
 	initConfig.Do(func() {
-		// Set config for testing only one
+		// Set config for testing only one, by overriding default values, then seal it
 		config := sdk.GetConfig()
 		config.SetBech32PrefixForAccount("gravity", "gravitypub")
 		config.SetBech32PrefixForValidator("gravityvaloper", "gravityvaloperpub")
