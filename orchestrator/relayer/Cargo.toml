@@ -14,7 +14,7 @@ cosmos_gravity = {path = "../cosmos_gravity"}
 gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = {git ="https://github.com/oraichain/deep_space.git"}
+deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "18991f6"}
 serde_derive = "1.0"
 clarity = "0.5"
 docopt = "1"

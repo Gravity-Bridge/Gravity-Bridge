@@ -11,7 +11,7 @@ gravity_utils = {path = "../gravity_utils"}
 ethereum_gravity = {path = "../ethereum_gravity"}
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = {git ="https://github.com/oraichain/deep_space.git"}
+deep_space = {git = "https://github.com/oraichain/deep_space.git", rev = "18991f6"}
 clarity = "0.5"
 serde = "1.0"
 serde_derive = "1.0"

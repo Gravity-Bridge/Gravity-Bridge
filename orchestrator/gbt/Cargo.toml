@@ -20,7 +20,7 @@ relayer = {path = "../relayer/"}
 orchestrator = {path = "../orchestrator/"}
 metrics_exporter = {path = "../metrics_exporter/"}
 
-deep_space = {git ="https://github.com/oraichain/deep_space.git", features = ["ethermint"]}
+deep_space = {git ="https://github.com/oraichain/deep_space.git", features = ["ethermint"], rev = "18991f6"}
 serde_derive = "1.0"
 serde_json = "1.0"
 clarity = "0.5"
