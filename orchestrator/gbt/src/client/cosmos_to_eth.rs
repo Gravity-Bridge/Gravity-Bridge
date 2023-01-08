@@ -21,6 +21,8 @@ pub async fn cosmos_to_eth_cmd(args: CosmosToEthOpts, address_prefix: String) {
     let eth_dest = args.eth_destination;
     let bridge_fee = args.bridge_fee;
     let evm_chain_prefix = args.evm_chain_prefix;
+    let chain_fee = args.chain_fee;
+
     let cosmos_address = cosmos_key.to_address(&address_prefix).unwrap();
 
     info!("Sending from Cosmos address {}", cosmos_address);
@@ -38,6 +40,7 @@ pub async fn cosmos_to_eth_cmd(args: CosmosToEthOpts, address_prefix: String) {
         gravity_coin,
         fee,
         bridge_fee,
+        chain_fee,
         eth_dest,
     )
     .await;
@@ -52,6 +55,7 @@ pub async fn cosmos_to_eth(
     sender_address: CosmosAddress,
     to_bridge: Coin,
     cosmos_fee: Coin,
+    chain_fee: Coin,
     bridge_fee: Coin,
     receiver_address: EthAddress,
 ) {
@@ -87,7 +91,11 @@ pub async fn cosmos_to_eth(
     }
 
     let amount = to_bridge.clone();
-    check_for_fee(&to_bridge, sender_address, contact).await;
+    let full_amount = Coin {
+        amount: to_bridge.amount.clone() + chain_fee.amount.clone(),
+        denom: to_bridge.denom.clone(),
+    };
+    check_for_fee(&full_amount, sender_address, contact).await;
     check_for_fee(&cosmos_fee, sender_address, contact).await;
 
     let balance = contact
@@ -99,9 +107,9 @@ pub async fn cosmos_to_eth(
         Some(balance) => {
             if balance.amount < amount.amount.clone() + bridge_fee.amount.clone() {
                 if is_cosmos_originated {
-                    error!("Your transfer of {} {} tokens is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_atom(amount.amount), to_bridge.denom, print_atom(balance.amount));
+                    error!("Your transfer of {} {} tokens with chain fee {} is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_atom(amount.amount), to_bridge.denom, print_atom(chain_fee.amount), print_atom(balance.amount));
                 } else {
-                    error!("Your transfer of {} {} tokens is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_eth(amount.amount), to_bridge.denom, print_eth(balance.amount));
+                    error!("Your transfer of {} {} tokens with chain fee {} is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_eth(amount.amount), to_bridge.denom, print_eth(chain_fee.amount), print_eth(balance.amount));
                 }
                 exit(1);
             }
@@ -122,7 +130,7 @@ pub async fn cosmos_to_eth(
         receiver_address,
         amount.clone(),
         bridge_fee.clone(),
-        None,
+        Some(chain_fee),
         cosmos_fee.clone(),
         contact,
     )

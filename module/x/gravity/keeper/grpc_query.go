@@ -288,6 +288,9 @@ func (k Keeper) DenomToERC20(
 	req *types.QueryDenomToERC20Request) (*types.QueryDenomToERC20Response, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	cosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, req.EvmChainPrefix, req.Denom)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "invalid denom (%v) queried", req.Denom)
+	}
 	var ret types.QueryDenomToERC20Response
 	ret.Erc20 = erc20.GetAddress().Hex()
 	ret.CosmosOriginated = cosmosOriginated

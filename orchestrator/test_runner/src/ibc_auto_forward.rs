@@ -17,7 +17,7 @@ use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::utils::decode_any;
 use deep_space::utils::encode_any;
 use deep_space::{Coin as DSCoin, Contact, Msg};
-use gravity_proto::bech32ibc::bech32ibc::v1::UpdateHrpIbcChannelProposal;
+use gravity_proto::cosmos_sdk_proto::bech32ibc::bech32ibc::v1::UpdateHrpIbcChannelProposal;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::{
     v1beta1 as Bank, v1beta1::query_client::QueryClient as BankQueryClient,
 };
@@ -206,7 +206,8 @@ pub async fn test_ibc_transfer(
         sender: sender_address,
         receiver: receiver.to_string(),
         timeout_height: None,
-        timeout_timestamp, // 150 minutes from now
+        timeout_timestamp,    // 150 minutes from now
+        memo: "".to_string(), // could be eth destination
     };
     info!("Submitting MsgTransfer {:?}", msg_transfer);
     let msg_transfer = Msg::new(MSG_TRANSFER_TYPE_URL, msg_transfer);

@@ -488,6 +488,7 @@ pub struct UpgradeProposalParams {
     pub proposal_desc: String,
 }
 
+#[allow(deprecated)]
 // Creates and submits a SoftwareUpgradeProposal to the chain, then votes yes with all validators
 pub async fn execute_upgrade_proposal(
     contact: &Contact,
@@ -500,6 +501,7 @@ pub async fn execute_upgrade_proposal(
         None => OPERATION_TIMEOUT,
     };
 
+    // given value for deprecated field cause Error
     let plan = Plan {
         name: upgrade_params.plan_name,
         time: None,

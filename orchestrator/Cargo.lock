@@ -666,13 +666,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5827cebf4670468b8772dd191856768aedcb1b0278a04f989f7766351917b9dc"
 
 [[package]]
-name = "cosmos-sdk-proto"
+name = "cosmos-sdk-proto-althea"
 version = "0.16.0"
-source = "git+https://github.com/cosmos/cosmos-rust.git#3829307a39e424c5ecaaf13775c2ef321654b6b2"
+source = "git+https://github.com/oraichain/cosmos-rust?rev=19f3de7#19f3de72558a83394673bbdd309001c9cbc4f15a"
 dependencies = [
  "prost",
  "prost-types",
- "tendermint-proto 0.27.0",
+ "tendermint-proto 0.28.0",
  "tonic",
 ]
 
@@ -827,13 +827,13 @@ dependencies = [
 [[package]]
 name = "deep_space"
 version = "2.15.2"
-source = "git+https://github.com/oraichain/deep_space.git#1fe2be7113cf576d7de46fbe20c19f325d037c1f"
+source = "git+https://github.com/oraichain/deep_space.git?rev=18991f6#18991f6163c4369aabe2af024b13e1c9a0b2b35c"
 dependencies = [
  "base64",
  "bech32",
  "bytes",
  "clarity",
- "cosmos-sdk-proto",
+ "cosmos-sdk-proto-althea",
  "hmac",
  "log",
  "num-bigint 0.4.3",
@@ -1337,7 +1337,7 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 name = "gravity_proto"
 version = "0.1.0"
 dependencies = [
- "cosmos-sdk-proto",
+ "cosmos-sdk-proto-althea",
  "deep_space",
  "prost",
  "prost-types",
@@ -3548,9 +3548,9 @@ dependencies = [
 
 [[package]]
 name = "tendermint-proto"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5895470f28c530f8ae8c4071bf8190304ce00bd131d25e81730453124a3375c"
+checksum = "890f1fb6dee48900c85f0cdf711ebf130e505ac09ad918cee5c34ed477973b05"
 dependencies = [
  "bytes",
  "flex-error",

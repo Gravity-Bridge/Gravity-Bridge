@@ -55,9 +55,6 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	// prevent changing config
 	cfg := sdk.GetConfig()
-	cfg.SetBech32PrefixForAccount(appconfig.Bech32PrefixAccAddr, appconfig.Bech32PrefixAccPub)
-	cfg.SetBech32PrefixForValidator(appconfig.Bech32PrefixValAddr, appconfig.Bech32PrefixValPub)
-	cfg.SetBech32PrefixForConsensusNode(appconfig.Bech32PrefixConsAddr, appconfig.Bech32PrefixConsPub)
 	cfg.Seal()
 
 	// nolint: exhaustruct

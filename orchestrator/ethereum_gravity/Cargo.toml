@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 gravity_utils = {path = "../gravity_utils"}
 
-deep_space = {git ="https://github.com/oraichain/deep_space.git"}
+deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "18991f6"}
 clarity = "0.5"
 web30 = "0.22"
 num256 = "0.3"
