@@ -1,0 +1,10 @@
+FROM oraichain/foundation-oraibridge-module:0.0.1 as builder
+RUN upx --best --lzma /workspace/build/gravity
+
+FROM alpine:3.16
+WORKDIR /workspace
+RUN apk update
+# need to install build-base to run go oraid binary
+RUN apk add nano bash build-base jq
+COPY --from=builder /workspace/build/gravity /usr/bin
+CMD [ "gravity version" ]
