@@ -60,7 +60,7 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
         erc20_address,
         gravity_address,
         amount.clone(),
-        cosmos_dest,
+        cosmos_dest.clone(),
         ethereum_key,
         Some(TIMEOUT),
         &web3,

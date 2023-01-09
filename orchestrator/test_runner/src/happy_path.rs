@@ -446,7 +446,7 @@ pub async fn send_erc20_deposit(
         erc20_address,
         gravity_address,
         amount.clone(),
-        dest,
+        dest.to_string(),
         *MINER_PRIVATE_KEY,
         None,
         web30,

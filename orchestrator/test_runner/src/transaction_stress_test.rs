@@ -296,7 +296,7 @@ pub async fn test_bulk_send_to_cosmos(
                 *token,
                 gravity_address,
                 amount,
-                keys.cosmos_address,
+                keys.cosmos_address.to_string(),
                 keys.eth_key,
                 Some(TIMEOUT),
                 web30,

@@ -378,7 +378,7 @@
                     "erc20_to_denoms": [],
                     "evm_chain": {
                         "evm_chain_name": "goerli testnet 1st fork",
-                        "evm_chain_net_version": "0",
+                        "evm_chain_net_version": "420",
                         "evm_chain_prefix": "goerli-testnet"
                     },
                     "gravity_nonces": {

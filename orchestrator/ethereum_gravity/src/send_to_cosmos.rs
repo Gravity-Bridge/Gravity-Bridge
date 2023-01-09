@@ -3,7 +3,6 @@
 use clarity::abi::{encode_call, Token};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address, Uint256};
-use deep_space::address::Address as CosmosAddress;
 use gravity_utils::error::GravityError;
 use std::time::{Duration, Instant};
 use web30::client::Web3;
@@ -16,7 +15,7 @@ pub async fn send_to_cosmos(
     erc20: Address,
     gravity_contract: Address,
     amount: Uint256,
-    cosmos_destination: CosmosAddress,
+    cosmos_destination: String,
     sender_secret: EthPrivateKey,
     wait_timeout: Option<Duration>,
     web3: &Web3,

@@ -52,6 +52,8 @@ services:
     tty: true
     volumes:
       - ./orchestrator:/orchestrator
+      - ./e2e/.gbt/:/root/.gbt
+    entrypoint: tail -f /dev/null
 
   orai:
     container_name: orai_test

@@ -22,13 +22,13 @@ artifacts
 build
 
 # data folder 
-e2e/*/validator*/data/*
+e2e/*/validator*/data/
 e2e/*/validator*/config/write-file*
 e2e/*/validator*_backup/
 e2e/*/validator*/U*
 e2e/*/validator*/config/addrbook.json
 
-e2e/.*/data/*
+e2e/.*/data/
 e2e/.*/config/write-file*
 e2e/.*/config/addrbook.json
 

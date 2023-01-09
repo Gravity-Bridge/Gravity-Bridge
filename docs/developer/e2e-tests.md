@@ -49,10 +49,10 @@ cat data/validator-eth-keys
 cat data/validator-phrases
 ```
 
-## Fork the network at deployment time so we can re-use the contract over and over again
+## Start the e2e testing networks (can be reused by restarting all)
 
 ```bash
-cd solidity && docker-compose up -d
+docker-compose up -d
 
 # Gravity contract on Goerli: 0xa49e040d7b8F045B090306C88aEF48955404B2e8
 
@@ -61,17 +61,29 @@ cd solidity && docker-compose up -d
 
 ## Start Orchestrator
 
+Enter the orchestrator container:
+
 ```bash
-cd orchestrator && BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home ../data/.gbt/ --address-prefix oraib orchestrator --cosmos-grpc http://localhost:9090 --ethereum-rpc http://localhost:8545 --fees 0uoraib --gravity-contract-address 0xa49e040d7b8F045B090306C88aEF48955404B2e8
+docker-compose exec orchestrator bash
+```
+
+then,
+
+```bash
+BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home /root/.gbt/ --address-prefix oraib orchestrator --cosmos-grpc http://gravity:9090 --ethereum-rpc http://first_fork:8545 --fees 0uoraib --gravity-contract-address 0xa49e040d7b8F045B090306C88aEF48955404B2e8
 ```
 
 ## Send Dummy tokens from Goerli to gravity-test
 
+Inside the container, run:
+
 ```bash
-BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home ../data/.gbt/ --address-prefix oraib client eth-to-cosmos --amount 0.00000000000000001 --token-contract-address 0xf48007ea0F3AA4d2A59DFb4473dd30f90488c8Ef --ethereum-rpc http://localhost:8545 --destination "oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4" --ethereum-key 0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08 --gravity-contract-address 0xa49e040d7b8F045B090306C88aEF48955404B2e8
+BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home /root/.gbt/ --address-prefix oraib client eth-to-cosmos --amount 0.00000000000000001 --token-contract-address 0xf48007ea0F3AA4d2A59DFb4473dd30f90488c8Ef --ethereum-rpc http://first_fork:8545 --destination "channel-0/orai1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2s9adp2k" --ethereum-key 0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08 --gravity-contract-address 0xa49e040d7b8F045B090306C88aEF48955404B2e8
 ```
 
 ## Send back Dummy tokens to Goerli testnet
+
+In side the Gravity test network, run:
 
 ```bash
 gravity tx gravity send-to-eth 0xc9B6f87d637d4774EEB54f8aC2b89dBC3D38226b 9goerli-testnet0xf48007ea0F3AA4d2A59DFb4473dd30f90488c8Ef 1goerli-testnet0xf48007ea0F3AA4d2A59DFb4473dd30f90488c8Ef goerli-testnet --home data/validator1 -y --from validator1
