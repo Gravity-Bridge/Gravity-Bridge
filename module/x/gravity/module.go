@@ -21,6 +21,7 @@ import (
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/client/cli"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/client/rest"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/exported"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -101,8 +102,9 @@ func (b AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry
 // AppModule object for module implementation
 type AppModule struct {
 	AppModuleBasic
-	keeper     keeper.Keeper
-	bankKeeper bankkeeper.Keeper
+	keeper         keeper.Keeper
+	bankKeeper     bankkeeper.Keeper
+	legacySubspace exported.Subspace
 }
 
 func (am AppModule) ConsensusVersion() uint64 {
@@ -110,11 +112,12 @@ func (am AppModule) ConsensusVersion() uint64 {
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k keeper.Keeper, bankKeeper bankkeeper.Keeper) AppModule {
+func NewAppModule(k keeper.Keeper, bankKeeper bankkeeper.Keeper, ss exported.Subspace) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		bankKeeper:     bankKeeper,
+		legacySubspace: ss,
 	}
 }
 
@@ -149,7 +152,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
-	m := keeper.NewMigrator(am.keeper)
+	m := keeper.NewMigrator(am.keeper, am.legacySubspace)
 
 	// if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
 	// 	panic(fmt.Sprintf("failed to migrate x/gravity from version 1 to 2: %v", err))

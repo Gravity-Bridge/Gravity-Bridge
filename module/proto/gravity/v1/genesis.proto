@@ -115,7 +115,7 @@ message Params {
   cosmos.base.v1beta1.Coin valset_reward = 11 [ (gogoproto.nullable) = false ];
   uint64 min_chain_fee_basis_points = 12;
 
-  repeated EvmChainParams evm_chain_params = 13;
+  repeated EvmChainParams evm_chain_params = 13 [ (gogoproto.nullable) = false ];
 }
 
 // GenesisState struct, containing all persistant data required by the Gravity

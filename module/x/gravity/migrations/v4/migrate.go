@@ -1,27 +1,35 @@
 package v4
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/exported"
 	v3 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v3"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+
+	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/doc/statik"
 )
 
 // MigrateParams performs in-place migrations from v3 to v4. The migration includes:
 //
 // - Set the MonitoredTokenAddresses param to an empty slice
-func MigrateParams(ctx sdk.Context, paramSpace paramstypes.Subspace) types.Params {
+func MigrateParams(ctx sdk.Context, paramSpace paramstypes.Subspace, legacySubspace exported.Subspace) types.Params {
 	ctx.Logger().Info("Pleiades Upgrade part 2: Beginning the migrations for the gravity module")
-	v3Params := GetParams(ctx, paramSpace)
+	v3Params := GetParams(ctx, legacySubspace)
+	fmt.Printf("v3 params: %v\n", v3Params)
 	v4Params := V3ToV4Params(v3Params)
+	fmt.Printf("v4 params: %v\n", v4Params)
+	paramSpace.SetParamSet(ctx, &v4Params)
 
 	ctx.Logger().Info("Pleiades Upgrade part 2: Finished the migrations for the gravity module successfully!")
 	return v4Params
 }
 
 // GetParams returns the parameters from the store
-func GetParams(ctx sdk.Context, paramSpace paramstypes.Subspace) (params v3.Params) {
+func GetParams(ctx sdk.Context, paramSpace exported.Subspace) (params v3.Params) {
 	paramSpace.GetParamSet(ctx, &params)
 	return
 }
@@ -48,7 +56,7 @@ func V3ToV4Params(v3Params v3.Params) types.Params {
 		ValsetReward:                 v3Params.ValsetReward,
 
 		MinChainFeeBasisPoints: minChainFeeBasisPoints,
-		EvmChainParams: []*types.EvmChainParams{
+		EvmChainParams: []types.EvmChainParams{
 			{
 				EvmChainPrefix:           v3.EthereumChainPrefix,
 				GravityId:                v3Params.GravityId,

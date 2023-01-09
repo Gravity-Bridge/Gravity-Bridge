@@ -17,28 +17,61 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+var DefaultParamspace = "gravity"
+
+var (
+	// ParamsStoreKeyGravityID stores the gravity id
+	ParamsStoreKeyGravityID = []byte("GravityID")
+
+	// ParamsStoreKeyContractHash stores the contract hash
+	ParamsStoreKeyContractHash = []byte("ContractHash")
+
+	// ParamsStoreKeyBridgeContractAddress stores the ethereum address
+	ParamsStoreKeyBridgeEthereumAddress = []byte("BridgeEthereumAddress")
+
+	// ParamsStoreKeyBridgeContractChainID stores the bridge chain id
+	ParamsStoreKeyBridgeContractChainID = []byte("BridgeChainID")
+
+	// ParamsStoreKeySignedClaimsWindow stores the signed blocks window
+	ParamsStoreKeyAverageEthereumBlockTime = []byte("AverageEthereumBlockTime")
+
+	// ParamBridgeActive allows governance to temporarily halt the bridge via vote, in this context halting
+	// means no more batches will be created and no oracle events executed. Valset creation will continue
+	// to be allowed as it must continue to ensure bridge continuity.
+	ParamStoreBridgeActive = []byte("BridgeActive")
+
+	// ParamStoreEthereumBlacklist allows storage of blocked Ethereum addresses blocked for use with the bridge
+	// this could be for technical reasons (zero address) or non-technical reasons, these apply across all ERC20 tokens
+	ParamStoreEthereumBlacklist = []byte("EthereumBlacklist")
+)
+
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
 // pairs of auth module's parameters.
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyGravityID, &p.GravityId, validateGravityID),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyContractHash, &p.ContractSourceHash, validateContractHash),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyBridgeEthereumAddress, &p.BridgeEthereumAddress, validateBridgeContractAddress),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyBridgeContractChainID, &p.BridgeChainId, validateBridgeChainID),
+		paramtypes.NewParamSetPair(ParamsStoreKeyGravityID, &p.GravityId, validateGravityID),
+		paramtypes.NewParamSetPair(ParamsStoreKeyContractHash, &p.ContractSourceHash, validateContractHash),
+		paramtypes.NewParamSetPair(ParamsStoreKeyBridgeEthereumAddress, &p.BridgeEthereumAddress, validateBridgeContractAddress),
+		paramtypes.NewParamSetPair(ParamsStoreKeyBridgeContractChainID, &p.BridgeChainId, validateBridgeChainID),
 		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedValsetsWindow, &p.SignedValsetsWindow, validateSignedValsetsWindow),
 		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedBatchesWindow, &p.SignedBatchesWindow, validateSignedBatchesWindow),
 		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedLogicCallsWindow, &p.SignedLogicCallsWindow, validateSignedLogicCallsWindow),
 		paramtypes.NewParamSetPair(types.ParamsStoreKeyTargetBatchTimeout, &p.TargetBatchTimeout, validateTargetBatchTimeout),
 		paramtypes.NewParamSetPair(types.ParamsStoreKeyAverageBlockTime, &p.AverageBlockTime, validateAverageBlockTime),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyAverageEthereumBlockTime, &p.AverageEthereumBlockTime, validateAverageEthereumBlockTime),
+		paramtypes.NewParamSetPair(ParamsStoreKeyAverageEthereumBlockTime, &p.AverageEthereumBlockTime, validateAverageEthereumBlockTime),
 		paramtypes.NewParamSetPair(types.ParamsStoreSlashFractionValset, &p.SlashFractionValset, validateSlashFractionValset),
 		paramtypes.NewParamSetPair(types.ParamsStoreSlashFractionBatch, &p.SlashFractionBatch, validateSlashFractionBatch),
 		paramtypes.NewParamSetPair(types.ParamStoreUnbondSlashingValsetsWindow, &p.UnbondSlashingValsetsWindow, validateUnbondSlashingValsetsWindow),
 		paramtypes.NewParamSetPair(types.ParamStoreSlashFractionBadEthSignature, &p.SlashFractionBadEthSignature, validateSlashFractionBadEthSignature),
 		paramtypes.NewParamSetPair(types.ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
-		paramtypes.NewParamSetPair(types.ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
-		paramtypes.NewParamSetPair(types.ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
+		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
+		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
 	}
+}
+
+// ParamKeyTable for auth module
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
 }
 
 type Params struct {

@@ -730,7 +730,7 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 
 	// pause the bridge
 	params := input.GravityKeeper.GetParams(ctx)
-	evmChainParams := params.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams, _ := params.EvmChain(evmChain.EvmChainPrefix)
 	evmChainParams.BridgeActive = false
 	input.GravityKeeper.SetParams(ctx, params)
 
@@ -810,7 +810,7 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 
 	// add the blacklisted address to the blacklist
 	params := input.GravityKeeper.GetParams(ctx)
-	evmChainParams := params.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams, err := params.EvmChain(evmChain.EvmChainPrefix)
 	evmChainParams.EthereumBlacklist = append(evmChainParams.EthereumBlacklist, blacklistedReceiver.GetAddress().Hex())
 	input.GravityKeeper.SetParams(ctx, params)
 

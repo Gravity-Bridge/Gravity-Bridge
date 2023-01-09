@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/exported"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2"
 	v3 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v3"
 	v4 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v4"
@@ -9,12 +10,13 @@ import (
 
 // Migrator is a struct for handling in-place store migrations.
 type Migrator struct {
-	keeper Keeper
+	keeper         Keeper
+	legacySubspace exported.Subspace
 }
 
 // NewMigrator returns a new Migrator.
-func NewMigrator(keeper Keeper) Migrator {
-	return Migrator{keeper: keeper}
+func NewMigrator(keeper Keeper, legacySubspace exported.Subspace) Migrator {
+	return Migrator{keeper: keeper, legacySubspace: legacySubspace}
 }
 
 // Migrate1to2 migrates from consensus version 1 to 2.
@@ -32,8 +34,7 @@ func (m Migrator) Migrate2to3(ctx sdk.Context) error {
 // Migrate3to4 migrates from consensus version 3 to 4.
 func (m Migrator) Migrate3to4(ctx sdk.Context) error {
 	ctx.Logger().Info("Pleiades Upgrade part 2: Enter Migrate3to4()")
-	newParams := v4.MigrateParams(ctx, m.keeper.paramSpace)
-	m.keeper.SetParams(ctx, newParams)
+	v4.MigrateParams(ctx, m.keeper.paramSpace, m.legacySubspace.WithKeyTable(v3.ParamKeyTable()))
 	ctx.Logger().Info("Pleiades Upgrade part 2: Gravity module migration is complete!")
 	return nil
 }

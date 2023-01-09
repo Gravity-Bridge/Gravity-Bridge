@@ -103,9 +103,9 @@ func slashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChainPre
 func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	params := k.GetParams(ctx)
 
-	evmChainParams := params.EvmChain(evmChainPrefix)
+	evmChainParams, err := params.EvmChain(evmChainPrefix)
 
-	if evmChainParams == nil {
+	if err != nil {
 		return
 	}
 

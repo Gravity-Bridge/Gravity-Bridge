@@ -278,14 +278,15 @@ func TestEthereumBlacklist(t *testing.T) {
 	blockedAddress := anyETHSender
 	newParams := k.GetParams(ctx)
 
-	evmChainParams := newParams.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams, _ := newParams.EvmChain(evmChain.EvmChainPrefix)
 	evmChainParams.EthereumBlacklist = []string{blockedAddress}
 
 	k.SetParams(ctx, newParams)
 
 	params := k.GetParams(ctx)
+	evmParams, _ := params.EvmChain(evmChain.EvmChainPrefix)
 
-	assert.Equal(t, params.EvmChain(evmChain.EvmChainPrefix).EthereumBlacklist, []string{blockedAddress})
+	assert.Equal(t, evmParams.EthereumBlacklist, []string{blockedAddress})
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {

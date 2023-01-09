@@ -116,6 +116,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/exported"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -369,6 +370,8 @@ func NewGravityApp(
 	}
 
 	paramsKeeper := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tKeys[paramstypes.TStoreKey])
+	// for the sake of param migration
+	paramsKeeper.Subspace(exported.DefaultParamspace)
 	app.paramsKeeper = &paramsKeeper
 
 	bApp.SetParamStore(paramsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable()))
@@ -478,7 +481,7 @@ func NewGravityApp(
 
 	gravityKeeper := keeper.NewKeeper(
 		keys[gravitytypes.StoreKey],
-		app.GetSubspace(gravitytypes.ModuleName),
+		app.GetSubspace(gravitytypes.DefaultParamspace),
 		appCodec,
 		&bankKeeper,
 		&stakingKeeper,
@@ -636,6 +639,7 @@ func NewGravityApp(
 		gravity.NewAppModule(
 			gravityKeeper,
 			bankKeeper,
+			app.GetSubspace(exported.DefaultParamspace),
 		),
 		bech32ibc.NewAppModule(
 			appCodec,
@@ -956,7 +960,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
-	paramsKeeper.Subspace(gravitytypes.ModuleName)
+	paramsKeeper.Subspace(gravitytypes.DefaultParamspace)
 	paramsKeeper.Subspace(ibchost.ModuleName)
 
 	return paramsKeeper
