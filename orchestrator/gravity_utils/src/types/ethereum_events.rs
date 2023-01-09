@@ -564,6 +564,7 @@ impl EthereumEvent for SendToCosmosEvent {
                 ))
             } else {
                 let event_nonce: u64 = data.event_nonce.to_string().parse().unwrap();
+                // TODO: process the destination to match new format: channel-x/<address>, where 'channel-x/' is optional
                 let validated_destination = match data.destination.parse() {
                     Ok(v) => Some(v),
                     Err(_) => {
