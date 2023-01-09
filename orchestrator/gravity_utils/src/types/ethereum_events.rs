@@ -564,8 +564,13 @@ impl EthereumEvent for SendToCosmosEvent {
                 ))
             } else {
                 let event_nonce: u64 = data.event_nonce.to_string().parse().unwrap();
-                // TODO: process the destination to match new format: channel-x/<address>, where 'channel-x/' is optional
-                let validated_destination = match data.destination.parse() {
+                let validated_destination = match data
+                    .destination
+                    .split('/')
+                    .last()
+                    .unwrap()
+                    .parse()
+                {
                     Ok(v) => Some(v),
                     Err(_) => {
                         if data.destination.len() < 1000 {
@@ -1038,6 +1043,7 @@ fn _debug_print_data(input: &[u8]) {
 mod tests {
     use super::*;
     use clarity::utils::hex_str_to_bytes;
+    use deep_space::error::AddressError;
     use rand::distributions::Distribution;
     use rand::distributions::Uniform;
     use rand::prelude::ThreadRng;
@@ -1059,6 +1065,16 @@ mod tests {
             })
             .collect();
         event_bytes
+    }
+
+    #[test]
+    fn test_parse_destination() {
+        let destination = "channel-0/orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573";
+        let mut validated_destination: Result<Address, AddressError> =
+            destination.split('/').last().unwrap().parse();
+        assert!(validated_destination.is_ok());
+        validated_destination = "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573".parse();
+        assert!(validated_destination.is_ok());
     }
 
     #[test]
