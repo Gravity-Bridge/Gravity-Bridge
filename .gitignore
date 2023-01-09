@@ -36,3 +36,5 @@ upgrade-tests/data*
 upgrade-tests/exported-genesis-new.json
 
 tmp
+
+.DS_Store
