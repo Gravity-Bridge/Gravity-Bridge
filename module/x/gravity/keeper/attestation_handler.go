@@ -104,7 +104,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 
 	// Block blacklisted asset transfers
 	// (these funds are unrecoverable for the blacklisted sender, they will instead be sent to community pool)
-	if a.keeper.IsOnBlacklist(ctx, *evmChainSender) {
+	if a.keeper.IsOnBlacklist(ctx, claim.EvmChainPrefix, *evmChainSender) {
 		hash, _ := claim.ClaimHash()
 		a.keeper.logger(ctx).Error("Invalid SendToCosmos: receiver is blacklisted",
 			"address", receiverAddress,

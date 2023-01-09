@@ -33,25 +33,33 @@ func V3ToV4Params(v3Params v3.Params) types.Params {
 	minChainFeeBasisPoints := v4DefaultParams.MinChainFeeBasisPoints
 
 	v4Params := types.Params{
-		GravityId:                    v3Params.GravityId,
-		ContractSourceHash:           v3Params.ContractSourceHash,
-		BridgeEthereumAddress:        v3Params.BridgeEthereumAddress,
-		BridgeChainId:                v3Params.BridgeChainId,
-		SignedValsetsWindow:          v3Params.SignedValsetsWindow,
-		SignedBatchesWindow:          v3Params.SignedBatchesWindow,
-		SignedLogicCallsWindow:       v3Params.SignedLogicCallsWindow,
-		TargetBatchTimeout:           v3Params.TargetBatchTimeout,
-		AverageBlockTime:             v3Params.AverageBlockTime,
-		AverageEthereumBlockTime:     v3Params.AverageEthereumBlockTime,
+
+		SignedValsetsWindow:    v3Params.SignedValsetsWindow,
+		SignedBatchesWindow:    v3Params.SignedBatchesWindow,
+		SignedLogicCallsWindow: v3Params.SignedLogicCallsWindow,
+		TargetBatchTimeout:     v3Params.TargetBatchTimeout,
+		AverageBlockTime:       v3Params.AverageBlockTime,
+
 		SlashFractionValset:          v3Params.SlashFractionValset,
 		SlashFractionBatch:           v3Params.SlashFractionBatch,
 		SlashFractionLogicCall:       v3Params.SlashFractionLogicCall,
 		UnbondSlashingValsetsWindow:  v3Params.UnbondSlashingValsetsWindow,
 		SlashFractionBadEthSignature: v3Params.SlashFractionBadEthSignature,
 		ValsetReward:                 v3Params.ValsetReward,
-		BridgeActive:                 v3Params.BridgeActive,
-		EthereumBlacklist:            v3Params.EthereumBlacklist,
-		MinChainFeeBasisPoints:       minChainFeeBasisPoints,
+
+		MinChainFeeBasisPoints: minChainFeeBasisPoints,
+		EvmChainParams: []*types.EvmChainParams{
+			{
+				EvmChainPrefix:           v3.EthereumChainPrefix,
+				GravityId:                v3Params.GravityId,
+				ContractSourceHash:       v3Params.ContractSourceHash,
+				BridgeEthereumAddress:    v3Params.BridgeEthereumAddress,
+				BridgeChainId:            v3Params.BridgeChainId,
+				AverageEthereumBlockTime: v3Params.AverageEthereumBlockTime,
+				BridgeActive:             v3Params.BridgeActive,
+				EthereumBlacklist:        v3Params.EthereumBlacklist,
+			},
+		},
 	}
 	return v4Params
 }

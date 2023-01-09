@@ -2,6 +2,7 @@ package gravity
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -276,11 +278,14 @@ func TestEthereumBlacklist(t *testing.T) {
 	blockedAddress := anyETHSender
 	newParams := k.GetParams(ctx)
 
-	newParams.EthereumBlacklist = []string{blockedAddress}
+	evmChainParams := newParams.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams.EthereumBlacklist = []string{blockedAddress}
 
 	k.SetParams(ctx, newParams)
 
-	assert.Equal(t, k.GetParams(ctx).EthereumBlacklist, []string{blockedAddress})
+	params := k.GetParams(ctx)
+
+	assert.Equal(t, params.EvmChain(evmChain.EvmChainPrefix).EthereumBlacklist, []string{blockedAddress})
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {
@@ -680,16 +685,19 @@ func TestMsgValsetConfirm(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	evmChain := input.GravityKeeper.GetEvmChainData(ctx, keeper.EthChainPrefix)
 
+	privKey, _ := crypto.GenerateKey()
+	ethAddressParsed, _ := types.NewEthAddress(crypto.PubkeyToAddress(privKey.PublicKey).String())
+	ethAddress := ethAddressParsed.GetAddress().String()
+	checkpoint, _ := hex.DecodeString("36793be54e563fe0f5542b0ff011f053a25c1fe61140c2c2c99a12fc8e5905dd")
+	signatureBytes, _ := types.NewEthereumSignature(checkpoint, privKey)
+	signature := hex.EncodeToString(signatureBytes)
+
 	var (
 		blockTime          = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		blockHeight  int64 = 200
-		signature          = "7c331bd8f2f586b04a2e2cafc6542442ef52e8b8be49533fa6b8962e822bc01e295a62733abfd65a412a8de8286f2794134c160c27a2827bdb71044b94b003cc1c"
 		badSignature       = "6c331bd8f2f586b04a2e2cafc6542442ef52e8b8be49533fa6b8962e822bc01e295a62733abfd65a412a8de8286f2794134c160c27a2827bdb71044b94b003cc1c"
-		ethAddress         = "0xd62FF457C6165FF214C1658c993A8a203E601B03"
 		wrongAddress       = "0xb9a2c7853F181C3dd4a0517FCb9470C0f709C08C"
 	)
-	ethAddressParsed, err := types.NewEthAddress(ethAddress)
-	require.NoError(t, err)
 
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 

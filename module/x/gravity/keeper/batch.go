@@ -29,7 +29,13 @@ func (k Keeper) BuildOutgoingTxBatch(
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "max elements value")
 	}
 	params := k.GetParams(ctx)
-	if !params.BridgeActive {
+	evmChainParams := params.EvmChain(evmChainPrefix)
+
+	if evmChainParams == nil {
+		return nil, sdkerrors.Wrap(types.ErrEmpty, "EvmChainParams not found "+evmChainPrefix)
+	}
+
+	if !evmChainParams.BridgeActive {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "bridge paused")
 	}
 
@@ -68,13 +74,13 @@ func (k Keeper) BuildOutgoingTxBatch(
 	k.StoreBatch(ctx, evmChainPrefix, *batch)
 
 	// Get the checkpoint and store it as a legit past batch
-	checkpoint := batch.GetCheckpoint(k.GetGravityID(ctx))
+	checkpoint := batch.GetCheckpoint(k.GetGravityID(ctx, evmChainPrefix))
 	k.SetPastEthSignatureCheckpoint(ctx, evmChainPrefix, checkpoint)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatch{
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
-			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			BridgeContract: k.GetBridgeContractAddress(ctx, evmChainPrefix).GetAddress().Hex(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx, evmChainPrefix))),
 			BatchId:        string(types.GetOutgoingTxBatchKey(evmChainPrefix, contract, nextID)),
 			Nonce:          fmt.Sprint(nextID),
 		},
@@ -85,6 +91,13 @@ func (k Keeper) BuildOutgoingTxBatch(
 // This gets the batch timeout height in evm chain blocks.
 func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) uint64 {
 	params := k.GetParams(ctx)
+
+	evmChainParams := params.EvmChain(evmChainPrefix)
+
+	if evmChainParams == nil {
+		return 0
+	}
+
 	currentCosmosHeight := ctx.BlockHeight()
 	// we store the last observed Cosmos and evm chain heights, we do not concern ourselves if these values are zero because
 	// no batch can be produced if the last evm chain block height is not first populated by a deposit event.
@@ -95,10 +108,10 @@ func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) ui
 	// we project how long it has been in milliseconds since the last evm chain block height was observed
 	projectedMillis := (uint64(currentCosmosHeight) - heights.CosmosBlockHeight) * params.AverageBlockTime
 	// we convert that projection into the current evm chain height using the average evm chain block time in millis
-	projectedCurrentEvmChainHeight := (projectedMillis / params.AverageEthereumBlockTime) + heights.EthereumBlockHeight
+	projectedCurrentEvmChainHeight := (projectedMillis / evmChainParams.AverageEthereumBlockTime) + heights.EthereumBlockHeight
 	// we convert our target time for block timeouts (lets say 12 hours) into a number of blocks to
 	// place on top of our projection of the current evm chain block height.
-	blocksToAdd := params.TargetBatchTimeout / params.AverageEthereumBlockTime
+	blocksToAdd := params.TargetBatchTimeout / evmChainParams.AverageEthereumBlockTime
 	return projectedCurrentEvmChainHeight + blocksToAdd
 }
 
@@ -192,7 +205,7 @@ func (k Keeper) pickUnbatchedTxs(
 			// batches with that tx will forever panic, blocking that erc20. With this check governance
 			// can add that address to the blacklist and quickly eliminate the issue. Note this is
 			// very inefficient, IsOnBlacklist is O(blacklist-length) and should be made faster
-			if !k.IsOnBlacklist(ctx, *tx.DestAddress) {
+			if !k.IsOnBlacklist(ctx, evmChainPrefix, *tx.DestAddress) {
 				selectedTxs = append(selectedTxs, tx)
 				err = k.removeUnbatchedTX(ctx, evmChainPrefix, *tx.Erc20Fee, tx.Id)
 				if err != nil {
@@ -259,8 +272,8 @@ func (k Keeper) CancelOutgoingTxBatch(ctx sdk.Context, evmChainPrefix string, to
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatchCanceled{
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
-			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			BridgeContract: k.GetBridgeContractAddress(ctx, evmChainPrefix).GetAddress().Hex(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx, evmChainPrefix))),
 			BatchId:        string(types.GetOutgoingTxBatchKey(evmChainPrefix, tokenContract, nonce)),
 			Nonce:          fmt.Sprint(nonce),
 		},

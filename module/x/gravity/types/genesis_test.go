@@ -15,16 +15,13 @@ func TestGenesisStateValidate(t *testing.T) {
 		"default params": {src: DefaultGenesisState(), expErr: false},
 		"empty params": {src: &GenesisState{
 			Params: &Params{
-				GravityId:                    "",
-				ContractSourceHash:           "",
-				BridgeEthereumAddress:        "",
-				BridgeChainId:                0,
-				SignedValsetsWindow:          0,
-				SignedBatchesWindow:          0,
-				SignedLogicCallsWindow:       0,
-				TargetBatchTimeout:           0,
-				AverageBlockTime:             0,
-				AverageEthereumBlockTime:     0,
+
+				SignedValsetsWindow:    0,
+				SignedBatchesWindow:    0,
+				SignedLogicCallsWindow: 0,
+				TargetBatchTimeout:     0,
+				AverageBlockTime:       0,
+
 				SlashFractionValset:          types.Dec{},
 				SlashFractionBatch:           types.Dec{},
 				SlashFractionLogicCall:       types.Dec{},
@@ -34,21 +31,27 @@ func TestGenesisStateValidate(t *testing.T) {
 					Denom:  "",
 					Amount: types.Int{},
 				},
+				EvmChainParams: []*EvmChainParams{
+					{
+						GravityId:                "",
+						ContractSourceHash:       "",
+						BridgeEthereumAddress:    "",
+						BridgeChainId:            0,
+						AverageEthereumBlockTime: 0,
+					},
+				},
 			},
 			EvmChains: []EvmChainData{},
 		}, expErr: true},
 		"invalid params": {src: &GenesisState{
 			Params: &Params{
-				GravityId:                    "foo",
-				ContractSourceHash:           "laksdjflasdkfja",
-				BridgeEthereumAddress:        "invalid-eth-address",
-				BridgeChainId:                3279089,
-				SignedValsetsWindow:          0,
-				SignedBatchesWindow:          0,
-				SignedLogicCallsWindow:       0,
-				TargetBatchTimeout:           0,
-				AverageBlockTime:             0,
-				AverageEthereumBlockTime:     0,
+
+				SignedValsetsWindow:    0,
+				SignedBatchesWindow:    0,
+				SignedLogicCallsWindow: 0,
+				TargetBatchTimeout:     0,
+				AverageBlockTime:       0,
+
 				SlashFractionValset:          types.Dec{},
 				SlashFractionBatch:           types.Dec{},
 				SlashFractionLogicCall:       types.Dec{},
@@ -57,6 +60,15 @@ func TestGenesisStateValidate(t *testing.T) {
 				ValsetReward: types.Coin{
 					Denom:  "",
 					Amount: types.Int{},
+				},
+				EvmChainParams: []*EvmChainParams{
+					{
+						GravityId:                "foo",
+						ContractSourceHash:       "laksdjflasdkfja",
+						BridgeEthereumAddress:    "invalid-eth-address",
+						BridgeChainId:            3279089,
+						AverageEthereumBlockTime: 0,
+					},
 				},
 			},
 			EvmChains: []EvmChainData{},

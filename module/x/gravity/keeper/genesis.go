@@ -11,15 +11,15 @@ import (
 
 func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainData) {
 	// reset valsets in state
-	chainPrefix := data.EvmChain.EvmChainPrefix
+	evmChainPrefix := data.EvmChain.EvmChainPrefix
 	highest := uint64(0)
 	for _, vs := range data.Valsets {
 		if vs.Nonce > highest {
 			highest = vs.Nonce
 		}
-		k.StoreValset(ctx, chainPrefix, vs)
+		k.StoreValset(ctx, evmChainPrefix, vs)
 	}
-	k.SetLatestValsetNonce(ctx, chainPrefix, highest)
+	k.SetLatestValsetNonce(ctx, evmChainPrefix, highest)
 
 	// reset valset confirmations in state
 	for _, conf := range data.ValsetConfirms {
@@ -33,7 +33,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "unable to make batch internal: %v", batch))
 		}
-		k.StoreBatch(ctx, chainPrefix, *intBatch)
+		k.StoreBatch(ctx, evmChainPrefix, *intBatch)
 	}
 
 	// reset batch confirmations in state
@@ -44,7 +44,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 
 	// reset logic calls in state
 	for _, call := range data.LogicCalls {
-		k.SetOutgoingLogicCall(ctx, chainPrefix, call)
+		k.SetOutgoingLogicCall(ctx, evmChainPrefix, call)
 	}
 
 	// reset logic call confirmations in state
@@ -59,7 +59,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 		if err != nil {
 			panic(sdkerrors.Wrapf(err, "invalid unbatched tx: %v", tx))
 		}
-		if err := k.addUnbatchedTX(ctx, chainPrefix, intTx); err != nil {
+		if err := k.addUnbatchedTX(ctx, evmChainPrefix, intTx); err != nil {
 			panic(err)
 		}
 	}
@@ -77,7 +77,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 		if err != nil {
 			panic(fmt.Errorf("error when computing ClaimHash for %v", hash))
 		}
-		k.SetAttestation(ctx, chainPrefix, claim.GetEventNonce(), hash, &att)
+		k.SetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash, &att)
 	}
 
 	// reset attestation state of specific validators
@@ -102,9 +102,9 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 			if err != nil {
 				panic(err)
 			}
-			last := k.GetLastEventNonceByValidator(ctx, chainPrefix, val)
+			last := k.GetLastEventNonceByValidator(ctx, evmChainPrefix, val)
 			if claim.GetEventNonce() > last {
-				k.SetLastEventNonceByValidator(ctx, chainPrefix, val, claim.GetEventNonce())
+				k.SetLastEventNonceByValidator(ctx, evmChainPrefix, val, claim.GetEventNonce())
 			}
 		}
 	}
@@ -144,7 +144,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 		if err != nil {
 			panic(fmt.Errorf("invalid erc20 address in Erc20ToDenoms for item %d: %s", i, item.Erc20))
 		}
-		k.setCosmosOriginatedDenomToERC20(ctx, chainPrefix, item.Denom, *ethAddr)
+		k.setCosmosOriginatedDenomToERC20(ctx, evmChainPrefix, item.Denom, *ethAddr)
 	}
 
 	// now that we have the denom-erc20 mapping we need to validate
@@ -152,7 +152,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 	// this if you want a non-cosmos originated reward
 	valsetReward := k.GetParams(ctx).ValsetReward
 	if valsetReward.IsValid() && !valsetReward.IsZero() {
-		_, exists := k.GetCosmosOriginatedERC20(ctx, chainPrefix, valsetReward.Denom)
+		_, exists := k.GetCosmosOriginatedERC20(ctx, evmChainPrefix, valsetReward.Denom)
 		if !exists {
 			panic("Invalid Cosmos originated denom for valset reward")
 		}

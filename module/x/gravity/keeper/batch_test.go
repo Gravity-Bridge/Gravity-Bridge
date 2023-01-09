@@ -717,11 +717,6 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 
 	ctx := input.Context
 
-	// pause the bridge
-	params := input.GravityKeeper.GetParams(ctx)
-	params.BridgeActive = false
-	input.GravityKeeper.SetParams(ctx, params)
-
 	var (
 		now                    = time.Now().UTC()
 		mySender, _            = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -732,6 +727,12 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 		evmChain               = input.GravityKeeper.GetEvmChainData(ctx, EthChainPrefix)
 	)
 	require.NoError(t, err)
+
+	// pause the bridge
+	params := input.GravityKeeper.GetParams(ctx)
+	evmChainParams := params.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams.BridgeActive = false
+	input.GravityKeeper.SetParams(ctx, params)
 
 	// mint some voucher first
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))
@@ -773,7 +774,7 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	require.Nil(t, gotFirstBatch)
 
 	// resume the bridge
-	params.BridgeActive = true
+	evmChainParams.BridgeActive = true
 	input.GravityKeeper.SetParams(ctx, params)
 
 	// when
@@ -809,7 +810,8 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 
 	// add the blacklisted address to the blacklist
 	params := input.GravityKeeper.GetParams(ctx)
-	params.EthereumBlacklist = append(params.EthereumBlacklist, blacklistedReceiver.GetAddress().Hex())
+	evmChainParams := params.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams.EthereumBlacklist = append(evmChainParams.EthereumBlacklist, blacklistedReceiver.GetAddress().Hex())
 	input.GravityKeeper.SetParams(ctx, params)
 
 	// mint some voucher first

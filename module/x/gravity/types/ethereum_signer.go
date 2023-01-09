@@ -61,7 +61,6 @@ func EthAddressFromSignature(hash []byte, signature []byte) (*EthAddress, error)
 // returns an error if the signature isn't valid
 func ValidateEthereumSignature(hash []byte, signature []byte, ethAddress EthAddress) error {
 	addr, err := EthAddressFromSignature(hash, signature)
-
 	if err != nil {
 		return sdkerrors.Wrap(err, "unable to get address from signature")
 	}

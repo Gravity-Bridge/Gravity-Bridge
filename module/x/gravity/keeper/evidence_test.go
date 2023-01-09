@@ -146,7 +146,7 @@ func TestSubmitBadSignatureEvidenceSlash(t *testing.T) {
 		BatchTimeout:  420,
 	}
 
-	checkpoint := batch.GetCheckpoint(input.GravityKeeper.GetGravityID(ctx))
+	checkpoint := batch.GetCheckpoint(input.GravityKeeper.GetGravityID(ctx, evmChain.EvmChainPrefix))
 
 	any, err := codectypes.NewAnyWithValue(&batch)
 	require.NoError(t, err)

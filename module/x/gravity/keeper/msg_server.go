@@ -91,7 +91,7 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find valset")
 	}
 
-	gravityID := k.GetGravityID(ctx)
+	gravityID := k.GetGravityID(ctx, msg.EvmChainPrefix)
 	checkpoint := valset.GetCheckpoint(gravityID)
 	orchaddr, err := sdk.AccAddressFromBech32(msg.Orchestrator)
 	if err != nil {
@@ -135,7 +135,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, sdkerrors.Wrap(err, "invalid denom")
 	}
 
-	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
+	if k.InvalidSendToEthAddress(ctx, msg.EvmChainPrefix, *dest, *erc20) {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted")
 	}
 
@@ -198,7 +198,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find batch")
 	}
 
-	gravityID := k.GetGravityID(ctx)
+	gravityID := k.GetGravityID(ctx, msg.EvmChainPrefix)
 	checkpoint := batch.GetCheckpoint(gravityID)
 	orchaddr, err := sdk.AccAddressFromBech32(msg.Orchestrator)
 	if err != nil {
@@ -240,7 +240,7 @@ func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogi
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "couldn't find logic")
 	}
 
-	gravityID := k.GetGravityID(ctx)
+	gravityID := k.GetGravityID(ctx, msg.EvmChainPrefix)
 	checkpoint := logic.GetCheckpoint(gravityID)
 	orchaddr, err := sdk.AccAddressFromBech32(msg.Orchestrator)
 	if err != nil {

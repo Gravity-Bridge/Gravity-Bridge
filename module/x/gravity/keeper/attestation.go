@@ -165,8 +165,8 @@ func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventObservation{
 			AttestationType: string(claim.GetType()),
-			BridgeContract:  k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
-			BridgeChainId:   strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			BridgeContract:  k.GetBridgeContractAddress(ctx, claim.GetEvmChainPrefix()).GetAddress().Hex(),
+			BridgeChainId:   strconv.Itoa(int(k.GetBridgeChainID(ctx, claim.GetEvmChainPrefix()))),
 			AttestationId:   string(types.GetAttestationKey(claim.GetEvmChainPrefix(), claim.GetEventNonce(), hash)),
 			Nonce:           fmt.Sprint(claim.GetEventNonce()),
 		},

@@ -158,6 +158,7 @@ func (k Keeper) GetParamsIfSet(ctx sdk.Context) (params types.Params, err error)
 
 // GetParams returns the parameters from the store
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
+	params = *types.DefaultParams()
 	k.paramSpace.GetParamSet(ctx, &params)
 	return
 }
@@ -168,9 +169,9 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 }
 
 // GetBridgeContractAddress returns the bridge contract address on evm chain
-func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) *types.EthAddress {
+func (k Keeper) GetBridgeContractAddress(ctx sdk.Context, evmChainPrefix string) *types.EthAddress {
 	var a string
-	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeEthereumAddress, &a)
+	k.paramSpace.Get(ctx, types.AppendChainPrefix(types.ParamsStoreKeyBridgeEthereumAddress, evmChainPrefix), &a)
 	addr, err := types.NewEthAddress(a)
 	if err != nil {
 		panic(sdkerrors.Wrapf(err, "found invalid bridge contract address in store: %v", a))
@@ -179,9 +180,9 @@ func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) *types.EthAddress {
 }
 
 // GetBridgeChainID returns the chain id of the evm chain we are running against
-func (k Keeper) GetBridgeChainID(ctx sdk.Context) uint64 {
+func (k Keeper) GetBridgeChainID(ctx sdk.Context, evmChainPrefix string) uint64 {
 	var a uint64
-	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeContractChainID, &a)
+	k.paramSpace.Get(ctx, types.AppendChainPrefix(types.ParamsStoreKeyBridgeContractChainID, evmChainPrefix), &a)
 	return a
 }
 
@@ -195,9 +196,9 @@ func (k Keeper) GetBridgeChainID(ctx sdk.Context) uint64 {
 // is deployed the GravityID CAN NOT BE CHANGED. Meaning that it can't just be the
 // same as the chain id since the chain id may be changed many times with each
 // successive chain in charge of the same bridge
-func (k Keeper) GetGravityID(ctx sdk.Context) string {
+func (k Keeper) GetGravityID(ctx sdk.Context, evmChainPrefix string) string {
 	var a string
-	k.paramSpace.Get(ctx, types.ParamsStoreKeyGravityID, &a)
+	k.paramSpace.Get(ctx, types.AppendChainPrefix(types.ParamsStoreKeyGravityID, evmChainPrefix), &a)
 	return a
 }
 
@@ -211,8 +212,8 @@ func (k Keeper) GetGravityID(ctx sdk.Context) string {
 // is deployed the GravityID CAN NOT BE CHANGED. Meaning that it can't just be the
 // same as the chain id since the chain id may be changed many times with each
 // successive chain in charge of the same bridge
-func (k Keeper) SetGravityID(ctx sdk.Context, v string) {
-	k.paramSpace.Set(ctx, types.ParamsStoreKeyGravityID, v)
+func (k Keeper) SetGravityID(ctx sdk.Context, evmChainPrefix string, v string) {
+	k.paramSpace.Set(ctx, types.AppendChainPrefix(types.ParamsStoreKeyGravityID, evmChainPrefix), v)
 }
 
 // logger returns a module-specific logger.
@@ -468,12 +469,19 @@ func (k Keeper) DeserializeValidatorIterator(vals []byte) stakingtypes.ValAddres
 }
 
 // Checks if the provided evm address is on the Governance blacklist
-func (k Keeper) IsOnBlacklist(ctx sdk.Context, addr types.EthAddress) bool {
+func (k Keeper) IsOnBlacklist(ctx sdk.Context, evmChainPrefix string, addr types.EthAddress) bool {
 	params := k.GetParams(ctx)
+
+	evmChainParams := params.EvmChain(evmChainPrefix)
+
+	if evmChainParams == nil {
+		return false
+	}
+
 	// Checks the address if it's inside the blacklisted address list and marks
 	// if it's inside the list.
-	for index := 0; index < len(params.EthereumBlacklist); index++ {
-		baddr, err := types.NewEthAddress(params.EthereumBlacklist[index])
+	for index := 0; index < len(evmChainParams.EthereumBlacklist); index++ {
+		baddr, err := types.NewEthAddress(evmChainParams.EthereumBlacklist[index])
 		if err != nil {
 			// this should not be possible we validate on genesis load
 			panic("unvalidated black list address!")
@@ -491,6 +499,6 @@ func (k Keeper) IsOnBlacklist(ctx sdk.Context, addr types.EthAddress) bool {
 // blacklist. (2) is not yet implemented
 // Blocking some addresses is technically motivated, if any ERC20 transfers in a batch fail the entire batch
 // becomes impossible to execute.
-func (k Keeper) InvalidSendToEthAddress(ctx sdk.Context, addr types.EthAddress, _erc20Addr types.EthAddress) bool {
-	return k.IsOnBlacklist(ctx, addr) || addr == types.ZeroAddress()
+func (k Keeper) InvalidSendToEthAddress(ctx sdk.Context, evmChainPrefix string, addr types.EthAddress, _erc20Addr types.EthAddress) bool {
+	return k.IsOnBlacklist(ctx, evmChainPrefix, addr) || addr == types.ZeroAddress()
 }

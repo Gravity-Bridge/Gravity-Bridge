@@ -36,13 +36,13 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context, evmChainPrefix string) types.V
 	// based slashing. We are storing the checkpoint that will be signed with
 	// the validators evm keys so that we know not to slash them if someone
 	// attempts to submit the signature of this validator set as evidence of bad behavior
-	checkpoint := valset.GetCheckpoint(k.GetGravityID(ctx))
+	checkpoint := valset.GetCheckpoint(k.GetGravityID(ctx, evmChainPrefix))
 	k.SetPastEthSignatureCheckpoint(ctx, evmChainPrefix, checkpoint)
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventMultisigUpdateRequest{
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
-			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			BridgeContract: k.GetBridgeContractAddress(ctx, evmChainPrefix).GetAddress().Hex(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx, evmChainPrefix))),
 			MultisigId:     fmt.Sprint(valset.Nonce),
 			Nonce:          fmt.Sprint(valset.Nonce),
 		},

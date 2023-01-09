@@ -38,7 +38,7 @@ func (k Keeper) CheckBadSignatureEvidence(
 
 func (k Keeper) checkBadSignatureEvidenceInternal(ctx sdk.Context, evmChainPrefix string, subject types.EthereumSigned, signature string) error {
 	// Get checkpoint of the supposed bad signature (fake valset, batch, or logic call submitted to evm)
-	gravityID := k.GetGravityID(ctx)
+	gravityID := k.GetGravityID(ctx, evmChainPrefix)
 	checkpoint := subject.GetCheckpoint(gravityID)
 
 	// Try to find the checkpoint in the archives. If it exists, we don't slash because

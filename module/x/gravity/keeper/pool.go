@@ -84,8 +84,8 @@ func (k Keeper) AddToOutgoingPool(
 
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventWithdrawalReceived{
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
-			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			BridgeContract: k.GetBridgeContractAddress(ctx, evmChainPrefix).GetAddress().Hex(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx, evmChainPrefix))),
 			OutgoingTxId:   strconv.Itoa(int(nextID)),
 			Nonce:          fmt.Sprint(nextID),
 		},
@@ -145,8 +145,8 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, evmChainPrefix 
 		&types.EventWithdrawCanceled{
 			Sender:         sender.String(),
 			TxId:           fmt.Sprint(txId),
-			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
-			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
+			BridgeContract: k.GetBridgeContractAddress(ctx, evmChainPrefix).GetAddress().Hex(),
+			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx, evmChainPrefix))),
 		},
 	)
 	return nil
@@ -294,7 +294,7 @@ func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, evmChainPrefix string, t
 	// in DESC order, we can safely pick the first N and have a batch with maximal fees for relaying
 	k.filterAndIterateUnbatchedTransactions(ctx, types.GetOutgoingTxPoolContractPrefix(evmChainPrefix, tokenContractAddr), func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 
-		if !k.IsOnBlacklist(ctx, *tx.DestAddress) {
+		if !k.IsOnBlacklist(ctx, evmChainPrefix, *tx.DestAddress) {
 			fee := tx.Erc20Fee
 			if fee.Contract.GetAddress() != tokenContractAddr.GetAddress() {
 				panic(fmt.Errorf("unexpected fee contract %s under key %v when getting batch fees for contract %s", fee.Contract.GetAddress().Hex(), key, tokenContractAddr.GetAddress().Hex()))

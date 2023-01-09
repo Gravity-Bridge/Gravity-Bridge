@@ -37,7 +37,7 @@ func TestConfirmHandlerCommon(t *testing.T) {
 		BatchTimeout:  420,
 	}
 
-	checkpoint := batch.GetCheckpoint(input.GravityKeeper.GetGravityID(ctx))
+	checkpoint := batch.GetCheckpoint(input.GravityKeeper.GetGravityID(ctx, EthChainPrefix))
 
 	ethSignature, err := types.NewEthereumSignature(checkpoint, privKey)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func confirmHandlerCommonWithAddress(t *testing.T, address string, testVar testI
 		BatchTimeout:  420,
 	}
 
-	checkpoint := batch.GetCheckpoint(input.GravityKeeper.GetGravityID(ctx))
+	checkpoint := batch.GetCheckpoint(input.GravityKeeper.GetGravityID(ctx, EthChainPrefix))
 
 	ethSignature, err := types.NewEthereumSignature(checkpoint, privKey)
 	require.NoError(t, err)

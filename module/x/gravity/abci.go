@@ -102,8 +102,15 @@ func slashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChainPre
 // an attestation that has not passed the threshold
 func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	params := k.GetParams(ctx)
+
+	evmChainParams := params.EvmChain(evmChainPrefix)
+
+	if evmChainParams == nil {
+		return
+	}
+
 	// bridge is currently disabled, do not process attestations from evm chain
-	if !params.BridgeActive {
+	if !evmChainParams.BridgeActive {
 		return
 	}
 

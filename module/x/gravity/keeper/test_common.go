@@ -226,25 +226,7 @@ var (
 	}
 
 	// TestingGravityParams is a set of gravity params for testing
-	TestingGravityParams = types.Params{
-		GravityId:                    "testgravityid",
-		ContractSourceHash:           "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713",
-		BridgeEthereumAddress:        "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf",
-		BridgeChainId:                11,
-		SignedValsetsWindow:          10,
-		SignedBatchesWindow:          10,
-		SignedLogicCallsWindow:       10,
-		TargetBatchTimeout:           60001,
-		AverageBlockTime:             5000,
-		AverageEthereumBlockTime:     15000,
-		SlashFractionValset:          sdk.NewDecWithPrec(1, 2),
-		SlashFractionBatch:           sdk.NewDecWithPrec(1, 2),
-		SlashFractionLogicCall:       sdk.Dec{},
-		UnbondSlashingValsetsWindow:  15,
-		SlashFractionBadEthSignature: sdk.NewDecWithPrec(1, 2),
-		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
-		BridgeActive:                 true,
-	}
+	TestingGravityParams = *types.DefaultParams()
 
 	EvmChains = []types.EvmChain{
 		{EvmChainPrefix: EthChainPrefix, EvmChainName: "Ethereum Mainnet", EvmChainNetVersion: 1},
@@ -664,6 +646,32 @@ func CreateTestEnv(t *testing.T) TestInput {
 		k.setID(ctx, 0, types.AppendChainPrefix(types.KeyLastOutgoingBatchID, evmChain.EvmChainPrefix))
 		k.SetEvmChainData(ctx, evmChain)
 	}
+
+	// TestingGravityParams = types.Params{
+
+	TestingGravityParams.SignedValsetsWindow = 10
+	TestingGravityParams.SignedBatchesWindow = 10
+	TestingGravityParams.SignedLogicCallsWindow = 10
+	TestingGravityParams.TargetBatchTimeout = 60001
+	TestingGravityParams.AverageBlockTime = 5000
+
+	TestingGravityParams.SlashFractionValset = sdk.NewDecWithPrec(1, 2)
+	TestingGravityParams.SlashFractionBatch = sdk.NewDecWithPrec(1, 2)
+	TestingGravityParams.SlashFractionLogicCall = sdk.Dec{}
+	TestingGravityParams.UnbondSlashingValsetsWindow = 15
+	TestingGravityParams.SlashFractionBadEthSignature = sdk.NewDecWithPrec(1, 2)
+	TestingGravityParams.ValsetReward = sdk.Coin{Denom: "", Amount: sdk.ZeroInt()}
+
+	// update 2 chains
+	chain1 := TestingGravityParams.EvmChain(EthChainPrefix)
+	chain1.ContractSourceHash = "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713"
+	chain1.BridgeEthereumAddress = "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf"
+	chain1.BridgeChainId = 1
+
+	chain2 := TestingGravityParams.EvmChain(BscChainPrefix)
+	chain2.ContractSourceHash = "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713"
+	chain2.BridgeEthereumAddress = "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf"
+	chain2.BridgeChainId = 2
 
 	k.SetParams(ctx, TestingGravityParams)
 

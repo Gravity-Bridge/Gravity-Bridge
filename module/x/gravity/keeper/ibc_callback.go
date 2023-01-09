@@ -128,7 +128,7 @@ func (k Keeper) OnRecvPacket(
 		return channeltypes.NewErrorAcknowledgement(err.Error())
 	}
 
-	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
+	if k.InvalidSendToEthAddress(ctx, evmChainPrefix, *dest, *erc20) {
 		return channeltypes.NewErrorAcknowledgement(sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted").Error())
 	}
 
