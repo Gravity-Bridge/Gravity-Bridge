@@ -84,7 +84,7 @@ pub async fn send_to_cosmos(
     }
 
     info!("sending to on cosmos {}", cosmos_destination);
-    let encoded_destination_address = Token::String(cosmos_destination.to_string());
+    let encoded_destination_address = Token::String(cosmos_destination);
 
     let tx_hash = web3
         .send_transaction(
