@@ -4,11 +4,13 @@ use crate::config::load_keys;
 use crate::utils::print_relaying_explanation;
 use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
+use cosmos_gravity::query::query_evm_chain_from_net_version;
 use deep_space::{CosmosPrivateKey, PrivateKey};
 use gravity_utils::connection_prep::check_for_fee;
 use gravity_utils::connection_prep::{
     check_for_eth, create_rpc_connections, wait_for_cosmos_node_ready,
 };
+use gravity_utils::get_with_retry::get_net_version_with_retry;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::RelayerConfig;
 use relayer::main_loop::all_relayer_loops;
@@ -26,7 +28,7 @@ pub async fn relayer(
     let ethereum_rpc = args.ethereum_rpc;
     let ethereum_key = args.ethereum_key;
     let cosmos_key = args.cosmos_phrase;
-    let evm_chain_prefix = args.evm_chain_prefix;
+
     let connections = create_rpc_connections(
         address_prefix,
         Some(cosmos_grpc),
@@ -72,6 +74,17 @@ pub async fn relayer(
     let web3 = connections.web3.unwrap();
     let mut grpc = connections.grpc.unwrap();
 
+    let net_version = get_net_version_with_retry(&web3).await;
+
+    // get correct evm_chain from rpc by querying net_id
+    let evm_chain_prefix = match query_evm_chain_from_net_version(&mut grpc, net_version).await {
+        Some(evm_chain) => evm_chain.evm_chain_prefix,
+        None => {
+            error!("Could not find the matching net version of evm chains on the network. Network from eth-rpc: {}", net_version);
+            return;
+        }
+    };
+
     // check if the cosmos node is syncing, if so wait for it
     // we can't move any steps above this because they may fail on an incorrect
     // historic chain state while syncing occurs
@@ -83,11 +96,17 @@ pub async fn relayer(
         .await
         .expect("Failed to get Gravity Bridge module parameters!");
 
+    let evm_chain_params = params
+        .evm_chain_params
+        .iter()
+        .find(|p| p.evm_chain_prefix.eq(&evm_chain_prefix))
+        .expect("Failed to get evm chain params");
+
     // get the gravity contract address, if not provided
     let contract_address = if let Some(c) = args.gravity_contract_address {
         c
     } else {
-        let c = params.bridge_ethereum_address.parse();
+        let c = evm_chain_params.bridge_ethereum_address.parse();
 
         match c {
             Ok(v) => {
@@ -127,7 +146,7 @@ pub async fn relayer(
         grpc,
         &evm_chain_prefix,
         contract_address,
-        params.gravity_id,
+        evm_chain_params.gravity_id.clone(),
         args.fees,
         config,
     )

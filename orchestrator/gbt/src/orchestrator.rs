@@ -4,10 +4,9 @@ use crate::config::load_keys;
 use crate::utils::print_relaying_explanation;
 use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
+use cosmos_gravity::query::query_evm_chain_from_net_version;
 use deep_space::{CosmosPrivateKey, PrivateKey};
 use futures::future::join_all;
-use gravity_proto::gravity::EvmChain;
-use gravity_proto::gravity::QueryListEvmChains;
 use gravity_utils::connection_prep::{
     check_delegate_addresses, check_for_eth, wait_for_cosmos_node_ready,
 };
@@ -126,26 +125,6 @@ pub async fn orchestrator(
         .await
         .expect("Failed to get Gravity Bridge module parameters!");
 
-    // get the gravity contract address, if not provided
-    let contract_address = if let Some(c) = args.gravity_contract_address {
-        c
-    } else {
-        let c = params.bridge_ethereum_address.parse();
-        match c {
-            Ok(v) => {
-                if v == *ZERO_ADDRESS {
-                    error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-                    exit(1);
-                }
-                c.unwrap()
-            }
-            Err(_) => {
-                error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-                exit(1);
-            }
-        }
-    };
-
     if config.orchestrator.relayer_enabled {
         // setup and explain relayer settings
         if config.relayer.batch_request_mode != BatchRequestMode::None {
@@ -162,36 +141,46 @@ pub async fn orchestrator(
         metrics_server(&config.metrics);
     };
 
+    let contact = connections.contact.unwrap();
     let mut grpc_client = connections.grpc.unwrap();
 
-    let list_evm_chains = grpc_client
-        .get_list_evm_chains(QueryListEvmChains { limit: 0 })
-        .await;
+    // get correct evm_chain from rpc by querying net_id
+    let evm_chain_prefix = match query_evm_chain_from_net_version(&mut grpc_client, net_version)
+        .await
+    {
+        Some(evm_chain) => evm_chain.evm_chain_prefix,
+        None => {
+            error!("Could not find the matching net version of evm chains on the network. Network from eth-rpc: {}", net_version);
+            return;
+        }
+    };
 
-    if let Err(status) = list_evm_chains {
-        warn!(
-            "Received an error when querying for evm chains: {}",
-            status.message()
-        );
-        return;
-    }
+    let evm_chain_params = params
+        .evm_chain_params
+        .iter()
+        .find(|p| p.evm_chain_prefix.eq(&evm_chain_prefix))
+        .expect("Failed to get evm chain params");
 
-    let contact = connections.contact.unwrap();
-    let list_evm_chains = list_evm_chains.unwrap().into_inner().evm_chains;
-    let evm_chain_option = list_evm_chains
-        .into_iter()
-        .find(|chain: &EvmChain| -> bool {
-            if chain.evm_chain_net_version.eq(&net_version) {
-                return true;
+    // get the gravity contract address, if not provided
+    let contract_address = if let Some(c) = args.gravity_contract_address {
+        c
+    } else {
+        let c = evm_chain_params.bridge_ethereum_address.parse();
+        match c {
+            Ok(v) => {
+                if v == *ZERO_ADDRESS {
+                    error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
+                    exit(1);
+                }
+                c.unwrap()
             }
-            false
-        });
+            Err(_) => {
+                error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
+                exit(1);
+            }
+        }
+    };
 
-    if evm_chain_option.is_none() {
-        error!("Could not find the matching net version of evm chains on the network. Network from eth-rpc: {}", net_version);
-        return;
-    }
-    let evm_chain = evm_chain_option.unwrap();
     let mut futures = vec![];
     futures.push(orchestrator_main_loop(
         cosmos_key,
@@ -199,9 +188,9 @@ pub async fn orchestrator(
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
-        &evm_chain.evm_chain_prefix,
+        &evm_chain_prefix,
         contract_address,
-        params.gravity_id.clone(),
+        evm_chain_params.gravity_id.clone(),
         fee.clone(),
         config.clone(),
     ));

@@ -1,11 +1,14 @@
 use crate::{args::DeployErc20RepresentationOpts, utils::TIMEOUT};
 use clarity::{utils::display_uint256_as_address, Address as EthAddress};
-use cosmos_gravity::query::get_gravity_params;
+use cosmos_gravity::query::{get_gravity_params, query_evm_chain_from_net_version};
 use ethereum_gravity::deploy_erc20::deploy_erc20;
 use gravity_proto::gravity::{
     MsgErc20DeployedClaim, QueryAttestationsRequest, QueryDenomToErc20Request,
 };
-use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
+use gravity_utils::{
+    connection_prep::{check_for_eth, create_rpc_connections},
+    get_with_retry::get_net_version_with_retry,
+};
 use prost::{bytes::BytesMut, Message};
 use std::{
     process::exit,
@@ -22,15 +25,22 @@ pub async fn deploy_erc20_representation(
     let ethereum_rpc = args.ethereum_rpc;
     let ethereum_key = args.ethereum_key;
     let denom = args.cosmos_denom;
-    let evm_chain_prefix = args.evm_chain_prefix;
 
     let connections =
         create_rpc_connections(address_prefix, Some(grpc_url), Some(ethereum_rpc), TIMEOUT).await;
     let web3 = connections.web3.unwrap();
-
     let contact = connections.contact.unwrap();
-
     let mut grpc = connections.grpc.unwrap();
+
+    let net_version = get_net_version_with_retry(&web3).await;
+    // get correct evm_chain from rpc by querying net_id
+    let evm_chain_prefix = match query_evm_chain_from_net_version(&mut grpc, net_version).await {
+        Some(evm_chain) => evm_chain.evm_chain_prefix,
+        None => {
+            error!("Could not find the matching net version of evm chains on the network. Network from eth-rpc: {}", net_version);
+            return;
+        }
+    };
 
     let ethereum_public_key = ethereum_key.to_address();
     check_for_eth(ethereum_public_key, &web3).await;
@@ -39,7 +49,12 @@ pub async fn deploy_erc20_representation(
         c
     } else {
         let params = get_gravity_params(&mut grpc).await.unwrap();
-        let c = params.bridge_ethereum_address.parse();
+        let evm_chain_params = params
+            .evm_chain_params
+            .iter()
+            .find(|p| p.evm_chain_prefix.eq(&evm_chain_prefix))
+            .expect("Failed to get evm chain params");
+        let c = evm_chain_params.bridge_ethereum_address.parse();
         if c.is_err() {
             error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
             exit(1);

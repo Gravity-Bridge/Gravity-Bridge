@@ -20,6 +20,7 @@ use web30::client::Web3;
 pub async fn valset_rewards_test(
     web30: &Web3,
     grpc_client: GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
@@ -83,9 +84,17 @@ pub async fn valset_rewards_test(
     wait_for_proposals_to_execute(contact).await;
 
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
+    let evm_chain_params = params
+        .evm_chain_params
+        .iter()
+        .find(|p| p.evm_chain_prefix.eq(evm_chain_prefix))
+        .unwrap();
     // check that params have changed
-    assert_eq!(params.bridge_chain_id, 1);
-    assert_eq!(params.bridge_ethereum_address, gravity_address.to_string());
+    assert_eq!(evm_chain_params.bridge_chain_id, 1);
+    assert_eq!(
+        evm_chain_params.bridge_ethereum_address,
+        gravity_address.to_string()
+    );
 
     // trigger a valset update
     test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;

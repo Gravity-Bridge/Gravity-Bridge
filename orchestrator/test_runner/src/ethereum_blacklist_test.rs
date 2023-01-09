@@ -11,6 +11,7 @@ use tonic::transport::Channel;
 
 pub async fn ethereum_blacklist_test(
     grpc_client: GravityQueryClient<Channel>,
+    evm_chain_prefix: &str,
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
 ) {
@@ -45,8 +46,13 @@ pub async fn ethereum_blacklist_test(
     wait_for_proposals_to_execute(contact).await;
 
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
+    let evm_chain_params = params
+        .evm_chain_params
+        .iter()
+        .find(|p| p.evm_chain_prefix.eq(evm_chain_prefix))
+        .unwrap();
     // check that params have changed
-    assert_eq!(params.ethereum_blacklist, blocked_addresses);
+    assert_eq!(evm_chain_params.ethereum_blacklist, blocked_addresses);
 
     info!("Successfully modified the blacklist!");
 }

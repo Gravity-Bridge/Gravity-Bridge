@@ -351,6 +351,13 @@ pub async fn start_orchestrators(
             .await
             .expect("Failed to get Gravity Bridge module parameters!");
 
+        let evm_chain_params = params
+            .evm_chain_params
+            .iter()
+            .find(|p| p.evm_chain_prefix.eq(EVM_CHAIN_PREFIX.as_str()))
+            .expect("Failed to get evm chain params")
+            .clone();
+
         // we have only one actual futures executor thread (see the actix runtime tag on our main function)
         // but that will execute all the orchestrators in our test in parallel
         thread::spawn(move || {
@@ -369,7 +376,7 @@ pub async fn start_orchestrators(
                 grpc_client,
                 EVM_CHAIN_PREFIX.as_str(),
                 gravity_address,
-                params.gravity_id,
+                evm_chain_params.gravity_id,
                 get_fee(None),
                 config,
             );

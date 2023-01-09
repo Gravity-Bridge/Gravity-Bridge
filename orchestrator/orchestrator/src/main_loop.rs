@@ -282,11 +282,27 @@ pub async fn eth_signer_main_loop(
                 continue;
             }
         };
+
         let blocks_until_slashing = min(
             min(params.signed_valsets_window, params.signed_batches_window),
             params.signed_logic_calls_window,
         );
-        let gravity_id = params.gravity_id;
+
+        let evm_chain_params = match params
+            .evm_chain_params
+            .iter()
+            .find(|p| p.evm_chain_prefix.eq(evm_chain_prefix))
+        {
+            Some(p) => p,
+            None => {
+                error!(
+                    "Failed to get Evm chain params with evm chain prefix {}",
+                    evm_chain_prefix
+                );
+                continue;
+            }
+        };
+        let gravity_id = evm_chain_params.gravity_id.as_str();
 
         let latest_cosmos_block = contact.get_chain_status().await;
         match latest_cosmos_block {
@@ -347,7 +363,7 @@ pub async fn eth_signer_main_loop(
                         fee.clone(),
                         valsets,
                         cosmos_key,
-                        gravity_id.clone(),
+                        gravity_id.to_string(),
                     )
                     .await;
                     trace!("Valset confirm result is {:?}", res);
@@ -386,7 +402,7 @@ pub async fn eth_signer_main_loop(
                         fee.clone(),
                         last_unsigned_batches,
                         cosmos_key,
-                        gravity_id.clone(),
+                        gravity_id.to_string(),
                     )
                     .await;
                     trace!("Batch confirm result is {:?}", res);
@@ -423,7 +439,7 @@ pub async fn eth_signer_main_loop(
                         fee.clone(),
                         last_unsigned_calls,
                         cosmos_key,
-                        gravity_id.clone(),
+                        gravity_id.to_string(),
                     )
                     .await;
                     trace!("call confirm result is {:?}", res);

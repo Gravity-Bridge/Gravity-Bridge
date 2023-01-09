@@ -1243,86 +1243,80 @@ pub mod msg_client {
         }
     }
 }
-/// The slashing fractions for the various gravity related slashing conditions. The first three
-/// refer to not submitting a particular message, the third for submitting a different claim
-/// for the same Ethereum event
+/// The slashing fractions for the various gravity related slashing conditions.
+/// The first three refer to not submitting a particular message, the third for
+/// submitting a different claim for the same Ethereum event
 ///
 /// unbond_slashing_valsets_window
 ///
-/// The unbond slashing valsets window is used to determine how many blocks after starting to unbond
-/// a validator needs to continue signing blocks. The goal of this paramater is that when a validator leaves
-/// the set, if their leaving creates enough change in the validator set to justify an update they will sign
-/// a validator set update for the Ethereum bridge that does not include themselves. Allowing us to remove them
-/// from the Ethereum bridge and replace them with the new set gracefully.
+/// The unbond slashing valsets window is used to determine how many blocks after
+/// starting to unbond a validator needs to continue signing blocks. The goal of
+/// this paramater is that when a validator leaves the set, if their leaving
+/// creates enough change in the validator set to justify an update they will
+/// sign a validator set update for the Ethereum bridge that does not include
+/// themselves. Allowing us to remove them from the Ethereum bridge and replace
+/// them with the new set gracefully.
 ///
 /// valset_reward
 ///
-/// These parameters allow for the bridge oracle to resolve a fork on the Ethereum chain without halting
-/// the chain. Once set reset bridge state will roll back events to the nonce provided in reset_bridge_nonce
-/// if and only if those events have not yet been observed (executed on the Cosmos chain). This allows for easy
-/// handling of cases where for example an Ethereum hardfork has occured and more than 1/3 of the vlaidtor set
-/// disagrees with the rest. Normally this would require a chain halt, manual genesis editing and restar to resolve
-/// with this feature a governance proposal can be used instead
+/// These parameters allow for the bridge oracle to resolve a fork on the
+/// Ethereum chain without halting the chain. Once set reset bridge state will
+/// roll back events to the nonce provided in reset_bridge_nonce if and only if
+/// those events have not yet been observed (executed on the Cosmos chain). This
+/// allows for easy handling of cases where for example an Ethereum hardfork has
+/// occured and more than 1/3 of the vlaidtor set disagrees with the rest.
+/// Normally this would require a chain halt, manual genesis editing and restar
+/// to resolve with this feature a governance proposal can be used instead
 ///
 /// bridge_active
 ///
-/// This boolean flag can be used by governance to temporarily halt the bridge due to a vulnerability or other issue
-/// In this context halting the bridge means prevent the execution of any oracle events from Ethereum and preventing
+/// This boolean flag can be used by governance to temporarily halt the bridge
+/// due to a vulnerability or other issue In this context halting the bridge
+/// means prevent the execution of any oracle events from Ethereum and preventing
 /// the creation of new batches that may be relayed to Ethereum.
 /// This does not prevent the creation of validator sets
-/// or slashing for not submitting validator set signatures as either of these might allow key signers to leave the validator
-/// set and steal funds on Ethereum without consequence.
-/// The practical outcome of this flag being set to 'false' is that deposits from Ethereum will not show up and withdraws from
+/// or slashing for not submitting validator set signatures as either of these
+/// might allow key signers to leave the validator set and steal funds on
+/// Ethereum without consequence. The practical outcome of this flag being set to
+/// 'false' is that deposits from Ethereum will not show up and withdraws from
 /// Cosmos will not execute on Ethereum.
 ///
 /// min_chain_fee_basis_points
 ///
-/// The minimum SendToEth `chain_fee` amount, in terms of basis points. e.g. 10% fee = 1000, and 0.02% fee = 2
+/// The minimum SendToEth `chain_fee` amount, in terms of basis points. e.g. 10%
+/// fee = 1000, and 0.02% fee = 2
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Params {
-    #[prost(string, tag = "1")]
-    pub gravity_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub contract_source_hash: ::prost::alloc::string::String,
-    #[prost(string, tag = "4")]
-    pub bridge_ethereum_address: ::prost::alloc::string::String,
-    #[prost(uint64, tag = "5")]
-    pub bridge_chain_id: u64,
-    #[prost(uint64, tag = "6")]
+    #[prost(uint64, tag = "1")]
     pub signed_valsets_window: u64,
-    #[prost(uint64, tag = "7")]
+    #[prost(uint64, tag = "2")]
     pub signed_batches_window: u64,
-    #[prost(uint64, tag = "8")]
+    #[prost(uint64, tag = "3")]
     pub signed_logic_calls_window: u64,
-    #[prost(uint64, tag = "9")]
+    #[prost(uint64, tag = "4")]
     pub target_batch_timeout: u64,
-    #[prost(uint64, tag = "10")]
+    #[prost(uint64, tag = "5")]
     pub average_block_time: u64,
-    #[prost(uint64, tag = "11")]
-    pub average_ethereum_block_time: u64,
-    #[prost(bytes = "vec", tag = "12")]
+    #[prost(bytes = "vec", tag = "6")]
     pub slash_fraction_valset: ::prost::alloc::vec::Vec<u8>,
-    #[prost(bytes = "vec", tag = "13")]
+    #[prost(bytes = "vec", tag = "7")]
     pub slash_fraction_batch: ::prost::alloc::vec::Vec<u8>,
-    #[prost(bytes = "vec", tag = "14")]
+    #[prost(bytes = "vec", tag = "8")]
     pub slash_fraction_logic_call: ::prost::alloc::vec::Vec<u8>,
-    #[prost(uint64, tag = "15")]
+    #[prost(uint64, tag = "9")]
     pub unbond_slashing_valsets_window: u64,
-    #[prost(bytes = "vec", tag = "16")]
+    #[prost(bytes = "vec", tag = "10")]
     pub slash_fraction_bad_eth_signature: ::prost::alloc::vec::Vec<u8>,
-    #[prost(message, optional, tag = "17")]
+    #[prost(message, optional, tag = "11")]
     pub valset_reward: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
-    #[prost(bool, tag = "18")]
-    pub bridge_active: bool,
-    /// addresses on this blacklist are forbidden from depositing or withdrawing
-    /// from Ethereum to the bridge
-    #[prost(string, repeated, tag = "19")]
-    pub ethereum_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(uint64, tag = "20")]
+    #[prost(uint64, tag = "12")]
     pub min_chain_fee_basis_points: u64,
+    #[prost(message, repeated, tag = "13")]
+    pub evm_chain_params: ::prost::alloc::vec::Vec<EvmChainParams>,
 }
-/// GenesisState struct, containing all persistant data required by the Gravity module
+/// GenesisState struct, containing all persistant data required by the Gravity
+/// module
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GenesisState {
@@ -1331,7 +1325,35 @@ pub struct GenesisState {
     #[prost(message, repeated, tag = "2")]
     pub evm_chains: ::prost::alloc::vec::Vec<EvmChainData>,
 }
-/// EvmChainData struct, containing all persistant data per EVM chain required by the Gravity module
+/// bridge_chain_id:
+/// the unique identifier of the Ethereum chain, this is a reference value
+/// only and is not actually used by any Gravity code
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EvmChainParams {
+    #[prost(string, tag = "1")]
+    pub gravity_id: ::prost::alloc::string::String,
+    #[prost(bool, tag = "2")]
+    pub bridge_active: bool,
+    #[prost(string, tag = "3")]
+    pub contract_source_hash: ::prost::alloc::string::String,
+    /// from Ethereum to the bridge
+    #[prost(string, tag = "4")]
+    pub bridge_ethereum_address: ::prost::alloc::string::String,
+    /// net id of evm chain
+    #[prost(uint64, tag = "5")]
+    pub bridge_chain_id: u64,
+    #[prost(uint64, tag = "6")]
+    pub average_ethereum_block_time: u64,
+    /// addresses on this blacklist are forbidden from depositing or withdrawing
+    #[prost(string, repeated, tag = "7")]
+    pub ethereum_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// use this for matching
+    #[prost(string, tag = "8")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
+}
+/// EvmChainData struct, containing all persistant data per EVM chain required by
+/// the Gravity module
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EvmChainData {
@@ -1373,7 +1395,8 @@ pub struct EvmChain {
     #[prost(uint64, tag = "3")]
     pub evm_chain_net_version: u64,
 }
-/// GravityCounters contains the many noces and counters required to maintain the bridge state in the genesis
+/// GravityCounters contains the many noces and counters required to maintain the
+/// bridge state in the genesis
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GravityNonces {

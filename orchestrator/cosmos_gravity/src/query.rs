@@ -5,6 +5,7 @@ use deep_space::address::Address;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::EvmChain;
 use gravity_proto::gravity::Params;
 use gravity_proto::gravity::QueryAttestationsRequest;
 use gravity_proto::gravity::QueryBatchConfirmsRequest;
@@ -20,6 +21,7 @@ use gravity_proto::gravity::QueryLastPendingBatchRequestByAddrRequest;
 use gravity_proto::gravity::QueryLastPendingLogicCallByAddrRequest;
 use gravity_proto::gravity::QueryLastPendingValsetRequestByAddrRequest;
 use gravity_proto::gravity::QueryLastValsetRequestsRequest;
+use gravity_proto::gravity::QueryListEvmChains;
 use gravity_proto::gravity::QueryLogicConfirmsRequest;
 use gravity_proto::gravity::QueryOutgoingLogicCallsRequest;
 use gravity_proto::gravity::QueryOutgoingTxBatchesRequest;
@@ -410,4 +412,27 @@ pub async fn get_min_chain_fee_basis_points(contact: &Contact) -> Result<u64, Co
         }
         None => 0u64,
     })
+}
+
+/// Queries the Gravity chain for Pending Ibc Auto Forwards, returning an empty vec if there is an error
+pub async fn query_evm_chain_from_net_version(
+    grpc_client: &mut GravityQueryClient<Channel>,
+    net_version: u64,
+) -> Option<EvmChain> {
+    let list_evm_chains = grpc_client
+        .get_list_evm_chains(QueryListEvmChains { limit: 0 })
+        .await;
+
+    if let Err(status) = list_evm_chains {
+        warn!(
+            "Received an error when querying for evm chains: {}",
+            status.message()
+        );
+        return None;
+    }
+
+    let list_evm_chains = list_evm_chains.unwrap().into_inner().evm_chains;
+    list_evm_chains
+        .into_iter()
+        .find(|chain: &EvmChain| chain.evm_chain_net_version.eq(&net_version))
 }

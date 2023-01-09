@@ -321,7 +321,15 @@ pub async fn main() {
             return;
         } else if test_type == "VALSET_REWARDS" {
             info!("Starting Valset rewards test");
-            valset_rewards_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            valset_rewards_test(
+                &web30,
+                grpc_client,
+                EVM_CHAIN_PREFIX.as_str(),
+                &contact,
+                keys,
+                gravity_address,
+            )
+            .await;
             return;
         } else if test_type == "V2_HAPPY_PATH" || test_type == "HAPPY_PATH_V2" {
             info!("Starting happy path for Gravity v2");
@@ -397,6 +405,7 @@ pub async fn main() {
             pause_bridge_test(
                 &web30,
                 grpc_client,
+                EVM_CHAIN_PREFIX.as_str(),
                 &contact,
                 keys,
                 gravity_address,
@@ -410,7 +419,7 @@ pub async fn main() {
             return;
         } else if test_type == "ETHEREUM_BLACKLIST" {
             info!("Starting ethereum blacklist test");
-            ethereum_blacklist_test(grpc_client, &contact, keys).await;
+            ethereum_blacklist_test(grpc_client, EVM_CHAIN_PREFIX.as_str(), &contact, keys).await;
             return;
         } else if test_type == "AIRDROP_PROPOSAL" {
             info!("Starting airdrop governance proposal test");
