@@ -497,9 +497,6 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 	if e.BatchNonce == 0 {
 		return fmt.Errorf("batch_nonce == 0")
 	}
-	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty")
-	}
 	if err := ValidateEthAddress(e.TokenContract); err != nil {
 		return sdkerrors.Wrap(err, "erc20 token")
 	}
@@ -572,9 +569,6 @@ func (e *MsgERC20DeployedClaim) ValidateBasic() error {
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
 	}
-	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty")
-	}
 	return nil
 }
 
@@ -639,9 +633,6 @@ func (e *MsgLogicCallExecutedClaim) ValidateBasic() error {
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
 	}
-	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty")
-	}
 	return nil
 }
 
@@ -705,9 +696,6 @@ func (e *MsgValsetUpdatedClaim) ValidateBasic() error {
 	}
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
-	}
-	if e.EvmChainPrefix == "" {
-		return fmt.Errorf("evm_chain_prefix is empty")
 	}
 	err := ValidateEthAddress(e.RewardToken)
 	if err != nil {

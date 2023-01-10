@@ -72,12 +72,18 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.EvmChainDat
 			panic("couldn't cast to claim")
 		}
 
-		// TODO: block height?
+		// block height?
+		if claim.GetEthBlockHeight() == 0 {
+			panic("eth block height can not be zero")
+		}
 		hash, err := claim.ClaimHash()
 		if err != nil {
 			panic(fmt.Errorf("error when computing ClaimHash for %v", hash))
 		}
-		k.SetAttestation(ctx, evmChainPrefix, claim.GetEventNonce(), hash, &att)
+		// these claims always have the same evmChainPrefix even not set
+		claim.SetEvmChainPrefix(evmChainPrefix)
+
+		k.SetAttestation(ctx, claim.GetEvmChainPrefix(), claim.GetEventNonce(), hash, &att)
 	}
 
 	// reset attestation state of specific validators
@@ -254,8 +260,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 
 		evmChains[ci] = types.EvmChainData{
 			EvmChain: types.EvmChain{
-				EvmChainPrefix: evmChain.EvmChainPrefix,
-				EvmChainName:   evmChain.EvmChainName,
+				EvmChainNetVersion: evmChain.EvmChainNetVersion,
+				EvmChainPrefix:     evmChain.EvmChainPrefix,
+				EvmChainName:       evmChain.EvmChainName,
 			},
 			GravityNonces: types.GravityNonces{
 				LatestValsetNonce:          k.GetLatestValsetNonce(ctx, evmChain.EvmChainPrefix),
