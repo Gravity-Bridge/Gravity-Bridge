@@ -519,7 +519,7 @@ func TestBatchTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Greater(t, params.AverageBlockTime, uint64(0))
-	evmChainParams, _ := params.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams := params.GetEvmChain(evmChain.EvmChainPrefix)
 
 	require.Greater(t, evmChainParams.AverageEthereumBlockTime, uint64(0))
 

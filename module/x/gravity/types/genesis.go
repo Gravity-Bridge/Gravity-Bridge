@@ -86,7 +86,7 @@ var (
 
 		MinChainFeeBasisPoints: 0,
 
-		EvmChainParams: []EvmChainParams{
+		EvmChainParams: []*EvmChainParams{
 			{
 				EvmChainPrefix:           "gravity",
 				GravityId:                "",
@@ -154,7 +154,7 @@ func DefaultParams() *Params {
 		ValsetReward:                 sdk.Coin{Denom: GravityDenomPrefix, Amount: sdk.ZeroInt()},
 
 		MinChainFeeBasisPoints: 2,
-		EvmChainParams: []EvmChainParams{
+		EvmChainParams: []*EvmChainParams{
 			{
 				EvmChainPrefix:           GravityDenomPrefix,
 				GravityId:                "oraibridge-2",
@@ -169,14 +169,14 @@ func DefaultParams() *Params {
 	}
 }
 
-func (p *Params) EvmChain(evmChainPrefix string) (EvmChainParams, error) {
+func (p *Params) GetEvmChain(evmChainPrefix string) *EvmChainParams {
 	for _, v := range p.EvmChainParams {
 		if v.EvmChainPrefix == evmChainPrefix {
 			// Found!
-			return v, nil
+			return v
 		}
 	}
-	return EvmChainParams{}, sdkerrors.Wrap(ErrEvmChainNotFound, "evm chain not found")
+	return nil
 }
 
 // ValidateBasic checks that the parameters have valid values.
@@ -292,6 +292,16 @@ func (p Params) Equal(p2 Params) bool {
 }
 
 func validateEvmChainParams(i interface{}) error {
+	evmChainParams, ok := i.([]*EvmChainParams)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	// validate all evm chain param
+	for _, v := range evmChainParams {
+		if err := v.ValidateBasic(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

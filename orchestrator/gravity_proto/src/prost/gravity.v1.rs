@@ -408,6 +408,8 @@ pub struct AddEvmChainProposal {
     pub evm_chain_prefix: ::prost::alloc::string::String,
     #[prost(uint64, tag = "5")]
     pub evm_chain_net_version: u64,
+    #[prost(string, tag = "6")]
+    pub gravity_id: ::prost::alloc::string::String,
 }
 /// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
 /// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards

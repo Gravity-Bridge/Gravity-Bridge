@@ -167,8 +167,9 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 	k.paramSpace.SetParamSet(ctx, &ps)
 }
 
-func (k Keeper) GetEvmChainParams(ctx sdk.Context) []types.EvmChainParams {
-	var evmChains []types.EvmChainParams
+// GetEvmChainParams only get EvmChainParams from the store
+func (k Keeper) GetEvmChainParams(ctx sdk.Context) []*types.EvmChainParams {
+	var evmChains []*types.EvmChainParams
 	k.paramSpace.Get(ctx, types.ParamStoreEvmChainParams, &evmChains)
 	return evmChains
 }
@@ -476,9 +477,9 @@ func (k Keeper) DeserializeValidatorIterator(vals []byte) stakingtypes.ValAddres
 func (k Keeper) IsOnBlacklist(ctx sdk.Context, evmChainPrefix string, addr types.EthAddress) bool {
 	params := k.GetParams(ctx)
 
-	evmChainParams, err := params.EvmChain(evmChainPrefix)
+	evmChainParams := params.GetEvmChain(evmChainPrefix)
 
-	if err != nil {
+	if evmChainParams == nil {
 		return false
 	}
 

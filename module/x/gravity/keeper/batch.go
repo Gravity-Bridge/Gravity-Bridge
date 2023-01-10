@@ -29,10 +29,10 @@ func (k Keeper) BuildOutgoingTxBatch(
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "max elements value")
 	}
 	params := k.GetParams(ctx)
-	evmChainParams, err := params.EvmChain(evmChainPrefix)
+	evmChainParams := params.GetEvmChain(evmChainPrefix)
 
-	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEmpty, "EvmChainParams not found "+evmChainPrefix)
+	if evmChainParams == nil {
+		return nil, sdkerrors.Wrap(types.ErrEmpty, "EvmChainParams not found for prefix "+evmChainPrefix)
 	}
 
 	if !evmChainParams.BridgeActive {
@@ -92,9 +92,9 @@ func (k Keeper) BuildOutgoingTxBatch(
 func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) uint64 {
 	params := k.GetParams(ctx)
 
-	evmChainParams, err := params.EvmChain(evmChainPrefix)
+	evmChainParams := params.GetEvmChain(evmChainPrefix)
 
-	if err != nil {
+	if evmChainParams == nil {
 		return 0
 	}
 

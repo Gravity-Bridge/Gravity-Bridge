@@ -731,15 +731,9 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 
 	// pause the bridge
 	params := input.GravityKeeper.GetParams(ctx)
-	evmChainParams, _ := params.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams := params.GetEvmChain(evmChain.EvmChainPrefix)
 	evmChainParams.BridgeActive = false
-	var index int
-	for i, param := range params.EvmChainParams {
-		if param.EvmChainPrefix == evmChain.EvmChainPrefix {
-			index = i
-		}
-	}
-	params.EvmChainParams[index] = evmChainParams
+
 	input.GravityKeeper.SetParams(ctx, params)
 
 	// mint some voucher first
@@ -783,7 +777,6 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 
 	// resume the bridge
 	evmChainParams.BridgeActive = true
-	params.EvmChainParams[index] = evmChainParams
 	input.GravityKeeper.SetParams(ctx, params)
 
 	// when
@@ -819,15 +812,9 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 
 	// add the blacklisted address to the blacklist
 	params := input.GravityKeeper.GetParams(ctx)
-	evmChainParams, err := params.EvmChain(evmChain.EvmChainPrefix)
+	evmChainParams := params.GetEvmChain(evmChain.EvmChainPrefix)
 	evmChainParams.EthereumBlacklist = append(evmChainParams.EthereumBlacklist, blacklistedReceiver.GetAddress().Hex())
-	var index int
-	for i, param := range params.EvmChainParams {
-		if param.EvmChainPrefix == evmChain.EvmChainPrefix {
-			index = i
-		}
-	}
-	params.EvmChainParams[index] = evmChainParams
+
 	input.GravityKeeper.SetParams(ctx, params)
 
 	// mint some voucher first

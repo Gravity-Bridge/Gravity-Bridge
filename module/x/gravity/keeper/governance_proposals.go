@@ -118,7 +118,7 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 
 	// update param to match with the new evm chain
 	params := k.GetParams(ctx)
-	evmChainParams := types.EvmChainParams{
+	evmChainParams := &types.EvmChainParams{
 		EvmChainPrefix:           p.EvmChainPrefix,
 		GravityId:                p.GravityId,
 		ContractSourceHash:       "",

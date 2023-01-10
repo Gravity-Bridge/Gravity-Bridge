@@ -56,7 +56,7 @@ func V3ToV4Params(v3Params v3.Params) types.Params {
 		ValsetReward:                 v3Params.ValsetReward,
 
 		MinChainFeeBasisPoints: minChainFeeBasisPoints,
-		EvmChainParams: []types.EvmChainParams{
+		EvmChainParams: []*types.EvmChainParams{
 			{
 				EvmChainPrefix:           v3.EthereumChainPrefix,
 				GravityId:                v3Params.GravityId,
