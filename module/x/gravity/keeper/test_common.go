@@ -230,7 +230,7 @@ var (
 
 	EvmChains = []types.EvmChain{
 		{EvmChainPrefix: EthChainPrefix, EvmChainName: "Ethereum Mainnet", EvmChainNetVersion: 1},
-		{EvmChainPrefix: BscChainPrefix, EvmChainName: "BSC Mainnet", EvmChainNetVersion: 2},
+		{EvmChainPrefix: BscChainPrefix, EvmChainName: "BSC Mainnet", EvmChainNetVersion: 56},
 	}
 )
 

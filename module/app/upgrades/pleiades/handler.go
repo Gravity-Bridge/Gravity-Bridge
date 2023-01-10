@@ -27,7 +27,7 @@ func GetPleiadesUpgradeHandler(
 			{
 				EvmChainPrefix:     EthereumChainPrefix,
 				EvmChainName:       "Binance Smart Chain",
-				EvmChainNetVersion: 5,
+				EvmChainNetVersion: 56,
 			},
 		}
 
