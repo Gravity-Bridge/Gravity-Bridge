@@ -1,0 +1,33 @@
+{
+    "title": "Change evm chain params",
+    "description": "Change evm chain params",
+    "changes": [
+        {
+            "subspace": "gravityv2",
+            "key": "EvmChainParams",
+            "value": [
+                {
+                    "gravity_id": "defaultgravityid",
+                    "bridge_active": true,
+                    "contract_source_hash": "",
+                    "bridge_ethereum_address": "0x0000000000000000000000000000000000000000",
+                    "bridge_chain_id": "0",
+                    "average_ethereum_block_time": "15000",
+                    "ethereum_blacklist": [],
+                    "evm_chain_prefix": "oraib"
+                },
+                {
+                    "gravity_id": "xyzid",
+                    "bridge_active": true,
+                    "contract_source_hash": "",
+                    "bridge_ethereum_address": "0x0000000000000000000000000000000000000000",
+                    "bridge_chain_id": "421",
+                    "average_ethereum_block_time": "15000",
+                    "ethereum_blacklist": [],
+                    "evm_chain_prefix": "foobar"
+                }
+            ]
+        }
+    ],
+    "deposit": "10000000uoraib"
+}

@@ -399,7 +399,7 @@ func CmdSendToEth() *cobra.Command {
 				Amount:         amount[0],
 				BridgeFee:      bridgeFee[0],
 				ChainFee:       chainFee[0],
-				EvmChainPrefix: args[3],
+				EvmChainPrefix: args[4],
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err

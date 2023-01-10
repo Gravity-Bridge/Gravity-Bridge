@@ -8,12 +8,12 @@ services:
       - VALIDATOR=validator1
       - CHAIN_ID=oraibridge-test
       - GRAVITY_HOME=/workspace/data
-      - GRAVITY_CONTRACT=0xb40C364e70bbD98E8aaab707A41a52A2eAF5733f # new gravity contract with admin
-      - ETH_NODE=
-      - TOKEN_CONTRACT=0xA325Ad6D9c92B55A3Fc5aD7e412B1518F96441C0
       - ADDRESS_PREFIX=oraib
     working_dir: /workspace
     volumes:
       - ./:/workspace
       # map first node data to .workspace folder
+    ports:
+      - 26657:26657
+      - 9090:9090
     tty: true

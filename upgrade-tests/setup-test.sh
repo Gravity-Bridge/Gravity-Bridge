@@ -85,4 +85,8 @@ echo "Collected $GENTXS gentx"
 # put the now final genesis.json into the correct folders
 cp /genesis.json $GRAVITY_HOME/$VALIDATOR/config/genesis.json
 
+sed -i "s/enabled-unsafe-cors *= *.*/enabled-unsafe-cors = true/g" $GRAVITY_HOME/$VALIDATOR/config/app.toml
+sed -i "s/cors_allowed_origins *= *.*/cors_allowed_origins = \[\"*\"\]/g" $GRAVITY_HOME/$VALIDATOR/config/config.toml
+sed -i "1,/\<laddr\>/{s/\<laddr\> *= *.*/laddr = \"tcp:\/\/0.0.0.0:26657\"/g}" $GRAVITY_HOME/$VALIDATOR/config/config.toml # replace exactly the string laddr with\< and \>
+
 # gravity tx ibc-transfer transfer transfer channel-0 orai18hr8jggl3xnrutfujy2jwpeu0l76azprlvgrwt 10000000000000000000000uairi --from validator1 --keyring-backend test --chain-id gravity-test -y --home /gravity/data/validator1
