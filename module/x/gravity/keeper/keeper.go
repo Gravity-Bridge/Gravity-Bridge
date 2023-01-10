@@ -168,35 +168,37 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 }
 
 // GetEvmChainParams only get EvmChainParams from the store
-func (k Keeper) GetEvmChainParams(ctx sdk.Context) []*types.EvmChainParams {
+func (k Keeper) GetEvmChainParams(ctx sdk.Context, evmChainPrefix string) *types.EvmChainParams {
 	var evmChains []*types.EvmChainParams
 	k.paramSpace.Get(ctx, types.ParamStoreEvmChainParams, &evmChains)
-	return evmChains
-}
-
-// GetBridgeContractAddress returns the bridge contract address on evm chain
-func (k Keeper) GetBridgeContractAddress(ctx sdk.Context, evmChainPrefix string) *types.EthAddress {
-	evmChains := k.GetEvmChainParams(ctx)
 	for _, chain := range evmChains {
 		if chain.EvmChainPrefix == evmChainPrefix {
-			addr, err := types.NewEthAddress(chain.BridgeEthereumAddress)
-			if err != nil {
-				ctx.Logger().Error("Found invalid bridge contract address in store: %v\n", chain.BridgeEthereumAddress)
-				return nil
-			}
-			return addr
+			return chain
 		}
 	}
 	return nil
 }
 
+// GetBridgeContractAddress returns the bridge contract address on evm chain
+func (k Keeper) GetBridgeContractAddress(ctx sdk.Context, evmChainPrefix string) *types.EthAddress {
+	chain := k.GetEvmChainParams(ctx, evmChainPrefix)
+	if chain != nil {
+		addr, err := types.NewEthAddress(chain.BridgeEthereumAddress)
+		if err != nil {
+			ctx.Logger().Error("Found invalid bridge contract address in store: %v\n", chain.BridgeEthereumAddress)
+			return nil
+		}
+		return addr
+	}
+
+	return nil
+}
+
 // GetBridgeChainID returns the chain id of the evm chain we are running against
 func (k Keeper) GetBridgeChainID(ctx sdk.Context, evmChainPrefix string) uint64 {
-	evmChains := k.GetEvmChainParams(ctx)
-	for _, chain := range evmChains {
-		if chain.EvmChainPrefix == evmChainPrefix {
-			return chain.BridgeChainId
-		}
+	chain := k.GetEvmChainParams(ctx, evmChainPrefix)
+	if chain != nil {
+		return chain.BridgeChainId
 	}
 	return 0
 }
@@ -212,11 +214,9 @@ func (k Keeper) GetBridgeChainID(ctx sdk.Context, evmChainPrefix string) uint64 
 // same as the chain id since the chain id may be changed many times with each
 // successive chain in charge of the same bridge
 func (k Keeper) GetGravityID(ctx sdk.Context, evmChainPrefix string) string {
-	evmChains := k.GetEvmChainParams(ctx)
-	for _, chain := range evmChains {
-		if chain.EvmChainPrefix == evmChainPrefix {
-			return chain.GravityId
-		}
+	chain := k.GetEvmChainParams(ctx, evmChainPrefix)
+	if chain != nil {
+		return chain.GravityId
 	}
 	return ""
 }
