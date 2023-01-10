@@ -11,5 +11,4 @@ RUN apk add upx bash jq
 WORKDIR /workspace
 COPY . /workspace/
 
-# # force it to use static lib (from above) not standard libgo_cosmwasm.so file
 RUN make install LEDGER_ENABLED=false BUILD_TAGS=muslc

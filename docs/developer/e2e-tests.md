@@ -105,8 +105,8 @@ yarn hardhat node --fork https://data-seed-prebsc-1-s1.binance.org:8545 --fork-b
 npx ts-node scripts/get-dummy-balance.ts
 
 # Add new evm chain
-gravity tx gravity add-evm-chain "goerli network" foobar "add goerli network" 100000000uoraib "foobar" --from validator1 --home data/validator1/ -y
-gravity tx gov vote 1 yes --from validator1 --home data/validator1/ -y
+gravity tx gravity add-evm-chain "goerli network 2nd" "foobar" "421" "defaultgravityid" "add goerli network 2nd" 100000000uoraib "foobar" --from validator1 --home e2e/data/validator1/ -y --keyring-backend test --chain-id gravity-test -b block --gas 2000000
+gravity tx gov vote 1 yes --from validator1 --home e2e/data/validator1/ -y
 ```
 
 <!-- oraid tx ibc-transfer transfer transfer channel-0 oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4 1orai --from validator -y -->

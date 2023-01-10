@@ -359,7 +359,7 @@
             },
             "votes": [],
             "voting_params": {
-                "voting_period": "60s"
+                "voting_period": "30s"
             }
         },
         "gravity": {
@@ -410,64 +410,22 @@
                             "reward_token": "0x0000000000000000000000000000000000000000"
                         }
                     ]
-                },
-                {
-                    "attestations": [],
-                    "batch_confirms": [],
-                    "batches": [],
-                    "delegate_keys": [
-                        {
-                            "eth_address": "0xc9B6f87d637d4774EEB54f8aC2b89dBC3D38226b",
-                            "orchestrator": "oraib1t8luzfnnrnupg6uhwr9gfdd6t7amshpj0nxh0g",
-                            "validator": "oraibvaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2su2jgqk"
-                        }
-                    ],
-                    "erc20_to_denoms": [],
-                    "evm_chain": {
-                        "evm_chain_name": "goerli testnet 2nd fork",
-                        "evm_chain_net_version": "0",
-                        "evm_chain_prefix": "testnet-goerli-2"
-                    },
-                    "gravity_nonces": {
-                        "last_batch_id": "0",
-                        "last_observed_evm_block_height": "0",
-                        "last_observed_nonce": "0",
-                        "last_slashed_batch_block": "0",
-                        "last_slashed_logic_call_block": "0",
-                        "last_slashed_valset_nonce": "0",
-                        "last_tx_pool_id": "0",
-                        "latest_valset_nonce": "1"
-                    },
-                    "logic_call_confirms": [],
-                    "logic_calls": [],
-                    "pending_ibc_auto_forwards": [],
-                    "unbatched_transfers": [],
-                    "valset_confirms": [],
-                    "valsets": [
-                        {
-                            "height": "1",
-                            "members": [
-                                {
-                                    "ethereum_address": "0xc9B6f87d637d4774EEB54f8aC2b89dBC3D38226b",
-                                    "power": "4294967296"
-                                }
-                            ],
-                            "nonce": "1",
-                            "reward_amount": "0",
-                            "reward_token": "0x0000000000000000000000000000000000000000"
-                        }
-                    ]
                 }
             ],
             "params": {
+                "evm_chain_params": [
+                    {
+                        "evm_chain_prefix": "goerli-testnet",
+                        "average_ethereum_block_time": "15000",
+                        "bridge_active": true,
+                        "bridge_chain_id": "420",
+                        "bridge_ethereum_address": "0x0000000000000000000000000000000000000000",
+                        "contract_source_hash": "",
+                        "ethereum_blacklist": [],
+                        "gravity_id": "defaultgravityid"
+                    }
+                ],
                 "average_block_time": "5000",
-                "average_ethereum_block_time": "15000",
-                "bridge_active": true,
-                "bridge_chain_id": "0",
-                "bridge_ethereum_address": "0x0000000000000000000000000000000000000000",
-                "contract_source_hash": "",
-                "ethereum_blacklist": [],
-                "gravity_id": "defaultgravityid",
                 "min_chain_fee_basis_points": "0",
                 "signed_batches_window": "10000",
                 "signed_logic_calls_window": "10000",

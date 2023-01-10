@@ -156,6 +156,8 @@ func (p AddEvmChainProposal) String() string {
   Description:    %s
   Evm Chain Name:   %s
   Evm Chain Prefix: %s
-`, p.Title, p.Description, p.EvmChainName, p.EvmChainPrefix))
+  Evm Chain Net Version : %d
+  Evm Chain Gravity Id: %s
+`, p.Title, p.Description, p.EvmChainName, p.EvmChainPrefix, p.EvmChainNetVersion, p.GravityId))
 	return b.String()
 }

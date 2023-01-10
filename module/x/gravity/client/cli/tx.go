@@ -306,9 +306,9 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 func CmdAddEvmChainProposal() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "add-evm-chain [evm-chain-name] [evm-chain-prefix] [evm-chain-net-version] [title] [initial-deposit] [description]",
+		Use:   "add-evm-chain [evm-chain-name] [evm-chain-prefix] [evm-chain-net-version] [evm-chain-gravity-id] [title] [initial-deposit] [description]",
 		Short: "Creates a governance proposal to support a new EVM chain on the network",
-		Args:  cobra.ExactArgs(6),
+		Args:  cobra.ExactArgs(7),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -316,7 +316,7 @@ func CmdAddEvmChainProposal() *cobra.Command {
 			}
 			cosmosAddr := cliCtx.GetFromAddress()
 
-			initialDeposit, err := sdk.ParseCoinsNormalized(args[4])
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[5])
 			if err != nil {
 				return sdkerrors.Wrap(err, "bad initial deposit amount")
 			}
@@ -331,8 +331,9 @@ func CmdAddEvmChainProposal() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("EVM chain net version should be an unsigned integer")
 			}
+			gravityId := args[3]
 
-			proposal := &types.AddEvmChainProposal{EvmChainName: evmChainName, EvmChainPrefix: evmChainPrefix, EvmChainNetVersion: evmChainNetVersion, Title: args[3], Description: args[5]}
+			proposal := &types.AddEvmChainProposal{EvmChainName: evmChainName, EvmChainPrefix: evmChainPrefix, EvmChainNetVersion: evmChainNetVersion, GravityId: gravityId, Title: args[4], Description: args[6]}
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
 				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
