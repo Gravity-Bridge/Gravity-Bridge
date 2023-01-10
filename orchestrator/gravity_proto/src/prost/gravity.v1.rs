@@ -1315,7 +1315,7 @@ pub struct Params {
     #[prost(uint64, tag = "12")]
     pub min_chain_fee_basis_points: u64,
     #[prost(message, repeated, tag = "13")]
-    pub evm_chain_params: ::prost::alloc::vec::Vec<EvmChainParams>,
+    pub evm_chain_params: ::prost::alloc::vec::Vec<EvmChainParam>,
 }
 /// GenesisState struct, containing all persistant data required by the Gravity
 /// module
@@ -1332,7 +1332,7 @@ pub struct GenesisState {
 /// only and is not actually used by any Gravity code
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EvmChainParams {
+pub struct EvmChainParam {
     #[prost(string, tag = "1")]
     pub gravity_id: ::prost::alloc::string::String,
     #[prost(bool, tag = "2")]

@@ -663,7 +663,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	TestingGravityParams.SlashFractionBadEthSignature = sdk.NewDecWithPrec(1, 2)
 	TestingGravityParams.ValsetReward = sdk.Coin{Denom: "", Amount: sdk.ZeroInt()}
 
-	TestingGravityParams.EvmChainParams = []*types.EvmChainParams{
+	TestingGravityParams.EvmChainParams = []*types.EvmChainParam{
 		{
 			EvmChainPrefix:           "bsc",
 			GravityId:                "bsc",

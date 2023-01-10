@@ -167,9 +167,9 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 	k.paramSpace.SetParamSet(ctx, &ps)
 }
 
-// GetEvmChainParams only get EvmChainParams from the store
-func (k Keeper) GetEvmChainParams(ctx sdk.Context, evmChainPrefix string) *types.EvmChainParams {
-	var evmChains []*types.EvmChainParams
+// GetEvmChainParam only get EvmChainParams from the store
+func (k Keeper) GetEvmChainParam(ctx sdk.Context, evmChainPrefix string) *types.EvmChainParam {
+	var evmChains []*types.EvmChainParam
 	k.paramSpace.Get(ctx, types.ParamStoreEvmChainParams, &evmChains)
 	for _, chain := range evmChains {
 		if chain.EvmChainPrefix == evmChainPrefix {
@@ -181,7 +181,7 @@ func (k Keeper) GetEvmChainParams(ctx sdk.Context, evmChainPrefix string) *types
 
 // GetBridgeContractAddress returns the bridge contract address on evm chain
 func (k Keeper) GetBridgeContractAddress(ctx sdk.Context, evmChainPrefix string) *types.EthAddress {
-	chain := k.GetEvmChainParams(ctx, evmChainPrefix)
+	chain := k.GetEvmChainParam(ctx, evmChainPrefix)
 	if chain != nil {
 		addr, err := types.NewEthAddress(chain.BridgeEthereumAddress)
 		if err != nil {
@@ -196,7 +196,7 @@ func (k Keeper) GetBridgeContractAddress(ctx sdk.Context, evmChainPrefix string)
 
 // GetBridgeChainID returns the chain id of the evm chain we are running against
 func (k Keeper) GetBridgeChainID(ctx sdk.Context, evmChainPrefix string) uint64 {
-	chain := k.GetEvmChainParams(ctx, evmChainPrefix)
+	chain := k.GetEvmChainParam(ctx, evmChainPrefix)
 	if chain != nil {
 		return chain.BridgeChainId
 	}
@@ -214,7 +214,7 @@ func (k Keeper) GetBridgeChainID(ctx sdk.Context, evmChainPrefix string) uint64 
 // same as the chain id since the chain id may be changed many times with each
 // successive chain in charge of the same bridge
 func (k Keeper) GetGravityID(ctx sdk.Context, evmChainPrefix string) string {
-	chain := k.GetEvmChainParams(ctx, evmChainPrefix)
+	chain := k.GetEvmChainParam(ctx, evmChainPrefix)
 	if chain != nil {
 		return chain.GravityId
 	}
@@ -477,16 +477,16 @@ func (k Keeper) DeserializeValidatorIterator(vals []byte) stakingtypes.ValAddres
 func (k Keeper) IsOnBlacklist(ctx sdk.Context, evmChainPrefix string, addr types.EthAddress) bool {
 	params := k.GetParams(ctx)
 
-	evmChainParams := params.GetEvmChain(evmChainPrefix)
+	evmChainParam := params.GetEvmChain(evmChainPrefix)
 
-	if evmChainParams == nil {
+	if evmChainParam == nil {
 		return false
 	}
 
 	// Checks the address if it's inside the blacklisted address list and marks
 	// if it's inside the list.
-	for index := 0; index < len(evmChainParams.EthereumBlacklist); index++ {
-		baddr, err := types.NewEthAddress(evmChainParams.EthereumBlacklist[index])
+	for _, baddrStr := range evmChainParam.EthereumBlacklist {
+		baddr, err := types.NewEthAddress(baddrStr)
 		if err != nil {
 			// this should not be possible we validate on genesis load
 			panic("unvalidated black list address!")

@@ -278,10 +278,8 @@ func TestEthereumBlacklist(t *testing.T) {
 	blockedAddress := anyETHSender
 	newParams := k.GetParams(ctx)
 
-	evmChainParams := newParams.GetEvmChain(evmChain.EvmChainPrefix)
-	evmChainParams.EthereumBlacklist = []string{blockedAddress}
-
-	t.Logf("newParams %v -%v\n", newParams.EvmChainParams[1].EthereumBlacklist, evmChainParams.EthereumBlacklist)
+	evmChainParam := newParams.GetEvmChain(evmChain.EvmChainPrefix)
+	evmChainParam.EthereumBlacklist = []string{blockedAddress}
 
 	k.SetParams(ctx, newParams)
 

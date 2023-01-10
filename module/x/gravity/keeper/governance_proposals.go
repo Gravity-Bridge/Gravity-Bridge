@@ -118,7 +118,7 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 
 	// update param to match with the new evm chain
 	params := k.GetParams(ctx)
-	evmChainParams := &types.EvmChainParams{
+	evmChainParam := &types.EvmChainParam{
 		EvmChainPrefix:           p.EvmChainPrefix,
 		GravityId:                p.GravityId,
 		ContractSourceHash:       "",
@@ -128,7 +128,7 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 		BridgeActive:             true,
 		EthereumBlacklist:        []string{},
 	}
-	params.EvmChainParams = append(params.EvmChainParams, evmChainParams)
+	params.EvmChainParams = append(params.EvmChainParams, evmChainParam)
 	k.SetParams(ctx, params)
 	return nil
 }

@@ -29,13 +29,13 @@ func (k Keeper) BuildOutgoingTxBatch(
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "max elements value")
 	}
 	params := k.GetParams(ctx)
-	evmChainParams := params.GetEvmChain(evmChainPrefix)
+	evmChainParam := params.GetEvmChain(evmChainPrefix)
 
-	if evmChainParams == nil {
+	if evmChainParam == nil {
 		return nil, sdkerrors.Wrap(types.ErrEmpty, "EvmChainParams not found for prefix "+evmChainPrefix)
 	}
 
-	if !evmChainParams.BridgeActive {
+	if !evmChainParam.BridgeActive {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "bridge paused")
 	}
 
@@ -92,9 +92,9 @@ func (k Keeper) BuildOutgoingTxBatch(
 func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) uint64 {
 	params := k.GetParams(ctx)
 
-	evmChainParams := params.GetEvmChain(evmChainPrefix)
+	evmChainParam := params.GetEvmChain(evmChainPrefix)
 
-	if evmChainParams == nil {
+	if evmChainParam == nil {
 		return 0
 	}
 
@@ -108,10 +108,10 @@ func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context, evmChainPrefix string) ui
 	// we project how long it has been in milliseconds since the last evm chain block height was observed
 	projectedMillis := (uint64(currentCosmosHeight) - heights.CosmosBlockHeight) * params.AverageBlockTime
 	// we convert that projection into the current evm chain height using the average evm chain block time in millis
-	projectedCurrentEvmChainHeight := (projectedMillis / evmChainParams.AverageEthereumBlockTime) + heights.EthereumBlockHeight
+	projectedCurrentEvmChainHeight := (projectedMillis / evmChainParam.AverageEthereumBlockTime) + heights.EthereumBlockHeight
 	// we convert our target time for block timeouts (lets say 12 hours) into a number of blocks to
 	// place on top of our projection of the current evm chain block height.
-	blocksToAdd := params.TargetBatchTimeout / evmChainParams.AverageEthereumBlockTime
+	blocksToAdd := params.TargetBatchTimeout / evmChainParam.AverageEthereumBlockTime
 	return projectedCurrentEvmChainHeight + blocksToAdd
 }
 

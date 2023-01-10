@@ -86,7 +86,7 @@ var (
 
 		MinChainFeeBasisPoints: 0,
 
-		EvmChainParams: []*EvmChainParams{
+		EvmChainParams: []*EvmChainParam{
 			{
 				EvmChainPrefix:           "gravity",
 				GravityId:                "",
@@ -154,7 +154,7 @@ func DefaultParams() *Params {
 		ValsetReward:                 sdk.Coin{Denom: GravityDenomPrefix, Amount: sdk.ZeroInt()},
 
 		MinChainFeeBasisPoints: 2,
-		EvmChainParams: []*EvmChainParams{
+		EvmChainParams: []*EvmChainParam{
 			{
 				EvmChainPrefix:           GravityDenomPrefix,
 				GravityId:                "oraibridge-2",
@@ -169,7 +169,7 @@ func DefaultParams() *Params {
 	}
 }
 
-func (p *Params) GetEvmChain(evmChainPrefix string) *EvmChainParams {
+func (p *Params) GetEvmChain(evmChainPrefix string) *EvmChainParam {
 	for _, v := range p.EvmChainParams {
 		if v.EvmChainPrefix == evmChainPrefix {
 			// Found!
@@ -180,7 +180,7 @@ func (p *Params) GetEvmChain(evmChainPrefix string) *EvmChainParams {
 }
 
 // ValidateBasic checks that the parameters have valid values.
-func (p *EvmChainParams) ValidateBasic() error {
+func (p *EvmChainParam) ValidateBasic() error {
 	if err := validateGravityID(p.GravityId); err != nil {
 		return sdkerrors.Wrap(err, "gravity id")
 	}
@@ -292,7 +292,7 @@ func (p Params) Equal(p2 Params) bool {
 }
 
 func validateEvmChainParams(i interface{}) error {
-	evmChainParams, ok := i.([]*EvmChainParams)
+	evmChainParams, ok := i.([]*EvmChainParam)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}

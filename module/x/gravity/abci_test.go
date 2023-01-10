@@ -519,9 +519,9 @@ func TestBatchTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Greater(t, params.AverageBlockTime, uint64(0))
-	evmChainParams := params.GetEvmChain(evmChain.EvmChainPrefix)
+	evmChainParam := params.GetEvmChain(evmChain.EvmChainPrefix)
 
-	require.Greater(t, evmChainParams.AverageEthereumBlockTime, uint64(0))
+	require.Greater(t, evmChainParam.AverageEthereumBlockTime, uint64(0))
 
 	// mint some vouchers first
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers))

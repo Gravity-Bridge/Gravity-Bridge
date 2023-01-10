@@ -103,14 +103,14 @@ func slashing(ctx sdk.Context, k keeper.Keeper, params types.Params, evmChainPre
 func attestationTally(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	params := k.GetParams(ctx)
 
-	evmChainParams := params.GetEvmChain(evmChainPrefix)
+	evmChainParam := params.GetEvmChain(evmChainPrefix)
 
-	if evmChainParams == nil {
+	if evmChainParam == nil {
 		return
 	}
 
 	// bridge is currently disabled, do not process attestations from evm chain
-	if !evmChainParams.BridgeActive {
+	if !evmChainParam.BridgeActive {
 		return
 	}
 
