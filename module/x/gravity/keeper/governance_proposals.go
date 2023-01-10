@@ -116,13 +116,20 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 
 	initBridgeDataFromGenesis(ctx, k, evmChain)
 
+	// check bridge address, if invalid then we set default to 0x0
+	finalEthAddress := p.BridgeEthereumAddress
+	err := types.ValidateEthAddress(p.BridgeEthereumAddress)
+	if err != nil {
+		finalEthAddress = "0x0000000000000000000000000000000000000000"
+	}
+
 	// update param to match with the new evm chain
 	params := k.GetParams(ctx)
 	evmChainParam := &types.EvmChainParam{
 		EvmChainPrefix:           p.EvmChainPrefix,
 		GravityId:                p.GravityId,
 		ContractSourceHash:       "",
-		BridgeEthereumAddress:    "0x0000000000000000000000000000000000000000",
+		BridgeEthereumAddress:    finalEthAddress,
 		BridgeChainId:            p.EvmChainNetVersion,
 		AverageEthereumBlockTime: 15000,
 		BridgeActive:             true,
