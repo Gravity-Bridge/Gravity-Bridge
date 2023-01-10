@@ -663,16 +663,27 @@ func CreateTestEnv(t *testing.T) TestInput {
 	TestingGravityParams.SlashFractionBadEthSignature = sdk.NewDecWithPrec(1, 2)
 	TestingGravityParams.ValsetReward = sdk.Coin{Denom: "", Amount: sdk.ZeroInt()}
 
-	// update 2 chains
-	chain1, _ := TestingGravityParams.EvmChain(EthChainPrefix)
-	chain1.ContractSourceHash = "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713"
-	chain1.BridgeEthereumAddress = "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf"
-	chain1.BridgeChainId = 1
-
-	chain2, _ := TestingGravityParams.EvmChain(BscChainPrefix)
-	chain2.ContractSourceHash = "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713"
-	chain2.BridgeEthereumAddress = "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf"
-	chain2.BridgeChainId = 2
+	TestingGravityParams.EvmChainParams = append([]types.EvmChainParams{}, types.EvmChainParams{
+		EvmChainPrefix:           "bsc",
+		GravityId:                "bsc",
+		ContractSourceHash:       "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713",
+		BridgeEthereumAddress:    "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf",
+		BridgeChainId:            1,
+		AverageEthereumBlockTime: 15000,
+		BridgeActive:             true,
+		EthereumBlacklist:        []string{},
+	},
+		types.EvmChainParams{
+			EvmChainPrefix:           "ethereum",
+			GravityId:                "ethereum",
+			ContractSourceHash:       "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713",
+			BridgeEthereumAddress:    "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf",
+			BridgeChainId:            2,
+			AverageEthereumBlockTime: 15000,
+			BridgeActive:             true,
+			EthereumBlacklist:        []string{},
+		},
+	)
 
 	k.SetParams(ctx, TestingGravityParams)
 
