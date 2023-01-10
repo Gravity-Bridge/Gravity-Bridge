@@ -256,8 +256,8 @@ func (k Keeper) IterateUnbatchedTransactionsByContract(ctx sdk.Context, evmChain
 // IterateUnbatchedTransactions iterates through all unbatched transactions in DESC order, executing the given callback
 // on each discovered Tx. Return true in cb to stop iteration, false to continue.
 // For finer grained control, use filterAndIterateUnbatchedTransactions or one of the above methods
-func (k Keeper) IterateUnbatchedTransactions(ctx sdk.Context, cb func(key []byte, tx *types.InternalOutgoingTransferTx) (stop bool)) {
-	k.filterAndIterateUnbatchedTransactions(ctx, types.OutgoingTXPoolKey, cb)
+func (k Keeper) IterateUnbatchedTransactions(ctx sdk.Context, evmChainPrefix string, cb func(key []byte, tx *types.InternalOutgoingTransferTx) (stop bool)) {
+	k.filterAndIterateUnbatchedTransactions(ctx, types.AppendChainPrefix(types.OutgoingTXPoolKey, evmChainPrefix), cb)
 }
 
 // filterAndIterateUnbatchedTransactions iterates through all unbatched transactions whose keys begin with prefixKey in DESC order

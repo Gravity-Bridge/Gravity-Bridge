@@ -24,13 +24,8 @@ func (k Keeper) CheckBadSignatureEvidence(
 	}
 
 	switch subject := subject.(type) {
-	case *types.OutgoingTxBatch:
+	case *types.OutgoingTxBatch, *types.Valset, *types.OutgoingLogicCall:
 		return k.checkBadSignatureEvidenceInternal(ctx, msg.EvmChainPrefix, subject, msg.Signature)
-	case *types.Valset:
-		return k.checkBadSignatureEvidenceInternal(ctx, msg.EvmChainPrefix, subject, msg.Signature)
-	case *types.OutgoingLogicCall:
-		return k.checkBadSignatureEvidenceInternal(ctx, msg.EvmChainPrefix, subject, msg.Signature)
-
 	default:
 		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Bad signature must be over a batch, valset, or logic call got %s", subject))
 	}
@@ -95,15 +90,11 @@ func (k Keeper) SetPastEthSignatureCheckpoint(ctx sdk.Context, evmChainPrefix st
 // GetPastEthSignatureCheckpoint tells you whether a given checkpoint has ever existed
 func (k Keeper) GetPastEthSignatureCheckpoint(ctx sdk.Context, evmChainPrefix string, checkpoint []byte) (found bool) {
 	store := ctx.KVStore(k.storeKey)
-	if bytes.Equal(store.Get(types.GetPastEvmSignatureCheckpointKey(evmChainPrefix, checkpoint)), []byte{0x1}) {
-		return true
-	} else {
-		return false
-	}
+	return bytes.Equal(store.Get(types.GetPastEvmSignatureCheckpointKey(evmChainPrefix, checkpoint)), []byte{0x1})
 }
 
-func (k Keeper) IteratePastEthSignatureCheckpoints(ctx sdk.Context, cb func(key []byte, value []byte) (stop bool)) {
-	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.PastEthSignatureCheckpointKey)
+func (k Keeper) IteratePastEthSignatureCheckpoints(ctx sdk.Context, evmChainPrefix string, cb func(key []byte, value []byte) (stop bool)) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.AppendChainPrefix(types.PastEvmSignatureCheckpointKey, evmChainPrefix))
 	iter := prefixStore.Iterator(nil, nil)
 	defer iter.Close()
 

@@ -36,9 +36,9 @@ func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, evmChainPrefix string,
 
 // IterateCosmosOriginatedERC20s iterates through every erc20 under DenomToERC20Key, passing it to the given callback.
 // cb should return true to stop iteration, false to continue
-func (k Keeper) IterateCosmosOriginatedERC20s(ctx sdk.Context, cb func(key []byte, erc20 *types.EthAddress) (stop bool)) {
+func (k Keeper) IterateCosmosOriginatedERC20s(ctx sdk.Context, evmChainPrefix string, cb func(key []byte, erc20 *types.EthAddress) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	prefixStore := prefix.NewStore(store, types.DenomToERC20Key)
+	prefixStore := prefix.NewStore(store, types.AppendChainPrefix(types.DenomToERC20Key, evmChainPrefix))
 	iter := prefixStore.Iterator(nil, nil)
 
 	defer iter.Close()

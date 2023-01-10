@@ -286,7 +286,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	}
 
 	// OutgoingTXPoolKey
-	k.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) (stop bool) {
+	k.IterateUnbatchedTransactions(ctx, evmChainPrefix, func(key []byte, tx *types.InternalOutgoingTransferTx) (stop bool) {
 		err = tx.ValidateBasic()
 		if err != nil {
 			err = fmt.Errorf("Invalid unbatched transaction %v under key %v in IterateUnbatchedTransactions: %v", tx, key, err)
@@ -325,7 +325,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	}
 
 	// LastEventNonceByValidatorKey (type checked when fetching)
-	k.IterateValidatorLastEventNonces(ctx, func(key []byte, nonce uint64) (stop bool) {
+	k.IterateValidatorLastEventNonces(ctx, evmChainPrefix, func(key []byte, nonce uint64) (stop bool) {
 		return false
 	})
 	if err != nil {
@@ -364,7 +364,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	}
 
 	// KeyOutgoingLogicConfirm
-	k.IterateLogicConfirms(ctx, func(key []byte, confirm *types.MsgConfirmLogicCall) (stop bool) {
+	k.IterateLogicConfirms(ctx, evmChainPrefix, func(key []byte, confirm *types.MsgConfirmLogicCall) (stop bool) {
 		err = confirm.ValidateBasic()
 		if err != nil {
 			err = fmt.Errorf("Invalid logic call confirm %v under key %v in IterateLogicConfirms: %v", confirm, key, err)
@@ -389,7 +389,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 	}
 
 	// DenomToERC20Key
-	k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) (stop bool) {
+	k.IterateCosmosOriginatedERC20s(ctx, evmChainPrefix, func(key []byte, erc20 *types.EthAddress) (stop bool) {
 		if err = erc20.ValidateBasic(); err != nil {
 			err = fmt.Errorf("Discovered invalid cosmos originated erc20 %v under key %v: %v", erc20, key, err)
 			return true
@@ -444,7 +444,7 @@ func ValidateStore(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 		return fmt.Errorf("Discovered invalid last observed valset %v: %v", valset, err)
 	}
 	// PastEthSignatureCheckpointKey
-	k.IteratePastEthSignatureCheckpoints(ctx, func(key []byte, value []byte) (stop bool) {
+	k.IteratePastEthSignatureCheckpoints(ctx, evmChainPrefix, func(key []byte, value []byte) (stop bool) {
 		// Check is performed in the iterator function
 		return false
 	})

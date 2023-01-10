@@ -441,9 +441,9 @@ func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, evmChainPrefix str
 }
 
 // IterateValidatorLastEventNonces iterates through all batch confirmations
-func (k Keeper) IterateValidatorLastEventNonces(ctx sdk.Context, cb func(key []byte, nonce uint64) (stop bool)) {
+func (k Keeper) IterateValidatorLastEventNonces(ctx sdk.Context, evmChainPrefix string, cb func(key []byte, nonce uint64) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	prefixStore := prefix.NewStore(store, types.LastEventNonceByValidatorKey)
+	prefixStore := prefix.NewStore(store, types.AppendChainPrefix(types.LastEventNonceByValidatorKey, evmChainPrefix))
 	iter := prefixStore.Iterator(nil, nil)
 
 	defer iter.Close()

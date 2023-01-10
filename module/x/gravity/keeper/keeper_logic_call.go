@@ -166,8 +166,8 @@ func (k Keeper) IterateLogicConfirmsByInvalidationIDAndNonce(
 // IterateLogicConfirmsByInvalidationIDAndNonce iterates over all logic confirms in the store applying the given
 // callback on each discovered confirm.
 // cb should return true to stop iteration, false to continue
-func (k Keeper) IterateLogicConfirms(ctx sdk.Context, cb func(key []byte, confirm *types.MsgConfirmLogicCall) (stop bool)) {
-	prefix := types.KeyOutgoingLogicConfirm
+func (k Keeper) IterateLogicConfirms(ctx sdk.Context, evmChainPrefix string, cb func(key []byte, confirm *types.MsgConfirmLogicCall) (stop bool)) {
+	prefix := types.AppendChainPrefix(types.KeyOutgoingLogicConfirm, evmChainPrefix)
 	k.iterateLogicConfirmsByPrefix(ctx, prefix, cb)
 }
 
