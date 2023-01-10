@@ -14,7 +14,7 @@ import (
 // DefaultParamspace defines the default auth module parameter subspace
 const (
 	// todo: implement oracle constants as params
-	DefaultParamspace = ModuleName
+	DefaultParamspace = ModuleName + "v2"
 )
 
 var (
