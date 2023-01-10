@@ -105,7 +105,7 @@ func TestMigrateParams(t *testing.T) {
 	v4Subspace.GetParamSet(ctx, &v4Params)
 	fmt.Printf("v4 params in testing: %v\n", v4Params)
 
-	evmChainParam := v4Params.EvmChainParams[0]
+	evmChainParam := v4Params.GetEvmChain(types.GravityDenomPrefix)
 	require.Equal(t, types.GravityDenomPrefix, evmChainParam.EvmChainPrefix)
 	require.Equal(t, params.AverageEthereumBlockTime, evmChainParam.AverageEthereumBlockTime)
 	require.Equal(t, params.GravityId, evmChainParam.GravityId)
