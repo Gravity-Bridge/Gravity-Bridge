@@ -141,16 +141,14 @@ pub struct TomlValsetRelayingMode {
 
 impl From<TomlValsetRelayingMode> for ValsetRelayingMode {
     fn from(input: TomlValsetRelayingMode) -> Self {
-        match input.mode.as_str() {
-            "ProfitableOnly" | "profitableonly" | "PROFITABLEONLY" => {
-                ValsetRelayingMode::ProfitableOnly {
-                    margin: input
-                        .margin
-                        .expect("Incorrect margin for valset relaying mode"),
-                }
-            }
-            "Altruistic" | "altruistic" | "ALTRUISTIC" => ValsetRelayingMode::Altruistic,
-            "EveryValset" | "everyvalset" | "EVERYVALSET" => ValsetRelayingMode::EveryValset,
+        match input.mode.to_lowercase().as_str() {
+            "profitableonly" => ValsetRelayingMode::ProfitableOnly {
+                margin: input
+                    .margin
+                    .expect("Incorrect margin for valset relaying mode"),
+            },
+            "altruistic" => ValsetRelayingMode::Altruistic,
+            "everyvalset" => ValsetRelayingMode::EveryValset,
             _ => panic!("Invalid TomlValsetRelayingMode"),
         }
     }
@@ -217,26 +215,22 @@ pub struct TomlBatchRelayingMode {
 
 impl From<TomlBatchRelayingMode> for BatchRelayingMode {
     fn from(input: TomlBatchRelayingMode) -> Self {
-        match input.mode.as_str() {
-            "Altruistic" | "altruistic" | "ALTRUISTIC" => BatchRelayingMode::Altruistic,
-            "EveryBatch" | "everybatch" | "EVERYBATCH" => BatchRelayingMode::EveryBatch,
-            "ProfitableOnly" | "profitableonly" | "PROFITABLEONLY" => {
-                BatchRelayingMode::ProfitableOnly {
-                    margin: input
-                        .margin
-                        .expect("Incorrect margin for batch relaying mode"),
-                }
-            }
-            "ProfitableWithWhitelist" | "profitablewithwhitelist" | "PROFITABLEWITHWHITELIST" => {
-                BatchRelayingMode::ProfitableWithWhitelist {
-                    margin: input
-                        .margin
-                        .expect("Incorrect margin for valset relaying mode"),
-                    whitelist: input
-                        .whitelist
-                        .expect("Incorrect whitelist for valset relaying mode"),
-                }
-            }
+        match input.mode.to_lowercase().as_str() {
+            "altruistic" => BatchRelayingMode::Altruistic,
+            "everybatch" => BatchRelayingMode::EveryBatch,
+            "profitableonly" => BatchRelayingMode::ProfitableOnly {
+                margin: input
+                    .margin
+                    .expect("Incorrect margin for batch relaying mode"),
+            },
+            "profitablewithwhitelist" => BatchRelayingMode::ProfitableWithWhitelist {
+                margin: input
+                    .margin
+                    .expect("Incorrect margin for valset relaying mode"),
+                whitelist: input
+                    .whitelist
+                    .expect("Incorrect whitelist for valset relaying mode"),
+            },
             _ => panic!("Bad TomlBatchRelayingMode"),
         }
     }
