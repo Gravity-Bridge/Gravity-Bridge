@@ -111,6 +111,11 @@ pub async fn find_latest_valset(
         current_block = end_search;
     }
 
+    // return cached valset
+    if valset.nonce > 0 {
+        return Ok(valset);
+    }
+
     panic!("Could not find the last validator set for contract {}, probably not a valid Gravity contract!", gravity_contract_address)
 }
 
