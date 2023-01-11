@@ -15,7 +15,7 @@ COSMOS_SDK_DIR=${COSMOS_SDK_DIR:-$(go list -f "{{ .Dir }}" -m github.com/cosmos/
 IBC_DIR=${IBC_DIR:-$(go list -f "{{ .Dir }}" -m github.com/cosmos/ibc-go/v3)}
 
 # scan all folders that contain proto file
-proto_dirs=$(find $PROJECTDIR/proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
+proto_dirs=$(find $PROJECTDIR/proto $IBC_DIR/proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
 proto_files=()
 
 for dir in $proto_dirs; do
