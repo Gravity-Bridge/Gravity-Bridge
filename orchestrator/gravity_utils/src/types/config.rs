@@ -144,7 +144,9 @@ impl From<TomlValsetRelayingMode> for ValsetRelayingMode {
         match input.mode.as_str() {
             "ProfitableOnly" | "profitableonly" | "PROFITABLEONLY" => {
                 ValsetRelayingMode::ProfitableOnly {
-                    margin: input.margin.unwrap(),
+                    margin: input
+                        .margin
+                        .expect("Incorrect margin for valset relaying mode"),
                 }
             }
             "Altruistic" | "altruistic" | "ALTRUISTIC" => ValsetRelayingMode::Altruistic,
@@ -220,13 +222,19 @@ impl From<TomlBatchRelayingMode> for BatchRelayingMode {
             "EveryBatch" | "everybatch" | "EVERYBATCH" => BatchRelayingMode::EveryBatch,
             "ProfitableOnly" | "profitableonly" | "PROFITABLEONLY" => {
                 BatchRelayingMode::ProfitableOnly {
-                    margin: input.margin.unwrap(),
+                    margin: input
+                        .margin
+                        .expect("Incorrect margin for batch relaying mode"),
                 }
             }
             "ProfitableWithWhitelist" | "profitablewithwhitelist" | "PROFITABLEWITHWHITELIST" => {
                 BatchRelayingMode::ProfitableWithWhitelist {
-                    margin: input.margin.unwrap(),
-                    whitelist: input.whitelist.unwrap(),
+                    margin: input
+                        .margin
+                        .expect("Incorrect margin for valset relaying mode"),
+                    whitelist: input
+                        .whitelist
+                        .expect("Incorrect whitelist for valset relaying mode"),
                 }
             }
             _ => panic!("Bad TomlBatchRelayingMode"),
