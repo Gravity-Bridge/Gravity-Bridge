@@ -51,10 +51,10 @@ func (k Keeper) BuildOutgoingTxBatch(
 			return nil, sdkerrors.Wrap(types.ErrInvalid, "error getting fees from tx pool")
 		}
 
-		// lastFees := lastBatch.ToExternal().GetFees()
-		// if lastFees.GTE(currentFees.TotalFees) {
-		// 	return nil, sdkerrors.Wrap(types.ErrInvalid, "new batch would not be more profitable")
-		// }
+		lastFees := lastBatch.ToExternal().GetFees()
+		if lastFees.GTE(currentFees.TotalFees) {
+			return nil, sdkerrors.Wrap(types.ErrInvalid, "new batch would not be more profitable")
+		}
 	}
 
 	selectedTxs, err := k.pickUnbatchedTxs(ctx, evmChainPrefix, contract, maxElements)
