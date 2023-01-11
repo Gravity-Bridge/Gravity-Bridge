@@ -60,7 +60,7 @@ func V3ToV4Params(v3Params v3.Params) types.Params {
 				EvmChainPrefix:           v3.EthereumChainPrefix,
 				GravityId:                v3Params.GravityId,
 				ContractSourceHash:       v3Params.ContractSourceHash,
-				BridgeEthereumAddress:    "0xb40C364e70bbD98E8aaab707A41a52A2eAF5733f",
+				BridgeEthereumAddress:    v3.BridgeEthereumAddress,
 				BridgeChainId:            v3Params.BridgeChainId,
 				AverageEthereumBlockTime: v3Params.AverageEthereumBlockTime,
 				BridgeActive:             v3Params.BridgeActive,

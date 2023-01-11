@@ -60,7 +60,7 @@ func TestMigrateParams(t *testing.T) {
 		},
 		GravityId:                "defaultid",
 		ContractSourceHash:       "foobar",
-		BridgeEthereumAddress:    "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf",
+		BridgeEthereumAddress:    v3.BridgeEthereumAddress,
 		BridgeChainId:            1,
 		AverageEthereumBlockTime: 5000,
 		BridgeActive:             false,
