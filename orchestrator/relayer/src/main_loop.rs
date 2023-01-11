@@ -172,6 +172,8 @@ pub async fn single_relayer_iteration(
     let should_relay_batches = relayer_config.batch_relaying_mode != BatchRelayingMode::Altruistic
         || should_relay_altruistic;
 
+    // TODO: handle bottleneck here. If valset does not change => the last valset update event block will get increase => take more time to find it. Need to improve performance here!
+    // Because this function is single_relayer_iteration, if we find no batches in relay_batches, then we would have to call find_latest_valset all over again just to send batch eth.
     let current_valset = find_latest_valset(
         &mut grpc_client,
         evm_chain_prefix,
