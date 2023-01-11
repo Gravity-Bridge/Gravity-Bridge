@@ -31,14 +31,24 @@ pub async fn find_latest_valset(
         } else {
             current_block.clone() - BLOCKS_TO_SEARCH.into()
         };
-        let mut all_valset_events = web3
+        let mut all_valset_events = match web3
             .check_for_events(
                 end_search.clone(),
                 Some(current_block.clone()),
                 vec![gravity_contract_address],
                 vec![VALSET_UPDATED_EVENT_SIG],
             )
-            .await?;
+            .await
+        {
+            Ok(events) => events,
+            Err(_) => {
+                warn!(
+                    "Failed to get events for block range {} - {}, repeating...",
+                    end_search, current_block
+                );
+                continue;
+            }
+        };
         // by default the lowest found valset goes first, we want the highest.
         all_valset_events.reverse();
 
