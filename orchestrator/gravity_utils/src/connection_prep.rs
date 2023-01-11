@@ -80,33 +80,6 @@ pub async fn create_rpc_connections(
                         (Ok(_), Ok(_)) => panic!("This should never happen? Why didn't things work the first time?"),
                         (Err(_), Err(_)) => panic!("Could not connect to Cosmos gRPC, are you sure it's running and on the specified port? {}", grpc_url)
                     }
-                } else if url.port().is_none() || url.scheme() == "http" {
-                    let body = url.host_str().unwrap_or_else(|| {
-                        panic!("Cosmos gRPC url contains no host? {}", grpc_url)
-                    });
-                    // transparently upgrade to https if available, we can't transparently downgrade for obvious security reasons
-                    let https_on_80_url = format!("https://{}:80", body);
-                    let https_on_443_url = format!("https://{}:443", body);
-                    let https_on_80 = GravityQueryClient::connect(https_on_80_url.clone()).await;
-                    let https_on_443 = GravityQueryClient::connect(https_on_443_url.clone()).await;
-                    warn!(
-                        "Trying fallback urls {} {}",
-                        https_on_443_url, https_on_80_url
-                    );
-                    match (https_on_80, https_on_443) {
-                        (Ok(v), Err(_)) => {
-                            info!("Https upgrade succeeded, your cosmos gRPC url {} has been corrected to {}", grpc_url, https_on_80_url);
-                            contact = Some(Contact::new(&https_on_80_url, timeout, &address_prefix).unwrap());
-                            grpc = Some(v)
-                        },
-                        (Err(_), Ok(v)) => {
-                            info!("Https upgrade succeeded, your cosmos gRPC url {} has been corrected to {}", grpc_url, https_on_443_url);
-                            contact = Some(Contact::new(&https_on_443_url, timeout, &address_prefix).unwrap());
-                            grpc = Some(v)
-                        },
-                        (Ok(_), Ok(_)) => panic!("This should never happen? Why didn't things work the first time?"),
-                        (Err(_), Err(_)) => panic!("Could not connect to Cosmos gRPC, are you sure it's running and on the specified port? {}", grpc_url)
-                    }
                 } else {
                     panic!("Could not connect to Cosmos gRPC! please check your grpc url {} for errors {:?}", grpc_url, e)
                 }
@@ -148,33 +121,6 @@ pub async fn create_rpc_connections(
                         (Err(_), Ok(_)) => {
                             info!("Url fallback succeeded, your Ethereum  rpc url {} has been corrected to {}", eth_rpc_url, ipv6_url);
                             web3 = Some(ipv6_web3)
-                        },
-                        (Ok(_), Ok(_)) => panic!("This should never happen? Why didn't things work the first time?"),
-                        (Err(_), Err(_)) => panic!("Could not connect to Ethereum rpc, are you sure it's running and on the specified port? {}", eth_rpc_url)
-                    }
-                } else if url.port().is_none() || url.scheme() == "http" {
-                    let body = url.host_str().unwrap_or_else(|| {
-                        panic!("Ethereum rpc url contains no host? {}", eth_rpc_url)
-                    });
-                    // transparently upgrade to https if available, we can't transparently downgrade for obvious security reasons
-                    let https_on_80_url = format!("https://{}:80", body);
-                    let https_on_443_url = format!("https://{}:443", body);
-                    let https_on_80_web3 = Web3::new(&https_on_80_url, timeout);
-                    let https_on_443_web3 = Web3::new(&https_on_443_url, timeout);
-                    let https_on_80_test = https_on_80_web3.eth_block_number().await;
-                    let https_on_443_test = https_on_443_web3.eth_block_number().await;
-                    warn!(
-                        "Trying fallback urls {} {}",
-                        https_on_443_url, https_on_80_url
-                    );
-                    match (https_on_80_test, https_on_443_test) {
-                        (Ok(_), Err(_)) => {
-                            info!("Https upgrade succeeded, your Ethereum rpc url {} has been corrected to {}", eth_rpc_url, https_on_80_url);
-                            web3 = Some(https_on_80_web3)
-                        },
-                        (Err(_), Ok(_)) => {
-                            info!("Https upgrade succeeded, your Ethereum rpc url {} has been corrected to {}", eth_rpc_url, https_on_443_url);
-                            web3 = Some(https_on_443_web3)
                         },
                         (Ok(_), Ok(_)) => panic!("This should never happen? Why didn't things work the first time?"),
                         (Err(_), Err(_)) => panic!("Could not connect to Ethereum rpc, are you sure it's running and on the specified port? {}", eth_rpc_url)
