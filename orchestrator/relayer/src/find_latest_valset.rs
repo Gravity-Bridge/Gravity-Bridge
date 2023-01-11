@@ -3,8 +3,29 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::types::{EthereumEvent, ValsetUpdatedEvent};
 use gravity_utils::{error::GravityError, types::Valset};
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 use tonic::transport::Channel;
 use web30::client::Web3;
+
+lazy_static! {
+    // cache evm_chain_prefix => (scan_block,Valset)
+    static ref LATEST_VALSET_INFO: Arc<RwLock<HashMap<String, (Uint256,Valset)>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+}
+
+fn get_latest_valset_info(evm_chain_prefix: &str) -> Option<(Uint256, Valset)> {
+    LATEST_VALSET_INFO
+        .read()
+        .unwrap()
+        .get(evm_chain_prefix)
+        .cloned()
+}
+
+fn set_latest_valset_info(evm_chain_prefix: &str, info: (Uint256, Valset)) {
+    let mut lock = LATEST_VALSET_INFO.write().unwrap();
+    lock.insert(evm_chain_prefix.to_string(), info);
+}
 
 /// This function finds the latest valset on the Gravity contract by looking back through the event
 /// history and finding the most recent ValsetUpdatedEvent. Most of the time this will be very fast
@@ -21,7 +42,10 @@ pub async fn find_latest_valset(
     let latest_block = web3.eth_block_number().await?;
     let mut current_block: Uint256 = latest_block.clone();
 
-    while current_block.clone() > 0u8.into() {
+    let (previous_block, valset) =
+        get_latest_valset_info(evm_chain_prefix).unwrap_or((0u8.into(), Valset::default()));
+
+    while current_block.clone() > previous_block {
         trace!(
             "About to submit a Valset or Batch looking back into the history to find the last Valset Update, on block {}",
             current_block
@@ -65,6 +89,13 @@ pub async fn find_latest_valset(
                         reward_amount: event.reward_amount,
                         reward_token: event.reward_token,
                     };
+
+                    // cache latest_eth_valset and current_block
+                    set_latest_valset_info(
+                        evm_chain_prefix,
+                        (current_block, latest_eth_valset.clone()),
+                    );
+
                     let cosmos_chain_valset = cosmos_gravity::query::get_valset(
                         grpc_client,
                         evm_chain_prefix,
