@@ -17,6 +17,7 @@ import (
 
 // change this to your current evm mainnet, by default it is your prev GravityDenomPrefix
 const EthereumChainPrefix string = types.GravityDenomPrefix
+const BridgeEthereumAddress string = "0xb40C364e70bbD98E8aaab707A41a52A2eAF5733f"
 
 // MigrateStore performs in-place store migrations from v2 to v3. The migration
 // includes:
