@@ -23,7 +23,7 @@ use std::{collections::HashMap, time::Duration};
 
 use crate::utils::{get_reasonable_send_to_eth_fee, BadSignatureEvidence};
 
-pub const MEMO: &str = "Sent using Althea Gravity Bridge Orchestrator";
+pub const MEMO: &str = "Sent using Orai Bridge Orchestrator";
 pub const TIMEOUT: Duration = Duration::from_secs(60);
 
 // gravity msg type urls

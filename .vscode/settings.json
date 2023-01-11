@@ -4,5 +4,9 @@
         "options": [
             "--proto_path=${workspaceFolder}/module/proto"
         ]
+    },
+    "solidity.packageDefaultDependenciesDirectory": "solidity/node_modules",
+    "files.associations": {
+        "validator-eth-keys": "cpp"
     }
 }
