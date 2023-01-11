@@ -10,11 +10,11 @@ use web30::client::Web3;
 
 lazy_static! {
     // cache evm_chain_prefix => (scan_block,Valset)
-    static ref LATEST_VALSET_INFO: Arc<RwLock<HashMap<String, (Uint256,Valset)>>> =
+    static ref LATEST_VALSET_INFO: Arc<RwLock<HashMap<String, (Uint256,Option<Valset>)>>> =
         Arc::new(RwLock::new(HashMap::new()));
 }
 
-fn get_latest_valset_info(evm_chain_prefix: &str) -> Option<(Uint256, Valset)> {
+fn get_latest_valset_info(evm_chain_prefix: &str) -> Option<(Uint256, Option<Valset>)> {
     LATEST_VALSET_INFO
         .read()
         .unwrap()
@@ -22,7 +22,7 @@ fn get_latest_valset_info(evm_chain_prefix: &str) -> Option<(Uint256, Valset)> {
         .cloned()
 }
 
-fn set_latest_valset_info(evm_chain_prefix: &str, info: (Uint256, Valset)) {
+fn set_latest_valset_info(evm_chain_prefix: &str, info: (Uint256, Option<Valset>)) {
     let mut lock = LATEST_VALSET_INFO.write().unwrap();
     lock.insert(evm_chain_prefix.to_string(), info);
 }
@@ -43,7 +43,7 @@ pub async fn find_latest_valset(
     let mut current_block: Uint256 = latest_block.clone();
 
     let (previous_block, mut latest_eth_valset) =
-        get_latest_valset_info(evm_chain_prefix).unwrap_or((0u8.into(), Valset::default()));
+        get_latest_valset_info(evm_chain_prefix).unwrap_or((0u8.into(), None));
 
     while current_block.clone() > previous_block {
         trace!(
@@ -84,12 +84,12 @@ pub async fn find_latest_valset(
             match ValsetUpdatedEvent::from_log(event) {
                 Ok(event) => {
                     // update latest_eth_valset
-                    latest_eth_valset = Valset {
+                    latest_eth_valset = Some(Valset {
                         nonce: event.valset_nonce,
                         members: event.members,
                         reward_amount: event.reward_amount,
                         reward_token: event.reward_token,
-                    };
+                    });
 
                     // cache latest_eth_valset and current_block
                     set_latest_valset_info(
@@ -106,8 +106,8 @@ pub async fn find_latest_valset(
         current_block = end_search;
     }
 
-    // return cached valset, if it is default (nonce == 0) then panic
-    if latest_eth_valset.nonce > 0 {
+    // return cached valset
+    if let Some(latest_eth_valset) = latest_eth_valset {
         // just for warning
         let cosmos_chain_valset = cosmos_gravity::query::get_valset(
             grpc_client,
