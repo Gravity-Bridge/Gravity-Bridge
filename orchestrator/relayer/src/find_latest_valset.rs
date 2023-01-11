@@ -111,7 +111,7 @@ pub async fn find_latest_valset(
         current_block = end_search;
     }
 
-    // return cached valset
+    // return cached valset, if it is default (nonce == 0) then panic
     if valset.nonce > 0 {
         return Ok(valset);
     }
