@@ -42,7 +42,7 @@ pub async fn find_latest_valset(
     let latest_block = web3.eth_block_number().await?;
     let mut current_block: Uint256 = latest_block.clone();
 
-    let (previous_block, valset) =
+    let (previous_block, mut latest_eth_valset) =
         get_latest_valset_info(evm_chain_prefix).unwrap_or((0u8.into(), Valset::default()));
 
     while current_block.clone() > previous_block {
@@ -83,7 +83,8 @@ pub async fn find_latest_valset(
             let event = &all_valset_events[0];
             match ValsetUpdatedEvent::from_log(event) {
                 Ok(event) => {
-                    let latest_eth_valset = Valset {
+                    // update latest_eth_valset
+                    latest_eth_valset = Valset {
                         nonce: event.valset_nonce,
                         members: event.members,
                         reward_amount: event.reward_amount,
@@ -96,14 +97,8 @@ pub async fn find_latest_valset(
                         (current_block, latest_eth_valset.clone()),
                     );
 
-                    let cosmos_chain_valset = cosmos_gravity::query::get_valset(
-                        grpc_client,
-                        evm_chain_prefix,
-                        latest_eth_valset.nonce,
-                    )
-                    .await?;
-                    check_if_valsets_differ(cosmos_chain_valset, &latest_eth_valset);
-                    return Ok(latest_eth_valset);
+                    // now break from loop
+                    break;
                 }
                 Err(e) => error!("Got valset event that we can't parse {}", e),
             }
@@ -112,8 +107,16 @@ pub async fn find_latest_valset(
     }
 
     // return cached valset, if it is default (nonce == 0) then panic
-    if valset.nonce > 0 {
-        return Ok(valset);
+    if latest_eth_valset.nonce > 0 {
+        // just for warning
+        let cosmos_chain_valset = cosmos_gravity::query::get_valset(
+            grpc_client,
+            evm_chain_prefix,
+            latest_eth_valset.nonce,
+        )
+        .await?;
+        check_if_valsets_differ(cosmos_chain_valset, &latest_eth_valset);
+        return Ok(latest_eth_valset);
     }
 
     panic!("Could not find the last validator set for contract {}, probably not a valid Gravity contract!", gravity_contract_address)
