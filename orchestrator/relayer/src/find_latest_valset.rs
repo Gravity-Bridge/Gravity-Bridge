@@ -8,6 +8,7 @@ use std::sync::{Arc, RwLock};
 use tonic::transport::Channel;
 use web30::client::Web3;
 
+// TODO: using leveldb
 lazy_static! {
     // cache evm_chain_prefix => (scan_block,Valset)
     static ref LATEST_VALSET_INFO: Arc<RwLock<HashMap<String, (Uint256,Option<Valset>)>>> =
