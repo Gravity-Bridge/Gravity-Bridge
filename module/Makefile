@@ -82,6 +82,9 @@ lint:
 proto-swagger: 
 	./contrib/local/protocgen-swagger.sh $(SRC_DIR)
 
+proto-js: 
+	./contrib/local/protocgen-js.sh $(SRC_DIR)
+
 proto-gen:
 	./contrib/local/protocgen.sh
 
