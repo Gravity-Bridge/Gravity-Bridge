@@ -14,7 +14,6 @@ import (
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
-	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
 )
 
 // RegisterUpgradeHandlers registers handlers for all upgrades
@@ -42,15 +41,20 @@ func RegisterUpgradeHandlers(
 	// )
 
 	// Polaris UPGRADE HANDLER SETUP
-	upgradeKeeper.SetUpgradeHandler(
-		polaris.V2toPolarisPlanName,
-		polaris.GetPolarisUpgradeHandler(mm, configurator, crisisKeeper, transferKeeper),
-	)
+	// upgradeKeeper.SetUpgradeHandler(
+	// 	polaris.V2toPolarisPlanName,
+	// 	polaris.GetPolarisUpgradeHandler(mm, configurator, crisisKeeper, transferKeeper),
+	// )
 
 	// Pleiades aka v2->v3 UPGRADE HANDLER SETUP
+	// upgradeKeeper.SetUpgradeHandler(
+	// 	pleiades.PolarisToPleiadesPlanName,
+	// 	pleiades.GetPleiadesUpgradeHandler(mm, configurator, crisisKeeper, gravityKeeper, bech32IbcKeeper),
+	// )
+
 	upgradeKeeper.SetUpgradeHandler(
-		pleiades.PolarisToPleiadesPlanName,
-		pleiades.GetPleiadesUpgradeHandler(mm, configurator, crisisKeeper, gravityKeeper, bech32IbcKeeper),
+		pleiades.PleiadesPart1ToPart2PlanName,
+		pleiades.GetPleiades2UpgradeHandler(mm, configurator, crisisKeeper),
 	)
 
 	// // Pleiades part 2 aka v3->v4 UPGRADE HANDLER SETUP
