@@ -308,8 +308,8 @@ pub async fn get_latest_safe_block(web3: &Web3) -> Uint256 {
         // up to num validators blocks. Number is higher than Ethereum based
         // on experience with operational issues
         4 | 5 => block_number - 10u8.into(),
-        // Binance smart chain POA
-        56 => 3u8.into(),
+        // Binance smart chain POA, 3 blocks are ok
+        56 => block_number - 3u8.into(),
         420 | 421 => block_number,
         // assume the safe option where we don't know
         _ => block_number - 96u8.into(),
