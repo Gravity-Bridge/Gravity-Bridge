@@ -96,12 +96,6 @@ pub async fn find_latest_valset(
                         reward_token: event.reward_token,
                     });
 
-                    // cache latest_eth_valset and current_block
-                    set_latest_valset_info(
-                        evm_chain_prefix,
-                        (current_block, latest_eth_valset.clone()),
-                    );
-
                     // now break from loop
                     break;
                 }
@@ -110,6 +104,9 @@ pub async fn find_latest_valset(
         }
         current_block = end_search;
     }
+
+    // cache latest_eth_valset and current_block
+    set_latest_valset_info(evm_chain_prefix, (current_block, latest_eth_valset.clone()));
 
     // return cached valset
     if let Some(latest_eth_valset) = latest_eth_valset {
