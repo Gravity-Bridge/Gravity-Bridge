@@ -2748,6 +2748,7 @@ dependencies = [
  "openssl-probe",
  "serde",
  "serde_derive",
+ "serde_json",
  "tokio",
  "tonic",
  "web30",
