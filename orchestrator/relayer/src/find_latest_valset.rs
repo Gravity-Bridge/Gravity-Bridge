@@ -43,7 +43,7 @@ pub async fn find_latest_valset(
     let latest_block = web3.eth_block_number().await?;
     let mut current_block: Uint256 = latest_block.clone();
 
-    let (previous_block, mut latest_eth_valset) =
+    let (previous_block, mut previous_valset) =
         get_latest_valset_info(evm_chain_prefix).unwrap_or((0u8.into(), None));
 
     while current_block.clone() > previous_block {
@@ -89,18 +89,12 @@ pub async fn find_latest_valset(
             match ValsetUpdatedEvent::from_log(event) {
                 Ok(event) => {
                     // update latest_eth_valset
-                    latest_eth_valset = Some(Valset {
+                    previous_valset = Some(Valset {
                         nonce: event.valset_nonce,
                         members: event.members,
                         reward_amount: event.reward_amount,
                         reward_token: event.reward_token,
                     });
-
-                    // cache latest_eth_valset and current_block
-                    set_latest_valset_info(
-                        evm_chain_prefix,
-                        (current_block, latest_eth_valset.clone()),
-                    );
 
                     // now break from loop
                     break;
@@ -112,7 +106,10 @@ pub async fn find_latest_valset(
     }
 
     // return cached valset
-    if let Some(latest_eth_valset) = latest_eth_valset {
+    if let Some(latest_eth_valset) = previous_valset.clone() {
+        // cache latest_eth_valset and current_block
+        set_latest_valset_info(evm_chain_prefix, (latest_block, previous_valset));
+
         // just for warning
         let cosmos_chain_valset = cosmos_gravity::query::get_valset(
             grpc_client,
