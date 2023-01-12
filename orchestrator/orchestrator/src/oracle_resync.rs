@@ -9,12 +9,21 @@ use gravity_utils::types::{
     TransactionBatchExecutedEvent, ValsetUpdatedEvent,
 };
 use metrics_exporter::metrics_errors_counter;
+use std::collections::HashMap;
 use std::env;
+use std::sync::{Arc, RwLock};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::types::Log;
 
 use crate::ethereum_event_watcher::get_latest_safe_block;
+
+lazy_static! {
+    // cache evm_chain_prefix => (scan_block,Valset)
+    static ref LAST_CHECKED_BLOCK_INFO: Arc<RwLock<HashMap<String, (Uint256,Option<Uint256>)>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+}
 
 /// This is roughly the maximum number of blocks a reasonable Ethereum node
 /// can search in a single request before it starts timing out or behaving badly
@@ -25,6 +34,166 @@ pub fn convert_block_to_search() -> u128 {
         .unwrap_or_else(|_| BLOCKS_TO_SEARCH.to_string())
         .parse::<u128>()
         .unwrap_or_else(|_| BLOCKS_TO_SEARCH)
+}
+
+fn get_last_checked_block_info(evm_chain_prefix: &str) -> Option<(Uint256, Option<Uint256>)> {
+    LAST_CHECKED_BLOCK_INFO
+        .read()
+        .unwrap()
+        .get(evm_chain_prefix)
+        .cloned()
+}
+
+fn set_last_checked_block_info(evm_chain_prefix: &str, info: (Uint256, Option<Uint256>)) {
+    let mut lock = LAST_CHECKED_BLOCK_INFO.write().unwrap();
+    lock.insert(evm_chain_prefix.to_string(), info);
+}
+
+fn batch_events_callback(
+    last_event_nonce: Uint256,
+    _our_cosmos_address: CosmosAddress,
+    events: Vec<Log>,
+) -> Option<Uint256> {
+    for event in events {
+        match TransactionBatchExecutedEvent::from_log(&event) {
+            Ok(batch) => {
+                trace!(
+                    "{} batch event nonce {} last event nonce",
+                    batch.event_nonce,
+                    last_event_nonce
+                );
+                if upcast(batch.event_nonce) == last_event_nonce && event.block_number.is_some() {
+                    return event.block_number;
+                }
+            }
+            Err(e) => {
+                error!("Got batch event that we can't parse {}", e);
+                metrics_errors_counter(1, "Got batch event that we can't parse");
+            }
+        }
+    }
+    None
+}
+
+fn send_to_cosmos_events_callback(
+    last_event_nonce: Uint256,
+    _our_cosmos_address: CosmosAddress,
+    events: Vec<Log>,
+) -> Option<Uint256> {
+    for event in events {
+        match SendToCosmosEvent::from_log(&event) {
+            Ok(send) => {
+                trace!(
+                    "{} send event nonce {} last event nonce",
+                    send.event_nonce,
+                    last_event_nonce
+                );
+                if upcast(send.event_nonce) == last_event_nonce && event.block_number.is_some() {
+                    return event.block_number;
+                }
+            }
+            Err(e) => {
+                error!("Got SendToCosmos event that we can't parse {}", e);
+                metrics_errors_counter(3, "Got SendToCosmos event that we can't parse");
+            }
+        }
+    }
+    None
+}
+
+fn erc20_deployed_events_callback(
+    last_event_nonce: Uint256,
+    _our_cosmos_address: CosmosAddress,
+    events: Vec<Log>,
+) -> Option<Uint256> {
+    for event in events {
+        match Erc20DeployedEvent::from_log(&event) {
+            Ok(deploy) => {
+                trace!(
+                    "{} deploy event nonce {} last event nonce",
+                    deploy.event_nonce,
+                    last_event_nonce
+                );
+                if upcast(deploy.event_nonce) == last_event_nonce && event.block_number.is_some() {
+                    return event.block_number;
+                }
+            }
+            Err(e) => {
+                error!("Got ERC20Deployed event that we can't parse {}", e);
+                metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
+            }
+        }
+    }
+    None
+}
+
+fn logic_call_executed_events_callback(
+    last_event_nonce: Uint256,
+    _our_cosmos_address: CosmosAddress,
+    events: Vec<Log>,
+) -> Option<Uint256> {
+    for event in events {
+        match LogicCallExecutedEvent::from_log(&event) {
+            Ok(call) => {
+                trace!(
+                    "{} LogicCall event nonce {} last event nonce",
+                    call.event_nonce,
+                    last_event_nonce
+                );
+                if upcast(call.event_nonce) == last_event_nonce && event.block_number.is_some() {
+                    return event.block_number;
+                }
+            }
+            Err(e) => {
+                error!("Got ERC20Deployed event that we can't parse {}", e);
+                metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
+            }
+        }
+    }
+    None
+}
+
+// this reverse solves a very specific bug, we use the properties of the first valsets for edgecase
+// handling here, but events come in chronological order, so if we don't reverse the iterator
+// we will encounter the first validator sets first and exit early and incorrectly.
+// note that reversing everything won't actually get you that much of a performance gain
+// because this only involves events within the searching block range.
+fn valset_events_callback(
+    last_event_nonce: Uint256,
+    our_cosmos_address: CosmosAddress,
+    events: Vec<Log>,
+) -> Option<Uint256> {
+    for event in events.into_iter().rev() {
+        match ValsetUpdatedEvent::from_log(&event) {
+            Ok(valset) => {
+                // if we've found this event it is the first possible event from the contract
+                // no other events can come before it, therefore either there's been a parsing error
+                // or no events have been submitted on this chain yet.
+                let bootstrapping = valset.valset_nonce == 0 && last_event_nonce == 1u8.into();
+                // our last event was a valset update event, treat as normal case
+                let common_case =
+                    upcast(valset.event_nonce) == last_event_nonce && event.block_number.is_some();
+                trace!(
+                    "{} valset event nonce {} last event nonce",
+                    valset.event_nonce,
+                    last_event_nonce
+                );
+                if common_case || bootstrapping {
+                    return event.block_number;
+                }
+                // if we're looking for a later event nonce and we find the deployment of the contract
+                // we must have failed to parse the event we're looking for. The oracle can not start
+                else if valset.valset_nonce == 0 && last_event_nonce > 1u8.into() {
+                    panic!("Could not find the last event relayed by {}, Last Event nonce is {} but no event matching that could be found!", our_cosmos_address, last_event_nonce)
+                }
+            }
+            Err(e) => {
+                error!("Got valset event that we can't parse {}", e);
+                metrics_errors_counter(3, "Got valset event that we can't parse");
+            }
+        }
+    }
+    None
 }
 
 /// This function retrieves the last event nonce this oracle has relayed to Cosmos
@@ -60,7 +229,10 @@ pub async fn get_last_checked_block(
 
     let mut current_block: Uint256 = latest_block.clone();
 
-    while current_block.clone() > 0u8.into() {
+    let (previous_block, mut prev_checked_block) =
+        get_last_checked_block_info(evm_chain_prefix).unwrap_or((0u8.into(), None));
+
+    while current_block.clone() > previous_block {
         info!(
             "Oracle is resyncing, looking back into the history to find our last event nonce {}, on block {}",
             last_event_nonce, current_block
@@ -68,190 +240,76 @@ pub async fn get_last_checked_block(
         let end_search = if current_block.clone() < block_to_search.into() {
             0u8.into()
         } else {
-            current_block.clone() - block_to_search.into()
+            // must be >= previous_block and < current_block
+            Uint256::max(
+                current_block.clone() - block_to_search.into(),
+                previous_block.clone(),
+            )
         };
-        let batch_events = web3
-            .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
-                vec![gravity_contract_address],
-                vec![TRANSACTION_BATCH_EXECUTED_EVENT_SIG],
-            )
-            .await;
-        let send_to_cosmos_events = web3
-            .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
-                vec![gravity_contract_address],
-                vec![SENT_TO_COSMOS_EVENT_SIG],
-            )
-            .await;
-        let erc20_deployed_events = web3
-            .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
-                vec![gravity_contract_address],
-                vec![ERC20_DEPLOYED_EVENT_SIG],
-            )
-            .await;
-        let logic_call_executed_events = web3
-            .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
-                vec![gravity_contract_address],
-                vec![LOGIC_CALL_EVENT_SIG],
-            )
-            .await;
 
-        // valset update events have one special property
-        // that is useful to us in this handler a valset update event for nonce 0 is emitted
-        // in the contract constructor meaning once you find that event you can exit the search
-        // with confidence that you have not missed any events without searching the entire blockchain
-        // history
-        let valset_events = web3
-            .check_for_events(
-                end_search.clone(),
-                Some(current_block.clone()),
-                vec![gravity_contract_address],
-                vec![VALSET_UPDATED_EVENT_SIG],
-            )
-            .await;
-        if batch_events.is_err()
-            || send_to_cosmos_events.is_err()
-            || valset_events.is_err()
-            || erc20_deployed_events.is_err()
-            || logic_call_executed_events.is_err()
-        {
-            error!("Failed to get blockchain events while resyncing, is your Eth node working? If you see only one of these it's fine",);
-            delay_for(RETRY_TIME).await;
-            metrics_errors_counter(1, "Failed to get blockchain events while resyncing");
-            continue;
-        }
-        let batch_events = batch_events.unwrap();
-        let send_to_cosmos_events = send_to_cosmos_events.unwrap();
-        let mut valset_events = valset_events.unwrap();
-        let erc20_deployed_events = erc20_deployed_events.unwrap();
-        let logic_call_executed_events = logic_call_executed_events.unwrap();
+        let callback_chains: Vec<(
+            &str,
+            fn(Uint256, deep_space::Address, Vec<web30::types::Log>) -> Option<Uint256>,
+        )> = vec![
+            (TRANSACTION_BATCH_EXECUTED_EVENT_SIG, batch_events_callback),
+            (SENT_TO_COSMOS_EVENT_SIG, send_to_cosmos_events_callback),
+            (ERC20_DEPLOYED_EVENT_SIG, erc20_deployed_events_callback),
+            (LOGIC_CALL_EVENT_SIG, logic_call_executed_events_callback),
+            // valset update events have one special property
+            // that is useful to us in this handler a valset update event for nonce 0 is emitted
+            // in the contract constructor meaning once you find that event you can exit the search
+            // with confidence that you have not missed any events without searching the entire blockchain
+            // history
+            (VALSET_UPDATED_EVENT_SIG, valset_events_callback),
+        ];
+        let mut ind = 0;
+        let mut found_block = false;
+        while ind < callback_chains.len() {
+            // get events log
+            let (event_sig, callback) = callback_chains[ind];
+            let events = match web3
+                .check_for_events(
+                    end_search.clone(),
+                    Some(current_block.clone()),
+                    vec![gravity_contract_address],
+                    vec![event_sig],
+                )
+                .await
+            {
+                Err(_) => {
+                    error!("Failed to get blockchain events while resyncing, is your Eth node working? If you see only one of these it's fine",);
+                    delay_for(RETRY_TIME).await;
+                    metrics_errors_counter(1, "Failed to get blockchain events while resyncing");
+                    continue;
+                }
+                Ok(events) => events,
+            };
+            // look for and return the block number of the event last seen on the Cosmos chain
+            // then we will play events from that block (including that block, just in case
+            // there is more than one event there) onwards. We use valset nonce 0 as an indicator
+            // of what block the contract was deployed on.
+            if let Some(block) = callback(last_event_nonce.clone(), our_cosmos_address, events) {
+                // found last_checked_block
+                found_block = true;
+                prev_checked_block = Some(block);
+                break;
+            }
 
-        // look for and return the block number of the event last seen on the Cosmos chain
-        // then we will play events from that block (including that block, just in case
-        // there is more than one event there) onwards. We use valset nonce 0 as an indicator
-        // of what block the contract was deployed on.
-        for event in batch_events {
-            match TransactionBatchExecutedEvent::from_log(&event) {
-                Ok(batch) => {
-                    trace!(
-                        "{} batch event nonce {} last event nonce",
-                        batch.event_nonce,
-                        last_event_nonce
-                    );
-                    if upcast(batch.event_nonce) == last_event_nonce && event.block_number.is_some()
-                    {
-                        return event.block_number.unwrap();
-                    }
-                }
-                Err(e) => {
-                    error!("Got batch event that we can't parse {}", e);
-                    metrics_errors_counter(1, "Got batch event that we can't parse");
-                }
-            }
-        }
-        for event in send_to_cosmos_events {
-            match SendToCosmosEvent::from_log(&event) {
-                Ok(send) => {
-                    trace!(
-                        "{} send event nonce {} last event nonce",
-                        send.event_nonce,
-                        last_event_nonce
-                    );
-                    if upcast(send.event_nonce) == last_event_nonce && event.block_number.is_some()
-                    {
-                        return event.block_number.unwrap();
-                    }
-                }
-                Err(e) => {
-                    error!("Got SendToCosmos event that we can't parse {}", e);
-                    metrics_errors_counter(3, "Got SendToCosmos event that we can't parse");
-                }
-            }
-        }
-        for event in erc20_deployed_events {
-            match Erc20DeployedEvent::from_log(&event) {
-                Ok(deploy) => {
-                    trace!(
-                        "{} deploy event nonce {} last event nonce",
-                        deploy.event_nonce,
-                        last_event_nonce
-                    );
-                    if upcast(deploy.event_nonce) == last_event_nonce
-                        && event.block_number.is_some()
-                    {
-                        return event.block_number.unwrap();
-                    }
-                }
-                Err(e) => {
-                    error!("Got ERC20Deployed event that we can't parse {}", e);
-                    metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
-                }
-            }
-        }
-        for event in logic_call_executed_events {
-            match LogicCallExecutedEvent::from_log(&event) {
-                Ok(call) => {
-                    trace!(
-                        "{} LogicCall event nonce {} last event nonce",
-                        call.event_nonce,
-                        last_event_nonce
-                    );
-                    if upcast(call.event_nonce) == last_event_nonce && event.block_number.is_some()
-                    {
-                        return event.block_number.unwrap();
-                    }
-                }
-                Err(e) => {
-                    error!("Got ERC20Deployed event that we can't parse {}", e);
-                    metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
-                }
-            }
+            ind += 1;
         }
 
-        // this reverse solves a very specific bug, we use the properties of the first valsets for edgecase
-        // handling here, but events come in chronological order, so if we don't reverse the iterator
-        // we will encounter the first validator sets first and exit early and incorrectly.
-        // note that reversing everything won't actually get you that much of a performance gain
-        // because this only involves events within the searching block range.
-        valset_events.reverse();
-        for event in valset_events {
-            match ValsetUpdatedEvent::from_log(&event) {
-                Ok(valset) => {
-                    // if we've found this event it is the first possible event from the contract
-                    // no other events can come before it, therefore either there's been a parsing error
-                    // or no events have been submitted on this chain yet.
-                    let bootstrapping = valset.valset_nonce == 0 && last_event_nonce == 1u8.into();
-                    // our last event was a valset update event, treat as normal case
-                    let common_case = upcast(valset.event_nonce) == last_event_nonce
-                        && event.block_number.is_some();
-                    trace!(
-                        "{} valset event nonce {} last event nonce",
-                        valset.event_nonce,
-                        last_event_nonce
-                    );
-                    if common_case || bootstrapping {
-                        return event.block_number.unwrap();
-                    }
-                    // if we're looking for a later event nonce and we find the deployment of the contract
-                    // we must have failed to parse the event we're looking for. The oracle can not start
-                    else if valset.valset_nonce == 0 && last_event_nonce > 1u8.into() {
-                        panic!("Could not find the last event relayed by {}, Last Event nonce is {} but no event matching that could be found!", our_cosmos_address, last_event_nonce)
-                    }
-                }
-                Err(e) => {
-                    error!("Got valset event that we can't parse {}", e);
-                    metrics_errors_counter(3, "Got valset event that we can't parse");
-                }
-            }
+        if found_block {
+            break;
         }
+
         current_block = end_search;
+    }
+
+    // return cached valset
+    if let Some(last_checked_block) = prev_checked_block.clone() {
+        // cache latest_eth_valset and current_block
+        set_last_checked_block_info(evm_chain_prefix, (latest_block, prev_checked_block));
+        return last_checked_block;
     }
 
     // we should exit above when we find the zero valset, if we have the wrong contract address through we could be at it a while as we go over
