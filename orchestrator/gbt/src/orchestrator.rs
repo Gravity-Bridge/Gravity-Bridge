@@ -1,12 +1,11 @@
 use crate::args::OrchestratorOpts;
 use crate::config::config_exists;
 use crate::config::load_keys;
+use crate::utils::parse_bridge_ethereum_address_with_exit;
 use crate::utils::print_relaying_explanation;
-use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::query::query_evm_chain_from_net_version;
 use deep_space::{CosmosPrivateKey, PrivateKey};
-use futures::future::join_all;
 use gravity_utils::connection_prep::{
     check_delegate_addresses, check_for_eth, wait_for_cosmos_node_ready,
 };
@@ -162,27 +161,10 @@ pub async fn orchestrator(
         .expect("Failed to get evm chain params");
 
     // get the gravity contract address, if not provided
-    let contract_address = if let Some(c) = args.gravity_contract_address {
-        c
-    } else {
-        let c = evm_chain_params.bridge_ethereum_address.parse();
-        match c {
-            Ok(v) => {
-                if v == *ZERO_ADDRESS {
-                    error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-                    exit(1);
-                }
-                c.unwrap()
-            }
-            Err(_) => {
-                error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-                exit(1);
-            }
-        }
-    };
+    let contract_address =
+        parse_bridge_ethereum_address_with_exit(&evm_chain_params.bridge_ethereum_address);
 
-    let mut futures = vec![];
-    futures.push(orchestrator_main_loop(
+    orchestrator_main_loop(
         cosmos_key,
         ethereum_key,
         web3.clone(),
@@ -193,8 +175,6 @@ pub async fn orchestrator(
         evm_chain_params.gravity_id.clone(),
         fee.clone(),
         config.clone(),
-    ));
-
-    // join all process for all evm chains
-    join_all(futures).await;
+    )
+    .await;
 }

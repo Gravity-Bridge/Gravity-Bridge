@@ -1,5 +1,7 @@
+use clarity::address::Address;
+use clarity::constants::ZERO_ADDRESS;
 use gravity_utils::types::{BatchRequestMode, RelayerConfig, ValsetRelayingMode};
-use std::time::Duration;
+use std::{process::exit, time::Duration};
 
 pub const TIMEOUT: Duration = Duration::from_secs(60);
 
@@ -42,4 +44,15 @@ pub fn print_relaying_explanation(input: &RelayerConfig, batch_requests: bool) {
         gravity_utils::types::BatchRelayingMode::ProfitableWithWhitelist { margin, whitelist } =>
             info!("This relayer will relay profitable matches with {} margin, and the following tokens with the provided amounts {:?}", margin, whitelist)
     }
+}
+
+/// Try parse ethereum address and check empty
+pub fn parse_bridge_ethereum_address_with_exit(address: &str) -> Address {
+    if let Ok(v) = address.parse() {
+        if v != *ZERO_ADDRESS {
+            return v;
+        }
+    }
+    error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
+    exit(1)
 }

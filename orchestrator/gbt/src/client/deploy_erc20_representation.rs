@@ -1,4 +1,7 @@
-use crate::{args::DeployErc20RepresentationOpts, utils::TIMEOUT};
+use crate::{
+    args::DeployErc20RepresentationOpts,
+    utils::{parse_bridge_ethereum_address_with_exit, TIMEOUT},
+};
 use clarity::{utils::display_uint256_as_address, Address as EthAddress};
 use cosmos_gravity::query::{get_gravity_params, query_evm_chain_from_net_version};
 use ethereum_gravity::deploy_erc20::deploy_erc20;
@@ -45,22 +48,14 @@ pub async fn deploy_erc20_representation(
     let ethereum_public_key = ethereum_key.to_address();
     check_for_eth(ethereum_public_key, &web3).await;
 
-    let contract_address = if let Some(c) = args.gravity_contract_address {
-        c
-    } else {
-        let params = get_gravity_params(&mut grpc).await.unwrap();
-        let evm_chain_params = params
-            .evm_chain_params
-            .iter()
-            .find(|p| p.evm_chain_prefix.eq(&evm_chain_prefix))
-            .expect("Failed to get evm chain params");
-        let c = evm_chain_params.bridge_ethereum_address.parse();
-        if c.is_err() {
-            error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-            exit(1);
-        }
-        c.unwrap()
-    };
+    let params = get_gravity_params(&mut grpc).await.unwrap();
+    let evm_chain_params = params
+        .evm_chain_params
+        .iter()
+        .find(|p| p.evm_chain_prefix.eq(&evm_chain_prefix))
+        .expect("Failed to get evm chain params");
+    let contract_address =
+        parse_bridge_ethereum_address_with_exit(&evm_chain_params.bridge_ethereum_address);
 
     let res = grpc
         .denom_to_erc20(QueryDenomToErc20Request {

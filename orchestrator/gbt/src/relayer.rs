@@ -1,8 +1,8 @@
 use crate::args::RelayerOpts;
 use crate::config::config_exists;
 use crate::config::load_keys;
+use crate::utils::parse_bridge_ethereum_address_with_exit;
 use crate::utils::print_relaying_explanation;
-use clarity::constants::ZERO_ADDRESS;
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::query::query_evm_chain_from_net_version;
 use deep_space::{CosmosPrivateKey, PrivateKey};
@@ -103,26 +103,9 @@ pub async fn relayer(
         .expect("Failed to get evm chain params");
 
     // get the gravity contract address, if not provided
-    let contract_address = if let Some(c) = args.gravity_contract_address {
-        c
-    } else {
-        let c = evm_chain_params.bridge_ethereum_address.parse();
+    let contract_address =
+        parse_bridge_ethereum_address_with_exit(&evm_chain_params.bridge_ethereum_address);
 
-        match c {
-            Ok(v) => {
-                if v == *ZERO_ADDRESS {
-                    error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-                    exit(1);
-                }
-
-                v
-            }
-            Err(_) => {
-                error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-                exit(1);
-            }
-        }
-    };
     info!("Gravity contract address {}", contract_address);
 
     // setup and explain relayer settings

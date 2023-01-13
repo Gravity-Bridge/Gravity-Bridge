@@ -10,11 +10,7 @@ use gravity_utils::types::{LogicCall, TransactionBatch, Valset};
 /// digest that is normally signed or may be used as a 'hash of the message'
 pub fn encode_valset_confirm(gravity_id: String, valset: Valset) -> Vec<u8> {
     let (eth_addresses, powers) = valset.to_arrays();
-    let reward_token = if let Some(v) = valset.reward_token {
-        v
-    } else {
-        *ZERO_ADDRESS
-    };
+    let reward_token = valset.reward_token.unwrap_or(*ZERO_ADDRESS);
     encode_tokens(&[
         Token::FixedString(gravity_id),
         Token::FixedString("checkpoint".to_string()),
