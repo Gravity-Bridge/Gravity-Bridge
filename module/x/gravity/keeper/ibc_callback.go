@@ -75,7 +75,7 @@ func GetReceivedCoin(srcPort, srcChannel, dstPort, dstChannel, rawDenom, rawAmt 
 // CONTRACT: This middleware MUST be executed transfer after the ICS20 OnRecvPacket
 // Return acknowledgement and continue with the next layer of the IBC middleware
 // stack if:
-// - memo is not MsgSendToEth
+// - memo is not EthDest
 // - The base denomination is not registered as ERC20
 func (k Keeper) OnRecvPacket(
 	ctx sdk.Context,
