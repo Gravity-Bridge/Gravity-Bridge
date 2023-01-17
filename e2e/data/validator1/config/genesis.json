@@ -410,6 +410,53 @@
                             "reward_token": "0x0000000000000000000000000000000000000000"
                         }
                     ]
+                },
+                {
+                    "attestations": [],
+                    "batch_confirms": [],
+                    "batches": [],
+                    "delegate_keys": [
+                        {
+                            "eth_address": "0xc9B6f87d637d4774EEB54f8aC2b89dBC3D38226b",
+                            "orchestrator": "oraib1t8luzfnnrnupg6uhwr9gfdd6t7amshpj0nxh0g",
+                            "validator": "oraibvaloper1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2su2jgqk"
+                        }
+                    ],
+                    "erc20_to_denoms": [],
+                    "evm_chain": {
+                        "evm_chain_name": "bsc mainnet fork",
+                        "evm_chain_net_version": "56",
+                        "evm_chain_prefix": "bsc-mainnet"
+                    },
+                    "gravity_nonces": {
+                        "last_batch_id": "0",
+                        "last_observed_evm_block_height": "0",
+                        "last_observed_nonce": "0",
+                        "last_slashed_batch_block": "0",
+                        "last_slashed_logic_call_block": "0",
+                        "last_slashed_valset_nonce": "0",
+                        "last_tx_pool_id": "0",
+                        "latest_valset_nonce": "1"
+                    },
+                    "logic_call_confirms": [],
+                    "logic_calls": [],
+                    "pending_ibc_auto_forwards": [],
+                    "unbatched_transfers": [],
+                    "valset_confirms": [],
+                    "valsets": [
+                        {
+                            "height": "1",
+                            "members": [
+                                {
+                                    "ethereum_address": "0xc9B6f87d637d4774EEB54f8aC2b89dBC3D38226b",
+                                    "power": "4294967296"
+                                }
+                            ],
+                            "nonce": "1",
+                            "reward_amount": "0",
+                            "reward_token": "0x0000000000000000000000000000000000000000"
+                        }
+                    ]
                 }
             ],
             "params": {
@@ -419,7 +466,17 @@
                         "average_ethereum_block_time": "15000",
                         "bridge_active": true,
                         "bridge_chain_id": "420",
-                        "bridge_ethereum_address": "0x0000000000000000000000000000000000000000",
+                        "bridge_ethereum_address": "0xa49e040d7b8F045B090306C88aEF48955404B2e8",
+                        "contract_source_hash": "",
+                        "ethereum_blacklist": [],
+                        "gravity_id": "defaultgravityid"
+                    },
+                    {
+                        "evm_chain_prefix": "bsc-mainnet",
+                        "average_ethereum_block_time": "15000",
+                        "bridge_active": true,
+                        "bridge_chain_id": "56",
+                        "bridge_ethereum_address": "0xa49e040d7b8f045b090306c88aef48955404b2e8",
                         "contract_source_hash": "",
                         "ethereum_blacklist": [],
                         "gravity_id": "defaultgravityid"

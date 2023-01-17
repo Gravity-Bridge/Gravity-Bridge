@@ -4,9 +4,19 @@ use gravity_utils::types::event_signatures::*;
 use gravity_utils::types::{EthereumEvent, ValsetUpdatedEvent};
 use gravity_utils::{error::GravityError, types::Valset};
 use std::collections::HashMap;
+use std::env;
 use std::sync::{Arc, RwLock};
 use tonic::transport::Channel;
 use web30::client::Web3;
+
+const BLOCKS_TO_SEARCH: u128 = 5_000u128;
+
+pub fn convert_block_to_search() -> u128 {
+    env::var("BLOCK_TO_SEARCH")
+        .unwrap_or_else(|_| BLOCKS_TO_SEARCH.to_string())
+        .parse::<u128>()
+        .unwrap_or_else(|_| BLOCKS_TO_SEARCH)
+}
 
 // TODO: using leveldb
 lazy_static! {
@@ -39,7 +49,7 @@ pub async fn find_latest_valset(
     gravity_contract_address: Address,
     web3: &Web3,
 ) -> Result<Valset, GravityError> {
-    const BLOCKS_TO_SEARCH: u128 = 5_000u128;
+    let block_to_search = convert_block_to_search();
     let latest_block = web3.eth_block_number().await?;
     let mut current_block: Uint256 = latest_block.clone();
 
@@ -51,12 +61,12 @@ pub async fn find_latest_valset(
             "About to submit a Valset or Batch looking back into the history to find the last Valset Update, on block {}",
             current_block
         );
-        let end_search = if current_block.clone() < BLOCKS_TO_SEARCH.into() {
+        let end_search = if current_block.clone() < block_to_search.into() {
             0u8.into()
         } else {
             // must be >= previous_block and < current_block
             Uint256::max(
-                current_block.clone() - BLOCKS_TO_SEARCH.into(),
+                current_block.clone() - block_to_search.into(),
                 previous_block.clone(),
             )
         };

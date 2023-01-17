@@ -109,4 +109,7 @@ gravity tx gravity add-evm-chain "goerli network 2nd" "foobar" "421" "defaultgra
 gravity tx gov vote 1 yes --from validator1 --home e2e/data/validator1/ -y --keyring-backend test --chain-id gravity-test -b block
 ```
 
-<!-- oraid tx ibc-transfer transfer transfer channel-0 oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4 1orai --from validator -y -->
+<!-- oraid tx ibc-transfer transfer transfer channel-0 oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4 1orai --from validator -y
+
+oraid tx ibc-transfer transfer transfer channel-0 oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4 1ibc/C720B50B80E3DEB56C76A3DB053DF269597B4B80B56D562BA914B6BF8D0DF982 --from validator --chain-id orai-test -y --keyring-backend test -b block --memo "goerli-testnet0xc9B6f87d637d4774EEB54f8aC2b89dBC3D38226b"
+ -->

@@ -190,7 +190,9 @@ async function deploy() {
     const erc721TestAddress = testERC721.address;
     console.log("ERC721 deployed at Address - ", erc721TestAddress);
   }
-  const gravityIdString = await getGravityId();
+  // TODO: Need to fix querying gravity to get the correct gravity id from the network
+  const gravityIdString = "oraibridge-2";
+  console.log("gravity id: ", gravityIdString)
   const gravityId = ethers.utils.formatBytes32String(gravityIdString);
 
   console.log("Starting Gravity contract deploy");
