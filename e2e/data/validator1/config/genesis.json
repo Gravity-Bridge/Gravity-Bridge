@@ -425,7 +425,7 @@
                     "erc20_to_denoms": [],
                     "evm_chain": {
                         "evm_chain_name": "bsc mainnet fork",
-                        "evm_chain_net_version": "56",
+                        "evm_chain_net_version": "421",
                         "evm_chain_prefix": "bsc-mainnet"
                     },
                     "gravity_nonces": {
@@ -475,7 +475,7 @@
                         "evm_chain_prefix": "bsc-mainnet",
                         "average_ethereum_block_time": "15000",
                         "bridge_active": true,
-                        "bridge_chain_id": "56",
+                        "bridge_chain_id": "421",
                         "bridge_ethereum_address": "0xc020aEcE63cbba5c1EbC46d1B39fB047977b0539",
                         "contract_source_hash": "",
                         "ethereum_blacklist": [],

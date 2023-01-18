@@ -40,7 +40,7 @@ module.exports = {
       chainId: 421,
       accounts: [{ privateKey: "0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08", balance: "10000000000000000000000" }],
       forking: {
-        url: "https://bsc-dataseed.binance.org",
+        url: "https://1rpc.io/bnb",
         blockNumber: 24882604
       },
       mining: {
