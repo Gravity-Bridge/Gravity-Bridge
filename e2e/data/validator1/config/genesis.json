@@ -479,7 +479,7 @@
                         "bridge_ethereum_address": "0xa49e040d7b8f045b090306c88aef48955404b2e8",
                         "contract_source_hash": "",
                         "ethereum_blacklist": [],
-                        "gravity_id": "defaultgravityid"
+                        "gravity_id": "oraibridge-fork"
                     }
                 ],
                 "average_block_time": "5000",
