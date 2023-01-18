@@ -161,8 +161,13 @@ pub async fn orchestrator(
         .expect("Failed to get evm chain params");
 
     // get the gravity contract address, if not provided
-    let contract_address =
-        parse_bridge_ethereum_address_with_exit(&evm_chain_params.bridge_ethereum_address);
+    // override if there is args gravity contract address
+    let bridge_ethereum_address_raw = if args.gravity_contract_address.is_some() {
+        args.gravity_contract_address.unwrap().to_string()
+    } else {
+        evm_chain_params.bridge_ethereum_address.clone()
+    };
+    let contract_address = parse_bridge_ethereum_address_with_exit(&bridge_ethereum_address_raw);
 
     orchestrator_main_loop(
         cosmos_key,

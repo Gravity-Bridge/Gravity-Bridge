@@ -54,7 +54,7 @@ cat data/validator-phrases
 ```bash
 docker-compose up -d
 
-# Gravity contract on Goerli: 0xa49e040d7b8F045B090306C88aEF48955404B2e8
+# Gravity contract on Goerli: 0xa49e040d7b8F045B090306C88aEF48955404B2e8; Gravity id: defaultgravityid
 
 # Dummy token on Goerli: 0xf48007ea0F3AA4d2A59DFb4473dd30f90488c8Ef
 ```
@@ -107,6 +107,9 @@ npx ts-node scripts/get-dummy-balance.ts
 # Add new evm chain
 gravity tx gravity add-evm-chain "goerli network 2nd" "foobar" "421" "defaultgravityid" "add goerli network 2nd" 100000000uoraib "foobar" --from validator1 --home e2e/data/validator1/ -y --keyring-backend test --chain-id gravity-test -b block --gas 2000000
 gravity tx gov vote 1 yes --from validator1 --home e2e/data/validator1/ -y --keyring-backend test --chain-id gravity-test -b block
+
+# bsc mainnet test gravity contract - 0xc020aece63cbba5c1ebc46d1b39fb047977b0539
+# gravity id of bsc mainnet test: "oraibridge-fork"
 ```
 
 <!-- oraid tx ibc-transfer transfer transfer channel-0 oraib1kvx7v59g9e8zvs7e8jm2a8w4mtp9ys2sjufdm4 1orai --from validator -y

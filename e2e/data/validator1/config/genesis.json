@@ -476,7 +476,7 @@
                         "average_ethereum_block_time": "15000",
                         "bridge_active": true,
                         "bridge_chain_id": "56",
-                        "bridge_ethereum_address": "0xa49e040d7b8f045b090306c88aef48955404b2e8",
+                        "bridge_ethereum_address": "0xc020aEcE63cbba5c1EbC46d1B39fB047977b0539",
                         "contract_source_hash": "",
                         "ethereum_blacklist": [],
                         "gravity_id": "oraibridge-fork"
@@ -631,7 +631,7 @@
                                     "root": {
                                         "hash": "zBkhVQwwUthUvN2uRs1wOrQ6nbatEXKw64vWBrXXfAs="
                                     },
-                                    "timestamp": "2023-01-08T22:27:54.999307696Z"
+                                    "timestamp": "2023-01-18T04:08:50.757146613Z"
                                 },
                                 "height": {
                                     "revision_height": "10",
@@ -645,7 +645,7 @@
                                     "root": {
                                         "hash": "tEsyyUzCAkz8E6PN7glbEo+k4xmzF/hJ27AEp+ml5iI="
                                     },
-                                    "timestamp": "2023-01-08T22:28:25.080787534Z"
+                                    "timestamp": "2023-01-18T04:08:50.757146613Z"
                                 },
                                 "height": {
                                     "revision_height": "16",
@@ -659,7 +659,7 @@
                                     "root": {
                                         "hash": "vtMLWf9qgApe+pwCpfGVo61Leur3dSSszO1cvjj4fV0="
                                     },
-                                    "timestamp": "2023-01-08T22:27:19.906519374Z"
+                                    "timestamp": "2023-01-18T04:08:50.757146613Z"
                                 },
                                 "height": {
                                     "revision_height": "3",
@@ -673,7 +673,7 @@
                                     "root": {
                                         "hash": "kI3f9LTPz5UeiE2Mhj65cTQeHG8DYIQjRfq2LnQYpiM="
                                     },
-                                    "timestamp": "2023-01-08T22:27:34.944702232Z"
+                                    "timestamp": "2023-01-18T04:08:50.757146613Z"
                                 },
                                 "height": {
                                     "revision_height": "6",
@@ -916,7 +916,7 @@
         },
         "version": {}
     },
-    "genesis_time": "2022-12-28T21:25:49.364897384Z",
+    "genesis_time": "2023-01-18T04:08:50.757146613Z",
     "initial_height": "15",
     "validators": [
         {
