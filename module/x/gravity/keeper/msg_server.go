@@ -8,10 +8,14 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
+
+// BasisPointDivisor used in determining if a SendToEth fee meets the governance-controlled minimum
+const BasisPointDivisor uint64 = 10000
 
 type msgServer struct {
 	Keeper
@@ -138,6 +142,11 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted")
 	}
 
+	// Collect the ChainFee and give to stakers, ensuring it meets MinChainFeeBasisPoints
+	if err := k.checkAndDeductSendToEthFees(ctx, sender, msg.Amount, msg.ChainFee); err != nil {
+		return nil, sdkerrors.Wrapf(err, "Could not deduct chainFee %v from account %v", msg.ChainFee.String(), msg.Sender)
+	}
+
 	txID, err := k.AddToOutgoingPool(ctx, sender, *dest, msg.Amount, msg.BridgeFee)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Could not add to outgoing pool")
@@ -151,6 +160,57 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	)
 
 	return &types.MsgSendToEthResponse{}, nil
+}
+
+// checkAndDeductSendToEthFees asserts that the minimum chainFee has been met for the given sendAmount
+func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAddress, sendAmount sdk.Coin, chainFee sdk.Coin) error {
+	// Compute the minimum fee which must be paid
+	minFeeBasisPoints := int64(0)
+	params, err := k.Keeper.GetParamsIfSet(ctx)
+	if err == nil {
+		// The params have been set, get the min send to eth fee
+		minFeeBasisPoints = int64(params.MinChainFeeBasisPoints)
+	}
+	minFee := sdk.NewDecFromInt(sendAmount.Amount).
+		QuoInt64(int64(BasisPointDivisor)).
+		MulInt64(minFeeBasisPoints).
+		TruncateInt()
+
+	// Require that the minimum has been met
+	if minFee.GT(sdk.ZeroInt()) { // Ignore fees too low to collect
+		minFeeCoin := sdk.NewCoin(sendAmount.GetDenom(), minFee)
+		if chainFee.IsLT(minFeeCoin) {
+			err := sdkerrors.Wrapf(
+				sdkerrors.ErrInsufficientFee,
+				"chain fee provided [%s] is insufficient, need at least [%s]",
+				chainFee,
+				minFeeCoin,
+			)
+			return err
+		}
+	}
+
+	// Finally, collect any provided fees
+	if !(chainFee == sdk.Coin{}) && chainFee.Amount.IsPositive() {
+		senderAcc := k.accountKeeper.GetAccount(ctx, sender)
+
+		err = sdkante.DeductFees(k.bankKeeper, ctx, senderAcc, sdk.NewCoins(chainFee))
+		if err != nil {
+			ctx.Logger().Error("Could not deduct MsgSendToEth fee!", "error", err, "account", senderAcc, "chainFee", chainFee)
+			return err
+		}
+
+		// Report the fee collection to the event log
+		ctx.EventManager().EmitTypedEvent(
+			&types.EventSendToEthFeeCollected{
+				Sender:     sender.String(),
+				SendAmount: sendAmount.String(),
+				FeeAmount:  chainFee.String(),
+			},
+		)
+	}
+
+	return nil
 }
 
 // RequestBatch handles MsgRequestBatch
