@@ -362,3 +362,9 @@ message EventOutgoingTxId {
     string message = 1;
     string tx_id = 2;
 }
+
+message EventSendToEthFeeCollected {
+  string sender = 1;
+  string send_amount = 2;
+  string fee_amount = 3;
+}

@@ -38,9 +38,8 @@ func NewAnteHandler(
 	// Create additional AnteDecorators to chain together
 	ibcAnteDecorator := ibcante.NewAnteDecorator(ibcKeeper)
 	minCommissionDecorator := NewMinCommissionDecorator(cdc)
-	bridgeFeeDecorator := NewBridgeFeeDecorator(gravityKeeper, accountKeeper, bankKeeper, feegrantKeeper)
 
-	addlDecorators := []sdk.AnteDecorator{ibcAnteDecorator, minCommissionDecorator, bridgeFeeDecorator}
+	addlDecorators := []sdk.AnteDecorator{ibcAnteDecorator, minCommissionDecorator}
 	// Chain together and terminate the input decorators array
 	customHandler := sdk.ChainAnteDecorators(addlDecorators...)
 
