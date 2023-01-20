@@ -62,7 +62,9 @@ pub async fn orchestrator_main_loop(
 ) {
     let fee = user_fee_amount;
 
-    test_eth_connection(web3.clone()).await;
+    if config.orchestrator.check_eth_rpc {
+        test_eth_connection(web3.clone()).await;
+    }
 
     let a = eth_oracle_main_loop(
         cosmos_key,
