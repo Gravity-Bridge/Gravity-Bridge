@@ -66,17 +66,19 @@ pub fn get_decimals(meta: &Metadata) -> u32 {
 }
 
 pub fn create_default_test_config() -> GravityBridgeToolsConfig {
-    let mut no_relay_market_config = GravityBridgeToolsConfig::default();
+    let mut cfg = GravityBridgeToolsConfig::default();
     // enable integrated relayer by default for tests
-    no_relay_market_config.orchestrator.relayer_enabled = true;
-    no_relay_market_config.relayer.batch_relaying_mode = BatchRelayingMode::EveryBatch;
-    no_relay_market_config.relayer.logic_call_market_enabled = false;
-    no_relay_market_config.relayer.valset_relaying_mode = ValsetRelayingMode::EveryValset;
-    no_relay_market_config.relayer.batch_request_mode = BatchRequestMode::EveryBatch;
-    no_relay_market_config.relayer.relayer_loop_speed = 10;
-    no_relay_market_config.relayer.ibc_auto_forward_loop_speed = 10;
-    no_relay_market_config.relayer.ibc_auto_forwards_to_execute = 300;
-    no_relay_market_config
+    cfg.orchestrator.relayer_enabled = true;
+    cfg.orchestrator.check_eth_rpc = false;
+    cfg.relayer.batch_relaying_mode = BatchRelayingMode::EveryBatch;
+    cfg.relayer.logic_call_market_enabled = false;
+    cfg.relayer.valset_relaying_mode = ValsetRelayingMode::EveryValset;
+    cfg.relayer.batch_request_mode = BatchRequestMode::EveryBatch;
+    cfg.relayer.relayer_loop_speed = 10;
+    cfg.relayer.ibc_auto_forward_loop_speed = 10;
+    cfg.relayer.ibc_auto_forwards_to_execute = 300;
+
+    cfg
 }
 
 pub fn create_no_batch_requests_config() -> GravityBridgeToolsConfig {

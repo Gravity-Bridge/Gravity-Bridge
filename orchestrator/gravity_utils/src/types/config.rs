@@ -337,16 +337,24 @@ pub struct OrchestratorConfig {
     /// If this Orchestrator should run an integrated relayer or not
     #[serde(default = "default_relayer_enabled")]
     pub relayer_enabled: bool,
+    /// Whether to check that the ethereum node supports "finalized" blocks
+    #[serde(default = "default_check_eth_rpc")]
+    pub check_eth_rpc: bool,
 }
 
 fn default_relayer_enabled() -> bool {
     false
 }
 
+fn default_check_eth_rpc() -> bool {
+    true
+}
+
 impl Default for OrchestratorConfig {
     fn default() -> Self {
         OrchestratorConfig {
             relayer_enabled: default_relayer_enabled(),
+            check_eth_rpc: default_check_eth_rpc(),
         }
     }
 }
