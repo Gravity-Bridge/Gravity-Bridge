@@ -23,7 +23,7 @@ const args = commandLineArgs([
   { name: "contractERC721", type: String },
   // test mode, if enabled this script deploys three ERC20 contracts for testing
   { name: "test-mode", type: String },
-  { name: "evm-prefix", type: String, defaultValue: "goerli-testnet" },
+  { name: "evm-prefix", type: String, defaultValue: "" },
   { name: "gravity-id", type: String, defaultValue: "" },
   { name: "admin", type: String, defaultValue: "0xD7F771664541b3f647CBA2be9Ab1Bc121bEEC913" },
 ]);
@@ -243,18 +243,17 @@ async function deploy() {
 
   await gravity.deployed();
   console.log("Gravity deployed at Address - ", gravity.address);
-  await submitGravityAddress(gravity.address);
 
-  console.log("Starting Gravity ERC721 contract deploy");
-  const { abi: abiERC721, bytecode: bytecodeERC721 } = getContractArtifacts(args["contractERC721"]);
-  const factoryERC721 = new ethers.ContractFactory(abiERC721, bytecodeERC721, wallet);
+  // console.log("Starting Gravity ERC721 contract deploy");
+  // const { abi: abiERC721, bytecode: bytecodeERC721 } = getContractArtifacts(args["contractERC721"]);
+  // const factoryERC721 = new ethers.ContractFactory(abiERC721, bytecodeERC721, wallet);
 
-  const gravityERC721 = (await factoryERC721.deploy(
-    gravity.address
-  ) as GravityERC721);
+  // const gravityERC721 = (await factoryERC721.deploy(
+  //   gravity.address
+  // ) as GravityERC721);
 
-  await gravityERC721.deployed();
-  console.log("GravityERC721 deployed at Address - ", gravityERC721.address);
+  // await gravityERC721.deployed();
+  // console.log("GravityERC721 deployed at Address - ", gravityERC721.address);
 }
 
 function getContractArtifacts(path: string): { bytecode: string; abi: string } {
@@ -312,8 +311,6 @@ async function getLatestValset(): Promise<Valset> {
   let valset: ValsetTypeWrapper = JSON.parse(decode(valsets.result.response.value))
   return valset.value;
 }
-
-async function submitGravityAddress(address: string) { }
 
 async function main() {
   await deploy();
