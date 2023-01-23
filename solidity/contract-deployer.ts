@@ -25,6 +25,7 @@ const args = commandLineArgs([
   { name: "test-mode", type: String },
   { name: "evm-prefix", type: String, defaultValue: "goerli-testnet" },
   { name: "gravity-id", type: String, defaultValue: "" },
+  { name: "admin", type: String, defaultValue: "0xD7F771664541b3f647CBA2be9Ab1Bc121bEEC913" },
 ]);
 
 // 4. Now, the deployer script hits a full node api, gets the Eth signatures of the valset from the latest block, and deploys the Ethereum contract.
@@ -236,6 +237,7 @@ async function deploy() {
     gravityId,
     eth_addresses,
     powers,
+    args["admin"],
     overrides
   )) as Gravity;
 
