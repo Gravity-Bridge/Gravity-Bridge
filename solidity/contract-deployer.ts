@@ -229,18 +229,18 @@ async function deploy() {
     exit(1)
   }
 
-  // const gravity = (await factory.deploy(
-  //   // todo generate this randomly at deployment time that way we can avoid
-  //   // anything but intentional conflicts
-  //   gravityId,
-  //   eth_addresses,
-  //   powers,
-  //   args["admin"],
-  //   overrides
-  // )) as Gravity;
+  const gravity = (await factory.deploy(
+    // todo generate this randomly at deployment time that way we can avoid
+    // anything but intentional conflicts
+    gravityId,
+    eth_addresses,
+    powers,
+    args["admin"],
+    overrides
+  )) as Gravity;
 
-  // await gravity.deployed();
-  // console.log("Gravity deployed at Address - ", gravity.address);
+  await gravity.deployed();
+  console.log("Gravity deployed at Address - ", gravity.address);
 
   // console.log("Starting Gravity ERC721 contract deploy");
   // const { abi: abiERC721, bytecode: bytecodeERC721 } = getContractArtifacts(args["contractERC721"]);
