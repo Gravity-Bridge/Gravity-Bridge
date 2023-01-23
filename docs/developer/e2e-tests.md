@@ -93,7 +93,7 @@ gravity tx gravity send-to-eth 0xc9B6f87d637d4774EEB54f8aC2b89dBC3D38226b 1fooba
 
 ```bash
 ## Deploy new contract
-npx ts-node contract-deployer.ts --cosmos-node="http://localhost:26657" --eth-node=http://localhost:8545 --eth-privkey=0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08 --contract=artifacts/contracts/Gravity.sol/Gravity.json
+npx ts-node contract-deployer.ts --cosmos-node="http://localhost:26657" --eth-node=http://localhost:8545 --eth-privkey=0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08 --contract=artifacts/contracts/Gravity.sol/Gravity.json --evm-prefix="foobar" --gravity-id="foobar"
 
 # fork Goerli. 8218229 is a block after the block of gravity contract & dummy token deployment. By doing this, we can re-play the network
 yarn hardhat node --fork https://rpc.ankr.com/eth_goerli --fork-block-number 8218229 --port 8545
