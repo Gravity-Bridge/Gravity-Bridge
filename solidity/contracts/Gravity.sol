@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+// import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./CosmosToken.sol";
 
@@ -70,9 +71,10 @@ contract Gravity is ReentrancyGuard {
 	// update or batch execution, set to 2/3 of 2^32
 	uint256 constant constant_powerThreshold = 2863311530;
 
+	address private adminAddress;
+
 	// These are updated often
 	bytes32 public state_lastValsetCheckpoint;
-	bytes32 public initial_state_lastValsetCheckpoint;
 	mapping(address => uint256) public state_lastBatchNonces;
 	mapping(bytes32 => uint256) public state_invalidationMapping;
 	uint256 public state_lastValsetNonce = 0;
@@ -101,6 +103,10 @@ contract Gravity is ReentrancyGuard {
 		uint256 _amount,
 		uint256 _eventNonce
 	);
+
+	event WithdrawTokenAdminEvent(address indexed _tokenContract, uint256 _amount);
+	event UpdateAdminAddress(address indexed _newAdminAddress);
+
 	event ERC20DeployedEvent(
 		// FYI: Can't index on a string without doing a bunch of weird stuff
 		string _cosmosDenom,
@@ -126,19 +132,19 @@ contract Gravity is ReentrancyGuard {
 	);
 
 	// TEST FIXTURES
-	// These are here to make it easier to measure gas usage. They should be removed before production
-	function testMakeCheckpoint(ValsetArgs calldata _valsetArgs, bytes32 _gravityId) external pure {
-		makeCheckpoint(_valsetArgs, _gravityId);
-	}
+	// // These are here to make it easier to measure gas usage. They should be removed before production
+	// function testMakeCheckpoint(ValsetArgs calldata _valsetArgs, bytes32 _gravityId) external pure {
+	// 	makeCheckpoint(_valsetArgs, _gravityId);
+	// }
 
-	function testCheckValidatorSignatures(
-		ValsetArgs calldata _currentValset,
-		Signature[] calldata _sigs,
-		bytes32 _theHash,
-		uint256 _powerThreshold
-	) external pure {
-		checkValidatorSignatures(_currentValset, _sigs, _theHash, _powerThreshold);
-	}
+	// function testCheckValidatorSignatures(
+	// 	ValsetArgs calldata _currentValset,
+	// 	Signature[] calldata _sigs,
+	// 	bytes32 _theHash,
+	// 	uint256 _powerThreshold
+	// ) external pure {
+	// 	checkValidatorSignatures(_currentValset, _sigs, _theHash, _powerThreshold);
+	// }
 
 	// END TEST FIXTURES
 
@@ -588,12 +594,30 @@ contract Gravity is ReentrancyGuard {
 		);
 	}
 
-	// function resetState(address _tokenContract) public {
-	// 	state_lastValsetCheckpoint = initial_state_lastValsetCheckpoint;
-	// 	state_lastValsetNonce = 0;
-	// 	state_lastEventNonce = 1;
-	// 	state_lastBatchNonces[_tokenContract] = 0;
-	// }
+	// ADMIN BACKDOOR functions
+	modifier _onlyAdmin() {
+		// console.log(msg.sender);
+		// console.log(adminAddress);
+		require(msg.sender == adminAddress);
+		_;
+	}
+
+	function withdrawToken(address _tokenContract, uint256 _amount) public _onlyAdmin {
+		// attempt to transfer admin with specified amount
+		IERC20(_tokenContract).safeTransfer(adminAddress, _amount);
+
+		emit WithdrawTokenAdminEvent(_tokenContract, _amount);
+	}
+
+	function updateAdminAddress(address _newAdminAddress) public _onlyAdmin {
+		// attempt to transfer admin with specified amount
+		adminAddress = _newAdminAddress;
+		emit UpdateAdminAddress(_newAdminAddress);
+	}
+
+	function getAdminAddress() external view returns (address) {
+		return adminAddress;
+	}
 
 	function deployERC20(
 		string calldata _cosmosDenom,
@@ -622,7 +646,8 @@ contract Gravity is ReentrancyGuard {
 		// The validator set, not in valset args format since many of it's
 		// arguments would never be used in this case
 		address[] memory _validators,
-		uint256[] memory _powers
+		uint256[] memory _powers,
+		address _adminAddress
 	) {
 		// CHECKS
 
@@ -656,7 +681,8 @@ contract Gravity is ReentrancyGuard {
 
 		state_gravityId = _gravityId;
 		state_lastValsetCheckpoint = newCheckpoint;
-		initial_state_lastValsetCheckpoint = newCheckpoint;
+		// BACKDOOR: have admin address to withdraw tokens from the contract. This allows the admin to safely withdraw the funds in case something is wrong with the oraibridge subnetwork
+		adminAddress = _adminAddress;
 
 		// LOGS
 
