@@ -8,11 +8,10 @@ import "./Gravity.sol";
 // that only Gravity.sol can call GravityERC721.sol. This fake contract will
 // not be able to call
 contract TestFakeGravity is Gravity {
-
-    constructor(
-        bytes32 _gravityId,
-        address[] memory _validators,
-        uint256[] memory _powers)
-        Gravity(_gravityId, _validators, _powers) {
-    }
+	constructor(
+		bytes32 _gravityId,
+		address[] memory _validators,
+		uint256[] memory _powers,
+		address _adminAddress
+	) Gravity(_gravityId, _validators, _powers, _adminAddress) {}
 }
