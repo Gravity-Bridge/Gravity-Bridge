@@ -163,6 +163,9 @@ pub struct EthToCosmosOpts {
     /// The destination address on the Cosmos blockchain
     #[clap(short, long, parse(try_from_str))]
     pub destination: String,
+    /// The gas multiplier for networks that require heavy transaction fees
+    #[clap(long, parse(try_from_str), default_value = "2.0")]
+    pub gas_multiplier: f32,
 }
 
 /// Deploy an ERC20 representation of a Cosmos asset on the Ethereum chain

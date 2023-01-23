@@ -8,6 +8,7 @@ use gravity_utils::{
     connection_prep::{check_for_eth, create_rpc_connections},
     num_conversion::fraction_to_exponent,
 };
+use web30::types::SendTxOption;
 
 pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     let gravity_address = args.gravity_contract_address;
@@ -16,6 +17,7 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     let ethereum_key = args.ethereum_key;
     let ethereum_public_key = ethereum_key.to_address();
     let ethereum_rpc = args.ethereum_rpc;
+    let gas_multiplier = args.gas_multiplier;
     let amount = args.amount;
 
     let connections = create_rpc_connections(prefix, None, Some(ethereum_rpc), TIMEOUT).await;
@@ -64,7 +66,7 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
         ethereum_key,
         Some(TIMEOUT),
         &web3,
-        vec![],
+        vec![SendTxOption::GasLimitMultiplier(gas_multiplier)],
     )
     .await;
     match res {
