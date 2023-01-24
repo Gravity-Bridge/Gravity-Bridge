@@ -146,7 +146,7 @@ mod test {
             ],
         };
         let checkpoint = encode_valset_confirm("foo".to_string(), valset);
-        let checkpoint_hash = Keccak256::digest(&checkpoint);
+        let checkpoint_hash = Keccak256::digest(checkpoint);
         assert_eq!(
             bytes_to_hex_str(&correct_hash),
             bytes_to_hex_str(&checkpoint_hash)
@@ -182,7 +182,7 @@ mod test {
             ],
         };
         let checkpoint = encode_valset_confirm("foo".to_string(), valset);
-        let checkpoint_hash = Keccak256::digest(&checkpoint);
+        let checkpoint_hash = Keccak256::digest(checkpoint);
         assert_ne!(
             bytes_to_hex_str(&correct_hash),
             bytes_to_hex_str(&checkpoint_hash)
@@ -223,7 +223,7 @@ mod test {
         };
 
         let checkpoint = encode_tx_batch_confirm("foo".to_string(), batch.clone());
-        let checkpoint_hash = Keccak256::digest(&checkpoint);
+        let checkpoint_hash = Keccak256::digest(checkpoint);
         assert_eq!(correct_hash.len(), checkpoint_hash.len());
         assert_eq!(correct_hash, checkpoint_hash.as_slice());
 
