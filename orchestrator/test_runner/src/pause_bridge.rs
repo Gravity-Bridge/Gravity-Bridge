@@ -9,6 +9,7 @@ use crate::{get_fee, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
+use cosmos_gravity::utils::get_reasonable_send_to_eth_fee;
 use deep_space::coin::Coin;
 use deep_space::Contact;
 use ethereum_gravity::utils::get_tx_batch_nonce;
@@ -121,6 +122,13 @@ pub async fn pause_bridge_test(
         amount: 1u64.into(),
     };
     let amount = amount - 5u64.into();
+    let chain_fee = get_reasonable_send_to_eth_fee(contact, amount.clone())
+        .await
+        .expect("Unable to get reasonable SendToEth fee");
+    let chain_fee_coin = Coin {
+        amount: chain_fee.clone(),
+        denom: token_name.clone(),
+    };
     send_to_eth(
         user_keys.cosmos_key,
         user_keys.eth_address,
@@ -129,7 +137,7 @@ pub async fn pause_bridge_test(
             amount: amount.clone(),
         },
         bridge_denom_fee.clone(),
-        None,
+        Some(chain_fee_coin),
         bridge_denom_fee.clone(),
         contact,
     )
@@ -195,8 +203,11 @@ pub async fn pause_bridge_test(
         .unwrap()
         .unwrap();
     // check that our balance is equal to 200 (two deposits) minus 95 (sent to eth) - 1 (fee) - 1 (fee for batch request)
+    // also minus the chain fee, which varies depending on the params
     // NOTE this makes the test not imdepotent but it's not anyways, a crash may leave the bridge halted
-    assert_eq!(res.amount, 103u8.into());
+    let expected_amount =
+        200u8 - 95u8 - 1u8 - 1u8 - chain_fee.to_str_radix(10u32).parse::<u8>().unwrap();
+    assert_eq!(res.amount, expected_amount.into());
 
     let mut current_eth_batch_nonce =
         get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
