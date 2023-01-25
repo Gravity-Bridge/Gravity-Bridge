@@ -15,7 +15,7 @@ use std::{
 
 /// The total power in the Gravity bridge is normalized to 2^32 every
 /// time a validator set is created. So this is the total power
-pub const TOTAL_GRAVITY_POWER: u64 = 2u64.pow(32) as u64;
+pub const TOTAL_GRAVITY_POWER: u64 = 2u64.pow(32);
 /// The total power in the Gravity bridge is normalized to 2^32 every
 /// time a validator set is created. This is a mirror of constant_powerThreshold
 /// in Gravity.sol
