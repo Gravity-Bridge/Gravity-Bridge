@@ -300,7 +300,7 @@ pub async fn get_latest_safe_block(web3: &Web3) -> Uint256 {
     match net_version {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
         // all Ethereum proof of stake Chains
-        1 | 3 | 6 | 7 => get_finalized_block_with_retry(web3).await,
+        3 | 6 | 7 => get_finalized_block_with_retry(web3).await,
         // Dev, our own Gravity Ethereum testnet, and Hardhat respectively
         // all single signer chains with no chance of any reorgs
         2018 | 15 | 31337 => block_number,
@@ -309,7 +309,7 @@ pub async fn get_latest_safe_block(web3: &Web3) -> Uint256 {
         // on experience with operational issues
         4 | 5 => block_number - 10u8.into(),
         // Binance smart chain POA, 3 blocks are ok
-        56 => block_number - 3u8.into(),
+        1 | 56 => block_number - 3u8.into(),
         420 | 421 => block_number,
         // assume the safe option where we don't know
         _ => block_number - 96u8.into(),
