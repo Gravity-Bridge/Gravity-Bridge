@@ -45,7 +45,7 @@ services:
     command: yarn hardhat node --config hardhat-second-fork.config.ts
 
   orchestrator:
-    image: oraichain/foundation-oraibridge-orchestrator:0.0.1-alpine # docker build -t oraichain/foundation-oraibridge-orchestrator:0.0.1-alpine -f orchestrator/Dockerfile ./orchestrator
+    image: oraichain/foundation-oraibridge-orchestrator:0.0.1 # docker build -t oraichain/foundation-oraibridge-orchestrator:0.0.1 -f orchestrator/Dockerfile ./orchestrator
     # apk add make upx
     # upx --best --lzma
     working_dir: /workspace
