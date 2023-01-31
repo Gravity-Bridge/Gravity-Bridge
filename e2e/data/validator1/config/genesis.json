@@ -631,7 +631,7 @@
                                     "root": {
                                         "hash": "zBkhVQwwUthUvN2uRs1wOrQ6nbatEXKw64vWBrXXfAs="
                                     },
-                                    "timestamp": "2023-01-18T04:08:50.757146613Z"
+                                    "timestamp": "2023-01-30T04:08:50.757146613Z"
                                 },
                                 "height": {
                                     "revision_height": "10",
@@ -645,7 +645,7 @@
                                     "root": {
                                         "hash": "tEsyyUzCAkz8E6PN7glbEo+k4xmzF/hJ27AEp+ml5iI="
                                     },
-                                    "timestamp": "2023-01-18T04:08:50.757146613Z"
+                                    "timestamp": "2023-01-30T04:08:50.757146613Z"
                                 },
                                 "height": {
                                     "revision_height": "16",
@@ -659,7 +659,7 @@
                                     "root": {
                                         "hash": "vtMLWf9qgApe+pwCpfGVo61Leur3dSSszO1cvjj4fV0="
                                     },
-                                    "timestamp": "2023-01-18T04:08:50.757146613Z"
+                                    "timestamp": "2023-01-30T04:08:50.757146613Z"
                                 },
                                 "height": {
                                     "revision_height": "3",
@@ -673,7 +673,7 @@
                                     "root": {
                                         "hash": "kI3f9LTPz5UeiE2Mhj65cTQeHG8DYIQjRfq2LnQYpiM="
                                     },
-                                    "timestamp": "2023-01-18T04:08:50.757146613Z"
+                                    "timestamp": "2023-01-30T04:08:50.757146613Z"
                                 },
                                 "height": {
                                     "revision_height": "6",
@@ -916,7 +916,7 @@
         },
         "version": {}
     },
-    "genesis_time": "2023-01-18T04:08:50.757146613Z",
+    "genesis_time": "2023-01-30T04:08:50.757146613Z",
     "initial_height": "15",
     "validators": [
         {
