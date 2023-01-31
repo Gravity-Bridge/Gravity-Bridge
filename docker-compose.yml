@@ -81,4 +81,4 @@ services:
     tty: true
     entrypoint: tail -f /dev/null
     volumes:
-      - ./hermes-test:/workspace
+      - ./e2e/hermes-test:/workspace

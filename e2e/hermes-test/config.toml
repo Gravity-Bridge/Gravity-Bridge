@@ -1,8 +1,8 @@
 [[chains]]
 id = 'gravity-test'
-rpc_addr = 'http://0.0.0.0:26657'
-grpc_addr = 'http://0.0.0.0:9090'
-websocket_addr = 'ws://0.0.0.0:26657/websocket'
+rpc_addr = 'http://gravity:26657'
+grpc_addr = 'http://gravity:9090'
+websocket_addr = 'ws://gravity:26657/websocket'
 rpc_timeout = '20s'
 account_prefix = 'oraib'
 key_name = 'testkey'
@@ -16,9 +16,9 @@ trust_threshold = { numerator = '1', denominator = '3' }
 
 [[chains]]
 id = 'orai-test'
-rpc_addr = 'http://0.0.0.0:36657'
-grpc_addr = 'http://0.0.0.0:8090'
-websocket_addr = 'ws://0.0.0.0:36657/websocket'
+rpc_addr = 'http://orai:26657'
+grpc_addr = 'http://orai:9090'
+websocket_addr = 'ws://orai:26657/websocket'
 rpc_timeout = '20s'
 account_prefix = 'orai'
 key_name = 'testkey'
