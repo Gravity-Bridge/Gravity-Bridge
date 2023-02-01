@@ -8,4 +8,3 @@ RUN upx --best --lzma /workspace/target/release/gbt
 
 FROM alpine:3.17 
 COPY --from=builder /workspace/target/release/gbt /usr/bin/gbt
-CMD [ "cargo run -p gbt -V" ]
