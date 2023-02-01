@@ -127,7 +127,7 @@ docker build -t oraichain/foundation-oraibridge-module:0.0.1 ./module
 # EVM fork build with Hardhat environment
 docker build -t oraichain/foundation-oraibridge-evmfork:0.0.1 ./solidity
 
-# Production build
-docker build -t oraichain/foundation-oraibridge-module-prod:0.0.1 -f module/Dockerfile.prod ./module
+# Gbt build
+docker build -t oraichain/foundation-oraibridge-orchestrator:0.0.1 ./orchestrator
 
 ```

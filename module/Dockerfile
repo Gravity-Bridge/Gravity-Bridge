@@ -1,6 +1,6 @@
 FROM golang:1.18-alpine3.17 as builder
 WORKDIR /workspace
-COPY . /workspace/
+COPY . /workspace
 # this comes from standard alpine nightly file
 #  https://github.com/rust-lang/docker-rust-nightly/blob/master/alpine3.12/Dockerfile
 # with some changes to support our toolchain, etc
