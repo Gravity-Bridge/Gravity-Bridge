@@ -109,6 +109,7 @@ gravity tx gravity add-evm-chain "goerli network 2nd" "foobar" "421" "defaultgra
 gravity tx gov vote 1 yes --from validator1 --home e2e/data/validator1/ -y --keyring-backend test --chain-id gravity-test -b block
 
 # bsc mainnet test gravity contract - 0xc020aece63cbba5c1ebc46d1b39fb047977b0539
+# bsc mainnet test dummy token - 0x7c40dcfCFAbEA494d451D04BfD7111B7959712E1
 # gravity id of bsc mainnet test: "oraibridge-fork"
 ```
 
