@@ -1,11 +1,11 @@
-FROM rust:1.66.0
-
-RUN apt update && apt install curl nano -y
-
+FROM rust:1.66.0-alpine3.17 as builder
 WORKDIR /workspace
-COPY . /workspace/
-
+COPY . /workspace
+# musl-dev to include h files, and make + perl to build openssl-sys
+RUN apk add musl-dev make perl upx
 RUN rustup default stable
+RUN cargo build -p gbt --release
+RUN upx --best --lzma /workspace/target/release/gbt
 
-RUN cargo build --all
-CMD [ "cargo run -p gbt -V" ]
+FROM alpine:3.17 
+COPY --from=builder /workspace/target/release/gbt /usr/bin/gbt
