@@ -11,6 +11,8 @@ use gravity_utils::types::{
 use metrics_exporter::metrics_errors_counter;
 use std::collections::HashMap;
 use std::env;
+use std::ops::Sub;
+use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
@@ -243,7 +245,7 @@ pub async fn get_last_checked_block(
             // must be >= previous_block and < current_block
             Uint256::max(
                 current_block.clone() - block_to_search.into(),
-                previous_block.clone(),
+                previous_block.clone() - 1u128.into(),
             )
         };
 
