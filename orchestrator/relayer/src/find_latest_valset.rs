@@ -64,10 +64,15 @@ pub async fn find_latest_valset(
         let end_search = if current_block.clone() < block_to_search.into() {
             0u8.into()
         } else {
+            let final_previous_block = if previous_block.eq(&Uint256::from(0u128)) {
+                previous_block.clone()
+            } else {
+                previous_block.clone() - 1u128.into()
+            };
             // must be >= previous_block and < current_block
             Uint256::max(
                 current_block.clone() - block_to_search.into(),
-                previous_block.clone() - 1u128.into(),
+                final_previous_block.clone(),
             )
         };
         let mut all_valset_events = match web3
