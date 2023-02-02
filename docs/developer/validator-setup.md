@@ -29,6 +29,7 @@ Init your node, use genesis.json file given by the team and start it with the gi
 You should have some oraib in your validator account for staking and tx fee.
 
 > **_NOTE:_** Don't use more uoraib than you have!
+
 ```bash
 gravity tx staking create-validator \
    --amount=<staking-amount>uoraib \
@@ -68,9 +69,8 @@ gravity tx gravity set-orchestrator-address $validator $orchestrator_address $et
 ```yml
 # docker-compose file
 
-version: '3.3'
+version: "3.3"
 services:
-
   orchestrator:
     image: oraichain/foundation-oraibridge-orchestrator:0.0.1 # docker build -t oraichain/foundation-oraibridge-orchestrator:0.0.1 -f orchestrator/Dockerfile ./orchestrator
     # apk add make upx
@@ -88,10 +88,9 @@ Start the orchestrator inside docker
 ```bash
 
 # goerli-testnet fork
-BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home /root/.gbt/ --address-prefix oraib orchestrator --cosmos-grpc http://<local-node-ip>:9090 --ethereum-rpc http://167.99.119.182:8545 --fees 0uoraib
+BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home /root/.gbt/ --address-prefix oraib orchestrator --cosmos-grpc http://<local-node-ip>:9090 --ethereum-rpc http://localhost:8545 --fees 0uoraib
 
 # bsc mainnet fork
 
-BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home /root/.gbt/ --address-prefix oraib orchestrator --cosmos-grpc http://<local-node-ip>:9090 --ethereum-rpc http://167.99.119.182:7545 --fees 0uoraib
+BLOCK_TO_SEARCH=100 cargo run -p gbt -- --home /root/.gbt/ --address-prefix oraib orchestrator --cosmos-grpc http://<local-node-ip>:9090 --ethereum-rpc http://localhost:7545 --fees 0uoraib
 ```
-
