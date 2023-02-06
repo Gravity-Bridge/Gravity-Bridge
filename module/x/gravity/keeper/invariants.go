@@ -63,6 +63,11 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			for _, actual := range actualBals {
 				denom := actual.GetDenom()
 
+				// denom not belong to the evm chain
+				if !strings.HasPrefix(denom, evmChain.EvmChainPrefix) {
+					continue
+				}
+
 				cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, evmChain.EvmChainPrefix, denom)
 
 				if err != nil {
