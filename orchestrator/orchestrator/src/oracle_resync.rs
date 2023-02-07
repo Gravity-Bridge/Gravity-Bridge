@@ -232,7 +232,7 @@ pub async fn get_last_checked_block(
     let mut current_block: Uint256 = latest_block.clone();
 
     let (previous_block, mut prev_checked_block) =
-        get_last_checked_block_info(evm_chain_prefix).unwrap_or((1u8.into(), None));
+        get_last_checked_block_info(evm_chain_prefix).unwrap_or((0u8.into(), None));
 
     while current_block.clone() > previous_block {
         info!(
@@ -242,10 +242,9 @@ pub async fn get_last_checked_block(
         let end_search = if current_block.clone() < block_to_search.into() {
             0u8.into()
         } else {
-            // must be >= previous_block and < current_block
             Uint256::max(
                 current_block.clone() - block_to_search.into(),
-                previous_block.clone() - 1u8.into(),
+                previous_block.clone(),
             )
         };
 
