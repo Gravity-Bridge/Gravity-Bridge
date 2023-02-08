@@ -20,11 +20,10 @@ use gravity_utils::{
     },
 };
 use metrics_exporter::metrics_errors_counter;
+use relayer::find_latest_valset::convert_block_to_search;
 use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
-
-use crate::oracle_resync::convert_block_to_search;
 
 pub struct CheckedNonces {
     pub block_number: Uint256,

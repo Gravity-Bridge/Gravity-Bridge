@@ -2,6 +2,7 @@
 //! that can only be run by a validator. This single binary the 'Orchestrator' runs not only these two rules but also the untrusted role of a relayer, that does not need any permissions and has it's
 //! own crate and binary so that anyone may run it.
 
+use crate::oracle_resync::{get_last_checked_block_info, set_last_checked_block_info};
 use crate::{ethereum_event_watcher::check_for_events, oracle_resync::get_last_checked_block};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{address::Address as EthAddress, Uint256};
@@ -26,6 +27,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
+use relayer::find_latest_valset::convert_block_to_search;
 use relayer::main_loop::all_relayer_loops;
 use std::cmp::min;
 use std::process::exit;
@@ -211,6 +213,9 @@ pub async fn eth_oracle_main_loop(
             .await;
         }
 
+        let (previous_block, prev_checked_block) =
+            get_last_checked_block_info(evm_chain_prefix).unwrap_or((0u8.into(), None));
+
         // Relays events from Ethereum -> Cosmos
         match check_for_events(
             &web3,
@@ -233,12 +238,29 @@ pub async fn eth_oracle_main_loop(
                 if nonces.event_nonce > last_checked_event {
                     last_checked_event = nonces.event_nonce;
                 }
+
+                // cache latest_eth_valset and current_block
+                set_last_checked_block_info(
+                    evm_chain_prefix,
+                    (previous_block, Some(last_checked_block.clone())),
+                );
+
                 metrics_latest(
                     last_checked_event.to_string().parse().unwrap(),
                     "last_checked_event",
                 );
             }
             Err(e) => {
+                if e.to_string().contains("non contiguous event nonce") {
+                    // reduce last_block scanned to retry to find checked block with new nonce
+                    set_last_checked_block_info(
+                        evm_chain_prefix,
+                        (
+                            previous_block - convert_block_to_search().into(),
+                            prev_checked_block,
+                        ),
+                    );
+                }
                 error!("Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}", e);
                 metrics_errors_counter(0, "Failed to get events for block range");
             }

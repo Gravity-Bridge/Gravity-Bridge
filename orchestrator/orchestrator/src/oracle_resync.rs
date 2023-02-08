@@ -9,10 +9,11 @@ use gravity_utils::types::{
     TransactionBatchExecutedEvent, ValsetUpdatedEvent,
 };
 use metrics_exporter::metrics_errors_counter;
+use relayer::find_latest_valset::convert_block_to_search;
 use std::collections::HashMap;
-use std::env;
-use std::ops::Sub;
-use std::str::FromStr;
+// use std::env;
+// use std::ops::Sub;
+// use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
@@ -27,18 +28,7 @@ lazy_static! {
         Arc::new(RwLock::new(HashMap::new()));
 }
 
-/// This is roughly the maximum number of blocks a reasonable Ethereum node
-/// can search in a single request before it starts timing out or behaving badly
-pub const BLOCKS_TO_SEARCH: u128 = 5_000u128;
-
-pub fn convert_block_to_search() -> u128 {
-    env::var("BLOCK_TO_SEARCH")
-        .unwrap_or_else(|_| BLOCKS_TO_SEARCH.to_string())
-        .parse::<u128>()
-        .unwrap_or_else(|_| BLOCKS_TO_SEARCH)
-}
-
-fn get_last_checked_block_info(evm_chain_prefix: &str) -> Option<(Uint256, Option<Uint256>)> {
+pub fn get_last_checked_block_info(evm_chain_prefix: &str) -> Option<(Uint256, Option<Uint256>)> {
     LAST_CHECKED_BLOCK_INFO
         .read()
         .unwrap()
@@ -46,7 +36,7 @@ fn get_last_checked_block_info(evm_chain_prefix: &str) -> Option<(Uint256, Optio
         .cloned()
 }
 
-fn set_last_checked_block_info(evm_chain_prefix: &str, info: (Uint256, Option<Uint256>)) {
+pub fn set_last_checked_block_info(evm_chain_prefix: &str, info: (Uint256, Option<Uint256>)) {
     let mut lock = LAST_CHECKED_BLOCK_INFO.write().unwrap();
     lock.insert(evm_chain_prefix.to_string(), info);
 }
