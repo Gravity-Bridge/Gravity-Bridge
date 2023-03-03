@@ -16,6 +16,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/simapp/helpers"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -29,8 +30,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
+	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
+	ibchost "github.com/cosmos/ibc-go/v6/modules/core/24-host"
 )
 
 func init() {
@@ -38,8 +39,8 @@ func init() {
 }
 
 type StoreKeysPrefixes struct {
-	A        sdk.StoreKey
-	B        sdk.StoreKey
+	A        storetypes.StoreKey
+	B        storetypes.StoreKey
 	Prefixes [][]byte
 }
 

@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -23,7 +24,7 @@ type StakingKeeper interface {
 	IterateLastValidators(sdk.Context, func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 	Validator(sdk.Context, sdk.ValAddress) stakingtypes.ValidatorI
 	ValidatorByConsAddr(sdk.Context, sdk.ConsAddress) stakingtypes.ValidatorI
-	Slash(sdk.Context, sdk.ConsAddress, int64, int64, sdk.Dec)
+	Slash(sdk.Context, sdk.ConsAddress, int64, int64, sdk.Dec) math.Int
 	Jail(sdk.Context, sdk.ConsAddress)
 }
 

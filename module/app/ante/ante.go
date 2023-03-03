@@ -9,8 +9,8 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
-	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
-	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
+	ibcante "github.com/cosmos/ibc-go/v6/modules/core/ante"
+	ibckeeper "github.com/cosmos/ibc-go/v6/modules/core/keeper"
 )
 
 // NewAnteHandler Constructs a new sdk.AnteHandler for the Gravity app.
@@ -36,7 +36,7 @@ func NewAnteHandler(
 	}
 
 	// Create additional AnteDecorators to chain together
-	ibcAnteDecorator := ibcante.NewAnteDecorator(ibcKeeper)
+	ibcAnteDecorator := ibcante.NewRedundantRelayDecorator(ibcKeeper)
 	minCommissionDecorator := NewMinCommissionDecorator(cdc)
 
 	addlDecorators := []sdk.AnteDecorator{ibcAnteDecorator, minCommissionDecorator}

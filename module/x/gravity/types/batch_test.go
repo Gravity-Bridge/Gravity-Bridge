@@ -13,7 +13,7 @@ import (
 // TestOutgoingTxBatchCheckpointGold1 tests an outgoing tx batch checkpoint
 // nolint: exhaustruct
 func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
-	senderAddr, err := sdk.AccAddressFromHex("527FBEE652609AB150F0AEE9D61A2F76CFC4A73E")
+	senderAddr, err := sdk.AccAddressFromHexUnsafe("527FBEE652609AB150F0AEE9D61A2F76CFC4A73E")
 	require.NoError(t, err)
 	var (
 		erc20Addr = "0x835973768750b3ED2D5c3EF5AdcD5eDb44d12aD4"

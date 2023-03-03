@@ -166,8 +166,12 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 				return errors.Wrap(err, "failed to parse coins")
 			}
 
+			keyAddr, err := key.GetAddress()
+			if err != nil {
+				return errors.Wrap(err, "failed to get address from Keyring Record")
+			}
 			// validate validator account in genesis
-			if err = genutil.ValidateAccountInGenesis(genesisState, genBalIterator, key.GetAddress(), coins, cdc); err != nil {
+			if err = genutil.ValidateAccountInGenesis(genesisState, genBalIterator, keyAddr, coins, cdc); err != nil {
 				return errors.Wrap(err, "failed to validate validator account in genesis")
 			}
 
@@ -176,7 +180,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 				return errors.Wrap(err, "error creating tx builder")
 			}
 
-			clientCtx = clientCtx.WithInput(inBuf).WithFromAddress(key.GetAddress())
+			clientCtx = clientCtx.WithInput(inBuf).WithFromAddress(keyAddr)
 
 			// The following line comes from a discrepancy between the `gentx`
 			// and `create-validator` commands:
@@ -198,7 +202,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			}
 
 			delegateKeySetMsg := &gravitytypes.MsgSetOrchestratorAddress{
-				Validator:    sdk.ValAddress(key.GetAddress()).String(),
+				Validator:    sdk.ValAddress(keyAddr).String(),
 				Orchestrator: orchAddress.String(),
 				EthAddress:   ethAddress,
 			}
@@ -207,14 +211,14 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 
 			if key.GetType() == keyring.TypeOffline || key.GetType() == keyring.TypeMulti {
 				cmd.PrintErrln("Offline key passed in. Use `tx sign` command to sign.")
-				return authclient.PrintUnsignedStdTx(txBldr, clientCtx, msgs)
+				return txBldr.PrintUnsignedTx(clientCtx, msgs...)
 			}
 
 			// write the unsigned transaction to the buffer
 			w := bytes.NewBuffer([]byte{})
 			clientCtx = clientCtx.WithOutput(w)
 
-			if err = authclient.PrintUnsignedStdTx(txBldr, clientCtx, msgs); err != nil {
+			if err = txBldr.PrintUnsignedTx(clientCtx, msgs...); err != nil {
 				return errors.Wrap(err, "failed to print unsigned std tx")
 			}
 

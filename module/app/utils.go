@@ -10,6 +10,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp/helpers"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -74,7 +76,7 @@ func SimulationOperations(app Gravity, cdc codec.JSONCodec, config simtypes.Conf
 		Rand:         &rand.Rand{},
 		GenState:     map[string]json.RawMessage{},
 		Accounts:     []simtypes.Account{},
-		InitialStake: 0,
+		InitialStake: math.ZeroInt(),
 		NumBonded:    0,
 		GenTimestamp: time.Time{},
 		UnbondTime:   0,
