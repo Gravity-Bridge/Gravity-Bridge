@@ -57,7 +57,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastBlock).
 		WithHomeDir(app.DefaultNodeHome).
-		WithKeyringOptions(ethermint.EthSecp256k1Option())
+		WithKeyringOptions(ethermint.EthSecp256k1Option()).
+		WithViper("")
 
 	// nolint: exhaustruct
 	rootCmd := &cobra.Command{
