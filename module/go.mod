@@ -161,8 +161,6 @@ require (
 )
 
 replace (
-	github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23 v0.0.0-20221014140410-2582f0aab7b2
-
 	// Lock us into the v0.45 line
 	github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.45.13
 
