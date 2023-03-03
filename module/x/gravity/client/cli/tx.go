@@ -16,7 +16,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govtypesv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -133,7 +133,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 			}
 
 			// Make the message
-			msg := govtypes.MsgSubmitProposal{
+			msg := govtypesv1beta1.MsgSubmitProposal{
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
@@ -225,7 +225,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 			}
 
 			// Make the message
-			msg := govtypes.MsgSubmitProposal{
+			msg := govtypesv1beta1.MsgSubmitProposal{
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
@@ -284,7 +284,7 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 			}
 
 			// Make the message
-			msg := govtypes.MsgSubmitProposal{
+			msg := govtypesv1beta1.MsgSubmitProposal{
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,

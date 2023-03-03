@@ -40,41 +40,50 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
-			cdc := clientCtx.Codec
-
 			serverCtx := server.GetServerContextFromCmd(cmd)
+
+			cdc := clientCtx.Codec
 			config := serverCtx.Config
 
 			homeFlag, errHomeFlag := cmd.Flags().GetString(flags.FlagHome)
 			if errHomeFlag != nil {
-				panic(fmt.Sprintf("Homeflag has an error %v", errHomeFlag))
+				panic(fmt.Sprintf("Unable to get --home flag value: %v", errHomeFlag))
 			}
 			if len(homeFlag) > 0 {
 				config = config.SetRoot(homeFlag)
 			} else {
 				config = config.SetRoot(clientCtx.HomeDir)
 			}
+
+			var kr keyring.Keyring
 			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				inBuf := bufio.NewReader(cmd.InOrStdin())
-				keyringBackend, errKeyringBackend := cmd.Flags().GetString(flags.FlagKeyringBackend)
-				if errKeyringBackend != nil {
-					panic(fmt.Sprintf("KeyringBackend has an issue: %v", errKeyringBackend))
+				keyringBackend, errKB := cmd.Flags().GetString(flags.FlagKeyringBackend)
+				if errKB != nil {
+					panic(fmt.Sprintf("Unable to get --keyring-backend value: %v", errKB))
 
 				}
 
-				// attempt to lookup address from Keybase if no address was provided
-				kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, clientCtx.HomeDir, inBuf)
+				if keyringBackend != "" && clientCtx.Keyring == nil {
+					var err error
+					kr, err = keyring.New(sdk.KeyringServiceName(), keyringBackend, clientCtx.HomeDir, inBuf, clientCtx.Codec)
+					if err != nil {
+						return err
+					}
+				} else {
+					kr = clientCtx.Keyring
+				}
+
+				info, err := kr.Key(args[0])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to get address from Keyring: %w", err)
 				}
 
-				info, err := kb.Key(args[0])
+				addr, err = info.GetAddress()
 				if err != nil {
-					return fmt.Errorf("failed to get address from Keybase: %w", err)
+					return fmt.Errorf("failed to get address from key info: %v", err)
 				}
-
-				addr = info.GetAddress()
 			}
 
 			coins, err := sdk.ParseCoinsNormalized(args[1])
@@ -82,17 +91,17 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 				return fmt.Errorf("failed to parse coins: %w", err)
 			}
 
-			vestingStart, errVestingStart := cmd.Flags().GetInt64(flagVestingStart)
-			if errVestingStart != nil {
-				fmt.Printf("errVestingStart %v", errVestingStart)
+			vestingStart, errVS := cmd.Flags().GetInt64(flagVestingStart)
+			if errVS != nil {
+				fmt.Printf("Unable to get --vesting-start-time value: %v", errVS)
 			}
-			vestingEnd, errVestingEnd := cmd.Flags().GetInt64(flagVestingEnd)
-			if errVestingEnd != nil {
-				fmt.Printf("errVestingEnd %v", errVestingEnd)
+			vestingEnd, errVE := cmd.Flags().GetInt64(flagVestingEnd)
+			if errVE != nil {
+				fmt.Printf("Unable to get --vesting-end-time value: %v", errVE)
 			}
-			vestingAmtStr, errVestingAmtStr := cmd.Flags().GetString(flagVestingAmt)
-			if errVestingStart != nil {
-				fmt.Printf("errVestingAmtStr %v", errVestingAmtStr)
+			vestingAmtStr, errVA := cmd.Flags().GetString(flagVestingAmt)
+			if errVS != nil {
+				fmt.Printf("Unable to get --vesting-amount value: %v", errVA)
 			}
 
 			vestingAmt, err := sdk.ParseCoinsNormalized(vestingAmtStr)
@@ -122,7 +131,7 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 					genAccount = authvesting.NewDelayedVestingAccountRaw(baseVestingAccount)
 
 				default:
-					return errors.New("invalid vesting parameters; must supply start and end time or end time")
+					return errors.New("invalid vesting parameters; must supply (start and end time) or (end time)")
 				}
 			} else {
 				genAccount = baseAccount
