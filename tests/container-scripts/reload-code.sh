@@ -19,8 +19,7 @@ done
 
 cd /gravity/module/
 export PATH=$PATH:/usr/local/go/bin
-make
-make install
+make install-core
 cd /gravity/
 tests/container-scripts/setup-validators.sh $NODES
 tests/container-scripts/setup-ibc-validators.sh $NODES
