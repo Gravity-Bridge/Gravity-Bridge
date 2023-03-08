@@ -296,6 +296,25 @@ pub struct Erc20ToDenom {
     #[prost(string, tag="2")]
     pub denom: ::prost::alloc::string::String,
 }
+/// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
+/// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PendingIbcAutoForward {
+    /// the destination address. sdk.AccAddress does not preserve foreign prefixes
+    #[prost(string, tag="1")]
+    pub foreign_receiver: ::prost::alloc::string::String,
+    /// the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
+    #[prost(message, optional, tag="2")]
+    pub token: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+    /// the IBC channel to send `Amount` over via ibc-transfer module
+    #[prost(string, tag="3")]
+    pub ibc_channel: ::prost::alloc::string::String,
+    /// the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
+    #[prost(uint64, tag="4")]
+    pub event_nonce: u64,
+}
+// CUSTOM PROPOSALS ------------------------------------------------------
+
 /// UnhaltBridgeProposal defines a custom governance proposal useful for restoring
 /// the bridge after a oracle disagreement. Once this proposal is passed bridge state will roll back events 
 /// to the nonce provided in target_nonce if and only if those events have not yet been observed (executed on the Cosmos chain). This allows for easy
@@ -348,22 +367,23 @@ pub struct IbcMetadataProposal {
     #[prost(string, tag="4")]
     pub ibc_denom: ::prost::alloc::string::String,
 }
-/// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
-/// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
+/// SetMonitoredTokenAddressesProposal defines a custom governance proposal type that allows governance to set the
+/// list of ERC20 tokens that orchestrators are required to monitor the Gravity.sol balance of. This controls the
+/// Cross-Bridge Balances security feature, whereby if there is an unexplained difference in any balance between the
+/// Cosmos and Ethereum sides of the bridge, the Cosmos side will halt all operations automatically.
+/// Orchestrators which fail to submit these Gravity.sol balances when the Monitored Token Addresses list has been set
+/// will not have any of their claims processed.
+/// This feature is vulnerable to malicious ERC20 tokens which perform undesireable behavior (e.g. returning a random
+/// value from balanceOf(address)), and thus this list is used rather than monitoring every possible token held by
+/// Gravity.sol.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PendingIbcAutoForward {
-    /// the destination address. sdk.AccAddress does not preserve foreign prefixes
+pub struct SetMonitoredTokenAddressesProposal {
     #[prost(string, tag="1")]
-    pub foreign_receiver: ::prost::alloc::string::String,
-    /// the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
-    #[prost(message, optional, tag="2")]
-    pub token: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
-    /// the IBC channel to send `Amount` over via ibc-transfer module
-    #[prost(string, tag="3")]
-    pub ibc_channel: ::prost::alloc::string::String,
-    /// the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
-    #[prost(uint64, tag="4")]
-    pub event_nonce: u64,
+    pub title: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag="3")]
+    pub tokens: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// MsgSetOrchestratorAddress
 /// this message allows validators to delegate their voting responsibilities
@@ -1278,12 +1298,6 @@ pub mod msg_client {
 /// ethereum_blacklist
 ///
 /// Addresses on this blacklist are forbidden from bridging to or from Ethereum
-///
-/// monitored_token_addresses
-///
-/// Addresses on this list will be monitored for cross-bridge balance checks. Orchestrators are required to collect the
-/// Gravity.sol contract's balance of each of these ERC20 tokens for each of their submitted claims at the event's
-/// ethereum block height
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Params {
     #[prost(string, tag="1")]
@@ -1324,8 +1338,6 @@ pub struct Params {
     pub ethereum_blacklist: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(uint64, tag="20")]
     pub min_chain_fee_basis_points: u64,
-    #[prost(string, repeated, tag="21")]
-    pub monitored_token_addresses: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// GenesisState struct, containing all persistant data required by the Gravity module
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1696,6 +1708,14 @@ pub struct QueryPendingIbcAutoForwards {
 pub struct QueryPendingIbcAutoForwardsResponse {
     #[prost(message, repeated, tag="1")]
     pub pending_ibc_auto_forwards: ::prost::alloc::vec::Vec<PendingIbcAutoForward>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct QueryMonitoredTokenAddresses {
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct QueryMonitoredTokenAddressesResponse {
+    #[prost(string, repeated, tag="1")]
+    pub monitored_token_addresses: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// Generated client implementations.
 pub mod query_client {
@@ -2308,6 +2328,28 @@ pub mod query_client {
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/gravity.v1.Query/GetPendingIbcAutoForwards",
+            );
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+        pub async fn get_monitored_token_addresses(
+            &mut self,
+            request: impl tonic::IntoRequest<super::QueryMonitoredTokenAddresses>,
+        ) -> Result<
+            tonic::Response<super::QueryMonitoredTokenAddressesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/gravity.v1.Query/GetMonitoredTokenAddresses",
             );
             self.inner.unary(request.into_request(), path, codec).await
         }

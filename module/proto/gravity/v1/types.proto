@@ -44,6 +44,17 @@ message ERC20ToDenom {
   string denom = 2;
 }
 
+// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
+// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
+message PendingIbcAutoForward {
+  string foreign_receiver = 1;         // the destination address. sdk.AccAddress does not preserve foreign prefixes
+  cosmos.base.v1beta1.Coin token = 2; // the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
+  string ibc_channel = 3;              // the IBC channel to send `Amount` over via ibc-transfer module
+  uint64 event_nonce = 4;              // the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
+}
+
+// CUSTOM PROPOSALS ------------------------------------------------------
+
 // UnhaltBridgeProposal defines a custom governance proposal useful for restoring
 // the bridge after a oracle disagreement. Once this proposal is passed bridge state will roll back events 
 // to the nonce provided in target_nonce if and only if those events have not yet been observed (executed on the Cosmos chain). This allows for easy
@@ -98,11 +109,22 @@ message IBCMetadataProposal {
   string ibc_denom = 4;
 }
 
-// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
-// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
-message PendingIbcAutoForward {
-  string foreign_receiver = 1;         // the destination address. sdk.AccAddress does not preserve foreign prefixes
-  cosmos.base.v1beta1.Coin token = 2; // the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
-  string ibc_channel = 3;              // the IBC channel to send `Amount` over via ibc-transfer module
-  uint64 event_nonce = 4;              // the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
+// SetMonitoredTokenAddressesProposal defines a custom governance proposal type that allows governance to set the
+// list of ERC20 tokens that orchestrators are required to monitor the Gravity.sol balance of. This controls the
+// Cross-Bridge Balances security feature, whereby if there is an unexplained difference in any balance between the
+// Cosmos and Ethereum sides of the bridge, the Cosmos side will halt all operations automatically.
+// Orchestrators which fail to submit these Gravity.sol balances when the Monitored Token Addresses list has been set
+// will not have any of their claims processed.
+// This feature is vulnerable to malicious ERC20 tokens which perform undesireable behavior (e.g. returning a random
+// value from balanceOf(address)), and thus this list is used rather than monitoring every possible token held by
+// Gravity.sol.
+message SetMonitoredTokenAddressesProposal {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  string title = 1;
+  string description = 2;
+  repeated string tokens = 3;
 }
+

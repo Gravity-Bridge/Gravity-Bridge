@@ -17,7 +17,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	paramstypesproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -328,20 +327,18 @@ func CmdGovSetMonitoredTokenAddresses() *cobra.Command {
 			}
 
 			tokens := strings.TrimSpace(args[0])
+			var propTokens []string
 			for _, token := range strings.Split(tokens, ",") {
 				if _, err := types.NewEthAddress(token); err != nil {
 					return sdkerrors.Wrapf(err, "token %v is not a valid ERC20 address", token)
 				}
+				propTokens = append(propTokens, token)
 			}
 
-			proposal := &paramstypesproposal.ParameterChangeProposal{
+			proposal := &types.SetMonitoredTokenAddressesProposal{
 				Title:       args[1],
 				Description: args[2],
-				Changes: []paramstypesproposal.ParamChange{{
-					Subspace: types.ModuleName,
-					Key:      string(types.ParamStoreMonitoredTokenAddresses),
-					Value:    tokens,
-				}},
+				Tokens:      propTokens,
 			}
 
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)

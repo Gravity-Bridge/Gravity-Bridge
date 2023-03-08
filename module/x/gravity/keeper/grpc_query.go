@@ -590,3 +590,13 @@ func (k Keeper) GetPendingIbcAutoForwards(
 	pendingForwards := k.PendingIbcAutoForwards(ctx, req.Limit)
 	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
 }
+
+func (k Keeper) GetMonitoredTokenAddresses(
+	c context.Context,
+	req *types.QueryMonitoredTokenAddresses,
+) (*types.QueryMonitoredTokenAddressesResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	monitoredTokens := k.MonitoredTokenStrings(ctx)
+
+	return &types.QueryMonitoredTokenAddressesResponse{MonitoredTokenAddresses: monitoredTokens}, nil
+}
