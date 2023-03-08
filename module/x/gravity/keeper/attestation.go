@@ -160,7 +160,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 // WARNING: These assertions must be run AFTER applying state, or the chain will halt
 func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
 	ethBals := claim.GetBridgeBalances()
-	monitoredTokens := k.GetParams(ctx).MonitoredTokenAddresses
+	monitoredTokens := k.MonitoredTokenAddresses(ctx)
 
 	if len(ethBals) != len(monitoredTokens) {
 		k.logger(ctx).Error(
@@ -173,7 +173,13 @@ func (k Keeper) assertBalances(ctx sdk.Context, att *types.Attestation, claim ty
 	}
 
 	for _, v := range ethBals {
-		if !slices.Contains(monitoredTokens, v.Contract) {
+		erc20, err := types.NewEthAddress(v.Contract)
+		if err != nil {
+			errMsg := fmt.Errorf("Invalid claim observed, monitored token balance for invalid ERC20 token %v: %v", v.Contract, err)
+			k.logger(ctx).Error(errMsg.Error())
+			panic(errMsg)
+		}
+		if !slices.Contains(monitoredTokens, *erc20) {
 			k.logger(ctx).Error(
 				"Invalid claim observed, reported balance is not one of the monitored tokens",
 				"reportedBalance", v,

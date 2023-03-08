@@ -85,9 +85,6 @@ var (
 	// or hundredths of a percent, e.g. 10% fee = 1000 and 0.02% fee = 2. If this is set > 0 and a MsgSendToEth is
 	// submitted with too low of a ChainFee value, it will be rejected in the AnteHandler
 	ParamStoreMinChainFeeBasisPoints = []byte("MinChainFeeBasisPoints")
-	// ParamStoreMonitoredTokenAddresses holds a collection of (string) ERC20 token addresses to monitor for cross-bridge
-	// balance checks
-	ParamStoreMonitoredTokenAddresses = []byte("MonitoredTokenAddresses")
 
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
@@ -110,10 +107,9 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		BridgeActive:            true,
-		EthereumBlacklist:       []string{},
-		MinChainFeeBasisPoints:  0,
-		MonitoredTokenAddresses: []string{},
+		BridgeActive:           true,
+		EthereumBlacklist:      []string{},
+		MinChainFeeBasisPoints: 0,
 	}
 )
 
@@ -167,7 +163,6 @@ func DefaultParams() *Params {
 		BridgeActive:                 true,
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       2,
-		MonitoredTokenAddresses:      []string{},
 	}
 }
 
@@ -230,9 +225,6 @@ func (p Params) ValidateBasic() error {
 	if err := validateMinChainFeeBasisPoints(p.MinChainFeeBasisPoints); err != nil {
 		return sdkerrors.Wrap(err, "min chain fee basis points parameter")
 	}
-	if err := validateMonitoredTokenAddresses(p.MonitoredTokenAddresses); err != nil {
-		return sdkerrors.Wrap(err, "monitored token addresses")
-	}
 	return nil
 }
 
@@ -258,7 +250,6 @@ func ParamKeyTable() paramtypes.KeyTable {
 		BridgeActive:                 true,
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,
-		MonitoredTokenAddresses:      []string{},
 	})
 }
 
@@ -284,7 +275,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
 		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
 		paramtypes.NewParamSetPair(ParamStoreMinChainFeeBasisPoints, &p.MinChainFeeBasisPoints, validateMinChainFeeBasisPoints),
-		paramtypes.NewParamSetPair(ParamStoreMonitoredTokenAddresses, &p.MonitoredTokenAddresses, validateMonitoredTokenAddresses),
 	}
 }
 

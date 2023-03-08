@@ -1,6 +1,10 @@
 package keeper
 
 import (
+	"fmt"
+
+	gethcommon "github.com/ethereum/go-ethereum/common"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -116,4 +120,87 @@ func (k Keeper) IterateBatchConfirms(ctx sdk.Context, cb func([]byte, types.MsgC
 			break
 		}
 	}
+}
+
+// setMonitoredTokenAddresses populates the list of tokens Orchestrators must monitor the Gravity.sol ERC20 balance of.
+// Panics if the collected bytes to store are of unexpected length
+// Note: This should ONLY be called on two occassions:
+// * via governance proposal when the chain has voted on a new list to monitor, OR
+// * via chain migration when updating the list as part of an in-place chain upgrade (complex launch, not recommended)
+func (k Keeper) setMonitoredTokenAddresses(ctx sdk.Context, addresses []types.EthAddress) error {
+	if err := types.ValidateEthAddresses(addresses); err != nil {
+		return err
+	}
+
+	var bytesToStore []byte
+	for _, address := range addresses {
+		bytesToStore = append(bytesToStore, address.GetAddress().Bytes()...)
+	}
+
+	expectedLen := len(addresses) * gethcommon.AddressLength
+	if len(bytesToStore) != expectedLen {
+		errMsg := fmt.Sprintf("something went wrong when updating addresses - unexpected store value length (%v != expected %v)", len(bytesToStore), expectedLen)
+		k.logger(ctx).Error(errMsg)
+		panic(errMsg)
+	}
+
+	key := types.MonitoredTokenAddresses
+	store := ctx.KVStore(k.storeKey)
+	store.Set(key, bytesToStore)
+
+	return nil
+}
+
+// MonitoredTokenAddresses returns the currently stored list of monitored ERC20 tokens as EthAddress-es
+func (k Keeper) MonitoredTokenAddresses(ctx sdk.Context) []types.EthAddress {
+	key := types.MonitoredTokenAddresses
+	store := ctx.KVStore(k.storeKey)
+
+	// Return early if the monitored tokens have not been voted on yet/assigned in an upgrade
+	if !store.Has(key) {
+		return []types.EthAddress{}
+	}
+
+	// Get the bytes and check the length
+	value := store.Get(key)
+	if len(value)%gethcommon.AddressLength != 0 {
+		errMsg := fmt.Sprintf("unable to decode MonitoredTokenAddresses: %v is not a multiple of %v", len(value), gethcommon.AddressLength)
+		k.logger(ctx).Error(errMsg)
+		panic(errMsg)
+	}
+
+	// Decode the stored monitored tokens 20 bytes at a time
+	numMonitoredTokens := len(value) / gethcommon.AddressLength
+	addresses := make([]types.EthAddress, numMonitoredTokens)
+	for i := 0; i < numMonitoredTokens; i++ {
+		start, end := i*gethcommon.AddressLength, (i+1)*gethcommon.AddressLength
+		addrBz := value[start:end]
+		addr, err := types.NewEthAddressFromBytes(addrBz)
+		if err != nil {
+			errMsg := fmt.Sprintf("invalid address %v in MonitoredTokenAddresses: %v", addrBz, err)
+			k.logger(ctx).Error(errMsg)
+			panic(errMsg)
+		}
+		if addr == nil {
+			errMsg := fmt.Sprintf("decoded nil address from bytes %v", addrBz)
+			k.logger(ctx).Error(errMsg)
+			panic(errMsg)
+		}
+
+		addresses[i] = *addr
+	}
+
+	return addresses
+}
+
+// MonitoredTokenStrings fetches the MonitoredTokenAddresses and converts them to string representation
+func (k Keeper) MonitoredTokenStrings(ctx sdk.Context) []string {
+	addrs := k.MonitoredTokenAddresses(ctx)
+
+	ret := make([]string, len(addrs))
+	for i, addr := range addrs {
+		ret[i] = addr.GetAddress().String()
+	}
+
+	return ret
 }

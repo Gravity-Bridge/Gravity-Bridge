@@ -33,7 +33,7 @@ type EthAddress struct {
 	address gethcommon.Address
 }
 
-// Returns the contained address as a string
+// Returns the contained address (as a gethcommon Address)
 func (ea EthAddress) GetAddress() gethcommon.Address {
 	return ea.address
 }
@@ -64,6 +64,19 @@ func NewEthAddress(address string) (*EthAddress, error) {
 
 	addr := EthAddress{gethcommon.HexToAddress(address)}
 	return &addr, nil
+}
+
+func NewEthAddressesFromStrings(addresses []string) ([]EthAddress, error) {
+	var ret []EthAddress
+	for i, address := range addresses {
+		ethAddress, err := NewEthAddress(address)
+		if err != nil {
+			return nil, fmt.Errorf("invalid address %v in %v-th position: %v", address, i, err)
+		}
+		ret = append(ret, *ethAddress)
+	}
+
+	return ret, nil
 }
 
 // Returns a new EthAddress with 0x0000000000000000000000000000000000000000 as the wrapped address
@@ -98,6 +111,17 @@ func ValidateEthAddress(address string) error {
 // Performs validation on the wrapped string
 func (ea EthAddress) ValidateBasic() error {
 	return ValidateEthAddress(ea.address.Hex())
+}
+
+// ValidateEthAddresses validates multiple addresses in a slice
+func ValidateEthAddresses(addresses []EthAddress) error {
+	for i, address := range addresses {
+		err := address.ValidateBasic()
+		if err != nil {
+			return fmt.Errorf("invalid address %v in %v-th position: %v", address, i, err)
+		}
+	}
+	return nil
 }
 
 // EthAddrLessThan migrates the Ethereum address less than function
