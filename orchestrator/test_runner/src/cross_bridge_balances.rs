@@ -141,8 +141,8 @@ pub async fn cross_bridge_balance_test(
 
     create_and_execute_attestations(
         keys.clone(),
-        validator_eth_keys[0].clone(),
-        Some(validator_cosmos_keys[0].clone()),
+        validator_eth_keys[0],
+        Some(validator_cosmos_keys[0]),
         Some(relayer_fee.clone()),
         contact,
         web30,
@@ -155,10 +155,11 @@ pub async fn cross_bridge_balance_test(
 
     ////////////// SECOND //////////////
 
-    // Try to mess up the balances by sending to Gravity.sol + Gravity Module (SHOULD NOT HALT)
+    // Try to mess up the balances by sending to Gravity.sol (SHOULD NOT HALT)
     // Try to send to the gravity module, which is not permitted
     let gravity_module = CosmosAddress::from_bech32(GRAVITY_MODULE_ADDRESS.to_string())
         .expect("Invalid Gravity module address");
+    #[allow(clippy::disallowed_names)]
     let foo = footoken_metadata.base.clone();
     let gravity_expected_balance = contact
         .get_balance(gravity_module, foo.clone())
@@ -174,7 +175,7 @@ pub async fn cross_bridge_balance_test(
             None,
             gravity_module,
             Some(OPERATION_TIMEOUT),
-            validator_cosmos_keys[0].clone(),
+            validator_cosmos_keys[0],
         )
         .await;
     info!(
@@ -195,7 +196,7 @@ pub async fn cross_bridge_balance_test(
             one_atom(),
             gravity_address,
             footoken_erc20,
-            validator_eth_keys[0].clone(),
+            validator_eth_keys[0],
             Some(OPERATION_TIMEOUT),
             vec![
                 SendTxOption::GasPriceMultiplier(2.0),
@@ -212,8 +213,8 @@ pub async fn cross_bridge_balance_test(
     // Test that the chain is still functioning by creating new valsets
     create_and_execute_attestations(
         keys.clone(),
-        validator_eth_keys[0].clone(),
-        Some(validator_cosmos_keys[0].clone()),
+        validator_eth_keys[0],
+        Some(validator_cosmos_keys[0]),
         Some(relayer_fee.clone()),
         contact,
         web30,
@@ -241,12 +242,12 @@ pub async fn cross_bridge_balance_test(
     let false_block_height =
         downcast_uint256(web30.eth_get_latest_block().await.unwrap().number).unwrap() + 1;
     let false_receiver = validator_cosmos_keys[0]
-        .to_address(&*ADDRESS_PREFIX)
+        .to_address(&ADDRESS_PREFIX)
         .unwrap();
 
     let orchestrator_cosmos_keys = keys
         .into_iter()
-        .map(|k| k.orch_key.clone())
+        .map(|k| k.orch_key)
         .collect::<Vec<CosmosPrivateKey>>();
     submit_false_claims(
         &orchestrator_cosmos_keys,
@@ -272,6 +273,7 @@ pub async fn cross_bridge_balance_test(
     .await;
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn setup(
     web30: &Web3,
     contact: &Contact,
@@ -345,8 +347,8 @@ pub async fn setup(
             let res = web30
                 .erc20_send(
                     one_eth(),
-                    eth_addr.clone(),
-                    erc20.clone(),
+                    *eth_addr,
+                    *erc20,
                     *MINER_PRIVATE_KEY,
                     Some(Duration::from_secs(30)),
                     vec![
@@ -373,7 +375,7 @@ pub async fn setup(
         });
     }
     sends.push(SendToCosmosArgs {
-        sender: validator_eth_keys[0].clone(),
+        sender: validator_eth_keys[0],
         dest: validator_cosmos_keys[0]
             .to_address(&ADDRESS_PREFIX)
             .unwrap(),
@@ -393,8 +395,8 @@ pub async fn setup(
             web30,
             &grpc,
             gravity_address,
-            &gravity_id,
-            &relayer_config,
+            gravity_id,
+            relayer_config,
             true,
         )
         .await;
@@ -435,7 +437,7 @@ pub async fn create_send_to_cosmos_activity(
         });
     }
     sends.push(SendToCosmosArgs {
-        sender: validator_eth_keys[0].clone(),
+        sender: validator_eth_keys[0],
         dest: validator_cosmos_keys[0]
             .to_address(&ADDRESS_PREFIX)
             .unwrap(),
@@ -490,11 +492,11 @@ pub async fn send_tokens_to_eth(
     fee_coin: Coin,
 ) {
     let sender_addr = sender_key
-        .to_address(&*ADDRESS_PREFIX.as_str())
+        .to_address(ADDRESS_PREFIX.as_str())
         .expect("Invalid sender!");
     for receiver in receiver_addrs {
         let res = send_to_eth(
-            sender_key.clone(),
+            sender_key,
             receiver,
             coin_to_send.clone(),
             fee_coin.clone(),       // Bridge fee
@@ -623,7 +625,7 @@ pub async fn create_send_to_eth_activity(
         let fee_coin = coin_to_send.clone();
         send_tokens_to_eth(
             contact,
-            validator_cosmos_keys[0].clone(),
+            validator_cosmos_keys[0],
             validator_eth_addrs.clone(),
             coin_to_send,
             fee_coin.clone(),
@@ -637,7 +639,7 @@ pub async fn create_send_to_eth_activity(
     let fee_coin = coin_to_send.clone();
     send_tokens_to_eth(
         contact,
-        validator_cosmos_keys[0].clone(),
+        validator_cosmos_keys[0],
         validator_eth_addrs.clone(),
         coin_to_send,
         fee_coin.clone(),
@@ -672,6 +674,7 @@ pub async fn create_send_to_eth_activity(
 ///
 /// Note: It is not nice to genericize this function to a `run_n_times` method, as working with async
 /// closures is still a pain
+#[allow(clippy::too_many_arguments)]
 pub async fn run_relayer_n_times(
     n: usize,
     iteration_delay: u64,
@@ -694,10 +697,10 @@ pub async fn run_relayer_n_times(
             cosmos_fee.clone(),
             contact,
             web30,
-            &grpc,
+            grpc,
             gravity_contract_address,
-            &gravity_id,
-            &relayer_config,
+            gravity_id,
+            relayer_config,
             should_relay_altruistic,
         )
         .await;
@@ -705,6 +708,7 @@ pub async fn run_relayer_n_times(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn create_and_execute_attestations(
     validator_keys: Vec<ValidatorKeys>,
     relayer_ethereum_key: EthPrivateKey,
@@ -720,21 +724,21 @@ pub async fn create_and_execute_attestations(
     let relay_fut = run_relayer_n_times(
         10,
         10,
-        relayer_ethereum_key.clone(),
-        relayer_cosmos_key.clone(),
+        relayer_ethereum_key,
+        relayer_cosmos_key,
         relayer_fee.clone(),
         contact,
         web30,
-        &grpc,
-        gravity_contract_address.clone(),
+        grpc,
+        gravity_contract_address,
         gravity_id,
-        &relayer_config,
+        relayer_config,
         true,
     );
     let valset_fut = test_valset_update(
         web30,
         contact,
-        &grpc,
+        grpc,
         &validator_keys,
         gravity_contract_address,
     );
