@@ -9,19 +9,20 @@ edition = "2018"
 [dependencies]
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "18991f6"}
-web30 = "0.22"
-clarity = "0.5"
-num256 = "0.3"
+deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "a2e1353"}
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "966518e"}
+clarity = "0.7"
+num256 = "0.5"
 serde_derive = "1.0"
 serde = "1.0"
-tokio = "1.4"
+tokio = "1.21"
 tonic = "0.8"
 num-bigint = "0.4"
 log = "0.4"
 url = "2"
 sha3 = "0.10"
 lazy_static = "1"
+num = "0.4.0"
 
 [dev_dependencies]
 rand = "0.8"

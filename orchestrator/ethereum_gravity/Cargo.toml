@@ -9,10 +9,10 @@ edition = "2018"
 [dependencies]
 gravity_utils = {path = "../gravity_utils"}
 
-deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "18991f6"}
-clarity = "0.5"
-web30 = "0.22"
-num256 = "0.3"
+deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "a2e1353"}
+clarity = "0.7"
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "966518e"}
+num256 = "0.5"
 log = "0.4"
 sha3 = "0.10"
 

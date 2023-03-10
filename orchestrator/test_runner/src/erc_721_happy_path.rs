@@ -63,14 +63,14 @@ pub async fn erc721_happy_path_test(
             gravity_address,
             gravity_erc721_address,
             erc721_address,
-            Uint256::from_bytes_be(&i.to_be_bytes()),
+            Uint256::from_be_bytes(&i.to_be_bytes()),
             None,
         )
         .await;
     }
 
     info!("testing ERC721 approval utility");
-    let token_id_for_approval = Uint256::from_bytes_be(&203_i32.to_be_bytes());
+    let token_id_for_approval = Uint256::from_be_bytes(&203_i32.to_be_bytes());
     test_erc721_transfer_utils(
         web30,
         gravity_erc721_address,

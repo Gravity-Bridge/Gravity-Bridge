@@ -15,4 +15,4 @@ prost = "0.11"
 prost-types = "0.11"
 cosmos-sdk-proto = {git = "https://github.com/oraichain/cosmos-rust", rev = "19f3de7", package = "cosmos-sdk-proto-althea", features = ["bech32ibc", "ethermint"]}
 tonic = "0.8"
-deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "18991f6"}
+deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "a2e1353"}

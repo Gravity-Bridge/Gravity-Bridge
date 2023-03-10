@@ -11,7 +11,6 @@ use gravity_utils::get_with_retry::RETRY_TIME;
 use gravity_utils::types::LogicCall;
 use gravity_utils::types::TransactionBatch;
 use gravity_utils::types::Valset;
-use num::Integer;
 use num256::Uint256;
 use prost_types::Any;
 use std::convert::TryFrom;
@@ -121,7 +120,7 @@ pub async fn get_reasonable_send_to_eth_fee(
 pub fn get_min_send_to_eth_fee(bridge_amount: Uint256, min_fee_basis_points: Uint256) -> Uint256 {
     Uint256(
         bridge_amount
-            .div_ceil(&Uint256::from(BASIS_POINT_DIVISOR).0)
+            .div_ceil(Uint256::from(BASIS_POINT_DIVISOR).0)
             .mul(min_fee_basis_points.0),
     )
 }

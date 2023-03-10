@@ -14,18 +14,19 @@ cosmos_gravity = {path = "../cosmos_gravity"}
 gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "18991f6"}
+deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "a2e1353"}
 serde_derive = "1.0"
-clarity = "0.5"
+clarity = "0.7"
 docopt = "1"
 serde = "1.0"
 actix-rt = "2"
 lazy_static = "1"
-web30 = "0.22"
-num256 = "0.3"
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "966518e"}
+num256 = "0.5"
 log = "0.4"
 env_logger = "0.10"
-tokio = "1.4"
+tokio = "1.21"
+
 tonic = "0.8"
 openssl-probe = "0.1"
 futures = "0.3"

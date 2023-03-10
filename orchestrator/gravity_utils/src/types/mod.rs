@@ -29,7 +29,10 @@ impl TryFrom<gravity_proto::gravity::Erc20Token> for Erc20Token {
     type Error = GravityError;
     fn try_from(input: gravity_proto::gravity::Erc20Token) -> Result<Erc20Token, GravityError> {
         Ok(Erc20Token {
-            amount: input.amount.parse()?,
+            amount: input
+                .amount
+                .parse()
+                .expect("Amount is not in correct format"),
             token_contract_address: input.contract.parse()?,
         })
     }
