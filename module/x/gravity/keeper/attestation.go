@@ -120,6 +120,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
 
 				k.processAttestation(ctx, att, claim)
+				k.logger(ctx).Info("Applying attestation because it has surpassed the threshold", "threshold", requiredPower, "attPower", attestationPower, "observed", att.Observed, "votes", att.Votes, "claim", claim)
 				k.assertBalances(ctx, att, claim) // Assert cross-bridge balance integrity AFTER applying updates
 				k.emitObservedEvent(ctx, att, claim)
 
@@ -130,6 +131,24 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 		// We panic here because this should never happen
 		panic("attempting to process observed attestation")
 	}
+}
+
+// AttestationVotePercentage computes the share of total voting power which has weighed in on the given attestation
+// Note: This is not used in TryAttestation because it will force fetching all validator powers, while TryAttestation
+// may fetch as few as 67% of the total voting power in the best case
+func (k Keeper) AttestationVotePercentage(ctx sdk.Context, att *types.Attestation) sdk.Dec {
+	totalPower := k.StakingKeeper.GetLastTotalPower(ctx)
+	attestationPower := sdk.NewInt(0)
+	for _, validator := range att.Votes {
+		val, err := sdk.ValAddressFromBech32(validator)
+		if err != nil {
+			panic(err)
+		}
+		validatorPower := k.StakingKeeper.GetLastValidatorPower(ctx, val)
+		// Add it to the attestation power's sum
+		attestationPower = attestationPower.Add(sdk.NewInt(validatorPower))
+	}
+	return attestationPower.ToDec().QuoInt(totalPower)
 }
 
 // processAttestation actually applies the attestation to the consensus state

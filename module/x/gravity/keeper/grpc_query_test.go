@@ -117,7 +117,7 @@ func TestQueryGetAttestations(t *testing.T) {
 
 				nonces := make([]uint64, len(result.Attestations))
 				for i, att := range result.Attestations {
-					claim, err := k.UnpackAttestationClaim(&att)
+					claim, err := k.UnpackAttestationClaim(&att.Attestation)
 					require.NoError(t, err)
 					nonces[i] = claim.GetEventNonce()
 				}

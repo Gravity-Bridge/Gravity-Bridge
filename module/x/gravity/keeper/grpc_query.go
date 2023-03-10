@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
@@ -451,7 +452,27 @@ func (k Keeper) GetAttestations(
 		return nil, iterErr
 	}
 
-	return &types.QueryAttestationsResponse{Attestations: attestations}, nil
+	responses, err := k.CollectAttestationResponses(ctx, attestations)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryAttestationsResponse{Attestations: responses}, nil
+}
+
+// Converts []Attestation into []AttestationResponse by computing the attestation progress for each input slice member
+func (k Keeper) CollectAttestationResponses(ctx sdk.Context, attestations []types.Attestation) ([]types.AttestationResponse, error) {
+	responses := make([]types.AttestationResponse, len(attestations))
+	for i, att := range attestations {
+		pow := k.AttestationVotePercentage(ctx, &att)
+		power, err := pow.Float64()
+		if err != nil {
+			return []types.AttestationResponse{}, fmt.Errorf("unable to convert attestation vote percentage from Dec (%v) to float: %v", pow, err)
+		}
+		responses[i] = types.AttestationResponse{Attestation: att, VotePercentage: power}
+	}
+
+	return responses, nil
 }
 
 // This is the pre-Mercury Attestation iterator, which used an old prefix
