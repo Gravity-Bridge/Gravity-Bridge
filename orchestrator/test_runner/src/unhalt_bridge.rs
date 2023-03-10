@@ -12,7 +12,7 @@ use deep_space::{Contact, Fee};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::MsgSendToCosmosClaim;
 use gravity_proto::gravity::UnhaltBridgeProposal;
-use gravity_utils::num_conversion::downcast_uint256;
+use num::ToPrimitive;
 use prost::Message;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
@@ -110,8 +110,13 @@ pub async fn unhalt_bridge_test(
     // All nonces should be the same right now
     assert!(initial_nonces_same, "The initial nonces differed!");
 
-    let initial_block_height =
-        downcast_uint256(web30.eth_get_latest_block().await.unwrap().number).unwrap();
+    let initial_block_height = web30
+        .eth_get_latest_block()
+        .await
+        .unwrap()
+        .number
+        .to_u64()
+        .unwrap();
     // At this point we can use any nonce since all the validators have the same state
     let initial_valid_nonce = initial_valid_nonce.unwrap();
 
@@ -285,7 +290,7 @@ async fn print_sends_to_cosmos(grpc_client: &GravityQueryClient<Channel>, print_
     let grpc_client = &mut grpc_client.clone();
     let attestations = get_attestations(grpc_client, None).await.unwrap();
     for (i, attestation) in attestations.into_iter().enumerate() {
-        let claim = attestation.clone().claim.unwrap();
+        let claim = attestation.attestation.clone().unwrap().claim.unwrap();
         if print_others && claim.type_url != "/gravity.v1.MsgSendToCosmosClaim" {
             info!("attestation {}: {:?}", i, &attestation);
             continue;
@@ -299,7 +304,9 @@ async fn print_sends_to_cosmos(grpc_client: &GravityQueryClient<Channel>, print_
 
         info!(
             "attestation {}: votes {:?}\n decoded{:?}",
-            i, &attestation.votes, decoded
+            i,
+            &attestation.attestation.clone().unwrap().votes,
+            decoded
         );
     }
 }

@@ -125,7 +125,11 @@ pub async fn happy_path_test_v2(
         erc20_contract,
     )
     .await;
-    assert!(success, "{}", "User's balance did not reach {amount_to_bridge}");
+    assert!(
+        success,
+        "{}",
+        "User's balance did not reach {amount_to_bridge}"
+    );
 
     // Await the Batch claim, takes the orchestrators a bit to confirm
     let start = Instant::now();
@@ -148,7 +152,7 @@ pub async fn happy_path_test_v2(
             !attestations.is_empty(),
             "Expected multiple claims to exist after happy_path_v2"
         );
-        let latest_claim = &attestations[0].claim;
+        let latest_claim = &attestations[0].clone().attestation.unwrap().claim;
         assert!(
             latest_claim.is_some(),
             "Expected nonempty claim from query attestations"

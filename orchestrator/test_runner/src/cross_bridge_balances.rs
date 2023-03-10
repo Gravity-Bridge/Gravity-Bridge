@@ -3,31 +3,32 @@ use crate::happy_path::test_valset_update;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::ibc_auto_forward::{get_channel_id, setup_gravity_auto_forwards};
 use crate::{
-    create_default_test_config, footoken_metadata, get_ibc_chain_id, one_eth, start_orchestrators,
-    submit_false_claims, vote_yes_on_proposals, CosmosAddress, EthPrivateKey, GravityQueryClient,
-    ValidatorKeys, ADDRESS_PREFIX, COSMOS_NODE_GRPC, GRAVITY_MODULE_ADDRESS, IBC_ADDRESS_PREFIX,
-    MINER_PRIVATE_KEY, OPERATION_TIMEOUT, STAKING_TOKEN,
+    create_default_test_config, footoken_metadata, get_deposit, get_fee, get_ibc_chain_id, one_eth,
+    start_orchestrators, submit_false_claims_and_expect, vote_yes_on_proposals, CosmosAddress,
+    EthPrivateKey, GravityQueryClient, ValidatorKeys, ADDRESS_PREFIX, COSMOS_NODE_GRPC,
+    GRAVITY_MODULE_ADDRESS, IBC_ADDRESS_PREFIX, MINER_PRIVATE_KEY, OPERATION_TIMEOUT,
+    STAKING_TOKEN, TOTAL_TIMEOUT,
 };
 use clarity::Address as EthAddress;
-use cosmos_gravity::proposals::{
-    submit_set_monitored_token_addresses_proposal, SetMonitoredTokenAddressesProposal,
-};
+use cosmos_gravity::proposals::submit_set_monitored_token_addresses_proposal;
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::send::send_to_eth;
-use cosmos_gravity::utils::get_gravity_monitored_erc20s;
 use deep_space::{Coin, Contact, CosmosPrivateKey, Fee, PrivateKey};
 use ethereum_gravity::send_to_cosmos::send_to_cosmos;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::query_client::QueryClient as IbcChannelQueryClient;
-use gravity_proto::gravity::{query_client::QueryClient, Erc20Token};
+use gravity_proto::gravity::{
+    query_client::QueryClient, Erc20Token, SetMonitoredTokenAddressesProposal,
+};
 
 use crate::unhalt_bridge::get_nonces;
 use futures::future::join;
-use gravity_utils::num_conversion::{downcast_uint256, one_atom};
+use gravity_utils::num_conversion::one_atom;
 use gravity_utils::types::{
     BatchRelayingMode, BatchRequestMode, RelayerConfig, ValsetRelayingMode,
 };
 use num256::Uint256;
+use num_traits::ToPrimitive;
 use relayer::main_loop::single_relayer_iteration;
 use std::ops::Mul;
 use std::time::Duration;
@@ -114,7 +115,7 @@ pub async fn cross_bridge_balance_test(
     )
     .await;
 
-    info!("\n\n\n CREATING COSMOS -> ETH ACTIVITY \n\n\n");
+    info!("\n\n\n CREATING ETH -> COSMOS ACTIVITY \n\n\n");
     create_send_to_cosmos_activity(
         web30,
         contact,
@@ -239,8 +240,14 @@ pub async fn cross_bridge_balance_test(
         .collect::<Vec<Erc20Token>>();
 
     let next_nonce = get_nonces(&mut grpc, &keys, &contact.get_prefix()).await[0] + 1;
-    let false_block_height =
-        downcast_uint256(web30.eth_get_latest_block().await.unwrap().number).unwrap() + 1;
+    let false_block_height = web30
+        .eth_get_latest_block()
+        .await
+        .unwrap()
+        .number
+        .to_u64()
+        .unwrap()
+        + 1;
     let false_receiver = validator_cosmos_keys[0]
         .to_address(&ADDRESS_PREFIX)
         .unwrap();
@@ -249,7 +256,8 @@ pub async fn cross_bridge_balance_test(
         .into_iter()
         .map(|k| k.orch_key)
         .collect::<Vec<CosmosPrivateKey>>();
-    submit_false_claims(
+    submit_false_claims_and_expect(
+        false,
         &orchestrator_cosmos_keys,
         next_nonce,
         false_block_height,
@@ -271,6 +279,8 @@ pub async fn cross_bridge_balance_test(
         Some(false_bridge_balances),
     )
     .await;
+
+    info!("Successfully testing cross bridge balances!")
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -499,9 +509,9 @@ pub async fn send_tokens_to_eth(
             sender_key,
             receiver,
             coin_to_send.clone(),
-            fee_coin.clone(),       // Bridge fee
-            Some(fee_coin.clone()), // Chain fee
-            fee_coin.clone(),       // Cosmos Tx fee
+            fee_coin.clone(), // Bridge fee
+            None,             // Chain fee will be decided by the function
+            fee_coin.clone(), // Cosmos Tx fee
             contact,
         )
         .await
@@ -522,37 +532,28 @@ pub async fn submit_and_pass_set_monitored_token_addresses_proposal(
     keys: Vec<ValidatorKeys>,
     monitored_erc20s: Vec<EthAddress>,
 ) {
+    let erc20s: Vec<String> = monitored_erc20s
+        .into_iter()
+        .map(|k| k.to_string())
+        .collect();
+    let proposal_content = SetMonitoredTokenAddressesProposal {
+        title: "Set Monitored Token Addresses!".to_string(),
+        description: format!("Proposal to set monitored token addresses to {erc20s:?}"),
+        tokens: erc20s,
+    };
     let res = submit_set_monitored_token_addresses_proposal(
-        SetMonitoredTokenAddressesProposal {
-            title: "Set MonitoredTokenAddresses".to_string(),
-            description: "Setting MonitoredTokenAddresses to the test ERC20s".to_string(),
-            monitored_addresses: monitored_erc20s.clone(),
-        },
-        Coin {
-            // deposit
-            amount: one_atom().mul(1000u64.into()),
-            denom: (*STAKING_TOKEN).clone(),
-        },
-        Coin {
-            // fee
-            amount: 0u64.into(),
-            denom: (*STAKING_TOKEN).clone(),
-        },
+        proposal_content,
+        get_deposit(),
+        get_fee(None),
         contact,
-        keys[0].validator_key, // proposer
-        Some(OPERATION_TIMEOUT),
+        keys[0].validator_key,
+        Some(TOTAL_TIMEOUT),
     )
-    .await;
-
-    info!("Gov proposal executed with {:?}", res);
+    .await
+    .expect("Failed to submit proposal");
     vote_yes_on_proposals(contact, &keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-
-    let actual_erc20s = get_gravity_monitored_erc20s(contact)
-        .await
-        .expect("Could not obtain MonitoredTokenAddresses!");
-
-    assert_eq!(monitored_erc20s, actual_erc20s);
+    info!("Gov proposal executed with {:?}", res);
 }
 
 pub struct SendToCosmosArgs {

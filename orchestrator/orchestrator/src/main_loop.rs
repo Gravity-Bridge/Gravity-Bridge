@@ -61,7 +61,6 @@ pub async fn orchestrator_main_loop(
     user_fee_amount: Coin,
     config: GravityBridgeToolsConfig,
 ) {
-    let eth_address = ethereum_key.to_address();
     let fee = user_fee_amount;
 
     if config.orchestrator.check_eth_rpc {
