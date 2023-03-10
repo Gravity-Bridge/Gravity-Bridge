@@ -9,7 +9,6 @@
 
 use super::ValsetMember;
 use crate::error::GravityError;
-use crate::num_conversion::downcast_uint256;
 use clarity::constants::zero_address;
 use clarity::Address as EthAddress;
 use deep_space::utils::bytes_to_hex_str;
@@ -19,6 +18,7 @@ use gravity_proto::gravity::{
     MsgSendToCosmosClaim, MsgValsetUpdatedClaim,
 };
 use num256::Uint256;
+use num_traits::ToPrimitive;
 use std::unimplemented;
 use web30::types::Log;
 
@@ -214,7 +214,7 @@ impl ValsetUpdatedEvent {
 
 impl EthereumEvent for ValsetUpdatedEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height).unwrap()
+        self.block_height.to_u64().unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -330,7 +330,7 @@ pub struct TransactionBatchExecutedEvent {
 
 impl EthereumEvent for TransactionBatchExecutedEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height).unwrap()
+        self.block_height.to_u64().unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -529,7 +529,7 @@ impl SendToCosmosEvent {
 }
 impl EthereumEvent for SendToCosmosEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height).unwrap()
+        self.block_height.to_u64().unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -866,7 +866,7 @@ impl Erc20DeployedEvent {
 
 impl EthereumEvent for Erc20DeployedEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height).unwrap()
+        self.block_height.to_u64().unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -968,7 +968,7 @@ pub struct LogicCallExecutedEvent {
 
 impl EthereumEvent for LogicCallExecutedEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height).unwrap()
+        self.block_height.to_u64().unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {

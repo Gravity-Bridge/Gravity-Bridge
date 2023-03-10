@@ -10,6 +10,7 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::Erc20Token as ProtoErc20Token;
 use gravity_proto::gravity::OutgoingLogicCall as ProtoLogicCall;
 use gravity_proto::gravity::OutgoingTxBatch as ProtoBatch;
+use gravity_proto::gravity::QueryMonitoredTokenAddresses;
 use gravity_proto::gravity::Valset as ProtoValset;
 use gravity_utils::error::GravityError;
 use gravity_utils::get_with_retry::RETRY_TIME;
@@ -164,22 +165,21 @@ pub async fn collect_eth_balances_for_claims(
 
 /// Fetches and parses the gravity MonitoredTokenAddresses governance param as a Vec
 pub async fn get_gravity_monitored_erc20s(
-    contact: &Contact,
+    grpc_url: String,
 ) -> Result<Vec<EthAddress>, GravityError> {
-    const PARAM: &str = "MonitoredTokenAddresses";
-    let erc20s = contact.get_param("gravity", PARAM).await?;
-    let erc20s = erc20s
-        .param
-        .expect("No response for the gravity MonitoredTokenAddresses param!")
-        .value;
-    info!("Got parameter {}: {}", PARAM, erc20s);
-
-    // Decode ERC20s from string
-    let erc20_strings = serde_json::from_str::<Vec<String>>(&erc20s)
-        .expect("serde_json string -> Vec<String> failed");
+    let mut grpc = GravityQueryClient::connect(grpc_url)
+        .await
+        .expect("Could not connect to gravity query client");
+    let erc20s = grpc
+        .get_monitored_token_addresses(QueryMonitoredTokenAddresses {})
+        .await
+        .expect("Could not get MonitoredTokenAddresses")
+        .into_inner()
+        .monitored_token_addresses;
+    info!("Got MonitoredTokenAddresses {erc20s:?}");
 
     let mut results: Vec<EthAddress> = vec![];
-    for e in &erc20_strings {
+    for e in &erc20s {
         if e.is_empty() {
             continue;
         }
@@ -237,14 +237,9 @@ pub async fn collect_eth_balances_at_heights(
 ) -> Result<HashMap<Uint256, Vec<ProtoErc20Token>>, GravityError> {
     let mut balances_by_height = HashMap::new();
     for h in heights {
-        let bals = collect_eth_balances_at_height(
-            web3,
-            querier_address,
-            gravity_contract,
-            erc20s,
-            *h,
-        )
-        .await;
+        let bals =
+            collect_eth_balances_at_height(web3, querier_address, gravity_contract, erc20s, *h)
+                .await;
         if bals.is_err() {
             info!(
                 "Could not query gravity eth balances at height {}: {:?}",

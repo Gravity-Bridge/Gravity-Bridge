@@ -244,7 +244,7 @@ pub async fn send_ethereum_claims(
         .to_address(&contact.get_prefix())
         .unwrap();
 
-    let monitored_erc20s = get_gravity_monitored_erc20s(contact).await?;
+    let monitored_erc20s = get_gravity_monitored_erc20s(contact.get_url()).await?;
     let must_monitor_erc20s = !monitored_erc20s.is_empty();
 
     // If the gov param is populated, Orchestrators are required to submit the Gravity.sol balances for various ERC20s

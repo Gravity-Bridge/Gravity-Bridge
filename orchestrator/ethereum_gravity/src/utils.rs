@@ -3,8 +3,8 @@ use clarity::Address as EthAddress;
 
 use clarity::Uint256;
 use clarity::{abi::Token, constants::zero_address};
-use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
+use num_traits::ToPrimitive;
 use web30::{client::Web3, jsonrpc::error::Web3Error};
 
 /// Gets the latest validator set nonce
@@ -23,7 +23,9 @@ pub async fn get_valset_nonce(
     // worth of transactions. But we properly check and
     // handle that case here.
     let real_num = Uint256::from_be_bytes(&val);
-    Ok(downcast_uint256(real_num).expect("Valset nonce overflow! Bridge Halt!"))
+    Ok(real_num
+        .to_u64()
+        .expect("Valset nonce overflow! Bridge Halt!"))
 }
 
 /// Gets the latest transaction batch nonce
@@ -49,7 +51,9 @@ pub async fn get_tx_batch_nonce(
     // worth of transactions. But we properly check and
     // handle that case here.
     let real_num = Uint256::from_be_bytes(&val);
-    Ok(downcast_uint256(real_num).expect("TxBatch nonce overflow! Bridge Halt!"))
+    Ok(real_num
+        .to_u64()
+        .expect("TxBatch nonce overflow! Bridge Halt!"))
 }
 
 /// Gets the latest transaction batch nonce
@@ -79,7 +83,9 @@ pub async fn get_logic_call_nonce(
     // worth of transactions. But we properly check and
     // handle that case here.
     let real_num = Uint256::from_be_bytes(&val);
-    Ok(downcast_uint256(real_num).expect("LogicCall nonce overflow! Bridge Halt!"))
+    Ok(real_num
+        .to_u64()
+        .expect("LogicCall nonce overflow! Bridge Halt!"))
 }
 
 /// Gets the latest transaction batch nonce
@@ -104,7 +110,9 @@ pub async fn get_event_nonce(
     // worth of transactions. But we properly check and
     // handle that case here.
     let real_num = Uint256::from_be_bytes(&val);
-    Ok(downcast_uint256(real_num).expect("EventNonce nonce overflow! Bridge Halt!"))
+    Ok(real_num
+        .to_u64()
+        .expect("EventNonce nonce overflow! Bridge Halt!"))
 }
 
 /// Gets the gravityID

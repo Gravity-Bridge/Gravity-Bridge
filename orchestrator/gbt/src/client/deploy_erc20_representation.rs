@@ -125,8 +125,9 @@ pub async fn deploy_erc20_representation(
                         Ok(attestations) => {
                             let attestations = attestations.into_inner().attestations;
                             for a in attestations {
+                                let att = a.attestation.clone().unwrap();
                                 // the else condition here should never happen as it would mean we have an event with a nil pointer
-                                if let Some(claim) = a.claim {
+                                if let Some(claim) = att.claim {
                                     if claim.type_url.contains("MsgERC20DeployedClaim") {
                                         // decode any value to get at the actual contents of this claim
                                         let mut buf = BytesMut::with_capacity(claim.value.len());
@@ -137,7 +138,7 @@ pub async fn deploy_erc20_representation(
                                         let claim_contract: EthAddress =
                                             claim_contents.token_contract.parse().unwrap();
                                         if claim_contract == contract_to_be_adopted {
-                                            if a.observed {
+                                            if att.observed {
                                                 error!("Your ERC20 contract has been rejected by the Gravity Bridge chain, please check the metadata and try again");
                                                 exit(1);
                                             } else {
@@ -197,8 +198,9 @@ mod tests {
         let attestations = attestations.into_inner().attestations;
         assert!(!attestations.is_empty());
         for a in attestations {
+            let att = a.attestation.clone().unwrap();
             // the else condition here should never happen as it would mean we have an event with a nil pointer
-            if let Some(claim) = a.claim {
+            if let Some(claim) = att.claim {
                 // required because claim type filtering does not seem to be working as expected
                 if claim.type_url.contains("MsgERC20DeployedClaim") {
                     // decode any value to get at the actual contents of this claim

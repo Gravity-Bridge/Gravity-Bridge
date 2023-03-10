@@ -281,8 +281,9 @@ async fn check_attestations(grpc_client: QueryClient<Channel>, expected_attestat
     assert!(attestations.len() >= expected_attestations as usize);
     let mut claims: Vec<Box<dyn EthereumClaim>> = vec![];
     for (i, att) in attestations.iter().enumerate() {
-        assert!(att.observed);
-        let claim_any = att
+        let attestation = att.attestation.clone().unwrap();
+        assert!(attestation.observed);
+        let claim_any = attestation
             .claim
             .clone()
             .unwrap_or_else(|| panic!("Attestation {} had no claims!", i));
