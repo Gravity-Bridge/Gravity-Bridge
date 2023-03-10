@@ -5,6 +5,7 @@ use deep_space::address::Address;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::AttestationResponse;
 use gravity_proto::gravity::Params;
 use gravity_proto::gravity::QueryAttestationsRequest;
 use gravity_proto::gravity::QueryBatchConfirmsRequest;
@@ -28,7 +29,7 @@ use gravity_proto::gravity::QueryPendingSendToEth;
 use gravity_proto::gravity::QueryPendingSendToEthResponse;
 use gravity_proto::gravity::QueryValsetConfirmsByNonceRequest;
 use gravity_proto::gravity::QueryValsetRequestRequest;
-use gravity_proto::gravity::{Attestation, PendingIbcAutoForward, QueryPendingIbcAutoForwards};
+use gravity_proto::gravity::{PendingIbcAutoForward, QueryPendingIbcAutoForwards};
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
 use tonic::transport::Channel;
@@ -249,7 +250,7 @@ pub async fn get_oldest_unsigned_logic_calls(
 pub async fn get_attestations(
     client: &mut GravityQueryClient<Channel>,
     limit: Option<u64>,
-) -> Result<Vec<Attestation>, GravityError> {
+) -> Result<Vec<AttestationResponse>, GravityError> {
     let request = client
         .get_attestations(QueryAttestationsRequest {
             limit: limit.unwrap_or(1000u64),

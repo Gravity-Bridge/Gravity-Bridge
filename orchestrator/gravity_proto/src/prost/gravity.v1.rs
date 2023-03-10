@@ -1646,9 +1646,16 @@ pub struct QueryAttestationsRequest {
     pub use_v1_key: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AttestationResponse {
+    #[prost(message, optional, tag="1")]
+    pub attestation: ::core::option::Option<Attestation>,
+    #[prost(double, tag="2")]
+    pub vote_percentage: f64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryAttestationsResponse {
     #[prost(message, repeated, tag="1")]
-    pub attestations: ::prost::alloc::vec::Vec<Attestation>,
+    pub attestations: ::prost::alloc::vec::Vec<AttestationResponse>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryDelegateKeysByValidatorAddress {

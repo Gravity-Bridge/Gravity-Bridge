@@ -404,6 +404,46 @@ pub async fn submit_false_claims(
     timeout: Option<Duration>,
     bridge_balances: Option<Vec<Erc20Token>>,
 ) {
+    submit_false_claims_and_expect(
+        true,
+        keys,
+        nonce,
+        height,
+        amount,
+        cosmos_receiver,
+        ethereum_sender,
+        erc20_address,
+        contact,
+        fee,
+        timeout,
+        bridge_balances,
+    )
+    .await
+}
+
+/// This function is much like submit_false_claims() but will panic on failure if `success` is true,
+/// or will panic on success if `success` is false
+// Submits a false send to cosmos for every orchestrator key in keys, sending amount of erc20_address
+// tokens to cosmos_receiver, claiming to come from ethereum_sender for the given fee.
+// If a timeout is supplied, contact.send_message() will block waiting for the tx to appear
+// Note: These sends to cosmos are false, meaning the ethereum side will have a lower nonce than the
+// cosmos side and the bridge will effectively break.
+#[allow(clippy::too_many_arguments)]
+pub async fn submit_false_claims_and_expect(
+    success: bool, // True to expect success, false to expect failure
+    keys: &[impl PrivateKey],
+    nonce: u64,
+    height: u64,
+    amount: Uint256,
+    cosmos_receiver: CosmosAddress,
+    ethereum_sender: EthAddress,
+    erc20_address: EthAddress,
+    contact: &Contact,
+    fee: &Fee,
+    timeout: Option<Duration>,
+    bridge_balances: Option<Vec<Erc20Token>>,
+) {
+    let mut submission_success = true;
     let bridge_balances = bridge_balances.unwrap_or(vec![]);
     for (i, k) in keys.iter().enumerate() {
         let orch_addr = k.to_address(&contact.get_prefix()).unwrap();
@@ -428,9 +468,20 @@ pub async fn submit_false_claims(
                 timeout,
                 k.clone(),
             )
-            .await
-            .expect("Failed to submit false claim");
+            .await;
+        if res.is_err() {
+            submission_success = false;
+            if success {
+                panic!("Failed to submit false claim, response is {res:?}")
+            }
+        }
         info!("Oracle {} false claim response {:?}", i, res);
+    }
+
+    if !success && submission_success {
+        panic!(
+            "Every attestation was successfully submitted to the chain, but failure was expected!"
+        )
     }
 }
 

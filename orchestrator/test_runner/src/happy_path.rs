@@ -141,7 +141,7 @@ pub async fn iterate_attestations<F: FnMut(T), T: Message + Default>(
         .await
         .expect("Something happened while getting attestations after delegating to validator");
     for (i, att) in attestations.into_iter().enumerate() {
-        let claim = att.clone().claim;
+        let claim = att.attestation.clone().unwrap().claim;
         trace!("Processing attestation {}", i);
         if claim.is_none() {
             trace!("Attestation returned with no claim: {:?}", att);

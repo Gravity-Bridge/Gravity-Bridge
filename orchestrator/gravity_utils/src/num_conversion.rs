@@ -1,6 +1,4 @@
 use clarity::Uint256;
-use std::u128::MAX as U128MAX;
-use std::u64::MAX as U64MAX;
 
 const ONE_ETH: u128 = 1000000000000000000;
 const ONE_ETH_FLOAT: f64 = ONE_ETH as f64;
@@ -18,38 +16,6 @@ const ONE_ATOM: u128 = 1000000;
 const ONE_ATOM_FLOAT: f64 = ONE_ATOM as f64;
 pub fn one_atom() -> Uint256 {
     ONE_ATOM.into()
-}
-
-pub fn downcast_uint256(input: Uint256) -> Option<u64> {
-    if input >= U64MAX.into() {
-        None
-    } else {
-        let mut val = input.to_be_bytes().to_vec();
-        // pad to 8 bytes
-        while val.len() < 8 {
-            val.insert(0, 0);
-        }
-        let mut lower_bytes: [u8; 8] = [0; 8];
-        // get the 'lowest' 8 bytes from a 256 bit integer
-        lower_bytes.copy_from_slice(&val[0..val.len()]);
-        Some(u64::from_be_bytes(lower_bytes))
-    }
-}
-
-pub fn downcast_to_u128(input: Uint256) -> Option<u128> {
-    if input >= U128MAX.into() {
-        None
-    } else {
-        let mut val = input.to_be_bytes().to_vec();
-        // pad to 8 bytes
-        while val.len() < 16 {
-            val.insert(0, 0);
-        }
-        let mut lower_bytes: [u8; 16] = [0; 16];
-        // get the 'lowest' 16 bytes from a 256 bit integer
-        lower_bytes.copy_from_slice(&val[0..val.len()]);
-        Some(u128::from_be_bytes(lower_bytes))
-    }
 }
 
 /// TODO revisit this for higher precision while
@@ -103,32 +69,38 @@ fn even_f32_rounding() {
 
 #[test]
 fn test_downcast_nonce() {
+    use num_traits::ToPrimitive;
     let mut i = 0u64;
     while i < 100_000 {
-        assert_eq!(i, downcast_uint256(i.into()).unwrap());
+        let i_uint256: Uint256 = i.into();
+        assert_eq!(i, (i_uint256).to_u64().unwrap());
         i += 1
     }
     let mut i: u64 = std::u32::MAX.into();
     i -= 100;
     let end = i + 100_000;
     while i < end {
-        assert_eq!(i, downcast_uint256(i.into()).unwrap());
+        let i_uint256: Uint256 = i.into();
+        assert_eq!(i, i_uint256.to_u64().unwrap());
         i += 1
     }
 }
 
 #[test]
 fn test_downcast_to_u128() {
+    use num_traits::ToPrimitive;
     let mut i = 0u128;
     while i < 100_000 {
-        assert_eq!(i, downcast_to_u128(i.into()).unwrap());
+        let i_uint256: Uint256 = i.into();
+        assert_eq!(i, i_uint256.to_u128().unwrap());
         i += 1
     }
     let mut i: u128 = std::u64::MAX.into();
     i -= 100;
     let end = i + 100_000;
     while i < end {
-        assert_eq!(i, downcast_to_u128(i.into()).unwrap());
+        let i_uint256: Uint256 = i.into();
+        assert_eq!(i, i_uint256.to_u128().unwrap());
         i += 1
     }
 }

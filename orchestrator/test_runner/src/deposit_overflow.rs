@@ -11,8 +11,8 @@ use deep_space::private_key::CosmosPrivateKey;
 use deep_space::{Coin, Contact, Fee};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::QueryErc20ToDenomRequest;
-use gravity_utils::num_conversion::downcast_uint256;
 use num::Bounded;
+use num_traits::ToPrimitive;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -66,8 +66,13 @@ pub async fn deposit_overflow_test(
 
     ///////////////////// EXECUTION /////////////////////
     let initial_nonce = get_nonces(&mut grpc_client, &keys, &contact.get_prefix()).await[0];
-    let initial_block_height =
-        downcast_uint256(web30.eth_get_latest_block().await.unwrap().number).unwrap();
+    let initial_block_height = web30
+        .eth_get_latest_block()
+        .await
+        .unwrap()
+        .number
+        .to_u64()
+        .unwrap();
     info!("Initial transfer complete, nonce is {}", initial_nonce);
 
     // NOTE: the dest user's balance should be 1 * normal_amount of check_module_erc20 token
@@ -172,7 +177,8 @@ pub async fn deposit_overflow_test(
     let dest2_bals = contact.get_balances(dest2).await.unwrap();
     assert!(
         dest2_bals.is_empty(),
-        "{}", "dest2 should have no coins, but they have {dest2_bals:?}"
+        "{}",
+        "dest2 should have no coins, but they have {dest2_bals:?}"
     );
     info!("Successful send of Uint256 max value to cosmos user, unable to overflow the supply!");
 }
