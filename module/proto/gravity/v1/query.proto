@@ -273,8 +273,13 @@ message QueryAttestationsRequest {
   bool use_v1_key = 6;
 }
 
+message AttestationResponse {
+  Attestation attestation = 1 [(gogoproto.nullable) = false];
+  double vote_percentage = 2;
+}
+
 message QueryAttestationsResponse {
-  repeated Attestation attestations = 1 [(gogoproto.nullable) = false];
+  repeated AttestationResponse attestations = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryDelegateKeysByValidatorAddress {
