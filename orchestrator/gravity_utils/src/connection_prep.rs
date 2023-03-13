@@ -91,7 +91,14 @@ pub async fn create_rpc_connections(
             .unwrap_or_else(|_| panic!("Invalid Ethereum RPC url {}", eth_rpc_url));
         check_scheme(&url, &eth_rpc_url);
         let eth_url = eth_rpc_url.trim_end_matches('/');
-        let base_web30 = Web3::new(eth_url, timeout);
+        let mut base_web30 = Web3::new(eth_url, timeout);
+
+        // check if eth_rpc_url is special url, such as tron then need to provide API_KEY from env to make sure it works without rate
+        if eth_rpc_url.starts_with("https://api.trongrid.io") {
+            base_web30.set_header("TRON-PRO-API-KEY", option_env!("API_KEY").unwrap());
+            base_web30.set_check_sync(false);
+        }
+
         let try_base = base_web30.eth_block_number().await;
         match try_base {
             // it worked, lets go!
