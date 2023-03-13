@@ -107,10 +107,7 @@ pub async fn pause_bridge_test(
 
     // Try to create a batch and send tokens to Ethereum
     let coin = contact
-        .get_balance(
-            user_keys.cosmos_address,
-            format!("gravity{erc20_address}"),
-        )
+        .get_balance(user_keys.cosmos_address, format!("gravity{erc20_address}"))
         .await
         .unwrap()
         .unwrap();
@@ -195,10 +192,7 @@ pub async fn pause_bridge_test(
 
     // finally we check that our batch executes and our new withdraw processes
     let res = contact
-        .get_balance(
-            user_keys.cosmos_address,
-            format!("gravity{erc20_address}"),
-        )
+        .get_balance(user_keys.cosmos_address, format!("gravity{erc20_address}"))
         .await
         .unwrap()
         .unwrap();

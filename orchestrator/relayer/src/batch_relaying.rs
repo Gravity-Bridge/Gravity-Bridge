@@ -134,13 +134,8 @@ async fn should_relay_batch(
     let batch_reward_amount = batch.total_fee.amount;
     let batch_reward_token = batch.total_fee.token_contract_address;
     // gets the price of the provided amount of the provided token in weth
-    let price = get_weth_price_with_retries(
-        pubkey,
-        batch_reward_token,
-        batch_reward_amount,
-        web3,
-    )
-    .await;
+    let price =
+        get_weth_price_with_retries(pubkey, batch_reward_token, batch_reward_amount, web3).await;
 
     match config {
         BatchRelayingMode::EveryBatch | BatchRelayingMode::Altruistic => (true, None),

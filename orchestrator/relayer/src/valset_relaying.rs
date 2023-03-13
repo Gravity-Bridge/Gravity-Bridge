@@ -229,13 +229,9 @@ async fn should_relay_valset(
         // if the user has configured only profitable relaying then it is our only consideration
         ValsetRelayingMode::ProfitableOnly { margin } => match valset.reward_token {
             Some(reward_token) => {
-                let price = get_weth_price_with_retries(
-                    pubkey,
-                    reward_token,
-                    valset.reward_amount,
-                    web3,
-                )
-                .await;
+                let price =
+                    get_weth_price_with_retries(pubkey, reward_token, valset.reward_amount, web3)
+                        .await;
                 let cost_with_margin = get_cost_with_margin(cost.get_total(), *margin);
                 // we need to see how much WETH we can get for the reward token amount,
                 // and compare that value to the gas cost times the margin

@@ -844,8 +844,7 @@ fn setup_transactions(
     // Convert the minimum fee param to a useable fee for a send of one eth (1 * 10^18)
     let curr_fee_basis_points = Uint256::from(min_fee_basis_points);
     let erc20_bridge_amount: Uint256 = one_eth();
-    let erc20_min_fee =
-        get_min_send_to_eth_fee(erc20_bridge_amount, curr_fee_basis_points);
+    let erc20_min_fee = get_min_send_to_eth_fee(erc20_bridge_amount, curr_fee_basis_points);
     let erc20_success_fees: Vec<Uint256> = get_success_test_fees(erc20_min_fee);
     let erc20_fail_fees: Vec<Uint256> = get_fail_test_fees(erc20_min_fee);
     info!(
@@ -855,8 +854,7 @@ fn setup_transactions(
 
     // ... and for a send of one atom (1 * 10^6)
     let cosmos_bridge_amount = one_atom();
-    let cosmos_min_fee =
-        get_min_send_to_eth_fee(cosmos_bridge_amount, curr_fee_basis_points);
+    let cosmos_min_fee = get_min_send_to_eth_fee(cosmos_bridge_amount, curr_fee_basis_points);
     let cosmos_success_fees: Vec<Uint256> = get_success_test_fees(cosmos_min_fee);
     let cosmos_fail_fees: Vec<Uint256> = get_fail_test_fees(cosmos_min_fee);
     info!(
@@ -985,9 +983,7 @@ pub async fn submit_and_pass_send_to_eth_fees_proposal(
     keys: &[ValidatorKeys],
 ) {
     let proposal_content = SendToEthFeesProposalJson {
-        title: format!(
-            "Set MinChainFeeBasisPoints to {min_chain_fee_basis_points}"
-        ),
+        title: format!("Set MinChainFeeBasisPoints to {min_chain_fee_basis_points}"),
         description: "MinChainFeeBasisPoints!".to_string(),
         min_chain_fee_basis_points,
     };
