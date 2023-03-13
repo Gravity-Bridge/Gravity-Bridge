@@ -7,8 +7,15 @@ import { TestERC721A } from "./typechain/TestERC721A";
 import { ethers } from "ethers";
 import fs from "fs";
 import commandLineArgs from "command-line-args";
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios from "axios";
 import { exit } from "process";
+// @ts-ignore
+import TronWeb from 'tronweb';
+
+const networkType = {
+  ETHEREUM: "eth",
+  TRON: "tron",
+}
 
 const args = commandLineArgs([
   // the ethernum node used to deploy the contract
@@ -25,6 +32,8 @@ const args = commandLineArgs([
   { name: "test-mode", type: String },
   { name: "evm-prefix", type: String, defaultValue: "" },
   { name: "admin", type: String, defaultValue: "0xD7F771664541b3f647CBA2be9Ab1Bc121bEEC913" },
+  { name: "network-type", type: String, defaultValue: networkType.ETHEREUM },
+  { name: 'headers', type: String }
 ]);
 
 // 4. Now, the deployer script hits a full node api, gets the Eth signatures of the valset from the latest block, and deploys the Ethereum contract.
@@ -150,17 +159,68 @@ async function deploy() {
 
   await gravity.deployed();
   console.log("Gravity deployed at Address - ", gravity.address);
+}
 
-  // console.log("Starting Gravity ERC721 contract deploy");
-  // const { abi: abiERC721, bytecode: bytecodeERC721 } = getContractArtifacts(args["contractERC721"]);
-  // const factoryERC721 = new ethers.ContractFactory(abiERC721, bytecodeERC721, wallet);
+async function deployTron() {
+  console.log(args['eth-node'], args['headers'], args['eth-privkey'])
+  const tronWeb = new TronWeb({
+    fullHost: args['eth-node'],
+    headers: { "TRON-PRO-API-KEY": args['headers'] },
+    privateKey: args['eth-privkey']
+  })
 
-  // const gravityERC721 = (await factoryERC721.deploy(
-  //   gravity.address
-  // ) as GravityERC721);
+  console.log("tron web: ", tronWeb.defaultAddress)
 
-  // await gravityERC721.deployed();
-  // console.log("GravityERC721 deployed at Address - ", gravityERC721.address);
+  const gravityIdString = await getGravityId();
+  console.log("gravity id: ", gravityIdString)
+  const gravityId = ethers.utils.formatBytes32String(gravityIdString);
+
+  console.log("Starting Gravity contract deploy");
+  const { abi, bytecode } = getContractArtifacts(args["contract"]);
+
+  console.log("About to get latest Gravity valset");
+  const latestValset = await getLatestValset();
+
+  let eth_addresses = [];
+  let powers = [];
+  let powers_sum = 0;
+  // this MUST be sorted uniformly across all components of Gravity in this
+  // case we perform the sorting in module/x/gravity/keeper/types.go to the
+  // output of the endpoint should always be sorted correctly. If you're
+  // having strange problems with updating the validator set you should go
+  // look there.
+  for (let i = 0; i < latestValset.members.length; i++) {
+    if (latestValset.members[i].ethereum_address == null) {
+      continue;
+    }
+    eth_addresses.push(latestValset.members[i].ethereum_address);
+    powers.push(latestValset.members[i].power);
+    powers_sum += latestValset.members[i].power;
+  }
+
+  // 66% of uint32_max
+  let vote_power = 2834678415;
+  if (powers_sum < vote_power) {
+    console.log("Refusing to deploy! Incorrect power! Please inspect the validator set below")
+    console.log("If less than 66% of the current voting power has unset Ethereum Addresses we refuse to deploy")
+    console.log(latestValset)
+    exit(1)
+  }
+
+  const gravity = await tronWeb.contract().new({
+    abi: JSON.parse(abi),
+    bytecode,
+    feeLimit: 1000000000,
+    callValue: 0,
+    userFeePercentage: 1,
+    originEnergyLimit: 10000000,
+    parameters: [gravityId,
+      eth_addresses,
+      powers,
+      args["admin"]
+    ]
+  });
+  console.log("Gravity deployed at Address - ", gravity.address);
 }
 
 function getContractArtifacts(path: string): { bytecode: string; abi: string } {
@@ -230,11 +290,16 @@ async function getGravityId(): Promise<string> {
 }
 
 async function main() {
-  await deploy();
-}
-
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  const type = args['network-type'];
+  switch (type) {
+    case networkType.TRON:
+      await deployTron();
+      break;
+    case networkType.ETHEREUM:
+    default:
+      await deploy();
+      break;
+  }
 }
 
 main();
