@@ -2201,9 +2201,9 @@ dependencies = [
 
 [[package]]
 name = "num256"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "579115b3a34ca765ed4ed29d71b3ba7c2d57cf5aa70041640cd305f75dccaac1"
+checksum = "27dd9df2c73f8724f4f6930882c127f042656bc84e6000fe9f6026bb43fe1a57"
 dependencies = [
  "bnum",
  "num-traits",
