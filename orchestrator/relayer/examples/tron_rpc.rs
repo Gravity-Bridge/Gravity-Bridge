@@ -4,9 +4,9 @@ use web30::client::Web3;
 #[actix_rt::main]
 pub async fn main() {
     let mut web3 = Web3::from_headers(
-        "https://trx.getblock.io/mainnet/fullnode/jsonrpc",
+        "https://api.trongrid.io/jsonrpc",
         Duration::from_secs(120),
-        vec![("x-api-key", "e2e3f401-2137-409c-b821-bd8c29f2141c")],
+        vec![("TRON-PRO-API-KEY", option_env!("API_KEY").unwrap())],
     );
 
     web3.set_check_sync(false);

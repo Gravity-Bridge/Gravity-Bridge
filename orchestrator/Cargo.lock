@@ -362,6 +362,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "349a06037c7bf932dd7e7d1f653678b2038b9ad46a74102f1fc7bd7872678cce"
 
 [[package]]
+name = "base58"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6107fe1be6682a68940da878d9e9f5e90ca5745b3dec9fd1bb393c8777d4f581"
+
+[[package]]
 name = "base64"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4189,11 +4195,13 @@ dependencies = [
 [[package]]
 name = "web30"
 version = "0.23.1"
-source = "git+https://github.com/oraichain/web30.git?rev=966518e#966518e3b478f35d72b375918fdc288e056258f2"
+source = "git+https://github.com/oraichain/web30.git?rev=843082d#843082d0f7ab9194aaae9a33068c5458721cf0a1"
 dependencies = [
  "awc",
+ "base58",
  "clarity",
  "futures",
+ "hex",
  "lazy_static",
  "log",
  "num-traits",
@@ -4201,6 +4209,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "sha2 0.10.6",
  "tokio",
 ]
 
