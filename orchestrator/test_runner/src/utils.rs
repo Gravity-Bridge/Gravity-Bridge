@@ -472,7 +472,7 @@ pub async fn submit_false_claims_and_expect(
         if res.is_err() {
             submission_success = false;
             if success {
-                panic!("Failed to submit false claim, response is {res:?}")
+                panic!("{}", "Failed to submit false claim, response is {res:?}")
             }
         }
         info!("Oracle {} false claim response {:?}", i, res);

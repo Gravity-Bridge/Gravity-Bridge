@@ -32,7 +32,7 @@ pub async fn signature_slashing_test(
     let no_relay_market_config = create_default_test_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
-    test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
+    test_valset_update(web30, contact, &grpc_client, &keys, gravity_address).await;
 
     reduce_slashing_window(contact, &mut grpc_client, &keys).await;
 
@@ -42,7 +42,7 @@ pub async fn signature_slashing_test(
     wait_for_height(20, contact).await;
 
     // make sure everything is still moving!
-    test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
+    test_valset_update(web30, contact, &grpc_client, &keys, gravity_address).await;
 }
 
 pub async fn wait_for_height(target_height: u64, contact: &Contact) {
