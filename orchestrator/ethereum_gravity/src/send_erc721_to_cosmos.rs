@@ -105,11 +105,7 @@ pub async fn send_erc721_to_cosmos(
             gravityerc721_contract,
             encode_call(
                 "sendERC721ToCosmos(address,string,uint256)",
-                &[
-                    erc721.into(),
-                    encoded_destination_address,
-                    token_id.into(),
-                ],
+                &[erc721.into(), encoded_destination_address, token_id.into()],
             )?,
             0u32.into(),
             sender_address,
@@ -119,8 +115,7 @@ pub async fn send_erc721_to_cosmos(
         .await?;
 
     if let Some(timeout) = wait_timeout {
-        web3.wait_for_transaction(tx_hash, timeout, None)
-            .await?;
+        web3.wait_for_transaction(tx_hash, timeout, None).await?;
     }
 
     Ok(tx_hash)

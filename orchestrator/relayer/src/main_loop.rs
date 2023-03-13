@@ -164,8 +164,7 @@ pub async fn single_relayer_iteration(
     let should_relay_batches = relayer_config.batch_relaying_mode != BatchRelayingMode::Altruistic
         || should_relay_altruistic;
 
-    let current_valset =
-        find_latest_valset(&mut grpc_client, gravity_contract_address, web3).await;
+    let current_valset = find_latest_valset(&mut grpc_client, gravity_contract_address, web3).await;
     if current_valset.is_err() {
         error!("Could not get current valset! {:?}", current_valset);
         return;

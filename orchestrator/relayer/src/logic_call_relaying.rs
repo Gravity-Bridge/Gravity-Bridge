@@ -38,8 +38,7 @@ async fn should_relay_logic_call(
             total_weth_reward += *total;
         } else {
             // Get the token's value in ETH as of the current moment
-            let weth_equiv =
-                get_weth_price_with_retries(our_address, *token, *total, web3).await;
+            let weth_equiv = get_weth_price_with_retries(our_address, *token, *total, web3).await;
             if weth_equiv.is_err() {
                 // Can't get the price so we ignore it
                 info!(

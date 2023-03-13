@@ -189,10 +189,7 @@ async fn submit_and_fail_airdrop_proposal(
             }
         }
     } else {
-        generate_valid_accounts_and_amounts(
-            NUM_AIRDROP_RECIPIENTS,
-            starting_amount_in_pool.amount,
-        )
+        generate_valid_accounts_and_amounts(NUM_AIRDROP_RECIPIENTS, starting_amount_in_pool.amount)
     };
 
     let mut byte_recipients = Vec::new();

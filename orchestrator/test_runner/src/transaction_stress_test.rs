@@ -153,13 +153,11 @@ pub async fn transaction_stress_test(
     let starting_eth = one_eth() * STARTING_ETH.into();
     let max_expected_sent = one_hundred_eth();
     // Users are not refunded the ChainFee value they pay for the send
-    let max_nonrefundable_amount =
-        get_reasonable_send_to_eth_fee(contact, max_expected_sent)
-            .await
-            .expect("Unable to get reasonable fee!");
+    let max_nonrefundable_amount = get_reasonable_send_to_eth_fee(contact, max_expected_sent)
+        .await
+        .expect("Unable to get reasonable fee!");
 
-    let min_expected_balance =
-        starting_eth - 500u16.into() - max_nonrefundable_amount;
+    let min_expected_balance = starting_eth - 500u16.into() - max_nonrefundable_amount;
 
     let start = Instant::now();
     let mut good = true;
@@ -174,9 +172,8 @@ pub async fn transaction_stress_test(
                     .await
                     .unwrap();
 
-                let min_expected_canceled_balance = starting_eth
-                    - sent_amounts[keys][token]
-                    - max_nonrefundable_amount;
+                let min_expected_canceled_balance =
+                    starting_eth - sent_amounts[keys][token] - max_nonrefundable_amount;
 
                 if e_dest_addr == user_who_cancels.eth_address {
                     if bal >= min_expected_canceled_balance {
@@ -338,8 +335,7 @@ pub async fn test_bulk_send_to_cosmos(
             let bal = get_erc20_balance_safe(*token, web30, e_dest_addr)
                 .await
                 .unwrap();
-            let expected_balance =
-                starting_eth - amount_sent_per_token_type[keys][token];
+            let expected_balance = starting_eth - amount_sent_per_token_type[keys][token];
             if bal != expected_balance {
                 panic!("Failed to decrement all balances on Ethereum!");
             }
@@ -404,8 +400,7 @@ pub async fn lock_funds_in_pool(
                 get_reasonable_send_to_eth_fee(contact, sent_amounts[keys][token])
                     .await
                     .expect("Unable to get reasonable fee!");
-            let send_amount =
-                sent_amounts[keys][token] - 500u16.into() - chain_fee_amount;
+            let send_amount = sent_amounts[keys][token] - 500u16.into() - chain_fee_amount;
 
             send_coin.amount = send_amount;
 

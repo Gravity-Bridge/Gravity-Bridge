@@ -363,7 +363,8 @@ pub async fn example_ethermint_key_usage(
         (None, Some(rewarded)) => {
             assert!(
                 rewarded.amount > 0u8.into(),
-                "{}", "Unexpected reward amount {rewarded}"
+                "{}",
+                "Unexpected reward amount {rewarded}"
             )
         }
         (Some(unrewarded), Some(rewarded)) => {

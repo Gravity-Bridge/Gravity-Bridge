@@ -295,11 +295,7 @@ pub async fn send_to_cosmos_invalid(
             gravity_contract,
             encode_call(
                 "sendToCosmos(address,string,uint256)",
-                &[
-                    erc20.into(),
-                    encoded_destination_address,
-                    one_eth().into(),
-                ],
+                &[erc20.into(), encoded_destination_address, one_eth().into()],
             )
             .unwrap(),
             0u32.into(),
