@@ -88,7 +88,7 @@ pub async fn valset_rewards_test(
     assert_eq!(params.bridge_ethereum_address, gravity_address.to_string());
 
     // trigger a valset update
-    test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
+    test_valset_update(web30, contact, &grpc_client, &keys, gravity_address).await;
 
     // check that one of the relayers has footoken now
     let mut found = false;

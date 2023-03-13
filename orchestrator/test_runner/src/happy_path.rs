@@ -62,7 +62,7 @@ pub async fn happy_path_test(
     // with the first block) is successfully updated
     if !validator_out {
         for _ in 0u32..2 {
-            test_valset_update(web30, contact, &mut grpc_client, &keys, gravity_address).await;
+            test_valset_update(web30, contact, &grpc_client, &keys, gravity_address).await;
         }
     } else {
         wait_for_nonzero_valset(web30, gravity_address).await;
