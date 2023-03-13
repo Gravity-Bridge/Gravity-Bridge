@@ -26,6 +26,14 @@ pub struct Connections {
     pub contact: Option<Contact>,
 }
 
+fn pre_processing_web3(web3: &mut Web3) {
+    // check if eth_rpc_url is special url, such as tron then need to provide API_KEY from env to make sure it works without
+    if web3.get_url().starts_with("https://api.trongrid.io") {
+        web3.set_header("TRON-PRO-API-KEY", option_env!("API_KEY").unwrap());
+        web3.set_check_sync(false);
+    }
+}
+
 /// Returns the three major RPC connections required for Gravity
 /// operation in a error resilient manner. TODO find some way to generalize
 /// this so that it's less ugly
@@ -93,11 +101,8 @@ pub async fn create_rpc_connections(
         let eth_url = eth_rpc_url.trim_end_matches('/');
         let mut base_web30 = Web3::new(eth_url, timeout);
 
-        // check if eth_rpc_url is special url, such as tron then need to provide API_KEY from env to make sure it works without rate
-        if eth_rpc_url.starts_with("https://api.trongrid.io") {
-            base_web30.set_header("TRON-PRO-API-KEY", option_env!("API_KEY").unwrap());
-            base_web30.set_check_sync(false);
-        }
+        // pre processing web3 for special case
+        pre_processing_web3(&mut base_web30);
 
         let try_base = base_web30.eth_block_number().await;
         match try_base {
