@@ -1,6 +1,6 @@
 use clarity::abi::encode_call;
-use clarity::Address as EthAddress;
 
+use clarity::Address as EthAddress;
 use clarity::Uint256;
 use clarity::{abi::Token, constants::zero_address};
 use gravity_utils::num_conversion::downcast_uint256;

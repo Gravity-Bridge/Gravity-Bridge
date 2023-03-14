@@ -21,12 +21,13 @@ docopt = "1"
 serde = "1.0"
 actix-rt = "2"
 lazy_static = "1"
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "8d51bd5"}
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "324acd7"}
 num256 = "0.5"
 log = "0.4"
 env_logger = "0.10"
 tokio = "1.21"
-heliosphere = {git = "https://github.com/oraichain/heliosphere.git", rev = "d8425a0"}
+heliosphere = {git = "https://github.com/oraichain/heliosphere.git", rev = "9cf84a4"}
+ethabi = "18.0"
 tonic = "0.8"
 openssl-probe = "0.1"
 futures = "0.3"

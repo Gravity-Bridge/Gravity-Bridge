@@ -194,3 +194,25 @@ pub async fn relay_logic_calls(
         }
     }
 }
+
+#[test]
+fn encode_tokens() {
+    let tokens = vec![clarity::abi::Token::Address(
+        "0x993d06FC97F45f16e4805883b98a6c20BAb54964"
+            .parse()
+            .unwrap(),
+    )];
+
+    let encoded1 = clarity::abi::encode_tokens(&tokens);
+
+    let tokens = vec![ethabi::Token::Address(
+        web30::utils::get_base58_address("0x993d06FC97F45f16e4805883b98a6c20BAb54964")
+            .parse::<heliosphere::core::Address>()
+            .unwrap()
+            .into(),
+    )];
+
+    let encoded2 = ethabi::encode(&tokens);
+
+    assert_eq!(encoded1, encoded2);
+}
