@@ -23,26 +23,26 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 		pruneAttestations(ctx, k, evmChain.EvmChainPrefix)
 	}
 
-	validators := k.StakingKeeper.GetAllValidators(ctx)
-	for _, val := range validators {
-		consAddr, _ := val.GetConsAddr()
-		if val.IsJailed() {
-			k.StakingKeeper.Unjail(ctx, consAddr)
-		}
-	}
+	// validators := k.StakingKeeper.GetAllValidators(ctx)
+	// for _, val := range validators {
+	// 	consAddr, _ := val.GetConsAddr()
+	// 	if val.IsJailed() {
+	// 		k.StakingKeeper.Unjail(ctx, consAddr)
+	// 	}
+	// }
 }
 
-// EndBlocker is called at the end of every block
-func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
-	validators := k.StakingKeeper.GetAllValidators(ctx)
+// // EndBlocker is called at the end of every block
+// func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
+// 	validators := k.StakingKeeper.GetAllValidators(ctx)
 
-	for _, val := range validators {
-		consAddr, _ := val.GetConsAddr()
-		if val.IsJailed() {
-			k.StakingKeeper.Unjail(ctx, consAddr)
-		}
-	}
-}
+// 	for _, val := range validators {
+// 		consAddr, _ := val.GetConsAddr()
+// 		if val.IsJailed() {
+// 			k.StakingKeeper.Unjail(ctx, consAddr)
+// 		}
+// 	}
+// }
 
 func createValsets(ctx sdk.Context, k keeper.Keeper, evmChainPrefix string) {
 	// Auto ValsetRequest Creation.
