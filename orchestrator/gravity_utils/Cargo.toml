@@ -10,6 +10,7 @@ edition = "2018"
 gravity_proto = {path = "../gravity_proto/"}
 
 deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "a2e1353"}
+heliosphere = {git = "https://github.com/oraichain/heliosphere.git", rev = "79c86e5"}
 web30 = {git = "https://github.com/oraichain/web30.git", rev = "41e90c0"}
 clarity = "0.7"
 num256 = "0.5"

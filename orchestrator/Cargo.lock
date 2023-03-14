@@ -1187,7 +1187,6 @@ dependencies = [
  "ethabi",
  "gravity_utils",
  "heliosphere",
- "k256",
  "log",
  "num256",
  "rand",
@@ -1476,6 +1475,7 @@ dependencies = [
  "clarity",
  "deep_space",
  "gravity_proto",
+ "heliosphere",
  "lazy_static",
  "log",
  "num",
@@ -1588,7 +1588,7 @@ checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 [[package]]
 name = "heliosphere"
 version = "0.2.0"
-source = "git+https://github.com/oraichain/heliosphere.git?rev=95e043e#95e043ef4a02fc776baa1aad0eed71dc0c401cb9"
+source = "git+https://github.com/oraichain/heliosphere.git?rev=79c86e5#79c86e5c39646a19d56b5e0aa3613579603c11d4"
 dependencies = [
  "awc",
  "heliosphere-core",
@@ -1603,7 +1603,7 @@ dependencies = [
 [[package]]
 name = "heliosphere-core"
 version = "0.2.0"
-source = "git+https://github.com/oraichain/heliosphere.git?rev=95e043e#95e043ef4a02fc776baa1aad0eed71dc0c401cb9"
+source = "git+https://github.com/oraichain/heliosphere.git?rev=79c86e5#79c86e5c39646a19d56b5e0aa3613579603c11d4"
 dependencies = [
  "bs58",
  "clarity",
@@ -1618,7 +1618,7 @@ dependencies = [
 [[package]]
 name = "heliosphere-signer"
 version = "0.2.0"
-source = "git+https://github.com/oraichain/heliosphere.git?rev=95e043e#95e043ef4a02fc776baa1aad0eed71dc0c401cb9"
+source = "git+https://github.com/oraichain/heliosphere.git?rev=79c86e5#79c86e5c39646a19d56b5e0aa3613579603c11d4"
 dependencies = [
  "heliosphere-core",
  "hex",

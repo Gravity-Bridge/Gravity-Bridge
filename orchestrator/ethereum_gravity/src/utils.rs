@@ -12,7 +12,6 @@ use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
 use heliosphere::signer::signer::Signer;
 use heliosphere::{signer::keypair::Keypair, MethodCall, RpcClient};
-use k256::ecdsa::SigningKey;
 
 use web30::types::SendTxOption;
 use web30::{client::Web3, jsonrpc::error::Web3Error};
@@ -217,9 +216,8 @@ pub async fn send_transaction(
     // processing with tron
     if let Some(api) = web3.get_url().strip_suffix("/jsonrpc") {
         // this is tron, we need to create a tron instance from web3
-        let keypair =
-            Keypair::from_signing_key(SigningKey::from_bytes(&sender_secret.to_bytes()).unwrap());
-        let mut client = RpcClient::new(api, web3.get_timeout()).unwrap();
+        let keypair = Keypair::from_bytes(&sender_secret.to_bytes()).expect("Wrong secret key");
+        let mut client = RpcClient::new(api, web3.get_timeout())?;
 
         // clone header keys from web3
         let header_keys = web3.header_keys();
@@ -235,7 +233,7 @@ pub async fn send_transaction(
         };
 
         // Estimate energy usage
-        let estimated = client.estimate_energy(&method_call).await.unwrap() as f64;
+        let estimated = client.estimate_energy(&method_call).await? as f64;
         let mut gas_limit_multiplier = 1f64;
         for option in options {
             match option {
@@ -251,15 +249,14 @@ pub async fn send_transaction(
         // Send tx
         let mut tx = client
             .trigger_contract(&method_call, 0, Some(fee_limit))
-            .await
-            .unwrap();
+            .await?;
         keypair.sign_transaction(&mut tx).unwrap();
-        let tx_id = client.broadcast_transaction(&tx).await.unwrap();
+        let tx_id = client.broadcast_transaction(&tx).await?;
 
         info!("Call {} with txid 0x{}", method_name, tx_id);
 
         if let Some(timeout) = wait_timeout {
-            client.await_confirmation(tx_id, timeout).await.unwrap();
+            client.await_confirmation(tx_id, timeout).await?;
         }
 
         Ok(Uint256::from_be_bytes(&tx_id.0))
@@ -297,7 +294,6 @@ mod test {
         core::transaction::TransactionId,
         signer::{keypair::Keypair, signer::Signer},
     };
-    use k256::ecdsa::SigningKey;
 
     #[test]
     fn address() {
@@ -334,8 +330,7 @@ mod test {
         .unwrap();
         let evm_address = sender_secret.to_address();
 
-        let keypair =
-            Keypair::from_signing_key(SigningKey::from_bytes(&sender_secret.to_bytes()).unwrap());
+        let keypair = Keypair::from_bytes(&sender_secret.to_bytes()).unwrap();
         assert_eq!(keypair.address(), evm_address.into());
     }
 
