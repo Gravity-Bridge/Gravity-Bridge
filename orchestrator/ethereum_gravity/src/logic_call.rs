@@ -1,5 +1,6 @@
 use crate::message_signatures::encode_logic_call_confirm_hashed;
 use crate::utils::{encode_valset_struct, get_logic_call_nonce, GasCost};
+use clarity::abi::encode_call;
 use clarity::{abi::Token, utils::bytes_to_hex_str, PrivateKey as EthPrivateKey};
 use clarity::{Address as EthAddress, Uint256};
 use gravity_utils::error::GravityError;
@@ -7,6 +8,8 @@ use gravity_utils::types::*;
 use std::{cmp::min, time::Duration};
 use web30::types::SendTxOption;
 use web30::{client::Web3, types::TransactionRequest};
+
+pub const SUBMIT_LOGIC_CALL_SELECTOR:&str = "submitLogicCall((address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[],(uint256[],address[],uint256[],address[],address,bytes,uint256,bytes32,uint256))";
 
 /// this function generates an appropriate Ethereum transaction
 /// to submit the provided logic call
@@ -52,12 +55,12 @@ pub async fn send_eth_logic_call(
         return Ok(());
     }
 
-    let payload = encode_logic_call_payload(current_valset, &call, confirms, gravity_id)?;
+    let tokens = tokens_logic_call_payload(current_valset, &call, confirms, gravity_id)?;
 
     let tx = web3
         .send_transaction(
             gravity_contract_address,
-            payload,
+            encode_call(SUBMIT_LOGIC_CALL_SELECTOR, &tokens)?,
             0u32.into(),
             eth_address,
             our_eth_key,
@@ -113,6 +116,9 @@ pub async fn estimate_logic_call_cost(
     // increase the value by 20% without using floating point multiplication
     let gas_price = gas_price.clone() + (gas_price / 5u8.into());
     let zero: Uint256 = 0u8.into();
+
+    let tokens = tokens_logic_call_payload(current_valset, &call, confirms, gravity_id)?;
+
     let val = web3
         .eth_estimate_gas(TransactionRequest {
             from: Some(our_eth_address),
@@ -121,9 +127,7 @@ pub async fn estimate_logic_call_cost(
             gas_price: Some(gas_price.clone().into()),
             gas: Some(gas_limit.into()),
             value: Some(zero.into()),
-            data: Some(
-                encode_logic_call_payload(current_valset, &call, confirms, gravity_id)?.into(),
-            ),
+            data: Some(encode_call(SUBMIT_LOGIC_CALL_SELECTOR, &tokens)?.into()),
         })
         .await?;
 
@@ -134,12 +138,12 @@ pub async fn estimate_logic_call_cost(
 }
 
 /// Encodes the logic call payload for both cost estimation and submission to EThereum
-fn encode_logic_call_payload(
+fn tokens_logic_call_payload(
     current_valset: Valset,
     call: &LogicCall,
     confirms: &[LogicCallConfirmResponse],
     gravity_id: String,
-) -> Result<Vec<u8>, GravityError> {
+) -> Result<Vec<Token>, GravityError> {
     let current_valset_token = encode_valset_struct(&current_valset);
     let hash = encode_logic_call_confirm_hashed(gravity_id, call.clone());
     let sig_data = current_valset.order_sigs(&hash, confirms)?;
@@ -197,19 +201,15 @@ fn encode_logic_call_payload(
         Token::Bytes(call.invalidation_id.clone()),
         call.invalidation_nonce.into(),
     ];
-    let tokens = &[
+    let tokens = vec![
         current_valset_token,
         sig_arrays.sigs,
         Token::Struct(struct_tokens.to_vec()),
     ];
-    let payload = clarity::abi::encode_call(
-        "submitLogicCall((address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[],(uint256[],address[],uint256[],address[],address,bytes,uint256,bytes32,uint256))",
-        tokens,
-    )
-    .unwrap();
+
     trace!("Tokens {:?}", tokens);
 
-    Ok(payload)
+    Ok(tokens)
 }
 
 #[cfg(test)]
@@ -292,8 +292,11 @@ mod tests {
                 .unwrap(),
         };
 
-        let our_encoding =
-            encode_logic_call_payload(valset, &logic_call, &[confirm], "foo".to_string()).unwrap();
+        let our_encoding = encode_call(
+            SUBMIT_LOGIC_CALL_SELECTOR,
+            &tokens_logic_call_payload(valset, &logic_call, &[confirm], "foo".to_string()).unwrap(),
+        )
+        .unwrap();
         assert_eq!(bytes_to_hex_str(&encoded), bytes_to_hex_str(&our_encoding));
     }
 }

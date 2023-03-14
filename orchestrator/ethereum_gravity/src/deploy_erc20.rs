@@ -11,6 +11,8 @@ use gravity_utils::error::GravityError;
 use std::time::Duration;
 use web30::{client::Web3, types::SendTxOption};
 
+pub const DEPLOY_ERC20_SELECTOR: &str = "deployERC20(string,string,string,uint8)";
+
 /// Calls the Gravity ethereum contract to deploy the ERC20 representation of the given Cosmos asset
 /// denom. If an existing contract is already deployed representing this asset this call will cost
 /// Gas but not actually do anything. Returns the txhash or an error
@@ -31,7 +33,7 @@ pub async fn deploy_erc20(
         .send_transaction(
             gravity_contract,
             encode_call(
-                "deployERC20(string,string,string,uint8)",
+                DEPLOY_ERC20_SELECTOR,
                 &[
                     Token::String(cosmos_denom),
                     Token::String(erc20_name),

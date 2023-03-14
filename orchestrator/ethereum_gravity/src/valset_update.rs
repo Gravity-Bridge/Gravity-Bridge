@@ -1,5 +1,6 @@
 use crate::message_signatures::encode_valset_confirm_hashed;
 use crate::utils::{encode_valset_struct, get_valset_nonce, GasCost};
+use clarity::abi::{encode_call, Token};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use gravity_utils::error::GravityError;
@@ -7,6 +8,8 @@ use gravity_utils::types::*;
 use std::{cmp::min, time::Duration};
 use web30::types::SendTxOption;
 use web30::{client::Web3, types::TransactionRequest};
+
+pub const UPDATE_VALSET_SELECTOR :&str = "updateValset((address[],uint256[],uint256,uint256,address),(address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[])";
 
 /// this function generates an appropriate Ethereum transaction
 /// to submit the provided validator set and signatures.
@@ -38,12 +41,12 @@ pub async fn send_eth_valset_update(
         return Ok(());
     }
 
-    let payload = encode_valset_update_payload(new_valset, old_valset, confirms, gravity_id)?;
+    let tokens = tokens_valset_update_payload(new_valset, old_valset, confirms, gravity_id)?;
 
     let tx = web3
         .send_transaction(
             gravity_contract_address,
-            payload,
+            encode_call(UPDATE_VALSET_SELECTOR, &tokens)?,
             0u32.into(),
             eth_address,
             our_eth_key,
@@ -93,6 +96,8 @@ pub async fn estimate_valset_cost(
     // increase the value by 20% without using floating point multiplication
     let gas_price = gas_price.clone() + (gas_price / 5u8.into());
     let zero: Uint256 = 0u8.into();
+    let tokens =
+        tokens_valset_update_payload(new_valset.clone(), old_valset.clone(), confirms, gravity_id)?;
     let val = web3
         .eth_estimate_gas(TransactionRequest {
             from: Some(our_eth_address),
@@ -101,15 +106,7 @@ pub async fn estimate_valset_cost(
             gas_price: Some(gas_price.clone().into()),
             gas: Some(gas_limit.into()),
             value: Some(zero.into()),
-            data: Some(
-                encode_valset_update_payload(
-                    new_valset.clone(),
-                    old_valset.clone(),
-                    confirms,
-                    gravity_id,
-                )?
-                .into(),
-            ),
+            data: Some(encode_call(UPDATE_VALSET_SELECTOR, &tokens)?.into()),
         })
         .await?;
 
@@ -121,12 +118,12 @@ pub async fn estimate_valset_cost(
 
 /// Encodes the payload bytes for the validator set update call, useful for
 /// estimating the cost of submitting a validator set
-pub fn encode_valset_update_payload(
+pub fn tokens_valset_update_payload(
     new_valset: Valset,
     old_valset: Valset,
     confirms: &[ValsetConfirmResponse],
     gravity_id: String,
-) -> Result<Vec<u8>, GravityError> {
+) -> Result<Vec<Token>, GravityError> {
     let new_valset_token = encode_valset_struct(&new_valset);
     let old_valset_token = encode_valset_struct(&old_valset);
 
@@ -157,9 +154,7 @@ pub fn encode_valset_update_payload(
     //
     // // These are arrays of the parts of the current validator's signatures
     // Signature[] _sigs,
-    let tokens = &[new_valset_token, old_valset_token, sig_arrays.sigs];
-    let payload = clarity::abi::encode_call("updateValset((address[],uint256[],uint256,uint256,address),(address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[])",
-    tokens).unwrap();
+    let tokens = vec![new_valset_token, old_valset_token, sig_arrays.sigs];
 
-    Ok(payload)
+    Ok(tokens)
 }

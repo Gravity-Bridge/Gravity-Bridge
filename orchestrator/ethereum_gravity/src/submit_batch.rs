@@ -1,5 +1,6 @@
 use crate::message_signatures::encode_tx_batch_confirm_hashed;
 use crate::utils::{encode_valset_struct, get_tx_batch_nonce, GasCost};
+use clarity::abi::{encode_call, Token};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use gravity_utils::error::GravityError;
@@ -9,6 +10,8 @@ use web30::{
     client::Web3,
     types::{SendTxOption, TransactionRequest},
 };
+
+pub const SUBMIT_BATCH_SELECTOR :&str = "submitBatch((address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[],uint256[],address[],uint256[],uint256,address,uint256)";
 
 /// this function generates an appropriate Ethereum transaction
 /// to submit the provided transaction batch
@@ -53,12 +56,12 @@ pub async fn send_eth_transaction_batch(
         return Ok(());
     }
 
-    let payload = encode_batch_payload(current_valset, &batch, confirms, gravity_id)?;
+    let tokens = tokens_batch_payload(current_valset, &batch, confirms, gravity_id)?;
 
     let tx = web3
         .send_transaction(
             gravity_contract_address,
-            payload,
+            encode_call(SUBMIT_BATCH_SELECTOR, &tokens)?,
             0u32.into(),
             eth_address,
             our_eth_key,
@@ -111,6 +114,7 @@ pub async fn estimate_tx_batch_cost(
     // increase the value by 20% without using floating point multiplication
     let gas_price = gas_price.clone() + (gas_price / 5u8.into());
     let zero: Uint256 = 0u8.into();
+    let tokens = tokens_batch_payload(current_valset, &batch, confirms, gravity_id)?;
     let val = web3
         .eth_estimate_gas(TransactionRequest {
             from: Some(our_eth_address),
@@ -119,7 +123,7 @@ pub async fn estimate_tx_batch_cost(
             gas_price: Some(gas_price.clone().into()),
             gas: Some(gas_limit.into()),
             value: Some(zero.into()),
-            data: Some(encode_batch_payload(current_valset, &batch, confirms, gravity_id)?.into()),
+            data: Some(encode_call(SUBMIT_BATCH_SELECTOR, &tokens)?.into()),
         })
         .await?;
 
@@ -130,12 +134,12 @@ pub async fn estimate_tx_batch_cost(
 }
 
 /// Encodes the batch payload for both estimate_tx_batch_cost and send_eth_transaction_batch
-fn encode_batch_payload(
+fn tokens_batch_payload(
     current_valset: Valset,
     batch: &TransactionBatch,
     confirms: &[BatchConfirmResponse],
     gravity_id: String,
-) -> Result<Vec<u8>, GravityError> {
+) -> Result<Vec<Token>, GravityError> {
     let current_valset_token = encode_valset_struct(&current_valset);
     let new_batch_nonce = batch.nonce;
     let hash = encode_tx_batch_confirm_hashed(gravity_id, batch.clone());
@@ -163,7 +167,7 @@ fn encode_batch_payload(
     // uint256 _batchNonce,
     // address _tokenContract,
     // uint256 _batchTimeout
-    let tokens = &[
+    let tokens = vec![
         current_valset_token,
         sig_arrays.sigs,
         amounts,
@@ -173,9 +177,8 @@ fn encode_batch_payload(
         batch.token_contract.into(),
         batch.batch_timeout.into(),
     ];
-    let payload = clarity::abi::encode_call("submitBatch((address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[],uint256[],address[],uint256[],uint256,address,uint256)",
-    tokens).unwrap();
+
     trace!("Tokens {:?}", tokens);
 
-    Ok(payload)
+    Ok(tokens)
 }

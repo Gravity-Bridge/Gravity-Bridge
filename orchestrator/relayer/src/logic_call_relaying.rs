@@ -195,24 +195,23 @@ pub async fn relay_logic_calls(
     }
 }
 
-#[test]
-fn encode_tokens() {
-    let tokens = vec![clarity::abi::Token::Address(
-        "0x993d06FC97F45f16e4805883b98a6c20BAb54964"
-            .parse()
-            .unwrap(),
-    )];
+#[cfg(test)]
+mod test {
 
-    let encoded1 = clarity::abi::encode_tokens(&tokens);
+    use std::str::FromStr;
 
-    let tokens = vec![ethabi::Token::Address(
-        web30::utils::get_base58_address("0x993d06FC97F45f16e4805883b98a6c20BAb54964")
-            .parse::<heliosphere::core::Address>()
-            .unwrap()
-            .into(),
-    )];
+    #[test]
+    fn encode_tokens() {
+        let evm_addr =
+            clarity::Address::from_str("0xf2846a1E4dAFaeA38C1660a618277d67605bd2B5").unwrap();
+        let tokens = vec![clarity::abi::Token::Address(evm_addr)];
+        let encoded1 = clarity::abi::encode_tokens(&tokens);
 
-    let encoded2 = ethabi::encode(&tokens);
+        let base58_addr =
+            heliosphere::core::Address::from_str("TY5X9ocQACH9YGAyiK3WUxLcLw3t2ethnc").unwrap();
+        let tokens = vec![ethabi::Token::Address(base58_addr.into())];
+        let encoded2 = ethabi::encode(&tokens);
 
-    assert_eq!(encoded1, encoded2);
+        assert_eq!(encoded1, encoded2);
+    }
 }

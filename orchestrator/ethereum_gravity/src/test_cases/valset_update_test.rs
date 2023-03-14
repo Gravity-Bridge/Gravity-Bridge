@@ -4,7 +4,9 @@
 #[cfg(test)]
 mod tests {
     use crate::message_signatures::encode_valset_confirm;
-    use crate::valset_update::encode_valset_update_payload;
+    use crate::valset_update::tokens_valset_update_payload;
+    use crate::valset_update::UPDATE_VALSET_SELECTOR;
+    use clarity::abi::encode_call;
     use clarity::utils::bytes_to_hex_str;
     use clarity::utils::hex_str_to_bytes;
     use clarity::PrivateKey;
@@ -77,9 +79,12 @@ mod tests {
             })
         }
 
-        let encoded_update_bytes =
-            encode_valset_update_payload(valset1, valset0, &confirms, gravity_id.to_string())
-                .unwrap();
+        let encoded_update_bytes = encode_call(
+            UPDATE_VALSET_SELECTOR,
+            &tokens_valset_update_payload(valset1, valset0, &confirms, gravity_id.to_string())
+                .unwrap(),
+        )
+        .unwrap();
 
         assert_eq!(
             bytes_to_hex_str(&encoded_update_bytes),

@@ -10,6 +10,7 @@ use web30::client::Web3;
 use web30::types::SendTxOption;
 
 pub const SEND_TO_COSMOS_GAS_LIMIT: u128 = 100_000;
+pub const SEND_ERC721_TO_COSMOS_SELECTOR: &str = "sendERC721ToCosmos(address,string,uint256)";
 
 #[allow(clippy::too_many_arguments)]
 pub async fn send_erc721_to_cosmos(
@@ -104,7 +105,7 @@ pub async fn send_erc721_to_cosmos(
         .send_transaction(
             gravityerc721_contract,
             encode_call(
-                "sendERC721ToCosmos(address,string,uint256)",
+                SEND_ERC721_TO_COSMOS_SELECTOR,
                 &[
                     erc721.into(),
                     encoded_destination_address,
