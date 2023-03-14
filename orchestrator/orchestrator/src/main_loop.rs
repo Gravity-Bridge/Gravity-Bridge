@@ -36,7 +36,6 @@ use std::time::Instant;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
-use web30::jsonrpc::error::Web3Error;
 
 /// The execution speed governing all loops in this file
 /// which is to say all loops started by Orchestrator main
@@ -345,170 +344,19 @@ pub async fn eth_signer_main_loop(
     fee: Coin,
 ) {
     let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
-    let mut grpc_client = grpc_client;
 
     loop {
         let loop_start = Instant::now();
 
-        // repeatedly refreshing the parameters here maintains loop correctness
-        // if the gravity_id is changed or slashing windows are changed. Neither of these
-        // is very probable
-        let params = match get_gravity_params(&mut grpc_client).await {
-            Ok(p) => p,
-            Err(e) => {
-                error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
-                metrics_errors_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
-                continue;
-            }
-        };
-        let blocks_until_slashing = min(
-            min(params.signed_valsets_window, params.signed_batches_window),
-            params.signed_logic_calls_window,
-        );
-        let gravity_id = params.gravity_id;
-
-        let latest_cosmos_block = contact.get_chain_status().await;
-        match latest_cosmos_block {
-            Ok(ChainStatus::Moving { block_height }) => {
-                trace!("Latest Cosmos block {}", block_height,);
-            }
-            Ok(ChainStatus::Syncing) => {
-                warn!("Cosmos node syncing, Eth signer paused");
-                warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
-                metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
-                metrics_latest(blocks_until_slashing, "blocks_until_slashing");
-                delay_for(DELAY).await;
-                continue;
-            }
-            Ok(ChainStatus::WaitingToStart) => {
-                warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
-                metrics_warnings_counter(
-                    2,
-                    "Cosmos node syncing waiting for chain start, Eth signer paused",
-                );
-                delay_for(DELAY).await;
-                continue;
-            }
-            Err(_) => {
-                error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
-                delay_for(DELAY).await;
-                metrics_latest(blocks_until_slashing, "blocks_until_slashing");
-                metrics_errors_counter(
-                    2,
-                    "Could not reach Cosmos rpc! You must correct this or you risk being slashed",
-                );
-                continue;
-            }
-        }
-
-        // sign the last unsigned valsets
-        match get_oldest_unsigned_valsets(
-            &mut grpc_client,
+        single_eth_signer_iteration(
+            grpc_client.clone(),
+            &contact,
+            cosmos_key,
             our_cosmos_address,
-            contact.get_prefix(),
+            ethereum_key,
+            fee.clone(),
         )
-        .await
-        {
-            Ok(valsets) => {
-                if valsets.is_empty() {
-                    trace!("No validator sets to sign, node is caught up!")
-                } else {
-                    info!(
-                        "Sending {} valset confirms starting with nonce {}",
-                        valsets.len(),
-                        valsets[0].nonce
-                    );
-                    let res = send_valset_confirms(
-                        &contact,
-                        ethereum_key,
-                        fee.clone(),
-                        valsets,
-                        cosmos_key,
-                        gravity_id.clone(),
-                    )
-                    .await;
-                    trace!("Valset confirm result is {:?}", res);
-                    check_for_fee_error(res, &fee);
-                }
-            }
-            Err(e) => trace!(
-                "Failed to get unsigned valsets, check your Cosmos gRPC {:?}",
-                e
-            ),
-        }
-
-        // sign the last unsigned batch, TODO check if we already have signed this
-        match get_oldest_unsigned_transaction_batches(
-            &mut grpc_client,
-            our_cosmos_address,
-            contact.get_prefix(),
-        )
-        .await
-        {
-            Ok(last_unsigned_batches) => {
-                if last_unsigned_batches.is_empty() {
-                    trace!("No unsigned batch sets to sign, node is caught up!")
-                } else {
-                    info!(
-                        "Sending {} batch confirms starting with nonce {}",
-                        last_unsigned_batches.len(),
-                        last_unsigned_batches[0].nonce
-                    );
-
-                    let res = send_batch_confirm(
-                        &contact,
-                        ethereum_key,
-                        fee.clone(),
-                        last_unsigned_batches,
-                        cosmos_key,
-                        gravity_id.clone(),
-                    )
-                    .await;
-                    trace!("Batch confirm result is {:?}", res);
-                    check_for_fee_error(res, &fee);
-                }
-            }
-            Err(e) => trace!(
-                "Failed to get unsigned Batches, check your Cosmos gRPC {:?}",
-                e
-            ),
-        }
-
-        match get_oldest_unsigned_logic_calls(
-            &mut grpc_client,
-            our_cosmos_address,
-            contact.get_prefix(),
-        )
-        .await
-        {
-            Ok(last_unsigned_calls) => {
-                if last_unsigned_calls.is_empty() {
-                    trace!("No unsigned call sets to sign, node is caught up!")
-                } else {
-                    info!(
-                        "Sending {} logic call confirms starting with nonce {}",
-                        last_unsigned_calls.len(),
-                        last_unsigned_calls[0].invalidation_nonce
-                    );
-                    let res = send_logic_call_confirm(
-                        &contact,
-                        ethereum_key,
-                        fee.clone(),
-                        last_unsigned_calls,
-                        cosmos_key,
-                        gravity_id.clone(),
-                    )
-                    .await;
-                    trace!("call confirm result is {:?}", res);
-                    check_for_fee_error(res, &fee);
-                }
-            }
-            Err(e) => info!(
-                "Failed to get unsigned Logic Calls, check your Cosmos gRPC {:?}",
-                e
-            ),
-        }
-
+        .await;
         // a bit of logic that tires to keep things running every LOOP_SPEED seconds exactly
         // this is not required for any specific reason. In fact we expect and plan for
         // the timing being off significantly
@@ -516,6 +364,166 @@ pub async fn eth_signer_main_loop(
         if elapsed < ETH_SIGNER_LOOP_SPEED {
             delay_for(ETH_SIGNER_LOOP_SPEED - elapsed).await;
         }
+    }
+}
+
+pub async fn single_eth_signer_iteration(
+    grpc_client: GravityQueryClient<Channel>,
+    contact: &Contact,
+    cosmos_key: CosmosPrivateKey,
+    cosmos_address: CosmosAddress,
+    ethereum_key: EthPrivateKey,
+    fee: Coin,
+) {
+    let mut grpc_client = grpc_client;
+    // repeatedly refreshing the parameters here maintains loop correctness
+    // if the gravity_id is changed or slashing windows are changed. Neither of these
+    // is very probable
+    let params = match get_gravity_params(&mut grpc_client).await {
+        Ok(p) => p,
+        Err(e) => {
+            error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
+            metrics_errors_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
+            return;
+        }
+    };
+    let blocks_until_slashing = min(
+        min(params.signed_valsets_window, params.signed_batches_window),
+        params.signed_logic_calls_window,
+    );
+    let gravity_id = params.gravity_id;
+
+    let latest_cosmos_block = contact.get_chain_status().await;
+    match latest_cosmos_block {
+        Ok(ChainStatus::Moving { block_height }) => {
+            trace!("Latest Cosmos block {}", block_height,);
+        }
+        Ok(ChainStatus::Syncing) => {
+            warn!("Cosmos node syncing, Eth signer paused");
+            warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
+            metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
+            metrics_latest(blocks_until_slashing, "blocks_until_slashing");
+            delay_for(DELAY).await;
+            return;
+        }
+        Ok(ChainStatus::WaitingToStart) => {
+            warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
+            metrics_warnings_counter(
+                2,
+                "Cosmos node syncing waiting for chain start, Eth signer paused",
+            );
+            delay_for(DELAY).await;
+            return;
+        }
+        Err(_) => {
+            error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
+            delay_for(DELAY).await;
+            metrics_latest(blocks_until_slashing, "blocks_until_slashing");
+            metrics_errors_counter(
+                2,
+                "Could not reach Cosmos rpc! You must correct this or you risk being slashed",
+            );
+            return;
+        }
+    }
+
+    // sign the last unsigned valsets
+    match get_oldest_unsigned_valsets(&mut grpc_client, cosmos_address, contact.get_prefix()).await
+    {
+        Ok(valsets) => {
+            if valsets.is_empty() {
+                trace!("No validator sets to sign, node is caught up!")
+            } else {
+                info!(
+                    "Sending {} valset confirms starting with nonce {}",
+                    valsets.len(),
+                    valsets[0].nonce
+                );
+                let res = send_valset_confirms(
+                    contact,
+                    ethereum_key,
+                    fee.clone(),
+                    valsets,
+                    cosmos_key,
+                    gravity_id.clone(),
+                )
+                .await;
+                trace!("Valset confirm result is {:?}", res);
+                check_for_fee_error(res, &fee);
+            }
+        }
+        Err(e) => trace!(
+            "Failed to get unsigned valsets, check your Cosmos gRPC {:?}",
+            e
+        ),
+    }
+
+    // sign the last unsigned batch, TODO check if we already have signed this
+    match get_oldest_unsigned_transaction_batches(
+        &mut grpc_client,
+        cosmos_address,
+        contact.get_prefix(),
+    )
+    .await
+    {
+        Ok(last_unsigned_batches) => {
+            if last_unsigned_batches.is_empty() {
+                trace!("No unsigned batch sets to sign, node is caught up!")
+            } else {
+                info!(
+                    "Sending {} batch confirms starting with nonce {}",
+                    last_unsigned_batches.len(),
+                    last_unsigned_batches[0].nonce
+                );
+
+                let res = send_batch_confirm(
+                    contact,
+                    ethereum_key,
+                    fee.clone(),
+                    last_unsigned_batches,
+                    cosmos_key,
+                    gravity_id.clone(),
+                )
+                .await;
+                trace!("Batch confirm result is {:?}", res);
+                check_for_fee_error(res, &fee);
+            }
+        }
+        Err(e) => trace!(
+            "Failed to get unsigned Batches, check your Cosmos gRPC {:?}",
+            e
+        ),
+    }
+
+    match get_oldest_unsigned_logic_calls(&mut grpc_client, cosmos_address, contact.get_prefix())
+        .await
+    {
+        Ok(last_unsigned_calls) => {
+            if last_unsigned_calls.is_empty() {
+                trace!("No unsigned call sets to sign, node is caught up!")
+            } else {
+                info!(
+                    "Sending {} logic call confirms starting with nonce {}",
+                    last_unsigned_calls.len(),
+                    last_unsigned_calls[0].invalidation_nonce
+                );
+                let res = send_logic_call_confirm(
+                    contact,
+                    ethereum_key,
+                    fee.clone(),
+                    last_unsigned_calls,
+                    cosmos_key,
+                    gravity_id.clone(),
+                )
+                .await;
+                trace!("call confirm result is {:?}", res);
+                check_for_fee_error(res, &fee);
+            }
+        }
+        Err(e) => info!(
+            "Failed to get unsigned Logic Calls, check your Cosmos gRPC {:?}",
+            e
+        ),
     }
 }
 
