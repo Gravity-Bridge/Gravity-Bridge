@@ -459,21 +459,6 @@ func validateMinChainFeeBasisPoints(i interface{}) error {
 	return nil
 }
 
-func validateMonitoredTokenAddresses(i interface{}) error {
-	v, ok := i.([]string)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	for i, e := range v {
-		_, err := NewEthAddress(e)
-		if err != nil {
-			return sdkerrors.Wrapf(ErrInvalidEthAddress, "the %d-th monitored token address (%v) is invalid: %v", i, e, err)
-		}
-	}
-	return nil
-}
-
 func strToFixByteArray(s string) ([32]byte, error) {
 	var out [32]byte
 	if len([]byte(s)) > 32 {
