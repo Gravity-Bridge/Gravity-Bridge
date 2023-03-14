@@ -212,6 +212,10 @@ pub async fn send_transaction(
     options: Vec<SendTxOption>,
 ) -> Result<Uint256, GravityError> {
     let url = web3.get_url();
+
+    // extract method name for logging
+    let method_name = &selector[..selector.find('(').unwrap_or(selector.len())];
+
     // processing with tron
     if url.ends_with("/jsonrpc") {
         // this is tron, we need to create a tron instance from web3
@@ -255,7 +259,7 @@ pub async fn send_transaction(
         keypair.sign_transaction(&mut tx).unwrap();
         let tx_id = client.broadcast_transaction(&tx).await.unwrap();
 
-        info!("Call {} with txid 0x{}", selector, tx_id);
+        info!("Call {} with txid 0x{}", method_name, tx_id);
 
         if let Some(timeout) = wait_timeout {
             client.await_confirmation(tx_id, timeout).await.unwrap();
@@ -275,7 +279,7 @@ pub async fn send_transaction(
             )
             .await?;
 
-        info!("Call {} with txid {:#066x}", selector, tx_hash);
+        info!("Call {} with txid {:#066x}", method_name, tx_hash);
 
         if let Some(timeout) = wait_timeout {
             web3.wait_for_transaction(tx_hash.clone(), timeout, None)
