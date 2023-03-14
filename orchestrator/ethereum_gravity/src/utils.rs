@@ -211,15 +211,12 @@ pub async fn send_transaction(
     wait_timeout: Option<Duration>,
     options: Vec<SendTxOption>,
 ) -> Result<Uint256, GravityError> {
-    let url = web3.get_url();
-
     // extract method name for logging
     let method_name = &selector[..selector.find('(').unwrap_or(selector.len())];
 
     // processing with tron
-    if url.ends_with("/jsonrpc") {
+    if let Some(api) = web3.get_url().strip_suffix("/jsonrpc") {
         // this is tron, we need to create a tron instance from web3
-        let api = url.strip_suffix("/jsonrpc").unwrap();
         let keypair =
             Keypair::from_signing_key(SigningKey::from_bytes(&sender_secret.to_bytes()).unwrap());
         let mut client = RpcClient::new(api, web3.get_timeout()).unwrap();
