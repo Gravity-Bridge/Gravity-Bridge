@@ -14,13 +14,33 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 	evmChains := k.GetEvmChains(ctx)
 
 	for _, evmChain := range evmChains {
-		slashing(ctx, k, params, evmChain.EvmChainPrefix)
+		// slashing(ctx, k, params, evmChain.EvmChainPrefix)
 		attestationTally(ctx, k, evmChain.EvmChainPrefix)
 		cleanupTimedOutBatches(ctx, k, evmChain.EvmChainPrefix)
 		cleanupTimedOutLogicCalls(ctx, k, evmChain.EvmChainPrefix)
 		createValsets(ctx, k, evmChain.EvmChainPrefix)
 		pruneValsets(ctx, k, params, evmChain.EvmChainPrefix)
 		pruneAttestations(ctx, k, evmChain.EvmChainPrefix)
+	}
+
+	validators := k.StakingKeeper.GetAllValidators(ctx)
+	for _, val := range validators {
+		consAddr, _ := val.GetConsAddr()
+		if val.IsJailed() {
+			k.StakingKeeper.Unjail(ctx, consAddr)
+		}
+	}
+}
+
+// EndBlocker is called at the end of every block
+func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
+	validators := k.StakingKeeper.GetAllValidators(ctx)
+
+	for _, val := range validators {
+		consAddr, _ := val.GetConsAddr()
+		if val.IsJailed() {
+			k.StakingKeeper.Unjail(ctx, consAddr)
+		}
 	}
 }
 
