@@ -2,10 +2,7 @@
 //! the event for this deployment is then ferried over to Cosmos where the validators will accept the ERC20 contract address
 //! as the representation of this asset on Ethereum
 
-use clarity::{
-    abi::{encode_call, Token},
-    Uint256,
-};
+use clarity::{abi::Token, Uint256};
 use clarity::{Address, PrivateKey};
 use gravity_utils::error::GravityError;
 use std::time::Duration;
@@ -28,30 +25,19 @@ pub async fn deploy_erc20(
     sender_secret: PrivateKey,
     options: Vec<SendTxOption>,
 ) -> Result<Uint256, GravityError> {
-    let sender_address = sender_secret.to_address();
-    let tx_hash = web3
-        .send_transaction(
-            gravity_contract,
-            encode_call(
-                DEPLOY_ERC20_SELECTOR,
-                &[
-                    Token::String(cosmos_denom),
-                    Token::String(erc20_name),
-                    Token::String(erc20_symbol),
-                    decimals.into(),
-                ],
-            )?,
-            0u32.into(),
-            sender_address,
-            sender_secret,
-            options,
-        )
-        .await?;
-
-    if let Some(timeout) = wait_timeout {
-        web3.wait_for_transaction(tx_hash.clone(), timeout, None)
-            .await?;
-    }
-
-    Ok(tx_hash)
+    crate::utils::send_transaction(
+        web3,
+        gravity_contract,
+        DEPLOY_ERC20_SELECTOR,
+        &[
+            Token::String(cosmos_denom),
+            Token::String(erc20_name),
+            Token::String(erc20_symbol),
+            decimals.into(),
+        ],
+        sender_secret,
+        wait_timeout,
+        options,
+    )
+    .await
 }

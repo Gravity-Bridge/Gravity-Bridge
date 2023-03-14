@@ -1,10 +1,20 @@
-use clarity::abi::encode_call;
+use std::time::Duration;
 
+use clarity::abi::encode_call;
+use clarity::PrivateKey;
+
+use clarity::abi::encode_tokens;
 use clarity::Address as EthAddress;
 use clarity::Uint256;
 use clarity::{abi::Token, constants::zero_address};
+use gravity_utils::error::GravityError;
 use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
+use heliosphere::signer::signer::Signer;
+use heliosphere::{signer::keypair::Keypair, MethodCall, RpcClient};
+use k256::ecdsa::SigningKey;
+
+use web30::types::SendTxOption;
 use web30::{client::Web3, jsonrpc::error::Web3Error};
 
 /// Gets the latest validator set nonce
@@ -190,4 +200,156 @@ pub fn encode_valset_struct(valset: &Valset) -> Token {
         reward_token.into(),
     ];
     Token::Struct(struct_tokens.to_vec())
+}
+
+pub async fn send_transaction(
+    web3: &Web3,
+    contract: clarity::Address,
+    selector: &str,
+    tokens: &[Token],
+    sender_secret: PrivateKey,
+    wait_timeout: Option<Duration>,
+    options: Vec<SendTxOption>,
+) -> Result<Uint256, GravityError> {
+    let url = web3.get_url();
+    // processing with tron
+    if url.ends_with("/jsonrpc") {
+        // this is tron, we need to create a tron instance from web3
+        let api = url.strip_suffix("/jsonrpc").unwrap();
+        let keypair =
+            Keypair::from_signing_key(SigningKey::from_bytes(&sender_secret.to_bytes()).unwrap());
+        let mut client = RpcClient::new(api, web3.get_timeout()).unwrap();
+
+        // clone header keys from web3
+        let header_keys = web3.header_keys();
+        for key in header_keys {
+            client.set_header(&key, &web3.get_header(&key));
+        }
+
+        let method_call = MethodCall {
+            caller: &keypair.address(),
+            contract: &contract.into(),
+            selector,
+            parameter: &encode_tokens(&tokens),
+        };
+
+        // Estimate energy usage
+        let estimated = client.estimate_energy(&method_call).await.unwrap() as f64;
+        let mut gas_limit_multiplier = 1f64;
+        for option in options {
+            match option {
+                SendTxOption::GasLimitMultiplier(glm) => {
+                    gas_limit_multiplier = glm.into();
+                    break;
+                }
+                _ => continue,
+            }
+        }
+        let fee_limit = (estimated * gas_limit_multiplier).round() as u64;
+
+        // Send tx
+        let mut tx = client
+            .trigger_contract(&method_call, 0, Some(fee_limit))
+            .await
+            .unwrap();
+        keypair.sign_transaction(&mut tx).unwrap();
+        let tx_id = client.broadcast_transaction(&tx).await.unwrap();
+
+        info!("Call {} with txid 0x{}", selector, tx_id);
+
+        if let Some(timeout) = wait_timeout {
+            client.await_confirmation(tx_id, timeout).await.unwrap();
+        }
+
+        Ok(Uint256::from_be_bytes(&tx_id.0))
+    } else {
+        let sender_address = sender_secret.to_address();
+        let tx_hash = web3
+            .send_transaction(
+                contract,
+                encode_call(selector, &tokens)?,
+                0u32.into(),
+                sender_address,
+                sender_secret,
+                options,
+            )
+            .await?;
+
+        info!("Call {} with txid {:#066x}", selector, tx_hash);
+
+        if let Some(timeout) = wait_timeout {
+            web3.wait_for_transaction(tx_hash.clone(), timeout, None)
+                .await?;
+        }
+
+        Ok(tx_hash)
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use std::str::FromStr;
+
+    use clarity::{PrivateKey, Uint256};
+    use heliosphere::{
+        core::transaction::TransactionId,
+        signer::{keypair::Keypair, signer::Signer},
+    };
+    use k256::ecdsa::SigningKey;
+
+    #[test]
+    fn address() {
+        let evm_addr =
+            clarity::Address::from_str("0xf2846a1E4dAFaeA38C1660a618277d67605bd2B5").unwrap();
+        let tron_addr: heliosphere::core::Address = evm_addr.into();
+
+        let evm_addr_again: clarity::Address = tron_addr.into();
+        assert_eq!(evm_addr, evm_addr_again);
+    }
+
+    #[test]
+    fn gas_multiplier() {
+        let estimated = 12f64;
+        let fee_limit = (estimated * 1.3f64).round() as u64;
+        assert_eq!(fee_limit, 16u64);
+    }
+
+    #[test]
+    fn transaction_id() {
+        let txid = TransactionId::from_str(
+            "2f136c35906fe9eacaf66940b68491b14ec65eb53d51a9d65965f7b4b01f4c36",
+        )
+        .unwrap();
+        let txhash = Uint256::from_be_bytes(&txid.0);
+        assert_eq!(txhash.to_be_bytes(), txid.0);
+    }
+
+    #[test]
+    fn keypair() {
+        let sender_secret = PrivateKey::from_str(
+            "0x8e940c2a136dadf87c3b4b408866ff5fb1cbb64893a933493341c5e400a81690",
+        )
+        .unwrap();
+        let evm_address = sender_secret.to_address();
+
+        let keypair =
+            Keypair::from_signing_key(SigningKey::from_bytes(&sender_secret.to_bytes()).unwrap());
+        assert_eq!(keypair.address(), evm_address.into());
+    }
+
+    #[test]
+    fn encode_tokens() {
+        let evm_addr =
+            clarity::Address::from_str("0xf2846a1E4dAFaeA38C1660a618277d67605bd2B5").unwrap();
+        let tokens = vec![clarity::abi::Token::Address(evm_addr)];
+        let encoded1 = clarity::abi::encode_tokens(&tokens);
+
+        let base58_addr =
+            heliosphere::core::Address::from_str("TY5X9ocQACH9YGAyiK3WUxLcLw3t2ethnc").unwrap();
+        let tokens = vec![ethabi::Token::Address(base58_addr.into())];
+        let encoded2 = ethabi::encode(&tokens);
+
+        assert_eq!(encoded1, encoded2);
+    }
 }

@@ -8,15 +8,16 @@ edition = "2018"
 
 [dependencies]
 gravity_utils = {path = "../gravity_utils"}
-
+heliosphere = {git = "https://github.com/oraichain/heliosphere.git", rev = "95e043e"}
 deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "a2e1353"}
 clarity = "0.7"
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "324acd7"}
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "41e90c0"}
 num256 = "0.5"
 log = "0.4"
 sha3 = "0.10"
-
+k256 = { version = "0.11.6", default-features = false, features = ["ecdsa"] }
 
 [dev_dependencies]
 rand = "0.8"
 actix = "0.13"
+ethabi = "18.0"

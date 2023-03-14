@@ -43,22 +43,19 @@ pub async fn send_eth_valset_update(
 
     let tokens = tokens_valset_update_payload(new_valset, old_valset, confirms, gravity_id)?;
 
-    let tx = web3
-        .send_transaction(
-            gravity_contract_address,
-            encode_call(UPDATE_VALSET_SELECTOR, &tokens)?,
-            0u32.into(),
-            eth_address,
-            our_eth_key,
-            // we maintain a 20% gas price increase to compensate for the 12.5% maximum
-            // base fee increase allowed per block in eip1559, if we overpay we'll
-            // be refunded.
-            vec![SendTxOption::GasPriceMultiplier(1.20f32)],
-        )
-        .await?;
-    info!("Sent valset update with txid {:#066x}", tx);
-
-    web3.wait_for_transaction(tx, timeout, None).await?;
+    crate::utils::send_transaction(
+        web3,
+        gravity_contract_address,
+        UPDATE_VALSET_SELECTOR,
+        &tokens,
+        our_eth_key,
+        Some(timeout),
+        // we maintain a 20% gas price increase to compensate for the 12.5% maximum
+        // base fee increase allowed per block in eip1559, if we overpay we'll
+        // be refunded.
+        vec![SendTxOption::GasPriceMultiplier(1.20f32)],
+    )
+    .await?;
 
     let last_nonce = get_valset_nonce(gravity_contract_address, eth_address, web3).await?;
     if last_nonce != new_nonce {

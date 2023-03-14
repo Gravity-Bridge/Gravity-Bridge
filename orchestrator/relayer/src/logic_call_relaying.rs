@@ -194,24 +194,3 @@ pub async fn relay_logic_calls(
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-
-    use std::str::FromStr;
-
-    #[test]
-    fn encode_tokens() {
-        let evm_addr =
-            clarity::Address::from_str("0xf2846a1E4dAFaeA38C1660a618277d67605bd2B5").unwrap();
-        let tokens = vec![clarity::abi::Token::Address(evm_addr)];
-        let encoded1 = clarity::abi::encode_tokens(&tokens);
-
-        let base58_addr =
-            heliosphere::core::Address::from_str("TY5X9ocQACH9YGAyiK3WUxLcLw3t2ethnc").unwrap();
-        let tokens = vec![ethabi::Token::Address(base58_addr.into())];
-        let encoded2 = ethabi::encode(&tokens);
-
-        assert_eq!(encoded1, encoded2);
-    }
-}

@@ -57,22 +57,19 @@ pub async fn send_eth_logic_call(
 
     let tokens = tokens_logic_call_payload(current_valset, &call, confirms, gravity_id)?;
 
-    let tx = web3
-        .send_transaction(
-            gravity_contract_address,
-            encode_call(SUBMIT_LOGIC_CALL_SELECTOR, &tokens)?,
-            0u32.into(),
-            eth_address,
-            our_eth_key,
-            // we maintain a 20% gas price increase to compensate for the 12.5% maximum
-            // base fee increase allowed per block in eip1559, if we overpay we'll
-            // be refunded.
-            vec![SendTxOption::GasPriceMultiplier(1.20f32)],
-        )
-        .await?;
-    info!("Sent batch update with txid {:#066x}", tx);
-
-    web3.wait_for_transaction(tx.clone(), timeout, None).await?;
+    crate::utils::send_transaction(
+        web3,
+        gravity_contract_address,
+        SUBMIT_LOGIC_CALL_SELECTOR,
+        &tokens,
+        our_eth_key,
+        Some(timeout),
+        // we maintain a 20% gas price increase to compensate for the 12.5% maximum
+        // base fee increase allowed per block in eip1559, if we overpay we'll
+        // be refunded.
+        vec![SendTxOption::GasPriceMultiplier(1.20f32)],
+    )
+    .await?;
 
     let last_nonce = get_logic_call_nonce(
         gravity_contract_address,

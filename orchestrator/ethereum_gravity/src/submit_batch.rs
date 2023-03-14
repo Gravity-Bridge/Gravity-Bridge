@@ -58,22 +58,19 @@ pub async fn send_eth_transaction_batch(
 
     let tokens = tokens_batch_payload(current_valset, &batch, confirms, gravity_id)?;
 
-    let tx = web3
-        .send_transaction(
-            gravity_contract_address,
-            encode_call(SUBMIT_BATCH_SELECTOR, &tokens)?,
-            0u32.into(),
-            eth_address,
-            our_eth_key,
-            // we maintain a 20% gas price increase to compensate for the 12.5% maximum
-            // base fee increase allowed per block in eip1559, if we overpay we'll
-            // be refunded.
-            vec![SendTxOption::GasPriceMultiplier(1.20f32)],
-        )
-        .await?;
-    info!("Sent batch update with txid {:#066x}", tx);
-
-    web3.wait_for_transaction(tx.clone(), timeout, None).await?;
+    crate::utils::send_transaction(
+        web3,
+        gravity_contract_address,
+        SUBMIT_BATCH_SELECTOR,
+        &tokens,
+        our_eth_key,
+        Some(timeout),
+        // we maintain a 20% gas price increase to compensate for the 12.5% maximum
+        // base fee increase allowed per block in eip1559, if we overpay we'll
+        // be refunded.
+        vec![SendTxOption::GasPriceMultiplier(1.20f32)],
+    )
+    .await?;
 
     let last_nonce = get_tx_batch_nonce(
         gravity_contract_address,

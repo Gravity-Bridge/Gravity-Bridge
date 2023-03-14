@@ -1,6 +1,6 @@
 //! Helper functions for sending tokens to Cosmos
 
-use clarity::abi::{encode_call, Token};
+use clarity::abi::Token;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address, Uint256};
 use gravity_utils::error::GravityError;
@@ -87,28 +87,18 @@ pub async fn send_to_cosmos(
     info!("sending to on cosmos {}", cosmos_destination);
     let encoded_destination_address = Token::String(cosmos_destination);
 
-    let tx_hash = web3
-        .send_transaction(
-            gravity_contract,
-            encode_call(
-                SEND_TO_COSMOS_SELECTOR,
-                &[
-                    erc20.into(),
-                    encoded_destination_address,
-                    amount.clone().into(),
-                ],
-            )?,
-            0u32.into(),
-            sender_address,
-            sender_secret,
-            options,
-        )
-        .await?;
-
-    if let Some(timeout) = wait_timeout {
-        web3.wait_for_transaction(tx_hash.clone(), timeout, None)
-            .await?;
-    }
-
-    Ok(tx_hash)
+    crate::utils::send_transaction(
+        web3,
+        gravity_contract,
+        SEND_TO_COSMOS_SELECTOR,
+        &[
+            erc20.into(),
+            encoded_destination_address,
+            amount.clone().into(),
+        ],
+        sender_secret,
+        wait_timeout,
+        options,
+    )
+    .await
 }
