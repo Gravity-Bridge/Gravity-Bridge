@@ -267,7 +267,11 @@ pub async fn get_last_checked_block(
                 )
                 .await
             {
-                Err(_) => {
+                Err(e) => {
+                    if e.to_string().contains("non contiguous event nonce") {
+                        // reduce last_block scanned to retry to find checked block with new nonce
+                        set_last_checked_block_info(evm_chain_prefix, (Uint256::from(0u128), None))
+                    }
                     error!("Failed to get blockchain events while resyncing, is your Eth node working? If you see only one of these it's fine",);
                     delay_for(RETRY_TIME).await;
                     metrics_errors_counter(1, "Failed to get blockchain events while resyncing");
