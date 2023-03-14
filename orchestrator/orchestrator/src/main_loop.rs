@@ -146,6 +146,8 @@ pub async fn test_eth_connection(web3: Web3) {
 
 /// This function is responsible for making sure that Ethereum events are retrieved from the Ethereum blockchain
 /// and ferried over to Cosmos where they will be used to issue tokens or process batches.
+/// The oracle will not perform any work if the bridge is determined to be insolvent, this is
+/// a security measure to protect the bridge.
 pub async fn eth_oracle_main_loop(
     cosmos_key: CosmosPrivateKey,
     ethereum_key: EthPrivateKey,
@@ -155,12 +157,12 @@ pub async fn eth_oracle_main_loop(
     gravity_contract_address: EthAddress,
     fee: Coin,
 ) {
-    let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
-    let our_eth_address = ethereum_key.to_address();
+    let cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
+    let eth_address = ethereum_key.to_address();
     let long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
     let mut last_checked_block: Uint256 = get_last_checked_block(
         grpc_client.clone(),
-        our_cosmos_address,
+        cosmos_address,
         contact.get_prefix(),
         gravity_contract_address,
         &long_timeout_web30,
@@ -230,7 +232,7 @@ pub async fn eth_oracle_main_loop(
         // in order to reset last_checked_block and last_checked_event and continue from that point
         let last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
             &mut grpc_client,
-            our_cosmos_address,
+            cosmos_address,
             contact.get_prefix().clone(),
         )
         .await
@@ -242,7 +244,7 @@ pub async fn eth_oracle_main_loop(
             last_checked_event = last_event_nonce;
             last_checked_block = get_last_checked_block(
                 grpc_client.clone(),
-                our_cosmos_address,
+                cosmos_address,
                 contact.get_prefix(),
                 gravity_contract_address,
                 &web3,
@@ -255,7 +257,7 @@ pub async fn eth_oracle_main_loop(
         let balances = check_cross_bridge_balances(
             &grpc_client,
             &web3,
-            our_eth_address,
+            eth_address,
             gravity_contract_address,
         )
         .await;
@@ -290,6 +292,8 @@ pub async fn eth_oracle_main_loop(
 /// The eth_signer simply signs off on any batches or validator sets provided by the validator
 /// since these are provided directly by a trusted Cosmsos node they can simply be assumed to be
 /// valid and signed off on.
+/// The eth_signer will not perform any work if the bridge is determined to be insolvent, this is
+/// a security measure to protect the bridge.
 pub async fn eth_signer_main_loop(
     cosmos_key: CosmosPrivateKey,
     contact: Contact,
@@ -299,86 +303,23 @@ pub async fn eth_signer_main_loop(
     web30: &Web3,
     gravity_contract_address: EthAddress,
 ) {
-    let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
-    let our_eth_address = ethereum_key.to_address();
-    let mut grpc_client = grpc_client;
+    let cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
+    let eth_address = ethereum_key.to_address();
 
     loop {
         let loop_start = Instant::now();
-
-        // repeatedly refreshing the parameters here maintains loop correctness
-        // if the gravity_id is changed or slashing windows are changed. Neither of these
-        // is very probable
-        let params = match get_gravity_params(&mut grpc_client).await {
-            Ok(p) => p,
-            Err(e) => {
-                error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
-                metrics_errors_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
-                continue;
-            }
-        };
-        let blocks_until_slashing = min(
-            min(params.signed_valsets_window, params.signed_batches_window),
-            params.signed_logic_calls_window,
-        );
-        let gravity_id = params.gravity_id;
-
-        let latest_cosmos_block = contact.get_chain_status().await;
-        match latest_cosmos_block {
-            Ok(ChainStatus::Moving { block_height }) => {
-                trace!("Latest Cosmos block {}", block_height,);
-            }
-            Ok(ChainStatus::Syncing) => {
-                warn!("Cosmos node syncing, Eth signer paused");
-                warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
-                metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
-                metrics_latest(blocks_until_slashing, "blocks_until_slashing");
-                delay_for(DELAY).await;
-                continue;
-            }
-            Ok(ChainStatus::WaitingToStart) => {
-                warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
-                metrics_warnings_counter(
-                    2,
-                    "Cosmos node syncing waiting for chain start, Eth signer paused",
-                );
-                delay_for(DELAY).await;
-                continue;
-            }
-            Err(_) => {
-                error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
-                delay_for(DELAY).await;
-                metrics_latest(blocks_until_slashing, "blocks_until_slashing");
-                metrics_errors_counter(
-                    2,
-                    "Could not reach Cosmos rpc! You must correct this or you risk being slashed",
-                );
-                continue;
-            }
-        }
-
-        // Check the balances on both sides of the bridge, only submitting further events if the
-        // bridge is functioning as expected
-        let res = check_cross_bridge_balances(
-            &grpc_client,
+        single_eth_signer_iteration(
+            grpc_client.clone(),
+            &contact,
             web30,
-            our_eth_address,
             gravity_contract_address,
+            cosmos_key,
+            cosmos_address,
+            ethereum_key,
+            eth_address,
+            fee.clone(),
         )
         .await;
-
-        if res.is_ok() {
-            sign_and_send(
-                &contact,
-                &grpc_client,
-                cosmos_key,
-                our_cosmos_address,
-                ethereum_key,
-                fee.clone(),
-                gravity_id,
-            )
-            .await;
-        }
 
         // a bit of logic that tires to keep things running every LOOP_SPEED seconds exactly
         // this is not required for any specific reason. In fact we expect and plan for
@@ -390,7 +331,96 @@ pub async fn eth_signer_main_loop(
     }
 }
 
-// Actually submits the events needed by the Cosmos side of the bridge
+// Performs the eth signer duties, see eth_signer_main_loop
+pub async fn single_eth_signer_iteration(
+    grpc_client: GravityQueryClient<Channel>,
+    contact: &Contact,
+    web30: &Web3,
+    gravity_contract_address: EthAddress,
+    cosmos_key: CosmosPrivateKey,
+    cosmos_address: Address,
+    ethereum_key: EthPrivateKey,
+    eth_address: EthAddress,
+    fee: Coin,
+) {
+    let mut grpc_client = grpc_client;
+    // repeatedly refreshing the parameters here maintains loop correctness
+    // if the gravity_id is changed or slashing windows are changed. Neither of these
+    // is very probable
+    let params = match get_gravity_params(&mut grpc_client).await {
+        Ok(p) => p,
+        Err(e) => {
+            error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
+            metrics_errors_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
+            return;
+        }
+    };
+    let blocks_until_slashing = min(
+        min(params.signed_valsets_window, params.signed_batches_window),
+        params.signed_logic_calls_window,
+    );
+    let gravity_id = params.gravity_id;
+
+    let latest_cosmos_block = contact.get_chain_status().await;
+    match latest_cosmos_block {
+        Ok(ChainStatus::Moving { block_height }) => {
+            trace!("Latest Cosmos block {}", block_height,);
+        }
+        Ok(ChainStatus::Syncing) => {
+            warn!("Cosmos node syncing, Eth signer paused");
+            warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
+            metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
+            metrics_latest(blocks_until_slashing, "blocks_until_slashing");
+            delay_for(DELAY).await;
+            return;
+        }
+        Ok(ChainStatus::WaitingToStart) => {
+            warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
+            metrics_warnings_counter(
+                2,
+                "Cosmos node syncing waiting for chain start, Eth signer paused",
+            );
+            delay_for(DELAY).await;
+            return;
+        }
+        Err(_) => {
+            error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
+            delay_for(DELAY).await;
+            metrics_latest(blocks_until_slashing, "blocks_until_slashing");
+            metrics_errors_counter(
+                2,
+                "Could not reach Cosmos rpc! You must correct this or you risk being slashed",
+            );
+            return;
+        }
+    }
+
+    // Check the balances on both sides of the bridge, only submitting further events if the
+    // bridge is functioning as expected
+    let res = check_cross_bridge_balances(
+        &grpc_client,
+        web30,
+        eth_address,
+        gravity_contract_address,
+    )
+    .await;
+
+
+    if res.is_ok() {
+        sign_and_send(
+            &contact,
+            &grpc_client,
+            cosmos_key,
+            cosmos_address,
+            ethereum_key,
+            fee.clone(),
+            gravity_id,
+        )
+        .await;
+    }
+}
+
+// Fetches, signs, and submits any outstanding work (valsets, batches, logic calls)
 async fn sign_and_send(
     contact: &Contact,
     grpc_client: &GravityQueryClient<Channel>,
