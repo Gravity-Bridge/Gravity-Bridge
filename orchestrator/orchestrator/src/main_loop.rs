@@ -16,11 +16,12 @@ use cosmos_gravity::{
 };
 use deep_space::error::CosmosGrpcError;
 use deep_space::{client::ChainStatus, utils::FeeInfo};
+use deep_space::Contact;
 use deep_space::{
+    address::Address as CosmosAddress,
     coin::Coin,
     private_key::{CosmosPrivateKey, PrivateKey},
 };
-use deep_space::{Address, Contact};
 use futures::future::{join, join3};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
@@ -173,110 +174,28 @@ pub async fn eth_oracle_main_loop(
     // last checked event nonce to detect when this happens
     let mut last_checked_event: Uint256 = 0u8.into();
     info!("Oracle resync complete, Oracle now operational");
-    let mut grpc_client = grpc_client;
 
     loop {
         let loop_start = Instant::now();
 
-        let latest_eth_block = web3.eth_block_number().await;
-        let latest_cosmos_block = contact.get_chain_status().await;
-
-        match (&latest_eth_block, latest_cosmos_block) {
-            (Ok(latest_eth_block), Ok(ChainStatus::Moving { block_height })) => {
-                trace!(
-                    "Latest Eth block {} Latest Cosmos block {}",
-                    latest_eth_block,
-                    block_height,
-                );
-
-                metrics_latest(block_height, "latest_cosmos_block");
-                // Converting into u64
-                metrics_latest(latest_eth_block.to_u64().unwrap(), "latest_eth_block");
-            }
-            (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
-                warn!("Cosmos node syncing, Eth oracle paused");
-                metrics_warnings_counter(2, "Cosmos node syncing");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
-                warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
-                metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Ok(_), Err(_)) => {
-                warn!("Could not contact Cosmos grpc, trying again");
-                metrics_warnings_counter(2, "Could not contact Cosmos grpc");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Err(_), Ok(_)) => {
-                warn!("Could not contact Eth node, trying again");
-                metrics_warnings_counter(1, "Could not contact Eth node");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Err(_), Err(_)) => {
-                error!("Could not reach Ethereum or Cosmos rpc!");
-
-                metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc");
-
-                delay_for(DELAY).await;
-                continue;
-            }
-        }
-
-        // if the governance vote reset last event nonce sent by validator to some lower value, we can detect this
-        // by comparing last_event_nonce retrieved from the chain with last_checked_event saved by the orchestrator
-        // in order to reset last_checked_block and last_checked_event and continue from that point
-        let last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
-            &mut grpc_client,
-            cosmos_address,
-            contact.get_prefix().clone(),
-        )
-        .await
-        .into();
-
-        if last_event_nonce < last_checked_event {
-            // validator went back in history
-            info!("Governance unhalt vote must have happened, resetting the block to check!");
-            last_checked_event = last_event_nonce;
-            last_checked_block = get_last_checked_block(
-                grpc_client.clone(),
-                cosmos_address,
-                contact.get_prefix(),
-                gravity_contract_address,
-                &web3,
-            )
-            .await;
-        }
-
-        // Check the balances on both sides of the bridge, only submitting further events if the
-        // bridge is functioning as expected
-        let balances = check_cross_bridge_balances(
-            &grpc_client,
+        let res = single_oracle_iteration(
+            grpc_client.clone(),
+            &contact,
             &web3,
-            eth_address,
             gravity_contract_address,
+            cosmos_key,
+            cosmos_address,
+            eth_address,
+            last_checked_event,
+            last_checked_block,
+            fee.clone(),
         )
         .await;
 
-        if balances.is_ok() {
-            // Relays events from Ethereum -> Cosmos, returns the latest nonces needed in future iterations
-            let updated_nonces = attest_to_events(
-                &web3,
-                &contact,
-                &grpc_client,
-                gravity_contract_address,
-                cosmos_key,
-                fee.clone(),
-                last_checked_block,
-                last_checked_event,
-            )
-            .await;
-            last_checked_block = updated_nonces.block_number;
-            last_checked_event = updated_nonces.event_nonce;
+        if res.is_some() {
+            let (event, block) = res.unwrap();
+            last_checked_event = event;
+            last_checked_block = block;
         }
 
         // a bit of logic that tires to keep things running every LOOP_SPEED seconds exactly
@@ -287,6 +206,129 @@ pub async fn eth_oracle_main_loop(
             delay_for(ETH_ORACLE_LOOP_SPEED - elapsed).await;
         }
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn single_oracle_iteration(
+    grpc_client: GravityQueryClient<Channel>,
+    contact: &Contact,
+    web30: &Web3,
+    gravity_contract_address: EthAddress,
+    cosmos_key: CosmosPrivateKey,
+    cosmos_address: CosmosAddress,
+    eth_address: EthAddress,
+    event_to_check: Uint256,
+    block_to_check: Uint256,
+    fee: Coin,
+) -> Option<(Uint256, Uint256)> {
+    let mut grpc_client = grpc_client;
+    let mut checked_event: Uint256 = event_to_check;
+    let mut checked_block: Uint256 = block_to_check;
+
+    let latest_eth_block = web30.eth_block_number().await;
+    let latest_cosmos_block = contact.get_chain_status().await;
+
+    match (&latest_eth_block, latest_cosmos_block) {
+        (Ok(latest_eth_block), Ok(ChainStatus::Moving { block_height })) => {
+            trace!(
+                "Latest Eth block {} Latest Cosmos block {}",
+                latest_eth_block,
+                block_height,
+            );
+
+            metrics_latest(block_height, "latest_cosmos_block");
+            // Converting into u64
+
+            metrics_latest(latest_eth_block.to_u64().unwrap(), "latest_eth_block");
+        }
+        (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
+            warn!("Cosmos node syncing, Eth oracle paused");
+            metrics_warnings_counter(2, "Cosmos node syncing");
+            delay_for(DELAY).await;
+            return None;
+        }
+        (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
+            warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
+            metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start");
+            delay_for(DELAY).await;
+            return None;
+        }
+        (Ok(_), Err(_)) => {
+            warn!("Could not contact Cosmos grpc, trying again");
+            metrics_warnings_counter(2, "Could not contact Cosmos grpc");
+            delay_for(DELAY).await;
+            return None;
+        }
+        (Err(_), Ok(_)) => {
+            warn!("Could not contact Eth node, trying again");
+            metrics_warnings_counter(1, "Could not contact Eth node");
+            delay_for(DELAY).await;
+            return None;
+        }
+        (Err(_), Err(_)) => {
+            error!("Could not reach Ethereum or Cosmos rpc!");
+
+            metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc");
+
+            delay_for(DELAY).await;
+            return None;
+        }
+    }
+
+    // if the governance vote reset last event nonce sent by validator to some lower value, we can detect this
+    // by comparing last_event_nonce retrieved from the chain with last_checked_event saved by the orchestrator
+    // in order to reset last_checked_block and last_checked_event and continue from that point
+    let last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
+        &mut grpc_client,
+        cosmos_address,
+        contact.get_prefix().clone(),
+    )
+    .await
+    .into();
+
+    if last_event_nonce < event_to_check {
+        // validator went back in history
+        info!("Governance unhalt vote must have happened, resetting the block to check!");
+        checked_event = last_event_nonce;
+        checked_block = get_last_checked_block(
+            grpc_client.clone(),
+            cosmos_address,
+            contact.get_prefix(),
+            gravity_contract_address,
+            web30,
+        )
+        .await;
+    }
+
+    // Check the balances on both sides of the bridge, only submitting further events if the
+    // bridge is functioning as expected
+    let balances = check_cross_bridge_balances(
+        &grpc_client,
+        web30,
+        eth_address,
+        gravity_contract_address,
+    )
+    .await;
+    if balances.is_ok() {
+        // Relays events from Ethereum -> Cosmos, returns the latest nonces needed in future iterations
+        let updated_nonces = attest_to_events(
+            web30,
+            &contact,
+            &grpc_client,
+            gravity_contract_address,
+            cosmos_key,
+            fee.clone(),
+            checked_block,
+            checked_event,
+        )
+        .await;
+        checked_block = updated_nonces.block_number;
+        checked_event = updated_nonces.event_nonce;
+
+        return Some((checked_event, checked_block))
+    }
+
+    None
 }
 
 /// The eth_signer simply signs off on any batches or validator sets provided by the validator
@@ -338,7 +380,7 @@ pub async fn single_eth_signer_iteration(
     web30: &Web3,
     gravity_contract_address: EthAddress,
     cosmos_key: CosmosPrivateKey,
-    cosmos_address: Address,
+    cosmos_address: CosmosAddress,
     ethereum_key: EthPrivateKey,
     eth_address: EthAddress,
     fee: Coin,
@@ -425,7 +467,7 @@ async fn sign_and_send(
     contact: &Contact,
     grpc_client: &GravityQueryClient<Channel>,
     cosmos_key: CosmosPrivateKey,
-    cosmos_address: Address,
+    cosmos_address: CosmosAddress,
     ethereum_key: EthPrivateKey,
     fee: Coin,
     gravity_id: String,
