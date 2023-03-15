@@ -254,13 +254,7 @@ pub async fn eth_oracle_main_loop(
             Err(e) => {
                 if e.to_string().contains("non contiguous event nonce") {
                     // reduce last_block scanned to retry to find checked block with new nonce
-                    set_last_checked_block_info(
-                        evm_chain_prefix,
-                        (
-                            previous_block - convert_block_to_search().into(),
-                            prev_checked_block,
-                        ),
-                    );
+                    set_last_checked_block_info(evm_chain_prefix, (Uint256::from(0u128), None))
                 }
                 error!("Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}", e);
                 metrics_errors_counter(0, "Failed to get events for block range");
