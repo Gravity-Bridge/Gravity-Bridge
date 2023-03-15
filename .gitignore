@@ -38,3 +38,4 @@ upgrade-tests/exported-genesis-new.json
 tmp
 
 .DS_Store
+yarn-error.log
