@@ -370,7 +370,17 @@ mod test {
 
             let admin_tron_addr: TronAddress = admin_addr.into();
 
-            println!("admin addr {} - {}", admin_addr, admin_tron_addr);
+            assert_eq!(
+                TronAddress::from_str("TVf8hwYiMa91Pd5y424xz4ybMhbqDTVN4B").unwrap(),
+                admin_tron_addr
+            );
+
+            let last_event_nonce =
+                crate::utils::get_event_nonce(tron_addr.into(), caller_address, &web3)
+                    .await
+                    .unwrap();
+
+            assert!(last_event_nonce > 0);
         })
     }
 }
