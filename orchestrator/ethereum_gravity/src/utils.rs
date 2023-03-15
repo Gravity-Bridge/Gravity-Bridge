@@ -287,13 +287,14 @@ pub async fn send_transaction(
 #[cfg(test)]
 mod test {
 
-    use std::str::FromStr;
-
-    use clarity::{PrivateKey, Uint256};
+    use actix::System;
+    use clarity::{abi::encode_call, PrivateKey, Uint256};
     use heliosphere::{
         core::transaction::TransactionId,
         signer::{keypair::Keypair, signer::Signer},
     };
+    use std::{convert::TryInto, str::FromStr, time::Duration};
+    use web30::client::Web3;
 
     #[test]
     fn address() {
@@ -347,5 +348,33 @@ mod test {
         let encoded2 = ethabi::encode(&tokens);
 
         assert_eq!(encoded1, encoded2);
+    }
+
+    #[test]
+    fn web30() {
+        let mut web3 = Web3::new("https://nile.trongrid.io/jsonrpc", Duration::from_secs(120));
+        web3.set_check_sync(false);
+
+        let tron_addr =
+            heliosphere::core::Address::from_str("TMjswVjeapQ73yZUrZbHq3rPAHJoexMcZy").unwrap();
+        let caller_address =
+            clarity::Address::from_str("0x993d06FC97F45f16e4805883b98a6c20BAb54964").unwrap();
+        let payload = encode_call("getAdminAddress()", &[]).unwrap();
+
+        let runner = System::new();
+
+        runner.block_on(async move {
+            let val = web3
+                .simulate_transaction(tron_addr.into(), 0u8.into(), payload, caller_address, None)
+                .await
+                .unwrap();
+
+            // uint256 => 32 bytes, get last 20 byte
+            let admin_addr = clarity::Address::from_slice(val[12..].try_into().unwrap()).unwrap();
+
+            let admin_tron_addr: heliosphere::core::Address = admin_addr.into();
+
+            println!("admin addr {} - {}", admin_addr, admin_tron_addr);
+        })
     }
 }
