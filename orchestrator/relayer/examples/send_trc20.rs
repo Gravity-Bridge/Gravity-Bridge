@@ -22,7 +22,7 @@ fn main() {
         .into();
 
     runner.block_on(async move {
-        send_transaction(
+        let tx_hash = send_transaction(
             &web3,
             erc20,
             "transfer(address,uint256)",
@@ -33,5 +33,9 @@ fn main() {
         )
         .await
         .unwrap();
+        println!(
+            "tx hash: {:?}",
+            format!("{tx_hash:#066x}").trim_start_matches("0x")
+        );
     });
 }
