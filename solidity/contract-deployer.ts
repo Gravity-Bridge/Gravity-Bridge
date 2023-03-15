@@ -116,7 +116,7 @@ async function deploy() {
 
   console.log("Starting Gravity contract deploy");
   const { abi, bytecode } = getContractArtifacts(args["contract"]);
-  const factory = new ethers.ContractFactory(abi, bytecode, wallet);
+  const factory = new ethers.ContractFactory(JSON.stringify(abi), JSON.stringify(bytecode), wallet);
 
   console.log("About to get latest Gravity valset");
   const latestValset = await getLatestValset();
@@ -207,23 +207,33 @@ async function deployTron() {
     exit(1)
   }
 
-  const gravity = await tronWeb.contract().new({
-    abi: JSON.parse(abi),
-    bytecode,
-    feeLimit: 1000000000,
-    callValue: 0,
-    userFeePercentage: 1,
-    originEnergyLimit: 10000000,
-    parameters: [gravityId,
-      eth_addresses,
-      powers,
-      args["admin"]
-    ]
-  });
-  console.log("Gravity deployed at Address - ", gravity.address);
+  // try {
+  //   tronWeb.trx.sendTransaction("TPwTVfDDvmWSawsP7Ki1t3ecSBmaFeMMXc", 2000000000);
+  // } catch (error) {
+  //   console.log("error: ", error);
+  // }
+
+  try {
+    const gravity = await tronWeb.contract().new({
+      abi: abi,
+      bytecode,
+      feeLimit: 1300000000,
+      callValue: 0,
+      userFeePercentage: 50,
+      parameters: [
+        gravityId,
+        eth_addresses,
+        powers,
+        args["admin"]
+      ]
+    });
+    console.log("Gravity deployed at Address - ", gravity.address);
+  } catch (error) {
+    console.log("Error deploying a Gravity contract onto Tron network: ", error);
+  }
 }
 
-function getContractArtifacts(path: string): { bytecode: string; abi: string } {
+function getContractArtifacts(path: string): { bytecode: string; abi: any } {
   var { bytecode, abi } = JSON.parse(fs.readFileSync(path, "utf8").toString());
   return { bytecode, abi };
 }
