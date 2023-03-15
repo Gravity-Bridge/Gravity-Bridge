@@ -232,7 +232,7 @@ pub async fn send_transaction(
         };
 
         // Estimate energy usage
-        let estimated = client.estimate_energy(&method_call).await? as f64;
+        let estimated = client.estimate_fee_limit(&method_call).await? as f64;
         let mut gas_limit_multiplier = 1f64;
         for option in options {
             match option {

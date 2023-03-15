@@ -10,3 +10,5 @@ pub mod proposals;
 pub mod query;
 pub mod send;
 pub mod utils;
+
+pub use deep_space::address::Address as CosmosAddress;

@@ -28,7 +28,6 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
 use num::ToPrimitive;
-use relayer::find_latest_valset::convert_block_to_search;
 use relayer::main_loop::all_relayer_loops;
 use std::cmp::min;
 use std::process::exit;
@@ -214,7 +213,7 @@ pub async fn eth_oracle_main_loop(
             .await;
         }
 
-        let (previous_block, prev_checked_block) =
+        let (previous_block, _) =
             get_last_checked_block_info(evm_chain_prefix).unwrap_or((0u8.into(), None));
 
         // Relays events from Ethereum -> Cosmos
