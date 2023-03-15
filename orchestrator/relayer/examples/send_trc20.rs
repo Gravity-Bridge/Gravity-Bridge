@@ -3,10 +3,11 @@ use std::{str::FromStr, time::Duration};
 use actix::System;
 use clarity::{PrivateKey, Uint256};
 use ethereum_gravity::{utils::send_transaction, EthAddress, TronAddress};
-use relayer::main_loop::ETH_SUBMIT_WAIT_TIME;
 use web30::{client::Web3, types::SendTxOption};
 
 fn main() {
+    env_logger::Builder::from_env("RUST_LOG").init();
+
     let mut web3 = Web3::new("https://nile.trongrid.io/jsonrpc", Duration::from_secs(120));
     web3.set_check_sync(false);
 
@@ -21,7 +22,7 @@ fn main() {
         .into();
 
     runner.block_on(async move {
-        let tx_hash = send_transaction(
+        send_transaction(
             &web3,
             erc20,
             "transfer(address,uint256)",
@@ -32,7 +33,5 @@ fn main() {
         )
         .await
         .unwrap();
-        // 66 length (64 hex start with 0x) : :#066x, 64 hex: :064x
-        println!("tx_hash {:064x}", tx_hash);
     });
 }

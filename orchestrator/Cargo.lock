@@ -2948,6 +2948,7 @@ dependencies = [
  "cosmos_gravity",
  "deep_space",
  "docopt",
+ "env_logger",
  "ethereum_gravity",
  "futures",
  "gravity_proto",
