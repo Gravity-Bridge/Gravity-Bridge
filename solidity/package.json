@@ -41,6 +41,7 @@
     "ethers": "^5.4.6",
     "fs-extra": "^9.0.1",
     "hardhat": "^2.11.2",
+    "hardhat-contract-sizer": "^2.8.0",
     "hardhat-gas-reporter": "^1.0.4",
     "hardhat-typechain": "^0.3.4",
     "husky": "^4.3.0",

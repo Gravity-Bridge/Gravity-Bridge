@@ -1,7 +1,9 @@
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-gas-reporter";
 import "hardhat-typechain";
+import "hardhat-contract-sizer";
 import { task } from "hardhat/config";
+import { HardhatConfig } from "hardhat/types";
 
 task("accounts", "Prints the list of accounts", async (args, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -25,40 +27,45 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
 // This object can have the following optional entries:
 // defaultNetwork, networks, solc, and paths.
 // Go to https://buidler.dev/config/ to learn more
-module.exports = {
+export default {
   // This is a sample solc configuration that specifies which version of solc to use
   solidity: {
     version: "0.8.10",
     settings: {
       optimizer: {
-        enabled: true
-      }
-    }
+        enabled: true,
+      },
+    },
   },
   networks: {
     hardhat: {
       chainId: 420,
-      accounts: [{ privateKey: "0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08", balance: "10000000000000000000000" }],
+      accounts: [
+        {
+          privateKey:
+            "0xbbfb76c92cd13796899f63dc6ead6d2420e8d0bc502d42bd5773c2d4b8897f08",
+          balance: "10000000000000000000000",
+        },
+      ],
       forking: {
         url: "https://rpc.ankr.com/eth_goerli",
-        blockNumber: 8218229
+        blockNumber: 8218229,
       },
       mining: {
         auto: false,
-        interval: 2000
-      }
-    }
-
+        interval: 2000,
+      },
+    },
   },
   typechain: {
     outDir: "typechain",
     target: "ethers-v5",
-    runOnCompile: true
+    runOnCompile: true,
   },
   gasReporter: {
-    enabled: true
+    enabled: true,
   },
   mocha: {
-    timeout: 2000000
-  }
-};
+    timeout: 2000000,
+  },
+} as unknown as HardhatConfig;
