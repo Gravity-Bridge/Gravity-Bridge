@@ -320,6 +320,8 @@ type EthereumClaim interface {
 	// validators claims agree. Therefore it's extremely important that this include all elements of the claim
 	// with the exception of the orchestrator who sent it in, which will be used as a different part of the index
 	ClaimHash() ([]byte, error)
+	// Sets the orchestrator value on the claim
+	SetOrchestrator(sdk.AccAddress)
 }
 
 // nolint: exhaustruct
@@ -329,6 +331,10 @@ var (
 	_ EthereumClaim = &MsgERC20DeployedClaim{}
 	_ EthereumClaim = &MsgLogicCallExecutedClaim{}
 )
+
+func (msg *MsgSendToCosmosClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	msg.Orchestrator = orchestrator.String()
+}
 
 // GetType returns the type of the claim
 func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
@@ -425,6 +431,10 @@ func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{acc}
 }
 
+func (msg *MsgBatchSendToEthClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	msg.Orchestrator = orchestrator.String()
+}
+
 // GetType returns the claim type
 func (msg *MsgBatchSendToEthClaim) GetType() ClaimType {
 	return CLAIM_TYPE_BATCH_SEND_TO_ETH
@@ -490,6 +500,10 @@ const (
 // EthereumClaim implementation for MsgERC20DeployedClaim
 // ======================================================
 
+func (msg *MsgERC20DeployedClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	msg.Orchestrator = orchestrator.String()
+}
+
 // GetType returns the type of the claim
 func (e *MsgERC20DeployedClaim) GetType() ClaimType {
 	return CLAIM_TYPE_ERC20_DEPLOYED
@@ -553,6 +567,10 @@ func (b *MsgERC20DeployedClaim) ClaimHash() ([]byte, error) {
 // EthereumClaim implementation for MsgLogicCallExecutedClaim
 // ======================================================
 
+func (msg *MsgLogicCallExecutedClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	msg.Orchestrator = orchestrator.String()
+}
+
 // GetType returns the type of the claim
 func (e *MsgLogicCallExecutedClaim) GetType() ClaimType {
 	return CLAIM_TYPE_LOGIC_CALL_EXECUTED
@@ -606,12 +624,15 @@ func (msg MsgLogicCallExecutedClaim) Route() string { return RouterKey }
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (b *MsgLogicCallExecutedClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d,%d,%s/%d/", b.EventNonce, b.EthBlockHeight, b.InvalidationId, b.InvalidationNonce)
+	path := fmt.Sprintf("%d/%d/%s/%d", b.EventNonce, b.EthBlockHeight, b.InvalidationId, b.InvalidationNonce)
 	return tmhash.Sum([]byte(path)), nil
 }
 
 // EthereumClaim implementation for MsgValsetUpdatedClaim
 // ======================================================
+func (e *MsgValsetUpdatedClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	e.Orchestrator = orchestrator.String()
+}
 
 // GetType returns the type of the claim
 func (e *MsgValsetUpdatedClaim) GetType() ClaimType {
