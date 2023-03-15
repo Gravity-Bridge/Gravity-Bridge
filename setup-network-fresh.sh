@@ -9,15 +9,16 @@ ALLOCATION="10000000000uoraib,10000000000000000000000000uairi"
 
 # first we start a genesis.json with validator 1
 # validator 1 will also collect the gentx's once gnerated
-GRAVITY_HOME=${1:-$PWD/data}
+GRAVITY_HOME=${GRAVITY_HOME:-$PWD/data}
 VALIDATOR=${VALIDATOR:-validator1}
 ORCHESTRATOR=${ORCHESTRATOR:-orchestrator1}
 DATA_HOME=$GRAVITY_HOME/$VALIDATOR
 STARTING_VALIDATOR_HOME="--home $DATA_HOME"
 
 # todo add git hash to chain name
-
-# rm -rf $DATA_HOME
+if [ $REMOVE_DATA_HOME ]; then
+    rm -rf $DATA_HOME
+fi
 
 $BIN init $STARTING_VALIDATOR_HOME --chain-id=$CHAIN_ID $VALIDATOR
 
@@ -26,7 +27,8 @@ $BIN init $STARTING_VALIDATOR_HOME --chain-id=$CHAIN_ID $VALIDATOR
 ## testing the generated one with the default values provided by the module.
 
 # add in denom metadata for both native tokens
-jq '.app_state.gravity.evm_chains = [{"evm_chain":{"evm_chain_prefix":"goerli-testnet","evm_chain_name":"Goerli network"}}] | .app_state.staking.params.bond_denom = "uoraib" | .app_state.gov.voting_params.voting_period = "60s" | .app_state.crisis.constant_fee.denom = "uoraib" | .app_state.gov.deposit_params.min_deposit[0].denom = "uoraib" | .app_state.mint.params.mint_denom = "uoraib" | .app_state.bank.denom_metadata += [{"name": "ORAIB Token", "symbol": "ORAIB", "base": "oraib", display: "oraib", "description": "A native staking & minting token", "denom_units": [{"denom": "oraib", "exponent": 0}, {"denom": "uoraib", "exponent": 6}, {"denom": "uairi", "exponent": 18}]}]' $GRAVITY_HOME/$VALIDATOR/config/genesis.json > ./genesis.json
+# how to get net version: curl -X POST 'https://nile.trongrid.io/jsonrpc' --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":79}'
+jq '.app_state.bech32ibc.nativeHRP = "oraib" | .app_state.gravity.params.evm_chain_params = [{"evm_chain_prefix":"goerli-testnet","average_ethereum_block_time":"15000","bridge_active":true,"bridge_chain_id":"420","bridge_ethereum_address":"0x0000000000000000000000000000000000000000","contract_source_hash":"","ethereum_blacklist":[],"gravity_id":"defaultgravityid"},{"evm_chain_prefix":"tron-testnet","average_ethereum_block_time":"3000","bridge_active":true,"bridge_chain_id":"3448148188","bridge_ethereum_address":"0x0000000000000000000000000000000000000000","contract_source_hash":"","ethereum_blacklist":[],"gravity_id":"defaultgravityid"}] | .app_state.gravity.evm_chains = [{"evm_chain":{"evm_chain_prefix":"goerli-testnet","evm_chain_name":"Goerli network","evm_chain_net_version":"5"}},{"evm_chain":{"evm_chain_prefix":"tron-testnet","evm_chain_name":"Tron Nile Network","evm_chain_net_version":"3448148188"}}] | .app_state.staking.params.bond_denom = "uoraib" | .app_state.gov.voting_params.voting_period = "60s" | .app_state.crisis.constant_fee.denom = "uoraib" | .app_state.gov.deposit_params.min_deposit[0].denom = "uoraib" | .app_state.mint.params.mint_denom = "uoraib" | .app_state.bank.denom_metadata += [{"name": "ORAIB Token", "symbol": "ORAIB", "base": "oraib", display: "oraib", "description": "A native staking & minting token", "denom_units": [{"denom": "oraib", "exponent": 0}, {"denom": "uoraib", "exponent": 6}, {"denom": "uairi", "exponent": 18}]}]' $GRAVITY_HOME/$VALIDATOR/config/genesis.json > ./genesis.json
 
 # Sets up an arbitrary number of validators on a single machine by manipulating
 # the --home parameter on gaiad
@@ -86,3 +88,5 @@ echo "Collected $GENTXS gentx"
 mv ./genesis.json $GRAVITY_HOME/$VALIDATOR/config/genesis.json
 
 # gravity tx ibc-transfer transfer transfer channel-0 orai18hr8jggl3xnrutfujy2jwpeu0l76azprlvgrwt 10000000000000000000000uairi --from validator1 --keyring-backend test --chain-id gravity-test -y --home /gravity/data/validator1
+
+# REMOVE_DATA_HOME=true GRAVITY_HOME=./upgrade-tests/data-local VALIDATOR=local ./setup-network-fresh.sh 

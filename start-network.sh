@@ -2,7 +2,7 @@
 set -eux
 # first we start a genesis.json with validator 1
 # validator 1 will also collect the gentx's once gnerated
-GRAVITY_HOME=${1:-$PWD/data}
+GRAVITY_HOME=${GRAVITY_HOME:-$PWD/data}
 VALIDATOR=${VALIDATOR:-validator1}
 DATA_HOME=$GRAVITY_HOME/$VALIDATOR
 STARTING_VALIDATOR_HOME="--home $DATA_HOME"
@@ -13,3 +13,5 @@ then
 fi
 
 gravity start $STARTING_VALIDATOR_HOME
+
+# GRAVITY_HOME=./upgrade-tests/data-local VALIDATOR=local ./start-network.sh

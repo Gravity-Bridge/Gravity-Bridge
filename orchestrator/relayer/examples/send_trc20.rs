@@ -39,3 +39,5 @@ fn main() {
         );
     });
 }
+
+// PRIVATE_KEY= cargo run --package relayer --example send_trc20
