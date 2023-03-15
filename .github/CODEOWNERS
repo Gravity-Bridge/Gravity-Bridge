@@ -1,6 +1,0 @@
-# CODEOWNERS: https://help.github.com/articles/about-codeowners/
-
-module/  @jkilpatr @marbar3778 @jackzampolin @fedekunze 
-orchestrator/ @jkilpatr @jtremback
-solidity/ @jkilpatr @jtremback
-tests/  @jkilpatr @jackzampolin @mvid
