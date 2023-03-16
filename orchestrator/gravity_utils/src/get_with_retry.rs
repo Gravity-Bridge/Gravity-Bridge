@@ -13,6 +13,10 @@ pub async fn get_block_number_with_retry(web3: &Web3) -> Uint256 {
     let mut res = web3.eth_block_number().await;
     while res.is_err() {
         error!("Failed to get latest block! Is your Eth node working?");
+        error!(
+            "Error getting the latest block: {}",
+            res.unwrap_err().to_string()
+        );
         delay_for(RETRY_TIME).await;
         res = web3.eth_block_number().await;
     }
