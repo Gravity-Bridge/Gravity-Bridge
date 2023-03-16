@@ -2,7 +2,6 @@ use crate::happy_path::test_erc20_deposit_panic;
 use crate::one_eth;
 use crate::utils::*;
 use crate::EVM_CHAIN_PREFIX;
-use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_pending_send_to_eth;
 use cosmos_gravity::send::cancel_send_to_eth;
 use cosmos_gravity::send::send_to_eth;
@@ -11,6 +10,7 @@ use deep_space::Contact;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 pub async fn send_to_eth_and_cancel(
     contact: &Contact,

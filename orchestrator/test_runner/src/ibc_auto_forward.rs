@@ -7,7 +7,6 @@ use crate::{
     get_ibc_chain_id, one_eth, ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC,
     STAKING_TOKEN,
 };
-use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::UPDATE_HRP_IBC_CHANNEL_PROPOSAL;
 use cosmos_gravity::send::MSG_EXECUTE_IBC_AUTO_FORWARDS_TYPE_URL;
 use deep_space::address::Address as CosmosAddress;
@@ -46,6 +45,7 @@ use std::time::{Duration, SystemTime};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 // Tests IBC transfers and IBC Auto-Forwarding from gravity to another chain (gravity-test-1 -> ibc-test-1)
 pub async fn ibc_auto_forward_test(

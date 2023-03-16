@@ -9,11 +9,11 @@ use crate::utils::{
     ValidatorKeys,
 };
 use crate::{get_fee, STAKING_TOKEN, TOTAL_TIMEOUT};
-use clarity::Address as EthAddress;
 use deep_space::{Coin, Contact};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 pub async fn slashing_delegation_test(
     web30: &Web3,

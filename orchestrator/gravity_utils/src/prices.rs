@@ -1,9 +1,9 @@
-use clarity::address::Address as EthAddress;
 use clarity::Uint256;
 use web30::amm::DAI_CONTRACT_ADDRESS;
 use web30::amm::WETH_CONTRACT_ADDRESS;
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
+use web30::EthAddress;
 
 const FIVE_PERCENT: f64 = 0.05f64; // used as an acceptable amount of slippage
 

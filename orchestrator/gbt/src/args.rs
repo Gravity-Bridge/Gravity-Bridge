@@ -2,11 +2,11 @@
 //! See the clap documentation for how exactly this works, note that doc comments are displayed to the user
 
 use clap::Parser;
-use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use deep_space::{address::Address as CosmosAddress, Coin};
 use deep_space::{CosmosPrivateKey, EthermintPrivateKey};
 use std::path::PathBuf;
+use web30::EthAddress;
 
 /// Gravity Bridge tools (gbt) provides tools for interacting with the Althea Gravity bridge for Cosmos based blockchains.
 #[derive(Parser)]

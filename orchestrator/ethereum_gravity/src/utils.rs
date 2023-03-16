@@ -4,13 +4,13 @@ use clarity::abi::encode_call;
 use clarity::PrivateKey;
 
 use clarity::Uint256;
-use clarity::{abi::Token, constants::zero_address, Address as EthAddress};
+use clarity::{abi::Token, constants::zero_address};
 use gravity_utils::error::GravityError;
 use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
 
 use web30::types::SendTxOption;
-use web30::{client::Web3, jsonrpc::error::Web3Error};
+use web30::{client::Web3, jsonrpc::error::Web3Error, EthAddress};
 
 /// Gets the latest validator set nonce
 pub async fn get_valset_nonce(

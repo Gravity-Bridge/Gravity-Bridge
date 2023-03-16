@@ -9,7 +9,6 @@ use crate::{
     utils::*,
     EVM_CHAIN_PREFIX, TOTAL_TIMEOUT,
 };
-use clarity::Address as EthAddress;
 use cosmos_gravity::{
     query::get_gravity_params, send::send_request_batch, utils::get_reasonable_send_to_eth_fee,
 };
@@ -22,6 +21,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 /// sixty seconds in milliseconds
 const BATCH_TIMEOUT_SHORT: u64 = 60000;

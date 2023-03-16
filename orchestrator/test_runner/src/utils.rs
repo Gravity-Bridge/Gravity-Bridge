@@ -10,7 +10,7 @@ use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_PRIVATE_KEY};
 use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
-use clarity::{Address as EthAddress, Uint256};
+use clarity::Uint256;
 use clarity::{PrivateKey as EthPrivateKey, Transaction};
 use cosmos_gravity::proposals::{submit_parameter_change_proposal, submit_upgrade_proposal};
 use cosmos_gravity::query::get_gravity_params;
@@ -43,7 +43,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use web30::jsonrpc::error::Web3Error;
-use web30::{client::Web3, types::SendTxOption};
+use web30::{client::Web3, types::SendTxOption, EthAddress};
 
 /// returns the required denom metadata for deployed the Footoken
 /// token defined in our test environment

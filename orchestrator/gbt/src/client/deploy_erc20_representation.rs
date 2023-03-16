@@ -2,7 +2,7 @@ use crate::{
     args::DeployErc20RepresentationOpts,
     utils::{parse_bridge_ethereum_address_with_exit, TIMEOUT},
 };
-use clarity::{utils::display_uint256_as_address, Address as EthAddress};
+use clarity::utils::display_uint256_as_address;
 use cosmos_gravity::query::{get_gravity_params, query_evm_chain_from_net_version};
 use ethereum_gravity::deploy_erc20::deploy_erc20;
 use gravity_proto::gravity::{
@@ -19,6 +19,7 @@ use std::{
 };
 use tokio::time::sleep as delay_for;
 use web30::types::SendTxOption;
+use web30::EthAddress;
 
 pub async fn deploy_erc20_representation(
     args: DeployErc20RepresentationOpts,

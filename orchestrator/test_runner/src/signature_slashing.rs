@@ -9,7 +9,6 @@ use crate::utils::{
     vote_yes_on_proposals, ValidatorKeys,
 };
 use crate::{get_fee, TOTAL_TIMEOUT};
-use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::client::types::ChainStatus;
 use deep_space::Contact;
@@ -19,6 +18,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 pub async fn signature_slashing_test(
     web30: &Web3,

@@ -4,7 +4,6 @@
 //! checked in this test
 
 use crate::utils::ValidatorKeys;
-use clarity::Address as EthAddress;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::Contact;
 use deep_space::PrivateKey;
@@ -13,6 +12,7 @@ use gravity_proto::gravity::{
     QueryDelegateKeysByOrchestratorAddress,
 };
 use tonic::transport::Channel;
+use web30::EthAddress;
 
 pub async fn orch_keys(
     grpc_client: GravityQueryClient<Channel>,

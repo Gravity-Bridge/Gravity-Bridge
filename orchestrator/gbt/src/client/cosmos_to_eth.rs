@@ -1,6 +1,5 @@
 use crate::args::CosmosToEthOpts;
 use crate::utils::TIMEOUT;
-use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_denom_to_erc20;
 use cosmos_gravity::send::send_to_eth;
 use deep_space::{Address as CosmosAddress, Coin, Contact, PrivateKey};
@@ -12,6 +11,7 @@ use gravity_utils::{
 };
 use std::process::exit;
 use tonic::transport::Channel;
+use web30::EthAddress;
 
 pub async fn cosmos_to_eth_cmd(args: CosmosToEthOpts, address_prefix: String) {
     let cosmos_key = args.cosmos_phrase;

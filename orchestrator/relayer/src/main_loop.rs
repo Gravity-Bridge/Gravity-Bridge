@@ -8,7 +8,6 @@ use crate::{
     batch_relaying::relay_batches, find_latest_valset::find_latest_valset,
     logic_call_relaying::relay_logic_calls, valset_relaying::relay_valsets,
 };
-use clarity::address::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use deep_space::{Coin, Contact, CosmosPrivateKey};
 use futures::future::join3;
@@ -19,6 +18,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 /// The general network request and operation timeout
 pub const TIMEOUT: Duration = Duration::from_secs(10);

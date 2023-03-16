@@ -10,7 +10,6 @@ use crate::RELAYER_MNEMONIC;
 use crate::TOTAL_TIMEOUT;
 use crate::{get_gravity_chain_id, get_ibc_chain_id, ETH_NODE};
 use crate::{utils::ValidatorKeys, COSMOS_NODE_ABCI};
-use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey, DEFAULT_COSMOS_HD_PATH};
 use deep_space::Contact;
@@ -24,6 +23,7 @@ use std::{
     io::{BufRead, BufReader, Read, Write},
     process::ExitStatus,
 };
+use web30::EthAddress;
 
 /// Ethereum private keys for the validators are generated using the gravity eth_keys add command
 /// and dumped into a file /validator-eth-keys in the container, from there they are then used by

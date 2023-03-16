@@ -1,7 +1,8 @@
+use clarity::abi::Token;
 use clarity::Signature as EthSignature;
-use clarity::{abi::Token, Address as EthAddress};
 use num256::Uint256;
 use std::cmp::Ordering;
+use web30::EthAddress;
 
 /// A sortable struct of a validator and it's signatures
 /// this can be used for either transaction batch or validator

@@ -2,7 +2,6 @@
 //! It's a common problem to have conflicts between ipv4 and ipv6 localhost and this module is first and foremost supposed to resolve that problem
 //! by trying more than one thing to handle potentially misconfigured inputs.
 
-use clarity::Address as EthAddress;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
@@ -16,6 +15,7 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use url::Url;
 use web30::client::Web3;
+use web30::EthAddress;
 
 use crate::get_with_retry::get_balances_with_retry;
 use crate::get_with_retry::get_eth_balances_with_retry;

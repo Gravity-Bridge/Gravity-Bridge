@@ -9,7 +9,6 @@ use crate::{
     STAKING_TOKEN, TOTAL_TIMEOUT,
 };
 use actix::clock::sleep;
-use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::{submit_send_to_eth_fees_proposal, SendToEthFeesProposalJson};
 use cosmos_gravity::query::get_min_chain_fee_basis_points;
 use cosmos_gravity::send::MSG_SEND_TO_ETH_TYPE_URL;
@@ -24,6 +23,7 @@ use std::ops::Mul;
 use std::time::{Duration, Instant};
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 // The voting period, in seconds. This is set in tests/container-scripts/setup-validators.sh
 const GOVERNANCE_VOTING_PERIOD: u64 = 120;

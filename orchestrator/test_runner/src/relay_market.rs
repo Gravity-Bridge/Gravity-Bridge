@@ -8,7 +8,7 @@ use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_ADDRESS};
 use crate::{ADDRESS_PREFIX, EVM_CHAIN_PREFIX};
 use clarity::PrivateKey as EthPrivateKey;
-use clarity::{Address as EthAddress, Uint256};
+use clarity::Uint256;
 use cosmos_gravity::query::get_oldest_unsigned_transaction_batches;
 use cosmos_gravity::send::send_to_eth;
 use deep_space::coin::Coin;
@@ -24,6 +24,7 @@ use tonic::transport::Channel;
 use web30::amm::{DAI_CONTRACT_ADDRESS, WETH_CONTRACT_ADDRESS};
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
+use web30::EthAddress;
 
 pub async fn relay_market_test(
     web30: &Web3,

@@ -1,6 +1,5 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
 use crate::{happy_path_test, happy_path_test_v2, utils::*, EVM_CHAIN_PREFIX};
-use clarity::Address as EthAddress;
 use deep_space::client::ChainStatus;
 use deep_space::utils::decode_any;
 use deep_space::{Contact, CosmosPrivateKey};
@@ -20,6 +19,7 @@ use std::time::Duration;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 // The number of attestations run_all_recoverable_tests and run_upgrade_specific_tests should create
 const MINIMUM_ATTESTATIONS: u64 = 10;

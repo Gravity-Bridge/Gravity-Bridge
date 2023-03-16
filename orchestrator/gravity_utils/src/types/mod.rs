@@ -1,7 +1,7 @@
 use crate::error::GravityError;
-use clarity::Address as EthAddress;
 use num256::Uint256;
 use std::convert::TryFrom;
+use web30::EthAddress;
 
 pub use batches::*;
 pub use config::*;

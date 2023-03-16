@@ -15,7 +15,6 @@ use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
 use clarity::abi::Token;
-use clarity::Address as EthAddress;
 use clarity::Address;
 use deep_space::Contact;
 use ethereum_gravity::send_to_cosmos::SEND_TO_COSMOS_GAS_LIMIT;
@@ -27,6 +26,7 @@ use std::time::Instant;
 use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::types::SendTxOption;
+use web30::EthAddress;
 
 pub async fn invalid_events(
     web30: &Web3,

@@ -1,6 +1,7 @@
 //! contains configuration structs that need to be accessed across crates.
 
-use clarity::{Address as EthAddress, Uint256};
+use clarity::Uint256;
+use web30::EthAddress;
 
 /// Global configuration struct for Gravity bridge tools
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]

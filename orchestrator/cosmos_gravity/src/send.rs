@@ -1,4 +1,3 @@
-use clarity::Address as EthAddress;
 use clarity::{PrivateKey as EthPrivateKey, Signature};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::error::CosmosGrpcError;
@@ -10,6 +9,7 @@ use ethereum_gravity::message_signatures::{
     encode_logic_call_confirm, encode_tx_batch_confirm, encode_valset_confirm,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
+use web30::EthAddress;
 
 use gravity_proto::gravity::{
     MsgCancelSendToEth, MsgConfirmBatch, MsgConfirmLogicCall, MsgExecuteIbcAutoForwards,

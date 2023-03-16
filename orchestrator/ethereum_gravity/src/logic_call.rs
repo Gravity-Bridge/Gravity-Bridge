@@ -1,12 +1,13 @@
 use crate::message_signatures::encode_logic_call_confirm_hashed;
 use crate::utils::{encode_valset_struct, get_logic_call_nonce, GasCost};
 use clarity::abi::encode_call;
+use clarity::Uint256;
 use clarity::{abi::Token, utils::bytes_to_hex_str, PrivateKey as EthPrivateKey};
-use clarity::{Address as EthAddress, Uint256};
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
 use std::{cmp::min, time::Duration};
 use web30::types::SendTxOption;
+use web30::EthAddress;
 use web30::{client::Web3, types::TransactionRequest};
 
 pub const SUBMIT_LOGIC_CALL_SELECTOR:&str = "submitLogicCall((address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[],(uint256[],address[],uint256[],address[],address,bytes,uint256,bytes32,uint256))";

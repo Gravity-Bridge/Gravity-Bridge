@@ -5,7 +5,7 @@
 use crate::oracle_resync::{get_last_checked_block_info, set_last_checked_block_info};
 use crate::{ethereum_event_watcher::check_for_events, oracle_resync::get_last_checked_block};
 use clarity::PrivateKey as EthPrivateKey;
-use clarity::{address::Address as EthAddress, Uint256};
+use clarity::Uint256;
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::{
     query::{
@@ -37,6 +37,7 @@ use std::time::Instant;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 /// The execution speed governing all loops in this file
 /// which is to say all loops started by Orchestrator main

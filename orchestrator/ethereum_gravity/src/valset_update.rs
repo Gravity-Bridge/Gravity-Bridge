@@ -2,12 +2,12 @@ use crate::message_signatures::encode_valset_confirm_hashed;
 use crate::utils::{encode_valset_struct, get_valset_nonce, GasCost};
 use clarity::abi::{encode_call, Token};
 use clarity::PrivateKey as EthPrivateKey;
-use clarity::{Address as EthAddress, Uint256};
+use clarity::Uint256;
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
 use std::{cmp::min, time::Duration};
 use web30::types::SendTxOption;
-use web30::{client::Web3, types::TransactionRequest};
+use web30::{client::Web3, types::TransactionRequest, EthAddress};
 
 pub const UPDATE_VALSET_SELECTOR :&str = "updateValset((address[],uint256[],uint256,uint256,address),(address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[])";
 

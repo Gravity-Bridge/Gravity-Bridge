@@ -1,7 +1,6 @@
 use super::*;
 use crate::error::GravityError;
 use clarity::constants::zero_address;
-use clarity::Address as EthAddress;
 use clarity::Signature as EthSignature;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Address as CosmosAddress;
@@ -12,6 +11,7 @@ use std::{
     collections::{HashMap, HashSet},
     fmt,
 };
+use web30::EthAddress;
 
 /// The total power in the Gravity bridge is normalized to 2^32 every
 /// time a validator set is created. So this is the total power

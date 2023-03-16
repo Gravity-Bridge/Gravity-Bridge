@@ -1,5 +1,4 @@
 use crate::main_loop::ETH_SUBMIT_WAIT_TIME;
-use clarity::address::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::Uint256;
 use cosmos_gravity::query::get_latest_transaction_batches;
@@ -17,6 +16,7 @@ use gravity_utils::types::{BatchConfirmResponse, RelayerConfig, TransactionBatch
 use std::collections::HashMap;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 #[derive(Debug, Clone)]
 struct SubmittableBatch {

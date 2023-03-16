@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 
-use clarity::Address as EthAddress;
 use deep_space::address::Address;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
@@ -34,6 +33,7 @@ use gravity_proto::gravity::{Attestation, PendingIbcAutoForward, QueryPendingIbc
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
 use tonic::transport::Channel;
+use web30::EthAddress;
 
 /// Gets the Gravity module parameters from the Gravity module
 pub async fn get_gravity_params(

@@ -1,5 +1,5 @@
 use crate::main_loop::ETH_SUBMIT_WAIT_TIME;
-use clarity::{address::Address as EthAddress, utils::bytes_to_hex_str};
+use clarity::utils::bytes_to_hex_str;
 use clarity::{PrivateKey as EthPrivateKey, Uint256};
 use cosmos_gravity::query::{get_latest_logic_calls, get_logic_call_signatures};
 use ethereum_gravity::message_signatures::encode_logic_call_confirm_hashed;
@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use tonic::transport::Channel;
 use web30::amm::WETH_CONTRACT_ADDRESS;
 use web30::client::Web3;
+use web30::EthAddress;
 
 // Determines whether or not submitting `logic_call` will be profitable given the estimated `cost`
 // and the current exchange rate available on uniswap

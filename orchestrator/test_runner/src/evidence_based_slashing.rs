@@ -8,7 +8,6 @@ use crate::STARTING_STAKE_PER_VALIDATOR;
 use crate::TOTAL_TIMEOUT;
 use crate::{get_fee, utils::get_operator_address};
 use clarity::utils::bytes_to_hex_str;
-use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_latest_valsets;
 use cosmos_gravity::{send::submit_bad_signature_evidence, utils::BadSignatureEvidence};
 use deep_space::PrivateKey;
@@ -20,6 +19,7 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::{Valset, ValsetMember};
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 // takes a vector of valsets and returns the latest nonce or none if there
 // are no valsets currently generated

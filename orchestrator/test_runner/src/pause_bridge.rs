@@ -6,7 +6,6 @@ use crate::happy_path::{test_erc20_deposit_panic, test_erc20_deposit_result};
 use crate::utils::*;
 use crate::MINER_ADDRESS;
 use crate::{get_fee, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
-use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::send::{send_request_batch, send_to_eth};
 use deep_space::coin::Coin;
@@ -18,6 +17,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 /// Tests the bridge pause function, which allows a governance vote
 /// to temporarily stop token transfers while vulnerabilities are dealt with

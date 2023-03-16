@@ -13,7 +13,6 @@ use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
 use crate::{get_fee, utils::ValidatorKeys};
-use clarity::Address as EthAddress;
 use clarity::Uint256;
 use cosmos_gravity::send::send_to_eth;
 use deep_space::coin::Coin;
@@ -33,6 +32,7 @@ use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::types::SendTxOption;
+use web30::EthAddress;
 
 pub async fn happy_path_test_v2(
     web30: &Web3,

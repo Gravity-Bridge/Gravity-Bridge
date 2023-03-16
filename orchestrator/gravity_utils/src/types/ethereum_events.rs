@@ -11,7 +11,6 @@ use super::ValsetMember;
 use crate::error::GravityError;
 use crate::num_conversion::downcast_uint256;
 use clarity::constants::zero_address;
-use clarity::Address as EthAddress;
 use deep_space::utils::bytes_to_hex_str;
 use deep_space::{Address as CosmosAddress, Address, Msg};
 use gravity_proto::gravity::{
@@ -21,6 +20,7 @@ use gravity_proto::gravity::{
 use num256::Uint256;
 use std::unimplemented;
 use web30::types::Log;
+use web30::EthAddress;
 
 // gravity msg type urls
 pub const MSG_BATCH_SEND_TO_ETH_TYPE_URL: &str = "/gravity.v1.MsgBatchSendToEthClaim";

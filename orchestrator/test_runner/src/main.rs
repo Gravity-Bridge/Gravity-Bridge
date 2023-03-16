@@ -25,7 +25,7 @@ use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
 use crate::vesting::vesting_test;
 use clarity::PrivateKey as EthPrivateKey;
-use clarity::{Address as EthAddress, Uint256};
+use clarity::Uint256;
 use deep_space::coin::Coin;
 use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
@@ -44,6 +44,7 @@ use tokio::time::sleep;
 use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
+use web30::EthAddress;
 
 mod airdrop_proposal;
 mod batch_timeout;

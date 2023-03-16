@@ -7,7 +7,7 @@ use crate::MINER_PRIVATE_KEY;
 use crate::OPERATION_TIMEOUT;
 use crate::TOTAL_TIMEOUT;
 use bytes::BytesMut;
-use clarity::{Address as EthAddress, Uint256};
+use clarity::Uint256;
 use cosmos_gravity::query::get_attestations;
 use cosmos_gravity::send::send_to_eth;
 use cosmos_gravity::{query::get_oldest_unsigned_transaction_batches, send::send_ethereum_claims};
@@ -30,6 +30,7 @@ use std::time::Instant;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 pub async fn happy_path_test(
     web30: &Web3,

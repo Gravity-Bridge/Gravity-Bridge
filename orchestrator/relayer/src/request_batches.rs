@@ -6,7 +6,6 @@
 use std::time::Duration;
 
 use crate::altruistic::get_acceptable_gas_price;
-use clarity::Address as EthAddress;
 use clarity::Uint256;
 use cosmos_gravity::query::get_erc20_to_denom;
 use cosmos_gravity::query::get_pending_batch_fees;
@@ -20,6 +19,7 @@ use gravity_utils::types::RelayerConfig;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 pub async fn request_batches(
     contact: &Contact,

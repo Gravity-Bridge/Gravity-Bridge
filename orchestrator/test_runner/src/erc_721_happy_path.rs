@@ -3,7 +3,7 @@ use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::OPERATION_TIMEOUT;
 use crate::TOTAL_TIMEOUT;
-use clarity::{Address as EthAddress, Uint256};
+use clarity::Uint256;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::Contact;
 use ethereum_gravity::send_erc721_to_cosmos::send_erc721_to_cosmos;
@@ -14,6 +14,7 @@ use std::time::Duration;
 use std::time::Instant;
 use web30::client::Web3;
 use web30::types::SendTxOption;
+use web30::EthAddress;
 
 pub async fn erc721_happy_path_test(
     web30: &Web3,

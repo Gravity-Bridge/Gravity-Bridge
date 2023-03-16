@@ -1,7 +1,6 @@
 //! This module contains code for the validator update lifecycle. Functioning as a way for this validator to observe
 //! the state of both chains and perform the required operations.
 
-use clarity::address::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use cosmos_gravity::query::get_latest_valsets;
 use cosmos_gravity::query::{get_all_valset_confirms, get_valset};
@@ -17,6 +16,7 @@ use gravity_utils::types::{RelayerConfig, Valset};
 use gravity_utils::types::{ValsetConfirmResponse, ValsetRelayingMode};
 use tonic::transport::Channel;
 use web30::client::Web3;
+use web30::EthAddress;
 
 use crate::batch_relaying::get_cost_with_margin;
 use crate::main_loop::ETH_SUBMIT_WAIT_TIME;
