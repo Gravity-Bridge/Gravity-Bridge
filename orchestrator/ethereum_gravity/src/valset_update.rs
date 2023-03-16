@@ -89,9 +89,11 @@ pub async fn estimate_valset_cost(
     let our_balance = web3.eth_get_balance(our_eth_address).await?;
     let our_nonce = web3.eth_get_transaction_count(our_eth_address).await?;
     let gas_limit = min((u64::MAX - 1).into(), our_balance.clone());
-    let gas_price = web3.eth_gas_price().await?;
+    info!("gas limit: {}", gas_limit);
+    let mut gas_price = web3.eth_gas_price().await?;
+    info!("gas price: {}", gas_price);
     // increase the value by 20% without using floating point multiplication
-    let gas_price = gas_price.clone() + (gas_price / 5u8.into());
+    gas_price = gas_price.clone() + (gas_price / 5u8.into());
     let zero: Uint256 = 0u8.into();
     let tokens =
         tokens_valset_update_payload(new_valset.clone(), old_valset.clone(), confirms, gravity_id)?;
