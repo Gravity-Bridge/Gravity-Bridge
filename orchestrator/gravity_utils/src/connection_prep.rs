@@ -26,9 +26,13 @@ pub struct Connections {
     pub contact: Option<Contact>,
 }
 
-fn pre_processing_web3(web3: &mut Web3) {
-    // check if eth_rpc_url is special url, such as tron then need to provide API_KEY from env to make sure it works without
-    if web3.get_url().starts_with("https://api.trongrid.io") {
+pub fn pre_processing_web3(web3: &mut Web3) {
+    // check if eth_rpc_url is special url, such as tron then need to provide API_KEY from env to make sure it works without. use ends_with to match with the testnet api too
+    if web3.get_url().ends_with("jsonrpc") {
+        info!(
+            "This url {} is from the Tron network. Customizing...",
+            web3.get_url()
+        );
         web3.set_header("TRON-PRO-API-KEY", option_env!("API_KEY").unwrap());
         web3.set_check_sync(false);
     }
