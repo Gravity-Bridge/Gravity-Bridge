@@ -33,7 +33,7 @@ fn main() {
             )
             .await
             .unwrap();
-        println!("tx hash: {:?}", format!("{tx_hash:#064x}"));
+        println!("tx hash: {:?}", format!("{tx_hash:064x}"));
     });
 }
 
