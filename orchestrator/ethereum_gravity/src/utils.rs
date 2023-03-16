@@ -271,9 +271,7 @@ mod test {
 
     #[test]
     fn web30() {
-        let mut web3 = Web3::new("https://nile.trongrid.io/jsonrpc", Duration::from_secs(120));
-        web3.set_check_sync(false);
-
+        let web3 = Web3::new("https://nile.trongrid.io/jsonrpc", Duration::from_secs(120));
         let tron_addr = TronAddress::from_str("TMjswVjeapQ73yZUrZbHq3rPAHJoexMcZy").unwrap();
         let caller_address =
             EthAddress::from_str("0x993d06FC97F45f16e4805883b98a6c20BAb54964").unwrap();
