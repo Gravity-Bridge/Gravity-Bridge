@@ -4,7 +4,6 @@
 use clarity::Error as ClarityError;
 use deep_space::error::AddressError as CosmosAddressError;
 use deep_space::error::CosmosGrpcError;
-use heliosphere::Error as TronError;
 use num_bigint::ParseBigIntError;
 use std::fmt::{self, Debug};
 use tokio::time::error::Elapsed;
@@ -18,7 +17,6 @@ pub enum GravityError {
     CosmosGrpcError(CosmosGrpcError),
     CosmosAddressError(CosmosAddressError),
     EthereumRestError(Web3Error),
-    TronRestError(TronError),
     InvalidBridgeStateError(String),
     FailedToUpdateValset,
     EthereumContractError(String),
@@ -42,7 +40,6 @@ impl fmt::Display for GravityError {
             }
             GravityError::CosmosAddressError(val) => write!(f, "Cosmos Address error {}", val),
             GravityError::EthereumRestError(val) => write!(f, "Ethereum REST error {}", val),
-            GravityError::TronRestError(val) => write!(f, "Tron REST error {}", val),
             GravityError::InvalidOptionsError(val) => {
                 write!(f, "Invalid TX options for this call {}", val)
             }
@@ -93,12 +90,6 @@ impl From<ClarityError> for GravityError {
 impl From<Web3Error> for GravityError {
     fn from(error: Web3Error) -> Self {
         GravityError::EthereumRestError(error)
-    }
-}
-
-impl From<TronError> for GravityError {
-    fn from(error: TronError) -> Self {
-        GravityError::TronRestError(error)
     }
 }
 

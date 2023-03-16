@@ -28,7 +28,7 @@ actix = "0.13"
 actix-rt = "2.2"
 lazy_static = "1"
 url = "2"
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "41e90c0"}
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "e1a3bc6"}
 num = "0.4.0"
 num256 = "0.5"
 log = "0.4"

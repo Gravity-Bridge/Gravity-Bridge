@@ -361,12 +361,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "349a06037c7bf932dd7e7d1f653678b2038b9ad46a74102f1fc7bd7872678cce"
 
 [[package]]
-name = "base58"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6107fe1be6682a68940da878d9e9f5e90ca5745b3dec9fd1bb393c8777d4f581"
-
-[[package]]
 name = "base64"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1186,7 +1180,6 @@ dependencies = [
  "deep_space",
  "ethabi",
  "gravity_utils",
- "heliosphere",
  "log",
  "num256",
  "rand",
@@ -1475,7 +1468,6 @@ dependencies = [
  "clarity",
  "deep_space",
  "gravity_proto",
- "heliosphere",
  "lazy_static",
  "log",
  "num",
@@ -4444,17 +4436,18 @@ dependencies = [
 [[package]]
 name = "web30"
 version = "0.23.1"
-source = "git+https://github.com/oraichain/web30.git?rev=41e90c0#41e90c0c90dc50dde4a745aaf1d30d3ae6275912"
+source = "git+https://github.com/oraichain/web30.git?rev=e1a3bc6#e1a3bc65f9ef21f9cf91f93c30af2d7b3bc96d16"
 dependencies = [
  "awc",
- "base58",
  "clarity",
  "futures",
+ "heliosphere",
  "hex",
  "lazy_static",
  "log",
  "num-traits",
  "num256",
+ "regex",
  "serde",
  "serde_derive",
  "serde_json",

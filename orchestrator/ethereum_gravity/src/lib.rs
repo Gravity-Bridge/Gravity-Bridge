@@ -12,6 +12,3 @@ pub mod submit_batch;
 mod test_cases;
 pub mod utils;
 pub mod valset_update;
-
-pub use clarity::Address as EthAddress;
-pub use heliosphere::core::Address as TronAddress;

@@ -312,8 +312,7 @@ pub async fn test_bulk_send_to_cosmos(
         }
         let results = join_all(wait_for_txid).await;
         for result in results {
-            let result = result.unwrap();
-            result.block_number.unwrap();
+            result.unwrap();
         }
         info!(
             "Locked 100 {} from {} into the Gravity Ethereum Contract",

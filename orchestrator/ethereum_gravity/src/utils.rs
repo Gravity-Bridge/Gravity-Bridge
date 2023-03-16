@@ -3,14 +3,11 @@ use std::time::Duration;
 use clarity::abi::encode_call;
 use clarity::PrivateKey;
 
-use clarity::abi::encode_tokens;
 use clarity::Uint256;
 use clarity::{abi::Token, constants::zero_address, Address as EthAddress};
 use gravity_utils::error::GravityError;
 use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
-use heliosphere::signer::signer::Signer;
-use heliosphere::{signer::keypair::Keypair, MethodCall, RpcClient};
 
 use web30::types::SendTxOption;
 use web30::{client::Web3, jsonrpc::error::Web3Error};
@@ -212,89 +209,34 @@ pub async fn send_transaction(
     // extract method name for logging
     let method_name = &selector[..selector.find('(').unwrap_or(selector.len())];
 
-    // processing with tron
-    if let Some(api) = web3.get_url().strip_suffix("/jsonrpc") {
-        // this is tron, we need to create a tron instance from web3
-        let keypair = Keypair::from_bytes(&sender_secret.to_bytes()).expect("Wrong secret key");
-        let mut client = RpcClient::new(api, web3.get_timeout())?;
-
-        // clone header keys from web3
-        let header_keys = web3.header_keys();
-        for key in header_keys {
-            client.set_header(&key, &web3.get_header(&key));
-        }
-
-        let method_call = MethodCall {
-            caller: &keypair.address(),
-            contract: &contract.into(),
+    let sender_address = sender_secret.to_address();
+    let tx_hash = web3
+        .send_transaction(
+            contract,
             selector,
-            parameter: &encode_tokens(&tokens),
-        };
+            &tokens,
+            0u32.into(),
+            sender_address,
+            sender_secret,
+            options,
+        )
+        .await?;
 
-        // Estimate energy usage
-        let estimated = client.estimate_fee_limit(&method_call).await? as f64;
-        let mut gas_limit_multiplier = 1f64;
-        for option in options {
-            match option {
-                SendTxOption::GasLimitMultiplier(glm) => {
-                    gas_limit_multiplier = glm.into();
-                    break;
-                }
-                _ => continue,
-            }
-        }
-        let fee_limit = (estimated * gas_limit_multiplier).round() as u64;
+    info!("Call {} with txid {:#066x}", method_name, tx_hash);
 
-        // Send tx
-        let mut tx = client
-            .trigger_contract(&method_call, 0, Some(fee_limit))
+    if let Some(timeout) = wait_timeout {
+        web3.wait_for_transaction(tx_hash.clone(), timeout, None)
             .await?;
-        keypair.sign_transaction(&mut tx).unwrap();
-        let tx_id = client.broadcast_transaction(&tx).await?;
-
-        info!("Call {} with txid 0x{}", method_name, tx_id);
-
-        if let Some(timeout) = wait_timeout {
-            client.await_confirmation(tx_id, timeout).await?;
-        }
-
-        Ok(Uint256::from_be_bytes(&tx_id.0))
-    } else {
-        let sender_address = sender_secret.to_address();
-        let tx_hash = web3
-            .send_transaction(
-                contract,
-                encode_call(selector, &tokens)?,
-                0u32.into(),
-                sender_address,
-                sender_secret,
-                options,
-            )
-            .await?;
-
-        info!("Call {} with txid {:#066x}", method_name, tx_hash);
-
-        if let Some(timeout) = wait_timeout {
-            web3.wait_for_transaction(tx_hash.clone(), timeout, None)
-                .await?;
-        }
-
-        Ok(tx_hash)
     }
+
+    Ok(tx_hash)
 }
 
 #[cfg(test)]
 mod test {
 
-    use actix::System;
-    use clarity::{abi::encode_call, Address as EthAddress, PrivateKey, Uint256};
-    use heliosphere::{
-        core::transaction::TransactionId,
-        core::Address as TronAddress,
-        signer::{keypair::Keypair, signer::Signer},
-    };
-    use std::{convert::TryInto, str::FromStr, time::Duration};
-    use web30::client::Web3;
+    use std::str::FromStr;
+    use web30::{EthAddress, TronAddress};
 
     #[test]
     fn address() {
@@ -313,28 +255,6 @@ mod test {
     }
 
     #[test]
-    fn transaction_id() {
-        let txid = TransactionId::from_str(
-            "2f136c35906fe9eacaf66940b68491b14ec65eb53d51a9d65965f7b4b01f4c36",
-        )
-        .unwrap();
-        let txhash = Uint256::from_be_bytes(&txid.0);
-        assert_eq!(txhash.to_be_bytes(), txid.0);
-    }
-
-    #[test]
-    fn keypair() {
-        let sender_secret = PrivateKey::from_str(
-            "0x8e940c2a136dadf87c3b4b408866ff5fb1cbb64893a933493341c5e400a81690",
-        )
-        .unwrap();
-        let evm_address = sender_secret.to_address();
-
-        let keypair = Keypair::from_bytes(&sender_secret.to_bytes()).unwrap();
-        assert_eq!(keypair.address(), evm_address.into());
-    }
-
-    #[test]
     fn encode_tokens() {
         let evm_addr = EthAddress::from_str("0xf2846a1E4dAFaeA38C1660a618277d67605bd2B5").unwrap();
         let tokens = vec![clarity::abi::Token::Address(evm_addr)];
@@ -345,42 +265,5 @@ mod test {
         let encoded2 = ethabi::encode(&tokens);
 
         assert_eq!(encoded1, encoded2);
-    }
-
-    #[test]
-    fn web30() {
-        let mut web3 = Web3::new("https://nile.trongrid.io/jsonrpc", Duration::from_secs(120));
-        web3.set_check_sync(false);
-
-        let tron_addr = TronAddress::from_str("TMjswVjeapQ73yZUrZbHq3rPAHJoexMcZy").unwrap();
-        let caller_address =
-            EthAddress::from_str("0x993d06FC97F45f16e4805883b98a6c20BAb54964").unwrap();
-        let payload = encode_call("getAdminAddress()", &[]).unwrap();
-
-        let runner = System::new();
-
-        runner.block_on(async move {
-            let val = web3
-                .simulate_transaction(tron_addr.into(), 0u8.into(), payload, caller_address, None)
-                .await
-                .unwrap();
-
-            // uint256 => 32 bytes, get last 20 byte
-            let admin_addr = EthAddress::from_slice(val[12..].try_into().unwrap()).unwrap();
-
-            let admin_tron_addr: TronAddress = admin_addr.into();
-
-            assert_eq!(
-                TronAddress::from_str("TVf8hwYiMa91Pd5y424xz4ybMhbqDTVN4B").unwrap(),
-                admin_tron_addr
-            );
-
-            let last_event_nonce =
-                crate::utils::get_event_nonce(tron_addr.into(), caller_address, &web3)
-                    .await
-                    .unwrap();
-
-            assert!(last_event_nonce > 0);
-        })
     }
 }

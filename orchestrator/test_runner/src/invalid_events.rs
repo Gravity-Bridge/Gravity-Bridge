@@ -14,7 +14,6 @@ use crate::utils::ValidatorKeys;
 use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
-use clarity::abi::encode_call;
 use clarity::abi::Token;
 use clarity::Address as EthAddress;
 use clarity::Address;
@@ -293,15 +292,12 @@ pub async fn send_to_cosmos_invalid(
     let tx_hash = web3
         .send_transaction(
             gravity_contract,
-            encode_call(
-                "sendToCosmos(address,string,uint256)",
-                &[
-                    erc20.into(),
-                    encoded_destination_address,
-                    one_eth().clone().into(),
-                ],
-            )
-            .unwrap(),
+            "sendToCosmos(address,string,uint256)",
+            &[
+                erc20.into(),
+                encoded_destination_address,
+                one_eth().clone().into(),
+            ],
             0u32.into(),
             *MINER_ADDRESS,
             *MINER_PRIVATE_KEY,
@@ -336,16 +332,13 @@ async fn deploy_invalid_erc20(
     let tx_hash = web30
         .send_transaction(
             gravity_address,
-            encode_call(
-                "deployERC20(string,string,string,uint8)",
-                &[
-                    Token::UnboundedBytes(erc20_params.cosmos_denom),
-                    Token::UnboundedBytes(erc20_params.erc20_name),
-                    Token::UnboundedBytes(erc20_params.erc20_symbol),
-                    erc20_params.decimals.into(),
-                ],
-            )
-            .unwrap(),
+            "deployERC20(string,string,string,uint8)",
+            &[
+                Token::UnboundedBytes(erc20_params.cosmos_denom),
+                Token::UnboundedBytes(erc20_params.erc20_name),
+                Token::UnboundedBytes(erc20_params.erc20_symbol),
+                erc20_params.decimals.into(),
+            ],
             0u32.into(),
             *MINER_ADDRESS,
             *MINER_PRIVATE_KEY,

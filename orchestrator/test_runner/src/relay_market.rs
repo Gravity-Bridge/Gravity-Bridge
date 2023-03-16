@@ -329,7 +329,8 @@ async fn test_good_batch(
     let txid = web30
         .send_transaction(
             dest_eth_address,
-            Vec::new(),
+            "",
+            &[],
             1_000_000_000_000_000_000u128.into(),
             *MINER_ADDRESS,
             *MINER_PRIVATE_KEY,

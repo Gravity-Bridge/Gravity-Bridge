@@ -21,7 +21,7 @@ docopt = "1"
 serde = "1.0"
 actix-rt = "2"
 lazy_static = "1"
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "41e90c0"}
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "e1a3bc6"}
 log = "0.4"
 tokio = "1.21"
 tonic = "0.8"

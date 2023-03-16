@@ -2,8 +2,7 @@ use std::{str::FromStr, time::Duration};
 
 use actix::System;
 use clarity::{PrivateKey, Uint256};
-use ethereum_gravity::{utils::send_transaction, EthAddress, TronAddress};
-use web30::{client::Web3, types::SendTxOption};
+use web30::{client::Web3, types::SendTxOption, EthAddress, TronAddress};
 
 fn main() {
     env_logger::Builder::from_env("RUST_LOG").init();
@@ -22,21 +21,19 @@ fn main() {
         .into();
 
     runner.block_on(async move {
-        let tx_hash = send_transaction(
-            &web3,
-            erc20,
-            "transfer(address,uint256)",
-            &[recipient.into(), Uint256::from_str("1000").unwrap().into()],
-            sender_private_key,
-            None,
-            vec![SendTxOption::GasLimitMultiplier(1.2f32)],
-        )
-        .await
-        .unwrap();
-        println!(
-            "tx hash: {:?}",
-            format!("{tx_hash:#066x}").trim_start_matches("0x")
-        );
+        let tx_hash = web3
+            .send_transaction(
+                erc20,
+                "transfer(address,uint256)",
+                &[recipient.into(), Uint256::from_str("1000").unwrap().into()],
+                0u32.into(),
+                sender_private_key.to_address(),
+                sender_private_key,
+                vec![SendTxOption::GasLimitMultiplier(1.2f32)],
+            )
+            .await
+            .unwrap();
+        println!("tx hash: {:?}", format!("{tx_hash:#064x}"));
     });
 }
 
