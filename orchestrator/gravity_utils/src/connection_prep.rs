@@ -26,18 +26,6 @@ pub struct Connections {
     pub contact: Option<Contact>,
 }
 
-pub fn pre_processing_web3(web3: &mut Web3) {
-    // check if eth_rpc_url is special url, such as tron then need to provide API_KEY from env to make sure it works without. use ends_with to match with the testnet api too
-    if web3.get_url().ends_with("jsonrpc") {
-        info!(
-            "This url {} is from the Tron network. Customizing...",
-            web3.get_url()
-        );
-        web3.set_header("TRON-PRO-API-KEY", option_env!("API_KEY").unwrap());
-        web3.set_check_sync(false);
-    }
-}
-
 /// Returns the three major RPC connections required for Gravity
 /// operation in a error resilient manner. TODO find some way to generalize
 /// this so that it's less ugly
@@ -103,10 +91,7 @@ pub async fn create_rpc_connections(
             .unwrap_or_else(|_| panic!("Invalid Ethereum RPC url {}", eth_rpc_url));
         check_scheme(&url, &eth_rpc_url);
         let eth_url = eth_rpc_url.trim_end_matches('/');
-        let mut base_web30 = Web3::new(eth_url, timeout);
-
-        // pre processing web3 for special case
-        pre_processing_web3(&mut base_web30);
+        let base_web30 = Web3::new(eth_url, timeout);
 
         let try_base = base_web30.eth_block_number().await;
         match try_base {

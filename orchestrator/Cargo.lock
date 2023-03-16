@@ -4436,13 +4436,12 @@ dependencies = [
 [[package]]
 name = "web30"
 version = "0.23.1"
-source = "git+https://github.com/oraichain/web30.git?rev=e1a3bc6#e1a3bc65f9ef21f9cf91f93c30af2d7b3bc96d16"
+source = "git+https://github.com/oraichain/web30.git?rev=9858509#985850953c66e80c682c8e0c4825944153256b69"
 dependencies = [
  "awc",
  "clarity",
  "futures",
  "heliosphere",
- "hex",
  "lazy_static",
  "log",
  "num-traits",
@@ -4451,7 +4450,6 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "sha2 0.10.6",
  "tokio",
 ]
 

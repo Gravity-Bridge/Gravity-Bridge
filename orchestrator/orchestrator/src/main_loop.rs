@@ -25,7 +25,6 @@ use deep_space::{
 use futures::future::{join, join3};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::connection_prep::pre_processing_web3;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
 use num::ToPrimitive;
@@ -119,8 +118,7 @@ pub async fn eth_oracle_main_loop(
     fee: Coin,
 ) {
     let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
-    let mut long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
-    pre_processing_web3(&mut long_timeout_web30);
+    let long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
     let mut last_checked_block: Uint256 = get_last_checked_block(
         grpc_client.clone(),
         evm_chain_prefix,
