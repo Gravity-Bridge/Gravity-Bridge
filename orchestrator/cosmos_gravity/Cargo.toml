@@ -20,7 +20,7 @@ num256 = "0.5"
 log = "0.4"
 sha3 = "0.10"
 tokio = "1.21"
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "fed6324"}
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "2708df6"}
 tonic = "0.8"
 bytes = "1.1"
 prost-types = "0.11"

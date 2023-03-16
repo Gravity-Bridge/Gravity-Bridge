@@ -7,8 +7,7 @@ use web30::{client::Web3, types::SendTxOption, EthAddress, TronAddress};
 fn main() {
     env_logger::Builder::from_env("RUST_LOG").init();
 
-    let mut web3 = Web3::new("https://nile.trongrid.io/jsonrpc", Duration::from_secs(120));
-    web3.set_check_sync(false);
+    let web3 = Web3::new("https://nile.trongrid.io/jsonrpc", Duration::from_secs(120));
 
     let sender_private_key = PrivateKey::from_str(option_env!("PRIVATE_KEY").unwrap()).unwrap();
     let erc20: EthAddress = TronAddress::from_str("TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj")
