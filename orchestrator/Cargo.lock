@@ -4436,7 +4436,7 @@ dependencies = [
 [[package]]
 name = "web30"
 version = "0.23.1"
-source = "git+https://github.com/oraichain/web30.git?rev=2708df6#2708df6f2407f89bf310537120e41a3b5dba8e29"
+source = "git+https://github.com/oraichain/web30.git?rev=113a450#113a450662882df48ea69e1f6f55526e8af2e502"
 dependencies = [
  "awc",
  "clarity",
