@@ -29,7 +29,7 @@ serde = "1.0"
 actix-rt = "2.2"
 lazy_static = "1"
 url = "2"
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "1c463fc"}
+web30 = {git = "https://github.com/oraichain/web30.git", rev = "7bcaf16"}
 env_logger = "0.10"
 log = "0.4"
 openssl-probe = "0.1"

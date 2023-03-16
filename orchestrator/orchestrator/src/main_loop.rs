@@ -118,7 +118,8 @@ pub async fn eth_oracle_main_loop(
     fee: Coin,
 ) {
     let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
-    let long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
+    let mut long_timeout_web30 = web3.clone();
+    long_timeout_web30.timeout = Duration::from_secs(120);
     let mut last_checked_block: Uint256 = get_last_checked_block(
         grpc_client.clone(),
         evm_chain_prefix,
