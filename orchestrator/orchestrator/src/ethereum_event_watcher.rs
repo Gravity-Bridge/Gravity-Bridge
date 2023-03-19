@@ -309,7 +309,7 @@ pub async fn get_latest_safe_block(web3: &Web3) -> Uint256 {
         // on experience with operational issues
         4 | 5 => block_number - 10u8.into(),
         // Binance smart chain POA, 3 blocks are ok
-        1 | 56 => block_number - 3u8.into(),
+        1 | 56 | 728126428 => block_number - 5u8.into(),
         420 | 421 => block_number,
         // assume the safe option where we don't know
         _ => block_number - 96u8.into(),
