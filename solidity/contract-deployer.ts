@@ -1,9 +1,4 @@
 import { Gravity } from "./typechain/Gravity";
-import { GravityERC721 } from "./typechain/GravityERC721";
-import { TestERC20A } from "./typechain/TestERC20A";
-import { TestERC20B } from "./typechain/TestERC20B";
-import { TestERC20C } from "./typechain/TestERC20C";
-import { TestERC721A } from "./typechain/TestERC721A";
 import { ethers } from "ethers";
 import fs from "fs";
 import commandLineArgs from "command-line-args";
@@ -313,3 +308,5 @@ async function main() {
 }
 
 main();
+
+// npx ts-node contract-deployer.ts --cosmos-node="http://localhost:26657" --eth-node=https://api.trongrid.io --eth-privkey= --contract=artifacts/contracts/Gravity.sol/Gravity.json --evm-prefix="tron-testnet" --headers abcd1234 --network-type tron --admin 0xD7F771664541b3f647CBA2be9Ab1Bc121bEEC913
