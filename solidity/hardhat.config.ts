@@ -42,12 +42,24 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   // This is a sample solc configuration that specifies which version of solc to use
   solidity: {
-    version: "0.8.10",
-    settings: {
-      optimizer: {
-        enabled: true,
+    compilers: [
+      {
+        version: "0.8.10",
+        settings: {
+          optimizer: {
+            enabled: true,
+          },
+        },
       },
-    },
+      {
+        version: "0.8.12",
+        settings: {
+          optimizer: {
+            enabled: true,
+          },
+        },
+      },
+    ],
   },
   networks: {
     hardhat: {
