@@ -6,8 +6,8 @@ edition = "2018"
 
 
 [dependencies]
-prost = "0.10"
-tonic = "0.7"
+prost = {workspace = true}
+tonic = {workspace = true}
 prost-build = "0.10"
 walkdir = "2"
 tonic-build = "0.7"

@@ -9,14 +9,15 @@ edition = "2018"
 [dependencies]
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = "2.15"
-web30 = "0.22"
-clarity = "0.5"
-num256 = "0.3"
+deep_space = {workspace = true}
+web30 = {workspace = true}
+clarity = {workspace = true}
+num256 = {workspace = true}
 serde_derive = "1.0"
 serde = "1.0"
 tokio = "1.4"
-tonic = "0.7"
+tonic = {workspace = true}
+num-traits = "0.2"
 num-bigint = "0.4"
 log = "0.4"
 url = "2"
