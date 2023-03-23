@@ -273,13 +273,13 @@ mod tests {
             ethereum_signer,
             eth_signature: Signature {
                 v: 27u8.into(),
-                r: Uint256::from_bytes_be(
+                r: Uint256::from_be_bytes(
                     &hex_str_to_bytes(
                         "0x324da548f6070e8c8d78b205f139138e263d4bad21751e437a7ef31bc53928a8",
                     )
                     .unwrap(),
                 ),
-                s: Uint256::from_bytes_be(
+                s: Uint256::from_be_bytes(
                     &hex_str_to_bytes(
                         "0x03a5f8acc4b6662f839c0f60f5dbfb276957241b7b38feb360d3d7a0b32d63e2",
                     )

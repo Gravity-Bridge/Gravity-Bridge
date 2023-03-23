@@ -1,6 +1,5 @@
 use clarity::Uint256;
-use std::u128::MAX as U128MAX;
-use std::u64::MAX as U64MAX;
+use num_traits::ToPrimitive;
 
 const ONE_ETH: u128 = 1000000000000000000;
 const ONE_ETH_FLOAT: f64 = ONE_ETH as f64;
@@ -21,35 +20,11 @@ pub fn one_atom() -> Uint256 {
 }
 
 pub fn downcast_uint256(input: Uint256) -> Option<u64> {
-    if input >= U64MAX.into() {
-        None
-    } else {
-        let mut val = input.to_bytes_be();
-        // pad to 8 bytes
-        while val.len() < 8 {
-            val.insert(0, 0);
-        }
-        let mut lower_bytes: [u8; 8] = [0; 8];
-        // get the 'lowest' 8 bytes from a 256 bit integer
-        lower_bytes.copy_from_slice(&val[0..val.len()]);
-        Some(u64::from_be_bytes(lower_bytes))
-    }
+    input.to_u64()
 }
 
 pub fn downcast_to_u128(input: Uint256) -> Option<u128> {
-    if input >= U128MAX.into() {
-        None
-    } else {
-        let mut val = input.to_bytes_be();
-        // pad to 8 bytes
-        while val.len() < 16 {
-            val.insert(0, 0);
-        }
-        let mut lower_bytes: [u8; 16] = [0; 16];
-        // get the 'lowest' 16 bytes from a 256 bit integer
-        lower_bytes.copy_from_slice(&val[0..val.len()]);
-        Some(u128::from_be_bytes(lower_bytes))
-    }
+    input.to_u128()
 }
 
 /// TODO revisit this for higher precision while

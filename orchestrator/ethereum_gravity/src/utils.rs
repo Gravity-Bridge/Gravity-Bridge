@@ -1,8 +1,7 @@
 use clarity::abi::encode_call;
 use clarity::Address as EthAddress;
-
 use clarity::Uint256;
-use clarity::{abi::Token, constants::ZERO_ADDRESS};
+use clarity::{abi::Token, constants::zero_address};
 use gravity_utils::num_conversion::downcast_uint256;
 use gravity_utils::types::*;
 use web30::{client::Web3, jsonrpc::error::Web3Error};
@@ -22,7 +21,7 @@ pub async fn get_valset_nonce(
     // submitting millions or tens of millions of dollars
     // worth of transactions. But we properly check and
     // handle that case here.
-    let real_num = Uint256::from_bytes_be(&val);
+    let real_num = Uint256::from_be_bytes(&val);
     Ok(downcast_uint256(real_num).expect("Valset nonce overflow! Bridge Halt!"))
 }
 
@@ -48,7 +47,7 @@ pub async fn get_tx_batch_nonce(
     // submitting millions or tens of millions of dollars
     // worth of transactions. But we properly check and
     // handle that case here.
-    let real_num = Uint256::from_bytes_be(&val);
+    let real_num = Uint256::from_be_bytes(&val);
     Ok(downcast_uint256(real_num).expect("TxBatch nonce overflow! Bridge Halt!"))
 }
 
@@ -78,7 +77,7 @@ pub async fn get_logic_call_nonce(
     // submitting millions or tens of millions of dollars
     // worth of transactions. But we properly check and
     // handle that case here.
-    let real_num = Uint256::from_bytes_be(&val);
+    let real_num = Uint256::from_be_bytes(&val);
     Ok(downcast_uint256(real_num).expect("LogicCall nonce overflow! Bridge Halt!"))
 }
 
@@ -103,7 +102,7 @@ pub async fn get_event_nonce(
     // submitting millions or tens of millions of dollars
     // worth of transactions. But we properly check and
     // handle that case here.
-    let real_num = Uint256::from_bytes_be(&val);
+    let real_num = Uint256::from_be_bytes(&val);
     Ok(downcast_uint256(real_num).expect("EventNonce nonce overflow! Bridge Halt!"))
 }
 
@@ -160,7 +159,7 @@ impl GasCost {
     /// Gets the total cost in Eth (or other EVM chain native token)
     /// of executing the batch
     pub fn get_total(&self) -> Uint256 {
-        self.gas.clone() * self.gas_price.clone()
+        self.gas * self.gas_price
     }
 }
 
@@ -176,12 +175,12 @@ impl GasCost {
 pub fn encode_valset_struct(valset: &Valset) -> Token {
     let (addresses, powers) = valset.to_arrays();
     let nonce = valset.nonce;
-    let reward_amount = valset.reward_amount.clone();
+    let reward_amount = valset.reward_amount;
     // the zero address represents 'no reward' in this case we have replaced it with a 'none'
     // so that it's easy to identify if this validator set has a reward or not. Now that we're
     // going to encode it for the contract call we need return it to the magic value the contract
     // expects.
-    let reward_token = valset.reward_token.unwrap_or(*ZERO_ADDRESS);
+    let reward_token = valset.reward_token.unwrap_or(zero_address());
     let struct_tokens = &[
         addresses.into(),
         powers.into(),
