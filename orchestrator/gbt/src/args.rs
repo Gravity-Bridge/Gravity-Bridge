@@ -62,9 +62,6 @@ pub struct OrchestratorOpts {
     /// (Optional) The passphrase that will be used to decrypt key
     #[clap(long, default_value = "")]
     pub passphrase: String,
-    /// The address fo the Gravity contract on Ethereum
-    #[clap(short, long, parse(try_from_str))]
-    pub gravity_contract_address: Option<EthAddress>,
 }
 
 /// The Gravity Bridge Relayer is an unpermissioned role that takes data from the Cosmos blockchain
@@ -85,9 +82,6 @@ pub struct RelayerOpts {
     /// request batches
     #[clap(short, long, parse(try_from_str))]
     pub fees: Option<Coin>,
-    /// The address fo the Gravity contract on Ethereum
-    #[clap(short, long, parse(try_from_str))]
-    pub gravity_contract_address: Option<EthAddress>,
     /// (Optional) The Ethereum RPC server that will be used
     #[clap(long, default_value = "http://localhost:8545")]
     pub ethereum_rpc: String,
@@ -184,9 +178,6 @@ pub struct DeployErc20RepresentationOpts {
     /// An Ethereum private key, containing enough ETH to pay for the transaction
     #[clap(short, long, parse(try_from_str))]
     pub ethereum_key: EthPrivateKey,
-    /// The address fo the Gravity contract on Ethereum
-    #[clap(short, long, parse(try_from_str))]
-    pub gravity_contract_address: Option<EthAddress>,
 }
 
 /// Manage keys

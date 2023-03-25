@@ -55,11 +55,8 @@ pub async fn deploy_erc20_representation(
         .iter()
         .find(|p| p.evm_chain_prefix.eq(&evm_chain_prefix))
         .expect("Failed to get evm chain params");
-    let contract_address = if args.gravity_contract_address.is_some() {
-        args.gravity_contract_address.unwrap()
-    } else {
-        parse_bridge_ethereum_address_with_exit(&evm_chain_params.bridge_ethereum_address)
-    };
+    let contract_address =
+        parse_bridge_ethereum_address_with_exit(&evm_chain_params.bridge_ethereum_address);
 
     let res = grpc
         .denom_to_erc20(QueryDenomToErc20Request {

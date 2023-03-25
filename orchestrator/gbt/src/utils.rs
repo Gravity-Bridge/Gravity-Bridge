@@ -1,7 +1,7 @@
 use clarity::address::Address;
 use clarity::constants::zero_address;
 use gravity_utils::types::{BatchRequestMode, RelayerConfig, ValsetRelayingMode};
-use std::{process::exit, time::Duration};
+use std::time::Duration;
 
 pub const TIMEOUT: Duration = Duration::from_secs(60);
 
@@ -53,6 +53,5 @@ pub fn parse_bridge_ethereum_address_with_exit(address: &str) -> Address {
             return v;
         }
     }
-    error!("The Gravity address is not yet set as a chain parameter! You must specify --gravity-contract-address");
-    exit(1)
+    panic!("The Gravity address is not yet set as a chain parameter! You must create a proposal to add the Gravity Address");
 }
