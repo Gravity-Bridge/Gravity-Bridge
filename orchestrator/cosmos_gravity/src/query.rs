@@ -431,20 +431,14 @@ pub async fn query_evm_chain_from_net_version(
         );
     }
 
-    let evm_chain_params = grpc_client.params(QueryParamsRequest {}).await;
-    if let Err(status) = list_evm_chains {
+    let evm_chain_params = get_gravity_params(grpc_client).await;
+    if let Err(status) = evm_chain_params {
         panic!(
             "Received an error when querying for evm chain params: {}",
-            status.message()
+            status.to_string()
         );
     }
-    // collect evm chain params to filter the list evm chain. Only collect one evm chain that is active
-    let evm_chain_params = evm_chain_params
-        .unwrap()
-        .into_inner()
-        .params
-        .unwrap()
-        .evm_chain_params;
+    let evm_chain_params = evm_chain_params.unwrap().evm_chain_params;
 
     let active_evm_chains: Vec<EvmChainParam> = evm_chain_params
         .into_iter()
