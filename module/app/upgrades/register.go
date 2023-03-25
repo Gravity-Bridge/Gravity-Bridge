@@ -13,7 +13,7 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/tron"
 )
 
 // RegisterUpgradeHandlers registers handlers for all upgrades
@@ -52,14 +52,19 @@ func RegisterUpgradeHandlers(
 	// 	pleiades.GetPleiadesUpgradeHandler(mm, configurator, crisisKeeper, gravityKeeper, bech32IbcKeeper),
 	// )
 
-	upgradeKeeper.SetUpgradeHandler(
-		pleiades.PleiadesPart1ToPart2PlanName,
-		pleiades.GetPleiades2UpgradeHandler(mm, configurator, crisisKeeper),
-	)
+	// upgradeKeeper.SetUpgradeHandler(
+	// 	pleiades.PleiadesPart1ToPart2PlanName,
+	// 	pleiades.GetPleiades2UpgradeHandler(mm, configurator, crisisKeeper),
+	// )
 
 	// // Pleiades part 2 aka v3->v4 UPGRADE HANDLER SETUP
 	// upgradeKeeper.SetUpgradeHandler(
 	// 	pleiades.PleiadesPart1ToPart2PlanName,
 	// 	pleiades.GetPleiades2UpgradeHandler(mm, configurator, crisisKeeper),
 	// )
+
+	upgradeKeeper.SetUpgradeHandler(
+		tron.PlanName,
+		tron.GetTronUpgradeHandler(mm, configurator, crisisKeeper),
+	)
 }

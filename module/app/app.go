@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -31,7 +30,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -114,7 +112,6 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/ante"
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
-	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/exported"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
@@ -563,7 +560,7 @@ func NewGravityApp(
 
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
-	app.registerStoreLoaders()
+	// app.registerStoreLoaders()
 
 	mm := *module.NewManager(
 		genutil.NewAppModule(
@@ -974,29 +971,29 @@ func (app *Gravity) registerUpgradeHandlers() {
 	)
 }
 
-// Sets up the StoreLoader for new, deleted, or renamed modules
-func (app *Gravity) registerStoreLoaders() {
-	// Read the upgrade height and name from previous execution
-	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
-	}
+// // Sets up the StoreLoader for new, deleted, or renamed modules
+// func (app *Gravity) registerStoreLoaders() {
+// 	// Read the upgrade height and name from previous execution
+// 	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+// 	if err != nil {
+// 		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
+// 	}
 
-	// v1->v2 STORE LOADER SETUP
-	// Register the new v2 modules and the special StoreLoader to add them
-	if upgradeInfo.Name == v2.V1ToV2PlanName {
-		if !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) { // Recognized the plan, need to skip this one though
-			storeUpgrades := storetypes.StoreUpgrades{
-				Added: []string{bech32ibctypes.ModuleName}, // We are adding these modules
-				// Check upgrade docs to see which type of store loader is necessary for deletes/renames
-				// Renamed: []storetypes.StoreRename{{"foo", "bar"}}, example foo to bar rename
-				// Deleted: []string{"bazmodule"}, example deleted bazmodule
-				Renamed: nil,
-				Deleted: nil,
-			}
+// 	// v1->v2 STORE LOADER SETUP
+// 	// Register the new v2 modules and the special StoreLoader to add them
+// 	if upgradeInfo.Name == v2.V1ToV2PlanName {
+// 		if !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) { // Recognized the plan, need to skip this one though
+// 			storeUpgrades := storetypes.StoreUpgrades{
+// 				Added: []string{bech32ibctypes.ModuleName}, // We are adding these modules
+// 				// Check upgrade docs to see which type of store loader is necessary for deletes/renames
+// 				// Renamed: []storetypes.StoreRename{{"foo", "bar"}}, example foo to bar rename
+// 				// Deleted: []string{"bazmodule"}, example deleted bazmodule
+// 				Renamed: nil,
+// 				Deleted: nil,
+// 			}
 
-			// configure store loader that checks if version == upgradeHeight and applies store upgrades
-			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-		}
-	}
-}
+// 			// configure store loader that checks if version == upgradeHeight and applies store upgrades
+// 			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+// 		}
+// 	}
+// }

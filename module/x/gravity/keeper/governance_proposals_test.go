@@ -215,10 +215,41 @@ func TestAddEvmChainProposal(t *testing.T) {
 	evmChain := input.GravityKeeper.GetEvmChainData(ctx, "dummy")
 	require.NotNil(t, evmChain)
 
+	// set evm chain params so later we can try to override them with new ones when we try to update
+	params := gk.GetParams(ctx)
+	exists := false
+	for _, param := range params.EvmChainParams {
+		if param.EvmChainPrefix == evmChain.EvmChainPrefix {
+			param.GravityId = "sample-gravity-id"
+			exists = true
+		}
+	}
+	require.Equal(t, exists, true) // when adding correctly, the new evm chain param should exist
+	require.Equal(t, len(params.EvmChainParams), 3)
+	gk.SetParams(ctx, params)
+
 	// does not have a zero base unit
 	badEvmChainPrefix := "dummy" // already exists above
 	goodProposal.EvmChainPrefix = badEvmChainPrefix
+	goodProposal.EvmChainName = "foobar"
 
 	err = gk.HandleAddEvmChainProposal(ctx, &goodProposal)
-	require.Error(t, err)
+	require.NoError(t, err)
+
+	// when we update the chain based on the evm prefix, it should be updated
+	chains := gk.GetEvmChains(ctx)
+	for _, chain := range chains {
+		if chain.EvmChainPrefix == "dummy" {
+			require.Equal(t, chain.EvmChainName, "foobar")
+		}
+	}
+	require.Equal(t, len(chains), 3) // only has three chains, BSC, ETH and newly updated dummy chain
+
+	params = gk.GetParams(ctx)
+	for _, param := range params.EvmChainParams {
+		if param.EvmChainPrefix == evmChain.EvmChainPrefix {
+			require.Equal(t, param.GravityId, "")
+		}
+	}
+	require.Equal(t, len(params.EvmChainParams), 3) // should update params only, not append
 }
