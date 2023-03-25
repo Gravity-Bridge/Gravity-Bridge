@@ -144,8 +144,12 @@ pub async fn orchestrator(
     let mut grpc_client = connections.grpc.unwrap();
 
     // get correct evm_chain from rpc by querying net_id
-    let evm_chain_prefix = match query_evm_chain_from_net_version(&mut grpc_client, net_version)
-        .await
+    let evm_chain_prefix = match query_evm_chain_from_net_version(
+        &mut grpc_client,
+        net_version,
+        args.evm_prefix,
+    )
+    .await
     {
         Some(evm_chain) => evm_chain.evm_chain_prefix,
         None => {

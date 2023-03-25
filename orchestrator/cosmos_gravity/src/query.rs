@@ -418,6 +418,7 @@ pub async fn get_min_chain_fee_basis_points(contact: &Contact) -> Result<u64, Co
 pub async fn query_evm_chain_from_net_version(
     grpc_client: &mut GravityQueryClient<Channel>,
     net_version: u64,
+    evm_prefix: Option<String>,
 ) -> Option<EvmChain> {
     let list_evm_chains = grpc_client
         .get_list_evm_chains(QueryListEvmChains { limit: 0 })
@@ -432,7 +433,8 @@ pub async fn query_evm_chain_from_net_version(
     }
 
     let list_evm_chains = list_evm_chains.unwrap().into_inner().evm_chains;
-    list_evm_chains
-        .into_iter()
-        .find(|chain: &EvmChain| chain.evm_chain_net_version.eq(&net_version))
+    list_evm_chains.into_iter().find(|chain: &EvmChain| {
+        chain.evm_chain_net_version.eq(&net_version)
+            && (evm_prefix.is_none() || evm_prefix.as_ref().unwrap().eq(&chain.evm_chain_prefix))
+    })
 }
