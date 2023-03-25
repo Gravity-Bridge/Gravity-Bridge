@@ -187,11 +187,10 @@ contract Gravity is ReentrancyGuard {
 	// Where h is the keccak256 hash function.
 	// The validator powers must be decreasing or equal. This is important for checking the signatures on the
 	// next valset, since it allows the caller to stop verifying signatures once a quorum of signatures have been verified.
-	function makeCheckpoint(ValsetArgs memory _valsetArgs, bytes32 _gravityId)
-		private
-		pure
-		returns (bytes32)
-	{
+	function makeCheckpoint(
+		ValsetArgs memory _valsetArgs,
+		bytes32 _gravityId
+	) private pure returns (bytes32) {
 		// bytes32 encoding of the string "checkpoint"
 		bytes32 methodName = 0x636865636b706f696e7400000000000000000000000000000000000000000000;
 
@@ -328,7 +327,7 @@ contract Gravity is ReentrancyGuard {
 
 		// Send submission reward to msg.sender if reward token is a valid value
 		if (_newValset.rewardToken != address(0) && _newValset.rewardAmount != 0) {
-			IERC20(_newValset.rewardToken).safeTransfer(msg.sender, _newValset.rewardAmount);
+			IERC20(_newValset.rewardToken).transfer(msg.sender, _newValset.rewardAmount);
 		}
 
 		// LOGS
@@ -431,12 +430,12 @@ contract Gravity is ReentrancyGuard {
 				// Send transaction amounts to destinations
 				uint256 totalFee;
 				for (uint256 i = 0; i < _amounts.length; i++) {
-					IERC20(_tokenContract).safeTransfer(_destinations[i], _amounts[i]);
+					IERC20(_tokenContract).transfer(_destinations[i], _amounts[i]);
 					totalFee = totalFee + _fees[i];
 				}
 
 				// Send transaction fees to msg.sender
-				IERC20(_tokenContract).safeTransfer(msg.sender, totalFee);
+				IERC20(_tokenContract).transfer(msg.sender, totalFee);
 			}
 		}
 
@@ -533,7 +532,7 @@ contract Gravity is ReentrancyGuard {
 
 		// Send tokens to the logic contract
 		for (uint256 i = 0; i < _args.transferAmounts.length; i++) {
-			IERC20(_args.transferTokenContracts[i]).safeTransfer(
+			IERC20(_args.transferTokenContracts[i]).transfer(
 				_args.logicContractAddress,
 				_args.transferAmounts[i]
 			);
@@ -544,7 +543,7 @@ contract Gravity is ReentrancyGuard {
 
 		// Send fees to msg.sender
 		for (uint256 i = 0; i < _args.feeAmounts.length; i++) {
-			IERC20(_args.feeTokenContracts[i]).safeTransfer(msg.sender, _args.feeAmounts[i]);
+			IERC20(_args.feeTokenContracts[i]).transfer(msg.sender, _args.feeAmounts[i]);
 		}
 
 		// LOGS scoped to reduce stack depth
@@ -604,7 +603,7 @@ contract Gravity is ReentrancyGuard {
 
 	function withdrawToken(address _tokenContract, uint256 _amount) public _onlyAdmin {
 		// attempt to transfer admin with specified amount
-		IERC20(_tokenContract).safeTransfer(adminAddress, _amount);
+		IERC20(_tokenContract).transfer(adminAddress, _amount);
 
 		emit WithdrawTokenAdminEvent(_tokenContract, _amount);
 	}
