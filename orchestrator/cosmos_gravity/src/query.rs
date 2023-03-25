@@ -5,6 +5,7 @@ use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::EvmChain;
+use gravity_proto::gravity::EvmChainParam;
 use gravity_proto::gravity::Params;
 use gravity_proto::gravity::QueryAttestationsRequest;
 use gravity_proto::gravity::QueryBatchConfirmsRequest;
@@ -418,23 +419,52 @@ pub async fn get_min_chain_fee_basis_points(contact: &Contact) -> Result<u64, Co
 pub async fn query_evm_chain_from_net_version(
     grpc_client: &mut GravityQueryClient<Channel>,
     net_version: u64,
-    evm_prefix: Option<String>,
 ) -> Option<EvmChain> {
     let list_evm_chains = grpc_client
         .get_list_evm_chains(QueryListEvmChains { limit: 0 })
         .await;
 
     if let Err(status) = list_evm_chains {
-        warn!(
+        panic!(
             "Received an error when querying for evm chains: {}",
             status.message()
         );
-        return None;
+    }
+
+    let evm_chain_params = grpc_client.params(QueryParamsRequest {}).await;
+    if let Err(status) = list_evm_chains {
+        panic!(
+            "Received an error when querying for evm chain params: {}",
+            status.message()
+        );
+    }
+    // collect evm chain params to filter the list evm chain. Only collect one evm chain that is active
+    let evm_chain_params = evm_chain_params
+        .unwrap()
+        .into_inner()
+        .params
+        .unwrap()
+        .evm_chain_params;
+
+    let active_evm_chains: Vec<EvmChainParam> = evm_chain_params
+        .into_iter()
+        .filter(|chain_param| {
+            chain_param.bridge_chain_id == net_version && chain_param.bridge_active
+        })
+        .collect();
+    if active_evm_chains.len() > 1 {
+        panic!("Cannot allow two chains having the same net version to be active!");
+    };
+    if active_evm_chains.len() < 1 {
+        panic!(
+            "There's no active chain given the net version: {}!",
+            net_version
+        );
     }
 
     let list_evm_chains = list_evm_chains.unwrap().into_inner().evm_chains;
     list_evm_chains.into_iter().find(|chain: &EvmChain| {
         chain.evm_chain_net_version.eq(&net_version)
-            && (evm_prefix.is_none() || evm_prefix.as_ref().unwrap().eq(&chain.evm_chain_prefix))
+            && active_evm_chains[0].evm_chain_prefix == chain.evm_chain_prefix
     })
 }

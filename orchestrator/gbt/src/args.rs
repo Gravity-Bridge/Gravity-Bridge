@@ -65,8 +65,6 @@ pub struct OrchestratorOpts {
     /// The address fo the Gravity contract on Ethereum
     #[clap(short, long, parse(try_from_str))]
     pub gravity_contract_address: Option<EthAddress>,
-    #[clap(long, parse(try_from_str))]
-    pub evm_prefix: Option<String>,
 }
 
 /// The Gravity Bridge Relayer is an unpermissioned role that takes data from the Cosmos blockchain
@@ -90,9 +88,6 @@ pub struct RelayerOpts {
     /// The address fo the Gravity contract on Ethereum
     #[clap(short, long, parse(try_from_str))]
     pub gravity_contract_address: Option<EthAddress>,
-    /// The address fo the Gravity contract on Ethereum
-    #[clap(long, parse(try_from_str))]
-    pub evm_prefix: Option<String>,
     /// (Optional) The Ethereum RPC server that will be used
     #[clap(long, default_value = "http://localhost:8545")]
     pub ethereum_rpc: String,
@@ -192,8 +187,6 @@ pub struct DeployErc20RepresentationOpts {
     /// The address fo the Gravity contract on Ethereum
     #[clap(short, long, parse(try_from_str))]
     pub gravity_contract_address: Option<EthAddress>,
-    #[clap(long, parse(try_from_str))]
-    pub evm_prefix: Option<String>,
 }
 
 /// Manage keys

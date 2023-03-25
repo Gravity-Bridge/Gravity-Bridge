@@ -38,13 +38,7 @@ pub async fn deploy_erc20_representation(
 
     let net_version = get_net_version_with_retry(&web3).await;
     // get correct evm_chain from rpc by querying net_id
-    let evm_chain_prefix = match query_evm_chain_from_net_version(
-        &mut grpc,
-        net_version,
-        args.evm_prefix,
-    )
-    .await
-    {
+    let evm_chain_prefix = match query_evm_chain_from_net_version(&mut grpc, net_version).await {
         Some(evm_chain) => evm_chain.evm_chain_prefix,
         None => {
             error!("Could not find the matching net version of evm chains on the network. Network from eth-rpc: {}", net_version);
