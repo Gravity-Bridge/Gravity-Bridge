@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	v3 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v3"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -41,6 +42,12 @@ func RegisterProposalTypes() {
 		govtypes.RegisterProposalType(types.ProposalTypeAddEvmChain)
 		govtypes.RegisterProposalTypeCodec(&types.AddEvmChainProposal{}, addEvmChain)
 	}
+
+	removeEvmChain := "gravity/RemoveEvmChain"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(removeEvmChain, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeRemoveEvmChain)
+		govtypes.RegisterProposalTypeCodec(&types.RemoveEvmChainProposal{}, removeEvmChain)
+	}
 }
 
 func NewGravityProposalHandler(k Keeper) govtypes.Handler {
@@ -54,7 +61,8 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 			return k.HandleIBCMetadataProposal(ctx, c)
 		case *types.AddEvmChainProposal:
 			return k.HandleAddEvmChainProposal(ctx, c)
-
+		case *types.RemoveEvmChainProposal:
+			return k.HandleRemoveEvmChainProposal(ctx, c)
 		default:
 			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
 		}
@@ -152,6 +160,11 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 	params.EvmChainParams = newParams
 	k.SetParams(ctx, params)
 	return nil
+}
+
+// In the event we need to remove an evm chains, we can create a new proposal, but call remove evm chain method from store migration
+func (k Keeper) HandleRemoveEvmChainProposal(ctx sdk.Context, p *types.RemoveEvmChainProposal) error {
+	return v3.RemoveEvmChainFromStore(ctx, k.storeKey, k.cdc, p.EvmChainPrefix)
 }
 
 // Iterate over all attestations currently being voted on in order of nonce

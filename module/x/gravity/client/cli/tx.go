@@ -47,6 +47,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 		CmdGovUnhaltBridgeProposal(),
 		CmdExecutePendingIbcAutoForwards(),
 		CmdAddEvmChainProposal(),
+		CmdRemoveEvmChainProposal(),
 	}...)
 
 	return gravityTxCmd
@@ -335,6 +336,53 @@ func CmdAddEvmChainProposal() *cobra.Command {
 			bridgeEthAddress := args[4]
 
 			proposal := &types.AddEvmChainProposal{EvmChainName: evmChainName, EvmChainPrefix: evmChainPrefix, EvmChainNetVersion: evmChainNetVersion, GravityId: gravityId, BridgeEthereumAddress: bridgeEthAddress, Title: args[5], Description: args[7]}
+			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+			}
+
+			// Make the message
+			msg := govtypes.MsgSubmitProposal{
+				Proposer:       cosmosAddr.String(),
+				InitialDeposit: initialDeposit,
+				Content:        proposalAny,
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdRemoveEvmChainProposal enables users to create a proposal to add new EVM chains
+func CmdRemoveEvmChainProposal() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "remove-evm-chain [evm-chain-prefix] [initial-deposit]",
+		Short: "Creates a governance proposal to remove an EVM chain on the network",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			cosmosAddr := cliCtx.GetFromAddress()
+
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[1])
+			if err != nil {
+				return sdkerrors.Wrap(err, "bad initial deposit amount")
+			}
+
+			if len(initialDeposit) != 1 {
+				return fmt.Errorf("unexpected coin amounts, expecting just 1 coin amount for initialDeposit")
+			}
+
+			evmChainPrefix := args[0]
+
+			proposal := &types.RemoveEvmChainProposal{EvmChainPrefix: evmChainPrefix}
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
 				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
