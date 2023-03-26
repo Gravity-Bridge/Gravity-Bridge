@@ -253,3 +253,7 @@ func TestAddEvmChainProposal(t *testing.T) {
 	}
 	require.Equal(t, len(params.EvmChainParams), 3) // should update params only, not append
 }
+
+// TODO: remove evm chain
+func TestRemoveEvmChainProposal(t *testing.T) {
+}

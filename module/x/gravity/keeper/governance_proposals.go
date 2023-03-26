@@ -41,6 +41,12 @@ func RegisterProposalTypes() {
 		govtypes.RegisterProposalType(types.ProposalTypeAddEvmChain)
 		govtypes.RegisterProposalTypeCodec(&types.AddEvmChainProposal{}, addEvmChain)
 	}
+
+	removeEvmChain := "gravity/RemoveEvmChain"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(removeEvmChain, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeRemoveEvmChain)
+		govtypes.RegisterProposalTypeCodec(&types.RemoveEvmChainProposal{}, removeEvmChain)
+	}
 }
 
 func NewGravityProposalHandler(k Keeper) govtypes.Handler {
@@ -54,7 +60,8 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 			return k.HandleIBCMetadataProposal(ctx, c)
 		case *types.AddEvmChainProposal:
 			return k.HandleAddEvmChainProposal(ctx, c)
-
+		case *types.RemoveEvmChainProposal:
+			return k.HandleRemoveEvmChainProposal(ctx, c)
 		default:
 			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
 		}
@@ -151,6 +158,12 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 	}
 	params.EvmChainParams = newParams
 	k.SetParams(ctx, params)
+	return nil
+}
+
+// TODO: remove evm chain
+// In the event we need to remove an evm chains, we can create a new proposal
+func (k Keeper) HandleRemoveEvmChainProposal(ctx sdk.Context, p *types.RemoveEvmChainProposal) error {
 	return nil
 }
 
