@@ -9,4 +9,4 @@ const getBase58Address = (address: string) => {
     const checkSum = hash.substring(2, 10);
     return ethers.utils.base58.encode(evmAddress + checkSum);
 };
-console.log(getEvmAddress(process.env.TRON_ADDRESS || '' as string), getBase58Address(process.env.EVM_ADDRESS || '' as string));
+console.log(process.env.TRON_ADDRESS && getEvmAddress(process.env.TRON_ADDRESS), process.env.EVM_ADDRESS && getBase58Address(process.env.EVM_ADDRESS));
