@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	v3 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v3"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -161,10 +162,9 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 	return nil
 }
 
-// TODO: remove evm chain
-// In the event we need to remove an evm chains, we can create a new proposal
+// In the event we need to remove an evm chains, we can create a new proposal, but call remove evm chain method from store migration
 func (k Keeper) HandleRemoveEvmChainProposal(ctx sdk.Context, p *types.RemoveEvmChainProposal) error {
-	return nil
+	return v3.RemoveEvmChainFromStore(ctx, k.storeKey, k.cdc, p.EvmChainPrefix)
 }
 
 // Iterate over all attestations currently being voted on in order of nonce

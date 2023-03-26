@@ -74,6 +74,13 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 	return nil
 }
 
+// TODO: remove evm chain
+// RemoveEvmChainFromStore performs in-place store migrations to remove an evm chain
+func RemoveEvmChainFromStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.BinaryCodec, evmChainPrefix string) error {
+
+	return nil
+}
+
 // Iterates over every value stored under keyPrefix, computes the new key using getNewKey,
 // then stores the value in the new key before deleting the old key
 func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix []byte, getNewKeyValue func([]byte, codec.BinaryCodec, []byte, []byte) ([]byte, []byte, error)) error {
