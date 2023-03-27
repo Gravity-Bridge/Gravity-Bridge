@@ -80,6 +80,9 @@ func RemoveEvmChainFromStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc 
 	ctx.Logger().Info("Pleiades Upgrade: Beginning the migrations for the gravity module")
 	store := ctx.KVStore(storeKey)
 
+	// delete evmChain data
+	store.Delete(types.GetEvmChainKey(evmChainPrefix))
+
 	// single key with chain
 	removeKeyPrefixFromEvm(store, types.KeyLastOutgoingBatchID, evmChainPrefix)
 	removeKeyPrefixFromEvm(store, types.LastObservedEventNonceKey, evmChainPrefix)

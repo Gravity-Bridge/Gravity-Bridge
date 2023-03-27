@@ -143,27 +143,41 @@ func (k Keeper) HandleAddEvmChainProposal(ctx sdk.Context, p *types.AddEvmChainP
 		EthereumBlacklist:        []string{},
 	}
 
-	var newParams []*types.EvmChainParam
+	var evmChainParams []*types.EvmChainParam
 
 	exists := false
 	for _, param := range params.EvmChainParams {
 		if param.EvmChainPrefix == evmChainParam.EvmChainPrefix {
-			newParams = append(newParams, evmChainParam)
+			evmChainParams = append(evmChainParams, evmChainParam)
 			exists = true
 		} else {
-			newParams = append(newParams, param)
+			evmChainParams = append(evmChainParams, param)
 		}
 	}
 	if !exists {
-		newParams = append(newParams, evmChainParam)
+		evmChainParams = append(evmChainParams, evmChainParam)
 	}
-	params.EvmChainParams = newParams
+	params.EvmChainParams = evmChainParams
 	k.SetParams(ctx, params)
 	return nil
 }
 
 // In the event we need to remove an evm chains, we can create a new proposal, but call remove evm chain method from store migration
 func (k Keeper) HandleRemoveEvmChainProposal(ctx sdk.Context, p *types.RemoveEvmChainProposal) error {
+	// remove params for current evm chain first
+	var evmChainParams []*types.EvmChainParam
+
+	params := k.GetParams(ctx)
+	for _, param := range params.EvmChainParams {
+		if param.EvmChainPrefix == p.EvmChainPrefix {
+			continue
+		}
+		evmChainParams = append(evmChainParams, param)
+
+	}
+
+	params.EvmChainParams = evmChainParams
+	k.SetParams(ctx, params)
 	return v3.RemoveEvmChainFromStore(ctx, k.storeKey, k.cdc, p.EvmChainPrefix)
 }
 

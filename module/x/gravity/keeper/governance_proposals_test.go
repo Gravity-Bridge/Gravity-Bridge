@@ -254,6 +254,43 @@ func TestAddEvmChainProposal(t *testing.T) {
 	require.Equal(t, len(params.EvmChainParams), 3) // should update params only, not append
 }
 
-// TODO: remove evm chain
 func TestRemoveEvmChainProposal(t *testing.T) {
+
+	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	ctx := input.Context
+	addProposal := types.AddEvmChainProposal{
+		Title:          "test tile",
+		Description:    "test description",
+		EvmChainPrefix: "dummy",
+		EvmChainName:   "Dummy",
+	}
+
+	gk := input.GravityKeeper
+
+	err := gk.HandleAddEvmChainProposal(ctx, &addProposal)
+	require.NoError(t, err)
+
+	evmChain := gk.GetEvmChainData(ctx, "dummy")
+	require.NotNil(t, evmChain)
+
+	gk.setLastObservedEventNonce(ctx, "dummy", 1)
+
+	removeProposal := types.RemoveEvmChainProposal{
+		Title:          "test tile",
+		Description:    "test description",
+		EvmChainPrefix: "dummy",
+	}
+	err = gk.HandleRemoveEvmChainProposal(ctx, &removeProposal)
+	require.NoError(t, err)
+
+	// now evmChain is empty
+	evmChain = gk.GetEvmChainData(ctx, "dummy")
+	require.Nil(t, evmChain)
+
+	// also evm chain params
+	evmChainParam := gk.GetEvmChainParam(ctx, "dummy")
+	require.Nil(t, evmChainParam)
+
 }
