@@ -479,24 +479,25 @@ func (msg *MsgSendToCosmosClaim) GetDestination(sourceChannel string) string {
 // a:b => sourceChannel:destChannel/cosmosReceiver
 // a => sourceChannel/cosmosReceiver
 func (msg *MsgSendToCosmosClaim) ParseReceiver() (receiver []byte, sourceChannel, destChannel, denom, hrp string, err error) {
-	var destination string
-	args := strings.SplitN(msg.CosmosReceiver, ":", 2)
-
-	if len(args) == 1 {
-		// no dest channel, normal processing, destination must be cosmosReceiver
-		if ind := strings.Index(msg.CosmosReceiver, "/"); ind != -1 {
-			sourceChannel, destination = msg.CosmosReceiver[0:ind], msg.CosmosReceiver[ind+1:]
-		} else {
-			destination = msg.CosmosReceiver
-		}
-	} else {
-		sourceChannel, destination = args[0], args[1]
-
-	}
-
+	sourceChannel, destination := msg.ParseReceiverRaw()
 	receiver, destChannel, denom, hrp, err = ParseDestination(destination)
 	return
 
+}
+
+// ParseReceiverRaw return source channel & destination when parsing msg cosmos receiver
+// a:b:c => sourceChannel=a, destination=b:c
+// a:b => sourceChannel=a, destination=b
+// a => if sourceChannel/cosmosReceiver then sourceChannel=a, destination=b. else sourceChannel="", destination=a
+func (msg *MsgSendToCosmosClaim) ParseReceiverRaw() (sourceChannel, destination string) {
+	args := strings.SplitN(msg.CosmosReceiver, ":", 2)
+	if len(args) != 1 {
+		return args[0], args[1]
+	}
+	if ind := strings.Index(msg.CosmosReceiver, "/"); ind != -1 {
+		return msg.CosmosReceiver[0:ind], msg.CosmosReceiver[ind+1:]
+	}
+	return "", msg.CosmosReceiver
 }
 
 func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {
