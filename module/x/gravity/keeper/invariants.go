@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/bech32"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -603,17 +602,8 @@ func CheckValsets(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
 
 // CheckPendingIbcAutoForwards checks each forward is appropriate and also that the transfer module holds enough of each token
 func CheckPendingIbcAutoForwards(ctx sdk.Context, evmChainPrefix string, k Keeper) error {
-	nativeHrp := sdk.GetConfig().GetBech32AccountAddrPrefix()
 	pendingForwards := k.PendingIbcAutoForwards(ctx, evmChainPrefix, 0)
 	for _, fwd := range pendingForwards {
-		// Check the foreign address
-		hrp, _, err := bech32.DecodeAndConvert(fwd.ForeignReceiver)
-		if err != nil {
-			return fmt.Errorf("found invalid pending IBC auto forward (%v) in the store: %v", fwd, err)
-		}
-		if hrp == nativeHrp {
-			return fmt.Errorf("found invalid pending IBC auto forward (%v) with local receiving address %s", fwd, fwd.ForeignReceiver)
-		}
 		// Check the amount
 		if !fwd.Token.Amount.IsPositive() {
 			return fmt.Errorf("found pending IBC auto forward (%v) transferring a non-positive balance %s", fwd, fwd.Token.Amount.String())

@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
@@ -68,32 +70,50 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 }
 
 func TestGetSourceChannelAndReceiver(t *testing.T) {
-	msgSendToCosmosNormal := MsgSendToCosmosClaim{
-		CosmosReceiver: "oraifoobar",
+	// cosmos channel
+	msgSendToCosmos := MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-0:channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom",
 	}
 
-	channel, receiver := msgSendToCosmosNormal.GetSourceChannelAndReceiver()
+	receiver, sourceChannel, channel, denom, hrp, err := msgSendToCosmos.ParseReceiver()
+	receiverAddr, _ := bech32.ConvertAndEncode(hrp, receiver)
+	assert.Equal(t, "channel-15", channel)
+	assert.Equal(t, "channel-0", sourceChannel)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", receiverAddr)
+	assert.Equal(t, "atom", denom)
+	require.NoError(t, err)
 
+	// evm channel
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-1:trx-mainnet0x73Ddc880916021EFC4754Cb42B53db6EAB1f9D64:usdt",
+	}
+
+	receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
+	ethAddr, _ := NewEthAddressFromBytes(receiver)
+	assert.Equal(t, "trx-mainnet", channel)
+	assert.Equal(t, "0x73Ddc880916021EFC4754Cb42B53db6EAB1f9D64", ethAddr.GetAddress().String())
+	assert.Equal(t, "usdt", denom)
+	require.NoError(t, err)
+
+	// no channel, cosmos address
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573",
+	}
+
+	receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
+	receiverAddr, _ = bech32.ConvertAndEncode(hrp, receiver)
 	assert.Equal(t, "", channel)
-	assert.Equal(t, "oraifoobar", receiver)
+	assert.Equal(t, "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573", receiverAddr)
+	assert.Equal(t, "", denom)
+	require.NoError(t, err)
 
-	// has channel case
-	msgSendToCosmosHasChannel := MsgSendToCosmosClaim{
-		CosmosReceiver: "channel-1/oraifoobar",
-	}
-
-	channel, receiver = msgSendToCosmosHasChannel.GetSourceChannelAndReceiver()
-
-	assert.Equal(t, "channel-1", channel)
-	assert.Equal(t, "oraifoobar", receiver)
-
-	// special case with many / to test split
-	msgSendToCosmosWithSlashes := MsgSendToCosmosClaim{
+	// cosmos channel with invalid address
+	msgSendToCosmos = MsgSendToCosmosClaim{
 		CosmosReceiver: "channel-1///oraifoobar",
 	}
 
-	channel, receiver = msgSendToCosmosWithSlashes.GetSourceChannelAndReceiver()
+	receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
+	assert.Equal(t, msgSendToCosmos.GetDestination(sourceChannel), "//oraifoobar")
+	require.Error(t, err)
 
-	assert.Equal(t, "channel-1", channel)
-	assert.Equal(t, "//oraifoobar", receiver)
 }

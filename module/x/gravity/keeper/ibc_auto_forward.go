@@ -17,7 +17,6 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
@@ -35,12 +34,6 @@ func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, evmChainPrefix st
 	latestEventNonce := k.GetLastObservedEventNonce(ctx, evmChainPrefix)
 	if forward.EventNonce > latestEventNonce {
 		return sdkerrors.Wrap(types.ErrInvalid, "EventNonce must be <= latest observed event nonce")
-	}
-
-	// no need to validate again because IbcChannel can come from prefix of Cosmos address
-	_, _, err := bech32.DecodeAndConvert(forward.ForeignReceiver)
-	if err != nil { // Covered by ValidateBasic, but check anyway to avoid linter issues
-		return sdkerrors.Wrapf(err, "ForeignReceiver %s is not a valid bech32 address", forward.ForeignReceiver)
 	}
 
 	modAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName).GetAddress()
@@ -193,8 +186,7 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix
 	portId := k.ibcTransferKeeper.GetPort(ctx)
 
 	// This local gravity user receives the coins if the ibc transaction fails
-	var fallback sdk.AccAddress
-	fallback, err = types.IBCAddressFromBech32(forward.ForeignReceiver)
+	fallback, _, _, _, err := types.ParseDestination(forward.ForeignReceiver)
 	if err != nil {
 		panic(fmt.Sprintf("Invalid ForeignReceiver found in Pending IBC Auto-Forward queue: %s [[%+v]]", err.Error(), forward))
 	}
@@ -208,7 +200,7 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix
 
 	timeoutTime := thirtyDaysInFuture(ctx) // Set the ibc transfer to expire ~one month from now
 
-	msgTransfer := createIbcMsgTransfer(portId, *forward, fallback.String(), uint64(timeoutTime.UnixNano()))
+	msgTransfer := createIbcMsgTransfer(portId, *forward, sdk.AccAddress(fallback).String(), uint64(timeoutTime.UnixNano()))
 
 	// Make the ibc-transfer attempt
 	wCtx := sdk.WrapSDKContext(ctx)
@@ -288,10 +280,9 @@ func (k Keeper) logEmitIbcForwardSuccessEvent(
 
 // logEmitIbcForwardFailureEvent logs failed IBC Auto-Forwarding and emits a EventSendToCosmosLocal type event
 func (k Keeper) logEmitIbcForwardFailureEvent(ctx sdk.Context, forward types.PendingIbcAutoForward, err error) {
-	var localReceiver sdk.AccAddress
-	localReceiver, _ = types.IBCAddressFromBech32(forward.ForeignReceiver) // checked valid bech32 receiver earlier
+
 	k.logger(ctx).Error("SendToCosmos IBC Auto-Forward Failure: funds sent to local address",
-		"localReceiver", localReceiver, "denom", forward.Token.Denom, "amount", forward.Token.Amount.String(),
+		"foreignReceiver", forward.ForeignReceiver, "denom", forward.Token.Denom, "amount", forward.Token.Amount.String(),
 		"failedIbcPort", ibctransfertypes.PortID, "failedIbcChannel", forward.IbcChannel,
 		"claimNonce", forward.EventNonce, "cosmosBlockHeight", ctx.BlockHeight(), "err", err,
 	)

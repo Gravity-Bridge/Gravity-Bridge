@@ -121,3 +121,33 @@ func AppendBytes(args ...[]byte) []byte {
 
 	return res
 }
+
+func ParseDestination(destination string) (receiver []byte, destChannel, denom, hrp string, err error) {
+
+	isCosmos := true
+
+	// has destination denom
+	if ind := strings.Index(destination, ":"); ind != -1 {
+		destination, denom = destination[0:ind], destination[ind+1:]
+	}
+	// now processing destination
+	if ind := strings.Index(destination, "/"); ind != -1 {
+		// cosmos style
+		destChannel, destination = destination[0:ind], destination[ind+1:]
+	} else if ind := strings.Index(destination, "0x"); ind != -1 {
+		// ethereum style
+		destChannel, destination = destination[0:ind], destination[ind:]
+		isCosmos = false
+	}
+
+	if isCosmos {
+		// validate cosmos
+		hrp, receiver, err = bech32.DecodeAndConvert(destination)
+	} else {
+		// validate ethereum
+		var ethAddress *EthAddress
+		ethAddress, err = NewEthAddress(destination)
+		receiver = ethAddress.address[:]
+	}
+	return
+}
