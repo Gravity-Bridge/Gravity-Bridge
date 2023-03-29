@@ -229,3 +229,8 @@ func shuffled(v InternalBridgeValidators) InternalBridgeValidators {
 	})
 	return v
 }
+
+// TODO: write some tests here
+func TestParseDestination(t *testing.T) {
+
+}
