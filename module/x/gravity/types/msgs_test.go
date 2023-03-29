@@ -71,6 +71,7 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 
 func TestGetSourceChannelAndReceiver(t *testing.T) {
 	// cosmos channel
+	// args=2. src channel = args[0] = channel-0, destination=args[1] = channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom
 	msgSendToCosmos := MsgSendToCosmosClaim{
 		CosmosReceiver: "channel-0:channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom",
 	}
@@ -84,6 +85,7 @@ func TestGetSourceChannelAndReceiver(t *testing.T) {
 	require.NoError(t, err)
 
 	// evm channel
+	//
 	msgSendToCosmos = MsgSendToCosmosClaim{
 		CosmosReceiver: "channel-1:trx-mainnet0x73Ddc880916021EFC4754Cb42B53db6EAB1f9D64:usdt",
 	}
@@ -116,4 +118,11 @@ func TestGetSourceChannelAndReceiver(t *testing.T) {
 	assert.Equal(t, msgSendToCosmos.GetDestination(sourceChannel), "//oraifoobar")
 	require.Error(t, err)
 
+	// cosmos channel with invalid address
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "",
+	}
+
+	receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
+	require.Error(t, err)
 }
