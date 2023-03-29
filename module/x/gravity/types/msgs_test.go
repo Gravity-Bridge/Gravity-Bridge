@@ -137,44 +137,39 @@ func TestParseReceiverRaw(t *testing.T) {
 	assert.Equal(t, "channel-0", sourceChannel)
 	assert.Equal(t, "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom", destination)
 
-	// evm channel
+	// args=1, no /
 	msgSendToCosmos = MsgSendToCosmosClaim{
-		CosmosReceiver: "channel-1:trx-mainnet0x73Ddc880916021EFC4754Cb42B53db6EAB1f9D64:usdt",
+		CosmosReceiver: "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz",
 	}
 
-	// receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
-	// ethAddr, _ := NewEthAddressFromBytes(receiver)
-	// assert.Equal(t, "trx-mainnet", channel)
-	// assert.Equal(t, "0x73Ddc880916021EFC4754Cb42B53db6EAB1f9D64", ethAddr.GetAddress().String())
-	// assert.Equal(t, "usdt", denom)
-	// require.NoError(t, err)
+	sourceChannel, destination = msgSendToCosmos.ParseReceiverRaw()
+	assert.Equal(t, "", sourceChannel)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", destination)
 
-	// // no channel, cosmos address
-	// msgSendToCosmos = MsgSendToCosmosClaim{
-	// 	CosmosReceiver: "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573",
-	// }
+	// args=1, empty
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "",
+	}
 
-	// receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
-	// receiverAddr, _ = bech32.ConvertAndEncode(hrp, receiver)
-	// assert.Equal(t, "", channel)
-	// assert.Equal(t, "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573", receiverAddr)
-	// assert.Equal(t, "", denom)
-	// require.NoError(t, err)
+	sourceChannel, destination = msgSendToCosmos.ParseReceiverRaw()
+	assert.Equal(t, "", sourceChannel)
+	assert.Equal(t, "", destination)
 
-	// // cosmos channel with invalid address
-	// msgSendToCosmos = MsgSendToCosmosClaim{
-	// 	CosmosReceiver: "channel-1///oraifoobar",
-	// }
+	//args=1, has /
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz",
+	}
 
-	// receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
-	// assert.Equal(t, msgSendToCosmos.GetDestination(sourceChannel), "//oraifoobar")
-	// require.Error(t, err)
+	sourceChannel, destination = msgSendToCosmos.ParseReceiverRaw()
+	assert.Equal(t, "channel-15", sourceChannel)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", destination)
 
-	// // cosmos channel with invalid address
-	// msgSendToCosmos = MsgSendToCosmosClaim{
-	// 	CosmosReceiver: "",
-	// }
+	//args=1, has /
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:usdt",
+	}
 
-	// receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
-	// require.Error(t, err)
+	sourceChannel, destination = msgSendToCosmos.ParseReceiverRaw()
+	assert.Equal(t, "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", sourceChannel)
+	assert.Equal(t, "usdt", destination)
 }
