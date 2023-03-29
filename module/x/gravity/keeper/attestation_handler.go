@@ -488,9 +488,9 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 
 		// Add the SendToCosmos to the Pending IBC Auto-Forward Queue, which when processed will send the funds to a
 		// local address before sending via IBC
-		cosmosReceiver := claim.GetDestination(sourceChannel)
+		destination := claim.GetDestination(sourceChannel)
 
-		err = a.addToIbcAutoForwardQueue(ctx, cosmosReceiver, coin, sourceChannel, claim)
+		err = a.addToIbcAutoForwardQueue(ctx, destination, coin, sourceChannel, claim)
 
 		if err != nil {
 			a.keeper.logger(ctx).Error(
@@ -547,17 +547,17 @@ func (a AttestationHandler) sendCoinToLocalAddress(
 // Note: This should only be used as part of SendToCosmos attestation handling and is not a good solution for general use
 func (a AttestationHandler) addToIbcAutoForwardQueue(
 	ctx sdk.Context,
-	cosmosReceiver string,
+	destination string,
 	coin sdk.Coin,
 	channel string,
 	claim types.MsgSendToCosmosClaim,
 ) error {
-	if strings.TrimSpace(cosmosReceiver) == "" {
-		panic(fmt.Sprintf("invalid call to addToIbcAutoForwardQueue: invalid or inaccurate receiver %s!", cosmosReceiver))
+	if strings.TrimSpace(destination) == "" {
+		panic(fmt.Sprintf("invalid call to addToIbcAutoForwardQueue: invalid or inaccurate destination %s!", destination))
 	}
 
 	forward := types.PendingIbcAutoForward{
-		ForeignReceiver: cosmosReceiver,
+		ForeignReceiver: destination,
 		Token:           &coin,
 		IbcChannel:      channel,
 		EventNonce:      claim.EventNonce,

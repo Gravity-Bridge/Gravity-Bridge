@@ -23,7 +23,7 @@ import (
 )
 
 // ValidatePendingIbcAutoForward performs basic validation, asserts the nonce is not ahead of what gravity is aware of,
-// requires ForeignReceiver's bech32 prefix to be registered and match with IbcChannel, and gravity module must have the
+// requires ForeignReceiver's is not empty because we have already checked it before sending to IBC wasm, and gravity module must have the
 // funds to meet this forward amount
 func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, evmChainPrefix string, forward types.PendingIbcAutoForward) error {
 
@@ -185,7 +185,7 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix
 
 	portId := k.ibcTransferKeeper.GetPort(ctx)
 
-	// This local gravity user receives the coins if the ibc transaction fails
+	// This local gravity user receives the coins if the ibc transaction fails, works with both evm address and bech32 address format
 	fallback, _, _, _, err := types.ParseDestination(forward.ForeignReceiver)
 	if err != nil {
 		panic(fmt.Sprintf("Invalid ForeignReceiver found in Pending IBC Auto-Forward queue: %s [[%+v]]", err.Error(), forward))
