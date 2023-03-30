@@ -73,14 +73,14 @@ func TestGetSourceChannelAndReceiver(t *testing.T) {
 	// cosmos channel
 	// args=2. src channel = args[0] = channel-0, destination=args[1] = channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom
 	msgSendToCosmos := MsgSendToCosmosClaim{
-		CosmosReceiver: "channel-0:channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom",
+		CosmosReceiver: "channel-0/orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573:channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom",
 	}
 
-	receiver, sourceChannel, channel, denom, hrp, err := msgSendToCosmos.ParseReceiver()
+	receiver, _, sourceChannel, channel, denom, hrp, err := msgSendToCosmos.ParseReceiver()
 	receiverAddr, _ := bech32.ConvertAndEncode(hrp, receiver)
 	assert.Equal(t, "channel-15", channel)
 	assert.Equal(t, "channel-0", sourceChannel)
-	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", receiverAddr)
+	assert.Equal(t, "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573", receiverAddr)
 	assert.Equal(t, "atom", denom)
 	require.NoError(t, err)
 
@@ -89,7 +89,7 @@ func TestGetSourceChannelAndReceiver(t *testing.T) {
 		CosmosReceiver: "channel-1:trx-mainnet0x73Ddc880916021EFC4754Cb42B53db6EAB1f9D64:usdt",
 	}
 
-	receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
+	receiver, _, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
 	ethAddr, _ := NewEthAddressFromBytes(receiver)
 	assert.Equal(t, "trx-mainnet", channel)
 	assert.Equal(t, "0x73Ddc880916021EFC4754Cb42B53db6EAB1f9D64", ethAddr.GetAddress().String())
@@ -101,7 +101,7 @@ func TestGetSourceChannelAndReceiver(t *testing.T) {
 		CosmosReceiver: "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573",
 	}
 
-	receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
+	receiver, _, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
 	receiverAddr, _ = bech32.ConvertAndEncode(hrp, receiver)
 	assert.Equal(t, "", channel)
 	assert.Equal(t, "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573", receiverAddr)
@@ -113,7 +113,7 @@ func TestGetSourceChannelAndReceiver(t *testing.T) {
 		CosmosReceiver: "channel-1///oraifoobar",
 	}
 
-	receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
+	receiver, _, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
 	assert.Equal(t, msgSendToCosmos.GetDestination(sourceChannel), "//oraifoobar")
 	require.Error(t, err)
 
@@ -122,7 +122,7 @@ func TestGetSourceChannelAndReceiver(t *testing.T) {
 		CosmosReceiver: "",
 	}
 
-	receiver, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
+	receiver, _, sourceChannel, channel, denom, hrp, err = msgSendToCosmos.ParseReceiver()
 	require.Error(t, err)
 }
 
@@ -133,7 +133,7 @@ func TestParseReceiverRaw(t *testing.T) {
 		CosmosReceiver: "channel-0:channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom",
 	}
 
-	sourceChannel, destination := msgSendToCosmos.ParseReceiverRaw()
+	sourceChannel, cosmosReceiver, destination := msgSendToCosmos.ParseReceiverRaw()
 	assert.Equal(t, "channel-0", sourceChannel)
 	assert.Equal(t, "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom", destination)
 
@@ -142,16 +142,16 @@ func TestParseReceiverRaw(t *testing.T) {
 		CosmosReceiver: "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz",
 	}
 
-	sourceChannel, destination = msgSendToCosmos.ParseReceiverRaw()
+	sourceChannel, cosmosReceiver, _ = msgSendToCosmos.ParseReceiverRaw()
 	assert.Equal(t, "", sourceChannel)
-	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", destination)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", cosmosReceiver)
 
 	// args=1, empty
 	msgSendToCosmos = MsgSendToCosmosClaim{
 		CosmosReceiver: "",
 	}
 
-	sourceChannel, destination = msgSendToCosmos.ParseReceiverRaw()
+	sourceChannel, cosmosReceiver, destination = msgSendToCosmos.ParseReceiverRaw()
 	assert.Equal(t, "", sourceChannel)
 	assert.Equal(t, "", destination)
 
@@ -160,16 +160,17 @@ func TestParseReceiverRaw(t *testing.T) {
 		CosmosReceiver: "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz",
 	}
 
-	sourceChannel, destination = msgSendToCosmos.ParseReceiverRaw()
+	sourceChannel, cosmosReceiver, destination = msgSendToCosmos.ParseReceiverRaw()
 	assert.Equal(t, "channel-15", sourceChannel)
 	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", destination)
 
 	//args=1, has /
 	msgSendToCosmos = MsgSendToCosmosClaim{
-		CosmosReceiver: "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:usdt",
+		CosmosReceiver: "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7:usdt",
 	}
 
-	sourceChannel, destination = msgSendToCosmos.ParseReceiverRaw()
-	assert.Equal(t, "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", sourceChannel)
-	assert.Equal(t, "usdt", destination)
+	sourceChannel, cosmosReceiver, destination = msgSendToCosmos.ParseReceiverRaw()
+	assert.Equal(t, "channel-15", sourceChannel)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", cosmosReceiver)
+	assert.Equal(t, "eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7:usdt", destination)
 }

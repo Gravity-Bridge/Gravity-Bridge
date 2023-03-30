@@ -351,17 +351,18 @@ func TestSendCoinToCosmosAccount(t *testing.T) {
 
 	// cosmos receiver is not bech32 case
 	// Validate the receiver as a valid bech32 address
-	receiverAddress, _, _, _, _, _ := claim.ParseReceiver()
-	isIbcQueued, sendError := attestationHandler.sendCoinToCosmosAccount(ctx, claim, receiverAddress, coin)
+	receiverAddress, _, sourceChannel, _, _, accountPrefix, err := claim.ParseReceiver()
+	isIbcQueued, sendError := attestationHandler.sendCoinToCosmosAccount(ctx, claim, receiverAddress, sourceChannel, accountPrefix, coin)
 	require.Error(t, sendError)
 	require.Equal(t, isIbcQueued, false)
 
 	// equal account prefix case - gravity
 	claim.CosmosReceiver = "gravity1603j3e4juddh7cuhfquxspl0p0nsun047vzxk8"
-	receiverAddress, _, _, _, _, _ = claim.ParseReceiver()
+	receiverAddress, _, sourceChannel, _, _, accountPrefix, err = claim.ParseReceiver()
+	require.NoError(t, err)
 	// mint new ethereum based coins to send to receiver
 	k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(sdk.NewCoin("ethereum0xDAFEA492D9c6733ae3d56b7Ed1ADB60692c98Bc5", claim.Amount)))
-	isIbcQueued, sendError = attestationHandler.sendCoinToCosmosAccount(ctx, claim, receiverAddress, coin)
+	isIbcQueued, sendError = attestationHandler.sendCoinToCosmosAccount(ctx, claim, receiverAddress, sourceChannel, accountPrefix, coin)
 	require.NoError(t, sendError)
 	require.Equal(t, isIbcQueued, false)
 
@@ -374,10 +375,10 @@ func TestSendCoinToCosmosAccount(t *testing.T) {
 
 	// first case: no channel prefix
 	claim.CosmosReceiver = "oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j"
-	receiverAddress, _, _, _, accountPrefix, err := claim.ParseReceiver()
+	receiverAddress, _, sourceChannel, _, _, accountPrefix, err = claim.ParseReceiver()
 	require.NoError(t, err)
 	// mint new ethereum based coins to send to receiver
-	isIbcQueued, sendError = attestationHandler.sendCoinToCosmosAccount(ctx, claim, receiverAddress, coin)
+	isIbcQueued, sendError = attestationHandler.sendCoinToCosmosAccount(ctx, claim, receiverAddress, sourceChannel, accountPrefix, coin)
 	require.NoError(t, sendError)
 	require.Equal(t, true, isIbcQueued)
 
@@ -390,15 +391,15 @@ func TestSendCoinToCosmosAccount(t *testing.T) {
 	k.setLastObservedEventNonce(ctx, claim.EvmChainPrefix, 2)
 	claim.EventNonce = 2
 	claim.CosmosReceiver = "channel-0/oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j"
-	receiverAddress, channel, _, _, _, err := claim.ParseReceiver()
+	receiverAddress, _, sourceChannel, _, _, accountPrefix, err = claim.ParseReceiver()
 	require.NoError(t, err)
 	// mint new ethereum based coins to send to receiver
-	isIbcQueued, sendError = attestationHandler.sendCoinToCosmosAccount(ctx, claim, receiverAddress, coin)
+	isIbcQueued, sendError = attestationHandler.sendCoinToCosmosAccount(ctx, claim, receiverAddress, sourceChannel, accountPrefix, coin)
 	require.NoError(t, sendError)
 	require.Equal(t, true, isIbcQueued)
 	// get auto forward queue
 	queues := k.PendingIbcAutoForwards(ctx, claim.EvmChainPrefix, 2)
-	require.Equal(t, channel, queues[1].IbcChannel)
+	require.Equal(t, sourceChannel, queues[1].IbcChannel)
 }
 
 func TestGetPrefixFromBech32(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
@@ -60,7 +61,8 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 
 	invalidAddress := false
 	// Validate the receiver as a valid bech32 address
-	receiverAddress, _, _, _, _, err := claim.ParseReceiver()
+	sourceChannel, cosmosReceiver, _ := claim.ParseReceiverRaw()
+	accountPrefix, receiverAddress, err := bech32.DecodeAndConvert(cosmosReceiver)
 
 	if err != nil {
 		invalidAddress = true
@@ -129,7 +131,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	if !invalidAddress { // address appears valid, attempt to send minted/locked coins to receiver
 		preSendBalance := a.keeper.bankKeeper.GetBalance(ctx, moduleAddr, denom)
 		// Failure to send will result in funds transfer to community pool
-		ibcForwardQueued, err := a.sendCoinToCosmosAccount(ctx, claim, receiverAddress, coin)
+		ibcForwardQueued, err := a.sendCoinToCosmosAccount(ctx, claim, receiverAddress, sourceChannel, accountPrefix, coin)
 
 		// Perform module balance assertions
 		if err != nil || ibcForwardQueued { // ibc forward enqueue and errors should not send tokens to anyone
@@ -440,20 +442,8 @@ func (a AttestationHandler) mintEthereumOriginatedVouchers(
 // send tokens to gravity1... re-prefixed account e.g. claim.CosmosReceiver = "cosmos1<account><cosmos-suffix>",
 // tokens will be received by gravity1<account><gravity-suffix>
 func (a AttestationHandler) sendCoinToCosmosAccount(
-	ctx sdk.Context, claim types.MsgSendToCosmosClaim, receiver sdk.AccAddress, coin sdk.Coin,
+	ctx sdk.Context, claim types.MsgSendToCosmosClaim, receiver sdk.AccAddress, sourceChannel, accountPrefix string, coin sdk.Coin,
 ) (ibcForwardQueued bool, err error) {
-	// get source channel from account prefix or from HrpIbcRecord
-	_, sourceChannel, _, _, accountPrefix, err := claim.ParseReceiver()
-	if err != nil {
-		hash, _ := claim.ClaimHash()
-		a.keeper.logger(ctx).Error("Invalid bech32 CosmosReceiver",
-			"cause", err.Error(), "address", receiver,
-			"claim type", claim.GetType(),
-			"id", types.GetAttestationKey(claim.EvmChainPrefix, claim.GetEventNonce(), hash),
-			"nonce", fmt.Sprint(claim.GetEventNonce()),
-		)
-		return false, err
-	}
 	nativePrefix, err := a.keeper.bech32IbcKeeper.GetNativeHrp(ctx)
 	if err != nil {
 		// In a real environment bech32ibc panics on InitGenesis and on Send with their bech32ics20 module, which
