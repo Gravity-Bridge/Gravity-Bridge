@@ -122,24 +122,28 @@ func AppendBytes(args ...[]byte) []byte {
 	return res
 }
 
-func ParseDestination(destination string) (receiver []byte, destChannel, denom, hrp string, err error) {
-
-	isCosmos := true
-
+// channel/receiver:denom
+func ParseDestinationRaw(destination string) (receiver, destChannel, denom string, isCosmos bool) {
+	isCosmos = true
+	receiver = destination
 	// has destination denom
-	if ind := strings.Index(destination, ":"); ind != -1 {
-		destination, denom = destination[0:ind], destination[ind+1:]
+	if ind := strings.Index(receiver, ":"); ind != -1 {
+		receiver, denom = receiver[0:ind], receiver[ind+1:]
 	}
-	// now processing destination
-	if ind := strings.Index(destination, "/"); ind != -1 {
+	// now processing receiver
+	if ind := strings.Index(receiver, "/"); ind != -1 {
 		// cosmos style
-		destChannel, destination = destination[0:ind], destination[ind+1:]
-	} else if ind := strings.Index(destination, "0x"); ind != -1 {
+		destChannel, receiver = receiver[0:ind], receiver[ind+1:]
+	} else if ind := strings.Index(receiver, "0x"); ind != -1 {
 		// ethereum style
-		destChannel, destination = destination[0:ind], destination[ind:]
+		destChannel, receiver = receiver[0:ind], receiver[ind:]
 		isCosmos = false
 	}
+	return
+}
 
+func ParseDestination(destination string) (receiver []byte, destChannel, denom, hrp string, err error) {
+	destination, destChannel, denom, isCosmos := ParseDestinationRaw(destination)
 	if isCosmos {
 		// validate cosmos
 		hrp, receiver, err = bech32.DecodeAndConvert(destination)

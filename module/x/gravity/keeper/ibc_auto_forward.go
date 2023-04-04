@@ -199,7 +199,6 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix
 	}
 
 	timeoutTime := thirtyDaysInFuture(ctx) // Set the ibc transfer to expire ~one month from now
-
 	msgTransfer := createIbcMsgTransfer(portId, *forward, sdk.AccAddress(fallback).String(), uint64(timeoutTime.UnixNano()))
 
 	// Make the ibc-transfer attempt
@@ -236,15 +235,23 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix
 // with the given timeout timestamp and a zero timeout block height
 func createIbcMsgTransfer(portId string, forward types.PendingIbcAutoForward, sender string, timeoutTimestampNs uint64) ibctransfertypes.MsgTransfer {
 	zeroHeight := ibcclienttypes.Height{}
-	return *ibctransfertypes.NewMsgTransfer(
-		portId,
-		forward.IbcChannel,
-		*forward.Token,
-		sender,
-		forward.ForeignReceiver,
-		zeroHeight, // Do not use block height based timeout
-		timeoutTimestampNs,
-	)
+	receiver, destChannel, denom, _ := types.ParseDestinationRaw(forward.ForeignReceiver)
+	msgTransfer := ibctransfertypes.MsgTransfer{
+		SourcePort:       portId,
+		SourceChannel:    forward.IbcChannel,
+		Token:            *forward.Token,
+		Sender:           sender,
+		Receiver:         receiver,
+		TimeoutHeight:    zeroHeight, // Do not use block height based timeout,
+		TimeoutTimestamp: timeoutTimestampNs,
+	}
+
+	// custom memo following standard channel:denom
+	if len(destChannel) > 0 || len(denom) > 0 {
+		msgTransfer.Memo = destChannel + ":" + denom
+	}
+
+	return msgTransfer
 }
 
 // thirtyDaysInFuture creates a time.Time exactly 30 days from the last BlockTime for use in createIbcMsgTransfer
