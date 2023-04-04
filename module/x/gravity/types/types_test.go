@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	mrand "math/rand"
 	"testing"
 
@@ -232,5 +233,15 @@ func shuffled(v InternalBridgeValidators) InternalBridgeValidators {
 
 // TODO: write some tests here
 func TestParseDestination(t *testing.T) {
-
+	msgSendToCosmos := MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-0/orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573:channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom",
+	}
+	sourceChannel, _, _ := msgSendToCosmos.ParseReceiverRaw()
+	destination := msgSendToCosmos.GetDestination(sourceChannel)
+	fmt.Println("destination: ", destination)
+	receiver, destChannel, denom, hrp, err := ParseDestination(destination)
+	require.NoError(t, err)
+	fmt.Println(sdk.AccAddress(receiver).String(), hrp)
+	fmt.Println("dest channel: ", destChannel)
+	fmt.Println("denom: ", denom)
 }

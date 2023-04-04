@@ -481,18 +481,9 @@ func (msg *MsgSendToCosmosClaim) GetDestination(sourceChannel string) string {
 // a => sourceChannel/cosmosReceiver
 // hrp is used when there is no source channel, otherwise it can be ignored
 // destReceiver is used for validating, and will be pass to ibc wasm
-func (msg *MsgSendToCosmosClaim) ParseReceiver() (sourceReceiver, destReceiver []byte, sourceChannel, destChannel, denom, hrp string, err error) {
-	sourceChannel, cosmosReceiver, destination := msg.ParseReceiverRaw()
-	destReceiver, destChannel, denom, hrp, err = ParseDestination(destination)
-	if err == nil {
-		// using from destination, such as same cointype 118 from orai to cosmos
-		if len(cosmosReceiver) == 0 {
-			sourceReceiver = destReceiver
-		} else {
-			// validate cosmos receiver, override hrp from cosmosReceiver
-			hrp, sourceReceiver, err = bech32.DecodeAndConvert(cosmosReceiver)
-		}
-	}
+func (msg *MsgSendToCosmosClaim) ParseReceiver() (sourceChannel, accountPrefix string, receiverAddress []byte, err error) {
+	sourceChannel, cosmosReceiver, _ := msg.ParseReceiverRaw()
+	accountPrefix, receiverAddress, err = bech32.DecodeAndConvert(cosmosReceiver)
 	return
 }
 

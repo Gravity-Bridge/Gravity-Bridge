@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
@@ -61,8 +60,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 
 	invalidAddress := false
 	// Validate the receiver as a valid bech32 address
-	sourceChannel, cosmosReceiver, _ := claim.ParseReceiverRaw()
-	accountPrefix, receiverAddress, err := bech32.DecodeAndConvert(cosmosReceiver)
+	sourceChannel, accountPrefix, receiverAddress, err := claim.ParseReceiver()
 
 	if err != nil {
 		invalidAddress = true
