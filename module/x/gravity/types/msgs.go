@@ -462,16 +462,16 @@ func (msg *MsgExecuteIbcAutoForwards) ValidateBasic() error {
 	return nil
 }
 
-// destination => destination
-// a => sourceChannel/destination
-// a:b => sourceChannel:destination
-func (msg *MsgSendToCosmosClaim) GetDestination(sourceChannel string) string {
-	if len(sourceChannel) == 0 {
-		return msg.CosmosReceiver
-	}
+// // destination => destination
+// // a => sourceChannel/destination
+// // a:b => sourceChannel:destination
+// func (msg *MsgSendToCosmosClaim) GetDestination(sourceChannel string) string {
+// 	if len(sourceChannel) == 0 {
+// 		return msg.CosmosReceiver
+// 	}
 
-	return msg.CosmosReceiver[len(sourceChannel)+1:]
-}
+// 	return msg.CosmosReceiver[len(sourceChannel)+1:]
+// }
 
 func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {
 	msg.ProtoMessage()
