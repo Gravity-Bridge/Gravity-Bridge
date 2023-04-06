@@ -127,7 +127,7 @@ pub async fn send_erc20_bulk(
     destinations: &[EthAddress],
     web3: &Web3,
 ) {
-    check_erc20_balance(erc20, amount.clone(), *MINER_ADDRESS, web3).await;
+    check_erc20_balance(erc20, amount, *MINER_ADDRESS, web3).await;
     let mut nonce = web3
         .eth_get_transaction_count(*MINER_ADDRESS)
         .await
@@ -135,13 +135,13 @@ pub async fn send_erc20_bulk(
     let mut transactions = Vec::new();
     for address in destinations {
         let send = web3.erc20_send(
-            amount.clone(),
+            amount,
             *address,
             erc20,
             *MINER_PRIVATE_KEY,
             Some(OPERATION_TIMEOUT),
             vec![
-                SendTxOption::Nonce(nonce.clone()),
+                SendTxOption::Nonce(nonce),
                 SendTxOption::GasLimit(100_000u32.into()),
                 SendTxOption::GasPriceMultiplier(5.0),
             ],
@@ -153,7 +153,7 @@ pub async fn send_erc20_bulk(
     wait_for_txids(txids, web3).await;
     let mut balance_checks = Vec::new();
     for address in destinations {
-        let check = check_erc20_balance(erc20, amount.clone(), *address, web3);
+        let check = check_erc20_balance(erc20, amount, *address, web3);
         balance_checks.push(check);
     }
     join_all(balance_checks).await;
@@ -173,10 +173,10 @@ pub async fn send_eth_bulk(amount: Uint256, destinations: &[EthAddress], web3: &
     for address in destinations {
         let t = Transaction {
             to: *address,
-            nonce: nonce.clone(),
+            nonce,
             gas_price: HIGH_GAS_PRICE.into(),
             gas_limit: 24000u64.into(),
-            value: amount.clone(),
+            value: amount,
             data: Vec::new(),
             signature: None,
         };
@@ -212,7 +212,7 @@ pub async fn check_erc20_balance(
 ) {
     let new_balance = get_erc20_balance_safe(erc20, web3, address).await;
     let new_balance = new_balance.unwrap();
-    assert!(new_balance >= amount.clone());
+    assert!(new_balance >= amount);
 }
 
 /// utility function for bulk checking erc20 balances, used to provide
@@ -709,7 +709,7 @@ pub async fn get_validator_to_delegate_to(contact: &Contact) -> (CosmosAddress, 
     let mut lowest = 0u8.into();
     for v in validators {
         let amount: Uint256 = v.tokens.parse().unwrap();
-        total_bonded_stake += amount.clone();
+        total_bonded_stake += amount;
 
         if lowest == 0u8.into() || amount < lowest {
             lowest = amount;

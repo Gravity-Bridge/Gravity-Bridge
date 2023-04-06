@@ -176,7 +176,7 @@ async fn setup_batch_test(
         .unwrap()
         .unwrap();
     let cdai_name = cdai_held.denom.clone();
-    let cdai_amount = cdai_held.amount.clone();
+    let cdai_amount = cdai_held.amount;
     info!(
         "generated address' cosmos balance of {} is {}",
         cdai_name, cdai_amount
@@ -197,7 +197,7 @@ async fn setup_batch_test(
         dest_eth_address,
         Coin {
             denom: cdai_name.clone(),
-            amount: send_amount.clone(),
+            amount: send_amount,
         },
         bridge_denom_fee.clone(),
         None,

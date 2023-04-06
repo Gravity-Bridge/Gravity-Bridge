@@ -88,7 +88,7 @@ pub async fn cosmos_to_eth(
 
     let amount = to_bridge.clone();
     let full_amount = Coin {
-        amount: to_bridge.amount.clone() + chain_fee.amount.clone(),
+        amount: to_bridge.amount + chain_fee.amount,
         denom: to_bridge.denom.clone(),
     };
     check_for_fee(&full_amount, sender_address, contact).await;
@@ -101,7 +101,7 @@ pub async fn cosmos_to_eth(
 
     match balance {
         Some(balance) => {
-            if balance.amount < amount.amount.clone() + bridge_fee.amount.clone() {
+            if balance.amount < amount.amount + bridge_fee.amount {
                 if is_cosmos_originated {
                     error!("Your transfer of {} {} tokens with chain fee {} is greater than your balance of {} tokens. Remember you need some to pay for fees!", print_atom(amount.amount), to_bridge.denom, print_atom(chain_fee.amount), print_atom(balance.amount));
                 } else {

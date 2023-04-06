@@ -58,7 +58,7 @@ pub async fn send_to_eth_and_cancel(
         user_keys.eth_address,
         Coin {
             denom: token_name.clone(),
-            amount: amount.clone(),
+            amount,
         },
         bridge_denom_fee.clone(),
         None,

@@ -153,13 +153,11 @@ pub async fn transaction_stress_test(
     let starting_eth = one_eth() * STARTING_ETH.into();
     let max_expected_sent = one_hundred_eth();
     // Users are not refunded the ChainFee value they pay for the send
-    let max_nonrefundable_amount =
-        get_reasonable_send_to_eth_fee(contact, max_expected_sent.clone())
-            .await
-            .expect("Unable to get reasonable fee!");
+    let max_nonrefundable_amount = get_reasonable_send_to_eth_fee(contact, max_expected_sent)
+        .await
+        .expect("Unable to get reasonable fee!");
 
-    let min_expected_balance =
-        starting_eth.clone() - 500u16.into() - max_nonrefundable_amount.clone();
+    let min_expected_balance = starting_eth - 500u16.into() - max_nonrefundable_amount;
 
     let start = Instant::now();
     let mut good = true;
@@ -174,16 +172,15 @@ pub async fn transaction_stress_test(
                     .await
                     .unwrap();
 
-                let min_expected_canceled_balance = starting_eth.clone()
-                    - sent_amounts[keys][token].clone()
-                    - max_nonrefundable_amount.clone();
+                let min_expected_canceled_balance =
+                    starting_eth - sent_amounts[keys][token] - max_nonrefundable_amount;
 
                 if e_dest_addr == user_who_cancels.eth_address {
                     if bal >= min_expected_canceled_balance {
                         info!("We successfully found the user who canceled their sends!");
                         found_canceled = true;
                     }
-                } else if bal < min_expected_balance.clone() {
+                } else if bal < min_expected_balance {
                     good = false;
                 }
             }
@@ -232,13 +229,13 @@ pub async fn prep_users_for_deposit(
     eth_destinations.extend(sending_eth_addresses.clone());
     eth_destinations.extend(dest_eth_addresses);
     let start_amt: Uint256 = one_eth() * 2u8.into();
-    send_eth_bulk(start_amt.clone(), &eth_destinations, web30).await;
+    send_eth_bulk(start_amt, &eth_destinations, web30).await;
     info!("Sent {} addresses {} ETH", NUM_USERS, start_amt);
 
     // now we need to send all the sending eth addresses erc20's to send
     let starting_eth: Uint256 = one_eth() * STARTING_ETH.into();
     for token in erc20_addresses.iter() {
-        send_erc20_bulk(starting_eth.clone(), *token, &sending_eth_addresses, web30).await;
+        send_erc20_bulk(starting_eth, *token, &sending_eth_addresses, web30).await;
         info!("Sent {} addresses {} {}", NUM_USERS, STARTING_ETH, token);
     }
     // wait one block to make sure all sends are processed
@@ -268,7 +265,7 @@ pub async fn test_bulk_send_to_cosmos(
             amount_sent_per_token_type
                 .get_mut(keys)
                 .unwrap()
-                .insert(*token, amount.clone());
+                .insert(*token, amount);
 
             let fut = send_to_cosmos(
                 *token,
@@ -338,9 +335,8 @@ pub async fn test_bulk_send_to_cosmos(
             let bal = get_erc20_balance_safe(*token, web30, e_dest_addr)
                 .await
                 .unwrap();
-            let expected_balance =
-                starting_eth.clone() - amount_sent_per_token_type[keys][token].clone();
-            if bal != expected_balance.clone() {
+            let expected_balance = starting_eth - amount_sent_per_token_type[keys][token];
+            if bal != expected_balance {
                 panic!("Failed to decrement all balances on Ethereum!");
             }
         }
@@ -401,13 +397,12 @@ pub async fn lock_funds_in_pool(
             // Get a sufficient fee for this Tx, and remove that from the amount to send so the address doesn't run out
             // of funds
             let chain_fee_amount =
-                get_reasonable_send_to_eth_fee(contact, sent_amounts[keys][token].clone())
+                get_reasonable_send_to_eth_fee(contact, sent_amounts[keys][token])
                     .await
                     .expect("Unable to get reasonable fee!");
-            let send_amount =
-                sent_amounts[keys][token].clone() - 500u16.into() - chain_fee_amount.clone();
+            let send_amount = sent_amounts[keys][token] - 500u16.into() - chain_fee_amount;
 
-            send_coin.amount = send_amount.clone();
+            send_coin.amount = send_amount;
 
             let send_fee = Coin {
                 denom: send_coin.denom.clone(),

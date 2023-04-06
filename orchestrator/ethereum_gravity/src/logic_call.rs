@@ -69,7 +69,7 @@ pub async fn send_eth_logic_call(
         .await?;
     info!("Sent batch update with txid {:#066x}", tx);
 
-    web3.wait_for_transaction(tx.clone(), timeout, None).await?;
+    web3.wait_for_transaction(tx, timeout, None).await?;
 
     let last_nonce = get_logic_call_nonce(
         gravity_contract_address,
@@ -108,17 +108,17 @@ pub async fn estimate_logic_call_cost(
 ) -> Result<GasCost, GravityError> {
     let our_balance = web3.eth_get_balance(our_eth_address).await?;
     let our_nonce = web3.eth_get_transaction_count(our_eth_address).await?;
-    let gas_limit = min((u64::MAX - 1).into(), our_balance.clone());
+    let gas_limit = min((u64::MAX - 1).into(), our_balance);
     let gas_price = web3.eth_gas_price().await?;
     // increase the value by 20% without using floating point multiplication
-    let gas_price = gas_price.clone() + (gas_price / 5u8.into());
+    let gas_price = gas_price + (gas_price / 5u8.into());
     let zero: Uint256 = 0u8.into();
     let val = web3
         .eth_estimate_gas(TransactionRequest {
             from: Some(our_eth_address),
             to: gravity_contract_address,
-            nonce: Some(our_nonce.clone().into()),
-            gas_price: Some(gas_price.clone().into()),
+            nonce: Some(our_nonce.into()),
+            gas_price: Some(gas_price.into()),
             gas: Some(gas_limit.into()),
             value: Some(zero.into()),
             data: Some(
@@ -150,11 +150,11 @@ fn encode_logic_call_payload(
     let mut fee_amounts = Vec::new();
     let mut fee_token_contracts = Vec::new();
     for item in call.transfers.iter() {
-        transfer_amounts.push(Token::Uint(item.amount.clone()));
+        transfer_amounts.push(Token::Uint(item.amount));
         transfer_token_contracts.push(item.token_contract_address);
     }
     for item in call.fees.iter() {
-        fee_amounts.push(Token::Uint(item.amount.clone()));
+        fee_amounts.push(Token::Uint(item.amount));
         fee_token_contracts.push(item.token_contract_address);
     }
 

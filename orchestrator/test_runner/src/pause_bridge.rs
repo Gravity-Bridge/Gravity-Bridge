@@ -122,11 +122,11 @@ pub async fn pause_bridge_test(
         amount: 1u64.into(),
     };
     let amount = amount - 5u64.into();
-    let chain_fee = get_reasonable_send_to_eth_fee(contact, amount.clone())
+    let chain_fee = get_reasonable_send_to_eth_fee(contact, amount)
         .await
         .expect("Unable to get reasonable SendToEth fee");
     let chain_fee_coin = Coin {
-        amount: chain_fee.clone(),
+        amount: chain_fee,
         denom: token_name.clone(),
     };
     send_to_eth(
@@ -134,7 +134,7 @@ pub async fn pause_bridge_test(
         user_keys.eth_address,
         Coin {
             denom: token_name.clone(),
-            amount: amount.clone(),
+            amount,
         },
         bridge_denom_fee.clone(),
         Some(chain_fee_coin),
