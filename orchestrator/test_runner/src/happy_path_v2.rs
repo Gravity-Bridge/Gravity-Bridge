@@ -66,11 +66,11 @@ pub async fn happy_path_test_v2(
     let chain_fee: Uint256 = 500u64.into(); // A typical chain fee is 2 basis points, this gives us a bit of wiggle room
     let send_to_user_coin = Coin {
         denom: token_to_send_to_eth.clone(),
-        amount: amount_to_bridge.clone() + chain_fee.clone() + 100u8.into(),
+        amount: amount_to_bridge + chain_fee + 100u8.into(),
     };
     let send_to_eth_coin = Coin {
         denom: token_to_send_to_eth.clone(),
-        amount: amount_to_bridge.clone(),
+        amount: amount_to_bridge,
     };
     let chain_fee_coin = Coin {
         denom: token_to_send_to_eth.clone(),
@@ -180,7 +180,7 @@ pub async fn send_to_eth_and_confirm(
     let starting_balance = get_erc20_balance_safe(erc20_contract, web30, eth_receiver)
         .await
         .unwrap();
-    let amount_to_bridge = send_to_eth_coin.amount.clone();
+    let amount_to_bridge = send_to_eth_coin.amount;
     let res = send_to_eth(
         cosmos_key,
         eth_receiver,
@@ -208,11 +208,11 @@ pub async fn send_to_eth_and_confirm(
             continue;
         }
         let balance = new_balance.unwrap();
-        if balance.clone() - starting_balance.clone() == amount_to_bridge {
+        if balance - starting_balance == amount_to_bridge {
             info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
-            assert!(balance == amount_to_bridge.clone());
+            assert!(balance == amount_to_bridge);
             return true;
-        } else if balance.clone() - starting_balance.clone() != 0u8.into() {
+        } else if balance - starting_balance != 0u8.into() {
             error!("Expected {} but got {} instead", amount_to_bridge, balance);
             return false;
         }

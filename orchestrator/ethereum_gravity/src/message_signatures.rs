@@ -66,11 +66,11 @@ pub fn encode_logic_call_confirm(gravity_id: String, call: LogicCall) -> Vec<u8>
     let mut fee_amounts = Vec::new();
     let mut fee_token_contracts = Vec::new();
     for item in call.transfers.iter() {
-        transfer_amounts.push(Token::Uint(item.amount.clone()));
+        transfer_amounts.push(Token::Uint(item.amount));
         transfer_token_contracts.push(item.token_contract_address);
     }
     for item in call.fees.iter() {
-        fee_amounts.push(Token::Uint(item.amount.clone()));
+        fee_amounts.push(Token::Uint(item.amount));
         fee_token_contracts.push(item.token_contract_address);
     }
 

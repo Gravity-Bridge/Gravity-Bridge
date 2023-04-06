@@ -72,7 +72,7 @@ pub async fn deposit_overflow_test(
 
     // NOTE: the dest user's balance should be 1 * normal_amount of check_module_erc20 token
     let mut expected_cosmos_coins = vec![Coin {
-        amount: normal_amount.clone(),
+        amount: normal_amount,
         denom: check_module_denom.clone(),
     }];
     check_cosmos_balances(contact, dest, &expected_cosmos_coins).await;
@@ -84,7 +84,7 @@ pub async fn deposit_overflow_test(
         &orchestrator_keys,
         initial_nonce + 1,
         initial_block_height + 1,
-        max_amount.clone(),
+        max_amount,
         dest,
         *MINER_ADDRESS,
         overflowing_erc20,
@@ -97,7 +97,7 @@ pub async fn deposit_overflow_test(
     // NOTE: the dest user's balance should be 1 * normal_amount of check_module_erc20 token and
     // Uint256 max of false_claims_erc20 token
     expected_cosmos_coins.push(Coin {
-        amount: max_amount.clone(),
+        amount: max_amount,
         denom: overflowing_denom.clone(),
     });
     check_cosmos_balances(contact, dest, &expected_cosmos_coins).await;
@@ -110,7 +110,7 @@ pub async fn deposit_overflow_test(
         &orchestrator_keys,
         initial_nonce + 2,
         initial_block_height + 2,
-        normal_amount.clone(),
+        normal_amount,
         dest,
         *MINER_ADDRESS,
         check_module_erc20,
@@ -123,7 +123,7 @@ pub async fn deposit_overflow_test(
     // Uint256 max of false_claims_erc20 token
     expected_cosmos_coins = vec![
         Coin {
-            amount: normal_amount.clone() + normal_amount.clone(),
+            amount: normal_amount + normal_amount,
             denom: check_module_denom.clone(),
         },
         Coin {
@@ -138,7 +138,7 @@ pub async fn deposit_overflow_test(
         &orchestrator_keys,
         initial_nonce + 3,
         initial_block_height + 3,
-        normal_amount.clone(),
+        normal_amount,
         dest,
         *MINER_ADDRESS,
         overflowing_erc20,
@@ -156,7 +156,7 @@ pub async fn deposit_overflow_test(
         &orchestrator_keys,
         initial_nonce + 4,
         initial_block_height + 4,
-        normal_amount.clone(),
+        normal_amount,
         dest2,
         *MINER_ADDRESS,
         overflowing_erc20,

@@ -338,7 +338,7 @@ pub async fn test_erc20_deposit_result(
         dest,
         gravity_address,
         erc20_address,
-        amount.clone(),
+        amount,
     )
     .await?;
 
@@ -358,8 +358,8 @@ pub async fn test_erc20_deposit_result(
             (Some(start_coin), Some(end_coin)) => {
                 // When a bridge governance vote happens, the orchestrator will replay all incomplete
                 // sends to cosmos on the next send to cosmos transaction, so we need to use expected_change
-                if let Some(expected) = expected_change.clone() {
-                    if end_coin.amount.clone() - start_coin.amount.clone() == expected
+                if let Some(expected) = expected_change {
+                    if end_coin.amount - start_coin.amount == expected
                         && start_coin.denom == end_coin.denom
                     {
                         info!(
@@ -376,7 +376,7 @@ pub async fn test_erc20_deposit_result(
                             start_coin.amount,
                             amount.clone()
                         );
-                    } else if start_coin.amount + amount.clone() == end_coin.amount
+                    } else if start_coin.amount + amount == end_coin.amount
                         && start_coin.denom == end_coin.denom
                     {
                         info!(
@@ -390,7 +390,7 @@ pub async fn test_erc20_deposit_result(
             (None, Some(end_coin)) => {
                 // When a bridge governance vote happens, the orchestrator will replay all incomplete
                 // sends to cosmos on the next send to cosmos transaction, so we need to use expected_change
-                if let Some(expected) = expected_change.clone() {
+                if let Some(expected) = expected_change {
                     if end_coin.amount == expected {
                         info!(
                             "Successfully bridged ERC20 {}{} to Cosmos! Balance is now {}{}",
@@ -444,7 +444,7 @@ pub async fn send_erc20_deposit(
     let tx_id = send_to_cosmos(
         erc20_address,
         gravity_address,
-        amount.clone(),
+        amount,
         dest,
         *MINER_PRIVATE_KEY,
         None,
@@ -539,7 +539,7 @@ async fn test_batch(
         dest_eth_address,
         Coin {
             denom: token_name.clone(),
-            amount: amount.clone(),
+            amount,
         },
         bridge_denom_fee.clone(),
         None,
@@ -589,7 +589,7 @@ async fn test_batch(
         send_one_eth(dest_eth_address, web30).await;
     }
 
-    check_erc20_balance(erc20_contract, amount.clone(), dest_eth_address, web30).await;
+    check_erc20_balance(erc20_contract, amount, dest_eth_address, web30).await;
     info!(
         "Successfully updated txbatch nonce to {} and sent {}{} tokens to Ethereum!",
         current_eth_batch_nonce, amount, token_name

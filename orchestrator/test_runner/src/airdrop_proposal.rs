@@ -75,7 +75,7 @@ async fn submit_and_pass_airdrop_proposal(
     let starting_amount_in_pool =
         get_coins(&STAKING_TOKEN, &community_pool_contents_start).unwrap();
     let (recipients, amounts) =
-        generate_valid_accounts_and_amounts(num_recipients, starting_amount_in_pool.amount.clone());
+        generate_valid_accounts_and_amounts(num_recipients, starting_amount_in_pool.amount);
 
     let proposal_content = AirdropProposalJson {
         title: format!("Proposal to perform {} airdrop", denom),
@@ -178,7 +178,7 @@ async fn submit_and_fail_airdrop_proposal(
     let (recipients, amounts) = if make_too_many {
         let res = generate_invalid_accounts_and_amounts(
             NUM_AIRDROP_RECIPIENTS,
-            starting_amount_in_pool.amount.clone(),
+            starting_amount_in_pool.amount,
         );
         match res {
             Some(res) => res,
@@ -189,10 +189,7 @@ async fn submit_and_fail_airdrop_proposal(
             }
         }
     } else {
-        generate_valid_accounts_and_amounts(
-            NUM_AIRDROP_RECIPIENTS,
-            starting_amount_in_pool.amount.clone(),
-        )
+        generate_valid_accounts_and_amounts(NUM_AIRDROP_RECIPIENTS, starting_amount_in_pool.amount)
     };
 
     let mut byte_recipients = Vec::new();

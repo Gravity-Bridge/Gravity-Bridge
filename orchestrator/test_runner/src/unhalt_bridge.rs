@@ -146,7 +146,7 @@ pub async fn unhalt_bridge_test(
         bridge_user.cosmos_address,
         gravity_address,
         erc20_address,
-        halted_bridge_amt.clone(),
+        halted_bridge_amt,
         Some(Duration::from_secs(30)),
         None,
     )
@@ -221,7 +221,7 @@ pub async fn unhalt_bridge_test(
         bridge_user.cosmos_address,
         gravity_address,
         erc20_address,
-        fixed_bridge_amt.clone(),
+        fixed_bridge_amt,
         None,
         None,
     )
