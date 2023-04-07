@@ -100,8 +100,8 @@ mod test {
     use clarity::utils::bytes_to_hex_str;
     use clarity::utils::hex_str_to_bytes;
     use clarity::PrivateKey as EthPrivateKey;
+    use gravity_utils::types::erc20::Erc20Token;
     use gravity_utils::types::BatchTransaction;
-    use gravity_utils::types::Erc20Token;
     use gravity_utils::types::LogicCall;
     use gravity_utils::types::TransactionBatch;
     use gravity_utils::types::ValsetMember;

@@ -217,6 +217,7 @@ mod tests {
     use super::*;
     use clarity::utils::hex_str_to_bytes;
     use clarity::Signature;
+    use gravity_utils::types::erc20::Erc20Token;
 
     #[test]
     /// This test encodes an abiV2 function call, specifically one
