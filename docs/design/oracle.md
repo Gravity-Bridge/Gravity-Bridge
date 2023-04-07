@@ -2,7 +2,7 @@
 
 As part of operating the Gravity bridge all validators run an `Oracle` this Ethereum oracle is bundled into the `gbt` (Gravity bridge tools) binary along with the [ethereum signer](/docs/design/ethereum-signing.md). For a detailed look at the code involved in this process see [code structure intro](/docs/developer/code-structure.md)
 
-This process connects to an Ethereum node to monitor the Ethereum blockchain for new events involving the `Gravity Contract`.
+This process connects to an Ethereum node to monitor the Ethereum blockchain for new events involving the `Gravity Contract`. While monitoring for events, the `Oracle` will also collect both a list of ERC20 token addresses to monitor, and snapshots of relevant token supply amounts from Cosmos. With this key information the Oracle will make end-to-end bridge balance assertions before continuing operation.
 
 The `Gravity Contract` assigns every event a strictly increasing `event_nonce` with no gaps. This nonce is the unique coordinating value for the Oracle. Every event has the `event_nonce` attached, this is used to ensure an unambiguous ordering when when a validator submits a claim stating it has seen a specific event happening on Ethereum.
 
