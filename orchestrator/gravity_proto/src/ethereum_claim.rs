@@ -4,7 +4,7 @@
 /// EthereumClaim represents a claim on ethereum state
 pub trait EthereumClaim {
     /// All Ethereum claims that we relay from the Gravity contract and into the module
-    /// have a nonce that is monotonically increasing and unique, since this nonce is
+    /// have a nonce that is strictly increasing and unique, since this nonce is
     /// issued by the Ethereum contract it is immutable and must be agreed on by all validators
     /// any disagreement on what claim goes to what nonce means someone is lying.
     fn get_event_nonce(&self) -> u64;
