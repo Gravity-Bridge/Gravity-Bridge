@@ -19,7 +19,7 @@ use gravity_utils::{
         TransactionBatchExecutedEvent, ValsetUpdatedEvent,
     },
 };
-use metrics_exporter::metrics_errors_counter;
+use metrics_exporter::{metrics_errors_counter, metrics_latest};
 use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::jsonrpc::error::Web3Error;
@@ -31,8 +31,65 @@ pub struct CheckedNonces {
     pub event_nonce: Uint256,
 }
 
+// Primarily calls check_for_and_relay_events to aggregate and submit events from Eth to Cosmos. This fn handles the various
+// errors that function may return, and returns updated nonces for use in the main loop
 #[allow(clippy::too_many_arguments)]
-pub async fn check_for_events(
+pub async fn attest_to_events(
+    web3: &Web3,
+    contact: &Contact,
+    grpc_client: &GravityQueryClient<Channel>,
+    gravity_contract_address: EthAddress,
+    our_private_key: CosmosPrivateKey,
+    fee: Coin,
+    last_checked_block: Uint256,
+    last_checked_event: Uint256,
+) -> CheckedNonces {
+    let mut grpc_client = grpc_client.clone();
+    let mut last_block = last_checked_block; // Maybe modified, return later
+    let mut last_event = last_checked_event; // Maybe modified, return later
+
+    match check_for_and_relay_events(
+        web3,
+        contact,
+        &mut grpc_client,
+        gravity_contract_address,
+        our_private_key,
+        fee.clone(),
+        last_checked_block,
+    )
+    .await
+    {
+        Ok(nonces) => {
+            // If the governance happened while check_for_events() was executing and there were no new event nonces,
+            // nonces.event_nonce would return lower value than last_checked_event. We want to keep last_checked_event
+            // value so it could be used in the next iteration to check if we should return to the
+            // earlier block and continue from that point. CheckedNonces is accurate unless a governance vote happens.
+            last_block = nonces.block_number;
+            if nonces.event_nonce > last_event {
+                last_event = nonces.event_nonce;
+            }
+            metrics_latest(
+                last_event.to_string().parse().unwrap(),
+                "last_checked_event",
+            );
+        }
+        Err(e) => {
+            error!(
+                "Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}",
+                e
+            );
+            metrics_errors_counter(0, "Failed to get events for block range");
+        }
+    }
+    CheckedNonces {
+        block_number: last_block,
+        event_nonce: last_event,
+    }
+}
+
+// Aggregates and submits the latest unattested events from Eth to Cosmos
+#[allow(clippy::too_many_arguments)]
+pub async fn check_for_and_relay_events(
     web3: &Web3,
     contact: &Contact,
     grpc_client: &mut GravityQueryClient<Channel>,
@@ -212,18 +269,13 @@ pub async fn check_for_events(
             )
             .await?;
 
-            info!("Current event nonce is {}", new_event_nonce);
-
             // since we can't actually trust that the above txresponse is correct we have to check here
             // we may be able to trust the tx response post grpc
             if new_event_nonce == last_event_nonce {
                 return Err(GravityError::InvalidBridgeStateError(
                     format!("Claims did not process, trying to update but still on {}, trying again in a moment, check txhash {:?} for errors", last_event_nonce, res),
                 ));
-            } else {
-                info!("Claims processed, new nonce {}", new_event_nonce);
             }
-
             // find the eth block for our newest event nonce
             let valsets = ValsetUpdatedEvent::get_block_for_nonce(new_event_nonce, &valsets);
             let deposits = SendToCosmosEvent::get_block_for_nonce(new_event_nonce, &deposits);

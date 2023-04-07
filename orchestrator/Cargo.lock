@@ -776,6 +776,7 @@ dependencies = [
  "deep_space",
  "env_logger",
  "ethereum_gravity",
+ "futures",
  "gravity_proto",
  "gravity_utils",
  "log",
@@ -1161,6 +1162,7 @@ dependencies = [
  "actix",
  "clarity",
  "deep_space",
+ "futures",
  "gravity_utils",
  "log",
  "num256",
@@ -1431,6 +1433,7 @@ version = "0.1.0"
 dependencies = [
  "clarity",
  "deep_space",
+ "futures",
  "gravity_proto",
  "lazy_static",
  "log",
