@@ -74,7 +74,7 @@ impl Confirm for ValsetConfirmResponse {
 /// a list of validators, powers, and eth addresses at a given block height
 #[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq)]
 pub struct Valset {
-    /// The monotonically increasing nonce value used to prevent
+    /// The strictly increasing nonce value used to prevent
     /// validator set update replay
     pub nonce: u64,
     /// Members of the validator set, these are the Ethereum keys of
