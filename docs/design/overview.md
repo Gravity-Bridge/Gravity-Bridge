@@ -25,6 +25,8 @@ things are listed below.
 
 [relaying semantics](/docs/design/relaying-semantics.md)
 
+[Security Features](/docs/design/security-features.md)
+
 ### Specs
 
 [slashing-spec](/spec/slashing-spec.md)

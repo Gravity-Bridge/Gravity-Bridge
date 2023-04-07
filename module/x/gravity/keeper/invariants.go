@@ -38,7 +38,8 @@ func AllInvariants(k Keeper) sdk.Invariant {
 	}
 }
 
-// ModuleBalanceInvariant checks that the module account's balance is equal to the balance of unbatched transactions and unobserved batches
+// ModuleBalanceInvariant checks that the module account's balance is equal to the balance of unbatched transactions, unobserved batches,
+// and pending IBC auto-forwards
 // Note that the returned bool should be true if there is an error, e.g. an unexpected module balance
 func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
