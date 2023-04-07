@@ -7,8 +7,9 @@ import { TestERC721A } from "./typechain/TestERC721A";
 import { ethers } from "ethers";
 import fs from "fs";
 import commandLineArgs from "command-line-args";
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { exit } from "process";
+import { VulnerableERC20 } from "./typechain";
+import axios from "axios";
 
 const args = commandLineArgs([
   // the ethernum node used to deploy the contract
@@ -125,19 +126,23 @@ async function deploy() {
     var erc20_b_path: string
     var erc20_c_path: string
     var erc721_a_path: string
+    var vulnerable_erc20_path: string
     const main_location_a = "/gravity/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json"
     const main_location_b = "/gravity/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json"
     const main_location_c = "/gravity/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json"
+    const main_location_vuln = "/gravity/solidity/artifacts/contracts/VulnerableERC20.sol/VulnerableERC20.json"
     const main_location_721_a = "/gravity/solidity/artifacts/contracts/TestERC721A.sol/TestERC721A.json"
     
     const alt_location_1_a = "/solidity/TestERC20A.json"
     const alt_location_1_b = "/solidity/TestERC20B.json"
     const alt_location_1_c = "/solidity/TestERC20C.json"
+    const alt_location_1_vuln = "/solidity/VulnerableERC20.json"
     const alt_location_1_721a = "/solidity/TestERC721A.json"
 
     const alt_location_2_a = "TestERC20A.json"
     const alt_location_2_b = "TestERC20B.json"
     const alt_location_2_c = "TestERC20C.json"
+    const alt_location_2_vuln = "VulnerableERC20.json"
     const alt_location_2_721a = "TestERC721A.json"
 
     if (fs.existsSync(main_location_a)) {
@@ -145,21 +150,23 @@ async function deploy() {
       erc20_b_path = main_location_b
       erc20_c_path = main_location_c
       erc721_a_path = main_location_721_a
+      vulnerable_erc20_path = main_location_vuln
     } else if (fs.existsSync(alt_location_1_a)) {
       erc20_a_path = alt_location_1_a
       erc20_b_path = alt_location_1_b
       erc20_c_path = alt_location_1_c
       erc721_a_path = alt_location_1_721a
+      vulnerable_erc20_path = alt_location_1_vuln
     } else if (fs.existsSync(alt_location_2_a)) {
       erc20_a_path = alt_location_2_a
       erc20_b_path = alt_location_2_b
       erc20_c_path = alt_location_2_c
       erc721_a_path = alt_location_2_721a
+      vulnerable_erc20_path = alt_location_2_vuln
     } else {
       console.log("Test mode was enabled but the ERC20 contracts can't be found!")
       exit(1)
     }
-
 
     const { abi, bytecode } = getContractArtifacts(erc20_a_path);
     const erc20Factory = new ethers.ContractFactory(abi, bytecode, wallet);
@@ -188,6 +195,13 @@ async function deploy() {
     await testERC721.deployed();
     const erc721TestAddress = testERC721.address;
     console.log("ERC721 deployed at Address - ", erc721TestAddress);
+
+    const { abi: abi4, bytecode: bytecode4 } = getContractArtifacts(vulnerable_erc20_path);
+    const erc20Factory3 = new ethers.ContractFactory(abi4, bytecode4, wallet);
+    const vulnERC20 = (await erc20Factory3.deploy(overrides)) as VulnerableERC20;
+    await vulnERC20.deployed();
+    const erc20TestAddressVulnerable = vulnERC20.address;
+    console.log("Vulnerable ERC20 deployed at - ", erc20TestAddressVulnerable);
   }
   const gravityIdString = await getGravityId();
   const gravityId = ethers.utils.formatBytes32String(gravityIdString);
