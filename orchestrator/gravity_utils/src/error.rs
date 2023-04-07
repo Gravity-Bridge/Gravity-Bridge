@@ -28,6 +28,7 @@ pub enum GravityError {
     InsufficientVotingPowerToPass(String),
     ParseBigIntError(ParseError),
     ValsetUpToDate,
+    InvalidBridgeBalances(String),
 }
 
 impl fmt::Display for GravityError {
@@ -62,6 +63,9 @@ impl fmt::Display for GravityError {
                     f,
                     "latest validator set is synced between Ethereum and Cosmos"
                 )
+            }
+            GravityError::InvalidBridgeBalances(val) => {
+                write!(f, "Invalid cross bridge balances: {}", val)
             }
         }
     }
