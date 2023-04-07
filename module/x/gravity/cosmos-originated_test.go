@@ -57,6 +57,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 }
 
 func addDenomToERC20Relation(tv *testingVars) {
+	tv.input.BankKeeper.MintCoins(tv.ctx, banktypes.ModuleName, sdk.NewCoins(sdk.NewCoin(tv.denom, sdk.NewInt(1000000000000))))
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, banktypes.Metadata{
 		Description: "The native staking token of the Cosmos Gravity Bridge",
 		Name:        "Graviton",
@@ -78,7 +79,7 @@ func addDenomToERC20Relation(tv *testingVars) {
 	for _, v := range keeper.OrchAddrs {
 		ethClaim := types.MsgERC20DeployedClaim{
 			EventNonce:     myNonce,
-			EthBlockHeight: 0,
+			EthBlockHeight: 1234567,
 			CosmosDenom:    tv.denom,
 			TokenContract:  tv.erc20,
 			Name:           "Graviton",
@@ -172,7 +173,7 @@ func acceptDepositEvent(tv *testingVars) {
 	for _, v := range keeper.OrchAddrs {
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     myNonce,
-			EthBlockHeight: 0,
+			EthBlockHeight: 1234567,
 			TokenContract:  myErc20.Contract,
 			Amount:         myErc20.Amount,
 			EthereumSender: anyETHAddr,
@@ -235,7 +236,7 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	for _, v := range keeper.OrchAddrs {
 		ethClaim := types.MsgERC20DeployedClaim{
 			EventNonce:     myNonce,
-			EthBlockHeight: 0,
+			EthBlockHeight: 1234567,
 			CosmosDenom:    ibcDenom,
 			TokenContract:  tokenContract,
 			Name:           "Atom",

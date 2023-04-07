@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
@@ -589,4 +590,55 @@ func (k Keeper) GetPendingIbcAutoForwards(
 	ctx := sdk.UnwrapSDKContext(c)
 	pendingForwards := k.PendingIbcAutoForwards(ctx, req.Limit)
 	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
+}
+
+// GetMonitoredERC20Addresses formats the MonitoredERC20Tokens as strings and returns them for the grpc query
+func (k Keeper) GetMonitoredERC20Addresses(
+	c context.Context, req *types.QueryMonitoredERC20Addresses,
+) (*types.QueryMonitoredERC20AddressesResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	addresses := k.MonitoredERC20Tokens(ctx)
+	var tokenStrs []string
+	for _, addr := range addresses {
+		tokenStrs = append(tokenStrs, addr.GetAddress().String())
+	}
+
+	return &types.QueryMonitoredERC20AddressesResponse{Addresses: tokenStrs}, nil
+}
+
+// GetBridgeBalanceSnapshots fetches the stored BridgeBalanceSnapshots, decodes their event nonces from the store key,
+// and returns them all as BridgeBalanceSnapshotResponses
+func (k Keeper) GetBridgeBalanceSnapshots(
+	c context.Context,
+	req *types.QueryBridgeBalanceSnapshots,
+) (*types.QueryBridgeBalanceSnapshotsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	limit := req.Limit
+	reverse := req.NewestFirst
+
+	snapshots := k.CollectBridgeBalanceSnapshots(ctx, reverse, limit)
+
+	return &types.QueryBridgeBalanceSnapshotsResponse{Snapshots: snapshots}, nil
+}
+
+// GetBridgeBalanceSnapshotByEventNonce implements types.QueryServer
+func (k Keeper) GetBridgeBalanceSnapshotByEventNonce(
+	c context.Context,
+	req *types.QueryBridgeBalanceSnapshotByEventNonce,
+) (*types.QueryBridgeBalanceSnapshotByEventNonceResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	store := ctx.KVStore(k.storeKey)
+	nonce := req.Nonce
+	key := types.GetBridgeBalanceSnapshotKey(nonce)
+	if !store.Has(key) {
+		return nil, fmt.Errorf("no snapshot with nonce %v exists", nonce)
+	}
+	snapshotBz := store.Get(key)
+	var snapshot types.BridgeBalanceSnapshot
+	if err := k.cdc.Unmarshal(snapshotBz, &snapshot); err != nil {
+		return nil, sdkerrors.Wrapf(err, "unable to fetch snapshot with nonce %v", nonce)
+	}
+
+	return &types.QueryBridgeBalanceSnapshotByEventNonceResponse{Snapshot: &snapshot}, nil
 }
