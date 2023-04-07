@@ -39,6 +39,12 @@ func RegisterProposalTypes() {
 		// nolint: exhaustruct
 		govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
 	}
+	monitoredERC20Tokens := "gravity/MonitoredERC20Tokens"
+	if !govtypes.IsValidProposalType(strings.TrimPrefix(monitoredERC20Tokens, prefix)) {
+		govtypes.RegisterProposalType(types.ProposalTypeMonitoredERC20Tokens)
+		// nolint: exhaustruct
+		govtypes.RegisterProposalTypeCodec(&types.MonitoredERC20TokensProposal{}, monitoredERC20Tokens)
+	}
 }
 
 func NewGravityProposalHandler(k Keeper) govtypes.Handler {
@@ -50,6 +56,8 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 			return k.HandleAirdropProposal(ctx, c)
 		case *types.IBCMetadataProposal:
 			return k.HandleIBCMetadataProposal(ctx, c)
+		case *types.MonitoredERC20TokensProposal:
+			return k.HandleMonitoredERC20TokensProposal(ctx, c)
 
 		default:
 			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
@@ -250,6 +258,49 @@ func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataP
 
 	// write out metadata, this will update existing metadata if no erc20 has been deployed
 	k.bankKeeper.SetDenomMetaData(ctx, p.Metadata)
+
+	return nil
+}
+
+// handles a governance proposal for setting the metadata of an IBC token, this takes the normal
+// metadata struct with one key difference, the base unit must be set as the ibc path string in order
+// for setting the denom metadata to work.
+func (k Keeper) HandleMonitoredERC20TokensProposal(ctx sdk.Context, p *types.MonitoredERC20TokensProposal) error {
+	ctx.Logger().Info("Gov vote passed: Setting Monitored ERC20 Tokens", "tokens", p.Tokens)
+
+	// checks each token to see if it is a valid address
+	if err := p.ValidateBasic(); err != nil {
+		return fmt.Errorf("Invalid MonitoredERC20TokensProposal: %v", err)
+	}
+	var tokens []types.EthAddress
+	for _, t := range p.Tokens {
+		// Address validation already occurred, so we can ignore address errors
+		// nolint: errcheck
+		addr, _ := types.NewEthAddress(t)
+
+		// Check that any cosmos originated denoms have an ERC20 representation
+		denom, exists := k.GetCosmosOriginatedDenom(ctx, *addr)
+		if exists && len(denom) > 0 {
+			// The ERC20 is a cosmos originated denom, check that the token has been bridged
+			contract, exists := k.GetCosmosOriginatedERC20(ctx, denom)
+			if !exists {
+				return fmt.Errorf(
+					"Invalid MonitoredERC20TokensProposal: ERC20 token %v is cosmos originated (%v), but no ERC20 representation has been registered?",
+					addr, denom,
+				)
+			}
+			if contract.GetAddress().String() != addr.GetAddress().String() {
+				return fmt.Errorf(
+					"Invalid MonitoredERC20TokensProposal: ERC20 token %v is cosmos originated (%v), but the registered representation is different than expected %v",
+					addr, denom, contract,
+				)
+			}
+		}
+
+		// If the above checks pass, add it to the list of contracts to use in the store
+		tokens = append(tokens, *addr)
+	}
+	k.setMonitoredERC20Tokens(ctx, tokens)
 
 	return nil
 }

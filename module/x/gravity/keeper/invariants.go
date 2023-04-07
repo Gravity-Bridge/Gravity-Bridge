@@ -44,15 +44,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		modAcc := k.accountKeeper.GetModuleAddress(types.ModuleName)
 		actualBals := k.bankKeeper.GetAllBalances(ctx, modAcc)
-		expectedBals := make(map[string]*sdk.Int, len(actualBals)) // Collect balances by contract
-		for _, v := range actualBals {
-			newInt := sdk.NewInt(0)
-			expectedBals[v.Denom] = &newInt
-		}
-		expectedBals = sumUnconfirmedBatchModuleBalances(ctx, k, expectedBals)
-		expectedBals = sumUnbatchedTxModuleBalances(ctx, k, expectedBals)
-		expectedBals = sumPendingIbcAutoForwards(ctx, k, expectedBals)
-
+		expectedBals := k.unaccountedGravityModuleBalancesMap(ctx)
 		// Compare actual vs expected balances
 		for _, actual := range actualBals {
 			denom := actual.GetDenom()
@@ -78,7 +70,32 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 	}
 }
 
-/////// MODULE BALANCE HELPERS
+// ///// MODULE BALANCE HELPERS
+func (k Keeper) UnaccountedGravityModuleBalances(ctx sdk.Context) sdk.Coins {
+	unaccountedMap := k.unaccountedGravityModuleBalancesMap(ctx)
+	ret := sdk.NewCoins()
+
+	for k, v := range unaccountedMap {
+		ret = ret.Add(sdk.NewCoin(k, *v))
+	}
+
+	return ret
+}
+
+func (k Keeper) unaccountedGravityModuleBalancesMap(ctx sdk.Context) map[string]*sdk.Int {
+	moduleBalances := k.bankKeeper.GetAllBalances(ctx, k.accountKeeper.GetModuleAddress(types.ModuleName))
+
+	unaccountedMap := make(map[string]*sdk.Int, len(moduleBalances)) // Collect balances by contract
+	for _, v := range moduleBalances {
+		newInt := sdk.NewInt(0)
+		unaccountedMap[v.Denom] = &newInt
+	}
+	unaccountedMap = sumUnconfirmedBatchModuleBalances(ctx, k, unaccountedMap)
+	unaccountedMap = sumUnbatchedTxModuleBalances(ctx, k, unaccountedMap)
+	unaccountedMap = sumPendingIbcAutoForwards(ctx, k, unaccountedMap)
+
+	return unaccountedMap
+}
 
 // sumUnconfirmedBatchModuleBalances calculate the value the module should have stored due to unconfirmed batches
 func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
@@ -435,6 +452,25 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	// BridgeBalanceSnapshotsKey
+	k.IterateBridgeBalanceSnapshots(ctx, false, func(key []byte, snapshot types.BridgeBalanceSnapshot) (stop bool) {
+		var expNonce uint64
+		expNonce, err = types.ExtractNonceFromBridgeBalanceSnapshotKey(key)
+		if err != nil || expNonce != snapshot.EventNonce {
+			err = fmt.Errorf("Key (%v) encodes nonce (%v) but extracting nonce results in (%v, %v)", key, expNonce, snapshot.EventNonce, err)
+			return true
+		}
+		err = snapshot.ValidateBasic()
+		if err != nil {
+			err = fmt.Errorf("ValidateBasic() failed: Key (%v) nonce (%v): %v", key, snapshot.EventNonce, err)
+			return true
+		}
+		return false
+	})
+	if err != nil {
+		return fmt.Errorf("Discovered invalid BridgeBalanceSnapshot: %v", err)
 	}
 
 	// Finally the params, which are not placed in the store

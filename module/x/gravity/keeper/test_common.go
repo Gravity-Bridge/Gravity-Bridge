@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
 
@@ -196,6 +197,9 @@ var (
 		"0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f", // SNX
 	}
 
+	// TokenContracts holds the TokenContractAddrs but as types.EthAddress
+	TokenContracts []types.EthAddress = make([]types.EthAddress, len(TokenContractAddrs))
+
 	// InitTokens holds the number of tokens to initialize an account with
 	InitTokens = sdk.TokensFromConsensusPower(110, sdk.DefaultPowerReduction)
 
@@ -240,6 +244,16 @@ var (
 		MinChainFeeBasisPoints:       0,
 	}
 )
+
+func init() {
+	for i, s := range TokenContractAddrs {
+		ctr, err := types.NewEthAddress(s)
+		if err != nil {
+			panic(fmt.Sprintf("invalid token contract address (%v) at %v-th position", s, err))
+		}
+		TokenContracts[i] = *ctr
+	}
+}
 
 // TestInput stores the various keepers required to test gravity
 type TestInput struct {
@@ -470,6 +484,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	// this is also used to initialize module accounts for all the map keys
 	maccPerms := map[string][]string{
 		authtypes.FeeCollectorName:     nil,
+		banktypes.ModuleName:           {authtypes.Minter, authtypes.Burner},
 		distrtypes.ModuleName:          nil,
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
@@ -633,6 +648,9 @@ func CreateTestEnv(t *testing.T) TestInput {
 
 	k.SetParams(ctx, TestingGravityParams)
 
+	// Set the monitored token addresses for cross bridge balances checking
+	k.setMonitoredERC20Tokens(ctx, TokenContracts[0:2])
+
 	testInput := TestInput{
 		GravityKeeper:     k,
 		AccountKeeper:     accountKeeper,
@@ -685,6 +703,12 @@ func (t TestInput) AssertInvariants() {
 	}
 
 	t.Context.Logger().Info("All invariants successful")
+}
+
+// An intermediary which allows calling a critical private function while safely restricting use to
+// tests only
+func (t TestInput) StoreBridgeBalanceSnapshot(snapshot types.BridgeBalanceSnapshot) {
+	t.GravityKeeper.storeBridgeBalanceSnapshot(t.Context, snapshot)
 }
 
 // getSubspace returns a param subspace for a given module name.

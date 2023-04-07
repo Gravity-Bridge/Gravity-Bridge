@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	ProposalTypeUnhaltBridge = "UnhaltBridge"
-	ProposalTypeAirdrop      = "Airdrop"
-	ProposalTypeIBCMetadata  = "IBCMetadata"
+	ProposalTypeUnhaltBridge         = "UnhaltBridge"
+	ProposalTypeAirdrop              = "Airdrop"
+	ProposalTypeIBCMetadata          = "IBCMetadata"
+	ProposalTypeMonitoredERC20Tokens = "MonitoredERC20Tokens"
 )
 
 func (p *UnhaltBridgeProposal) GetTitle() string { return p.Title }
@@ -124,5 +125,50 @@ func (p IBCMetadataProposal) String() string {
   Token Decimals:    %d
   Token Description: %s
 `, p.Title, p.Description, p.Metadata.Name, p.Metadata.Symbol, p.Metadata.Display, decimals, p.Metadata.Description))
+	return b.String()
+}
+
+func (p *MonitoredERC20TokensProposal) GetTitle() string { return p.Title }
+
+func (p *MonitoredERC20TokensProposal) GetDescription() string { return p.Description }
+
+func (p *MonitoredERC20TokensProposal) ProposalRoute() string { return RouterKey }
+
+func (p *MonitoredERC20TokensProposal) ProposalType() string {
+	return ProposalTypeMonitoredERC20Tokens
+}
+
+func (p *MonitoredERC20TokensProposal) ValidateBasic() error {
+	err := govtypes.ValidateAbstract(p)
+	if err != nil {
+		return err
+	}
+	for _, t := range p.Tokens {
+		if _, err := NewEthAddress(t); err != nil {
+			return fmt.Errorf("invalid token %v in proposal: %v", t, err)
+		}
+	}
+	return nil
+}
+
+func (p MonitoredERC20TokensProposal) String() string {
+	tokens := "["
+	for i, t := range p.Tokens {
+		// Add the token address to the work in progress string
+		addition := t
+		// If we're at the end, append a ] to close the group
+		if i == len(tokens)-1 {
+			addition += "]"
+		} else { // Otherwise separate the strings with commas
+			addition += ","
+		}
+		tokens += addition
+	}
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf(`Monitored ERC20 Tokens setting proposal:
+  Title:       %s
+  Description: %s
+  Tokens:      %s
+`, p.Title, p.Description, tokens))
 	return b.String()
 }

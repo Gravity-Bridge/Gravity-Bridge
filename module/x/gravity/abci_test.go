@@ -1,21 +1,26 @@
 package gravity
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 func TestValsetCreationIfNotAvailable(t *testing.T) {
@@ -643,4 +648,165 @@ func TestValsetPruning(t *testing.T) {
 	EndBlocker(ctx, pk)
 	require.Nil(t, pk.GetValset(ctx, firstValsetNonce))
 	require.Equal(t, 0, len(pk.GetValsetConfirms(ctx, firstValsetNonce)))
+}
+
+func TestSnapshotPruning(t *testing.T) {
+	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	pk := input.GravityKeeper
+	tokens := pk.MonitoredERC20Tokens(ctx)
+
+	var balances []*types.ERC20Token
+	for _, t := range tokens {
+		bal := types.ERC20Token{Contract: t.GetAddress().String(), Amount: sdk.OneInt()}
+		balances = append(balances, &bal)
+	}
+	slices.SortFunc(balances, func(a, b *types.ERC20Token) bool {
+		if a == nil || b == nil {
+			panic("nil balance when trying to sort snapshot balances")
+		}
+		return a.Contract < b.Contract
+	})
+
+	// Create test snapshots
+	store := ctx.KVStore(input.GravityStoreKey)
+	for i := 0; i < 3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(uint64(i + 1))
+		snap := types.BridgeBalanceSnapshot{
+			CosmosBlockHeight:   uint64(ctx.BlockHeight()),
+			EthereumBlockHeight: uint64(1234567 + i),
+			Balances:            balances,
+			EventNonce:          uint64(i + 1),
+		}
+		store.Set(key, input.Marshaler.MustMarshal(&snap))
+		store.Set(types.LastObservedEventNonceKey, types.UInt64Bytes(uint64(i+1)))
+		input.Context.WithBlockHeight(ctx.BlockHeight() + 1)
+	}
+	// Create enough snapshots to test pruning
+	for i := uint64(3); i < EventsToKeep+3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(uint64(i + 1))
+		snap := types.BridgeBalanceSnapshot{
+			CosmosBlockHeight:   uint64(ctx.BlockHeight()),
+			EthereumBlockHeight: uint64(1234567 + i),
+			Balances:            balances,
+			EventNonce:          uint64(i + 1),
+		}
+		store.Set(key, input.Marshaler.MustMarshal(&snap))
+		store.Set(types.LastObservedEventNonceKey, types.UInt64Bytes(uint64(i+1)))
+		input.Context.WithBlockHeight(ctx.BlockHeight() + 1)
+	}
+
+	// Assert that the snapshots are in the store
+	for i := uint64(0); i < EventsToKeep+3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(i + 1)
+		snap := store.Get(key)
+		var snapshot types.BridgeBalanceSnapshot
+		input.Marshaler.MustUnmarshal(snap, &snapshot)
+		require.Equal(t, snapshot.Balances, balances)
+	}
+
+	// EndBlocker should cleanup snapshot with nonce 1
+	EndBlocker(ctx, pk)
+
+	// Assert that the snapshots before the cutoff have been removed
+	for i := 0; i < 3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(uint64(i + 1))
+		fmt.Println("Checking for snapshot with nonce ", i, "and key", key)
+		require.False(t, store.Has(key))
+	}
+	// and that the rest remain
+	for i := uint64(3); i < EventsToKeep+3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(i + 1)
+		snap := store.Get(key)
+		var snapshot types.BridgeBalanceSnapshot
+		input.Marshaler.MustUnmarshal(snap, &snapshot)
+		require.Equal(t, snapshot.Balances, balances)
+	}
+}
+
+func TestInvalidSnapshotBalanceUpdate(t *testing.T) {
+	tv := initializeTestingVars(t)
+
+	// Should create and apply a ERC20 deployed attestation, which will store a snapshot
+	addDenomToERC20Relation(tv)
+	tv.ctx = tv.ctx.WithBlockHeight(tv.ctx.BlockHeight() + 1)
+	input := tv.input
+	pk := input.GravityKeeper
+	ctx := input.Context
+	handler := tv.h
+	cosmosDenom := tv.denom
+	depositReceiver := keeper.AccAddrs[0]
+
+	// Send 1 token to an account
+	err := input.BankKeeper.SendCoinsFromModuleToAccount(input.Context, banktypes.ModuleName, depositReceiver, sdk.NewCoins(sdk.NewCoin(cosmosDenom, sdk.NewIntFromUint64(1000000))))
+	require.NoError(t, err)
+
+	// nolint: exhaustruct
+	attestations, err := pk.GetAttestations(sdk.WrapSDKContext(ctx), &types.QueryAttestationsRequest{Limit: 1, OrderBy: "desc"})
+	require.NoError(t, err)
+	att := attestations.Attestations[0]
+	claim, err := pk.UnpackAttestationClaim(&att)
+	require.NoError(t, err)
+
+	snap := pk.FetchBridgeBalanceSnapshot(ctx, claim)
+	require.Equal(t, 0, len(snap.Balances))
+
+	depositContract := "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+	depositSender := "0x00000000219ab540356cBB839Cbe05303d7705Fa"
+	amount := uint64(1000000)
+	sendToCosmosClaim := observeSendToCosmos(t, handler, input, depositContract, amount, depositSender, depositReceiver.String())
+
+	msgSendToEth := types.MsgSendToEth{
+		Sender:    depositReceiver.String(),
+		EthDest:   depositSender,
+		Amount:    sdk.NewCoin(cosmosDenom, sdk.NewInt(1000)),
+		BridgeFee: sdk.NewCoin(cosmosDenom, sdk.NewInt(1000)),
+		ChainFee:  sdk.NewCoin(cosmosDenom, sdk.NewInt(1000)),
+	}
+	_, err = handler(input.Context, &msgSendToEth)
+	require.NoError(t, err)
+
+	EndBlocker(input.Context, pk)
+	input.Context = tv.ctx.WithBlockHeight(tv.ctx.BlockHeight() + 1)
+
+	secondSnap := pk.FetchBridgeBalanceSnapshot(ctx, sendToCosmosClaim)
+	t.Logf("Got second snapshot %+v\n", secondSnap)
+	require.Equal(t, 1, len(secondSnap.Balances))
+
+	expectedChange, err := pk.ExpectedSupplyChange(input.Context, sendToCosmosClaim)
+	t.Logf("Expecting sendToCosmos balance change of %+v\n", expectedChange)
+	require.NoError(t, err)
+	err = pk.AssertBridgeBalanceSanity(input.Context, sendToCosmosClaim, *expectedChange)
+	t.Logf("Assert balance sanity: %+v\n", err)
+	require.NoError(t, err)
+}
+
+func observeSendToCosmos(t *testing.T, h sdk.Handler, input keeper.TestInput, contract string, amount uint64, sender string, receiver string) types.EthereumClaim {
+	nonce := input.GravityKeeper.GetLastObservedEventNonce(input.Context) + 1
+	height := input.GravityKeeper.GetLastObservedEthereumBlockHeight(input.Context).EthereumBlockHeight + 1
+	var ethClaim types.MsgSendToCosmosClaim
+	// have all five validators observe this event
+	for _, v := range keeper.OrchAddrs {
+		ethClaim = types.MsgSendToCosmosClaim{
+			EventNonce:     nonce,
+			EthBlockHeight: height,
+			TokenContract:  contract,
+			Amount:         sdk.NewIntFromUint64(amount),
+			EthereumSender: sender,
+			CosmosReceiver: receiver,
+			Orchestrator:   v.String(),
+		}
+		_, err := h(input.Context, &ethClaim)
+		require.NoError(t, err)
+
+		// check if attestations persisted
+		hash, err := ethClaim.ClaimHash()
+		require.NoError(t, err)
+		a := input.GravityKeeper.GetAttestation(input.Context, nonce, hash)
+		require.NotNil(t, a)
+	}
+
+	var claim types.EthereumClaim = &ethClaim
+	return claim
 }

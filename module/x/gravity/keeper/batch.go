@@ -70,6 +70,11 @@ func (k Keeper) BuildOutgoingTXBatch(
 	checkpoint := batch.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
 
+	k.logger(ctx).Info("Batch created",
+		"batch-nonce", batch.BatchNonce, "batch-timeout", batch.BatchTimeout,
+		"batch-created-cosmos-block", batch.CosmosBlockCreated, "batch-contract", batch.TokenContract.GetAddress().String(),
+		"batch-total-value", batch.TotalValue().String(),
+	)
 	return batch, ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatch{
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
@@ -254,6 +259,11 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 	// Delete it's confirmations as well
 	k.DeleteBatchConfirms(ctx, *batch)
 
+	k.logger(ctx).Info("Batch cancelled",
+		"batch-nonce", batch.BatchNonce, "batch-timeout", batch.BatchTimeout,
+		"batch-created-cosmos-block", batch.CosmosBlockCreated, "batch-contract", batch.TokenContract.GetAddress().String(),
+		"batch-total-value", batch.TotalValue().String(),
+	)
 	return ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatchCanceled{
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
