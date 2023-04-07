@@ -2,6 +2,10 @@
 
 As outlined in the [overview](/docs/design/overview.md) the [Gravity.sol](/solidity/contracts/Gravity.sol) contract acts as a weighted powers multisig for the funds sorted in the bridge. Effectively producing a situation where the validator set of the Cosmos chain owns all the funds in the bridge in a multisig that replicates their stake weighted voting power on Cosmos.
 
+## End-to-End Balance Monitoring
+
+As part of the Orion update, the `Ethereum Signer` will collect a list of montitored ERC20 addresses and the relevant token supply snapshots from the Cosmos side of the bridge and make assertions about the monitored ERC20 supplies before submitting any signatures. The snapshots include an Ethereum block height for which the `Ethereum Signer` process must get the historical balances of each monitored ERC20 address held by the [Gravity.sol](/solidity/contracts/Gravity.sol). If the `Gravity.sol` balance is less than the balance on the Cosmos side of the bridge, then the `Ethereum Signer` will halt the signature submission process until the imbalance is resolved or manually attended to.
+
 ## Delegate Addresses
 
 This document outlines the Ethereum signatures, all contract calls on [Gravity.sol](/solidity/contracts/Gravity.sol) accept an array of signatures provided by a validator set stored in the contract.
