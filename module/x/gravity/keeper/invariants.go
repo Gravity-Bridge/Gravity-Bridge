@@ -434,6 +434,25 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 		return err
 	}
 
+	// BridgeBalanceSnapshotsKey
+	k.IterateBridgeBalanceSnapshots(ctx, false, func(key []byte, snapshot types.BridgeBalanceSnapshot) (stop bool) {
+		var expNonce uint64
+		expNonce, err = types.ExtractNonceFromBridgeBalanceSnapshotKey(key)
+		if err != nil || expNonce != snapshot.EventNonce {
+			err = fmt.Errorf("Key (%v) encodes nonce (%v) but extracting nonce results in (%v, %v)", key, expNonce, snapshot.EventNonce, err)
+			return true
+		}
+		err = snapshot.ValidateBasic()
+		if err != nil {
+			err = fmt.Errorf("ValidateBasic() failed: Key (%v) nonce (%v): %v", key, snapshot.EventNonce, err)
+			return true
+		}
+		return false
+	})
+	if err != nil {
+		return fmt.Errorf("Discovered invalid BridgeBalanceSnapshot: %v", err)
+	}
+
 	// Finally the params, which are not placed in the store
 	params := k.GetParams(ctx)
 	err = params.ValidateBasic()

@@ -790,6 +790,17 @@ func (app *Gravity) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 // Note: This should ONLY be called once, it should be called at the top of BeginBlocker guarded by firstBlock
 func (app *Gravity) firstBeginBlocker(ctx sdk.Context) {
 	app.assertBech32PrefixMatches(ctx)
+
+	// The following call should panic if any invalid ERC20 addresses exist in types/const.go
+	monitoredErc20s := app.gravityKeeper.MonitoredERC20Tokens(ctx)
+	if len(monitoredErc20s) > 0 {
+		ctx.Logger().Info(
+			"Loaded Monitored ERC20 Tokens, your orchestrator is required to monitor the Gravity.sol balance of the following tokens: %v",
+			monitoredErc20s,
+		)
+	} else {
+		ctx.Logger().Info("Monitored ERC20 Tokens not yet set, your orchestrator is currently not required to monitor any Gravity.sol balances")
+	}
 }
 
 // EndBlocker application updates every end block

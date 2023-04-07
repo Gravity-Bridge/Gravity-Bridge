@@ -121,6 +121,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	for _, v := range keeper.OrchAddrs {
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     uint64(1),
+			EthBlockHeight: 1234567,
 			TokenContract:  myErc20.Contract,
 			Amount:         myErc20.Amount,
 			EthereumSender: anyETHAddr,
@@ -157,6 +158,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 		// Test to reject skipped nonce
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     uint64(3),
+			EthBlockHeight: 1234567,
 			TokenContract:  tokenETHAddr,
 			Amount:         amountA,
 			EthereumSender: anyETHAddr,
@@ -180,6 +182,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 		// Test to finally accept consecutive nonce
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     uint64(2),
+			EthBlockHeight: 1234567,
 			Amount:         amountA,
 			TokenContract:  tokenETHAddr,
 			EthereumSender: anyETHAddr,
@@ -234,6 +237,7 @@ func TestEthereumBlacklist(t *testing.T) {
 	for _, v := range keeper.OrchAddrs {
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     uint64(1),
+			EthBlockHeight: 1234567,
 			TokenContract:  myErc20.Contract,
 			Amount:         myErc20.Amount,
 			EthereumSender: anyETHSender,
@@ -324,6 +328,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	}
 	almostTooMuchClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce,
+		EthBlockHeight: 1234567,
 		TokenContract:  almostTooMuch.Contract,
 		Amount:         almostTooMuch.Amount,
 		EthereumSender: anyETHAddr,
@@ -332,6 +337,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	}
 	exactlyTooMuchClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 1,
+		EthBlockHeight: 1234567,
 		TokenContract:  exactlyTooMuch.Contract,
 		Amount:         exactlyTooMuch.Amount,
 		EthereumSender: anyETHAddr,
@@ -345,6 +351,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	}
 	maxSendClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 2,
+		EthBlockHeight: 1234567,
 		TokenContract:  maxSend.Contract,
 		Amount:         maxSend.Amount,
 		EthereumSender: anyETHAddr,
@@ -417,6 +424,7 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 
 	ethClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce,
+		EthBlockHeight: 1234567,
 		TokenContract:  myErc20.Contract,
 		Amount:         myErc20.Amount,
 		EthereumSender: anyETHAddr,
@@ -508,6 +516,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 
 	foreignEthClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 0,
+		EthBlockHeight: 1234567,
 		TokenContract:  myErc20.Contract,
 		Amount:         myErc20.Amount,
 		EthereumSender: anyETHAddr,
@@ -517,6 +526,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 
 	nativeEthClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 1,
+		EthBlockHeight: 1234567,
 		TokenContract:  myErc20.Contract,
 		Amount:         myErc20.Amount,
 		EthereumSender: anyETHAddr,

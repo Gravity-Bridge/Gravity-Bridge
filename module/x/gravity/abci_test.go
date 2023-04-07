@@ -1,21 +1,25 @@
 package gravity
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 func TestValsetCreationIfNotAvailable(t *testing.T) {
@@ -636,4 +640,79 @@ func TestValsetPruning(t *testing.T) {
 	EndBlocker(ctx, pk)
 	require.Nil(t, pk.GetValset(ctx, firstValsetNonce))
 	require.Equal(t, 0, len(pk.GetValsetConfirms(ctx, firstValsetNonce)))
+}
+
+func TestSnapshotPruning(t *testing.T) {
+	input, ctx := keeper.SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	pk := input.GravityKeeper
+	tokens := pk.MonitoredERC20Tokens(ctx)
+
+	var balances []*types.ERC20Token
+	for _, t := range tokens {
+		bal := types.ERC20Token{Contract: t.GetAddress().String(), Amount: sdk.OneInt()}
+		balances = append(balances, &bal)
+	}
+	slices.SortFunc(balances, func(a, b *types.ERC20Token) bool {
+		if a == nil || b == nil {
+			panic("nil balance when trying to sort snapshot balances")
+		}
+		return a.Contract < b.Contract
+	})
+
+	// Create test snapshots
+	store := ctx.KVStore(input.GravityStoreKey)
+	for i := 0; i < 3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(uint64(i + 1))
+		snap := types.BridgeBalanceSnapshot{
+			CosmosBlockHeight:   uint64(ctx.BlockHeight()),
+			EthereumBlockHeight: uint64(1234567 + i),
+			Balances:            balances,
+			EventNonce:          uint64(i + 1),
+		}
+		store.Set(key, input.Marshaler.MustMarshal(&snap))
+		store.Set(types.LastObservedEventNonceKey, types.UInt64Bytes(uint64(i+1)))
+		input.Context.WithBlockHeight(ctx.BlockHeight() + 1)
+	}
+	// Create enough snapshots to test pruning
+	for i := uint64(3); i < EventsToKeep+3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(uint64(i + 1))
+		snap := types.BridgeBalanceSnapshot{
+			CosmosBlockHeight:   uint64(ctx.BlockHeight()),
+			EthereumBlockHeight: uint64(1234567 + i),
+			Balances:            balances,
+			EventNonce:          uint64(i + 1),
+		}
+		store.Set(key, input.Marshaler.MustMarshal(&snap))
+		store.Set(types.LastObservedEventNonceKey, types.UInt64Bytes(uint64(i+1)))
+		input.Context.WithBlockHeight(ctx.BlockHeight() + 1)
+	}
+
+	// Assert that the snapshots are in the store
+	for i := uint64(0); i < EventsToKeep+3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(i + 1)
+		snap := store.Get(key)
+		var snapshot types.BridgeBalanceSnapshot
+		input.Marshaler.MustUnmarshal(snap, &snapshot)
+		require.Equal(t, snapshot.Balances, balances)
+	}
+
+	// EndBlocker should cleanup snapshot with nonce 1
+	EndBlocker(ctx, pk)
+
+	// Assert that the snapshots before the cutoff have been removed
+	for i := 0; i < 3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(uint64(i + 1))
+		fmt.Println("Checking for snapshot with nonce ", i, "and key", key)
+		require.False(t, store.Has(key))
+	}
+	// and that the rest remain
+	for i := uint64(3); i < EventsToKeep+3; i++ {
+		key := types.GetBridgeBalanceSnapshotKey(i + 1)
+		snap := store.Get(key)
+		var snapshot types.BridgeBalanceSnapshot
+		input.Marshaler.MustUnmarshal(snap, &snapshot)
+		require.Equal(t, snapshot.Balances, balances)
+	}
 }

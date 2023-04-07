@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -66,6 +67,10 @@ func NewEthAddress(address string) (*EthAddress, error) {
 	return &addr, nil
 }
 
+func EthAddressFromCommon(address gethcommon.Address) *EthAddress {
+	return &EthAddress{address}
+}
+
 // Returns a new EthAddress with 0x0000000000000000000000000000000000000000 as the wrapped address
 func ZeroAddress() EthAddress {
 	return EthAddress{gethcommon.HexToAddress(ZeroAddressString)}
@@ -105,8 +110,30 @@ func EthAddrLessThan(e EthAddress, o EthAddress) bool {
 	return bytes.Compare([]byte(e.GetAddress().Hex()), []byte(o.GetAddress().Hex())) == -1
 }
 
+type EthAddresses []EthAddress
+
+func FromMonitoredERC20Addresses(in MonitoredERC20Addresses) EthAddresses {
+	var eas []EthAddress
+	for _, a := range in.Addresses {
+		ea, err := NewEthAddressFromBytes(a)
+		if err != nil {
+			panic(fmt.Sprintf("Invalid address in MonitoredERC20Addresses: %s", err.Error()))
+		}
+		eas = append(eas, *ea)
+	}
+	return eas
+}
+
+func (eas EthAddresses) ToMonitoredERC20Addresses() MonitoredERC20Addresses {
+	var byteses [][]byte
+	for _, ea := range eas {
+		byteses = append(byteses, ea.GetAddress().Bytes())
+	}
+	return MonitoredERC20Addresses{Addresses: byteses}
+}
+
 /////////////////////////
-// ERC20Token      //
+// ERC20Token ///////////
 /////////////////////////
 
 // NewERC20Token returns a new instance of an ERC20
@@ -149,9 +176,6 @@ func NewInternalERC20Token(amount sdk.Int, contract string) (*InternalERC20Token
 
 // ValidateBasic performs validation on all fields of an InternalERC20Token
 func (i *InternalERC20Token) ValidateBasic() error {
-	if i.Amount.IsNegative() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "coins must not be negative")
-	}
 	err := i.Contract.ValidateBasic()
 	if err != nil {
 		return sdkerrors.Wrap(err, "invalid contract")
@@ -169,7 +193,7 @@ func (i *InternalERC20Token) ToExternal() ERC20Token {
 
 // GravityCoin returns the gravity representation of the ERC20
 func (i *InternalERC20Token) GravityCoin() sdk.Coin {
-	return sdk.NewCoin(GravityDenom(i.Contract), i.Amount)
+	return sdk.Coin{Denom: GravityDenom(i.Contract), Amount: i.Amount}
 }
 
 // GravityDenom converts an EthAddress to a gravity cosmos denom
@@ -187,13 +211,121 @@ func (e *ERC20Token) ValidateBasic() error {
 }
 
 // Add adds one ERC20 to another
-// TODO: make this return errors instead
 func (i *InternalERC20Token) Add(o *InternalERC20Token) (*InternalERC20Token, error) {
 	if i.Contract.GetAddress() != o.Contract.GetAddress() {
 		return nil, sdkerrors.Wrap(ErrMismatched, "cannot add two different tokens")
 	}
 	sum := i.Amount.Add(o.Amount) // validation happens in NewInternalERC20Token()
 	return NewInternalERC20Token(sum, i.Contract.GetAddress().Hex())
+}
+
+// Neg changes the sign of i
+func (i *InternalERC20Token) Neg() {
+	i.Amount = i.Amount.Neg()
+}
+
+type ERC20Tokens []*ERC20Token
+
+// ToInternal converts an ERC20Token to the internal type InternalERC20Token
+func (e ERC20Tokens) ToInternal() (InternalERC20Tokens, error) {
+	var result []*InternalERC20Token
+	for _, t := range e {
+		i, err := t.ToInternal()
+		if err != nil {
+			return nil, fmt.Errorf("unable to convert token (%v) to internal type: %v", t, err)
+		}
+		result = append(result, i)
+	}
+	return result, nil
+}
+
+type InternalERC20Tokens []*InternalERC20Token
+
+func (i InternalERC20Tokens) IsSorted() bool {
+	for j := range i {
+		if j == len(i)-1 {
+			break
+		}
+		if i[j].Contract.GetAddress().String() >= i[j+1].Contract.GetAddress().String() {
+			return false
+		}
+	}
+	return true
+}
+
+func (i *InternalERC20Tokens) Add(n InternalERC20Token) {
+	for _, token := range *i {
+		if token.Contract.GetAddress() == n.Contract.GetAddress() {
+			token.Amount = token.Amount.Add(n.Amount)
+			return
+		}
+	}
+	// Never found an entry with n's contract, add it to the end of the collection
+	*i = append(*i, &n)
+}
+
+// Sort orders the elements of i by contract address
+func (i InternalERC20Tokens) Sort() {
+	slices.SortFunc(i, func(a, b *InternalERC20Token) bool {
+		return a.Contract.GetAddress().String() < b.Contract.GetAddress().String()
+	})
+}
+
+// Neg changes the sign of each element of i
+func (i InternalERC20Tokens) Neg() {
+	for _, t := range i {
+		t.Neg()
+	}
+}
+
+// SubSorted will perform subtraction between two sets of sorted InternalERC20Tokens
+// If any final amounts are zero, they will not be included in the result
+func (i InternalERC20Tokens) SubSorted(o InternalERC20Tokens) InternalERC20Tokens {
+	other := make(InternalERC20Tokens, len(o))
+	copy(other, o)
+	other.Neg()
+	return i.AddSorted(other)
+}
+
+// AddSorted will perform addition between two sets of sorted InternalERC20Tokens
+// If any final amounts are zero, they will not be included in the result
+func (i InternalERC20Tokens) AddSorted(o InternalERC20Tokens) InternalERC20Tokens {
+	if !i.IsSorted() || !o.IsSorted() {
+		panic("inputs to AddSorted are not sorted!")
+	}
+
+	unique := make(map[EthAddress]InternalERC20Tokens, len(i)+len(o))
+	// Add each token to a list of tokens based on contract
+	for _, list := range []InternalERC20Tokens{i, o} {
+		for _, token := range list {
+			unique[token.Contract] = append(unique[token.Contract], token)
+		}
+	}
+
+	var result InternalERC20Tokens
+	for ctr, list := range unique {
+		ctrTotal := &InternalERC20Token{Contract: ctr, Amount: sdk.NewInt(0)}
+		for _, token := range list {
+			var err error
+			ctrTotal, err = ctrTotal.Add(token)
+			if err != nil {
+				panic(err)
+			}
+		}
+		if !ctrTotal.Amount.IsZero() {
+			result = append(result, ctrTotal)
+		}
+	}
+	return result
+}
+
+// ToCoins converts each InternalERC20Token to an sdk.Coin by calling GravityCoin()
+func (i InternalERC20Tokens) ToCoins() sdk.Coins {
+	var coins sdk.Coins
+	for _, v := range i {
+		coins = coins.Add(v.GravityCoin())
+	}
+	return coins
 }
 
 // GravityDenomToERC20 converts a gravity cosmos denom to an EthAddress

@@ -118,8 +118,17 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 				att.Observed = true
 				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
 
+				expectedSupplyChange, err := k.ExpectedSupplyChange(ctx, claim)
+				if err != nil || expectedSupplyChange == nil {
+					errMsg := fmt.Sprintf("error calculating change to bank supply due to attestation: %v", err)
+					k.logger(ctx).Error(errMsg)
+					panic(errMsg)
+				}
 				k.processAttestation(ctx, att, claim)
 				k.emitObservedEvent(ctx, att, claim)
+
+				// Add a new bridge balance to the store, check the supply of all monitored erc20 tokens too
+				k.updateBridgeBalanceSnapshots(ctx, claim, *expectedSupplyChange)
 
 				break
 			}
@@ -456,4 +465,85 @@ func (k Keeper) IterateValidatorLastEventNonces(ctx sdk.Context, cb func(key []b
 			break
 		}
 	}
+}
+
+// ExpectedSupplyChange calculates the expected change to the bank supply as a result
+// of this attestation's application to state. E.g. a MsgSendToCosmosClaim would increase supply,
+// while MsgBatchSendToEthClaim would decrease supply.
+// Note: This MUST be called before applying the attestation, since batches are deleted
+// immediately after processing batch claims.
+func (k Keeper) ExpectedSupplyChange(ctx sdk.Context, ethClaim types.EthereumClaim) (*sdk.Coins, error) {
+	var change sdk.Coins
+	switch ethClaim.GetType() {
+	// Send to Cosmos
+	case types.CLAIM_TYPE_SEND_TO_COSMOS:
+		var claim *types.MsgSendToCosmosClaim = (ethClaim).(*types.MsgSendToCosmosClaim)
+		contract, err := types.NewEthAddress(claim.TokenContract)
+		if err != nil {
+			return nil, fmt.Errorf("attestation contains claim with invalid contract (%v): %v", claim.TokenContract, err)
+		}
+		change = sdk.Coins{sdk.Coin{Denom: types.GravityDenom(*contract), Amount: claim.Amount}}
+
+	// Batch Send to Eth
+	case types.CLAIM_TYPE_BATCH_SEND_TO_ETH:
+		var claim *types.MsgBatchSendToEthClaim = (ethClaim).(*types.MsgBatchSendToEthClaim)
+
+		// Get the batch associated with the claim
+		contract, err := types.NewEthAddress(claim.TokenContract)
+		if err != nil {
+			return nil, fmt.Errorf("attestation contains claim with invalid contract (%v): %v", claim.TokenContract, err)
+		}
+		outgoingBatch := k.GetOutgoingTXBatch(ctx, *contract, claim.BatchNonce)
+		if outgoingBatch == nil {
+			return nil, fmt.Errorf("unable to find batch for attestation with event nonce %v: %v", claim.EventNonce, err)
+		}
+
+		// Finally, calculate the total value the batch represents
+		change = sdk.NewCoins(outgoingBatch.TotalValue())
+
+	// ERC20 Deployed
+	case types.CLAIM_TYPE_ERC20_DEPLOYED:
+		// An ERC20 deploy indicates that the token originates on cosmos, and thus cannot affect its bank supply
+		change = sdk.Coins{}
+
+	// Valset Updated
+	case types.CLAIM_TYPE_VALSET_UPDATED:
+		var claim *types.MsgValsetUpdatedClaim = (ethClaim).(*types.MsgValsetUpdatedClaim)
+		if claim.RewardAmount.GT(sdk.ZeroInt()) && claim.RewardToken != types.ZeroAddressString {
+			rewardAddress, err := types.NewEthAddress(claim.RewardToken)
+			if err != nil {
+				return nil, sdkerrors.Wrap(err, "invalid reward token on claim")
+			}
+			// Check if coin is Cosmos-originated asset and get denom
+			isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *rewardAddress)
+			if !isCosmosOriginated {
+				err := sdkerrors.Wrapf(err, "valset updated claim contains invalid reward token (%v)", rewardAddress)
+				return nil, err
+			}
+
+			change = sdk.NewCoins(sdk.NewCoin(denom, claim.RewardAmount))
+		} else {
+			change = sdk.Coins{}
+		}
+	// Error case
+	case types.CLAIM_TYPE_UNSPECIFIED:
+		return nil, sdkerrors.Wrap(types.ErrInvalidClaim, "claim type unspecified")
+
+	// Logic Call Executed
+	case types.CLAIM_TYPE_LOGIC_CALL_EXECUTED:
+		var claim *types.MsgLogicCallExecutedClaim = (ethClaim).(*types.MsgLogicCallExecutedClaim)
+		logicCall := k.GetOutgoingLogicCall(ctx, claim.InvalidationId, claim.InvalidationNonce)
+		if logicCall == nil {
+			return nil, fmt.Errorf("could not find logic call for claim (%v)", ethClaim)
+		}
+
+		intLC, err := logicCall.ToInternal()
+		if err != nil {
+			return nil, fmt.Errorf("invalid logic call (%v): %v", logicCall, err)
+		}
+
+		change = intLC.TotalValue()
+	}
+
+	return &change, nil
 }
