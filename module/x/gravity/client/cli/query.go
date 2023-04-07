@@ -42,6 +42,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetLastObservedEthBlock(),
 		CmdGetLastObservedEthNonce(),
 		GetCmdQueryParams(),
+		GetCmdQueryMonitoredERC20s(),
 	}...)
 
 	return gravityQueryCmd
@@ -456,6 +457,32 @@ func GetCmdQueryParams() *cobra.Command {
 			}
 
 			return clientCtx.PrintProto(&res.Params)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdQueryMonitoredERC20s fetches the current monitored ERC20s
+func GetCmdQueryMonitoredERC20s() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "monitored-erc20s",
+		Args:  cobra.NoArgs,
+		Short: "Query gravity monitored ERC20s",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.GetMonitoredERC20Addresses(cmd.Context(), &types.QueryMonitoredERC20Addresses{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
 		},
 	}
 
