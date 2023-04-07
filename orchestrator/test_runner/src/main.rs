@@ -9,6 +9,7 @@ extern crate log;
 use crate::airdrop_proposal::airdrop_proposal_test;
 use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
+use crate::cross_bridge_balances::cross_bridge_balance_test;
 use crate::deposit_overflow::deposit_overflow_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
@@ -49,6 +50,7 @@ use valset_stress::validator_set_stress_test;
 mod airdrop_proposal;
 mod batch_timeout;
 mod bootstrapping;
+mod cross_bridge_balances;
 mod deposit_overflow;
 mod erc_721_happy_path;
 mod ethereum_blacklist_test;
@@ -109,6 +111,8 @@ lazy_static! {
     // LOCAL ETHEREUM CONSTANTS
     static ref ETH_NODE: String =
         env::var("ETH_NODE").unwrap_or_else(|_| "http://localhost:8545".to_owned());
+
+    static ref GRAVITY_MODULE_ADDRESS: String = deep_space::address::get_module_account_address(GRAVITY_MODULE_NAME, Some(ADDRESS_PREFIX.as_str())).unwrap().to_string();
 }
 
 /// this value reflects the contents of /tests/container-scripts/setup-validator.sh
@@ -117,6 +121,9 @@ lazy_static! {
 pub const STAKE_SUPPLY_PER_VALIDATOR: u128 = 1000000000;
 /// this is the amount each validator bonds at startup
 pub const STARTING_STAKE_PER_VALIDATOR: u128 = STAKE_SUPPLY_PER_VALIDATOR / 2;
+// This is the address of the gravity module, which is the first 20 bytes of the sha256 hash of "gravity" treated as
+// the bytes for a bech32 account address.
+const GRAVITY_MODULE_NAME: &str = "gravity";
 
 lazy_static! {
     // this key is the private key for the public key defined in tests/assets/ETHGenesis.json
@@ -231,6 +238,7 @@ pub async fn main() {
     let erc721_addresses = contracts.erc721_addresses.clone();
     // before we start the orchestrators send them some funds so they can pay
     // for things
+    let vulnerable_erc20_address = contracts.vulnerable_erc20_address;
     send_eth_to_orchestrators(&keys, &web30).await;
 
     // assert that the validators have a balance of the footoken we use
@@ -538,6 +546,23 @@ pub async fn main() {
                 keys,
                 gravity_address,
                 erc20_addresses,
+            )
+            .await;
+            return;
+        } else if test_type == "CROSS_BRIDGE_BALANCES" {
+            let vulnerable_erc20 = vulnerable_erc20_address.expect("CROSS_BRIDGE_BALANCES MUST have a vulnerable ERC20 deployed, check the contract deployer output");
+            let grpc = GravityQueryClient::connect(contact.get_url())
+                .await
+                .expect("Could not connect to gravity grpc client");
+            cross_bridge_balance_test(
+                &web30,
+                grpc,
+                &contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                erc20_addresses,
+                vulnerable_erc20,
             )
             .await;
             return;

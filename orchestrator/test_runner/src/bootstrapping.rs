@@ -204,6 +204,7 @@ pub struct BootstrapContractAddresses {
     pub erc20_addresses: Vec<EthAddress>,
     pub erc721_addresses: Vec<EthAddress>,
     pub uniswap_liquidity_address: Option<EthAddress>,
+    pub vulnerable_erc20_address: Option<EthAddress>,
 }
 
 /// Parses the ERC20 and Gravity contract addresses from the file created
@@ -218,6 +219,7 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
     let mut erc20_addresses = Vec::new();
     let mut erc721_addresses = Vec::new();
     let mut uniswap_liquidity = None;
+    let mut vulnerable_erc20_address = None;
     for line in output.lines() {
         if line.contains("Gravity deployed at Address -") {
             let address_string = line.split('-').last().unwrap();
@@ -236,6 +238,10 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
         } else if line.contains("Uniswap Liquidity test deployed at Address - ") {
             let address_string = line.split('-').last().unwrap();
             uniswap_liquidity = Some(address_string.trim().parse().unwrap());
+        } else if line.contains("Vulnerable ERC20 deployed at -") {
+            let address_string = line.split('-').last().unwrap();
+            vulnerable_erc20_address = Some(address_string.trim().parse().unwrap());
+            info!("found vulnerable erc20 address it is {}", address_string);
         }
     }
     let gravity_address: EthAddress = maybe_gravity_address.unwrap();
@@ -246,6 +252,7 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
         erc20_addresses,
         erc721_addresses,
         uniswap_liquidity_address: uniswap_liquidity,
+        vulnerable_erc20_address,
     }
 }
 

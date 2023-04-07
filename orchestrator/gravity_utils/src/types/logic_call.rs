@@ -1,3 +1,6 @@
+use std::convert::TryFrom;
+
+use super::erc20::Erc20Token;
 use super::*;
 use crate::error::GravityError;
 use clarity::Signature as EthSignature;

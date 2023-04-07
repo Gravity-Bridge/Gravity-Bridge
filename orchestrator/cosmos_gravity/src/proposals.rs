@@ -15,6 +15,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangePro
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
 use gravity_proto::gravity::AirdropProposal as AirdropProposalMsg;
 use gravity_proto::gravity::IbcMetadataProposal;
+use gravity_proto::gravity::MonitoredErc20TokensProposal;
 use gravity_proto::gravity::UnhaltBridgeProposal;
 use serde::Deserialize;
 use serde::Serialize;
@@ -25,7 +26,8 @@ use std::time::Duration;
 pub const AIRDROP_PROPOSAL_TYPE_URL: &str = "/gravity.v1.AirdropProposal";
 pub const UNHALT_BRIDGE_PROPOSAL_TYPE_URL: &str = "/gravity.v1.UnhaltBridgeProposal";
 pub const IBC_METADATA_PROPOSAL_TYPE_URL: &str = "/gravity.v1.IBCMetadataProposal";
-
+pub const MONITORED_ERC20_TOKENS_PROPOSAL_TYPE_URL: &str =
+    "/gravity.v1.MonitoredERC20TokensProposal";
 // cosmos-sdk proposals
 pub const PARAMETER_CHANGE_PROPOSAL_TYPE_URL: &str =
     "/cosmos.params.v1beta1.ParameterChangeProposal";
@@ -303,4 +305,38 @@ pub async fn submit_send_to_eth_fees_proposal(
         changes: params_to_change,
     };
     submit_parameter_change_proposal(proposal, deposit, fee, contact, key, wait_timeout).await
+}
+
+/// The proposal.json representation for updating the list of ERC20 balances orchestrators must monitor
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct MonitoredErc20TokensProposalJson {
+    pub title: String,
+    pub description: String,
+    pub tokens: Vec<String>,
+}
+
+impl From<MonitoredErc20TokensProposalJson> for MonitoredErc20TokensProposal {
+    fn from(v: MonitoredErc20TokensProposalJson) -> Self {
+        MonitoredErc20TokensProposal {
+            title: v.title,
+            description: v.description,
+            tokens: v.tokens,
+        }
+    }
+}
+/// Submit a MonitoredERC20TokensProposal, which will force orchestrators to monitor the balances of the tokens
+/// in the proposal
+pub async fn submit_monitored_erc20s_proposal(
+    proposal: MonitoredErc20TokensProposalJson,
+    deposit: Coin,
+    fee: Coin,
+    contact: &Contact,
+    key: impl PrivateKey,
+    wait_timeout: Option<Duration>,
+) -> Result<TxResponse, CosmosGrpcError> {
+    let prop: MonitoredErc20TokensProposal = proposal.into();
+    let any = encode_any(prop, MONITORED_ERC20_TOKENS_PROPOSAL_TYPE_URL.to_string());
+    contact
+        .create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .await
 }
