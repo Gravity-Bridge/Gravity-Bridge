@@ -3,7 +3,12 @@ package gravity.v1;
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/bank/v1beta1/bank.proto";
 import "gogoproto/gogo.proto";
+import "gravity/v1/attestation.proto";
 option  go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types";
+
+message MonitoredERC20Addresses {
+  repeated bytes addresses = 1;
+}
 
 // BridgeValidator represents a validator's ETH address and its power
 message BridgeValidator {
@@ -98,6 +103,19 @@ message IBCMetadataProposal {
   string ibc_denom = 4;
 }
 
+// MonitoredERC20TokensProposal defines a custom governance proposal type to set the list of ERC20 tokens which orchestrators
+// must monitor the balance of. If the balance on Ethereum does not match the Cosmos supply of these tokens, then the bridge
+// will stop functioning.
+message MonitoredERC20TokensProposal {
+  option (gogoproto.equal) = true;
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  string title = 1;
+  string description = 2;
+  repeated string tokens = 3;
+}
+
 // PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
 // PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
 message PendingIbcAutoForward {
@@ -105,4 +123,14 @@ message PendingIbcAutoForward {
   cosmos.base.v1beta1.Coin token = 2; // the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
   string ibc_channel = 3;              // the IBC channel to send `Amount` over via ibc-transfer module
   uint64 event_nonce = 4;              // the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
+}
+
+// BridgeBalanceSnapshot records the total bank supply of the Monitored ERC20 Tokens
+// immediately after applying each Attestation, plus the Cosmos and Eth Block Heights
+// associated with the Attestation
+message BridgeBalanceSnapshot {
+  uint64 cosmos_block_height   = 1;
+  uint64 ethereum_block_height = 2;
+  repeated ERC20Token balances = 3;
+  uint64 event_nonce           = 4;
 }
