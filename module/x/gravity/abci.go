@@ -125,7 +125,7 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 
 // cleanupTimedOutBatches deletes batches that have passed their expiration on Ethereum
 // keep in mind several things when modifying this function
-// A) unlike nonces timeouts are not monotonically increasing, meaning batch 5 can have a later timeout than batch 6
+// A) unlike nonces timeouts are not strictly increasing, meaning batch 5 can have a later timeout than batch 6
 // this means that we MUST only cleanup a single batch at a time
 // B) it is possible for ethereumHeight to be zero if no events have ever occurred, make sure your code accounts for this
 // C) When we compute the timeout we do our best to estimate the Ethereum block height at that very second. But what we work with
@@ -147,7 +147,7 @@ func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
 
 // cleanupTimedOutBatches deletes logic calls that have passed their expiration on Ethereum
 // keep in mind several things when modifying this function
-// A) unlike nonces timeouts are not monotonically increasing, meaning call 5 can have a later timeout than batch 6
+// A) unlike nonces timeouts are not strictly increasing, meaning call 5 can have a later timeout than batch 6
 // this means that we MUST only cleanup a single call at a time
 // B) it is possible for ethereumHeight to be zero if no events have ever occurred, make sure your code accounts for this
 // C) When we compute the timeout we do our best to estimate the Ethereum block height at that very second. But what we work with
