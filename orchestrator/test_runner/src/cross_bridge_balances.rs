@@ -1,13 +1,16 @@
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::{test_erc20_deposit_panic, test_erc20_deposit_result, test_valset_update};
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
-use crate::ibc_auto_forward::{get_channel_id, setup_gravity_auto_forwards, test_ibc_transfer};
+use crate::ibc_auto_forward::{
+    get_channel_id, get_ibc_balance, ibc_transfer, setup_gravity_auto_forwards, test_ibc_transfer,
+};
+use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
 use crate::utils::{get_user_key, send_one_eth, vote_yes_on_proposals};
 use crate::{
-    create_default_test_config, footoken_metadata, get_ibc_chain_id, one_eth, start_orchestrators,
-    CosmosAddress, EthPrivateKey, GravityQueryClient, ValidatorKeys, ADDRESS_PREFIX,
-    COSMOS_NODE_GRPC, GRAVITY_MODULE_ADDRESS, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, MINER_ADDRESS,
-    MINER_PRIVATE_KEY, OPERATION_TIMEOUT, STAKING_TOKEN,
+    create_default_test_config, footoken_metadata, get_gravity_chain_id, get_ibc_chain_id, one_eth,
+    start_orchestrators, CosmosAddress, EthPrivateKey, GravityQueryClient, ValidatorKeys,
+    ADDRESS_PREFIX, COSMOS_NODE_GRPC, GRAVITY_MODULE_ADDRESS, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC,
+    MINER_ADDRESS, MINER_PRIVATE_KEY, OPERATION_TIMEOUT, STAKING_TOKEN,
 };
 use clarity::utils::display_uint256_as_address;
 use clarity::Address as EthAddress;
@@ -16,9 +19,11 @@ use cosmos_gravity::proposals::{
 };
 use cosmos_gravity::query::get_gravity_params;
 use cosmos_gravity::send::send_to_eth;
+use deep_space::error::CosmosGrpcError;
 use deep_space::{Coin, Contact, CosmosPrivateKey, PrivateKey};
 use ethereum_gravity::send_to_cosmos::send_to_cosmos;
 use futures::future::join;
+use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::DenomUnit;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::{
     v1beta1::query_client::QueryClient as BankQueryClient, v1beta1::Metadata,
 };
@@ -52,6 +57,7 @@ pub async fn cross_bridge_balance_test(
     web30: &Web3,
     grpc: QueryClient<Channel>,
     contact: &Contact,
+    ibc_contact: &Contact,
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
     gravity_address: EthAddress,
@@ -60,13 +66,22 @@ pub async fn cross_bridge_balance_test(
 ) {
     let ibc_bank_qc = BankQueryClient::connect(IBC_NODE_GRPC.as_str())
         .await
-        .expect("Could not connect bank query client");
+        .expect("Could not connect ibc bank query client");
     let ibc_transfer_qc = IbcTransferQueryClient::connect(IBC_NODE_GRPC.as_str())
         .await
-        .expect("Could not connect ibc-transfer query client");
+        .expect("Could not connect ibc ibc-transfer query client");
+    let ibc_channel_qc = IbcChannelQueryClient::connect(IBC_NODE_GRPC.as_str())
+        .await
+        .expect("Could not connect ibc channel query client");
+    let gravity_bank_qc = BankQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+        .await
+        .expect("Could not connect gravity bank query client");
+    let gravity_ibc_transfer_qc = IbcTransferQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+        .await
+        .expect("Could not connect gravity ibc-transfer query client");
     let gravity_channel_qc = IbcChannelQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
-        .expect("Could not connect channel query client");
+        .expect("Could not connect gravity channel query client");
     let channel_id_timeout = Duration::from_secs(60 * 5);
     let gravity_channel_id = get_channel_id(
         gravity_channel_qc,
@@ -74,7 +89,14 @@ pub async fn cross_bridge_balance_test(
         Some(channel_id_timeout),
     )
     .await
-    .expect("Could not find gravity-test-1 channel");
+    .expect("Could not find gravity -> ibc-test-1 channel");
+    let ibc_channel_id = get_channel_id(
+        ibc_channel_qc,
+        get_gravity_chain_id(),
+        Some(channel_id_timeout),
+    )
+    .await
+    .expect("Could not find ibc -> gravity-test-1 channel");
 
     // Disable the relayer so that complicated state can exist without race conditions
     let mut no_relayer_config = create_default_test_config();
@@ -103,21 +125,27 @@ pub async fn cross_bridge_balance_test(
         validator_eth_addrs,
         footoken_metadata,
         footoken_erc20,
-    ) = setup(
-        web30,
-        contact,
-        grpc.clone(),
-        &no_relayer_config.relayer,
-        keys.clone(),
-        ibc_keys.clone(),
+        ibc_stake,
+        ibc_stake_erc20,
+    ) = setup(SetupArgs {
+        web30: web30.clone(),
+        contact: contact.clone(),
+        ibc_contact: ibc_contact.clone(),
+        grpc: grpc.clone(),
+        relayer_config: no_relayer_config.relayer.clone(),
+        keys: keys.clone(),
+        ibc_keys: ibc_keys.clone(),
         gravity_address,
-        &params.gravity_id,
-        erc20_addresses.clone(),
+        gravity_id: params.gravity_id.clone(),
+        erc20_addresses: erc20_addresses.clone(),
         vulnerable_erc20_address,
-        gravity_channel_id.clone(),
-        ibc_transfer_qc,
-        ibc_bank_qc,
-    )
+        gravity_ibc_channel_id: gravity_channel_id.clone(),
+        gravity_bank_qc,
+        gravity_ibc_transfer_qc,
+        ibc_ibc_channel_id: ibc_channel_id.clone(),
+        ibc_chain_transfer_qc: ibc_transfer_qc.clone(),
+        ibc_chain_bank_qc: ibc_bank_qc.clone(),
+    })
     .await;
 
     info!("\n\n\n CREATING COSMOS -> ETH ACTIVITY \n\n\n");
@@ -130,6 +158,7 @@ pub async fn cross_bridge_balance_test(
         single_iteration_relayer_config.clone(),
         erc20_addresses.clone(),
         footoken_metadata.base.clone(),
+        ibc_stake.clone(),
         validator_cosmos_keys.clone(),
         validator_eth_addrs.clone(),
         validator_eth_keys[0],
@@ -142,11 +171,9 @@ pub async fn cross_bridge_balance_test(
     info!("\n\n\n Setting Monitored ERC20s via governance! \n\n\n");
     let mut monitored_erc20s = erc20_addresses.clone();
     monitored_erc20s.push(footoken_erc20);
+    monitored_erc20s.push(ibc_stake_erc20);
     monitored_erc20s.push(vulnerable_erc20_address);
-    let monitored_erc20s: Vec<String> = monitored_erc20s
-        .into_iter()
-        .map(|e| e.to_string())
-        .collect();
+
     submit_and_pass_monitored_erc20s_proposal(contact, keys.clone(), monitored_erc20s.clone())
         .await;
 
@@ -189,18 +216,16 @@ pub async fn cross_bridge_balance_test(
     .await;
 
     ////////////// SECOND //////////////
-
     // Try to mess up the balances by sending to Gravity.sol + Gravity Module (SHOULD NOT HALT)
     // A. Try to send to the gravity module, which is not permitted
     let gravity_module = CosmosAddress::from_bech32(GRAVITY_MODULE_ADDRESS.to_string())
         .expect("Invalid Gravity module address");
-    let foo_denom = footoken_metadata.base.clone();
     let gravity_expected_balance = contact
-        .get_balance(gravity_module, foo_denom.clone())
+        .get_balance(gravity_module, ibc_stake.clone())
         .await
         .expect("Unable to get gravity module foo balance");
     let coin_to_send = Coin {
-        denom: foo_denom.clone(),
+        denom: ibc_stake.clone(),
         amount: one_atom(),
     };
     info!("\n\n\nAttempting to mess up balances by sending to the gravity module\n\n\n");
@@ -220,7 +245,7 @@ pub async fn cross_bridge_balance_test(
     assert!(res.is_err());
 
     let gravity_updated_balance = contact
-        .get_balance(gravity_module, foo_denom.clone())
+        .get_balance(gravity_module, ibc_stake.clone())
         .await
         .expect("Unable to get gravity module foo balance");
     assert_eq!(gravity_expected_balance, gravity_updated_balance);
@@ -261,9 +286,51 @@ pub async fn cross_bridge_balance_test(
     )
     .await;
 
-    // THIRD: Check that the orchestrator halts by "stealing" from the bridge using theft_erc20_address.
-    //  This ERC20 has been setup with an unprotected .transferFrom(from, to, amount) function which
-    //  allows any sender to forcibly share funds from someone else's account.
+    ////////////// THIRD //////////////
+    // Check that the IBC token supply changing does not halt the chain
+    let coin_to_send = Coin {
+        amount: one_atom(),
+        denom: ibc_stake.clone(),
+    };
+
+    info!("\n\n\n Ensuring that ibc balance changes do not halt the chain \n\n\n");
+    let res = ibc_transfer(
+        contact,
+        coin_to_send.clone().into(),
+        gravity_channel_id,
+        None,
+        validator_cosmos_keys[0],
+        ibc_keys[0].to_address(IBC_ADDRESS_PREFIX.as_str()).unwrap(),
+        None,
+        Some(Duration::from_secs(60 * 5)),
+        Some(coin_to_send),
+    )
+    .await;
+    assert!(
+        res.is_ok(),
+        "Error trying to send ibc stake back to the ibc chain: {:?}",
+        res
+    );
+
+    // Test that the chain is still functioning by creating new valsets
+    create_and_execute_attestations(
+        keys.clone(),
+        validator_eth_keys[0],
+        Some(validator_cosmos_keys[0]),
+        Some(relayer_fee.clone()),
+        contact,
+        web30,
+        &grpc,
+        gravity_address,
+        &params.gravity_id,
+        &valset_relaying_only_config,
+    )
+    .await;
+
+    ////////////// FOURTH //////////////
+    // Check that the orchestrator halts by "stealing" from the bridge using theft_erc20_address.
+    // This ERC20 has been setup with an unprotected .transferFrom(from, to, amount) function which
+    // allows any sender to forcibly share funds from someone else's account.
     let thief = get_user_key(None);
     let thief_address = thief.eth_address;
     send_one_eth(thief_address, web30).await;
@@ -312,34 +379,65 @@ pub async fn cross_bridge_balance_test(
         "Expected ERC20 deposit to time out due to orchestrator halt, but result is Ok(())"
     );
     error!("{res:?}");
+
+    info!("Successful Cross Bridge Balances Test!")
 }
 
-#[allow(clippy::too_many_arguments)]
+pub struct SetupArgs {
+    pub web30: Web3,
+    pub contact: Contact,
+    pub ibc_contact: Contact,
+    pub grpc: GravityQueryClient<Channel>,
+    pub relayer_config: RelayerConfig,
+    pub keys: Vec<ValidatorKeys>,
+    pub ibc_keys: Vec<CosmosPrivateKey>,
+    pub gravity_address: EthAddress,
+    pub gravity_id: String,
+    pub erc20_addresses: Vec<EthAddress>,
+    pub vulnerable_erc20_address: EthAddress,
+    pub gravity_ibc_channel_id: String,
+    pub gravity_ibc_transfer_qc: IbcTransferQueryClient<Channel>,
+    pub gravity_bank_qc: BankQueryClient<Channel>,
+    pub ibc_ibc_channel_id: String,
+    pub ibc_chain_transfer_qc: IbcTransferQueryClient<Channel>,
+    pub ibc_chain_bank_qc: BankQueryClient<Channel>,
+}
+
 pub async fn setup(
-    web30: &Web3,
-    contact: &Contact,
-    grpc: GravityQueryClient<Channel>,
-    relayer_config: &RelayerConfig,
-    keys: Vec<ValidatorKeys>,
-    ibc_keys: Vec<CosmosPrivateKey>,
-    gravity_address: EthAddress,
-    gravity_id: &str,
-    erc20_addresses: Vec<EthAddress>,
-    vulnerable_erc20_address: EthAddress,
-    gravity_ibc_channel_id: String,
-    ibc_chain_transfer_qc: IbcTransferQueryClient<Channel>,
-    ibc_chain_bank_qc: BankQueryClient<Channel>,
+    args: SetupArgs,
 ) -> (
     Vec<CosmosPrivateKey>, // Vec<Validator Cosmos Keys>
     Vec<EthPrivateKey>,    // Vec<Validator Eth Keys>
     Vec<EthAddress>,       // Vec<Validator Eth Addresses>
     Metadata,              // Footoken
-    EthAddress,            // New ERC20 deployed
+    EthAddress,            // Footoken ERC20 deployed
+    String,                // IBC Token denom on gravity chain
+    EthAddress,            // IBC Token ERC20 representation
 ) {
+    let SetupArgs {
+        web30,
+        contact,
+        ibc_contact,
+        grpc,
+        relayer_config,
+        keys,
+        ibc_keys,
+        gravity_address,
+        gravity_id,
+        erc20_addresses,
+        vulnerable_erc20_address,
+        gravity_ibc_channel_id,
+        gravity_ibc_transfer_qc,
+        gravity_bank_qc,
+        ibc_ibc_channel_id,
+        ibc_chain_transfer_qc,
+        ibc_chain_bank_qc,
+    } = args;
+
     let mut erc20s = erc20_addresses.clone();
     erc20s.push(vulnerable_erc20_address);
     let mut grpc = grpc;
-    let footoken_metadata = footoken_metadata(contact).await;
+    let footoken_metadata = footoken_metadata(&contact).await;
     let mut validator_cosmos_keys = vec![];
     let mut validator_eth_keys = vec![];
     let mut validator_eth_addrs = vec![];
@@ -368,12 +466,12 @@ pub async fn setup(
             dest: validator_cosmos_keys[0]
                 .to_address(&ADDRESS_PREFIX)
                 .unwrap(),
-            amount: one_atom(),
+            amount: one_eth(),
             contract: *erc20,
         });
     }
 
-    send_erc20s_to_cosmos(web30, gravity_address, sends).await;
+    send_erc20s_to_cosmos(&web30, gravity_address, sends).await;
 
     info!(
         "\n\n\n SENDING ERC20S FROM MINER ({}) TO VALIDATORS ON ETHEREUM\n\n\n",
@@ -408,7 +506,7 @@ pub async fn setup(
     // This call does not depend on an active relayer
     let footoken_erc20 = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
-        web30,
+        &web30,
         None, // Already started the orchestrators with custom config
         &mut grpc,
         false,
@@ -420,7 +518,7 @@ pub async fn setup(
     info!("\n\n\n SENDING FOOTOKEN FROM COSMOS TO VALIDATORS ON ETHEREUM\n\n\n");
     // This will need a relayer to run
     send_tokens_to_eth(
-        contact,
+        &contact,
         validator_cosmos_keys[0],
         validator_eth_addrs.clone(),
         coin_to_send.clone(),
@@ -450,7 +548,7 @@ pub async fn setup(
         contract: footoken_erc20,
     });
 
-    send_erc20s_to_cosmos(web30, gravity_address, sends).await;
+    send_erc20s_to_cosmos(&web30, gravity_address, sends).await;
 
     info!("\n\n\n SETTING UP IBC AUTO FORWARDING \n\n\n");
     // Wait for the ibc channel to be created and find the channel ids
@@ -459,21 +557,24 @@ pub async fn setup(
     let sender = keys[0].validator_key;
     let receiver = ibc_keys[0].to_address(&IBC_ADDRESS_PREFIX).unwrap();
     info!("Testing a regular IBC transfer first");
-    test_ibc_transfer(
-        contact,
-        ibc_chain_bank_qc.clone(),
-        ibc_chain_transfer_qc.clone(),
-        sender,
-        receiver,
-        None,
-        None,
-        gravity_ibc_channel_id.clone(),
-        Duration::from_secs(60 * 5),
-    )
-    .await;
+    assert!(
+        test_ibc_transfer(
+            &contact,
+            ibc_chain_bank_qc.clone(),
+            ibc_chain_transfer_qc.clone(),
+            sender,
+            receiver,
+            None,
+            None,
+            gravity_ibc_channel_id.clone(),
+            Duration::from_secs(60 * 5),
+        )
+        .await,
+        "Unable to perform a basic IBC transfer"
+    );
 
     setup_gravity_auto_forwards(
-        contact,
+        &contact,
         (*IBC_ADDRESS_PREFIX).clone(),
         gravity_ibc_channel_id.clone(),
         validator_cosmos_keys[0],
@@ -481,18 +582,35 @@ pub async fn setup(
     )
     .await;
 
+    info!("\n\n\n Creating an erc20 representation of an ibc token \n\n\n");
+
+    let (ibc_denom, ibc_token) = create_ibc_token_erc20_representation(
+        &contact,
+        keys,
+        &ibc_contact,
+        ibc_keys,
+        ibc_ibc_channel_id,
+        gravity_bank_qc,
+        gravity_ibc_transfer_qc,
+        gravity_address,
+        &web30,
+        grpc.clone(),
+    )
+    .await
+    .expect("unable to deploy ibc token erc20");
+
     // Run the relayer for a bit to clear any pending work
     for _ in 0..10 {
         single_relayer_iteration(
             validator_eth_keys[0],
             Some(validator_cosmos_keys[0]),
             Some(fee_coin.clone()),
-            contact,
-            web30,
+            &contact,
+            &web30,
             &grpc,
             gravity_address,
-            gravity_id,
-            relayer_config,
+            &gravity_id,
+            &relayer_config,
             true,
         )
         .await;
@@ -505,14 +623,21 @@ pub async fn setup(
         validator_eth_addrs,
         footoken_metadata,
         footoken_erc20,
+        ibc_denom,
+        ibc_token,
     )
 }
 
 pub async fn submit_and_pass_monitored_erc20s_proposal(
     contact: &Contact,
     keys: Vec<ValidatorKeys>,
-    monitored_erc20s: Vec<String>,
+    monitored_erc20s: Vec<EthAddress>,
 ) {
+    let monitored_erc20s: Vec<String> = monitored_erc20s
+        .into_iter()
+        .map(|e| e.to_string())
+        .collect();
+
     let res = submit_monitored_erc20s_proposal(
         MonitoredErc20TokensProposalJson {
             title: "Set MonitoredTokenAddresses".to_string(),
@@ -690,6 +815,114 @@ pub async fn send_erc20s_to_cosmos(
     }
 }
 
+/// Transfers the native "stake" token on the ibc test chain to the gravity test chain, submits a metadata proposal,
+/// and deploys an erc20 on ethereum for the foreign token.
+#[allow(clippy::too_many_arguments)]
+pub async fn create_ibc_token_erc20_representation(
+    contact: &Contact,
+    keys: Vec<ValidatorKeys>,
+    ibc_contact: &Contact,
+    ibc_keys: Vec<CosmosPrivateKey>,
+    ibc_ibc_channel_id: String,
+    gravity_bank_qc: BankQueryClient<Channel>,
+    gravity_ibc_transfer_qc: IbcTransferQueryClient<Channel>,
+    gravity_contract_address: EthAddress,
+    web30: &Web3,
+    gravity_qc: GravityQueryClient<Channel>,
+) -> Result<(String, EthAddress), CosmosGrpcError> {
+    let mut gravity_qc = gravity_qc;
+    let foreign_denom: String = "stake".to_string();
+    let zero_fee = Coin {
+        amount: 0u8.into(),
+        denom: foreign_denom.clone(),
+    };
+    // Each validator holds 10000000000stake, but they have only 9500000000 undelegated
+    let working_amount: Uint256 = 9000000000u64.into();
+
+    info!("Transferring foreign stake token to gravity");
+    // Obtain some foreign stake token
+    let sender = ibc_keys[0];
+    let receiver = keys[0]
+        .validator_key
+        .to_address(ADDRESS_PREFIX.as_str())
+        .unwrap();
+    assert!(
+        test_ibc_transfer(
+            ibc_contact,
+            gravity_bank_qc.clone(),
+            gravity_ibc_transfer_qc.clone(),
+            sender,
+            receiver,
+            Some(
+                Coin {
+                    amount: working_amount,
+                    denom: foreign_denom.clone()
+                }
+                .into()
+            ),
+            Some(zero_fee),
+            ibc_ibc_channel_id,
+            Duration::from_secs(60 * 5),
+        )
+        .await,
+        "Unable to send foreign stake token to gravity address"
+    );
+
+    info!("Fetching foreign stake balance on gravity");
+
+    let transferred_token = get_ibc_balance(
+        receiver,
+        foreign_denom,
+        None,
+        gravity_bank_qc.clone(),
+        gravity_ibc_transfer_qc.clone(),
+        None,
+    )
+    .await
+    .expect("Unable to retrieve transferred ibc token balance");
+
+    let ibc_stake = transferred_token.denom.clone();
+
+    // Submit a metadata proposal
+    // Base stake token denom units: {"denom": "stake", "exponent": 0}, {"denom": "mstake", "exponent": 6}]}
+    let metadata = Metadata {
+        description: "ibc chain stake metadata".to_string(),
+        denom_units: vec![
+            DenomUnit {
+                denom: ibc_stake.clone(),
+                exponent: 0,
+                aliases: vec![],
+            },
+            DenomUnit {
+                denom: "mibcstake".to_string(),
+                exponent: 6,
+                aliases: vec![],
+            },
+        ],
+        base: ibc_stake.clone(),
+        display: "mibcstake".to_string(),
+        name: "Ibc Stake".to_string(),
+        symbol: "iSTEAK".to_string(),
+    };
+
+    info!("Deploying foreign stake ibc metadata proposal");
+    submit_and_pass_ibc_metadata_proposal(ibc_stake.clone(), metadata.clone(), contact, &keys)
+        .await;
+
+    info!("Deploying representative ERC20 for foreign stake token");
+    let erc20 = deploy_cosmos_representing_erc20_and_check_adoption(
+        gravity_contract_address,
+        web30,
+        Some(keys),
+        &mut gravity_qc,
+        false,
+        metadata,
+    )
+    .await;
+
+    Ok((ibc_stake, erc20))
+}
+
 /// Creates several transactions and requests several batches to create in-progress transfers to Eth
 #[allow(clippy::too_many_arguments)]
 pub async fn create_send_to_eth_activity(
@@ -701,16 +934,16 @@ pub async fn create_send_to_eth_activity(
     relayer_config: RelayerConfig,
     erc20_addresses: Vec<EthAddress>,
     footoken_denom: String,
+    ibc_stake_denom: String,
     validator_cosmos_keys: Vec<CosmosPrivateKey>,
     validator_eth_addrs: Vec<EthAddress>,
     relayer_eth_key: EthPrivateKey,
     relayer_cosmos_key: CosmosPrivateKey,
 ) {
-    let mut denoms: Vec<String> = erc20_addresses
+    let denoms: Vec<String> = erc20_addresses
         .into_iter()
         .map(|e| format!("{}{}", "gravity", e))
         .collect();
-    denoms.push(footoken_denom.clone());
     info!("\n\n\n SENDING ERC20S TO ETH FOR BATCH CREATION\n\n\n");
     for denom in denoms {
         let coin_to_send = Coin {
@@ -727,19 +960,23 @@ pub async fn create_send_to_eth_activity(
         )
         .await;
     }
-    let coin_to_send = Coin {
-        amount: 1u8.into(),
-        denom: footoken_denom.to_string(),
-    };
-    let fee_coin = coin_to_send.clone();
-    send_tokens_to_eth(
-        contact,
-        validator_cosmos_keys[0],
-        validator_eth_addrs.clone(),
-        coin_to_send,
-        fee_coin.clone(),
-    )
-    .await;
+    info!("\n\n\n SENDING COSMOS DENOMS TO ETH FOR BATCH CREATION \n\n\n");
+    let cosmos_denoms = vec![footoken_denom.clone(), ibc_stake_denom.clone()];
+    for denom in cosmos_denoms {
+        let coin_to_send = Coin {
+            amount: 1u8.into(),
+            denom,
+        };
+        let fee_coin = coin_to_send.clone();
+        send_tokens_to_eth(
+            contact,
+            validator_cosmos_keys[0],
+            validator_eth_addrs.clone(),
+            coin_to_send,
+            fee_coin.clone(),
+        )
+        .await;
+    }
     let cosmos_fee = Coin {
         amount: 0u8.into(),
         denom: (*STAKING_TOKEN).clone(),
