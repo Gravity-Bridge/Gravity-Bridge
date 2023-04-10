@@ -29,6 +29,7 @@ bash all-up-test.sh ETHEREUM_KEYS
 bash all-up-test.sh BATCH_TIMEOUT
 bash all-up-test.sh VESTING
 bash all-up-test.sh SEND_TO_ETH_FEES
+bash all-up-test.sh CROSS_BRIDGE_BALANCES
 if [ ! -z "$ALCHEMY_ID" ]; then
     bash all-up-test.sh RELAY_MARKET $ALCHEMY_ID
     bash all-up-test.sh ARBITRARY_LOGIC $ALCHEMY_ID
