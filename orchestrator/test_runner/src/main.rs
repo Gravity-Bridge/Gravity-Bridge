@@ -207,6 +207,12 @@ pub async fn main() {
         ADDRESS_PREFIX.as_str(),
     )
     .unwrap();
+    let ibc_contact = Contact::new(
+        IBC_NODE_GRPC.as_str(),
+        OPERATION_TIMEOUT,
+        IBC_ADDRESS_PREFIX.as_str(),
+    )
+    .unwrap();
 
     info!("Waiting for Cosmos chain to come online");
     wait_for_cosmos_online(&contact, TOTAL_TIMEOUT).await;
@@ -551,6 +557,7 @@ pub async fn main() {
                 &web30,
                 grpc,
                 &contact,
+                &ibc_contact,
                 keys,
                 ibc_keys,
                 gravity_address,

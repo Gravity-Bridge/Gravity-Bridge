@@ -106,14 +106,6 @@ pub struct BalanceEntry {
     pub c: Uint256,
     pub e: Uint256,
 }
-impl BalanceEntry {
-    pub fn new() -> Self {
-        BalanceEntry {
-            c: 0u8.into(),
-            e: 0u8.into(),
-        }
-    }
-}
 
 /// Checks the inputs to determine if the bridge has an unexplained difference
 /// in balances. Returns Ok(()) if the balances are normal or Err(InvalidBridgeBalances) otherwise
