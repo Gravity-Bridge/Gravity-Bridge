@@ -1,5 +1,6 @@
 use crate::{
     airdrop_proposal::wait_for_proposals_to_execute,
+    cross_bridge_balances::submit_and_pass_monitored_erc20s_proposal,
     get_fee,
     happy_path::test_erc20_deposit_panic,
     one_eth, one_hundred_eth,
@@ -44,6 +45,9 @@ pub async fn batch_timeout_test(
 
     let no_relay_market_config = create_no_batch_requests_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
+
+    // Set up Cross Bridge Balance monitoring
+    submit_and_pass_monitored_erc20s_proposal(contact, keys.clone(), erc20_addresses.clone()).await;
 
     // first we reduce batch timeout (denominated in miliseconds)
     // to one minute, the absolute minimum value
