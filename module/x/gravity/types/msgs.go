@@ -3,10 +3,8 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -464,61 +462,16 @@ func (msg *MsgExecuteIbcAutoForwards) ValidateBasic() error {
 	return nil
 }
 
-// destination => destination
-// a => sourceChannel/destination
-// a:b => sourceChannel:destination
-func (msg *MsgSendToCosmosClaim) GetDestination(sourceChannel string) string {
-	if len(sourceChannel) == 0 {
-		return msg.CosmosReceiver
-	}
+// // destination => destination
+// // a => sourceChannel/destination
+// // a:b => sourceChannel:destination
+// func (msg *MsgSendToCosmosClaim) GetDestination(sourceChannel string) string {
+// 	if len(sourceChannel) == 0 {
+// 		return msg.CosmosReceiver
+// 	}
 
-	return msg.CosmosReceiver[len(sourceChannel)+1:]
-}
-
-// ParseReceiver return channel, receiver, denom and error when validating receiver
-// a:b:c => sourceChannel:destChannel/cosmosReceiver:denom
-// a:b => sourceChannel:destChannel/cosmosReceiver
-// a => sourceChannel/cosmosReceiver
-// hrp is used when there is no source channel, otherwise it can be ignored
-// destReceiver is used for validating, and will be pass to ibc wasm
-func (msg *MsgSendToCosmosClaim) ParseReceiver() (sourceReceiver, destReceiver []byte, sourceChannel, destChannel, denom, hrp string, err error) {
-	sourceChannel, cosmosReceiver, destination := msg.ParseReceiverRaw()
-	destReceiver, destChannel, denom, hrp, err = ParseDestination(destination)
-	if err == nil {
-		// using from destination, such as same cointype 118 from orai to cosmos
-		if len(cosmosReceiver) == 0 {
-			sourceReceiver = destReceiver
-		} else {
-			// validate cosmos receiver, override hrp from cosmosReceiver
-			hrp, sourceReceiver, err = bech32.DecodeAndConvert(cosmosReceiver)
-		}
-	}
-	return
-}
-
-// ParseReceiverRaw return source channel & destination when parsing msg cosmos receiver
-// a:b:c => sourceChannel=a, destination=b:c
-// a:b => sourceChannel=a, destination=b
-// a => if sourceChannel/cosmosReceiver then sourceChannel=a, destination=b. else sourceChannel="", destination=a
-func (msg *MsgSendToCosmosClaim) ParseReceiverRaw() (sourceChannel, cosmosReceiver, destination string) {
-	args := strings.SplitN(msg.CosmosReceiver, ":", 2)
-	if len(args) != 1 {
-		sourceChannel, destination = args[0], args[1]
-		if ind := strings.Index(sourceChannel, "/"); ind != -1 {
-			sourceChannel, cosmosReceiver = sourceChannel[0:ind], sourceChannel[ind+1:]
-		}
-	} else {
-		// source Receiver is destination
-		if ind := strings.Index(msg.CosmosReceiver, "/"); ind != -1 {
-			sourceChannel, cosmosReceiver = msg.CosmosReceiver[0:ind], msg.CosmosReceiver[ind+1:]
-		} else {
-			cosmosReceiver = msg.CosmosReceiver
-		}
-		destination = cosmosReceiver
-	}
-
-	return
-}
+// 	return msg.CosmosReceiver[len(sourceChannel)+1:]
+// }
 
 func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {
 	msg.ProtoMessage()

@@ -122,36 +122,72 @@ func AppendBytes(args ...[]byte) []byte {
 	return res
 }
 
-// channel/receiver:denom
-func ParseDestinationRaw(destination string) (receiver, destChannel, denom string, isCosmos bool) {
-	isCosmos = true
-	receiver = destination
-	// has destination denom
-	if ind := strings.Index(receiver, ":"); ind != -1 {
-		receiver, denom = receiver[0:ind], receiver[ind+1:]
-	}
-	// now processing receiver
-	if ind := strings.Index(receiver, "/"); ind != -1 {
-		// cosmos style
-		destChannel, receiver = receiver[0:ind], receiver[ind+1:]
-	} else if ind := strings.Index(receiver, "0x"); ind != -1 {
-		// ethereum style
-		destChannel, receiver = receiver[0:ind], receiver[ind:]
-		isCosmos = false
-	}
+// ParseReceiver return channel, receiver, denom and error when validating receiver
+// a:b:c => sourceChannel:destChannel/cosmosReceiver:denom
+// a:b => sourceChannel:destChannel/cosmosReceiver
+// a => sourceChannel/cosmosReceiver
+// hrp is used when there is no source channel, otherwise it can be ignored
+// destReceiver is used for validating, and will be pass to ibc wasm
+func ParseReceiver(receiver string) (sourceChannel, cosmosReceiver, destination, accountPrefix string, receiverAddress []byte, err error) {
+	sourceChannel, cosmosReceiver, destination = ParseReceiverRaw(receiver)
+	accountPrefix, receiverAddress, err = bech32.DecodeAndConvert(cosmosReceiver)
 	return
 }
 
-func ParseDestination(destination string) (receiver []byte, destChannel, denom, hrp string, err error) {
-	destination, destChannel, denom, isCosmos := ParseDestinationRaw(destination)
-	if isCosmos {
-		// validate cosmos
-		hrp, receiver, err = bech32.DecodeAndConvert(destination)
+// ParseReceiverRaw return source channel & destination when parsing msg cosmos receiver
+// a:b:c => sourceChannel=a, destination=b:c
+// a:b => sourceChannel=a, destination=b
+// a => if sourceChannel/cosmosReceiver then sourceChannel=a, destination=b. else sourceChannel="", destination=a
+func ParseReceiverRaw(receiver string) (sourceChannel, cosmosReceiver, destination string) {
+	args := strings.SplitN(receiver, ":", 2)
+	if len(args) != 1 {
+		sourceChannel, destination = args[0], args[1]
+		if ind := strings.Index(sourceChannel, "/"); ind != -1 {
+			sourceChannel, cosmosReceiver = sourceChannel[0:ind], sourceChannel[ind+1:]
+		}
 	} else {
-		// validate ethereum
-		var ethAddress *EthAddress
-		ethAddress, err = NewEthAddress(destination)
-		receiver = ethAddress.address[:]
+		// source Receiver is destination
+		if ind := strings.Index(receiver, "/"); ind != -1 {
+			sourceChannel, cosmosReceiver = receiver[0:ind], receiver[ind+1:]
+		} else {
+			cosmosReceiver = receiver
+		}
+		destination = cosmosReceiver
 	}
+
 	return
 }
+
+// // channel/sender:channel/receiver:denom
+// func ParseDestinationRaw(destination string) (receiver, destChannel, denom string, isCosmos bool) {
+// 	isCosmos = true
+// 	receiver = destination
+// 	// has destination denom
+// 	if ind := strings.Index(receiver, ":"); ind != -1 {
+// 		receiver, denom = receiver[0:ind], receiver[ind+1:]
+// 	}
+// 	// now processing receiver
+// 	if ind := strings.Index(receiver, "/"); ind != -1 {
+// 		// cosmos style
+// 		destChannel, receiver = receiver[0:ind], receiver[ind+1:]
+// 	} else if ind := strings.Index(receiver, "0x"); ind != -1 {
+// 		// ethereum style
+// 		destChannel, receiver = receiver[0:ind], receiver[ind:]
+// 		isCosmos = false
+// 	}
+// 	return
+// }
+
+// func ParseDestination(destination string) (receiver []byte, destChannel, denom, hrp string, err error) {
+// 	destination, destChannel, denom, isCosmos := ParseDestinationRaw(destination)
+// 	if isCosmos {
+// 		// validate cosmos
+// 		hrp, receiver, err = bech32.DecodeAndConvert(destination)
+// 	} else {
+// 		// validate ethereum
+// 		var ethAddress *EthAddress
+// 		ethAddress, err = NewEthAddress(destination)
+// 		receiver = ethAddress.address[:]
+// 	}
+// 	return
+// }

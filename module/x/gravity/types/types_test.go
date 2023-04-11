@@ -230,7 +230,105 @@ func shuffled(v InternalBridgeValidators) InternalBridgeValidators {
 	return v
 }
 
-// TODO: write some tests here
-func TestParseDestination(t *testing.T) {
+func TestParseReceiver(t *testing.T) {
+	// cosmos channel
+	// args=2. src channel = args[0] = channel-0, destination=args[1] = channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom
+	msgSendToCosmos := MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-0/orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573:channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom",
+	}
 
+	sourceChannel, cosmosReceiver, destination, _, fallback, err := ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.NoError(t, err)
+	assert.Equal(t, "channel-0", sourceChannel)
+	assert.Equal(t, "orai14n3tx8s5ftzhlxvq0w5962v60vd82h30rha573", cosmosReceiver)
+	assert.Equal(t, "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:atom", destination)
+	assert.Equal(t, "oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j", sdk.AccAddress(fallback).String()) // fallback string needs to be in oraib prefix
+
+	// args=1, no /
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz",
+	}
+
+	sourceChannel, cosmosReceiver, destination, _, fallback, err = ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.NoError(t, err)
+	assert.Equal(t, "", sourceChannel)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", destination)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", cosmosReceiver)
+	assert.Equal(t, "oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j", sdk.AccAddress(fallback).String()) // fallback string needs to be in oraib prefix
+
+	// args=1, empty
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "",
+	}
+
+	sourceChannel, cosmosReceiver, destination, _, _, err = ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.Error(t, err)
+	assert.Equal(t, "", sourceChannel)
+	assert.Equal(t, "", destination)
+	assert.Equal(t, "", cosmosReceiver)
+
+	//args=1, has /
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz",
+	}
+
+	sourceChannel, cosmosReceiver, destination, _, _, err = ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.NoError(t, err)
+	assert.Equal(t, "channel-15", sourceChannel)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", destination)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", cosmosReceiver)
+	assert.Equal(t, "oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j", sdk.AccAddress(fallback).String()) // fallback string needs to be in oraib prefix
+
+	//args=1, has /
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-15/cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz:eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7:usdt",
+	}
+
+	sourceChannel, cosmosReceiver, destination, _, fallback, err = ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.Equal(t, "channel-15", sourceChannel)
+	assert.Equal(t, "cosmos14n3tx8s5ftzhlxvq0w5962v60vd82h30sythlz", cosmosReceiver)
+	assert.Equal(t, "eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7:usdt", destination)
+	assert.Equal(t, "oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j", sdk.AccAddress(fallback).String())
+	assert.Equal(t, "oraib14n3tx8s5ftzhlxvq0w5962v60vd82h305kec0j", sdk.AccAddress(fallback).String()) // fallback string needs to be in oraib prefix
+
+	// args=1, has :
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7:usdt",
+	}
+
+	sourceChannel, cosmosReceiver, destination, _, _, err = ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.Error(t, err)
+	assert.Equal(t, "eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7", sourceChannel)
+	assert.Equal(t, "", cosmosReceiver)
+	assert.Equal(t, "usdt", destination)
+
+	// args=1, has / with cosmos receiver in eth form
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-0/eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7",
+	}
+
+	sourceChannel, cosmosReceiver, destination, _, _, err = ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.Error(t, err)
+	assert.Equal(t, "channel-0", sourceChannel)
+	assert.Equal(t, "eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7", cosmosReceiver)
+	assert.Equal(t, "eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7", destination)
+
+	// args=1, has / with cosmos receiver in eth form & has :
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "channel-0/eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7:usdt",
+	}
+
+	sourceChannel, cosmosReceiver, destination, _, _, err = ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.Error(t, err) // we dont accept eth form as the cosmos receiver => has to turn into an error.
+	assert.Equal(t, "channel-0", sourceChannel)
+	assert.Equal(t, "eth-mainnet0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7", cosmosReceiver)
+	assert.Equal(t, "usdt", destination)
+
+	// args=1, has nothing but evm address
+	msgSendToCosmos = MsgSendToCosmosClaim{
+		CosmosReceiver: "0xdc05090A39650026E6AFe89b2e795fd57a3cfEC7",
+	}
+
+	sourceChannel, cosmosReceiver, destination, _, _, err = ParseReceiver(msgSendToCosmos.CosmosReceiver)
+	assert.Error(t, err)
 }

@@ -49,11 +49,14 @@ services:
     # apk add make upx
     # upx --best --lzma
     working_dir: /workspace
+    restart: on-failure
     tty: true
     volumes:
       - ./orchestrator:/orchestrator
       - ./e2e/.gbt/:/root/.gbt
     entrypoint: tail -f /dev/null
+    depends_on:
+      - gravity
 
   orai:
     container_name: orai_test

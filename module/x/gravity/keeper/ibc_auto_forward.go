@@ -186,8 +186,10 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix
 	portId := k.ibcTransferKeeper.GetPort(ctx)
 
 	// This local gravity user receives the coins if the ibc transaction fails, works with both evm address and bech32 address format
-	fallback, _, _, _, err := types.ParseDestination(forward.ForeignReceiver)
+	// forward.ForeignReceiver = claim.CosmosReceiver
+	_, cosmosReceiver, memo, _, fallback, err := types.ParseReceiver(forward.ForeignReceiver)
 	if err != nil {
+		// sanity check only. In attestation_handler.go there should be a validation call on CosmosReceiver already
 		panic(fmt.Sprintf("Invalid ForeignReceiver found in Pending IBC Auto-Forward queue: %s [[%+v]]", err.Error(), forward))
 	}
 
@@ -199,7 +201,7 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix
 	}
 
 	timeoutTime := thirtyDaysInFuture(ctx) // Set the ibc transfer to expire ~one month from now
-	msgTransfer := createIbcMsgTransfer(portId, *forward, sdk.AccAddress(fallback).String(), uint64(timeoutTime.UnixNano()))
+	msgTransfer := createIbcMsgTransfer(portId, *forward, sdk.AccAddress(fallback).String(), cosmosReceiver, memo, uint64(timeoutTime.UnixNano()))
 
 	// Make the ibc-transfer attempt
 	wCtx := sdk.WrapSDKContext(ctx)
@@ -233,22 +235,21 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context, evmChainPrefix
 
 // createIbcMsgTransfer creates a MsgTransfer for the given pending `forward` on port `portId` sent from `sender`,
 // with the given timeout timestamp and a zero timeout block height
-func createIbcMsgTransfer(portId string, forward types.PendingIbcAutoForward, sender string, timeoutTimestampNs uint64) ibctransfertypes.MsgTransfer {
+func createIbcMsgTransfer(portId string, forward types.PendingIbcAutoForward, sender, receiver, memo string, timeoutTimestampNs uint64) ibctransfertypes.MsgTransfer {
 	zeroHeight := ibcclienttypes.Height{}
-	receiver, destChannel, denom, _ := types.ParseDestinationRaw(forward.ForeignReceiver)
 	msgTransfer := ibctransfertypes.MsgTransfer{
 		SourcePort:       portId,
 		SourceChannel:    forward.IbcChannel,
 		Token:            *forward.Token,
-		Sender:           sender,
+		Sender:           sender, // from bytes to acc address with oraib prefix serving as sender
 		Receiver:         receiver,
 		TimeoutHeight:    zeroHeight, // Do not use block height based timeout,
 		TimeoutTimestamp: timeoutTimestampNs,
 	}
 
 	// custom memo following standard channel:denom
-	if len(destChannel) > 0 || len(denom) > 0 {
-		msgTransfer.Memo = destChannel + ":" + denom
+	if len(memo) > 0 {
+		msgTransfer.Memo = memo
 	}
 
 	return msgTransfer
