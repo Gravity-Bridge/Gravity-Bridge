@@ -25,6 +25,7 @@ use crate::upgrade::{run_upgrade, upgrade_part_1, upgrade_part_2};
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
 use crate::vesting::vesting_test;
+use batch_stress::batch_stress_test;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use deep_space::coin::Coin;
@@ -43,11 +44,11 @@ use orch_only::orch_only_test;
 use relay_market::relay_market_test;
 use std::{env, time::Duration};
 use tokio::time::sleep;
-use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
 
 mod airdrop_proposal;
+mod batch_stress;
 mod batch_timeout;
 mod bootstrapping;
 mod cross_bridge_balances;
@@ -68,7 +69,6 @@ mod relay_market;
 mod send_to_eth_fees;
 mod signature_slashing;
 mod slashing_delegation;
-mod transaction_stress_test;
 mod tx_cancel;
 mod unhalt_bridge;
 mod upgrade;
@@ -318,7 +318,7 @@ pub async fn main() {
                 ADDRESS_PREFIX.as_str(),
             )
             .unwrap();
-            transaction_stress_test(
+            batch_stress_test(
                 &web30,
                 &contact,
                 grpc_client,
