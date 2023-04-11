@@ -291,7 +291,9 @@ pub async fn ibc_transfer(
     timeout_duration: Option<Duration>,
     fee_coin: Option<DSCoin>,
 ) -> Result<TxResponse, CosmosGrpcError> {
-    if timeout_height.is_none() && timeout_duration.is_none() || timeout_height.is_some() && timeout_duration.is_some() {
+    if timeout_height.is_none() && timeout_duration.is_none()
+        || timeout_height.is_some() && timeout_duration.is_some()
+    {
         return Err(CosmosGrpcError::BadInput(
             "Exactly one of timeout_height and timout_duration is required".to_string(),
         ));
