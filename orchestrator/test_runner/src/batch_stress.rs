@@ -1,4 +1,7 @@
-use crate::{get_fee, one_eth, one_eth_128, one_hundred_eth, utils::*, TOTAL_TIMEOUT};
+use crate::{
+    cross_bridge_balances::submit_and_pass_monitored_erc20s_proposal, get_fee, one_eth,
+    one_eth_128, one_hundred_eth, utils::*, TOTAL_TIMEOUT,
+};
 use clarity::{Address as EthAddress, Uint256};
 use cosmos_gravity::{
     query::get_pending_send_to_eth,
@@ -33,10 +36,9 @@ const TIMEOUT: Duration = Duration::from_secs(120);
 const NUM_USERS: usize = 100;
 pub const STARTING_ETH: u64 = 200; // The starting ETH amount, in whole units of ETH
 
-/// Perform a stress test by sending thousands of
-/// transactions and producing large batches
+/// Perform a stress test of batches by sending thousands of transactions and producing large batches
 #[allow(clippy::too_many_arguments)]
-pub async fn transaction_stress_test(
+pub async fn batch_stress_test(
     web30: &Web3,
     contact: &Contact,
     grpc_client: GravityQueryClient<Channel>,
@@ -48,6 +50,9 @@ pub async fn transaction_stress_test(
 
     let no_relay_market_config = create_no_batch_requests_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
+
+    // Set up Cross Bridge Balance monitoring
+    submit_and_pass_monitored_erc20s_proposal(contact, keys.clone(), erc20_addresses.clone()).await;
 
     // Generate NUM_USERS user keys to send ETH and multiple types of tokens
     let mut user_keys = Vec::new();
