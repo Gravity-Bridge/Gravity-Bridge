@@ -327,7 +327,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 
 	// First store a batch
 
-	batch, err := types.NewInternalOutgingTxBatchFromExternalBatch(types.OutgoingTxBatch{
+	batch, err := types.NewInternalOutgoingTxBatchFromExternalBatch(types.OutgoingTxBatch{
 		BatchNonce:         1,
 		BatchTimeout:       0,
 		Transactions:       []types.OutgoingTransferTx{},
@@ -380,7 +380,7 @@ func TestBatchSlashing(t *testing.T) {
 
 	// First store a batch
 
-	batch, err := types.NewInternalOutgingTxBatchFromExternalBatch(types.OutgoingTxBatch{
+	batch, err := types.NewInternalOutgoingTxBatchFromExternalBatch(types.OutgoingTxBatch{
 		BatchNonce:         1,
 		BatchTimeout:       0,
 		Transactions:       []types.OutgoingTransferTx{},

@@ -58,7 +58,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 	}
 
 	nextID := k.autoIncrementID(ctx, types.KeyLastOutgoingBatchID)
-	batch, err := types.NewInternalOutgingTxBatch(nextID, k.getBatchTimeoutHeight(ctx), selectedTxs, contract, 0)
+	batch, err := types.NewInternalOutgoingTxBatch(nextID, k.getBatchTimeoutHeight(ctx), selectedTxs, contract, 0)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "unable to create batch"))
 	}

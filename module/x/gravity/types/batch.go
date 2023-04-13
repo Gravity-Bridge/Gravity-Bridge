@@ -99,7 +99,7 @@ type InternalOutgoingTxBatch struct {
 	CosmosBlockCreated uint64
 }
 
-func NewInternalOutgingTxBatch(
+func NewInternalOutgoingTxBatch(
 	nonce uint64,
 	timeout uint64,
 	transactions []*InternalOutgoingTransferTx,
@@ -119,7 +119,7 @@ func NewInternalOutgingTxBatch(
 	return ret, nil
 }
 
-func NewInternalOutgingTxBatchFromExternalBatch(batch OutgoingTxBatch) (*InternalOutgoingTxBatch, error) {
+func NewInternalOutgoingTxBatchFromExternalBatch(batch OutgoingTxBatch) (*InternalOutgoingTxBatch, error) {
 	contractAddr, err := NewEthAddress(batch.TokenContract)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid eth address")
@@ -143,7 +143,7 @@ func NewInternalOutgingTxBatchFromExternalBatch(batch OutgoingTxBatch) (*Interna
 }
 
 func (o *OutgoingTxBatch) ToInternal() (*InternalOutgoingTxBatch, error) {
-	return NewInternalOutgingTxBatchFromExternalBatch(*o)
+	return NewInternalOutgoingTxBatchFromExternalBatch(*o)
 }
 
 func (i *InternalOutgoingTxBatch) ToExternal() OutgoingTxBatch {
