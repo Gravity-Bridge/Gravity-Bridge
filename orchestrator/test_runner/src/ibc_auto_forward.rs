@@ -315,7 +315,8 @@ pub async fn ibc_transfer(
         sender: sender_address.to_string(),
         receiver: receiver.to_string(),
         timeout_height,
-        timeout_timestamp, // 150 minutes from now
+        timeout_timestamp,
+        memo: "".to_string(),
     };
     info!("Submitting MsgTransfer {:?}", msg_transfer);
     let msg_transfer = Msg::new(MSG_TRANSFER_TYPE_URL, msg_transfer);

@@ -252,7 +252,7 @@ pub async fn eth_oracle_main_loop(
 
         // Check the balances on both sides of the bridge, only submitting further events if the
         // bridge is functioning as expected
-        let res = check_cross_bridge_balances(
+        let balances = check_cross_bridge_balances(
             &grpc_client,
             &web3,
             our_eth_address,
@@ -260,7 +260,7 @@ pub async fn eth_oracle_main_loop(
         )
         .await;
 
-        if res.is_ok() {
+        if balances.is_ok() {
             // Relays events from Ethereum -> Cosmos, returns the latest nonces needed in future iterations
             let updated_nonces = attest_to_events(
                 &web3,
