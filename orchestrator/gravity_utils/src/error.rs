@@ -10,6 +10,9 @@ use tokio::time::error::Elapsed;
 use tonic::Status;
 use web30::jsonrpc::error::Web3Error;
 
+// A substring used to detect when the ethereum endpoint is missing the queried historical height
+pub const ETHEREUM_MISSING_NODE: &str = "missing trie node";
+
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum GravityError {

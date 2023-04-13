@@ -12,11 +12,10 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use tonic::transport::Channel;
 use web30::client::Web3;
-use web30::jsonrpc::error::Web3Error;
 
 use super::erc20::Erc20Token;
-use crate::error::GravityError;
 use crate::error::GravityError::InvalidBridgeBalances;
+use crate::error::{GravityError, ETHEREUM_MISSING_NODE};
 
 /// Collects balances on both sides of the bridge (supply snapshots on the Gravity Bridge Chain side, Gravity.sol
 /// holdings on the Ethereum side) and asserts that the Ethereum side is not insolvent.
@@ -44,63 +43,62 @@ pub async fn check_cross_bridge_balances(
             })
         })
         .collect();
-    let must_collect_balances = !erc20s.is_empty();
 
-    if !must_collect_balances {
+    if erc20s.is_empty() {
+        // When the monitored token response is empty, no need to check balances
         return Ok(());
     }
 
     // Collect the erc20s, more snapshots than desired
-    let res = gravity_chain_balance_data(&grpc_client).await;
-    let GravityChainBalanceData { snapshots, heights } = res?;
-    // Nothing to check, either because no vote has happened on ERC20s to monitor or no new snapshots have been committed
-    if heights.is_empty() {
+    let snapshot = gravity_chain_balance_data(&grpc_client).await?;
+    let height = snapshot.ethereum_block_height;
+
+    // Nothing to check, no new snapshots have been committed
+    if height == 0 {
         return Ok(());
     }
-    let eth_balances = collect_eth_balances_at_heights(
+
+    let eth_balances = collect_eth_balances_at_height(
         web30,
         querier_address,
         gravity_contract_address,
         &erc20s,
-        &heights,
+        height.into(),
     )
-    .await;
-    let eth_balances = eth_balances?;
+    .await?;
 
-    for (cosmos_snapshot, (eth_height, eth_bals)) in
-        snapshots.into_iter().zip(eth_balances.into_iter())
-    {
-        // the cosmos side's ethereum event height, not the cosmos block height
-        let cosmos_height = cosmos_snapshot.ethereum_block_height;
-
-        if eth_height != cosmos_height.into() {
-            return Err(GravityError::InvalidBridgeStateError(format!(
-                "failed to collect balances at the same heights: {eth_height} != {cosmos_height}"
-            )));
+    match eth_balances {
+        HistEthBalances::Missing => {
+            info!("Unable to get historical ethereum balances at height {} - skipping this balance check", height);
+            Ok(())
         }
-        let cosmos_bals: Vec<Erc20Token> = cosmos_snapshot
-            .balances
-            .into_iter()
-            .map(|b| Erc20Token {
-                amount: Uint256::from_str(&b.amount)
-                    .expect("Invalid balance amount obtained from gravity module"),
-                token_contract_address: EthAddress::from_str(&b.contract)
-                    .expect("invalid balance contract obtained from gravity module"),
-            })
-            .collect();
+        HistEthBalances::Found(eth_bals) => {
+            let cosmos_balances: Vec<Erc20Token> = snapshot
+                .balances
+                .into_iter()
+                .map(|b| Erc20Token {
+                    amount: Uint256::from_str(&b.amount)
+                        .expect("Invalid balance amount obtained from gravity module"),
+                    token_contract_address: EthAddress::from_str(&b.contract)
+                        .expect("invalid balance contract obtained from gravity module"),
+                })
+                .collect();
 
-        let res = valid_bridge_balances(eth_bals, cosmos_bals);
-        if res.is_err() {
-            error!("!!!!!!!!!!!!!!!!!!!!!!!!!!!! INVALID CROSS BRIDGE BALANCES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            let err = res.err();
-            error!("Error is {:?}", err);
-            return Err(err.unwrap());
+            let res = valid_bridge_balances(eth_bals, cosmos_balances);
+            if res.is_err() {
+                error!("!!!!!!!!!!!!!!!!!!!!!!!!!!!! INVALID CROSS BRIDGE BALANCES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                let err = res.err();
+                error!("Error is {:?}", err);
+                return Err(err.unwrap());
+            }
+
+            Ok(())
         }
     }
-
-    Ok(())
 }
 
+// BalanceEntry is a helper struct used to populate a HashMap in valid_bridge_balances, these are
+// 0 initialized and populated if balances are found. They are then iterated over to make assertions
 #[derive(Clone, Copy)]
 pub struct BalanceEntry {
     pub c: Uint256,
@@ -164,17 +162,10 @@ pub fn valid_bridge_balances(
     Ok(())
 }
 
-#[derive(Debug)]
-// a data struct used to simplify the return of gravity_chain_balance_data
-pub struct GravityChainBalanceData {
-    pub snapshots: Vec<BridgeBalanceSnapshot>,
-    pub heights: Vec<Uint256>,
-}
-
 // Collects the monitored ERC20 tokens, relevant bridge balance snapshots, and the list of ethereum heights to monitor
 pub async fn gravity_chain_balance_data(
     grpc_client: &GravityQueryClient<Channel>,
-) -> Result<GravityChainBalanceData, CosmosGrpcError> {
+) -> Result<BridgeBalanceSnapshot, CosmosGrpcError> {
     let mut grpc_client = grpc_client.clone();
 
     let snapshots_res = grpc_client
@@ -185,48 +176,25 @@ pub async fn gravity_chain_balance_data(
         .await?
         .into_inner()
         .snapshots;
-    let mut heights: Vec<Uint256> = vec![];
-    for snap in &snapshots_res {
-        heights.push(snap.ethereum_block_height.into());
+    if snapshots_res.is_empty() {
+        info!("No snapshots returned - cross bridge balances will not be checked. This log should occur only once or twice!");
+        Ok(BridgeBalanceSnapshot {
+            cosmos_block_height: 0,
+            ethereum_block_height: 0,
+            balances: vec![],
+            event_nonce: 0,
+        })
+    } else {
+        return Ok(snapshots_res.get(0).unwrap().clone());
     }
-
-    Ok(GravityChainBalanceData {
-        snapshots: snapshots_res,
-        heights,
-    })
 }
 
-/// Fetches the balances of the Gravity.sol contract balance of each erc20 at each ethereum height provided
-/// Returns
-/// Note: Does not populate the result for a height if any eth balance could not be obtained
-pub async fn collect_eth_balances_at_heights(
-    web3: &Web3,
-    querier_address: EthAddress,
-    gravity_contract: EthAddress,
-    erc20s: &[EthAddress],
-    heights: &[Uint256],
-) -> Result<Vec<(Uint256, Vec<Erc20Token>)>, GravityError> {
-    let mut balances_by_height = vec![];
-    for h in heights {
-        let bals =
-            collect_eth_balances_at_height(web3, querier_address, gravity_contract, erc20s, *h)
-                .await;
-        if bals.is_err() {
-            info!(
-                "Could not query gravity eth balances at height {}: {:?}",
-                h.to_string(),
-                bals.unwrap_err(),
-            );
-            continue;
-        }
-        balances_by_height.push((*h, bals.unwrap()));
-    }
-    if balances_by_height.is_empty() {
-        return Err(GravityError::EthereumRestError(Web3Error::BadResponse(
-            "Unable to collect ERC20 balances by height".to_string(),
-        )));
-    }
-    Ok(balances_by_height)
+// An enum used to describe the acceptable results an ethereum endpoint can respond with for a historical request
+// if the node is not archival it is likely to have pruned some history the orchestrator requires, in which case
+// the best case scenario is the orchestrator skips this issue and tries to check later
+pub enum HistEthBalances {
+    Missing,
+    Found(Vec<Erc20Token>),
 }
 
 /// Fetches the balances of the Gravity.sol contract at the provided ethereum block height
@@ -237,7 +205,7 @@ pub async fn collect_eth_balances_at_height(
     gravity_contract: EthAddress,
     erc20s: &[EthAddress],
     height: Uint256,
-) -> Result<Vec<Erc20Token>, GravityError> {
+) -> Result<HistEthBalances, GravityError> {
     let mut futs = vec![];
     for e in erc20s {
         futs.push(web3.get_erc20_balance_at_height_as_address(
@@ -251,12 +219,21 @@ pub async fn collect_eth_balances_at_height(
     let mut results = vec![];
     // Order of res is preserved, so we can assign the erc20 by index
     for (i, r) in res.into_iter().enumerate() {
-        let erc20 = erc20s[i];
-        results.push(Erc20Token {
-            token_contract_address: erc20,
-            amount: r?,
-        });
+        match r {
+            Ok(bal) => {
+                let erc20 = erc20s[i];
+                results.push(Erc20Token {
+                    token_contract_address: erc20,
+                    amount: bal,
+                });
+            }
+            Err(error) => {
+                if error.to_string().contains(ETHEREUM_MISSING_NODE) {
+                    return Ok(HistEthBalances::Missing);
+                }
+            }
+        }
     }
 
-    Ok(results)
+    Ok(HistEthBalances::Found(results))
 }
