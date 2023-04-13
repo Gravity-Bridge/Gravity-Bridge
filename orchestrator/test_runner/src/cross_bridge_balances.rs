@@ -684,6 +684,8 @@ pub async fn submit_and_pass_monitored_erc20s_proposal(
         .zip(actual_erc20s.into_iter()) // Pair the input with the query response
         .map(|(exp, act)| assert_eq!(exp, act)) // Add the check
         .for_each(drop); // Tell rust to actually check every value
+
+    info!("\n\nThe monitored ERC20 token proposal has passed, expect the orchestrators to produce many failure logs if an imbalance occurs!\n\n\n");
 }
 
 #[allow(clippy::too_many_arguments)]
