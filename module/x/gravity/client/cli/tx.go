@@ -361,9 +361,9 @@ func CmdAddEvmChainProposal() *cobra.Command {
 // CmdRemoveEvmChainProposal enables users to create a proposal to add new EVM chains
 func CmdRemoveEvmChainProposal() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "remove-evm-chain [evm-chain-prefix] [initial-deposit]",
+		Use:   "remove-evm-chain [evm-chain-prefix] [initial-deposit] [title] [description]",
 		Short: "Creates a governance proposal to remove an EVM chain on the network",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -382,7 +382,7 @@ func CmdRemoveEvmChainProposal() *cobra.Command {
 
 			evmChainPrefix := args[0]
 
-			proposal := &types.RemoveEvmChainProposal{EvmChainPrefix: evmChainPrefix}
+			proposal := &types.RemoveEvmChainProposal{EvmChainPrefix: evmChainPrefix, Title: args[2], Description: args[3]}
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
 				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
