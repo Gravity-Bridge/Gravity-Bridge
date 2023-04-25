@@ -1416,8 +1416,11 @@ dependencies = [
 name = "gravity_utils"
 version = "0.1.0"
 dependencies = [
+ "actix",
  "clarity",
  "deep_space",
+ "env_logger",
+ "futures",
  "gravity_proto",
  "lazy_static",
  "log",
