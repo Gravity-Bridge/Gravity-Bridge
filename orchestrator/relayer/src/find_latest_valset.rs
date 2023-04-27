@@ -1,7 +1,7 @@
 use clarity::{Address, Uint256};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::event_signatures::*;
-use gravity_utils::types::{EthereumEvent, ValsetUpdatedEvent};
+use gravity_utils::types::ValsetUpdatedEvent;
 use gravity_utils::{error::GravityError, types::Valset};
 use std::collections::HashMap;
 use std::env;
@@ -71,12 +71,12 @@ pub async fn find_latest_valset(
                 previous_block.clone(),
             )
         };
-        let mut all_valset_events = match web3
-            .check_for_events(
+        let all_valset_events: Vec<ValsetUpdatedEvent> = match web3
+            .parse_event(
                 end_search.clone(),
                 Some(current_block.clone()),
-                vec![gravity_contract_address],
-                vec![VALSET_UPDATED_EVENT_SIG],
+                gravity_contract_address,
+                VALSET_UPDATED_EVENT_SIG,
             )
             .await
         {
@@ -89,30 +89,24 @@ pub async fn find_latest_valset(
                 continue;
             }
         };
-        // by default the lowest found valset goes first, we want the highest.
-        all_valset_events.reverse();
 
         trace!("Found events {:?}", all_valset_events);
 
-        // we take only the first event if we find any at all.
-        if !all_valset_events.is_empty() {
-            let event = &all_valset_events[0];
-            match ValsetUpdatedEvent::from_log(event) {
-                Ok(event) => {
-                    // update latest_eth_valset
-                    previous_valset = Some(Valset {
-                        nonce: event.valset_nonce,
-                        members: event.members,
-                        reward_amount: event.reward_amount,
-                        reward_token: event.reward_token,
-                    });
+        // by default the lowest found valset goes first, we want the highest.
+        // we take only the last event if we find any at all.
+        if let Some(event) = all_valset_events.last().cloned() {
+            // update latest_eth_valset
+            previous_valset = Some(Valset {
+                nonce: event.valset_nonce,
+                members: event.members,
+                reward_amount: event.reward_amount,
+                reward_token: event.reward_token,
+            });
 
-                    // now break from loop
-                    break;
-                }
-                Err(e) => error!("Got valset event that we can't parse {}", e),
-            }
+            // now break from loop
+            break;
         }
+
         current_block = end_search;
     }
 

@@ -313,7 +313,7 @@ impl EthereumEvent for ValsetUpdatedEvent {
 }
 
 impl ContractEvent for ValsetUpdatedEvent {
-    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+    fn from_event(event_data: &EventData) -> Result<Self, Web3Error> {
         let EventData {
             block_number,
             result,
@@ -339,16 +339,16 @@ impl ContractEvent for ValsetUpdatedEvent {
         Ok(Self {
             valset_nonce: result["_newValsetNonce"].as_str().unwrap().parse().unwrap(),
             event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
-            block_height: block_number.into(),
+            block_height: block_number.to_owned().into(),
             reward_amount: Uint256::from_str(result["_rewardAmount"].as_str().unwrap()).unwrap(),
             reward_token: result["_rewardToken"].as_str().unwrap().parse().ok(),
             members,
         })
     }
 
-    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+    fn from_events(input: &Web3Event) -> Result<Vec<Self>, Web3Error> {
         match input {
-            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Logs(logs) => Self::from_logs(logs),
             Web3Event::Events(events) => {
                 let mut res = Vec::new();
                 for item in events {
@@ -472,7 +472,7 @@ impl EthereumEvent for TransactionBatchExecutedEvent {
 }
 
 impl ContractEvent for TransactionBatchExecutedEvent {
-    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+    fn from_event(event_data: &EventData) -> Result<Self, Web3Error> {
         let EventData {
             block_number,
             result,
@@ -481,16 +481,16 @@ impl ContractEvent for TransactionBatchExecutedEvent {
 
         // based on abi
         Ok(Self {
-            block_height: block_number.into(),
+            block_height: block_number.to_owned().into(),
             event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
             erc20: result["_token"].as_str().unwrap().parse().unwrap(),
             batch_nonce: result["_batchNonce"].as_str().unwrap().parse().unwrap(),
         })
     }
 
-    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+    fn from_events(input: &Web3Event) -> Result<Vec<Self>, Web3Error> {
         match input {
-            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Logs(logs) => Self::from_logs(logs),
             Web3Event::Events(events) => {
                 let mut res = Vec::new();
                 for item in events {
@@ -719,7 +719,7 @@ impl EthereumEvent for SendToCosmosEvent {
 }
 
 impl ContractEvent for SendToCosmosEvent {
-    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+    fn from_event(event_data: &EventData) -> Result<Self, Web3Error> {
         let EventData {
             block_number,
             result,
@@ -729,7 +729,7 @@ impl ContractEvent for SendToCosmosEvent {
         let destination = result["_destination"].as_str().unwrap();
 
         Ok(Self {
-            block_height: block_number.into(),
+            block_height: block_number.to_owned().into(),
             event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
             erc20: result["_tokenContract"].as_str().unwrap().parse().unwrap(),
             sender: result["_sender"].as_str().unwrap().parse().unwrap(),
@@ -739,9 +739,9 @@ impl ContractEvent for SendToCosmosEvent {
         })
     }
 
-    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+    fn from_events(input: &Web3Event) -> Result<Vec<Self>, Web3Error> {
         match input {
-            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Logs(logs) => Self::from_logs(logs),
             Web3Event::Events(events) => {
                 let mut res = Vec::new();
                 for item in events {
@@ -1073,7 +1073,7 @@ impl EthereumEvent for Erc20DeployedEvent {
 }
 
 impl ContractEvent for Erc20DeployedEvent {
-    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+    fn from_event(event_data: &EventData) -> Result<Self, Web3Error> {
         let EventData {
             block_number,
             result,
@@ -1081,7 +1081,7 @@ impl ContractEvent for Erc20DeployedEvent {
         } = event_data;
 
         Ok(Self {
-            block_height: block_number.into(),
+            block_height: block_number.to_owned().into(),
             event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
             erc20_address: result["_tokenContract"].as_str().unwrap().parse().unwrap(),
             cosmos_denom: result["_cosmosDenom"].as_str().unwrap().to_string(),
@@ -1091,9 +1091,9 @@ impl ContractEvent for Erc20DeployedEvent {
         })
     }
 
-    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+    fn from_events(input: &Web3Event) -> Result<Vec<Self>, Web3Error> {
         match input {
-            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Logs(logs) => Self::from_logs(logs),
             Web3Event::Events(events) => {
                 let mut res = Vec::new();
                 for item in events {
@@ -1171,7 +1171,7 @@ impl EthereumEvent for LogicCallExecutedEvent {
 }
 
 impl ContractEvent for LogicCallExecutedEvent {
-    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+    fn from_event(event_data: &EventData) -> Result<Self, Web3Error> {
         let EventData {
             block_number,
             result,
@@ -1180,7 +1180,7 @@ impl ContractEvent for LogicCallExecutedEvent {
 
         // bytes are shown as hex string
         Ok(Self {
-            block_height: block_number.into(),
+            block_height: block_number.to_owned().into(),
             event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
             invalidation_id: hex_str_to_bytes(result["_invalidationId"].as_str().unwrap()).unwrap(),
             invalidation_nonce: result["_invalidationNonce"]
@@ -1192,9 +1192,9 @@ impl ContractEvent for LogicCallExecutedEvent {
         })
     }
 
-    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+    fn from_events(input: &Web3Event) -> Result<Vec<Self>, Web3Error> {
         match input {
-            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Logs(logs) => Self::from_logs(logs),
             Web3Event::Events(events) => {
                 let mut res = Vec::new();
                 for item in events {

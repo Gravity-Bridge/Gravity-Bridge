@@ -63,7 +63,7 @@ pub async fn check_for_events(
     };
 
     let deposits = web3
-        .parse_events(
+        .parse_event(
             starting_block.clone(),
             Some(latest_block.clone()),
             gravity_contract_address,
@@ -72,7 +72,7 @@ pub async fn check_for_events(
         .await;
 
     let batches = web3
-        .parse_events(
+        .parse_event(
             starting_block.clone(),
             Some(latest_block.clone()),
             gravity_contract_address,
@@ -80,7 +80,7 @@ pub async fn check_for_events(
         )
         .await;
     let valsets = web3
-        .parse_events(
+        .parse_event(
             starting_block.clone(),
             Some(latest_block.clone()),
             gravity_contract_address,
@@ -88,7 +88,7 @@ pub async fn check_for_events(
         )
         .await;
     let erc20_deployed = web3
-        .parse_events(
+        .parse_event(
             starting_block.clone(),
             Some(latest_block.clone()),
             gravity_contract_address,
@@ -96,7 +96,7 @@ pub async fn check_for_events(
         )
         .await;
     let logic_call_executed = web3
-        .parse_events(
+        .parse_event(
             starting_block.clone(),
             Some(latest_block.clone()),
             gravity_contract_address,

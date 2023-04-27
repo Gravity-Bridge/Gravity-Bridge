@@ -15,7 +15,7 @@ fn main() {
 
     runner.block_on(async move {
         let val: Vec<ValsetUpdatedEvent> = web3
-            .parse_events(
+            .parse_event(
                 start_block,
                 end_block,
                 contract_addr,

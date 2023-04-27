@@ -5,12 +5,13 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::get_with_retry::RETRY_TIME;
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::types::{
-    Erc20DeployedEvent, EthereumEvent, LogicCallExecutedEvent, SendToCosmosEvent,
-    TransactionBatchExecutedEvent, ValsetUpdatedEvent,
+    Erc20DeployedEvent, LogicCallExecutedEvent, SendToCosmosEvent, TransactionBatchExecutedEvent,
+    ValsetUpdatedEvent,
 };
 use metrics_exporter::metrics_errors_counter;
 use relayer::find_latest_valset::convert_block_to_search;
 use std::collections::HashMap;
+use web30::{ContractEvent, Web3Event};
 // use std::env;
 // use std::ops::Sub;
 // use std::str::FromStr;
@@ -18,7 +19,6 @@ use std::sync::{Arc, RwLock};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
-use web30::types::Log;
 
 use crate::ethereum_event_watcher::get_latest_safe_block;
 
@@ -44,104 +44,113 @@ pub fn set_last_checked_block_info(evm_chain_prefix: &str, info: (Uint256, Optio
 fn batch_events_callback(
     last_event_nonce: Uint256,
     _our_cosmos_address: CosmosAddress,
-    events: Vec<Log>,
+    web3_event: &Web3Event,
 ) -> Option<Uint256> {
-    for event in events {
-        match TransactionBatchExecutedEvent::from_log(&event) {
-            Ok(batch) => {
+    match TransactionBatchExecutedEvent::from_events(web3_event) {
+        Ok(batches) => {
+            if let Some(batch) = batches
+                .iter()
+                .find(|&b| upcast(b.event_nonce) == last_event_nonce)
+            {
                 trace!(
                     "{} batch event nonce {} last event nonce",
                     batch.event_nonce,
                     last_event_nonce
                 );
-                if upcast(batch.event_nonce) == last_event_nonce && event.block_number.is_some() {
-                    return event.block_number;
-                }
-            }
-            Err(e) => {
-                error!("Got batch event that we can't parse {}", e);
-                metrics_errors_counter(1, "Got batch event that we can't parse");
+
+                return Some(batch.block_height);
             }
         }
+        Err(e) => {
+            error!("Got batch event that we can't parse {}", e);
+            metrics_errors_counter(1, "Got batch event that we can't parse");
+        }
     }
+
     None
 }
 
 fn send_to_cosmos_events_callback(
     last_event_nonce: Uint256,
     _our_cosmos_address: CosmosAddress,
-    events: Vec<Log>,
+    web3_event: &Web3Event,
 ) -> Option<Uint256> {
-    for event in events {
-        match SendToCosmosEvent::from_log(&event) {
-            Ok(send) => {
+    match SendToCosmosEvent::from_events(web3_event) {
+        Ok(sends) => {
+            if let Some(send) = sends
+                .iter()
+                .find(|&b| upcast(b.event_nonce) == last_event_nonce)
+            {
                 trace!(
                     "{} send event nonce {} last event nonce",
                     send.event_nonce,
                     last_event_nonce
                 );
-                if upcast(send.event_nonce) == last_event_nonce && event.block_number.is_some() {
-                    return event.block_number;
-                }
-            }
-            Err(e) => {
-                error!("Got SendToCosmos event that we can't parse {}", e);
-                metrics_errors_counter(3, "Got SendToCosmos event that we can't parse");
+                return Some(send.block_height);
             }
         }
+        Err(e) => {
+            error!("Got SendToCosmos event that we can't parse {}", e);
+            metrics_errors_counter(3, "Got SendToCosmos event that we can't parse");
+        }
     }
+
     None
 }
 
 fn erc20_deployed_events_callback(
     last_event_nonce: Uint256,
     _our_cosmos_address: CosmosAddress,
-    events: Vec<Log>,
+    web3_event: &Web3Event,
 ) -> Option<Uint256> {
-    for event in events {
-        match Erc20DeployedEvent::from_log(&event) {
-            Ok(deploy) => {
+    match Erc20DeployedEvent::from_events(web3_event) {
+        Ok(deploys) => {
+            if let Some(deploy) = deploys
+                .iter()
+                .find(|&b| upcast(b.event_nonce) == last_event_nonce)
+            {
                 trace!(
                     "{} deploy event nonce {} last event nonce",
                     deploy.event_nonce,
                     last_event_nonce
                 );
-                if upcast(deploy.event_nonce) == last_event_nonce && event.block_number.is_some() {
-                    return event.block_number;
-                }
-            }
-            Err(e) => {
-                error!("Got ERC20Deployed event that we can't parse {}", e);
-                metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
+                return Some(deploy.block_height);
             }
         }
+        Err(e) => {
+            error!("Got ERC20Deployed event that we can't parse {}", e);
+            metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
+        }
     }
+
     None
 }
 
 fn logic_call_executed_events_callback(
     last_event_nonce: Uint256,
     _our_cosmos_address: CosmosAddress,
-    events: Vec<Log>,
+    web3_event: &Web3Event,
 ) -> Option<Uint256> {
-    for event in events {
-        match LogicCallExecutedEvent::from_log(&event) {
-            Ok(call) => {
+    match LogicCallExecutedEvent::from_events(web3_event) {
+        Ok(calls) => {
+            if let Some(call) = calls
+                .iter()
+                .find(|&b| upcast(b.event_nonce) == last_event_nonce)
+            {
                 trace!(
                     "{} LogicCall event nonce {} last event nonce",
                     call.event_nonce,
                     last_event_nonce
                 );
-                if upcast(call.event_nonce) == last_event_nonce && event.block_number.is_some() {
-                    return event.block_number;
-                }
-            }
-            Err(e) => {
-                error!("Got ERC20Deployed event that we can't parse {}", e);
-                metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
+                return Some(call.block_height);
             }
         }
+        Err(e) => {
+            error!("Got ERC20Deployed event that we can't parse {}", e);
+            metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
+        }
     }
+
     None
 }
 
@@ -153,25 +162,24 @@ fn logic_call_executed_events_callback(
 fn valset_events_callback(
     last_event_nonce: Uint256,
     our_cosmos_address: CosmosAddress,
-    events: Vec<Log>,
+    web3_event: &Web3Event,
 ) -> Option<Uint256> {
-    for event in events.into_iter().rev() {
-        match ValsetUpdatedEvent::from_log(&event) {
-            Ok(valset) => {
+    match ValsetUpdatedEvent::from_events(web3_event) {
+        Ok(valsets) => {
+            for valset in valsets.iter().rev() {
                 // if we've found this event it is the first possible event from the contract
                 // no other events can come before it, therefore either there's been a parsing error
                 // or no events have been submitted on this chain yet.
                 let bootstrapping = valset.valset_nonce == 0 && last_event_nonce == 1u8.into();
                 // our last event was a valset update event, treat as normal case
-                let common_case =
-                    upcast(valset.event_nonce) == last_event_nonce && event.block_number.is_some();
+                let common_case = upcast(valset.event_nonce) == last_event_nonce;
                 trace!(
                     "{} valset event nonce {} last event nonce",
                     valset.event_nonce,
                     last_event_nonce
                 );
                 if common_case || bootstrapping {
-                    return event.block_number;
+                    return Some(valset.block_height);
                 }
                 // if we're looking for a later event nonce and we find the deployment of the contract
                 // we must have failed to parse the event we're looking for. The oracle can not start
@@ -179,12 +187,13 @@ fn valset_events_callback(
                     panic!("Could not find the last event relayed by {}, Last Event nonce is {} but no event matching that could be found!", our_cosmos_address, last_event_nonce)
                 }
             }
-            Err(e) => {
-                error!("Got valset event that we can't parse {}", e);
-                metrics_errors_counter(3, "Got valset event that we can't parse");
-            }
+        }
+        Err(e) => {
+            error!("Got valset event that we can't parse {}", e);
+            metrics_errors_counter(3, "Got valset event that we can't parse");
         }
     }
+
     None
 }
 
@@ -240,7 +249,7 @@ pub async fn get_last_checked_block(
 
         let callback_chains: Vec<(
             &str,
-            fn(Uint256, deep_space::Address, Vec<web30::types::Log>) -> Option<Uint256>,
+            fn(Uint256, deep_space::Address, &Web3Event) -> Option<Uint256>,
         )> = vec![
             (TRANSACTION_BATCH_EXECUTED_EVENT_SIG, batch_events_callback),
             (SENT_TO_COSMOS_EVENT_SIG, send_to_cosmos_events_callback),
@@ -258,12 +267,12 @@ pub async fn get_last_checked_block(
         while ind < callback_chains.len() {
             // get events log
             let (event_sig, callback) = callback_chains[ind];
-            let events = match web3
-                .check_for_events(
+            let web3_event = match web3
+                .check_for_event(
                     end_search.clone(),
                     Some(current_block.clone()),
-                    vec![gravity_contract_address],
-                    vec![event_sig],
+                    gravity_contract_address,
+                    event_sig,
                 )
                 .await
             {
@@ -283,7 +292,8 @@ pub async fn get_last_checked_block(
             // then we will play events from that block (including that block, just in case
             // there is more than one event there) onwards. We use valset nonce 0 as an indicator
             // of what block the contract was deployed on.
-            if let Some(block) = callback(last_event_nonce.clone(), our_cosmos_address, events) {
+            if let Some(block) = callback(last_event_nonce.clone(), our_cosmos_address, &web3_event)
+            {
                 // found last_checked_block
                 found_block = true;
                 prev_checked_block = Some(block);
