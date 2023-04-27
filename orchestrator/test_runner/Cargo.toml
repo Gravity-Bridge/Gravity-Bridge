@@ -19,7 +19,7 @@ orchestrator = {path = "../orchestrator/"}
 bytes = "1"
 prost = "0.11"
 prost-types = "0.11"
-deep_space = {git ="https://github.com/oraichain/deep_space.git", features = ["ethermint"], rev = "a2e1353"}
+deep_space = { workspace = true, features = ["ethermint"] }
 serde_derive = "1.0"
 clarity = "0.7"
 docopt = "1"
@@ -28,7 +28,7 @@ actix = "0.13"
 actix-rt = "2.2"
 lazy_static = "1"
 url = "2"
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "5fc5815"}
+web30 = { workspace = true }
 num = "0.4.0"
 num256 = "0.5"
 log = "0.4"

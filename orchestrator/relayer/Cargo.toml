@@ -14,14 +14,14 @@ cosmos_gravity = {path = "../cosmos_gravity"}
 gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {path = "../gravity_proto/"}
 
-deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "a2e1353"}
+deep_space = { workspace = true }
 serde_derive = "1.0"
 clarity = "0.7"
 docopt = "1"
 serde = "1.0"
 actix-rt = "2"
 lazy_static = "1"
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "5fc5815"}
+web30 = { workspace = true }
 log = "0.4"
 tokio = "1.21"
 tonic = "0.8"
