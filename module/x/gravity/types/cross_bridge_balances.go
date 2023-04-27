@@ -5,12 +5,12 @@ import "fmt"
 // NewBridgeBalanceSnapshot constructs a BridgeBalanceSnapshot conveniently from the Cosmos block height,
 // an attestation with Ethereum block height, and a list of monitored tokens with their balances
 func NewBridgeBalanceSnapshot(
-	cosmosHeight uint64, ethBlockHeight uint64, monitoredBalances []*ERC20Token, eventNonce uint64,
+	cosmosHeight uint64, ethBlockHeight uint64, monitoredBalances InternalERC20Tokens, eventNonce uint64,
 ) BridgeBalanceSnapshot {
 	return BridgeBalanceSnapshot{
 		CosmosBlockHeight:   cosmosHeight,
 		EthereumBlockHeight: ethBlockHeight,
-		Balances:            monitoredBalances,
+		Balances:            monitoredBalances.ToExternal(),
 		EventNonce:          eventNonce,
 	}
 }

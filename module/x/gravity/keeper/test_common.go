@@ -702,6 +702,12 @@ func (t TestInput) AssertInvariants() {
 	t.Context.Logger().Info("All invariants successful")
 }
 
+// An intermediary which allows calling a critical private function while safely restricting use to
+// tests only
+func (t TestInput) StoreBridgeBalanceSnapshot(snapshot types.BridgeBalanceSnapshot) {
+	t.GravityKeeper.storeBridgeBalanceSnapshot(t.Context, snapshot)
+}
+
 // getSubspace returns a param subspace for a given module name.
 func getSubspace(k paramskeeper.Keeper, moduleName string) paramstypes.Subspace {
 	subspace, _ := k.GetSubspace(moduleName)

@@ -284,7 +284,9 @@ func (i InternalERC20Tokens) SubSorted(o InternalERC20Tokens) InternalERC20Token
 	other := make(InternalERC20Tokens, len(o))
 	copy(other, o)
 	other.Neg()
-	return i.AddSorted(other)
+	added := i.AddSorted(other)
+	other.Neg() // Reverse the impact of negation
+	return added
 }
 
 // AddSorted will perform addition between two sets of sorted InternalERC20Tokens
@@ -319,6 +321,15 @@ func (i InternalERC20Tokens) AddSorted(o InternalERC20Tokens) InternalERC20Token
 	return result
 }
 
+func (i InternalERC20Tokens) ToExternal() ERC20Tokens {
+	var externals ERC20Tokens
+	for _, t := range i {
+		extern := t.ToExternal()
+		externals = append(externals, &extern)
+	}
+	return externals
+}
+
 // ToCoins converts each InternalERC20Token to an sdk.Coin by calling GravityCoin()
 func (i InternalERC20Tokens) ToCoins() sdk.Coins {
 	var coins sdk.Coins
@@ -326,6 +337,20 @@ func (i InternalERC20Tokens) ToCoins() sdk.Coins {
 		coins = coins.Add(v.GravityCoin())
 	}
 	return coins
+}
+
+func (i InternalERC20Tokens) String() string {
+	builder := strings.Builder{}
+	builder.WriteString("[")
+	for j, token := range i {
+		if j > 0 {
+			builder.WriteString(",")
+		}
+		builder.WriteString(fmt.Sprintf("%v%v", token.Amount.String(), token.Contract.GetAddress().String()))
+	}
+	builder.WriteString("]")
+
+	return builder.String()
 }
 
 // GravityDenomToERC20 converts a gravity cosmos denom to an EthAddress

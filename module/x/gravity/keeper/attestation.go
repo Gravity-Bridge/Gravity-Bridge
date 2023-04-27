@@ -124,11 +124,15 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 					k.logger(ctx).Error(errMsg)
 					panic(errMsg)
 				}
-				k.processAttestation(ctx, att, claim)
+				successfulAttestation := k.processAttestation(ctx, att, claim)
 				k.emitObservedEvent(ctx, att, claim)
 
 				// Add a new bridge balance to the store, check the supply of all monitored erc20 tokens too
-				k.updateBridgeBalanceSnapshots(ctx, claim, *expectedSupplyChange)
+				if successfulAttestation {
+					if err = k.updateBridgeBalanceSnapshots(ctx, claim, *expectedSupplyChange); err != nil {
+						panic(err)
+					}
+				}
 
 				break
 			}
@@ -139,8 +143,8 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 	}
 }
 
-// processAttestation actually applies the attestation to the consensus state
-func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
+// processAttestation actually applies the attestation to the consensus state, returning whether the attestation was successful or not
+func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) bool {
 	hash, err := claim.ClaimHash()
 	if err != nil {
 		panic("unable to compute claim hash")
@@ -156,8 +160,10 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
+		return false
 	} else {
 		commit() // persist transient storage
+		return true
 	}
 }
 
