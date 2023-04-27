@@ -10,6 +10,7 @@
 use super::ValsetMember;
 use crate::num_conversion::downcast_uint256;
 use clarity::constants::zero_address;
+use clarity::utils::hex_str_to_bytes;
 use deep_space::utils::bytes_to_hex_str;
 use deep_space::{Address as CosmosAddress, Address, Msg};
 use gravity_proto::gravity::{
@@ -312,24 +313,16 @@ impl EthereumEvent for ValsetUpdatedEvent {
 }
 
 impl ContractEvent for ValsetUpdatedEvent {
-    fn from_event(event_data: EventData) -> Result<ValsetUpdatedEvent, Web3Error> {
+    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
         let EventData {
             block_number,
             result,
             ..
         } = event_data;
 
-        let powers: Vec<&str> = result
-            .get("_powers")
-            .unwrap()
-            .as_str()
-            .unwrap()
-            .split("\n")
-            .collect();
+        let powers: Vec<&str> = result["_powers"].as_str().unwrap().split("\n").collect();
 
-        let validators: Vec<&str> = result
-            .get("_validators")
-            .unwrap()
+        let validators: Vec<&str> = result["_validators"]
             .as_str()
             .unwrap()
             .split("\n")
@@ -343,44 +336,23 @@ impl ContractEvent for ValsetUpdatedEvent {
             })
         }
 
-        Ok(ValsetUpdatedEvent {
-            valset_nonce: result
-                .get("_newValsetNonce")
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .parse()
-                .unwrap(),
-            event_nonce: result
-                .get("_eventNonce")
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .parse()
-                .unwrap(),
+        Ok(Self {
+            valset_nonce: result["_newValsetNonce"].as_str().unwrap().parse().unwrap(),
+            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
             block_height: block_number.into(),
-            reward_amount: Uint256::from_str(
-                result.get("_rewardAmount").unwrap().as_str().unwrap(),
-            )
-            .unwrap(),
-            reward_token: result
-                .get("_rewardToken")
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .parse()
-                .ok(),
+            reward_amount: Uint256::from_str(result["_rewardAmount"].as_str().unwrap()).unwrap(),
+            reward_token: result["_rewardToken"].as_str().unwrap().parse().ok(),
             members,
         })
     }
 
-    fn from_events(input: Web3Event) -> Result<Vec<ValsetUpdatedEvent>, Web3Error> {
+    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
         match input {
-            Web3Event::Logs(logs) => ValsetUpdatedEvent::from_logs(&logs),
+            Web3Event::Logs(logs) => Self::from_logs(&logs),
             Web3Event::Events(events) => {
                 let mut res = Vec::new();
                 for item in events {
-                    res.push(ValsetUpdatedEvent::from_event(item)?);
+                    res.push(Self::from_event(item)?);
                 }
                 Ok(res)
             }
@@ -496,6 +468,37 @@ impl EthereumEvent for TransactionBatchExecutedEvent {
             evm_chain_prefix,
         };
         Msg::new(MSG_BATCH_SEND_TO_ETH_TYPE_URL, claim)
+    }
+}
+
+impl ContractEvent for TransactionBatchExecutedEvent {
+    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+        let EventData {
+            block_number,
+            result,
+            ..
+        } = event_data;
+
+        // based on abi
+        Ok(Self {
+            block_height: block_number.into(),
+            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            erc20: result["_token"].as_str().unwrap().parse().unwrap(),
+            batch_nonce: result["_batchNonce"].as_str().unwrap().parse().unwrap(),
+        })
+    }
+
+    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+        match input {
+            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Events(events) => {
+                let mut res = Vec::new();
+                for item in events {
+                    res.push(Self::from_event(item)?);
+                }
+                Ok(res)
+            }
+        }
     }
 }
 
@@ -712,6 +715,41 @@ impl EthereumEvent for SendToCosmosEvent {
             evm_chain_prefix,
         };
         Msg::new(MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL, claim)
+    }
+}
+
+impl ContractEvent for SendToCosmosEvent {
+    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+        let EventData {
+            block_number,
+            result,
+            ..
+        } = event_data;
+
+        let destination = result["_destination"].as_str().unwrap();
+
+        Ok(Self {
+            block_height: block_number.into(),
+            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            erc20: result["_tokenContract"].as_str().unwrap().parse().unwrap(),
+            sender: result["_sender"].as_str().unwrap().parse().unwrap(),
+            destination: destination.to_string(),
+            validated_destination: destination.split('/').last().unwrap().parse().ok(),
+            amount: result["_amount"].as_str().unwrap().parse().unwrap(),
+        })
+    }
+
+    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+        match input {
+            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Events(events) => {
+                let mut res = Vec::new();
+                for item in events {
+                    res.push(Self::from_event(item)?);
+                }
+                Ok(res)
+            }
+        }
     }
 }
 
@@ -1033,6 +1071,40 @@ impl EthereumEvent for Erc20DeployedEvent {
         Msg::new(MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL, claim)
     }
 }
+
+impl ContractEvent for Erc20DeployedEvent {
+    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+        let EventData {
+            block_number,
+            result,
+            ..
+        } = event_data;
+
+        Ok(Self {
+            block_height: block_number.into(),
+            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            erc20_address: result["_tokenContract"].as_str().unwrap().parse().unwrap(),
+            cosmos_denom: result["_cosmosDenom"].as_str().unwrap().to_string(),
+            name: result["_name"].as_str().unwrap().to_string(),
+            symbol: result["_symbol"].as_str().unwrap().to_string(),
+            decimals: result["_decimals"].as_u64().unwrap() as u8,
+        })
+    }
+
+    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+        match input {
+            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Events(events) => {
+                let mut res = Vec::new();
+                for item in events {
+                    res.push(Self::from_event(item)?);
+                }
+                Ok(res)
+            }
+        }
+    }
+}
+
 /// A parsed struct representing the Ethereum event fired when someone uses the Gravity
 /// contract to deploy a new ERC20 contract representing a Cosmos asset
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -1095,6 +1167,42 @@ impl EthereumEvent for LogicCallExecutedEvent {
             evm_chain_prefix,
         };
         Msg::new(MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL, claim)
+    }
+}
+
+impl ContractEvent for LogicCallExecutedEvent {
+    fn from_event(event_data: EventData) -> Result<Self, Web3Error> {
+        let EventData {
+            block_number,
+            result,
+            ..
+        } = event_data;
+
+        // bytes are shown as hex string
+        Ok(Self {
+            block_height: block_number.into(),
+            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            invalidation_id: hex_str_to_bytes(result["_invalidationId"].as_str().unwrap()).unwrap(),
+            invalidation_nonce: result["_invalidationNonce"]
+                .as_str()
+                .unwrap()
+                .parse()
+                .unwrap(),
+            return_data: hex_str_to_bytes(result["_returnData"].as_str().unwrap()).unwrap(),
+        })
+    }
+
+    fn from_events(input: Web3Event) -> Result<Vec<Self>, Web3Error> {
+        match input {
+            Web3Event::Logs(logs) => Self::from_logs(&logs),
+            Web3Event::Events(events) => {
+                let mut res = Vec::new();
+                for item in events {
+                    res.push(Self::from_event(item)?);
+                }
+                Ok(res)
+            }
+        }
     }
 }
 

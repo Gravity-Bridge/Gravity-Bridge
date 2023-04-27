@@ -8,6 +8,7 @@ use deep_space::{
     coin::Coin,
     private_key::{CosmosPrivateKey, PrivateKey},
 };
+
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::get_with_retry::get_net_version_with_retry;
 use gravity_utils::get_with_retry::{get_block_number_with_retry, get_finalized_block_with_retry};
@@ -62,72 +63,60 @@ pub async fn check_for_events(
     };
 
     let deposits = web3
-        .check_for_events(
+        .parse_events(
             starting_block.clone(),
             Some(latest_block.clone()),
-            vec![gravity_contract_address],
-            vec![SENT_TO_COSMOS_EVENT_SIG],
+            gravity_contract_address,
+            SENT_TO_COSMOS_EVENT_SIG,
         )
         .await;
-    trace!("Deposits {:?}", deposits);
 
     let batches = web3
-        .check_for_events(
+        .parse_events(
             starting_block.clone(),
             Some(latest_block.clone()),
-            vec![gravity_contract_address],
-            vec![TRANSACTION_BATCH_EXECUTED_EVENT_SIG],
+            gravity_contract_address,
+            TRANSACTION_BATCH_EXECUTED_EVENT_SIG,
         )
         .await;
-    trace!("Batches {:?}", batches);
-
     let valsets = web3
-        .check_for_events(
+        .parse_events(
             starting_block.clone(),
             Some(latest_block.clone()),
-            vec![gravity_contract_address],
-            vec![VALSET_UPDATED_EVENT_SIG],
+            gravity_contract_address,
+            VALSET_UPDATED_EVENT_SIG,
         )
         .await;
-    trace!("Valsets {:?}", valsets);
-
     let erc20_deployed = web3
-        .check_for_events(
+        .parse_events(
             starting_block.clone(),
             Some(latest_block.clone()),
-            vec![gravity_contract_address],
-            vec![ERC20_DEPLOYED_EVENT_SIG],
+            gravity_contract_address,
+            ERC20_DEPLOYED_EVENT_SIG,
         )
         .await;
-    trace!("ERC20 Deployments {:?}", erc20_deployed);
-
     let logic_call_executed = web3
-        .check_for_events(
+        .parse_events(
             starting_block.clone(),
             Some(latest_block.clone()),
-            vec![gravity_contract_address],
-            vec![LOGIC_CALL_EVENT_SIG],
+            gravity_contract_address,
+            LOGIC_CALL_EVENT_SIG,
         )
         .await;
-    trace!("Logic call executions {:?}", logic_call_executed);
 
-    if let (Ok(valsets), Ok(batches), Ok(deposits), Ok(deploys), Ok(logic_calls)) = (
+    if let (Ok(valsets), Ok(batches), Ok(deposits), Ok(erc20_deployed), Ok(logic_call_executed)) = (
         valsets,
         batches,
         deposits,
         erc20_deployed,
         logic_call_executed,
     ) {
-        let valsets = ValsetUpdatedEvent::from_logs(&valsets)?;
-        trace!("parsed valsets {:?}", valsets);
-        let withdraws = TransactionBatchExecutedEvent::from_logs(&batches)?;
-        trace!("parsed batches {:?}", batches);
-        let deposits = SendToCosmosEvent::from_logs(&deposits)?;
-        trace!("parsed deposits {:?}", deposits);
-        let erc20_deploys = Erc20DeployedEvent::from_logs(&deploys)?;
-        trace!("parsed erc20 deploys {:?}", erc20_deploys);
-        let logic_calls = LogicCallExecutedEvent::from_logs(&logic_calls)?;
-        trace!("logic call executions {:?}", logic_calls);
+        // (deposits, batches, valsets, erc20_deployed, logic_call_executed)
+        trace!("Deposits {:?}", deposits);
+        trace!("Batches {:?}", batches);
+        trace!("Valsets {:?}", valsets);
+        trace!("ERC20 Deployments {:?}", erc20_deployed);
+        trace!("Logic call executions {:?}", logic_call_executed);
 
         // note that starting block overlaps with our last checked block, because we have to deal with
         // the possibility that the relayer was killed after relaying only one of multiple events in a single
@@ -144,11 +133,11 @@ pub async fn check_for_events(
         let valsets = ValsetUpdatedEvent::filter_by_event_nonce(last_event_nonce, &valsets);
         let deposits = SendToCosmosEvent::filter_by_event_nonce(last_event_nonce, &deposits);
         let withdraws =
-            TransactionBatchExecutedEvent::filter_by_event_nonce(last_event_nonce, &withdraws);
+            TransactionBatchExecutedEvent::filter_by_event_nonce(last_event_nonce, &batches);
         let erc20_deploys =
-            Erc20DeployedEvent::filter_by_event_nonce(last_event_nonce, &erc20_deploys);
+            Erc20DeployedEvent::filter_by_event_nonce(last_event_nonce, &erc20_deployed);
         let logic_calls =
-            LogicCallExecutedEvent::filter_by_event_nonce(last_event_nonce, &logic_calls);
+            LogicCallExecutedEvent::filter_by_event_nonce(last_event_nonce, &logic_call_executed);
 
         if !valsets.is_empty() {
             info!(
