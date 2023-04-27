@@ -72,7 +72,7 @@ pub async fn upgrade_part_1(
     )
     .await;
 
-    let upgrade_height = run_upgrade(contact, keys, "pleiades2".to_string(), false).await;
+    let upgrade_height = run_upgrade(contact, keys, "orion".to_string(), false).await;
 
     // Check that the expected attestations exist
     check_attestations(grpc_client.clone(), MINIMUM_ATTESTATIONS).await;
