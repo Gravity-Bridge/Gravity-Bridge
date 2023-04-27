@@ -10,8 +10,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	"github.com/osmosis-labs/bech32-ibc/x/bech32ibc"
-	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
+
+	"github.com/althea-net/bech32-ibc/x/bech32ibc"
+	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )

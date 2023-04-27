@@ -100,10 +100,10 @@ import (
 	ibchost "github.com/cosmos/ibc-go/v6/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v6/modules/core/keeper"
 
-	// Osmosis-Labs Bech32-IBC
-	"github.com/osmosis-labs/bech32-ibc/x/bech32ibc"
-	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
-	bech32ibctypes "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/types"
+	// Bech32-IBC (The Althea fork)
+	"github.com/althea-net/bech32-ibc/x/bech32ibc"
+	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
+	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"

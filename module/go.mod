@@ -9,13 +9,13 @@ require (
 
 require (
 	cosmossdk.io/math v1.0.0-beta.4
+	github.com/althea-net/bech32-ibc v0.5.1
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/evmos/ethermint v0.21.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/osmosis-labs/bech32-ibc v0.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
 	github.com/regen-network/cosmos-proto v0.3.1
@@ -196,8 +196,6 @@ require (
 replace (
 	github.com/gogo/grpc => google.golang.org/grpc v1.33.2
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
-	github.com/osmosis-labs/bech32-ibc => github.com/althea-net/bech32-ibc v0.5.0
 
 	github.com/tendermint/tendermint => github.com/informalsystems/tendermint v0.34.26
 )
