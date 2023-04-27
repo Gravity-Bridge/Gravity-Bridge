@@ -80,7 +80,12 @@ func (k Keeper) AddToOutgoingPool(
 
 	// todo: add second index for sender so that we can easily query: give pending Tx by sender
 	// todo: what about a second index for receiver?
-
+	k.logger(ctx).Info("Transaction added to pool",
+		"transaction-id", outgoing.Id, "transaction-sender", outgoing.Sender.String(),
+		"transaction-token-amount", outgoing.Erc20Token.Amount.String(), "token-contract", outgoing.Erc20Token.Contract.GetAddress().String(),
+		"transaction-fee-amount", outgoing.Erc20Fee.Amount.String(),
+		"transaction-destination", outgoing.DestAddress.GetAddress().String(),
+	)
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventWithdrawalReceived{
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
@@ -140,6 +145,11 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 		return sdkerrors.Wrap(err, "transfer vouchers")
 	}
 
+	k.logger(ctx).Info("Transaction refunded",
+		"transaction-id", txId, "refundee", sender.String(), "total-refunded", totalToRefundCoins.String(),
+		"refunded-token-amount", tx.Erc20Token.Amount.String(), "token-contract", tx.Erc20Token.Contract.GetAddress().String(),
+		"refunded-fee-amount", tx.Erc20Fee.Amount.String(),
+	)
 	ctx.EventManager().EmitTypedEvent(
 		&types.EventWithdrawCanceled{
 			Sender:         sender.String(),

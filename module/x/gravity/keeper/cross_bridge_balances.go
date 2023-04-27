@@ -37,6 +37,7 @@ func (k Keeper) MonitoredERC20Tokens(ctx sdk.Context) []types.EthAddress {
 // setMonitoredERC20Tokens will update the list of ERC20 tokens which the Orchestrators should monitor,
 // Note that this list should ONLY be updated via governance or as part of an upgrade which includes consensus on the token list!
 func (k Keeper) setMonitoredERC20Tokens(ctx sdk.Context, erc20s types.EthAddresses) {
+	k.logger(ctx).Info("Setting Monitored ERC20 Tokens", "tokens", erc20s)
 	store := ctx.KVStore(k.storeKey)
 	key := types.MonitoredERC20TokensKey
 
@@ -133,6 +134,7 @@ func (k Keeper) updateBridgeBalanceSnapshots(ctx sdk.Context, claim types.Ethere
 		// There are no elligible balances to store, return early
 		return nil
 	}
+	k.logger(ctx).Info("Updating Bridge Balance Snapshot", "ethereum-height", snapshot.EthereumBlockHeight, "ethereum-event-nonce", snapshot.EventNonce, "balances", snapshot.Balances)
 	k.storeBridgeBalanceSnapshot(ctx, snapshot)
 	return k.AssertBridgeBalanceSanity(ctx, claim, expectedSupplyChange)
 }
@@ -186,6 +188,7 @@ func (k Keeper) FetchBridgedTokenBalances(ctx sdk.Context) types.InternalERC20To
 
 	balances.Sort()
 	unaccountedBalances.Sort()
+	k.logger(ctx).Info("Collected Snapshot Balances", "firm-balances", balances.String(), "transient-balances", unaccountedBalances.String())
 	balances = balances.SubSorted(unaccountedBalances)
 
 	return balances

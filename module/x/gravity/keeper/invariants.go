@@ -83,7 +83,11 @@ func (k Keeper) UnaccountedGravityModuleBalances(ctx sdk.Context) sdk.Coins {
 }
 
 func (k Keeper) unaccountedGravityModuleBalancesMap(ctx sdk.Context) map[string]*sdk.Int {
-	unaccountedMap := make(map[string]*sdk.Int) // Collect balances by contract
+	moduleBalances := k.bankKeeper.GetAllBalances(ctx, k.accountKeeper.GetModuleAddress(types.ModuleName))
+	unaccountedMap := make(map[string]*sdk.Int, len(moduleBalances)) // Collect balances by contract
+	for _, balance := range moduleBalances {
+		*unaccountedMap[balance.Denom] = sdk.ZeroInt()
+	}
 	unaccountedMap = sumUnconfirmedBatchModuleBalances(ctx, k, unaccountedMap)
 	unaccountedMap = sumUnbatchedTxModuleBalances(ctx, k, unaccountedMap)
 	unaccountedMap = sumPendingIbcAutoForwards(ctx, k, unaccountedMap)
@@ -110,6 +114,7 @@ func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals m
 		}
 
 		*expectedBals[denom] = expectedBals[denom].Add(batchTotal)
+		fmt.Println("!!!!!!!!!!!!!!! Added unconfirmed batch balance: amount ", batchTotal, "contract", contract)
 
 		return false // continue iterating
 	})
@@ -132,6 +137,7 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[st
 			expectedBals[denom] = &zero
 		}
 		*expectedBals[denom] = expectedBals[denom].Add(txTotal)
+		fmt.Println("!!!!!!!!!!!!!!! Added unbatched tx balance: amount ", txTotal, "contract", contract)
 
 		return false // continue iterating
 	})
@@ -147,6 +153,7 @@ func sumPendingIbcAutoForwards(ctx sdk.Context, k Keeper, expectedBals map[strin
 		} else {
 			*expectedBals[forward.Token.Denom] = expectedBals[forward.Token.Denom].Add(forward.Token.Amount)
 		}
+		fmt.Println("!!!!!!!!!!!!!!! Added unbatched tx balance: amount ", forward.Token.Amount, "denom", forward.Token.Denom)
 	}
 
 	return expectedBals

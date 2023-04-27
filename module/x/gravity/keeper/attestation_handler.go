@@ -41,7 +41,6 @@ func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim
 		return a.handleBatchSendToEth(ctx, *claim)
 
 	case *types.MsgERC20DeployedClaim:
-
 		return a.handleErc20Deployed(ctx, *claim)
 
 	case *types.MsgValsetUpdatedClaim:
@@ -194,6 +193,11 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 	}
 	a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim)
 
+	a.keeper.logger(ctx).Info("Batch Send To Eth executed",
+		"batch-nonce", claim.BatchNonce, "batch-token", claim.TokenContract,
+		"nonce", claim.EventNonce, "ethBlockHeight", claim.EthBlockHeight,
+		"cosmosBlockHeight", ctx.BlockHeight(),
+	)
 	err = ctx.EventManager().EmitTypedEvent(
 		&types.EventBatchSendToEthClaim{
 			Nonce: strconv.Itoa(int(claim.BatchNonce)),
@@ -266,7 +270,11 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 
 	// Add to denom-erc20 mapping
 	a.keeper.setCosmosOriginatedDenomToERC20(ctx, claim.CosmosDenom, *tokenAddress)
-
+	a.keeper.logger(ctx).Info("ERC20 Deployed", "token-cosmos-denom", claim.CosmosDenom, "token-decimals", claim.Decimals,
+		"token-name", claim.Name, "token-symbol", claim.Symbol, "token-contract", claim.TokenContract,
+		"nonce", claim.EventNonce, "ethBlockHeight", claim.EthBlockHeight,
+		"cosmosBlockHeight", ctx.BlockHeight(),
+	)
 	err = ctx.EventManager().EmitTypedEvent(
 		&types.EventERC20DeployedClaim{
 			Token: tokenAddress.GetAddress().Hex(),
@@ -357,6 +365,11 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 			panic("Can not use Ethereum originated token as reward!")
 		}
 	}
+	a.keeper.logger(ctx).Info("Valset Updated", "num-members", len(claim.Members),
+		"valset-nonce", claim.ValsetNonce, "reward-token", claim.RewardToken, "reward-amount", claim.RewardAmount.String(),
+		"nonce", claim.EventNonce, "ethBlockHeight", claim.EthBlockHeight,
+		"cosmosBlockHeight", ctx.BlockHeight(),
+	)
 	err = ctx.EventManager().EmitTypedEvent(
 		&types.EventValsetUpdatedClaim{
 			Nonce: strconv.Itoa(int(claim.GetEventNonce())),

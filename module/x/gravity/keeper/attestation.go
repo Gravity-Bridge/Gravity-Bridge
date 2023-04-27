@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"strconv"
@@ -106,6 +107,10 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 			// If the power of all the validators that have voted on the attestation is higher or equal to the threshold,
 			// process the attestation, set Observed to true, and break
 			if attestationPower.GT(requiredPower) {
+				k.logger(ctx).Info("Attestation has sufficient votes",
+					"total-power", totalPower, "attestation-power", attestationPower,
+					"claim-type", types.ClaimTypeToTypeUrl(claim.GetType()), "claim-hash", hex.EncodeToString(hash), "ethereum-event-nonce", claim.GetEventNonce(),
+				)
 				lastEventNonce := k.GetLastObservedEventNonce(ctx)
 				// this check is performed at the next level up so this should never panic
 				// outside of programmer error.
