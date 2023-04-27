@@ -99,7 +99,7 @@ pub async fn check_cross_bridge_balances(
 
 // BalanceEntry is a helper struct used to populate a HashMap in valid_bridge_balances, these are
 // 0 initialized and populated if balances are found. They are then iterated over to make assertions
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct BalanceEntry {
     pub c: Uint256,
     pub e: Uint256,
@@ -132,19 +132,13 @@ pub fn valid_bridge_balances(
 
     for balance in cosmos_snapshot_balances {
         let key = balance.token_contract_address.to_string();
-        let entry = balances_by_contract.get(&key);
-        let entry = match entry {
-            None => BalanceEntry {
-                e: 0u8.into(),
-                c: balance.amount,
-            },
-            Some(e) => {
-                let mut copy = *e;
-                copy.c = balance.amount;
-                copy
-            }
-        };
-        balances_by_contract.insert(key.clone(), entry);
+        let entry = balances_by_contract.get_mut(&key);
+        if entry.is_none() {
+            // Cosmos reports *all* bridged tokens, skip unmonitored tokens
+            continue;
+        }
+        let entry = entry.unwrap();
+        entry.c = balance.amount;
     }
 
     // Assert that any recorded balances are appropriate
@@ -192,6 +186,7 @@ pub async fn gravity_chain_balance_data(
 // An enum used to describe the acceptable results an ethereum endpoint can respond with for a historical request
 // if the node is not archival it is likely to have pruned some history the orchestrator requires, in which case
 // the best case scenario is the orchestrator skips this issue and tries to check later
+#[derive(Debug)]
 pub enum HistEthBalances {
     Missing,
     Found(Vec<Erc20Token>),
@@ -236,4 +231,75 @@ pub async fn collect_eth_balances_at_height(
     }
 
     Ok(HistEthBalances::Found(results))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::types::cross_bridge_balances::valid_bridge_balances;
+    use std::str::FromStr;
+    use clarity::Address;
+    use crate::types::erc20::Erc20Token;
+    #[test]
+    fn test_valid_bridge_balances() {
+        // This configuration implies that 0x0412C7c846bb6b7DC462CF6B453f76D8440b2609 and 0x30dA8589BFa1E509A319489E014d384b87815D89
+        // are the monitored ERC20s, thus despite 0x9676519d99E390A180Ab1445d5d857E3f6869065 having a lesser balance on Ethereum
+        // we should not expect an error.
+
+        let eth_bals = vec![
+            Erc20Token{
+                amount: 100u8.into(),
+                token_contract_address: Address::from_str("0x0412C7c846bb6b7DC462CF6B453f76D8440b2609").unwrap(),
+            },
+            Erc20Token{
+                amount: 10u8.into(),
+                token_contract_address: Address::from_str("0x30dA8589BFa1E509A319489E014d384b87815D89").unwrap(),
+            },
+        ];
+        let cos_bals = vec![
+            Erc20Token{
+                amount: 10u8.into(),
+                token_contract_address: Address::from_str("0x30dA8589BFa1E509A319489E014d384b87815D89").unwrap(),
+            },
+            Erc20Token{
+                amount: 100u8.into(),
+                token_contract_address: Address::from_str("0x9676519d99E390A180Ab1445d5d857E3f6869065").unwrap(),
+            },
+        ];
+
+        let res = valid_bridge_balances(eth_bals, cos_bals);
+        println!("Got valid_bridge_balances: {res:?}");
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_invalid_bridge_balances() {
+        // This configuration implies that 0x0412C7c846bb6b7DC462CF6B453f76D8440b2609 and 0x9676519d99E390A180Ab1445d5d857E3f6869065
+        // are monitored ERC20 tokens, and 0x0412C7c846bb6b7DC462CF6B453f76D8440b2609 has been erroneously sent to Gravity.sol.
+        // Notably, 0x9676519d99E390A180Ab1445d5d857E3f6869065 has a low balance and should cause a bridge halt
+
+        let eth_bals = vec![
+            Erc20Token{
+                amount: 100u8.into(),
+                token_contract_address: Address::from_str("0x0412C7c846bb6b7DC462CF6B453f76D8440b2609").unwrap(),
+            },
+            Erc20Token{
+                amount: 99u8.into(),
+                token_contract_address: Address::from_str("0x9676519d99E390A180Ab1445d5d857E3f6869065").unwrap(),
+            },
+        ];
+        let cos_bals = vec![
+            Erc20Token{
+                amount: 10u8.into(),
+                token_contract_address: Address::from_str("0x30dA8589BFa1E509A319489E014d384b87815D89").unwrap(),
+            },
+            Erc20Token{
+                amount: 100u8.into(),
+                token_contract_address: Address::from_str("0x9676519d99E390A180Ab1445d5d857E3f6869065").unwrap(),
+            },
+        ];
+
+        let res = valid_bridge_balances(eth_bals, cos_bals);
+        println!("Got valid_bridge_balances: {res:?}");
+        assert!(res.is_err());
+    }
 }
