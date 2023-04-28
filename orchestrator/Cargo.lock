@@ -1581,7 +1581,7 @@ checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 [[package]]
 name = "heliosphere"
 version = "0.2.0"
-source = "git+https://github.com/oraichain/heliosphere.git?rev=24d2306#24d2306983333e81f4076b62794243f352778576"
+source = "git+https://github.com/oraichain/heliosphere.git?rev=869c1c6#869c1c615dc301857b36b572b16f642e05f6d2f5"
 dependencies = [
  "awc",
  "heliosphere-core",
@@ -1596,7 +1596,7 @@ dependencies = [
 [[package]]
 name = "heliosphere-core"
 version = "0.2.0"
-source = "git+https://github.com/oraichain/heliosphere.git?rev=24d2306#24d2306983333e81f4076b62794243f352778576"
+source = "git+https://github.com/oraichain/heliosphere.git?rev=869c1c6#869c1c615dc301857b36b572b16f642e05f6d2f5"
 dependencies = [
  "bs58",
  "clarity",
@@ -1611,7 +1611,7 @@ dependencies = [
 [[package]]
 name = "heliosphere-signer"
 version = "0.2.0"
-source = "git+https://github.com/oraichain/heliosphere.git?rev=24d2306#24d2306983333e81f4076b62794243f352778576"
+source = "git+https://github.com/oraichain/heliosphere.git?rev=869c1c6#869c1c615dc301857b36b572b16f642e05f6d2f5"
 dependencies = [
  "heliosphere-core",
  "hex",
@@ -4437,7 +4437,7 @@ dependencies = [
 [[package]]
 name = "web30"
 version = "0.23.1"
-source = "git+https://github.com/oraichain/web30.git?rev=930d20a#930d20a26c1c0629fc68d1be4a09c1cf20147451"
+source = "git+https://github.com/oraichain/web30.git?rev=419a1b3#419a1b3aabe13ff51c08e7422afa41262920087b"
 dependencies = [
  "awc",
  "clarity",
