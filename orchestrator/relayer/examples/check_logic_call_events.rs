@@ -2,9 +2,7 @@ use std::{str::FromStr, time::Duration};
 
 use actix::System;
 use clarity::Uint256;
-use gravity_utils::types::{
-    event_signatures::TRANSACTION_BATCH_EXECUTED_EVENT_SIG, TransactionBatchExecutedEvent,
-};
+use gravity_utils::types::{event_signatures::LOGIC_CALL_EVENT_SIG, LogicCallExecutedEvent};
 
 use web30::{client::Web3, EthAddress};
 
@@ -16,13 +14,8 @@ fn main() {
     let contract_addr = EthAddress::from_str("0x73Ddc880916021EFC4754Cb42B53db6EAB1f9D64").unwrap();
 
     runner.block_on(async move {
-        let val: Vec<TransactionBatchExecutedEvent> = web3
-            .parse_event(
-                start_block,
-                end_block,
-                contract_addr,
-                TRANSACTION_BATCH_EXECUTED_EVENT_SIG,
-            )
+        let val: Vec<LogicCallExecutedEvent> = web3
+            .parse_event(start_block, end_block, contract_addr, LOGIC_CALL_EVENT_SIG)
             .await
             .unwrap();
 
