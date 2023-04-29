@@ -81,10 +81,12 @@ pub async fn find_latest_valset(
             .await
         {
             Ok(events) => events,
-            Err(_) => {
+            Err(err) => {
                 warn!(
-                    "Failed to get events for block range {} - {}, repeating...",
-                    end_search, current_block
+                    "Failed to get events with err: {}, for block range {} - {}, repeating...",
+                    err.to_string(),
+                    end_search,
+                    current_block
                 );
                 continue;
             }
