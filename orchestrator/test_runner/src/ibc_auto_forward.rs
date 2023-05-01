@@ -206,6 +206,7 @@ pub async fn test_ibc_transfer(
         receiver: receiver.to_string(),
         timeout_height: None,
         timeout_timestamp, // 150 minutes from now
+        ..Default::default()
     };
     info!("Submitting MsgTransfer {:?}", msg_transfer);
     let msg_transfer = Msg::new(MSG_TRANSFER_TYPE_URL, msg_transfer);

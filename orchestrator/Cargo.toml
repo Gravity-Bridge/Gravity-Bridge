@@ -6,7 +6,7 @@ default-members = ["gbt"]
 num256 = "0.5"
 clarity = "0.7"
 web30 = "0.23"
-deep_space = ">=2.17.1, <2.18"
+deep_space = "2.18"
 prost = "0.10"
 prost-types = "0.10"
 tonic = "0.7"

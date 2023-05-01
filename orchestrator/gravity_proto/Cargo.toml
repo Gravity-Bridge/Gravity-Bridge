@@ -9,6 +9,6 @@ edition = "2018"
 [dependencies]
 prost = {workspace = true}
 prost-types = {workspace = true}
-cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.13", features = ["bech32ibc", "ethermint"]}
+cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.14", features = ["bech32ibc", "ethermint"]}
 tonic = {workspace = true}
 deep_space = {workspace = true}
