@@ -88,8 +88,22 @@ jobs:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
-      - name: Run all up batch stress test
+      - name: Run Happy path v2 test (Cosmos -> Eth)
         run: tests/all-up-test.sh V2_HAPPY_PATH
+        env:
+          NO_IMAGE_BUILD: True
+  v2-happy-path-native:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jpribyl/action-docker-layer-caching@v0.1.1
+        with:
+          key: integration-test-cache-{hash}
+          restore-keys: |
+            integration-test-cache-
+      - name: Run Happy path v2 test with the native token
+        run: tests/all-up-test.sh V2_HAPPY_PATH_NATIVE
         env:
           NO_IMAGE_BUILD: True
 #  relay-market:
