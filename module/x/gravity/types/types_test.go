@@ -117,8 +117,10 @@ func TestValsetPowerDiff(t *testing.T) {
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			startInternal, _ := spec.start.ToInternal()
-			diffInternal, _ := spec.diff.ToInternal()
+			startInternal, err := spec.start.ToInternal()
+			require.NoError(t, err)
+			diffInternal, err := spec.diff.ToInternal()
+			require.NoError(t, err)
 			assert.Equal(t, spec.exp, startInternal.PowerDiff(*diffInternal))
 		})
 	}
@@ -186,8 +188,10 @@ func TestValsetSort(t *testing.T) {
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			srcInternal, _ := spec.src.ToInternal()
-			expInternal, _ := spec.exp.ToInternal()
+			srcInternal, err := spec.src.ToInternal()
+			require.NoError(t, err)
+			expInternal, err := spec.exp.ToInternal()
+			require.NoError(t, err)
 			srcInternal.Sort()
 			assert.Equal(t, srcInternal, expInternal)
 			shuffled := shuffled(*srcInternal)

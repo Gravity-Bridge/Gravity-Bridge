@@ -48,13 +48,15 @@ func TestMigrateAttestation(t *testing.T) {
 		TokenContract:  "0x00000000000000000001",
 		Orchestrator:   "0x00000000000000000004",
 	}
-	msgAny, _ := codectypes.NewAnyWithValue(&msg)
+	msgAny, err := codectypes.NewAnyWithValue(&msg)
+	require.NoError(t, err)
 
-	_, err := msg.ClaimHash()
+	_, err = msg.ClaimHash()
 	require.NoError(t, err)
 
 	dummyAttestation := &types.Attestation{
 		Observed: false,
+		Votes:    []string{},
 		Height:   uint64(1),
 		Claim:    msgAny,
 	}

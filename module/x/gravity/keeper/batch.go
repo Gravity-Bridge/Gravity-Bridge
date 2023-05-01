@@ -70,7 +70,7 @@ func (k Keeper) BuildOutgoingTXBatch(
 	checkpoint := batch.GetCheckpoint(k.GetGravityID(ctx))
 	k.SetPastEthSignatureCheckpoint(ctx, checkpoint)
 
-	ctx.EventManager().EmitTypedEvent(
+	return batch, ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatch{
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
@@ -78,7 +78,6 @@ func (k Keeper) BuildOutgoingTXBatch(
 			Nonce:          fmt.Sprint(nextID),
 		},
 	)
-	return batch, nil
 }
 
 // This gets the batch timeout height in Ethereum blocks.
@@ -255,7 +254,7 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 	// Delete it's confirmations as well
 	k.DeleteBatchConfirms(ctx, *batch)
 
-	ctx.EventManager().EmitTypedEvent(
+	return ctx.EventManager().EmitTypedEvent(
 		&types.EventOutgoingBatchCanceled{
 			BridgeContract: k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
 			BridgeChainId:  strconv.Itoa(int(k.GetBridgeChainID(ctx))),
@@ -263,7 +262,6 @@ func (k Keeper) CancelOutgoingTXBatch(ctx sdk.Context, tokenContract types.EthAd
 			Nonce:          fmt.Sprint(nonce),
 		},
 	)
-	return nil
 }
 
 // IterateOutgoingTxBatches iterates through all outgoing batches in DESC order.

@@ -174,6 +174,7 @@ func (m *Params) GetValsetReward() sdk.Coin {
 	if m != nil {
 		return m.ValsetReward
 	}
+	// nolint: exhaustruct
 	return sdk.Coin{}
 }
 

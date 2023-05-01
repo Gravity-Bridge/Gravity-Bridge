@@ -236,6 +236,8 @@ var (
 		SlashFractionBadEthSignature: sdk.NewDecWithPrec(1, 2),
 		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
 		BridgeActive:                 true,
+		EthereumBlacklist:            []string{},
+		MinChainFeeBasisPoints:       0,
 	}
 )
 
@@ -275,7 +277,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 
 		// Set the balance for the account
 		require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, InitCoins))
-		input.BankKeeper.SendCoinsFromModuleToAccount(input.Context, types.ModuleName, acc.GetAddress(), InitCoins)
+		require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(input.Context, types.ModuleName, acc.GetAddress(), InitCoins))
 
 		// Set the account in state
 		input.AccountKeeper.SetAccount(input.Context, acc)
@@ -632,17 +634,18 @@ func CreateTestEnv(t *testing.T) TestInput {
 	k.SetParams(ctx, TestingGravityParams)
 
 	testInput := TestInput{
-		GravityKeeper:   k,
-		AccountKeeper:   accountKeeper,
-		BankKeeper:      bankKeeper,
-		StakingKeeper:   stakingKeeper,
-		SlashingKeeper:  slashingKeeper,
-		DistKeeper:      distKeeper,
-		GovKeeper:       govKeeper,
-		Context:         ctx,
-		Marshaler:       marshaler,
-		LegacyAmino:     cdc,
-		GravityStoreKey: gravityKey,
+		GravityKeeper:     k,
+		AccountKeeper:     accountKeeper,
+		StakingKeeper:     stakingKeeper,
+		SlashingKeeper:    slashingKeeper,
+		DistKeeper:        distKeeper,
+		BankKeeper:        bankKeeper,
+		GovKeeper:         govKeeper,
+		IbcTransferKeeper: ibcTransferKeeper,
+		Context:           ctx,
+		Marshaler:         marshaler,
+		LegacyAmino:       cdc,
+		GravityStoreKey:   gravityKey,
 	}
 	// check invariants before starting
 	testInput.Context.Logger().Info("Asserting invariants on new test env")

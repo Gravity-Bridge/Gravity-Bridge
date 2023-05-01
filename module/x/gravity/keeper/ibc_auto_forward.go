@@ -249,7 +249,10 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context) (stop bool, er
 // createIbcMsgTransfer creates a MsgTransfer for the given pending `forward` on port `portId` sent from `sender`,
 // with the given timeout timestamp and a zero timeout block height
 func createIbcMsgTransfer(portId string, forward types.PendingIbcAutoForward, sender string, timeoutTimestampNs uint64) ibctransfertypes.MsgTransfer {
-	zeroHeight := ibcclienttypes.Height{}
+	zeroHeight := ibcclienttypes.Height{
+		RevisionNumber: 0,
+		RevisionHeight: 0,
+	}
 	return *ibctransfertypes.NewMsgTransfer(
 		portId,
 		forward.IbcChannel,
@@ -281,7 +284,7 @@ func (k Keeper) logEmitIbcForwardSuccessEvent(
 		"claimNonce", forward.EventNonce, "cosmosBlockHeight", ctx.BlockHeight(),
 	)
 
-	ctx.EventManager().EmitTypedEvent(&types.EventSendToCosmosExecutedIbcAutoForward{
+	err := ctx.EventManager().EmitTypedEvent(&types.EventSendToCosmosExecutedIbcAutoForward{
 		Nonce:         fmt.Sprint(forward.EventNonce),
 		Receiver:      forward.ForeignReceiver,
 		Token:         forward.Token.Denom,
@@ -290,22 +293,31 @@ func (k Keeper) logEmitIbcForwardSuccessEvent(
 		TimeoutHeight: msgTransfer.TimeoutHeight.String(),
 		TimeoutTime:   fmt.Sprint(msgTransfer.TimeoutTimestamp),
 	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 // logEmitIbcForwardFailureEvent logs failed IBC Auto-Forwarding and emits a EventSendToCosmosLocal type event
 func (k Keeper) logEmitIbcForwardFailureEvent(ctx sdk.Context, forward types.PendingIbcAutoForward, err error) {
 	var localReceiver sdk.AccAddress
-	localReceiver, _ = types.IBCAddressFromBech32(forward.ForeignReceiver) // checked valid bech32 receiver earlier
+	localReceiver, er := types.IBCAddressFromBech32(forward.ForeignReceiver) // checked valid bech32 receiver earlier
+	if er != nil {
+		panic(err)
+	}
 	k.logger(ctx).Error("SendToCosmos IBC Auto-Forward Failure: funds sent to local address",
 		"localReceiver", localReceiver, "denom", forward.Token.Denom, "amount", forward.Token.Amount.String(),
 		"failedIbcPort", ibctransfertypes.PortID, "failedIbcChannel", forward.IbcChannel,
 		"claimNonce", forward.EventNonce, "cosmosBlockHeight", ctx.BlockHeight(), "err", err,
 	)
 
-	ctx.EventManager().EmitTypedEvent(&types.EventSendToCosmosLocal{
+	er = ctx.EventManager().EmitTypedEvent(&types.EventSendToCosmosLocal{
 		Nonce:    fmt.Sprint(forward.EventNonce),
 		Receiver: forward.ForeignReceiver,
 		Token:    forward.Token.Denom,
 		Amount:   forward.Token.Amount.String(),
 	})
+	if er != nil {
+		panic(err)
+	}
 }

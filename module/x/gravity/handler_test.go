@@ -19,7 +19,7 @@ import (
 // nolint: exhaustruct
 func TestHandleMsgSendToEth(t *testing.T) {
 	var (
-		userCosmosAddr, _                = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
+		userCosmosAddr, e1               = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
 		blockTime                        = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		blockHeight            int64     = 200
 		denom                            = "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
@@ -32,6 +32,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 		ethDestination                   = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
 		invalidEthDestinations           = []string{"obviously invalid", "0x3c9289da00b02dC623d0D8D907", "0x3c9289da00b02dC623d0D8D907dC623d0D8D907619890", "0x3c9289da00b02dC623d0D8D907619890301D26dU"}
 	)
+	require.NoError(t, e1)
 
 	// we start by depositing some funds into the users balance to send
 	input := keeper.CreateTestEnv(t)
@@ -40,7 +41,7 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	ctx := input.Context
 	h := NewHandler(input.GravityKeeper)
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, startingCoins))
-	input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, userCosmosAddr, startingCoins)
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, userCosmosAddr, startingCoins))
 	balance1 := input.BankKeeper.GetAllBalances(ctx, userCosmosAddr)
 	assert.Equal(t, sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}, balance1)
 
@@ -100,13 +101,14 @@ func TestHandleMsgSendToEth(t *testing.T) {
 // nolint: exhaustruct
 func TestMsgSendToCosmosClaim(t *testing.T) {
 	var (
-		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
-		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
-		amountA, _      = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
-		amountB, _      = sdk.NewIntFromString("100000000000000000000") // 100 ETH
+		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
+		anyETHAddr       = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		myBlockTime      = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		amountA, _       = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
+		amountB, _       = sdk.NewIntFromString("100000000000000000000") // 100 ETH
 	)
+	require.NoError(t, e1)
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -203,13 +205,14 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 // nolint: exhaustruct
 func TestEthereumBlacklist(t *testing.T) {
 	var (
-		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
-		anyETHSender    = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		denom           = "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
-		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
-		amountA, _      = sdk.NewIntFromString("50000000000000000000") // 50 ETH
+		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
+		anyETHSender     = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		denom            = "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+		myBlockTime      = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		amountA, _       = sdk.NewIntFromString("50000000000000000000") // 50 ETH
 	)
+	require.NoError(t, e1)
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -298,19 +301,22 @@ func sendSendToCosmosClaim(msg types.MsgSendToCosmosClaim, ctx sdk.Context, h sd
 func TestMsgSendToCosmosOverflow(t *testing.T) {
 	const grandeInt = "115792089237316195423570985008687907853269984665640564039457584007913129639835" // 2^256 - 101
 	var (
-		biggestBigInt, _    = new(big.Int).SetString(biggestInt, 10)
-		grandeBigInt, _     = new(big.Int).SetString(grandeInt, 10)
-		myCosmosAddr, _     = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
-		myNonce             = uint64(1)
-		anyETHAddr          = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr1       = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		tokenETHAddr2       = "0x429881672b9AE42b8eBA0e26cd9c73711b891ca6"
-		myBlockTime         = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
-		tokenEthAddress1, _ = types.NewEthAddress(tokenETHAddr1)
-		tokenEthAddress2, _ = types.NewEthAddress(tokenETHAddr2)
-		denom1              = types.GravityDenom(*tokenEthAddress1)
-		denom2              = types.GravityDenom(*tokenEthAddress2)
+		biggestBigInt, _     = new(big.Int).SetString(biggestInt, 10)
+		grandeBigInt, _      = new(big.Int).SetString(grandeInt, 10)
+		myCosmosAddr, e1     = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
+		myNonce              = uint64(1)
+		anyETHAddr           = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr1        = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		tokenETHAddr2        = "0x429881672b9AE42b8eBA0e26cd9c73711b891ca6"
+		myBlockTime          = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		tokenEthAddress1, e2 = types.NewEthAddress(tokenETHAddr1)
+		tokenEthAddress2, e3 = types.NewEthAddress(tokenETHAddr2)
+		denom1               = types.GravityDenom(*tokenEthAddress1)
+		denom2               = types.GravityDenom(*tokenEthAddress2)
 	)
+	require.NoError(t, e1)
+	require.NoError(t, e2)
+	require.NoError(t, e3)
 
 	// Totally valid, but we're 101 away from the supply limit
 	almostTooMuch := types.ERC20Token{
@@ -324,6 +330,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	}
 	almostTooMuchClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce,
+		EthBlockHeight: 0,
 		TokenContract:  almostTooMuch.Contract,
 		Amount:         almostTooMuch.Amount,
 		EthereumSender: anyETHAddr,
@@ -332,6 +339,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	}
 	exactlyTooMuchClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 1,
+		EthBlockHeight: 0,
 		TokenContract:  exactlyTooMuch.Contract,
 		Amount:         exactlyTooMuch.Amount,
 		EthereumSender: anyETHAddr,
@@ -345,6 +353,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	}
 	maxSendClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 2,
+		EthBlockHeight: 0,
 		TokenContract:  maxSend.Contract,
 		Amount:         maxSend.Amount,
 		EthereumSender: anyETHAddr,
@@ -399,12 +408,13 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 // nolint: exhaustruct
 func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 	var (
-		myCosmosAddr, _ = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
-		myNonce         = uint64(1)
-		anyETHAddr      = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr    = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		myBlockTime     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
+		myNonce          = uint64(1)
+		anyETHAddr       = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
+		tokenETHAddr     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		myBlockTime      = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 	)
+	require.NoError(t, e1)
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -503,11 +513,13 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 		Contract: tokenETHAddr,
 	}
 
-	myTokenAddress, _ := types.NewEthAddress(myErc20.Contract)
+	myTokenAddress, err := types.NewEthAddress(myErc20.Contract)
+	require.NoError(t, err)
 	_, erc20Denom := k.ERC20ToDenomLookup(ctx, *myTokenAddress)
 
 	foreignEthClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 0,
+		EthBlockHeight: 0,
 		TokenContract:  myErc20.Contract,
 		Amount:         myErc20.Amount,
 		EthereumSender: anyETHAddr,
@@ -517,6 +529,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 
 	nativeEthClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 1,
+		EthBlockHeight: 0,
 		TokenContract:  myErc20.Contract,
 		Amount:         myErc20.Amount,
 		EthereumSender: anyETHAddr,
@@ -545,15 +558,17 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 // nolint: exhaustruct
 func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	var (
-		ethAddress, _                 = types.NewEthAddress("0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255")
-		cosmosAddress  sdk.AccAddress = bytes.Repeat([]byte{0x1}, 20)
-		ethAddress2, _                = types.NewEthAddress("0x26126048c706fB45a5a6De8432F428e794d0b952")
-		cosmosAddress2 sdk.AccAddress = bytes.Repeat([]byte{0x2}, 20)
-		blockTime                     = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
-		blockTime2                    = time.Date(2020, 9, 15, 15, 20, 10, 0, time.UTC)
-		blockHeight    int64          = 200
-		blockHeight2   int64          = 210
+		ethAddress, e1                 = types.NewEthAddress("0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255")
+		cosmosAddress   sdk.AccAddress = bytes.Repeat([]byte{0x1}, 20)
+		ethAddress2, e2                = types.NewEthAddress("0x26126048c706fB45a5a6De8432F428e794d0b952")
+		cosmosAddress2  sdk.AccAddress = bytes.Repeat([]byte{0x2}, 20)
+		blockTime                      = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		blockTime2                     = time.Date(2020, 9, 15, 15, 20, 10, 0, time.UTC)
+		blockHeight     int64          = 200
+		blockHeight2    int64          = 210
 	)
+	require.NoError(t, e1)
+	require.NoError(t, e2)
 	input, ctx := keeper.SetupTestChain(t, []uint64{1000000000}, false)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
