@@ -46,6 +46,7 @@ func TestOnRecvPacket(t *testing.T) {
 
 	timeoutHeight := clienttypes.NewHeight(0, 100)
 	expAck := ibcmock.MockAcknowledgement
+	params := input.GravityKeeper.GetParams(ctx)
 
 	// add it to the ERC20 registry
 	// because this is one way from Oraichain to Gravity Bridge so just use the ibc token as default native token and mint some
@@ -93,7 +94,7 @@ func TestOnRecvPacket(t *testing.T) {
 						},
 						Erc20Fee: types.ERC20Token{
 							Contract: tokenContractAddr,
-							Amount:   sdk.NewInt(0),
+							Amount:   sdk.NewInt(int64(params.MinChainFeeBasisPoints)),
 						},
 					},
 				},
@@ -133,7 +134,7 @@ func TestOnRecvPacket(t *testing.T) {
 			input.Context,
 			types.ModuleName,
 			gravityAddr,
-			sdk.NewCoins(sdk.NewCoin(ibcDenom, sdk.NewInt(100))))
+			sdk.NewCoins(sdk.NewCoin(ibcDenom, sdk.NewInt(102))))
 		ack := input.GravityKeeper.OnRecvPacket(ctx, packet, expAck)
 
 		// Check acknowledgement

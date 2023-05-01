@@ -132,8 +132,15 @@ func (k Keeper) OnRecvPacket(
 		return channeltypes.NewErrorAcknowledgement(sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted").Error())
 	}
 
+	batchFees := sdk.ZeroInt()
+	params, err := k.GetParamsIfSet(ctx)
+	if err == nil {
+		// The params have been set, get the min send to eth fee
+		batchFees = sdk.NewInt(int64(params.MinChainFeeBasisPoints))
+	}
+
 	// finally add to outgoing pool and waiting for gbt to submit it via MsgRequestBatch
-	txID, err := k.AddToOutgoingPool(ctx, evmChainPrefix, sender, *dest, coin, sdk.Coin{Denom: coin.Denom, Amount: sdk.ZeroInt()})
+	txID, err := k.AddToOutgoingPool(ctx, evmChainPrefix, sender, *dest, coin, sdk.Coin{Denom: coin.Denom, Amount: batchFees})
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(err.Error())
 	}
