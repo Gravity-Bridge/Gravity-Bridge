@@ -47,13 +47,23 @@ use web30::{client::Web3, types::SendTxOption};
 /// returns the required denom metadata for deployed the Footoken
 /// token defined in our test environment
 pub async fn footoken_metadata(contact: &Contact) -> Metadata {
+    get_metadata(contact, "footoken").await
+}
+
+/// returns the required denom metadata for the native staking token
+/// token defined in our test environment
+pub async fn stake_metadata(contact: &Contact) -> Metadata {
+    get_metadata(contact, "stake").await
+}
+
+pub async fn get_metadata(contact: &Contact, base_denom: &str) -> Metadata {
     let metadata = contact.get_all_denoms_metadata().await.unwrap();
     for m in metadata {
-        if m.base == "footoken" {
+        if m.base == base_denom {
             return m;
         }
     }
-    panic!("Footoken metadata not set?");
+    panic!("{} metadata not set?", base_denom);
 }
 
 pub fn get_decimals(meta: &Metadata) -> u32 {

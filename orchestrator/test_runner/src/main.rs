@@ -35,6 +35,7 @@ use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
+use happy_path_v2::happy_path_test_v2_native;
 use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use orch_only::orch_only_test;
@@ -255,6 +256,7 @@ pub async fn main() {
     // VALSET_STRESS sends in 1k valsets to sign and update
     // VALSET_REWARDS tests the reward functions for validator set updates
     // V2_HAPPY_PATH runs the happy path tests but focusing on moving Cosmos assets to Ethereum
+    // V2_HAPPY_PATH_NATIVE runs the happy path tests but focusing specifically on moving the native staking token to Ethereum
     // RELAY_MARKET uses the Alchemy api to run a test against forked Ethereum state and test Ethereum
     //              relaying profitability, which requires Uniswap to be deployed and populated.
     // ORCHESTRATOR_KEYS tests setting the orchestrator Ethereum and Cosmos delegate addresses used to submit
@@ -332,6 +334,11 @@ pub async fn main() {
                 None,
             )
             .await;
+            return;
+        } else if test_type == "V2_HAPPY_PATH_NATIVE" || test_type == "HAPPY_PATH_V2_NATIVE" {
+            info!("Starting happy path for ERC20 representation of the Native staking token");
+            happy_path_test_v2_native(&web30, grpc_client, &contact, keys, gravity_address, false)
+                .await;
             return;
         } else if test_type == "RELAY_MARKET" {
             info!("Starting relay market tests!");
