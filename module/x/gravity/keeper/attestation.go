@@ -160,7 +160,7 @@ func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim
 		panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
 	}
 
-	ctx.EventManager().EmitTypedEvent(
+	err = ctx.EventManager().EmitTypedEvent(
 		&types.EventObservation{
 			AttestationType: string(claim.GetType()),
 			BridgeContract:  k.GetBridgeContractAddress(ctx).GetAddress().Hex(),
@@ -169,6 +169,9 @@ func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim
 			Nonce:           fmt.Sprint(claim.GetEventNonce()),
 		},
 	)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // SetAttestation sets the attestation in the store

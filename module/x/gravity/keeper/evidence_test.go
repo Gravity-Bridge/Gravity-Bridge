@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bytes"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,13 +24,14 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 
 	var (
 		now                 = time.Now().UTC()
-		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
+		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
-		token, err          = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+		token, e2           = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
-	require.NoError(t, err)
+	require.NoError(t, e1)
+	require.NoError(t, e2)
 	receiver, err := types.NewEthAddress(myReceiver)
 	require.NoError(t, err)
 	tokenContract, err := types.NewEthAddress(myTokenContractAddr)
@@ -63,7 +65,8 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	goodBatchExternal := goodBatch.ToExternal()
 	require.NoError(t, err)
 
-	any, _ := codectypes.NewAnyWithValue(&goodBatchExternal)
+	any, err := codectypes.NewAnyWithValue(&goodBatchExternal)
+	require.NoError(t, err)
 
 	msg := types.MsgSubmitBadSignatureEvidence{
 		Subject:   any,
@@ -84,14 +87,15 @@ func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 
 	valset := input.GravityKeeper.SetValsetRequest(ctx)
 
-	any, _ := codectypes.NewAnyWithValue(&valset)
+	any, err := codectypes.NewAnyWithValue(&valset)
+	require.NoError(t, err)
 
 	msg := types.MsgSubmitBadSignatureEvidence{
 		Subject:   any,
 		Signature: "foo",
 	}
 
-	err := input.GravityKeeper.CheckBadSignatureEvidence(ctx, &msg)
+	err = input.GravityKeeper.CheckBadSignatureEvidence(ctx, &msg)
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
@@ -116,14 +120,15 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 
 	input.GravityKeeper.SetOutgoingLogicCall(ctx, logicCall)
 
-	any, _ := codectypes.NewAnyWithValue(&logicCall)
+	any, err := codectypes.NewAnyWithValue(&logicCall)
+	require.NoError(t, err)
 
 	msg := types.MsgSubmitBadSignatureEvidence{
 		Subject:   any,
 		Signature: "foo",
 	}
 
-	err := input.GravityKeeper.CheckBadSignatureEvidence(ctx, &msg)
+	err = input.GravityKeeper.CheckBadSignatureEvidence(ctx, &msg)
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 

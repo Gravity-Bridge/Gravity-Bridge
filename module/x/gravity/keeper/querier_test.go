@@ -17,6 +17,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
+// nolint: exhaustruct
 func TestQueryValsetConfirm(t *testing.T) {
 	var (
 		addrStr                       = "gravity1ees2tqhhhm9ahlhceh2zdguww9lqn2ckcxpllh"
@@ -93,14 +94,20 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 		"gravity1u94xef3cp9thkcpxecuvhtpwnmg8mhljeh96n9",
 	}
 	var (
-		nonce                       = uint64(1)
-		myValidatorCosmosAddr1, _   = sdk.AccAddressFromBech32(addrs[0])
-		myValidatorCosmosAddr2, _   = sdk.AccAddressFromBech32(addrs[1])
-		myValidatorCosmosAddr3, _   = sdk.AccAddressFromBech32(addrs[2])
-		myValidatorEthereumAddr1, _ = types.NewEthAddress("0x0101010101010101010101010101010101010101")
-		myValidatorEthereumAddr2, _ = types.NewEthAddress("0x0202020202020202020202020202020202020202")
-		myValidatorEthereumAddr3, _ = types.NewEthAddress("0x0303030303030303030303030303030303030303")
+		nonce                        = uint64(1)
+		myValidatorCosmosAddr1, e1   = sdk.AccAddressFromBech32(addrs[0])
+		myValidatorCosmosAddr2, e2   = sdk.AccAddressFromBech32(addrs[1])
+		myValidatorCosmosAddr3, e3   = sdk.AccAddressFromBech32(addrs[2])
+		myValidatorEthereumAddr1, e4 = types.NewEthAddress("0x0101010101010101010101010101010101010101")
+		myValidatorEthereumAddr2, e5 = types.NewEthAddress("0x0202020202020202020202020202020202020202")
+		myValidatorEthereumAddr3, e6 = types.NewEthAddress("0x0303030303030303030303030303030303030303")
 	)
+	require.NoError(t, e1)
+	require.NoError(t, e2)
+	require.NoError(t, e3)
+	require.NoError(t, e4)
+	require.NoError(t, e5)
+	require.NoError(t, e6)
 
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -111,7 +118,8 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 
 	// seed confirmations
 	for i := 0; i < 3; i++ {
-		addr, _ := sdk.AccAddressFromBech32(addrs[i])
+		addr, err := sdk.AccAddressFromBech32(addrs[i])
+		require.NoError(t, err)
 		msg := types.MsgValsetConfirm{}
 		msg.EthAddress = gethcommon.BytesToAddress(bytes.Repeat([]byte{byte(i + 1)}, 20)).String()
 		msg.Nonce = uint64(1)

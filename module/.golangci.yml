@@ -17,7 +17,6 @@ linters:
       - typecheck
       - unused
       - varcheck
-
       - exhaustruct
       - errcheck
     # - gosec
@@ -47,7 +46,6 @@ issues:
     - path: config/
       linters:
         - exhaustruct
-        - errcheck
     - path: contrib/
       linters:
         - exhaustruct
@@ -57,10 +55,6 @@ issues:
         - exhaustruct
         - errcheck
     - path: third_party/
-      linters:
-        - exhaustruct
-        - errcheck
-    - path: x/
       linters:
         - exhaustruct
         - errcheck

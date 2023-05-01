@@ -128,16 +128,20 @@ func lockCoinsInModule(tv *testingVars) {
 
 	// we start by depositing some funds into the users balance to send
 	require.NoError(tv.t, tv.input.BankKeeper.MintCoins(tv.ctx, types.ModuleName, startingCoins))
-	tv.input.BankKeeper.SendCoinsFromModuleToAccount(tv.ctx, types.ModuleName, userCosmosAddr, startingCoins)
+	err = tv.input.BankKeeper.SendCoinsFromModuleToAccount(tv.ctx, types.ModuleName, userCosmosAddr, startingCoins)
+	require.NoError(tv.t, err)
 	balance1 := tv.input.BankKeeper.GetAllBalances(tv.ctx, userCosmosAddr)
 	assert.Equal(tv.t, sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}, balance1)
 
 	// send some coins
+	// nolint: exhaustruct
+	zeroCoin := sdk.Coin{}
 	msg := &types.MsgSendToEth{
 		Sender:    userCosmosAddr.String(),
 		EthDest:   ethDestination,
 		Amount:    sendingCoin,
 		BridgeFee: feeCoin,
+		ChainFee:  zeroCoin,
 	}
 
 	_, err = tv.h(tv.ctx, msg)
