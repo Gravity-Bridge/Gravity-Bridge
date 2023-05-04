@@ -10,7 +10,8 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v6/modules/apps/transfer/keeper"
-	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
+
+	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"

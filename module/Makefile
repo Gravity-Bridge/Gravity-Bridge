@@ -53,11 +53,15 @@ BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)' -gcflags="all=-N -l"
 
 all: install
 
-install: go.sum
-		export GOFLAGS='-buildmode=pie'
-		export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
-		export CGO_LDFLAGS="-Wl,-z,relro,-z,now -fstack-protector"
-		go install $(BUILD_FLAGS) ./cmd/gravity
+# First run go mod verify, followed by installing the gravity binary
+install: go.sum install-core
+
+# Performs the work of installing without running go mod verify, to save time in testing
+install-core:
+	export GOFLAGS='-buildmode=pie'
+	export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
+	export CGO_LDFLAGS="-Wl,-z,relro,-z,now -fstack-protector"
+	go install $(BUILD_FLAGS) ./cmd/gravity
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"

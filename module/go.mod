@@ -3,21 +3,21 @@ module github.com/Gravity-Bridge/Gravity-Bridge/module
 go 1.18
 
 require (
+	github.com/bianjieai/nft-transfer v1.1.1-beta.0.20230423022320-36d37f459aab
 	github.com/cosmos/cosmos-sdk v0.46.10
 	github.com/cosmos/ibc-go/v6 v6.1.0
 	github.com/irisnet/irismod v1.7.2-gon-beta.2
-	github.com/bianjieai/nft-transfer dreamer/ibc-v6
 )
 
 require (
 	cosmossdk.io/math v1.0.0-beta.4
+	github.com/althea-net/bech32-ibc v0.5.1
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/evmos/ethermint v0.21.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/osmosis-labs/bech32-ibc v0.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
 	github.com/regen-network/cosmos-proto v0.3.1
@@ -157,7 +157,7 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/rjeczalik/notify v0.9.1 // indirect
 	github.com/rs/cors v1.8.3 // indirect
-	github.com/rs/zerolog v1.27.0 // indirect
+	github.com/rs/zerolog v1.28.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/spf13/afero v1.9.2 // indirect
@@ -168,6 +168,9 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tidwall/btree v1.5.0 // indirect
+	github.com/tidwall/gjson v1.14.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
@@ -198,8 +201,6 @@ require (
 replace (
 	github.com/gogo/grpc => google.golang.org/grpc v1.33.2
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
-	github.com/osmosis-labs/bech32-ibc => github.com/althea-net/bech32-ibc v0.5.0
 
 	github.com/tendermint/tendermint => github.com/informalsystems/tendermint v0.34.26
 )
