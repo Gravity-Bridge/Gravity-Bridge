@@ -28,6 +28,7 @@ use gravity_proto::gravity::{
     query_client::QueryClient as GravityQueryClient, QueryDenomToErc20Request,
 };
 use gravity_utils::types::MSG_BATCH_SEND_TO_ETH_TYPE_URL;
+use std::str::FromStr;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tonic::transport::Channel;
@@ -264,9 +265,7 @@ pub async fn send_to_eth_and_confirm(
     false
 }
 
-/// This segment is broken out because it's used in two different tests
-/// once here where we verify that tokens bridge correctly and once in valset_rewards
-/// where we do a governance update to enable rewards
+/// Deploys an ERC20 token for the given token_metadata, if none exists, and asserts correctness of the bridge adoption
 pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
     gravity_address: EthAddress,
     web30: &Web3,
@@ -275,106 +274,115 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
     validator_out: bool,
     token_metadata: Metadata,
 ) -> EthAddress {
-    get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
-        .await
-        .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
+    let erc20: EthAddress;
+    // The token could already have an ERC20 representation, run the adoption checks only in that case
+    let token_request = grpc_client.denom_to_erc20(QueryDenomToErc20Request{denom: token_metadata.base.clone()}).await;
+    if token_request.is_ok() {
+        info!("An ERC20 for {} has already been adopted by the bridge", token_metadata.base);
+        erc20 = EthAddress::from_str(&token_request.unwrap().into_inner().erc20).unwrap();
+    } else {
+        get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
+            .await
+            .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
-    let starting_event_nonce = get_event_nonce_safe(gravity_address, web30, *MINER_ADDRESS)
-        .await
-        .unwrap();
+        let starting_event_nonce = get_event_nonce_safe(gravity_address, web30, *MINER_ADDRESS)
+            .await
+            .unwrap();
 
-    let cosmos_decimals = get_decimals(&token_metadata);
-    deploy_erc20(
-        token_metadata.base.clone(),
-        token_metadata.name.clone(),
-        token_metadata.symbol.clone(),
-        cosmos_decimals,
-        gravity_address,
-        web30,
-        Some(TOTAL_TIMEOUT),
-        *MINER_PRIVATE_KEY,
-        vec![
-            SendTxOption::GasLimitMultiplier(2.0),
-            SendTxOption::GasPriceMultiplier(2.0),
-        ],
-    )
-    .await
-    .unwrap();
-    let ending_event_nonce = get_event_nonce_safe(gravity_address, web30, *MINER_ADDRESS)
-        .await
-        .unwrap();
-
-    assert!(starting_event_nonce != ending_event_nonce);
-    info!(
-        "Successfully deployed new ERC20 representing FooToken on Cosmos with event nonce {}",
-        ending_event_nonce
-    );
-
-    // if no keys are provided we assume the caller does not want to spawn
-    // orchestrators as part of the test
-    if let Some(keys) = keys {
-        let no_relay_market_config = create_default_test_config();
-        start_orchestrators(
-            keys.clone(),
+        let cosmos_decimals = get_decimals(&token_metadata);
+        deploy_erc20(
+            token_metadata.base.clone(),
+            token_metadata.name.clone(),
+            token_metadata.symbol.clone(),
+            cosmos_decimals,
             gravity_address,
-            validator_out,
-            no_relay_market_config,
+            web30,
+            Some(TOTAL_TIMEOUT),
+            *MINER_PRIVATE_KEY,
+            vec![
+                SendTxOption::GasLimitMultiplier(2.0),
+                SendTxOption::GasPriceMultiplier(2.0),
+            ],
         )
-        .await;
-    }
+        .await
+        .unwrap();
+        let ending_event_nonce = get_event_nonce_safe(gravity_address, web30, *MINER_ADDRESS)
+            .await
+            .unwrap();
 
-    let start = Instant::now();
-    // the erc20 representing the cosmos asset on Ethereum
-    let mut erc20_contract = None;
-    while Instant::now() - start < TOTAL_TIMEOUT {
-        let res = grpc_client
-            .denom_to_erc20(QueryDenomToErc20Request {
-                denom: token_metadata.base.clone(),
-            })
-            .await;
-        if let Ok(res) = res {
-            let erc20 = res.into_inner().erc20;
-            info!(
-                "Successfully adopted {} token contract of {}",
-                token_metadata.base, erc20
-            );
-            erc20_contract = Some(erc20);
-            break;
-        }
-        sleep(Duration::from_secs(1)).await;
-    }
-    if erc20_contract.is_none() {
-        panic!(
-            "Cosmos did not adopt the ERC20 contract for {} it must be invalid in some way",
-            token_metadata.base
+        assert!(starting_event_nonce != ending_event_nonce);
+        info!(
+            "Successfully deployed new ERC20 representing FooToken on Cosmos with event nonce {}",
+            ending_event_nonce
         );
+
+        // if no keys are provided we assume the caller does not want to spawn
+        // orchestrators as part of the test
+        if let Some(keys) = keys {
+            let no_relay_market_config = create_default_test_config();
+            start_orchestrators(
+                keys.clone(),
+                gravity_address,
+                validator_out,
+                no_relay_market_config,
+            )
+            .await;
+        }
+
+        let start = Instant::now();
+        // the erc20 representing the cosmos asset on Ethereum
+        let mut erc20_contract = None;
+        while Instant::now() - start < TOTAL_TIMEOUT {
+            let res = grpc_client
+                .denom_to_erc20(QueryDenomToErc20Request {
+                    denom: token_metadata.base.clone(),
+                })
+                .await;
+            if let Ok(res) = res {
+                let erc20 = res.into_inner().erc20;
+                info!(
+                    "Successfully adopted {} token contract of {}",
+                    token_metadata.base, erc20
+                );
+                erc20_contract = Some(erc20);
+                break;
+            }
+            sleep(Duration::from_secs(1)).await;
+        }
+        if erc20_contract.is_none() {
+            panic!(
+                "Cosmos did not adopt the ERC20 contract for {} it must be invalid in some way",
+                token_metadata.base
+            );
+        }
+        erc20 = erc20_contract.unwrap().parse().unwrap();
     }
-    let erc20_contract: EthAddress = erc20_contract.unwrap().parse().unwrap();
 
     // now that we have the contract, validate that it has the properties we want
     let got_decimals = web30
-        .get_erc20_decimals(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_decimals(erc20, *MINER_ADDRESS)
         .await
         .unwrap();
+    let cosmos_decimals = get_decimals(&token_metadata);
     assert_eq!(Uint256::from(cosmos_decimals), got_decimals);
 
     let got_name = web30
-        .get_erc20_name(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_name(erc20, *MINER_ADDRESS)
         .await
         .unwrap();
     assert_eq!(got_name, token_metadata.name);
 
     let got_symbol = web30
-        .get_erc20_symbol(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_symbol(erc20, *MINER_ADDRESS)
         .await
         .unwrap();
     assert_eq!(got_symbol, token_metadata.symbol);
 
     let got_supply = web30
-        .get_erc20_supply(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_supply(erc20, *MINER_ADDRESS)
         .await
         .unwrap();
     assert_eq!(got_supply, 0u8.into());
 
-    erc20_contract
+    erc20
 }

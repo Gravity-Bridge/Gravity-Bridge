@@ -30,7 +30,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::bank::{
 use gravity_proto::cosmos_sdk_proto::ibc::applications::transfer::v1::query_client::QueryClient as IbcTransferQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::query_client::QueryClient as IbcChannelQueryClient;
 use gravity_proto::gravity::query_client::QueryClient;
-use gravity_proto::gravity::QueryMonitoredErc20Addresses;
+use gravity_proto::gravity::{QueryMonitoredErc20Addresses, QueryDenomToErc20Request};
 use gravity_utils::num_conversion::one_atom;
 use gravity_utils::types::{
     BatchRelayingMode, BatchRequestMode, RelayerConfig, ValsetRelayingMode,
@@ -38,6 +38,7 @@ use gravity_utils::types::{
 use num256::Uint256;
 use relayer::main_loop::single_relayer_iteration;
 use std::ops::Mul;
+use std::str::FromStr;
 use std::time::Duration;
 use tokio::time::sleep;
 use tonic::transport::Channel;
@@ -501,6 +502,7 @@ pub async fn setup(
         }
     }
 
+    // Footoken could have been deployed by another test, or we may need to deploy it, do so now.
     info!("\n\n\n DEPLOYING FOOTOKEN \n\n\n");
     // Deploy an ERC20 for Cosmos-originated IBC auto-forwards + donations to Gravity.sol
     // This call does not depend on an active relayer
