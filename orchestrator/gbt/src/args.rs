@@ -181,7 +181,7 @@ pub struct DeployErc20RepresentationOpts {
     pub gravity_contract_address: Option<EthAddress>,
 }
 
-/// Requests and relays a batch of a specific token type. 
+/// Requests and relays a batch of a specific token type.
 /// This can be used to easily relay a batch without any special configuration as a one off operation.
 /// WARNING: This command will relay a batch, you will recieve the fees attached to the batch but the
 /// command itself does not check that the batch is profitable. Check on https://info.gravitychain.io
