@@ -12,6 +12,7 @@ use clap::Parser;
 use client::cosmos_to_eth::cosmos_to_eth_cmd;
 use client::deploy_erc20_representation::deploy_erc20_representation;
 use client::eth_to_cosmos::eth_to_cosmos;
+use client::spot_relay::spot_relay;
 use config::{get_home_dir, load_config};
 use env_logger::Env;
 use gov::proposals::{
@@ -60,6 +61,9 @@ async fn main() {
             }
             ClientSubcommand::DeployErc20Representation(deploy_erc20_opts) => {
                 deploy_erc20_representation(deploy_erc20_opts, address_prefix).await
+            }
+            ClientSubcommand::SpotRelay(spot_relay_opts) => {
+                spot_relay(spot_relay_opts, address_prefix).await
             }
         },
         SubCommand::Keys(key_opts) => match key_opts.subcmd {
