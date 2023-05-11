@@ -18,8 +18,8 @@ pub async fn the_gauntlet(
     vulnerable_erc20_address: EthAddress,
 ) {
     batch_stress_test(
-        &web30,
-        &contact,
+        web30,
+        contact,
         grpc.clone(),
         keys.clone(),
         gravity_address,
@@ -28,8 +28,8 @@ pub async fn the_gauntlet(
     .await;
     info!("Starting Batch Timeout/Timeout Stress test");
     batch_timeout_test(
-        &web30,
-        &contact,
+        web30,
+        contact,
         grpc.clone(),
         keys.clone(),
         gravity_address,
@@ -38,17 +38,17 @@ pub async fn the_gauntlet(
     .await;
     info!("Starting SendToEth cancellation test!");
     send_to_eth_and_cancel(
-        &contact,
+        contact,
         grpc.clone(),
-        &web30,
+        web30,
         keys.clone(),
         gravity_address,
-        erc20_addresses[0].clone(),
+        erc20_addresses[0],
     )
     .await;
     send_to_eth_fees_test(
-        &web30,
-        &contact,
+        web30,
+        contact,
         grpc.clone(),
         keys.clone(),
         gravity_address,
@@ -56,10 +56,10 @@ pub async fn the_gauntlet(
     )
     .await;
     cross_bridge_balance_test(
-        &web30,
+        web30,
         grpc.clone(),
-        &contact,
-        &ibc_contact,
+        contact,
+        ibc_contact,
         keys.clone(),
         ibc_keys.clone(),
         gravity_address,
