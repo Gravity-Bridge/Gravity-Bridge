@@ -2,6 +2,7 @@
 //! that can only be run by a validator. This single binary the 'Orchestrator' runs not only these two rules but also the untrusted role of a relayer, that does not need any permissions and has it's
 //! own crate and binary so that anyone may run it.
 
+use crate::ethereum_event_watcher::CheckedNonces;
 use crate::{ethereum_event_watcher::attest_to_events, oracle_resync::get_last_checked_block};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{address::Address as EthAddress, Uint256};
@@ -192,10 +193,9 @@ pub async fn eth_oracle_main_loop(
         )
         .await;
 
-        if res.is_some() {
-            let (event, block) = res.unwrap();
-            last_checked_event = event;
-            last_checked_block = block;
+        if let Some(CheckedNonces{event_nonce, block_number}) = res {
+            last_checked_event = event_nonce;
+            last_checked_block = block_number;
         }
 
         // a bit of logic that tires to keep things running every LOOP_SPEED seconds exactly
@@ -220,7 +220,7 @@ pub async fn single_oracle_iteration(
     event_to_check: Uint256,
     block_to_check: Uint256,
     fee: Coin,
-) -> Option<(Uint256, Uint256)> {
+) -> Option<CheckedNonces> {
     let mut grpc_client = grpc_client;
     let mut checked_event: Uint256 = event_to_check;
     let mut checked_block: Uint256 = block_to_check;
@@ -313,7 +313,7 @@ pub async fn single_oracle_iteration(
         // Relays events from Ethereum -> Cosmos, returns the latest nonces needed in future iterations
         let updated_nonces = attest_to_events(
             web30,
-            &contact,
+            contact,
             &grpc_client,
             gravity_contract_address,
             cosmos_key,
@@ -325,7 +325,7 @@ pub async fn single_oracle_iteration(
         checked_block = updated_nonces.block_number;
         checked_event = updated_nonces.event_nonce;
 
-        return Some((checked_event, checked_block))
+        return Some(CheckedNonces{block_number: checked_block, event_nonce: checked_event})
     }
 
     None
@@ -450,7 +450,7 @@ pub async fn single_eth_signer_iteration(
 
     if res.is_ok() {
         sign_and_send(
-            &contact,
+            contact,
             &grpc_client,
             cosmos_key,
             cosmos_address,
