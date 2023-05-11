@@ -20,6 +20,7 @@ use crate::pause_bridge::pause_bridge_test;
 use crate::send_to_eth_fees::send_to_eth_fees_test;
 use crate::signature_slashing::signature_slashing_test;
 use crate::slashing_delegation::slashing_delegation_test;
+use crate::snapshot_manipulation::snapshot_manipulation_test;
 use crate::test_gauntlet::the_gauntlet;
 use crate::tx_cancel::send_to_eth_and_cancel;
 use crate::upgrade::{run_upgrade, upgrade_part_1, upgrade_part_2};
@@ -70,6 +71,7 @@ mod relay_market;
 mod send_to_eth_fees;
 mod signature_slashing;
 mod slashing_delegation;
+mod snapshot_manipulation;
 mod test_gauntlet;
 mod tx_cancel;
 mod unhalt_bridge;
@@ -596,6 +598,9 @@ pub async fn main() {
                 erc20_addresses,
                 vulnerable_erc20,
             ).await;
+            return;
+        } else if test_type == "SNAPSHOT_MANIPULATION" {
+            snapshot_manipulation_test(&web30, grpc_client, &contact, keys, gravity_address, erc20_addresses).await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;
