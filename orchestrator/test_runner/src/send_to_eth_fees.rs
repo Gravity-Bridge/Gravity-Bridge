@@ -36,7 +36,7 @@ pub async fn send_to_eth_fees_test(
     erc20_addresses: Vec<EthAddress>,
 ) {
     info!("Enter send to eth fees test");
-    let (ibc_metadata, staker_key) = setup(
+    let (ibc_metadata, _staker_key) = setup(
         web30,
         contact,
         &gravity_client,
