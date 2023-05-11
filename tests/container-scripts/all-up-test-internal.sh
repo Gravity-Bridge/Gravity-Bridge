@@ -1,8 +1,9 @@
 #!/bin/bash
 # the script run inside the container for all-up-test.sh
 NODES=$1
-TEST_TYPE=$2
-ALCHEMY_ID=$3
+LOG_LEVEL=$2
+TEST_TYPE=$3
+ALCHEMY_ID=$4
 set -eux
 
 bash /gravity/tests/container-scripts/setup-validators.sh $NODES
@@ -15,4 +16,4 @@ DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full RUST_LOG="INFO,relayer=DEBUG,orchestrator
 
 echo "Running ibc relayer in the background, directing output to /ibc-relayer-logs"
 
-bash /gravity/tests/container-scripts/integration-tests.sh $NODES $TEST_TYPE
+bash /gravity/tests/container-scripts/integration-tests.sh $NODES $LOG_LEVEL $TEST_TYPE

@@ -2,8 +2,9 @@
 set -eux
 # Number of validators to start
 NODES=$1
+LOG_LEVEL=$2
 # old binary version to run
-OLD_VERSION=$2
+OLD_VERSION=$3
 
 echo "Downloading old gravity version at https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64"
 wget https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64
@@ -36,7 +37,7 @@ popd
 
 # Run the pre-upgrade tests
 pushd /gravity/
-tests/container-scripts/integration-tests.sh $NODES UPGRADE_PART_1
+tests/container-scripts/integration-tests.sh $NODES $LOG_LEVEL UPGRADE_PART_1
 popd
 
 unset OLD_BINARY_LOCATION
@@ -46,5 +47,5 @@ tests/container-scripts/run-testnet.sh $NODES
 
 # Run the post-upgrade test
 pushd /gravity/
-tests/container-scripts/integration-tests.sh $NODES UPGRADE_PART_2
+tests/container-scripts/integration-tests.sh $NODES $LOG_LEVEL UPGRADE_PART_2
 popd
