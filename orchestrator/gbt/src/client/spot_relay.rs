@@ -2,7 +2,7 @@ use crate::args::SpotRelayOpts;
 use crate::utils::TIMEOUT;
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::{
-    get_gravity_params, get_latest_transaction_batches, get_latest_valsets, get_pending_batch_fees,
+    get_gravity_params, get_latest_transaction_batches, get_pending_batch_fees,
     get_transaction_batch_signatures,
 };
 use cosmos_gravity::send::send_request_batch;
@@ -12,6 +12,7 @@ use gravity_proto::gravity::query_client::QueryClient;
 use gravity_proto::gravity::{QueryDenomToErc20Request, QueryErc20ToDenomRequest};
 use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
 use gravity_utils::types::TransactionBatch;
+use relayer::find_latest_valset::find_latest_valset;
 use std::process::exit;
 use tonic::transport::Channel;
 
@@ -96,21 +97,26 @@ pub async fn spot_relay(args: SpotRelayOpts, address_prefix: String) {
             return;
         }
         info!("Found pending batch {} for {}", batch.nonce, args.token);
-        let sigs =
-            get_transaction_batch_signatures(&mut grpc, batch.nonce, gravity_contract_address)
-                .await
-                .expect("Failed to get sigs for batch!");
-        let current_valset = get_latest_valsets(&mut grpc)
+        let sigs = get_transaction_batch_signatures(&mut grpc, batch.nonce, ethereum_erc20)
             .await
-            .expect("Failed to get validator sets")
-            .into_iter()
-            .last()
-            .unwrap();
+            .expect("Failed to get sigs for batch!");
+        if sigs.is_empty() {
+            panic!("Failed to get sigs for batch");
+        }
+
+        let current_valset = find_latest_valset(&mut grpc, gravity_contract_address, &web3).await;
+        if current_valset.is_err() {
+            error!("Could not get current valset! {:?}", current_valset);
+            return;
+        }
+        let current_valset = current_valset.unwrap();
+
         // this checks that the signatures for the batch are actually possible to submit to the chain
         let hash = encode_tx_batch_confirm_hashed(gravity_id.clone(), batch.clone());
 
-        if current_valset.order_sigs(&hash, &sigs).is_err() {
+        if let Err(e) = current_valset.order_sigs(&hash, &sigs) {
             error!("Current validator set is not valid to relay this batch, a validator set update must be submitted!");
+            error!("{:?}", e);
             return;
         }
 
