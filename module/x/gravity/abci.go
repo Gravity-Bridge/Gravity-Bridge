@@ -134,6 +134,7 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 			// If no attestation becomes observed, when we get to the next nonce, every attestation in
 			// it will be skipped. The same will happen for every nonce after that.
 			if nonce == k.GetLastObservedEventNonce(ctx)+1 {
+				att := att
 				k.TryAttestation(ctx, &att)
 			}
 		}
@@ -425,6 +426,7 @@ func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call types.Outgoing
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]*types.MsgConfirmLogicCall)
 	for _, confirm := range confirms {
+		confirm := confirm
 		// TODO this presents problems for delegate key rotation see issue #344
 		confVal, err := sdk.AccAddressFromBech32(confirm.Orchestrator)
 		if err != nil {
