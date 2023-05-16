@@ -184,7 +184,7 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 	}
 
 	// Finally, collect any provided fees
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	if !(chainFee == sdk.Coin{}) && chainFee.Amount.IsPositive() {
 		senderAcc := k.accountKeeper.GetAccount(ctx, sender)
 
@@ -468,7 +468,6 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 // Performs additional checks on msg to determine if it is valid
 func additionalPatchChecks(ctx sdk.Context, k msgServer, msg *types.MsgBatchSendToEthClaim) {
 	contractAddress, err := types.NewEthAddress(msg.TokenContract)
-
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "Invalid TokenContract on MsgBatchSendToEthClaim"))
 	}

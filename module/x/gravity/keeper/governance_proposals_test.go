@@ -189,5 +189,4 @@ func TestIBCMetadataProposal(t *testing.T) {
 
 	err = gk.HandleIBCMetadataProposal(ctx, &badMetadata3)
 	require.Error(t, err)
-
 }

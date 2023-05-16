@@ -69,7 +69,6 @@ func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, t
 func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, *types.EthAddress, error) {
 	// First try parsing the ERC20 out of the denom
 	tc1, err := types.GravityDenomToERC20(denom)
-
 	if err != nil {
 		// Look up ERC20 contract in index and error if it's not in there.
 		tc2, exists := k.GetCosmosOriginatedERC20(ctx, denom)

@@ -9,7 +9,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
-// nolint: exhaustruct
+//nolint: exhaustruct
 var (
 	_ sdk.Msg = &MsgSetOrchestratorAddress{}
 	_ sdk.Msg = &MsgValsetConfirm{}
@@ -324,7 +324,7 @@ type EthereumClaim interface {
 	SetOrchestrator(sdk.AccAddress)
 }
 
-// nolint: exhaustruct
+//nolint: exhaustruct
 var (
 	_ EthereumClaim = &MsgSendToCosmosClaim{}
 	_ EthereumClaim = &MsgBatchSendToEthClaim{}

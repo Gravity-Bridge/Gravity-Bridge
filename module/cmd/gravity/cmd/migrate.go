@@ -21,13 +21,15 @@ import (
 
 // Currently we are seeing 6-8 second block times on Gravity, a safe maxExpectedBlockDelay is 3x - 5x the expected block time
 // Here we go for 5 x 8 = 40 seconds
-const gravityMaxExpectedBlockDelay = 40000000000
-const flagGenesisTime = "genesis-time"
+const (
+	gravityMaxExpectedBlockDelay = 40000000000
+	flagGenesisTime              = "genesis-time"
+)
 
 // MigrateGenesisCmd returns a command to execute genesis state migration.
 // This is a copy of the genutil migrate cmd, with minimal changes to call the ibc v1->v2 genesis migration code
 func MigrateGravityGenesisCmd() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "ibc-migrate [genesis-file]",
 		Short: "Migrate gravity genesis to ibc v2",

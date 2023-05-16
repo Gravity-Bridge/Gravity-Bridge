@@ -291,5 +291,4 @@ func TestInvalidHeight(t *testing.T) {
 		log.Info("Asserting that the bad attestation only has one claimer", "attVotes", att.Votes)
 		require.Equal(t, len(att.Votes), i+1) // Only these good orchestrators votes should be counted
 	}
-
 }

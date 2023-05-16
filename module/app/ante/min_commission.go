@@ -22,7 +22,8 @@ func NewMinCommissionDecorator(cdc codec.BinaryCodec) MinCommissionDecorator {
 
 func (min MinCommissionDecorator) AnteHandle(
 	ctx sdk.Context, tx sdk.Tx,
-	simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	simulate bool, next sdk.AnteHandler,
+) (newCtx sdk.Context, err error) {
 	msgs := tx.GetMsgs()
 	minCommissionRate := sdk.NewDecWithPrec(10, 2)
 

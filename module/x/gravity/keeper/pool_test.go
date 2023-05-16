@@ -177,7 +177,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	//////// Zero inputs ////////
 	mtCtx := new(sdk.Context)
 	mtSend := new(sdk.AccAddress)
-	var mtRecieve = types.ZeroAddress() // This address should not actually cause an issue
+	mtRecieve := types.ZeroAddress() // This address should not actually cause an issue
 	mtCoin := new(sdk.Coin)
 	r, err = input.GravityKeeper.AddToOutgoingPool(*mtCtx, *mtSend, mtRecieve, *mtCoin, *mtCoin)
 	require.Error(t, err)
@@ -235,9 +235,9 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 	}
 
 	// token 2 - Only top 100
-	var (
-		myToken2ContractAddr = "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
-	)
+
+	myToken2ContractAddr := "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
+
 	// mint some voucher first
 	allVouchersToken, err = types.NewInternalERC20Token(sdk.NewIntFromUint64(uint64(18446744073709551615)), myToken2ContractAddr)
 	require.NoError(t, err)
@@ -275,7 +275,6 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 	assert.Equal(t, batchFees[0].TxCount, uint64(4))
 	assert.Equal(t, batchFees[1].TotalFees.BigInt(), big.NewInt(int64(500)))
 	assert.Equal(t, batchFees[1].TxCount, uint64(100))
-
 }
 
 func TestGetBatchFeeByTokenType(t *testing.T) {
@@ -393,7 +392,6 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 	require.Equal(t, batchFee3.Token, myTokenContractAddr3)
 	require.Equal(t, batchFee3.TotalFees.Uint64(), uint64(totalFee3), fmt.Errorf("expected total fees %d but got %d", batchFee3.TotalFees.Uint64(), uint64(totalFee3)))
 	require.Equal(t, batchFee3.TxCount, uint64(100), fmt.Errorf("expected tx count %d but got %d", batchFee3.TxCount, uint64(100)))
-
 }
 
 func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
@@ -541,7 +539,8 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 // 3. Require that `mySender` has been refunded the correct amount for the cancelled transaction
 // 4. Require that the unbatched transaction pool does not contain the refunded transaction via iterating its elements
 func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, fee uint64, amount uint64,
-	feesAndAmounts *uint64, originalBal uint64, mySender sdk.AccAddress, myTokenContractAddr string, myTokenDenom string) {
+	feesAndAmounts *uint64, originalBal uint64, mySender sdk.AccAddress, myTokenContractAddr string, myTokenDenom string,
+) {
 	err := input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, id, mySender)
 	require.NoError(t, err)
 	*feesAndAmounts -= fee + amount // user should have regained the locked amounts from tx
@@ -608,9 +607,7 @@ func TestRefundNonexistentTx(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
-	var (
-		mySender, e1 = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
-	)
+	mySender, e1 := sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 	require.NoError(t, e1)
 
 	//////// Refund a tx which never existed ////////

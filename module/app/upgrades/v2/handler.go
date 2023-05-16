@@ -212,7 +212,7 @@ func bumpMinValidatorCommissions(stakingKeeper *stakingkeeper.Keeper, ctx sdk.Co
 	for _, v := range validators {
 		ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): checking validator", "validator", v.GetMoniker(), "Commission.Rate", v.Commission.Rate.String(), "Commission.MaxRate", v.Commission.MaxRate.String())
 		if v.Commission.Rate.LT(minCommissionRate) {
-			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): validator is out of compilance! Modifying their commission rate(s)", "validator ", v.GetMoniker())
+			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): validator is out of compliance! Modifying their commission rate(s)", "validator ", v.GetMoniker())
 			if v.Commission.MaxRate.LT(minCommissionRate) {
 				ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): Updating validator Commission.MaxRate", "validator", v.GetMoniker(), "old", v.Commission.MaxRate.String(), "new", minCommissionRate.String())
 				v.Commission.MaxRate = minCommissionRate

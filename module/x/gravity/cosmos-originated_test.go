@@ -70,9 +70,7 @@ func addDenomToERC20Relation(tv *testingVars) {
 		Display: "graviton",
 	})
 
-	var (
-		myNonce = uint64(1)
-	)
+	myNonce := uint64(1)
 
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {
@@ -134,7 +132,7 @@ func lockCoinsInModule(tv *testingVars) {
 	assert.Equal(tv.t, sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}, balance1)
 
 	// send some coins
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	zeroCoin := sdk.Coin{}
 	msg := &types.MsgSendToEth{
 		Sender:    userCosmosAddr.String(),
@@ -209,7 +207,6 @@ func acceptDepositEvent(tv *testingVars) {
 }
 
 func addIbcDenomToERC20Relation(tv *testingVars) {
-
 	tokenContract := "0xE486cC1a00aA806C3e40224EDAd5FdCA93dDdA62"
 	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
 	metadata := banktypes.Metadata{
@@ -231,9 +228,7 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	}
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, metadata)
 
-	var (
-		myNonce = uint64(2)
-	)
+	myNonce := uint64(2)
 
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {

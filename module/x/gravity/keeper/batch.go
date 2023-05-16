@@ -23,7 +23,8 @@ const OutgoingTxBatchSize = 100
 func (k Keeper) BuildOutgoingTXBatch(
 	ctx sdk.Context,
 	contract types.EthAddress,
-	maxElements uint) (*types.InternalOutgoingTxBatch, error) {
+	maxElements uint,
+) (*types.InternalOutgoingTxBatch, error) {
 	if maxElements == 0 {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "max elements value")
 	}
@@ -178,7 +179,8 @@ func (k Keeper) DeleteBatch(ctx sdk.Context, batch types.InternalOutgoingTxBatch
 func (k Keeper) pickUnbatchedTxs(
 	ctx sdk.Context,
 	contractAddress types.EthAddress,
-	maxElements uint) ([]*types.InternalOutgoingTransferTx, error) {
+	maxElements uint,
+) ([]*types.InternalOutgoingTransferTx, error) {
 	var selectedTxs []*types.InternalOutgoingTransferTx
 	var err error
 	k.IterateUnbatchedTransactionsByContract(ctx, contractAddress, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
@@ -328,7 +330,6 @@ func (k Keeper) HasLastSlashedBatchBlock(ctx sdk.Context) bool {
 // block height instead of nonce because batches could have individual nonces for each token type
 // this function will panic if a lower last slashed block is set, this protects against programmer error
 func (k Keeper) SetLastSlashedBatchBlock(ctx sdk.Context, blockHeight uint64) {
-
 	if k.HasLastSlashedBatchBlock(ctx) && k.GetLastSlashedBatchBlock(ctx) > blockHeight {
 		panic("Attempted to decrement LastSlashedBatchBlock")
 	}

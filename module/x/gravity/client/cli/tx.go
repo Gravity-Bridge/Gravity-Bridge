@@ -28,7 +28,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 	// internal check prevents double registration in node case
 	keeper.RegisterProposalTypes()
 
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	gravityTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Gravity transaction subcommands",
@@ -54,7 +54,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 // CmdGovIbcMetadataProposal enables users to easily submit json file proposals for IBC Metadata registration, needed to
 // send Cosmos tokens over to Ethereum
 func CmdGovIbcMetadataProposal() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "gov-ibc-metadata [path-to-proposal-json] [initial-deposit]",
 		Short: "Creates a governance proposal to set the Metadata of the given IBC token. Once the metadata is set this token can be moved to Ethereum using Gravity Bridge",
@@ -163,7 +163,7 @@ type AirdropProposalPlain struct {
 // CmdGovAirdropProposal enables users to easily submit json file proposals for token airdrops, eliminating the need for
 // users to claim their airdrops / a custom on-chain module
 func CmdGovAirdropProposal() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "gov-airdrop [path-to-proposal-json] [initial-deposit]",
 		Short: "Creates a governance proposal for an airdrop",
@@ -244,7 +244,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 // CmdGovUnhaltBridgeProposal enables users to easily submit json file proposals to set the Gravity module parameters
 // which account for Ethereum forks, "rewinding" state and letting the chain achieve consensus after the fork is settled
 func CmdGovUnhaltBridgeProposal() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "gov-unhalt-bridge [path-to-proposal-json] [initial-deposit]",
 		Short: "Creates a governance proposal to unhalt the Ethereum bridge after an oracle dispute",
@@ -302,7 +302,7 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 
 // CmdSendToEth sends tokens to Ethereum. Locks Cosmos-side tokens into the Transaction pool for batching.
 func CmdSendToEth() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "send-to-eth [eth-dest] [amount] [bridge-fee] [chain-fee]",
 		Short: "Adds a new entry to the transaction pool to withdraw an amount from the Ethereum bridge contract. This will not execute until a batch is requested and then actually relayed. Chain fee must be at least min_chain_fee_basis_points in `query gravity params`. Your funds can be reclaimed using cancel-send-to-eth so long as they remain in the pool",
@@ -358,7 +358,7 @@ func CmdSendToEth() *cobra.Command {
 // CmdCancelSendToEth enables users to take their Transaction out of the pool. Note that this cannot be done if it is
 // locked up in a pending batch or if it has already been executed on Ethereum
 func CmdCancelSendToEth() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "cancel-send-to-eth [transaction id]",
 		Short: "Removes an entry from the transaction pool, preventing your tokens from going to Ethereum and refunding the send.",
@@ -394,7 +394,7 @@ func CmdCancelSendToEth() *cobra.Command {
 // CmdRequestBatch requests that the validators create and confirm a batch to be sent to Ethereum. This
 // is a manual command which duplicates the efforts of the Ethereum Relayer, likely not to be used often
 func CmdRequestBatch() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "request-batch [token_contract_address]",
 		Short: "Request a new batch on the cosmos side for pooled withdrawal transactions",
@@ -425,7 +425,7 @@ func CmdRequestBatch() *cobra.Command {
 // CmdSetOrchestratorAddress registers delegate keys for a validator so that their Orchestrator has authority to perform
 // its responsibility
 func CmdSetOrchestratorAddress() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "set-orchestrator-address [validator-address] [orchestrator-address] [ethereum-address]",
 		Short: "Allows validators to delegate their voting responsibilities to a given key.",
@@ -457,7 +457,7 @@ func CmdSetOrchestratorAddress() *cobra.Command {
 // immediately create an IBC transfer to the destination chain to the original foreign account. If there is an IBC
 // failure, the funds will be deposited on the gravity-prefixed account.
 func CmdExecutePendingIbcAutoForwards() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "execute-pending-ibc-auto-forwards [forwards-to-execute]",
 		Short: "Executes a given number of IBC Auto-Forwards",

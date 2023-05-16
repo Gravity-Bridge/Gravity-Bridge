@@ -1,11 +1,10 @@
 package keeper
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 	"time"
-
-	"bytes"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"

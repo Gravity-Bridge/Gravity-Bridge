@@ -22,7 +22,7 @@ const (
 
 // GetQueryCmd bundles all the query subcmds together so they appear under `gravity query` or `gravity q`
 func GetQueryCmd() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	gravityQueryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Querying commands for the gravity module",
@@ -49,7 +49,7 @@ func GetQueryCmd() *cobra.Command {
 
 // CmdGetCurrentValset fetches the current validator set
 func CmdGetCurrentValset() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "current-valset",
 		Short: "Query current valset",
@@ -77,7 +77,7 @@ func CmdGetCurrentValset() *cobra.Command {
 
 // CmdGetValsetRequest fetches a historical valset with the given valset nonce, for use in Ethereum relaying
 func CmdGetValsetRequest() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "valset-request [nonce]",
 		Short: "Get requested valset with a particular nonce",
@@ -112,7 +112,7 @@ func CmdGetValsetRequest() *cobra.Command {
 
 // CmdGetValsetConfirm fetches a confirm for the valset with the given nonce made by the given validator
 func CmdGetValsetConfirm() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "valset-confirm [nonce] [bech32 validator address]",
 		Short: "Get valset confirmation with a particular nonce from a particular validator",
@@ -148,7 +148,7 @@ func CmdGetValsetConfirm() *cobra.Command {
 
 // CmdGetPendingValsetRequest fetches the valset to be confirmed next by the given validator, if any exists
 func CmdGetPendingValsetRequest() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-valset-request [bech32 orchestrator address]",
 		Short: "Get the latest valset request which has not been signed by a particular orchestrator",
@@ -178,7 +178,7 @@ func CmdGetPendingValsetRequest() *cobra.Command {
 
 // CmdGetPendingOutgoingTXBatchRequest fetches the batch to be confirmed next by the given validator, if any exists
 func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-batch-request [bech32 orchestrator address]",
 		Short: "Get the latest outgoing TX batch request which has not been signed by a particular orchestrator",
@@ -208,7 +208,7 @@ func CmdGetPendingOutgoingTXBatchRequest() *cobra.Command {
 
 // CmdGetPendingSendToEth fetches all pending Sends to Ethereum made by the given address
 func CmdGetPendingSendToEth() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-send-to-eth [address]",
 		Short: "Query transactions waiting to go to Ethereum",
@@ -238,7 +238,7 @@ func CmdGetPendingSendToEth() *cobra.Command {
 
 // GetCmdPendingIbcAutoForwards fetches the next IBC auto forwards to be executed, up to an optional limit
 func GetCmdPendingIbcAutoForwards() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-ibc-auto-forwards [optional limit]",
 		Short: "Query SendToCosmos transactions waiting to be forwarded over IBC",
@@ -279,7 +279,7 @@ func CmdGetAttestations() *cobra.Command {
 	long := short + "\n\n" + "Optionally provide a limit to reduce the number of attestations returned" + "\n" +
 		"Note that when querying with --height less than 1282013 '--use-v1-key' must be provided to locate the attestations"
 
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "attestations [optional limit]",
 		Args:  cobra.MaximumNArgs(1),
@@ -354,14 +354,14 @@ func CmdGetAttestations() *cobra.Command {
 
 // CmdGetLastObservedEthBlock fetches the Ethereum block height for the most recent "observed" Attestation, indicating
 // the state of Cosmos consensus on the submitted Ethereum events
-// nolint: dupl
+//nolint: dupl
 func CmdGetLastObservedEthBlock() *cobra.Command {
 	short := "Query the last observed Ethereum block height"
 	long := short + "\n\n" +
 		"This value is expected to lag the actual Ethereum block height significantly due to 1. Ethereum Finality and 2. Consensus mirroring the state on Ethereum" + "\n" +
 		"Note that when querying with --height less than 1282013 '--use-v1-key' must be provided to locate the value"
 
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "last-observed-eth-block",
 		Short: short,
@@ -397,14 +397,14 @@ func CmdGetLastObservedEthBlock() *cobra.Command {
 
 // CmdGetLastObservedEthNonce fetches the Ethereum event nonce for the most recent "observed" Attestation, indicating
 // // the state of Cosmos consensus on the submitted Ethereum events
-// nolint: dupl
+//nolint: dupl
 func CmdGetLastObservedEthNonce() *cobra.Command {
 	short := "Query the last observed Ethereum event nonce"
 	long := short + "\n\n" +
 		"This this is likely to lag the last executed event a little due to 1. Ethereum Finality and 2. Consensus mirroring the Ethereum state" + "\n" +
 		"Note that when querying with --height less than 1282013 '--use-v1-key' must be provided to locate the value"
 
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "last-observed-eth-nonce",
 		Short: short,
@@ -440,7 +440,7 @@ func CmdGetLastObservedEthNonce() *cobra.Command {
 
 // GetCmdQueryParams fetches the current Gravity module params
 func GetCmdQueryParams() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "params",
 		Args:  cobra.NoArgs,

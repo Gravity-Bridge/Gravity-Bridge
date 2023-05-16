@@ -531,8 +531,8 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 // Send tokens via bank keeper to a native gravity address, re-prefixing receiver to a gravity native address if necessary
 // Note: This should only be used as part of SendToCosmos attestation handling and is not a good solution for general use
 func (a AttestationHandler) sendCoinToLocalAddress(
-	ctx sdk.Context, claim types.MsgSendToCosmosClaim, receiver sdk.AccAddress, coin sdk.Coin) (err error) {
-
+	ctx sdk.Context, claim types.MsgSendToCosmosClaim, receiver sdk.AccAddress, coin sdk.Coin,
+) (err error) {
 	err = a.keeper.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, sdk.NewCoins(coin))
 	if err != nil {
 		// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool

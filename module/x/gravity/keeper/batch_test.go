@@ -890,13 +890,11 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 	// should only be 5
 	gotUnbatchedTx := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *myTokenContractAddr)
 	assert.Equal(t, gotUnbatchedTx[0].Id, uint64(5))
-
 }
 
 // tests total batch fee collected from all of the txs in the batch
 // nolint: exhaustruct
 func TestGetFees(t *testing.T) {
-
 	txs := []types.OutgoingTransferTx{
 		{Erc20Fee: types.ERC20Token{Amount: sdk.NewInt(1)}},
 		{Erc20Fee: types.ERC20Token{Amount: sdk.NewInt(2)}},
@@ -909,16 +907,22 @@ func TestGetFees(t *testing.T) {
 	}
 
 	batches := []batchFeesTuple{
-		{types.OutgoingTxBatch{
-			Transactions: []types.OutgoingTransferTx{}},
+		{
+			types.OutgoingTxBatch{
+				Transactions: []types.OutgoingTransferTx{},
+			},
 			sdk.NewInt(0),
 		},
-		{types.OutgoingTxBatch{
-			Transactions: []types.OutgoingTransferTx{txs[0]}},
+		{
+			types.OutgoingTxBatch{
+				Transactions: []types.OutgoingTransferTx{txs[0]},
+			},
 			sdk.NewInt(1),
 		},
-		{types.OutgoingTxBatch{
-			Transactions: []types.OutgoingTransferTx{txs[0], txs[1], txs[2]}},
+		{
+			types.OutgoingTxBatch{
+				Transactions: []types.OutgoingTransferTx{txs[0], txs[1], txs[2]},
+			},
 			sdk.NewInt(6),
 		},
 	}

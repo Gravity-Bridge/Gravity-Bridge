@@ -43,7 +43,7 @@ func GetPleiades2UpgradeHandler(
 		ctx.Logger().Info("Pleiades Upgrade part 2: Running any configured module migrations")
 		out, outErr := mm.RunMigrations(ctx, *configurator, vmap)
 
-		ctx.Logger().Info("Pleiades Upgrade part 2: Enforcing validator minimum comission")
+		ctx.Logger().Info("Pleiades Upgrade part 2: Enforcing validator minimum commission")
 		bumpMinValidatorCommissions(stakingKeeper, ctx)
 
 		ctx.Logger().Info("Asserting invariants after upgrade")
@@ -68,7 +68,7 @@ func bumpMinValidatorCommissions(stakingKeeper *stakingkeeper.Keeper, ctx sdk.Co
 	for _, v := range validators {
 		ctx.Logger().Info("Pleiades Upgrade part 2: bumpMinValidatorCommissions(): checking validator", "validator", v.GetMoniker(), "Commission.Rate", v.Commission.Rate.String(), "Commission.MaxRate", v.Commission.MaxRate.String())
 		if v.Commission.Rate.LT(minCommissionRate) {
-			ctx.Logger().Info("Pleiades Upgrade part 2: bumpMinValidatorCommissions(): validator is out of compilance! Modifying their commission rate(s)", "validator ", v.GetMoniker())
+			ctx.Logger().Info("Pleiades Upgrade part 2: bumpMinValidatorCommissions(): validator is out of compliance! Modifying their commission rate(s)", "validator ", v.GetMoniker())
 			if v.Commission.MaxRate.LT(minCommissionRate) {
 				ctx.Logger().Info("Pleiades Upgrade part 2: bumpMinValidatorCommissions(): Updating validator Commission.MaxRate", "validator", v.GetMoniker(), "old", v.Commission.MaxRate.String(), "new", minCommissionRate.String())
 				v.Commission.MaxRate = minCommissionRate

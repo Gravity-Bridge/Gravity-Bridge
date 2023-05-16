@@ -56,7 +56,8 @@ func TestQueryValsetConfirm(t *testing.T) {
 
 			// expResp:  []byte(`{"type":"gravity/MsgValsetConfirm", "value":{"eth_address":"0x3232323232323232323232323232323232323232", "nonce": "1", "orchestrator": "cosmos1ees2tqhhhm9ahlhceh2zdguww9lqn2ckukn86l",  "signature": "alksdjhflkasjdfoiasjdfiasjdfoiasdj"}}`),
 			expResp: types.QueryValsetConfirmResponse{
-				Confirm: types.NewMsgValsetConfirm(1, *myValidatorEthereumAddr, myValidatorCosmosAddr, "abcdef123456789")},
+				Confirm: types.NewMsgValsetConfirm(1, *myValidatorEthereumAddr, myValidatorCosmosAddr, "abcdef123456789"),
+			},
 			expErr: false,
 		},
 		"unknown nonce": {
@@ -320,143 +321,144 @@ func TestLastValsetRequests(t *testing.T) {
 }
 
 // nolint: exhaustruct
-// TODO: check that it doesn't accidently return a valset that HAS been signed
+// TODO: check that it doesn't accidentally return a valset that HAS been signed
 // Right now it is basically just testing that any valset comes back
 func TestPendingValsetRequests(t *testing.T) {
 	specs := map[string]struct {
 		expResp types.QueryLastPendingValsetRequestByAddrResponse
 	}{
 		"find valset": {
-			expResp: types.QueryLastPendingValsetRequestByAddrResponse{Valsets: []types.Valset{
-				{
-					Nonce:        6,
-					Height:       1235167,
-					RewardAmount: sdk.ZeroInt(),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
-					Members: []types.BridgeValidator{
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0000000000000000000000000000000000000000",
-						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0101010101010101010101010101010101010101",
-						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0202020202020202020202020202020202020202",
-						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0303030303030303030303030303030303030303",
-						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0404040404040404040404040404040404040404",
-						},
-					},
-				},
-				{
-					Nonce:        5,
-					Height:       1235067,
-					RewardAmount: sdk.ZeroInt(),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
-					Members: []types.BridgeValidator{
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0000000000000000000000000000000000000000",
-						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0101010101010101010101010101010101010101",
-						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0202020202020202020202020202020202020202",
-						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0303030303030303030303030303030303030303",
-						},
-						{
-							Power:           858993459,
-							EthereumAddress: "0x0404040404040404040404040404040404040404",
+			expResp: types.QueryLastPendingValsetRequestByAddrResponse{
+				Valsets: []types.Valset{
+					{
+						Nonce:        6,
+						Height:       1235167,
+						RewardAmount: sdk.ZeroInt(),
+						RewardToken:  "0x0000000000000000000000000000000000000000",
+						Members: []types.BridgeValidator{
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0000000000000000000000000000000000000000",
+							},
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0101010101010101010101010101010101010101",
+							},
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0202020202020202020202020202020202020202",
+							},
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0303030303030303030303030303030303030303",
+							},
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0404040404040404040404040404040404040404",
+							},
 						},
 					},
-				},
-				{
-					Nonce:        4,
-					Height:       1234967,
-					RewardAmount: sdk.ZeroInt(),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
-					Members: []types.BridgeValidator{
-						{
-							Power:           1073741824,
-							EthereumAddress: "0x0000000000000000000000000000000000000000",
-						},
-						{
-							Power:           1073741824,
-							EthereumAddress: "0x0101010101010101010101010101010101010101",
-						},
-						{
-							Power:           1073741824,
-							EthereumAddress: "0x0202020202020202020202020202020202020202",
-						},
-						{
-							Power:           1073741824,
-							EthereumAddress: "0x0303030303030303030303030303030303030303",
-						},
-					},
-				},
-				{
-					Nonce:        3,
-					Height:       1234867,
-					RewardAmount: sdk.ZeroInt(),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
-					Members: []types.BridgeValidator{
-						{
-							Power:           1431655765,
-							EthereumAddress: "0x0000000000000000000000000000000000000000",
-						},
-						{
-							Power:           1431655765,
-							EthereumAddress: "0x0101010101010101010101010101010101010101",
-						},
-						{
-							Power:           1431655765,
-							EthereumAddress: "0x0202020202020202020202020202020202020202",
+					{
+						Nonce:        5,
+						Height:       1235067,
+						RewardAmount: sdk.ZeroInt(),
+						RewardToken:  "0x0000000000000000000000000000000000000000",
+						Members: []types.BridgeValidator{
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0000000000000000000000000000000000000000",
+							},
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0101010101010101010101010101010101010101",
+							},
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0202020202020202020202020202020202020202",
+							},
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0303030303030303030303030303030303030303",
+							},
+							{
+								Power:           858993459,
+								EthereumAddress: "0x0404040404040404040404040404040404040404",
+							},
 						},
 					},
-				},
-				{
-					Nonce:        2,
-					Height:       1234767,
-					RewardAmount: sdk.ZeroInt(),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
-					Members: []types.BridgeValidator{
-						{
-							Power:           2147483648,
-							EthereumAddress: "0x0000000000000000000000000000000000000000",
-						},
-						{
-							Power:           2147483648,
-							EthereumAddress: "0x0101010101010101010101010101010101010101",
+					{
+						Nonce:        4,
+						Height:       1234967,
+						RewardAmount: sdk.ZeroInt(),
+						RewardToken:  "0x0000000000000000000000000000000000000000",
+						Members: []types.BridgeValidator{
+							{
+								Power:           1073741824,
+								EthereumAddress: "0x0000000000000000000000000000000000000000",
+							},
+							{
+								Power:           1073741824,
+								EthereumAddress: "0x0101010101010101010101010101010101010101",
+							},
+							{
+								Power:           1073741824,
+								EthereumAddress: "0x0202020202020202020202020202020202020202",
+							},
+							{
+								Power:           1073741824,
+								EthereumAddress: "0x0303030303030303030303030303030303030303",
+							},
 						},
 					},
-				},
-				{
-					Nonce: 1,
-					Members: []types.BridgeValidator{
-						{
-							Power:           4294967296,
-							EthereumAddress: "0x0000000000000000000000000000000000000000",
+					{
+						Nonce:        3,
+						Height:       1234867,
+						RewardAmount: sdk.ZeroInt(),
+						RewardToken:  "0x0000000000000000000000000000000000000000",
+						Members: []types.BridgeValidator{
+							{
+								Power:           1431655765,
+								EthereumAddress: "0x0000000000000000000000000000000000000000",
+							},
+							{
+								Power:           1431655765,
+								EthereumAddress: "0x0101010101010101010101010101010101010101",
+							},
+							{
+								Power:           1431655765,
+								EthereumAddress: "0x0202020202020202020202020202020202020202",
+							},
 						},
 					},
-					Height:       1234667,
-					RewardAmount: sdk.NewInt(0),
-					RewardToken:  "0x0000000000000000000000000000000000000000",
+					{
+						Nonce:        2,
+						Height:       1234767,
+						RewardAmount: sdk.ZeroInt(),
+						RewardToken:  "0x0000000000000000000000000000000000000000",
+						Members: []types.BridgeValidator{
+							{
+								Power:           2147483648,
+								EthereumAddress: "0x0000000000000000000000000000000000000000",
+							},
+							{
+								Power:           2147483648,
+								EthereumAddress: "0x0101010101010101010101010101010101010101",
+							},
+						},
+					},
+					{
+						Nonce: 1,
+						Members: []types.BridgeValidator{
+							{
+								Power:           4294967296,
+								EthereumAddress: "0x0000000000000000000000000000000000000000",
+							},
+						},
+						Height:       1234667,
+						RewardAmount: sdk.NewInt(0),
+						RewardToken:  "0x0000000000000000000000000000000000000000",
+					},
 				},
-			},
 			},
 		},
 	}
@@ -492,47 +494,47 @@ func TestPendingValsetRequests(t *testing.T) {
 // nolint: exhaustruct
 // TODO: check that it actually returns a batch that has NOT been signed, not just any batch
 func TestLastPendingBatchRequest(t *testing.T) {
-
 	specs := map[string]struct {
 		expResp types.QueryLastPendingBatchRequestByAddrResponse
 	}{
 		"find batch": {
-			expResp: types.QueryLastPendingBatchRequestByAddrResponse{Batch: []types.OutgoingTxBatch{
-				{
-					BatchNonce:   1,
-					BatchTimeout: 0,
-					Transactions: []types.OutgoingTransferTx{
-						{
-							Id:          2,
-							Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
-							DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
-							Erc20Token: types.ERC20Token{
-								Amount:   sdk.NewInt(101),
-								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+			expResp: types.QueryLastPendingBatchRequestByAddrResponse{
+				Batch: []types.OutgoingTxBatch{
+					{
+						BatchNonce:   1,
+						BatchTimeout: 0,
+						Transactions: []types.OutgoingTransferTx{
+							{
+								Id:          2,
+								Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
+								DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
+								Erc20Token: types.ERC20Token{
+									Amount:   sdk.NewInt(101),
+									Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+								},
+								Erc20Fee: types.ERC20Token{
+									Amount:   sdk.NewInt(3),
+									Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+								},
 							},
-							Erc20Fee: types.ERC20Token{
-								Amount:   sdk.NewInt(3),
-								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+							{
+								Id:          3,
+								Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
+								DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
+								Erc20Token: types.ERC20Token{
+									Amount:   sdk.NewInt(102),
+									Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+								},
+								Erc20Fee: types.ERC20Token{
+									Amount:   sdk.NewInt(2),
+									Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+								},
 							},
 						},
-						{
-							Id:          3,
-							Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
-							DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
-							Erc20Token: types.ERC20Token{
-								Amount:   sdk.NewInt(102),
-								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-							},
-							Erc20Fee: types.ERC20Token{
-								Amount:   sdk.NewInt(2),
-								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-							},
-						},
+						TokenContract:      "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+						CosmosBlockCreated: 1235067,
 					},
-					TokenContract:      "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-					CosmosBlockCreated: 1235067,
 				},
-			},
 			},
 		},
 	}
@@ -782,9 +784,7 @@ func TestQueryBatch(t *testing.T) {
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 
-	var (
-		tokenContract = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
-	)
+	tokenContract := "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 
 	createTestBatch(t, input, 2)
 
@@ -938,36 +938,34 @@ func TestLastBatchesRequest(t *testing.T) {
 // nolint: exhaustruct
 // tests setting and querying eth address and orchestrator addresses
 func TestQueryCurrentValset(t *testing.T) {
-	var (
-		expectedValset = types.Valset{
-			Nonce:        1,
-			Height:       1234567,
-			RewardAmount: sdk.ZeroInt(),
-			RewardToken:  "0x0000000000000000000000000000000000000000",
-			Members: []types.BridgeValidator{
-				{
-					Power:           858993459,
-					EthereumAddress: "0x0101010101010101010101010101010101010101",
-				},
-				{
-					Power:           858993459,
-					EthereumAddress: "0x0202020202020202020202020202020202020202",
-				},
-				{
-					Power:           858993459,
-					EthereumAddress: "0x0303030303030303030303030303030303030303",
-				},
-				{
-					Power:           858993459,
-					EthereumAddress: "0x0404040404040404040404040404040404040404",
-				},
-				{
-					Power:           858993459,
-					EthereumAddress: "0x0505050505050505050505050505050505050505",
-				},
+	expectedValset := types.Valset{
+		Nonce:        1,
+		Height:       1234567,
+		RewardAmount: sdk.ZeroInt(),
+		RewardToken:  "0x0000000000000000000000000000000000000000",
+		Members: []types.BridgeValidator{
+			{
+				Power:           858993459,
+				EthereumAddress: "0x0101010101010101010101010101010101010101",
 			},
-		}
-	)
+			{
+				Power:           858993459,
+				EthereumAddress: "0x0202020202020202020202020202020202020202",
+			},
+			{
+				Power:           858993459,
+				EthereumAddress: "0x0303030303030303030303030303030303030303",
+			},
+			{
+				Power:           858993459,
+				EthereumAddress: "0x0404040404040404040404040404040404040404",
+			},
+			{
+				Power:           858993459,
+				EthereumAddress: "0x0505050505050505050505050505050505050505",
+			},
+		},
+	}
 	input, _ := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -1089,34 +1087,35 @@ func TestQueryPendingSendToEth(t *testing.T) {
 	// Should receive 1 and 4 unbatched, 2 and 3 batched in response
 	response, err := k.GetPendingSendToEth(ctx, &types.QueryPendingSendToEth{SenderAddress: mySender.String()})
 	require.NoError(t, err)
-	expectedRes := types.QueryPendingSendToEthResponse{TransfersInBatches: []types.OutgoingTransferTx{
-		{
-			Id:          2,
-			Sender:      "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
-			DestAddress: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
-			Erc20Token: types.ERC20Token{
-				Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-				Amount:   sdk.NewInt(101),
+	expectedRes := types.QueryPendingSendToEthResponse{
+		TransfersInBatches: []types.OutgoingTransferTx{
+			{
+				Id:          2,
+				Sender:      "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
+				DestAddress: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+				Erc20Token: types.ERC20Token{
+					Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
+					Amount:   sdk.NewInt(101),
+				},
+				Erc20Fee: types.ERC20Token{
+					Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
+					Amount:   sdk.NewInt(3),
+				},
 			},
-			Erc20Fee: types.ERC20Token{
-				Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-				Amount:   sdk.NewInt(3),
+			{
+				Id:          3,
+				Sender:      "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
+				DestAddress: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+				Erc20Token: types.ERC20Token{
+					Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
+					Amount:   sdk.NewInt(102),
+				},
+				Erc20Fee: types.ERC20Token{
+					Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
+					Amount:   sdk.NewInt(2),
+				},
 			},
 		},
-		{
-			Id:          3,
-			Sender:      "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
-			DestAddress: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
-			Erc20Token: types.ERC20Token{
-				Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-				Amount:   sdk.NewInt(102),
-			},
-			Erc20Fee: types.ERC20Token{
-				Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-				Amount:   sdk.NewInt(2),
-			},
-		},
-	},
 
 		UnbatchedTransfers: []types.OutgoingTransferTx{
 			{

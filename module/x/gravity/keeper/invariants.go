@@ -176,7 +176,7 @@ func StoreValidityInvariant(k Keeper) sdk.Invariant {
 
 // ValidateStore checks that all values in the store can be decoded and pass a ValidateBasic check
 // Returns an error string and a boolean indicating an error if true, for use in an invariant
-// nolint: gocyclo
+//nolint: gocyclo
 func ValidateStore(ctx sdk.Context, k Keeper) error {
 	// TODO: Check the newly added iterators with unit tests
 	// EthAddressByValidatorKey

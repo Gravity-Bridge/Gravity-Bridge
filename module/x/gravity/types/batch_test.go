@@ -15,9 +15,7 @@ import (
 func TestOutgoingTxBatchCheckpointGold1(t *testing.T) {
 	senderAddr, err := sdk.AccAddressFromHex("527FBEE652609AB150F0AEE9D61A2F76CFC4A73E")
 	require.NoError(t, err)
-	var (
-		erc20Addr = "0x835973768750b3ED2D5c3EF5AdcD5eDb44d12aD4"
-	)
+	erc20Addr := "0x835973768750b3ED2D5c3EF5AdcD5eDb44d12aD4"
 	erc20Address, err := NewEthAddress(erc20Addr)
 	require.NoError(t, err)
 	destAddress, err := NewEthAddress("0x9FC9C2DfBA3b6cF204C37a5F690619772b926e39")

@@ -186,7 +186,7 @@ var (
 // MakeCodec creates the application codec. The codec is sealed before it is
 // returned.
 func MakeCodec() *codec.LegacyAmino {
-	var cdc = codec.NewLegacyAmino()
+	cdc := codec.NewLegacyAmino()
 	ModuleBasics.RegisterLegacyAminoCodec(cdc)
 	vesting.AppModuleBasic{}.RegisterLegacyAminoCodec(cdc)
 	sdk.RegisterLegacyAminoCodec(cdc)
@@ -354,8 +354,8 @@ func NewGravityApp(
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	// nolint: exhaustruct
-	var app = &Gravity{
+	//nolint: exhaustruct
+	app := &Gravity{
 		BaseApp:           &bApp,
 		legacyAmino:       legacyAmino,
 		appCodec:          appCodec,
@@ -551,7 +551,7 @@ func NewGravityApp(
 	)
 	app.evidenceKeeper = &evidenceKeeper
 
-	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	app.registerStoreLoaders()
 

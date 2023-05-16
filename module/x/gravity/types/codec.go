@@ -16,7 +16,7 @@ func init() {
 }
 
 // RegisterInterfaces registers the interfaces for the proto stuff
-// nolint: exhaustruct
+//nolint: exhaustruct
 func RegisterInterfaces(registry types.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgValsetConfirm{},
@@ -52,7 +52,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 }
 
 // RegisterCodec registers concrete types on the Amino codec
-// nolint: exhaustruct
+//nolint: exhaustruct
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterInterface((*EthereumClaim)(nil), nil)
 	cdc.RegisterConcrete(&MsgSetOrchestratorAddress{}, "gravity/MsgSetOrchestratorAddress", nil)

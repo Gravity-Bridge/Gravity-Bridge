@@ -50,7 +50,8 @@ func TestHandleMsgSendToEth(t *testing.T) {
 		Sender:    userCosmosAddr.String(),
 		EthDest:   ethDestination,
 		Amount:    sendingCoin,
-		BridgeFee: feeCoin}
+		BridgeFee: feeCoin,
+	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err := h(ctx, msg)
 	require.NoError(t, err)
@@ -62,7 +63,8 @@ func TestHandleMsgSendToEth(t *testing.T) {
 		Sender:    userCosmosAddr.String(),
 		EthDest:   ethDestination,
 		Amount:    sendingCoin,
-		BridgeFee: feeCoin}
+		BridgeFee: feeCoin,
+	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err1 := h(ctx, msg1)
 	require.NoError(t, err1)
@@ -75,7 +77,8 @@ func TestHandleMsgSendToEth(t *testing.T) {
 		Sender:    userCosmosAddr.String(),
 		EthDest:   ethDestination,
 		Amount:    sendingCoin,
-		BridgeFee: feeCoin}
+		BridgeFee: feeCoin,
+	}
 	ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 	_, err2 := h(ctx, msg2)
 	require.Error(t, err2)
@@ -88,14 +91,14 @@ func TestHandleMsgSendToEth(t *testing.T) {
 			Sender:    userCosmosAddr.String(),
 			EthDest:   val,
 			Amount:    sendingCoin,
-			BridgeFee: feeCoin}
+			BridgeFee: feeCoin,
+		}
 		ctx = ctx.WithBlockTime(blockTime).WithBlockHeight(blockHeight)
 		_, err := h(ctx, msg)
 		require.Error(t, err)
 		balance := input.BankKeeper.GetAllBalances(ctx, userCosmosAddr)
 		assert.Equal(t, sdk.Coins{sdk.NewCoin(denom, finalAmount3)}, balance)
 	}
-
 }
 
 // nolint: exhaustruct
@@ -274,7 +277,6 @@ func TestEthereumBlacklist(t *testing.T) {
 	// Check community pool has received the money instead of the address
 	community_pool_balance := input.DistKeeper.GetFeePool(ctx).CommunityPool
 	assert.Equal(t, sdk.NewDecFromInt(amountA), community_pool_balance.AmountOf(denom))
-
 }
 
 const biggestInt = "115792089237316195423570985008687907853269984665640564039457584007913129639935" // 2^256 - 1
@@ -346,7 +348,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 		CosmosReceiver: myCosmosAddr.String(),
 		Orchestrator:   "",
 	}
-	// Absoulte max value of 2^256 - 1. Previous versions (v0.43 or v0.44) of cosmos-sdk did not support sdk.Int of this size
+	// Absolute max value of 2^256 - 1. Previous versions (v0.43 or v0.44) of cosmos-sdk did not support sdk.Int of this size
 	maxSend := types.ERC20Token{
 		Amount:   sdk.NewIntFromBigInt(biggestBigInt),
 		Contract: tokenETHAddr2,

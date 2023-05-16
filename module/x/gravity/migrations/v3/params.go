@@ -78,15 +78,19 @@ func (p *Params) ProtoMessage() {
 func (m *Params) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
+
 func (m *Params) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return []byte{}, nil
 }
+
 func (m *Params) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Params.Merge(m, src)
 }
+
 func (m *Params) XXX_Size() int {
 	return m.Size()
 }
+
 func (m *Params) XXX_DiscardUnknown() {
 	xxx_messageInfo_Params.DiscardUnknown(m)
 }
@@ -174,7 +178,7 @@ func (m *Params) GetValsetReward() sdk.Coin {
 	if m != nil {
 		return m.ValsetReward
 	}
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	return sdk.Coin{}
 }
 
@@ -348,7 +352,6 @@ func validateEthereumBlacklistAddresses(i interface{}) error {
 	}
 	for index, value := range strArr {
 		if err := types.ValidateEthAddress(value); err != nil {
-
 			if !strings.Contains(err.Error(), "empty, index is"+strconv.Itoa(index)) {
 				return err
 			}

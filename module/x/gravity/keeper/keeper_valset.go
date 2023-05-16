@@ -256,7 +256,7 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedVa
 func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	validators := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
 	if len(validators) == 0 {
-		// nolint: exhaustruct
+		//nolint: exhaustruct
 		return types.Valset{}, types.ErrNoValidators
 	}
 	// allocate enough space for all validators, but len zero, we then append
