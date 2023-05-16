@@ -250,7 +250,7 @@ func GetCmdPendingIbcAutoForwards() *cobra.Command {
 			}
 			queryClient := types.NewQueryClient(clientCtx)
 
-			var limit uint64 = 0
+			var limit uint64
 			if args[0] != "" {
 				var err error
 				limit, err = strconv.ParseUint(args[0], 10, 0)
@@ -354,7 +354,6 @@ func CmdGetAttestations() *cobra.Command {
 
 // CmdGetLastObservedEthBlock fetches the Ethereum block height for the most recent "observed" Attestation, indicating
 // the state of Cosmos consensus on the submitted Ethereum events
-//nolint: dupl
 func CmdGetLastObservedEthBlock() *cobra.Command {
 	short := "Query the last observed Ethereum block height"
 	long := short + "\n\n" +
@@ -397,7 +396,6 @@ func CmdGetLastObservedEthBlock() *cobra.Command {
 
 // CmdGetLastObservedEthNonce fetches the Ethereum event nonce for the most recent "observed" Attestation, indicating
 // // the state of Cosmos consensus on the submitted Ethereum events
-//nolint: dupl
 func CmdGetLastObservedEthNonce() *cobra.Command {
 	short := "Query the last observed Ethereum event nonce"
 	long := short + "\n\n" +

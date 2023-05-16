@@ -131,7 +131,6 @@ func unpackAttestationClaim(att *types.Attestation, cdc codec.BinaryCodec) (type
 	err := cdc.UnpackAny(att.Claim, &msg)
 	if err != nil {
 		return nil, err
-	} else {
-		return msg, nil
 	}
+	return msg, nil
 }

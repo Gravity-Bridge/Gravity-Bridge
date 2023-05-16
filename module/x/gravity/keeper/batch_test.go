@@ -545,6 +545,7 @@ func TestManyBatches(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	//nolint:gosec // test addresses
 	var (
 		now                = time.Now().UTC()
 		mySender, e1       = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")

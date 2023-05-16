@@ -20,6 +20,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 
 	ctx := input.Context
 
+	//nolint:gosec // test address
 	var (
 		now                 = time.Now().UTC()
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")

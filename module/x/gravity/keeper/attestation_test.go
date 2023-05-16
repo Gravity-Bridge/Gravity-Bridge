@@ -211,7 +211,7 @@ func TestInvalidHeight(t *testing.T) {
 	lastNonce := pk.GetLastObservedEventNonce(ctx)
 	lastEthHeight := pk.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
 	lastBatchNonce := 0
-	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" //nolint:gosec // test address
 	goodHeight := lastEthHeight + 1
 	batchTimeout := lastEthHeight + 100
 	badHeight := batchTimeout

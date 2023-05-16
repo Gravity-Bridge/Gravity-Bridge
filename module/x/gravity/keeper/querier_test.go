@@ -611,6 +611,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 
+	//nolint:gosec // this is for testing purposes only
 	var (
 		tokenContract      = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
 		validatorAddr, err = sdk.AccAddressFromBech32("gravity1mgamdcs9dah0vn0gqupl05up7pedg2mvc3tzjl")
@@ -653,8 +654,8 @@ func TestQueryLogicCalls(t *testing.T) {
 	var (
 		logicContract            = "0x510ab76899430424d209a6c9a5b9951fb8a6f47d"
 		payload                  = []byte("fake bytes")
-		tokenContract            = "0x7580bfe88dd3d07947908fae12d95872a260f2d8"
-		invalidationId           = []byte("GravityTesting")
+		tokenContract            = "0x7580bfe88dd3d07947908fae12d95872a260f2d8" //nolint:gosec // test address
+		invalidationId           = []byte("GravityTesting")                     //nolint:gosec // test address
 		invalidationNonce uint64 = 1
 	)
 
@@ -710,6 +711,7 @@ func TestQueryLogicCallConfirms(t *testing.T) {
 
 	sdkCtx := input.Context
 	k := input.GravityKeeper
+	//nolint:gosec // we are using a address key for testing
 	var (
 		logicContract            = "0x510ab76899430424d209a6c9a5b9951fb8a6f47d"
 		payload                  = []byte("fake bytes")
@@ -776,7 +778,7 @@ func TestQueryBatch(t *testing.T) {
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
 
-	tokenContract := "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B"
+	tokenContract := "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B" //nolint:gosec // test address
 
 	createTestBatch(t, input, 2)
 
@@ -1022,6 +1024,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := sdk.WrapSDKContext(input.Context)
 	k := input.GravityKeeper
+	//nolint:gosec // pickle is for testing only
 	var (
 		now                 = time.Now().UTC()
 		mySender, err1      = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")

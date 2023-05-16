@@ -78,7 +78,7 @@ func (m *Params) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
 
-func (m *Params) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Params) XXX_Marshal(_ []byte, _ bool) ([]byte, error) {
 	return []byte{}, nil
 }
 
@@ -195,7 +195,7 @@ func (m *Params) GetEthereumBlacklist() []string {
 	return nil
 }
 
-func (p *Params) Unmarshal(b []byte) error {
+func (p *Params) Unmarshal(_ []byte) error {
 	return nil
 }
 

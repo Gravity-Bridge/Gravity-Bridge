@@ -485,6 +485,7 @@ func TestBatchTimeout(t *testing.T) {
 
 	pk := input.GravityKeeper
 	params := pk.GetParams(ctx)
+	//nolint:gosec // pickle is for testing only
 	var (
 		now                 = time.Now().UTC()
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")

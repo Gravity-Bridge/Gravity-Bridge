@@ -121,7 +121,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 	)
 	require.NoError(t, e1)
 	receiver, err := types.NewEthAddress(myReceiver)
@@ -201,6 +201,7 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 	ctx := input.Context
 
 	// token1
+	//nolint:gosec // for testing only
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
@@ -237,7 +238,7 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 
 	// token 2 - Only top 100
 
-	myToken2ContractAddr := "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
+	myToken2ContractAddr := "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0" //nolint:gosec // test address
 
 	// mint some voucher first
 	allVouchersToken, err = types.NewInternalERC20Token(sdk.NewIntFromUint64(uint64(18446744073709551615)), myToken2ContractAddr)
@@ -404,7 +405,7 @@ func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 		myTokenDenom        = "gravity" + myTokenContractAddr
 	)
 	require.NoError(t, e1)
@@ -471,7 +472,7 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 		myTokenDenom        = "grav"
 	)
 	require.NoError(t, e1)
@@ -628,7 +629,7 @@ func TestRefundTwice(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 	)
 	require.NoError(t, e1)
 	receiver, err := types.NewEthAddress(myReceiver)
@@ -832,6 +833,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	ctx := input.Context
 
 	// token1
+	//nolint:gosec // for testing only
 	var (
 		mySender1, e1                       = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		mySender2            sdk.AccAddress = []byte("gravity1ahx7f8wyertus")
@@ -958,7 +960,7 @@ func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 	)
 	require.NoError(t, e1)
 	receiver, err := types.NewEthAddress(myReceiver)

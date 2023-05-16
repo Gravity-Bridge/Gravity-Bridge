@@ -124,7 +124,6 @@ func (s GenesisState) ValidateBasic() error {
 }
 
 // DefaultGenesisState returns empty genesis state
-//nolint: exhaustruct
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params:                 DefaultParams(),

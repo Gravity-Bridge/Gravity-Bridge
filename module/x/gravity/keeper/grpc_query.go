@@ -22,7 +22,7 @@ const (
 )
 
 // Params queries the params of the gravity module
-func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	var params types.Params
 	k.paramSpace.GetParamSet(sdk.UnwrapSDKContext(c), &params)
 	return &types.QueryParamsResponse{Params: params}, nil
@@ -31,7 +31,7 @@ func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types
 // CurrentValset queries the CurrentValset of the gravity module
 func (k Keeper) CurrentValset(
 	c context.Context,
-	req *types.QueryCurrentValsetRequest,
+	_ *types.QueryCurrentValsetRequest,
 ) (*types.QueryCurrentValsetResponse, error) {
 	vs, err := k.GetCurrentValset(sdk.UnwrapSDKContext(c))
 	if err != nil {
@@ -76,7 +76,7 @@ const maxValsetRequestsReturned = 5
 // LastValsetRequests queries the LastValsetRequests of the gravity module
 func (k Keeper) LastValsetRequests(
 	c context.Context,
-	req *types.QueryLastValsetRequestsRequest,
+	_ *types.QueryLastValsetRequestsRequest,
 ) (*types.QueryLastValsetRequestsResponse, error) {
 	valReq := k.GetValsets(sdk.UnwrapSDKContext(c))
 	valReqLen := len(valReq)
@@ -122,7 +122,7 @@ func (k Keeper) LastPendingValsetRequestByAddr(
 // BatchFees queries the batch fees from unbatched pool
 func (k Keeper) BatchFees(
 	c context.Context,
-	req *types.QueryBatchFeeRequest,
+	_ *types.QueryBatchFeeRequest,
 ) (*types.QueryBatchFeeResponse, error) {
 	return &types.QueryBatchFeeResponse{BatchFees: k.GetAllBatchFees(sdk.UnwrapSDKContext(c), OutgoingTxBatchSize)}, nil
 }
@@ -195,7 +195,7 @@ const MaxResults = 100 // todo: impl pagination
 // OutgoingTxBatches queries the OutgoingTxBatches of the gravity module
 func (k Keeper) OutgoingTxBatches(
 	c context.Context,
-	req *types.QueryOutgoingTxBatchesRequest,
+	_ *types.QueryOutgoingTxBatchesRequest,
 ) (*types.QueryOutgoingTxBatchesResponse, error) {
 	var batches []types.OutgoingTxBatch
 	k.IterateOutgoingTxBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
@@ -208,7 +208,7 @@ func (k Keeper) OutgoingTxBatches(
 // OutgoingLogicCalls queries the OutgoingLogicCalls of the gravity module
 func (k Keeper) OutgoingLogicCalls(
 	c context.Context,
-	req *types.QueryOutgoingLogicCallsRequest,
+	_ *types.QueryOutgoingLogicCallsRequest,
 ) (*types.QueryOutgoingLogicCallsResponse, error) {
 	var calls []types.OutgoingLogicCall
 	k.IterateOutgoingLogicCalls(sdk.UnwrapSDKContext(c), func(_ []byte, call types.OutgoingLogicCall) bool {

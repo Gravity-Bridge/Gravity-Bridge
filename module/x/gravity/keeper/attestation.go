@@ -119,7 +119,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
 
 				k.processAttestation(ctx, att, claim)
-				k.emitObservedEvent(ctx, att, claim)
+				k.emitObservedEvent(ctx, claim)
 
 				break
 			}
@@ -154,7 +154,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 
 // emitObservedEvent emits an event with information about an attestation that has been applied to
 // consensus state.
-func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
+func (k Keeper) emitObservedEvent(ctx sdk.Context, claim types.EthereumClaim) {
 	hash, err := claim.ClaimHash()
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "unable to compute claim hash"))

@@ -29,7 +29,7 @@ func TestNoDuplicateKeys(t *testing.T) {
 
 func getAllKeys() [][]byte {
 	i := 0
-	inc := func(i *int) *int { *i += 1; return i }
+	inc := func(i *int) *int { *i++; return i }
 
 	keys := make([][]byte, 47)
 

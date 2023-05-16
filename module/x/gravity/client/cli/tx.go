@@ -23,7 +23,7 @@ import (
 )
 
 // GetTxCmd bundles all the subcmds together so they appear under `gravity tx`
-func GetTxCmd(storeKey string) *cobra.Command {
+func GetTxCmd(_ string) *cobra.Command {
 	// needed for governance proposal txs in cli case
 	// internal check prevents double registration in node case
 	keeper.RegisterProposalTypes()

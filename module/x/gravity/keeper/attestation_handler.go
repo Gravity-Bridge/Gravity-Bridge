@@ -31,7 +31,7 @@ func (a AttestationHandler) ValidateMembers() {
 
 // Handle is the entry point for Attestation processing, only attestations with sufficient validator submissions
 // should be processed through this function, solidifying their effect in chain state
-func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim types.EthereumClaim) error {
+func (a AttestationHandler) Handle(ctx sdk.Context, _ types.Attestation, claim types.EthereumClaim) error {
 	switch claim := claim.(type) {
 
 	case *types.MsgSendToCosmosClaim:
@@ -510,7 +510,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 
 		// Add the SendToCosmos to the Pending IBC Auto-Forward Queue, which when processed will send the funds to a
 		// local address before sending via IBC
-		err = a.addToIbcAutoForwardQueue(ctx, receiver, accountPrefix, coin, hrpIbcRecord.SourceChannel, claim)
+		err = a.addToIbcAutoForwardQueue(ctx, accountPrefix, coin, hrpIbcRecord.SourceChannel, claim)
 
 		if err != nil {
 			a.keeper.logger(ctx).Error(
@@ -570,7 +570,6 @@ func (a AttestationHandler) sendCoinToLocalAddress(
 // Note: This should only be used as part of SendToCosmos attestation handling and is not a good solution for general use
 func (a AttestationHandler) addToIbcAutoForwardQueue(
 	ctx sdk.Context,
-	receiver sdk.AccAddress,
 	accountPrefix string,
 	coin sdk.Coin,
 	channel string,

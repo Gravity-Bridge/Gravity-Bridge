@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:gosec // for testing only
 const (
 	denom         string = "graviton"
 	tokenContract string = "0x2a24af0501a534fca004ee1bd667b783f205a546"

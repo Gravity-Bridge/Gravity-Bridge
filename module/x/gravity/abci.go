@@ -250,7 +250,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 								Address: consAddr.String(),
 							},
 						); err != nil {
-							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+							panic(fmt.Errorf("unable to emit slashing event: %v", err))
 						}
 
 						k.StakingKeeper.Jail(ctx, consAddr)
@@ -297,7 +297,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 								Address: valConsAddr.String(),
 							},
 						); err != nil {
-							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+							panic(fmt.Errorf("unable to emit slashing event: %v", err))
 						}
 						k.StakingKeeper.Jail(ctx, valConsAddr)
 					}
@@ -406,7 +406,7 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 								Address: consAddr.String(),
 							},
 						); err != nil {
-							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+							panic(fmt.Errorf("unable to emit slashing event: %v", err))
 						}
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}
@@ -486,7 +486,7 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 								Address: consAddr.String(),
 							},
 						); err != nil {
-							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+							panic(fmt.Errorf("unable to emit slashing event: %v", err))
 						}
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}

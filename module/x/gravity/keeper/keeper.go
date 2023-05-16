@@ -404,7 +404,7 @@ func (k Keeper) GetLastSlashedLogicCallBlock(ctx sdk.Context) uint64 {
 }
 
 // GetUnSlashedLogicCalls returns all the unslashed logic calls in state
-func (k Keeper) GetUnSlashedLogicCalls(ctx sdk.Context, maxHeight uint64) (out []types.OutgoingLogicCall) {
+func (k Keeper) GetUnSlashedLogicCalls(ctx sdk.Context, _ uint64) (out []types.OutgoingLogicCall) {
 	lastSlashedLogicCallBlock := k.GetLastSlashedLogicCallBlock(ctx)
 	calls := k.GetOutgoingLogicCalls(ctx)
 	for _, call := range calls {
@@ -489,6 +489,6 @@ func (k Keeper) IsOnBlacklist(ctx sdk.Context, addr types.EthAddress) bool {
 // blacklist. (2) is not yet implemented
 // Blocking some addresses is technically motivated, if any ERC20 transfers in a batch fail the entire batch
 // becomes impossible to execute.
-func (k Keeper) InvalidSendToEthAddress(ctx sdk.Context, addr types.EthAddress, _erc20Addr types.EthAddress) bool {
+func (k Keeper) InvalidSendToEthAddress(ctx sdk.Context, addr types.EthAddress) bool {
 	return k.IsOnBlacklist(ctx, addr) || addr == types.ZeroAddress()
 }

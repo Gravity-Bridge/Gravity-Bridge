@@ -69,7 +69,7 @@ func TestFullAppSimulation(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		StateFn(app.AppCodec(), app.SimulationManager()),
 		simtypes.RandomAccounts,
 		SimulationOperations(*app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
@@ -107,7 +107,7 @@ func TestAppImportExport(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		StateFn(app.AppCodec(), app.SimulationManager()),
 		simtypes.RandomAccounts,
 		SimulationOperations(*app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
@@ -207,7 +207,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		StateFn(app.AppCodec(), app.SimulationManager()),
 		simtypes.RandomAccounts,
 		SimulationOperations(*app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
@@ -256,7 +256,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t,
 		os.Stdout,
 		newApp.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		StateFn(app.AppCodec(), app.SimulationManager()),
 		simtypes.RandomAccounts,
 		SimulationOperations(*newApp, newApp.AppCodec(), config),
 		newApp.ModuleAccountAddrs(),
@@ -305,7 +305,7 @@ func TestAppStateDeterminism(t *testing.T) {
 				t,
 				os.Stdout,
 				app.BaseApp,
-				AppStateFn(app.AppCodec(), app.SimulationManager()),
+				StateFn(app.AppCodec(), app.SimulationManager()),
 				simtypes.RandomAccounts,
 				SimulationOperations(*app, app.AppCodec(), config),
 				app.ModuleAccountAddrs(),
@@ -335,6 +335,6 @@ func TestAppStateDeterminism(t *testing.T) {
 type EmptyAppOptions struct{}
 
 // Get implements AppOptions
-func (ao EmptyAppOptions) Get(o string) interface{} {
+func (ao EmptyAppOptions) Get(_ string) interface{} {
 	return nil
 }

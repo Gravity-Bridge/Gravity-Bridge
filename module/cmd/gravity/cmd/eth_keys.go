@@ -71,7 +71,7 @@ type EthereumKeyOutput struct {
 	Address    string `json:"address"`
 }
 
-func runAddCmd(cmd *cobra.Command, args []string) error {
+func runAddCmd(cmd *cobra.Command, _ []string) error {
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {
 		return err

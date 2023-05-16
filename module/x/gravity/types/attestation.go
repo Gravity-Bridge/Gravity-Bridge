@@ -46,7 +46,6 @@ func ClaimValidateBasic(cdc codec.BinaryCodec, claim *codectypes.Any) error {
 }
 
 // ClaimTypeToTypeUrl takes a type of EthereumClaim and returns the associated protobuf Msg TypeUrl
-//nolint: exhaustruct
 func ClaimTypeToTypeUrl(claimType ClaimType) string {
 	var msgName string
 	switch claimType {

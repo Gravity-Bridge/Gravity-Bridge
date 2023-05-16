@@ -179,7 +179,7 @@ func StoreValidityInvariant(k Keeper) sdk.Invariant {
 func ValidateStore(ctx sdk.Context, k Keeper) error {
 	// TODO: Check the newly added iterators with unit tests
 	// EthAddressByValidatorKey
-	var err error = nil
+	var err error
 	k.IterateEthAddressesByValidator(ctx, func(key []byte, addr types.EthAddress) (stop bool) {
 		err = addr.ValidateBasic()
 		if err != nil {
@@ -204,7 +204,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 		return err
 	}
 	// ValsetRequestKey
-	var actualLatestValsetNonce uint64 = 0
+	var actualLatestValsetNonce uint64
 	k.IterateValsets(ctx, func(key []byte, valset *types.Valset) (stop bool) {
 		err = valset.ValidateBasic()
 		if err != nil {

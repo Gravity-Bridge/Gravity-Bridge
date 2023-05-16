@@ -18,18 +18,18 @@ import (
 
 func TestHandleMsgSendToEth(t *testing.T) {
 	var (
-		userCosmosAddr, e1               = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
-		blockTime                        = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
-		blockHeight            int64     = 200
-		denom                            = "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
-		startingCoinAmount, _            = sdk.NewIntFromString("150000000000000000000") // 150 ETH worth, required to reach above u64 limit (which is about 18 ETH)
-		sendAmount, _                    = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
-		feeAmount, _                     = sdk.NewIntFromString("5000000000000000000")   // 5 ETH
-		startingCoins          sdk.Coins = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
-		sendingCoin            sdk.Coin  = sdk.NewCoin(denom, sendAmount)
-		feeCoin                sdk.Coin  = sdk.NewCoin(denom, feeAmount)
-		ethDestination                   = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
-		invalidEthDestinations           = []string{"obviously invalid", "0x3c9289da00b02dC623d0D8D907", "0x3c9289da00b02dC623d0D8D907dC623d0D8D907619890", "0x3c9289da00b02dC623d0D8D907619890301D26dU"}
+		userCosmosAddr, e1           = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
+		blockTime                    = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
+		blockHeight            int64 = 200
+		denom                        = "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+		startingCoinAmount, _        = sdk.NewIntFromString("150000000000000000000") // 150 ETH worth, required to reach above u64 limit (which is about 18 ETH)
+		sendAmount, _                = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
+		feeAmount, _                 = sdk.NewIntFromString("5000000000000000000")   // 5 ETH
+		startingCoins                = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
+		sendingCoin                  = sdk.NewCoin(denom, sendAmount)
+		feeCoin                      = sdk.NewCoin(denom, feeAmount)
+		ethDestination               = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
+		invalidEthDestinations       = []string{"obviously invalid", "0x3c9289da00b02dC623d0D8D907", "0x3c9289da00b02dC623d0D8D907dC623d0D8D907619890", "0x3c9289da00b02dC623d0D8D907619890301D26dU"}
 	)
 	require.NoError(t, e1)
 
@@ -104,7 +104,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	var (
 		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		anyETHAddr       = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		tokenETHAddr     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e" //nolint:gosec // test address
 		myBlockTime      = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 		amountA, _       = sdk.NewIntFromString("50000000000000000000")  // 50 ETH
 		amountB, _       = sdk.NewIntFromString("100000000000000000000") // 100 ETH
@@ -204,6 +204,7 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 }
 
 func TestEthereumBlacklist(t *testing.T) {
+	//nolint:gosec // for testing only
 	var (
 		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		anyETHSender     = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
@@ -299,6 +300,7 @@ func sendSendToCosmosClaim(msg types.MsgSendToCosmosClaim, ctx sdk.Context, h sd
 
 func TestMsgSendToCosmosOverflow(t *testing.T) {
 	const grandeInt = "115792089237316195423570985008687907853269984665640564039457584007913129639835" // 2^256 - 101
+	//nolint:gosec // for testing only
 	var (
 		biggestBigInt, _     = new(big.Int).SetString(biggestInt, 10)
 		grandeBigInt, _      = new(big.Int).SetString(grandeInt, 10)
@@ -409,7 +411,7 @@ func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
 		myNonce          = uint64(1)
 		anyETHAddr       = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		tokenETHAddr     = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e" //nolint:gosec // test address
 		myBlockTime      = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 	)
 	require.NoError(t, e1)
@@ -494,7 +496,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 
 		myNonce      = uint64(1)
 		anyETHAddr   = "0xf9613b532673Cc223aBa451dFA8539B87e1F666D"
-		tokenETHAddr = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+		tokenETHAddr = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e" //nolint:gosec // test address
 		myBlockTime  = time.Date(2020, 9, 14, 15, 20, 10, 0, time.UTC)
 	)
 	require.NoError(t, err0)
