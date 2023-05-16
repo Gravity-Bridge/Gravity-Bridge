@@ -680,8 +680,8 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 		},
 		{
 			"OutgoingTXPoolKey",
-			v1.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.Id),
-			v2.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.Id),
+			v1.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.ID),
+			v2.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.ID),
 			bz,
 		},
 		{

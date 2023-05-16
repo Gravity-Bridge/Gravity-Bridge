@@ -18,6 +18,7 @@ func TestAddToOutgoingPool(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	//nolint:gosec // these credentials are here for testing purposes only
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
@@ -80,28 +81,28 @@ func TestAddToOutgoingPool(t *testing.T) {
 	require.NoError(t, err)
 	exp := []*types.InternalOutgoingTransferTx{
 		{
-			Id:          2,
+			ID:          2,
 			Erc20Fee:    threeTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredOneTok,
 		},
 		{
-			Id:          3,
+			ID:          3,
 			Erc20Fee:    twoTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredTwoTok,
 		},
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twoTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    oneTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
@@ -284,6 +285,7 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 	ctx := input.Context
 
 	// token1
+	//nolint:gosec // these are test addresses
 	var (
 		mySender1, e1                       = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		mySender2            sdk.AccAddress = []byte("gravity1ahx7f8wyertus")
@@ -549,7 +551,7 @@ func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, f
 	expectedKey := myTokenContractAddr + fmt.Sprint(fee) + fmt.Sprint(id)
 	input.GravityKeeper.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotEqual(t, []byte(expectedKey), key)
-		found := id == tx.Id &&
+		found := id == tx.ID &&
 			fee == tx.Erc20Fee.Amount.Uint64() &&
 			amount == tx.Erc20Token.Amount.Uint64()
 		require.False(t, found)
@@ -588,7 +590,7 @@ func TestRefundInconsistentTx(t *testing.T) {
 	require.Error(t, err)
 	// But this unsafe override won't fail
 	err = input.GravityKeeper.addUnbatchedTX(ctx, &types.InternalOutgoingTransferTx{
-		Id:          uint64(5),
+		ID:          uint64(5),
 		Sender:      mySender,
 		DestAddress: myReceiver,
 		Erc20Token:  amountToken,
@@ -680,6 +682,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	ctx := input.Context
 
 	// token1
+	//nolint:gosec // this doesn't affect security because this is a test
 	var (
 		mySender1, e1                       = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		mySender2            sdk.AccAddress = []byte("gravity1ahx7f8wyertus")
@@ -793,7 +796,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	// GetUnbatchedTransactionsByContract
 	token1Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract1)
 	for _, v := range token1Txs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, myTokenContractAddr1, v.Erc20Fee.Contract.GetAddress().Hex())
 		require.Equal(t, myTokenContractAddr1, v.Erc20Token.Contract.GetAddress().Hex())
@@ -802,7 +805,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	}
 	token2Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract2)
 	for _, v := range token2Txs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, myTokenContractAddr2, v.Erc20Fee.Contract.GetAddress().Hex())
 		require.Equal(t, myTokenContractAddr2, v.Erc20Token.Contract.GetAddress().Hex())
@@ -812,7 +815,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	// GetUnbatchedTransactions
 	allTxs := input.GravityKeeper.GetUnbatchedTransactions(ctx)
 	for _, v := range allTxs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress().Hex())
 		require.Equal(t, expTx.Sender, v.Sender.String())
@@ -904,7 +907,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	foundMap := make(map[uint64]bool)
 	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, *tokenContract1, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.Erc20Fee.Contract, myTokenContractAddr1)
 		require.Equal(t, fTx.Erc20Token.Contract, myTokenContractAddr1)
@@ -915,7 +918,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	})
 	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, *tokenContract2, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.Erc20Fee.Contract, myTokenContractAddr2)
 		require.Equal(t, fTx.Erc20Token.Contract, myTokenContractAddr2)
@@ -932,7 +935,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	anotherFoundMap := make(map[uint64]bool)
 	input.GravityKeeper.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.DestAddress, tx.DestAddress.GetAddress().Hex())
 

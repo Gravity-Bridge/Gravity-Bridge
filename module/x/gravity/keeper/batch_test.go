@@ -13,7 +13,6 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-// nolint: exhaustruct
 func TestBatches(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -147,14 +146,14 @@ func TestBatches(t *testing.T) {
 	require.NoError(t, err)
 	expUnbatchedTx := []*types.InternalOutgoingTransferTx{
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twoFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
 			Erc20Token:  oneHundredTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    oneFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
@@ -278,28 +277,28 @@ func TestBatches(t *testing.T) {
 	require.NoError(t, err)
 	expUnbatchedTx = []*types.InternalOutgoingTransferTx{
 		{
-			Id:          2,
+			ID:          2,
 			Erc20Fee:    threeFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
 			Erc20Token:  oneHundredOneTok,
 		},
 		{
-			Id:          3,
+			ID:          3,
 			Erc20Fee:    twoFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
 			Erc20Token:  oneHundredTwoTok,
 		},
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twoFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
 			Erc20Token:  oneHundredTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    oneFee,
 			Sender:      mySender,
 			DestAddress: myReceiver,
@@ -318,12 +317,13 @@ func TestBatches(t *testing.T) {
 
 // tests that batches work with large token amounts, mostly a duplicate of the above
 // tests but using much bigger numbers
-// nolint: exhaustruct
+
 func TestBatchesFullCoins(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	//nolint:gosec // these are for tests
 	var (
 		now                 = time.Now().UTC()
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -413,14 +413,14 @@ func TestBatchesFullCoins(t *testing.T) {
 	require.NoError(t, err)
 	expUnbatchedTx := []*types.InternalOutgoingTransferTx{
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twentyTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  twentyTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    tenTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
@@ -506,28 +506,28 @@ func TestBatchesFullCoins(t *testing.T) {
 	require.NoError(t, err)
 	expUnbatchedTx = []*types.InternalOutgoingTransferTx{
 		{
-			Id:          2,
+			ID:          2,
 			Erc20Fee:    threeHundredTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  threeHundredTok,
 		},
 		{
-			Id:          3,
+			ID:          3,
 			Erc20Fee:    twentyFiveTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  twentyFiveTok,
 		},
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twentyTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  twentyTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    tenTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
@@ -539,7 +539,7 @@ func TestBatchesFullCoins(t *testing.T) {
 
 // TestManyBatches handles test cases around batch execution, specifically executing multiple batches
 // out of sequential order, which is exactly what happens on the
-// nolint: exhaustruct
+
 func TestManyBatches(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -642,7 +642,6 @@ func TestManyBatches(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestPoolTxRefund(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -720,7 +719,6 @@ func TestPoolTxRefund(t *testing.T) {
 	require.Equal(t, sdk.NewInt(104), balances.AmountOf(myDenom))
 }
 
-// nolint: exhaustruct
 func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -800,7 +798,6 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	require.NotNil(t, gotFirstBatch)
 }
 
-// nolint: exhaustruct
 // test that tokens on the blacklist do not enter batches
 func TestEthereumBlacklistBatches(t *testing.T) {
 	input := CreateTestEnv(t)
@@ -883,17 +880,17 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 	assert.Equal(t, 4, len(gotFirstBatch.Transactions))
 	// should not contain id 5
 	for i := 0; i < len(gotFirstBatch.Transactions); i++ {
-		assert.NotEqual(t, gotFirstBatch.Transactions[i].Id, 5)
+		assert.NotEqual(t, gotFirstBatch.Transactions[i].ID, 5)
 	}
 
 	// and verify remaining available Tx in the pool
 	// should only be 5
 	gotUnbatchedTx := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *myTokenContractAddr)
-	assert.Equal(t, gotUnbatchedTx[0].Id, uint64(5))
+	assert.Equal(t, gotUnbatchedTx[0].ID, uint64(5))
 }
 
 // tests total batch fee collected from all of the txs in the batch
-// nolint: exhaustruct
+
 func TestGetFees(t *testing.T) {
 	txs := []types.OutgoingTransferTx{
 		{Erc20Fee: types.ERC20Token{Amount: sdk.NewInt(1)}},

@@ -13,7 +13,6 @@ import (
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
-// nolint: exhaustruct
 func TestPrefixRange(t *testing.T) {
 	cases := map[string]struct {
 		src      []byte
@@ -50,7 +49,7 @@ func TestPrefixRange(t *testing.T) {
 }
 
 // Test that valset creation produces the expected normalized power values
-// nolint: exhaustruct
+
 func TestCurrentValsetNormalization(t *testing.T) {
 	// Setup the overflow test
 	maxPower64 := make([]uint64, 64)             // users with max power (approx 2^63)
@@ -103,7 +102,6 @@ func TestCurrentValsetNormalization(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestAttestationIterator(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -162,7 +160,6 @@ func TestAttestationIterator(t *testing.T) {
 	require.Len(t, atts, 2)
 }
 
-// nolint: exhaustruct
 func TestDelegateKeys(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -211,7 +208,6 @@ func TestDelegateKeys(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestLastSlashedValsetNonce(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()

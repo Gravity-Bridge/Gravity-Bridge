@@ -87,7 +87,6 @@ func TestFullAppSimulation(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestAppImportExport(t *testing.T) {
 	config, db, dir, logger, skip, err := SetupSimulation("leveldb-app-sim", "Simulation")
 	if skip {
@@ -188,7 +187,6 @@ func TestAppImportExport(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestAppSimulationAfterImport(t *testing.T) {
 	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
 	if skip {

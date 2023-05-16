@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -20,58 +19,58 @@ import (
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
 // pairs of auth module's parameters.
-func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyGravityID, &p.GravityId, validateGravityID),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyContractHash, &p.ContractSourceHash, validateContractHash),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyBridgeEthereumAddress, &p.BridgeEthereumAddress, validateBridgeContractAddress),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyBridgeContractChainID, &p.BridgeChainId, validateBridgeChainID),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedValsetsWindow, &p.SignedValsetsWindow, validateSignedValsetsWindow),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedBatchesWindow, &p.SignedBatchesWindow, validateSignedBatchesWindow),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedLogicCallsWindow, &p.SignedLogicCallsWindow, validateSignedLogicCallsWindow),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyTargetBatchTimeout, &p.TargetBatchTimeout, validateTargetBatchTimeout),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyAverageBlockTime, &p.AverageBlockTime, validateAverageBlockTime),
-		paramtypes.NewParamSetPair(types.ParamsStoreKeyAverageEthereumBlockTime, &p.AverageEthereumBlockTime, validateAverageEthereumBlockTime),
-		paramtypes.NewParamSetPair(types.ParamsStoreSlashFractionValset, &p.SlashFractionValset, validateSlashFractionValset),
-		paramtypes.NewParamSetPair(types.ParamsStoreSlashFractionBatch, &p.SlashFractionBatch, validateSlashFractionBatch),
-		paramtypes.NewParamSetPair(types.ParamStoreUnbondSlashingValsetsWindow, &p.UnbondSlashingValsetsWindow, validateUnbondSlashingValsetsWindow),
-		paramtypes.NewParamSetPair(types.ParamStoreSlashFractionBadEthSignature, &p.SlashFractionBadEthSignature, validateSlashFractionBadEthSignature),
-		paramtypes.NewParamSetPair(types.ParamStoreValsetRewardAmount, &p.ValsetReward, validateValsetRewardAmount),
-		paramtypes.NewParamSetPair(types.ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
-		paramtypes.NewParamSetPair(types.ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeyGravityID, &m.GravityId, validateGravityID),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeyContractHash, &m.ContractSourceHash, validateContractHash),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeyBridgeEthereumAddress, &m.BridgeEthereumAddress, validateBridgeContractAddress),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeyBridgeContractChainID, &m.BridgeChainId, validateBridgeChainID),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedValsetsWindow, &m.SignedValsetsWindow, validateSignedValsetsWindow),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedBatchesWindow, &m.SignedBatchesWindow, validateSignedBatchesWindow),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeySignedLogicCallsWindow, &m.SignedLogicCallsWindow, validateSignedLogicCallsWindow),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeyTargetBatchTimeout, &m.TargetBatchTimeout, validateTargetBatchTimeout),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeyAverageBlockTime, &m.AverageBlockTime, validateAverageBlockTime),
+		paramtypes.NewParamSetPair(types.ParamsStoreKeyAverageEthereumBlockTime, &m.AverageEthereumBlockTime, validateAverageEthereumBlockTime),
+		paramtypes.NewParamSetPair(types.ParamsStoreSlashFractionValset, &m.SlashFractionValset, validateSlashFractionValset),
+		paramtypes.NewParamSetPair(types.ParamsStoreSlashFractionBatch, &m.SlashFractionBatch, validateSlashFractionBatch),
+		paramtypes.NewParamSetPair(types.ParamStoreUnbondSlashingValsetsWindow, &m.UnbondSlashingValsetsWindow, validateUnbondSlashingValsetsWindow),
+		paramtypes.NewParamSetPair(types.ParamStoreSlashFractionBadEthSignature, &m.SlashFractionBadEthSignature, validateSlashFractionBadEthSignature),
+		paramtypes.NewParamSetPair(types.ParamStoreValsetRewardAmount, &m.ValsetReward, validateValsetRewardAmount),
+		paramtypes.NewParamSetPair(types.ParamStoreBridgeActive, &m.BridgeActive, validateBridgeActive),
+		paramtypes.NewParamSetPair(types.ParamStoreEthereumBlacklist, &m.EthereumBlacklist, validateEthereumBlacklistAddresses),
 	}
 }
 
 type Params struct {
-	GravityId                    string                                 `protobuf:"bytes,1,opt,name=gravity_id,json=gravityId,proto3" json:"gravity_id,omitempty"`
-	ContractSourceHash           string                                 `protobuf:"bytes,2,opt,name=contract_source_hash,json=contractSourceHash,proto3" json:"contract_source_hash,omitempty"`
-	BridgeEthereumAddress        string                                 `protobuf:"bytes,4,opt,name=bridge_ethereum_address,json=bridgeEthereumAddress,proto3" json:"bridge_ethereum_address,omitempty"`
-	BridgeChainId                uint64                                 `protobuf:"varint,5,opt,name=bridge_chain_id,json=bridgeChainId,proto3" json:"bridge_chain_id,omitempty"`
-	SignedValsetsWindow          uint64                                 `protobuf:"varint,6,opt,name=signed_valsets_window,json=signedValsetsWindow,proto3" json:"signed_valsets_window,omitempty"`
-	SignedBatchesWindow          uint64                                 `protobuf:"varint,7,opt,name=signed_batches_window,json=signedBatchesWindow,proto3" json:"signed_batches_window,omitempty"`
-	SignedLogicCallsWindow       uint64                                 `protobuf:"varint,8,opt,name=signed_logic_calls_window,json=signedLogicCallsWindow,proto3" json:"signed_logic_calls_window,omitempty"`
-	TargetBatchTimeout           uint64                                 `protobuf:"varint,9,opt,name=target_batch_timeout,json=targetBatchTimeout,proto3" json:"target_batch_timeout,omitempty"`
-	AverageBlockTime             uint64                                 `protobuf:"varint,10,opt,name=average_block_time,json=averageBlockTime,proto3" json:"average_block_time,omitempty"`
-	AverageEthereumBlockTime     uint64                                 `protobuf:"varint,11,opt,name=average_ethereum_block_time,json=averageEthereumBlockTime,proto3" json:"average_ethereum_block_time,omitempty"`
-	SlashFractionValset          github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,12,opt,name=slash_fraction_valset,json=slashFractionValset,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_valset"`
-	SlashFractionBatch           github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,13,opt,name=slash_fraction_batch,json=slashFractionBatch,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_batch"`
-	SlashFractionLogicCall       github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,14,opt,name=slash_fraction_logic_call,json=slashFractionLogicCall,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_logic_call"`
-	UnbondSlashingValsetsWindow  uint64                                 `protobuf:"varint,15,opt,name=unbond_slashing_valsets_window,json=unbondSlashingValsetsWindow,proto3" json:"unbond_slashing_valsets_window,omitempty"`
-	SlashFractionBadEthSignature github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,16,opt,name=slash_fraction_bad_eth_signature,json=slashFractionBadEthSignature,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_bad_eth_signature"`
-	ValsetReward                 sdk.Coin                               `protobuf:"bytes,17,opt,name=valset_reward,json=valsetReward,proto3" json:"valset_reward"`
-	BridgeActive                 bool                                   `protobuf:"varint,18,opt,name=bridge_active,json=bridgeActive,proto3" json:"bridge_active,omitempty"`
-	EthereumBlacklist            []string                               `protobuf:"bytes,19,rep,name=ethereum_blacklist,json=ethereumBlacklist,proto3" json:"ethereum_blacklist,omitempty"`
+	GravityId                    string   `protobuf:"bytes,1,opt,name=gravity_id,json=gravityId,proto3" json:"gravity_id,omitempty"`
+	ContractSourceHash           string   `protobuf:"bytes,2,opt,name=contract_source_hash,json=contractSourceHash,proto3" json:"contract_source_hash,omitempty"`
+	BridgeEthereumAddress        string   `protobuf:"bytes,4,opt,name=bridge_ethereum_address,json=bridgeEthereumAddress,proto3" json:"bridge_ethereum_address,omitempty"`
+	BridgeChainId                uint64   `protobuf:"varint,5,opt,name=bridge_chain_id,json=bridgeChainId,proto3" json:"bridge_chain_id,omitempty"`
+	SignedValsetsWindow          uint64   `protobuf:"varint,6,opt,name=signed_valsets_window,json=signedValsetsWindow,proto3" json:"signed_valsets_window,omitempty"`
+	SignedBatchesWindow          uint64   `protobuf:"varint,7,opt,name=signed_batches_window,json=signedBatchesWindow,proto3" json:"signed_batches_window,omitempty"`
+	SignedLogicCallsWindow       uint64   `protobuf:"varint,8,opt,name=signed_logic_calls_window,json=signedLogicCallsWindow,proto3" json:"signed_logic_calls_window,omitempty"`
+	TargetBatchTimeout           uint64   `protobuf:"varint,9,opt,name=target_batch_timeout,json=targetBatchTimeout,proto3" json:"target_batch_timeout,omitempty"`
+	AverageBlockTime             uint64   `protobuf:"varint,10,opt,name=average_block_time,json=averageBlockTime,proto3" json:"average_block_time,omitempty"`
+	AverageEthereumBlockTime     uint64   `protobuf:"varint,11,opt,name=average_ethereum_block_time,json=averageEthereumBlockTime,proto3" json:"average_ethereum_block_time,omitempty"`
+	SlashFractionValset          sdk.Dec  `protobuf:"bytes,12,opt,name=slash_fraction_valset,json=slashFractionValset,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_valset"`
+	SlashFractionBatch           sdk.Dec  `protobuf:"bytes,13,opt,name=slash_fraction_batch,json=slashFractionBatch,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_batch"`
+	SlashFractionLogicCall       sdk.Dec  `protobuf:"bytes,14,opt,name=slash_fraction_logic_call,json=slashFractionLogicCall,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_logic_call"`
+	UnbondSlashingValsetsWindow  uint64   `protobuf:"varint,15,opt,name=unbond_slashing_valsets_window,json=unbondSlashingValsetsWindow,proto3" json:"unbond_slashing_valsets_window,omitempty"`
+	SlashFractionBadEthSignature sdk.Dec  `protobuf:"bytes,16,opt,name=slash_fraction_bad_eth_signature,json=slashFractionBadEthSignature,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_bad_eth_signature"`
+	ValsetReward                 sdk.Coin `protobuf:"bytes,17,opt,name=valset_reward,json=valsetReward,proto3" json:"valset_reward"`
+	BridgeActive                 bool     `protobuf:"varint,18,opt,name=bridge_active,json=bridgeActive,proto3" json:"bridge_active,omitempty"`
+	EthereumBlacklist            []string `protobuf:"bytes,19,rep,name=ethereum_blacklist,json=ethereumBlacklist,proto3" json:"ethereum_blacklist,omitempty"`
 }
 
-func (p *Params) Reset() {
+func (m *Params) Reset() {
 	panic("implement me")
 }
 
-func (p *Params) String() string {
+func (m *Params) String() string {
 	panic("implement me")
 }
 
-func (p *Params) ProtoMessage() {
+func (m *Params) ProtoMessage() {
 	panic("implement me")
 }
 

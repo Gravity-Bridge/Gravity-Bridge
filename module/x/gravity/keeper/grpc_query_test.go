@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// nolint: exhaustruct
 func TestQueryGetAttestations(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	encCfg := app.MakeEncodingConfig()

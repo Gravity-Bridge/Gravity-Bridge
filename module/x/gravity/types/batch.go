@@ -19,7 +19,7 @@ func (o OutgoingTransferTx) ToInternal() (*InternalOutgoingTransferTx, error) {
 
 // InternalOutgoingTransferTx is an internal duplicate of OutgoingTransferTx with validation
 type InternalOutgoingTransferTx struct {
-	Id          uint64
+	ID          uint64
 	Sender      sdk.AccAddress
 	DestAddress *EthAddress
 	Erc20Token  *InternalERC20Token
@@ -51,7 +51,7 @@ func NewInternalOutgoingTransferTx(
 	}
 
 	return &InternalOutgoingTransferTx{
-		Id:          id,
+		ID:          id,
 		Sender:      send,
 		DestAddress: dest,
 		Erc20Token:  token,
@@ -61,7 +61,7 @@ func NewInternalOutgoingTransferTx(
 
 func (i InternalOutgoingTransferTx) ToExternal() OutgoingTransferTx {
 	return OutgoingTransferTx{
-		Id:          i.Id,
+		Id:          i.ID,
 		Sender:      i.Sender.String(),
 		DestAddress: i.DestAddress.GetAddress().Hex(),
 		Erc20Token:  i.Erc20Token.ToExternal(),

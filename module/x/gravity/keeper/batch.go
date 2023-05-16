@@ -193,13 +193,13 @@ func (k Keeper) pickUnbatchedTxs(
 			// very inefficient, IsOnBlacklist is O(blacklist-length) and should be made faster
 			if !k.IsOnBlacklist(ctx, *tx.DestAddress) {
 				selectedTxs = append(selectedTxs, tx)
-				err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, tx.Id)
+				err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, tx.ID)
 				if err != nil {
 					panic("Failed to remote tx from unbatched queue")
 				}
 
 				// double check that no duplicates exist in the index
-				oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
+				oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.ID)
 				if oldTx != nil || oldTxErr == nil {
 					panic("picked a duplicate transaction from the pool, duplicates should never exist!")
 				}

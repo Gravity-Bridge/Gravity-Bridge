@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// nolint: exhaustruct
 func TestGenesisStateValidate(t *testing.T) {
 	specs := map[string]struct {
 		src    *GenesisState

@@ -16,7 +16,6 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-// nolint: exhaustruct
 func TestHandleMsgSendToEth(t *testing.T) {
 	var (
 		userCosmosAddr, e1               = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
@@ -101,7 +100,6 @@ func TestHandleMsgSendToEth(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestMsgSendToCosmosClaim(t *testing.T) {
 	var (
 		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
@@ -205,7 +203,6 @@ func TestMsgSendToCosmosClaim(t *testing.T) {
 	assert.Equal(t, sdk.Coins{sdk.NewCoin("gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", amountB)}, balance)
 }
 
-// nolint: exhaustruct
 func TestEthereumBlacklist(t *testing.T) {
 	var (
 		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
@@ -407,7 +404,6 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 	fmt.Println("END>>>>")
 }
 
-// nolint: exhaustruct
 func TestMsgSendToCosmosClaimSpreadVotes(t *testing.T) {
 	var (
 		myCosmosAddr, e1 = sdk.AccAddressFromBech32("gravity16ahjkfqxpp6lvfy9fpfnfjg39xr96qet0l08hu")
@@ -557,7 +553,6 @@ func TestMsgSendToCosmosForeignPrefixedAddress(t *testing.T) {
 	require.Equal(t, nativeBals, sdk.NewCoins(sdk.NewCoin(erc20Denom, expectedDoubleBalance)))
 }
 
-// nolint: exhaustruct
 func TestMsgSetOrchestratorAddresses(t *testing.T) {
 	var (
 		ethAddress, e1                 = types.NewEthAddress("0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255")

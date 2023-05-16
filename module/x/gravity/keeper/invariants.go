@@ -176,7 +176,6 @@ func StoreValidityInvariant(k Keeper) sdk.Invariant {
 
 // ValidateStore checks that all values in the store can be decoded and pass a ValidateBasic check
 // Returns an error string and a boolean indicating an error if true, for use in an invariant
-//nolint: gocyclo
 func ValidateStore(ctx sdk.Context, k Keeper) error {
 	// TODO: Check the newly added iterators with unit tests
 	// EthAddressByValidatorKey
@@ -184,7 +183,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateEthAddressesByValidator(ctx, func(key []byte, addr types.EthAddress) (stop bool) {
 		err = addr.ValidateBasic()
 		if err != nil {
-			err = fmt.Errorf("Failed to validate eth address %v under key %v in IterateEthAddressesByValidator: %s", addr, key, err.Error())
+			err = fmt.Errorf("failed to validate eth address %v under key %v in IterateEthAddressesByValidator: %s", addr, key, err.Error())
 			return true
 		}
 		return false
@@ -196,7 +195,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateValidatorsByEthAddress(ctx, func(key []byte, addr sdk.ValAddress) (stop bool) {
 		bech := addr.String()
 		if len(bech) == 0 || !strings.HasPrefix(bech, sdk.GetConfig().GetBech32ValidatorAddrPrefix()) {
-			err = fmt.Errorf("Invalid validator %v under key %v in IterateValidatorsByEthAddress", addr, key)
+			err = fmt.Errorf("invalid validator %v under key %v in IterateValidatorsByEthAddress", addr, key)
 			return true
 		}
 		return false
@@ -209,7 +208,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateValsets(ctx, func(key []byte, valset *types.Valset) (stop bool) {
 		err = valset.ValidateBasic()
 		if err != nil {
-			err = fmt.Errorf("Invalid valset %v in IterateValsets: %v", valset, err)
+			err = fmt.Errorf("invalid valset %v in IterateValsets: %v", valset, err)
 			return true
 		}
 		nonce := valset.Nonce
@@ -226,11 +225,11 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 		for _, confirm := range confirms {
 			err = confirm.ValidateBasic()
 			if err != nil {
-				err = fmt.Errorf("Invalid MsgValsetConfirm %v for nonce %d in IterateValsetConfirms: %v", confirm, nonce, err)
+				err = fmt.Errorf("invalid MsgValsetConfirm %v for nonce %d in IterateValsetConfirms: %v", confirm, nonce, err)
 				return true
 			}
 			if confirm.Nonce != nonce {
-				panic(fmt.Errorf("Unexpected msg Nonce %d in IterateValsetConfirms, expected %d", confirm.Nonce, nonce))
+				panic(fmt.Errorf("unexpected msg Nonce %d in IterateValsetConfirms, expected %d", confirm.Nonce, nonce))
 			}
 		}
 		return false
@@ -247,12 +246,12 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) (stop bool) {
 		er := att.ValidateBasic(k.cdc)
 		if er != nil {
-			err = fmt.Errorf("Invalid attestation %v in IterateAttestations: %v", att, er)
+			err = fmt.Errorf("invalid attestation %v in IterateAttestations: %v", att, er)
 			return true
 		}
 		claim, er := k.UnpackAttestationClaim(&att) // Already unpacked in ValidateBasic
 		if er != nil {
-			err = fmt.Errorf("Invalid attestation claim %v in IterateAttestations: %v", att, er)
+			err = fmt.Errorf("invalid attestation claim %v in IterateAttestations: %v", att, er)
 			return true
 		}
 		if att.Observed {
@@ -274,7 +273,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) (stop bool) {
 		err = tx.ValidateBasic()
 		if err != nil {
-			err = fmt.Errorf("Invalid unbatched transaction %v under key %v in IterateUnbatchedTransactions: %v", tx, key, err)
+			err = fmt.Errorf("invalid unbatched transaction %v under key %v in IterateUnbatchedTransactions: %v", tx, key, err)
 			return true
 		}
 		return false
@@ -286,7 +285,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateOutgoingTxBatches(ctx, func(key []byte, batch types.InternalOutgoingTxBatch) (stop bool) {
 		err = batch.ValidateBasic()
 		if err != nil {
-			err = fmt.Errorf("Invalid outgoing batch %v under key %v in IterateOutgoingTxBatches: %v", batch, key, err)
+			err = fmt.Errorf("invalid outgoing batch %v under key %v in IterateOutgoingTxBatches: %v", batch, key, err)
 			return true
 		}
 		return false
@@ -298,7 +297,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateBatchConfirms(ctx, func(key []byte, confirm types.MsgConfirmBatch) (stop bool) {
 		err = confirm.ValidateBasic()
 		if err != nil {
-			err = fmt.Errorf("Invalid batch confirm %v under key %v in IterateBatchConfirms: %v", confirm, key, err)
+			err = fmt.Errorf("invalid batch confirm %v under key %v in IterateBatchConfirms: %v", confirm, key, err)
 			return true
 		}
 		return false
@@ -323,7 +322,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateValidatorsByOrchestratorAddress(ctx, func(key []byte, addr sdk.ValAddress) (stop bool) {
 		bech := addr.String()
 		if len(bech) == 0 || !strings.HasPrefix(bech, sdk.GetConfig().GetBech32ValidatorAddrPrefix()) {
-			err = fmt.Errorf("Invalid validator %v under key %v in IterateValidatorsByOrchestratorAddress", addr, key)
+			err = fmt.Errorf("invalid validator %v under key %v in IterateValidatorsByOrchestratorAddress", addr, key)
 			return true
 		}
 		return false
@@ -335,7 +334,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateOutgoingLogicCalls(ctx, func(key []byte, logicCall types.OutgoingLogicCall) (stop bool) {
 		err = logicCall.ValidateBasic()
 		if err != nil {
-			err = fmt.Errorf("Invalid logic call %v under key %v in IterateOutgoingLogicCalls: %v", logicCall, key, err)
+			err = fmt.Errorf("invalid logic call %v under key %v in IterateOutgoingLogicCalls: %v", logicCall, key, err)
 			return true
 		}
 		return false
@@ -347,7 +346,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	k.IterateLogicConfirms(ctx, func(key []byte, confirm *types.MsgConfirmLogicCall) (stop bool) {
 		err = confirm.ValidateBasic()
 		if err != nil {
-			err = fmt.Errorf("Invalid logic call confirm %v under key %v in IterateLogicConfirms: %v", confirm, key, err)
+			err = fmt.Errorf("invalid logic call confirm %v under key %v in IterateLogicConfirms: %v", confirm, key, err)
 			return true
 		}
 		return false
@@ -359,7 +358,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	lastEthHeight := k.GetLastObservedEthereumBlockHeight(ctx)
 	if lastEthHeight.EthereumBlockHeight < lastObservedEthereumClaimHeight {
 		err = fmt.Errorf(
-			"Stored last observed ethereum block height is less than the actual last observed height (%d < %d)",
+			"stored last observed ethereum block height is less than the actual last observed height (%d < %d)",
 			lastEthHeight.EthereumBlockHeight,
 			lastObservedEthereumClaimHeight,
 		)
@@ -370,7 +369,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	// DenomToERC20Key
 	k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) (stop bool) {
 		if err = erc20.ValidateBasic(); err != nil {
-			err = fmt.Errorf("Discovered invalid cosmos originated erc20 %v under key %v: %v", erc20, key, err)
+			err = fmt.Errorf("discovered invalid cosmos originated erc20 %v under key %v: %v", erc20, key, err)
 			return true
 		}
 		return false
@@ -381,7 +380,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	// ERC20ToDenomKey
 	k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) (stop bool) {
 		if err = erc20ToDenom.ValidateBasic(); err != nil {
-			err = fmt.Errorf("Discovered invalid ERC20ToDenom %v under key %v: %v", erc20ToDenom, key, err)
+			err = fmt.Errorf("discovered invalid ERC20ToDenom %v under key %v: %v", erc20ToDenom, key, err)
 			return true
 		}
 		return false
@@ -417,7 +416,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 		err = valset.ValidateBasic()
 	}
 	if err != nil {
-		return fmt.Errorf("Discovered invalid last observed valset %v: %v", valset, err)
+		return fmt.Errorf("discovered invalid last observed valset %v: %v", valset, err)
 	}
 	// PastEthSignatureCheckpointKey
 	k.IteratePastEthSignatureCheckpoints(ctx, func(key []byte, value []byte) (stop bool) {
@@ -428,7 +427,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	// PendingIbcAutoForwards
 	k.IteratePendingIbcAutoForwards(ctx, func(key []byte, forward *types.PendingIbcAutoForward) (stop bool) {
 		if err = forward.ValidateBasic(); err != nil {
-			err = fmt.Errorf("Discovered invalid PendingIbcAutoForward %v under key %v: %v", forward, key, err)
+			err = fmt.Errorf("discovered invalid PendingIbcAutoForward %v under key %v: %v", forward, key, err)
 			return true
 		}
 		return false
@@ -441,7 +440,7 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	params := k.GetParams(ctx)
 	err = params.ValidateBasic()
 	if err != nil {
-		return fmt.Errorf("Discovered invalid params %v: %v", params, err)
+		return fmt.Errorf("discovered invalid params %v: %v", params, err)
 	}
 
 	return nil
@@ -502,30 +501,30 @@ func CheckValsets(ctx sdk.Context, k Keeper) error {
 	valsets := k.GetValsets(ctx) // Highest to lowest nonce
 	if len(valsets) == 0 {
 		if k.GetLatestValsetNonce(ctx) != 0 {
-			return fmt.Errorf("No valsets in store but the latest valset nonce is nonzero!")
+			return fmt.Errorf("no valsets in store but the latest valset nonce is nonzero!")
 		}
 		return nil
 	}
 	latest := k.GetLatestValset(ctx) // Should have the highest nonce
 	equal, err := latest.Equal(valsets[0])
 	if err != nil {
-		return fmt.Errorf("Unable to compare latest valsets: %s", err.Error())
+		return fmt.Errorf("unable to compare latest valsets: %s", err.Error())
 	}
 	if !equal {
-		return fmt.Errorf("Latest stored valset (%v) is unexpectedly different from GetLatestValset() (%v)", valsets[0], latest)
+		return fmt.Errorf("latest stored valset (%v) is unexpectedly different from GetLatestValset() (%v)", valsets[0], latest)
 	}
 	// Should have power diff of less than 0.05 between the current valset and the last stored one
 	current, err := k.GetCurrentValset(ctx)
 	if err != nil {
-		return fmt.Errorf("Unable to retrieve current valsets: %s", err.Error())
+		return fmt.Errorf("unable to retrieve current valsets: %s", err.Error())
 	}
 	_, err = types.BridgeValidators(current.Members).ToInternal()
 	if err != nil {
-		return fmt.Errorf("Unable to make current BridgeValidators from the current valset: %s", err.Error())
+		return fmt.Errorf("unable to make current BridgeValidators from the current valset: %s", err.Error())
 	}
 	_, err = types.BridgeValidators(latest.Members).ToInternal()
 	if err != nil {
-		return fmt.Errorf("Unable to make latest BridgeValidators from the latest valset: %s", err.Error())
+		return fmt.Errorf("unable to make latest BridgeValidators from the latest valset: %s", err.Error())
 	}
 
 	// The previously stored valsets may have been created for multiple reasons, so we make no more power diff checks
@@ -543,7 +542,7 @@ func CheckValsets(ctx sdk.Context, k Keeper) error {
 			// We have found the earliest stored valset, all valsets before it should have been pruned
 			shouldNotExist := k.GetValset(ctx, claimNonce-1)
 			if shouldNotExist != nil {
-				err = fmt.Errorf("Discovered a valset missing from the store: nonce %d is present but nonce %d is not", shouldNotExist.Nonce, claimNonce)
+				err = fmt.Errorf("discovered a valset missing from the store: nonce %d is present but nonce %d is not", shouldNotExist.Nonce, claimNonce)
 				return true
 			}
 			// Didn't exist, stop checking so we can return no error
@@ -594,7 +593,7 @@ func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 		if strings.HasPrefix(strings.ToLower(fwdDenom), "ibc/") {
 			_, err := k.ibcTransferKeeper.DenomPathFromHash(ctx, fwdDenom)
 			if err != nil {
-				return fmt.Errorf("Unable to parse path from ibc denom %s: %v", fwdDenom, err)
+				return fmt.Errorf("unable to parse path from ibc denom %s: %v", fwdDenom, err)
 			}
 		}
 	}
