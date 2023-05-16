@@ -686,7 +686,7 @@ func TestQueryLogicCalls(t *testing.T) {
 		Payload:              payload,
 		Timeout:              10000,
 		InvalidationId:       invalidationId,
-		InvalidationNonce:    uint64(invalidationNonce),
+		InvalidationNonce:    invalidationNonce,
 	}
 	k.SetOutgoingLogicCall(sdkCtx, call)
 
@@ -746,7 +746,7 @@ func TestQueryLogicCallConfirms(t *testing.T) {
 		Payload:              payload,
 		Timeout:              10000,
 		InvalidationId:       invalidationId,
-		InvalidationNonce:    uint64(invalidationNonce),
+		InvalidationNonce:    invalidationNonce,
 	}
 	k.SetOutgoingLogicCall(sdkCtx, call)
 

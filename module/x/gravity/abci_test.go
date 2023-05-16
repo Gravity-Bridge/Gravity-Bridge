@@ -25,7 +25,7 @@ func TestValsetCreationIfNotAvailable(t *testing.T) {
 
 	// EndBlocker should set a new validator set if not available
 	EndBlocker(ctx, pk)
-	require.NotNil(t, pk.GetValset(ctx, uint64(pk.GetLatestValsetNonce(ctx))))
+	require.NotNil(t, pk.GetValset(ctx, pk.GetLatestValsetNonce(ctx)))
 	valsets := pk.GetValsets(ctx)
 	require.True(t, len(valsets) == 1)
 }
@@ -463,7 +463,7 @@ func TestValsetEmission(t *testing.T) {
 
 	// EndBlocker should set a new validator set
 	EndBlocker(ctx, pk)
-	require.NotNil(t, pk.GetValset(ctx, uint64(pk.GetLatestValsetNonce(ctx))))
+	require.NotNil(t, pk.GetValset(ctx, pk.GetLatestValsetNonce(ctx)))
 	valsets := pk.GetValsets(ctx)
 	require.True(t, len(valsets) == 2)
 }

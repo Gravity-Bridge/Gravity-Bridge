@@ -211,7 +211,7 @@ func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmo
 	for _, val := range members {
 		mem = append(mem, val.ToExternal())
 	}
-	vs := Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress().Hex()}
+	vs := Valset{Nonce: nonce, Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress().Hex()}
 	return &vs,
 		nil
 }

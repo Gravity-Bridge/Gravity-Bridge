@@ -133,7 +133,7 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 			// we skip the other attestations and move on to the next nonce again.
 			// If no attestation becomes observed, when we get to the next nonce, every attestation in
 			// it will be skipped. The same will happen for every nonce after that.
-			if nonce == uint64(k.GetLastObservedEventNonce(ctx))+1 {
+			if nonce == k.GetLastObservedEventNonce(ctx)+1 {
 				k.TryAttestation(ctx, &att)
 			}
 		}
@@ -266,7 +266,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			if err != nil {
 				panic(err)
 			}
-			validator, found := k.StakingKeeper.GetValidator(ctx, sdk.ValAddress(addr))
+			validator, found := k.StakingKeeper.GetValidator(ctx, addr)
 			if !found {
 				panic("Unable to find validator!")
 			}
@@ -508,7 +508,7 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 	// minus some buffer value. This buffer value is purely to allow
 	// frontends and other UI components to view recent oracle history
 	const eventsToKeep = 1000
-	lastNonce := uint64(k.GetLastObservedEventNonce(ctx))
+	lastNonce := k.GetLastObservedEventNonce(ctx)
 	var cutoff uint64
 	if lastNonce <= eventsToKeep {
 		return

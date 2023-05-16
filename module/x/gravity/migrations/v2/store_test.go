@@ -147,7 +147,7 @@ func TestMigrateValidatorByEthAddressKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	key := types.GetValidatorByEthAddressKey(*addr)
-	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
+	res := input.Context.KVStore(input.GravityStoreKey).Get(key)
 	assert.Equal(t, validator.Bytes(), res)
 
 	assert.Nil(t, input.Context.KVStore(input.GravityStoreKey).
@@ -216,7 +216,7 @@ func TestMigrateOutgoingTxs(t *testing.T) {
 	assert.NoError(t, err)
 
 	key := types.GetOutgoingTxPoolKey(*internalTx, outtx.Id)
-	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
+	res := input.Context.KVStore(input.GravityStoreKey).Get(key)
 	assert.Equal(t, inputBytes, res)
 }
 
@@ -245,7 +245,7 @@ func TestMigrateOutgoingTxBatches(t *testing.T) {
 	assert.NoError(t, err)
 
 	key := types.GetOutgoingTxBatchKey(*addr, batch.BatchNonce)
-	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
+	res := input.Context.KVStore(input.GravityStoreKey).Get(key)
 	assert.Equal(t, inputBytes, res)
 }
 
