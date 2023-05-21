@@ -6,11 +6,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/testutil"
 	"net"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/testutil"
 
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/spf13/cobra"
@@ -47,7 +48,7 @@ var (
 
 // get cmd to initialize all files for tendermint testnet and application
 func testnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "testnet",
 		Short: "Initialize files for a simapp testnet",
@@ -122,7 +123,7 @@ Example:
 	return cmd
 }
 
-const nodeDirPerm = 0755
+const nodeDirPerm = 0o755
 
 // InitTestnet initializes the testnet
 func InitTestnet(
@@ -141,7 +142,6 @@ func InitTestnet(
 	algoStr string,
 	numValidators int,
 ) error {
-
 	if chainID == "" {
 		chainID = "chain-" + tmrand.NewRand().Str(6)
 	}
@@ -298,7 +298,6 @@ func initGenFiles(
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
 	genFiles []string, numValidators int,
 ) error {
-
 	appGenState := mbm.DefaultGenesis(clientCtx.Codec)
 
 	// set the accounts in the genesis state
@@ -366,7 +365,6 @@ func collectGenFiles(
 	nodeIDs []string, valPubKeys []crypto.PubKey, numValidators int,
 	outputDir, nodeDirPrefix, nodeDaemonHome string, genBalIterator banktypes.GenesisBalancesIterator,
 ) error {
-
 	var appState json.RawMessage
 	genTime := tmtime.Now()
 
@@ -434,12 +432,12 @@ func calculateIP(ip string, i int) (string, error) {
 func writeFile(name string, dir string, contents []byte) error {
 	file := filepath.Join(dir, name)
 
-	err := tmos.EnsureDir(dir, 0755)
+	err := tmos.EnsureDir(dir, 0o755)
 	if err != nil {
 		return err
 	}
 
-	err = tmos.WriteFile(file, contents, 0644)
+	err = tmos.WriteFile(file, contents, 0o644)
 	if err != nil {
 		return err
 	}

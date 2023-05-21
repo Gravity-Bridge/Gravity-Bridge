@@ -70,9 +70,7 @@ func addDenomToERC20Relation(tv *testingVars) {
 		Display: "graviton",
 	})
 
-	var (
-		myNonce = uint64(1)
-	)
+	myNonce := uint64(1)
 
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {
@@ -114,15 +112,15 @@ func addDenomToERC20Relation(tv *testingVars) {
 
 func lockCoinsInModule(tv *testingVars) {
 	var (
-		userCosmosAddr, err           = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
-		denom                         = "ugraviton"
-		startingCoinAmount  sdk.Int   = sdk.NewIntFromUint64(150)
-		sendAmount          sdk.Int   = sdk.NewIntFromUint64(50)
-		feeAmount           sdk.Int   = sdk.NewIntFromUint64(5)
-		startingCoins       sdk.Coins = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
-		sendingCoin         sdk.Coin  = sdk.NewCoin(denom, sendAmount)
-		feeCoin             sdk.Coin  = sdk.NewCoin(denom, feeAmount)
-		ethDestination                = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
+		userCosmosAddr, err = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
+		denom               = "ugraviton"
+		startingCoinAmount  = sdk.NewIntFromUint64(150)
+		sendAmount          = sdk.NewIntFromUint64(50)
+		feeAmount           = sdk.NewIntFromUint64(5)
+		startingCoins       = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
+		sendingCoin         = sdk.NewCoin(denom, sendAmount)
+		feeCoin             = sdk.NewCoin(denom, feeAmount)
+		ethDestination      = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
 	)
 	assert.Nil(tv.t, err)
 
@@ -134,7 +132,7 @@ func lockCoinsInModule(tv *testingVars) {
 	assert.Equal(tv.t, sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}, balance1)
 
 	// send some coins
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	zeroCoin := sdk.Coin{}
 	msg := &types.MsgSendToEth{
 		Sender:    userCosmosAddr.String(),
@@ -209,8 +207,7 @@ func acceptDepositEvent(tv *testingVars) {
 }
 
 func addIbcDenomToERC20Relation(tv *testingVars) {
-
-	tokenContract := "0xE486cC1a00aA806C3e40224EDAd5FdCA93dDdA62"
+	tokenContract := "0xE486cC1a00aA806C3e40224EDAd5FdCA93dDdA62" //nolint:gosec // test address
 	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
 	metadata := banktypes.Metadata{
 		Description: "Atom",
@@ -231,9 +228,7 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	}
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, metadata)
 
-	var (
-		myNonce = uint64(2)
-	)
+	myNonce := uint64(2)
 
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {

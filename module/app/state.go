@@ -24,10 +24,9 @@ import (
 // AppStateFn returns the initial application state using a genesis or the simulation parameters.
 // It panics if the user provides files for both of them.
 // If a file is not given for the genesis or the sim params, it creates a randomized one.
-func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simtypes.AppStateFn {
+func StateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simtypes.AppStateFn {
 	return func(r *rand.Rand, accs []simtypes.Account, config simtypes.Config,
 	) (appState json.RawMessage, simAccs []simtypes.Account, chainID string, genesisTimestamp time.Time) {
-
 		if FlagGenesisTimeValue == 0 {
 			genesisTimestamp = simtypes.RandTimestamp(r)
 		} else {
@@ -63,11 +62,11 @@ func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simty
 			if err != nil {
 				panic(err)
 			}
-			appState, simAccs = AppStateRandomizedFn(simManager, r, cdc, accs, genesisTimestamp, appParams)
+			appState, simAccs = StateRandomizedFn(simManager, r, cdc, accs, genesisTimestamp, appParams)
 
 		default:
 			appParams := make(simtypes.AppParams)
-			appState, simAccs = AppStateRandomizedFn(simManager, r, cdc, accs, genesisTimestamp, appParams)
+			appState, simAccs = StateRandomizedFn(simManager, r, cdc, accs, genesisTimestamp, appParams)
 		}
 
 		return appState, simAccs, chainID, genesisTimestamp
@@ -76,7 +75,7 @@ func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simty
 
 // AppStateRandomizedFn creates calls each module's GenesisState generator function
 // and creates the simulation params
-func AppStateRandomizedFn(
+func StateRandomizedFn(
 	simManager *module.SimulationManager, r *rand.Rand, cdc codec.JSONCodec,
 	accs []simtypes.Account, genesisTimestamp time.Time, appParams simtypes.AppParams,
 ) (json.RawMessage, []simtypes.Account) {

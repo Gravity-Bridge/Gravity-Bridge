@@ -21,7 +21,6 @@ import (
 func (app *Gravity) ExportAppStateAndValidators(
 	forZeroHeight bool, jailWhiteList []string,
 ) (servertypes.ExportedApp, error) {
-
 	ctx := app.NewContext(true, tmproto.Header{
 		Version: version.Consensus{
 			Block: 0,

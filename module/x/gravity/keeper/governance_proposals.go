@@ -24,19 +24,19 @@ func RegisterProposalTypes() {
 	metadata := "gravity/IBCMetadata"
 	if !govtypes.IsValidProposalType(strings.TrimPrefix(metadata, prefix)) {
 		govtypes.RegisterProposalType(types.ProposalTypeIBCMetadata)
-		// nolint: exhaustruct
+		//nolint: exhaustruct
 		govtypes.RegisterProposalTypeCodec(&types.IBCMetadataProposal{}, metadata)
 	}
 	unhalt := "gravity/UnhaltBridge"
 	if !govtypes.IsValidProposalType(strings.TrimPrefix(unhalt, prefix)) {
 		govtypes.RegisterProposalType(types.ProposalTypeUnhaltBridge)
-		// nolint: exhaustruct
+		//nolint: exhaustruct
 		govtypes.RegisterProposalTypeCodec(&types.UnhaltBridgeProposal{}, unhalt)
 	}
 	airdrop := "gravity/Airdrop"
 	if !govtypes.IsValidProposalType(strings.TrimPrefix(airdrop, prefix)) {
 		govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
-		// nolint: exhaustruct
+		//nolint: exhaustruct
 		govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
 	}
 }

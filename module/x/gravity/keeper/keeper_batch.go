@@ -70,7 +70,7 @@ func (k Keeper) DeleteBatchConfirms(ctx sdk.Context, batch types.InternalOutgoin
 func (k Keeper) IterateBatchConfirmByNonceAndTokenContract(ctx sdk.Context, nonce uint64, tokenContract types.EthAddress, cb func([]byte, types.MsgConfirmBatch) bool) {
 	store := ctx.KVStore(k.storeKey)
 	prefix := types.GetBatchConfirmNonceContractPrefix(tokenContract, nonce)
-	iter := store.Iterator(prefixRange([]byte(prefix)))
+	iter := store.Iterator(prefixRange(prefix))
 
 	defer iter.Close()
 

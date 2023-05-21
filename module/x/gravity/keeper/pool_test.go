@@ -18,6 +18,7 @@ func TestAddToOutgoingPool(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
+	//nolint:gosec // these credentials are here for testing purposes only
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
@@ -80,28 +81,28 @@ func TestAddToOutgoingPool(t *testing.T) {
 	require.NoError(t, err)
 	exp := []*types.InternalOutgoingTransferTx{
 		{
-			Id:          2,
+			ID:          2,
 			Erc20Fee:    threeTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredOneTok,
 		},
 		{
-			Id:          3,
+			ID:          3,
 			Erc20Fee:    twoTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredTwoTok,
 		},
 		{
-			Id:          1,
+			ID:          1,
 			Erc20Fee:    twoTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
 			Erc20Token:  oneHundredTok,
 		},
 		{
-			Id:          4,
+			ID:          4,
 			Erc20Fee:    oneTok,
 			Sender:      mySender,
 			DestAddress: receiverAddr,
@@ -120,7 +121,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 	)
 	require.NoError(t, e1)
 	receiver, err := types.NewEthAddress(myReceiver)
@@ -177,7 +178,7 @@ func TestAddToOutgoingPoolEdgeCases(t *testing.T) {
 	//////// Zero inputs ////////
 	mtCtx := new(sdk.Context)
 	mtSend := new(sdk.AccAddress)
-	var mtRecieve = types.ZeroAddress() // This address should not actually cause an issue
+	mtRecieve := types.ZeroAddress() // This address should not actually cause an issue
 	mtCoin := new(sdk.Coin)
 	r, err = input.GravityKeeper.AddToOutgoingPool(*mtCtx, *mtSend, mtRecieve, *mtCoin, *mtCoin)
 	require.Error(t, err)
@@ -200,6 +201,7 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 	ctx := input.Context
 
 	// token1
+	//nolint:gosec // for testing only
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
@@ -235,9 +237,9 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 	}
 
 	// token 2 - Only top 100
-	var (
-		myToken2ContractAddr = "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
-	)
+
+	myToken2ContractAddr := "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0" //nolint:gosec // test address
+
 	// mint some voucher first
 	allVouchersToken, err = types.NewInternalERC20Token(sdk.NewIntFromUint64(uint64(18446744073709551615)), myToken2ContractAddr)
 	require.NoError(t, err)
@@ -275,7 +277,6 @@ func TestTotalBatchFeeInPool(t *testing.T) {
 	assert.Equal(t, batchFees[0].TxCount, uint64(4))
 	assert.Equal(t, batchFees[1].TotalFees.BigInt(), big.NewInt(int64(500)))
 	assert.Equal(t, batchFees[1].TxCount, uint64(100))
-
 }
 
 func TestGetBatchFeeByTokenType(t *testing.T) {
@@ -285,6 +286,7 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 	ctx := input.Context
 
 	// token1
+	//nolint:gosec // these are test addresses
 	var (
 		mySender1, e1                       = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		mySender2            sdk.AccAddress = []byte("gravity1ahx7f8wyertus")
@@ -393,7 +395,6 @@ func TestGetBatchFeeByTokenType(t *testing.T) {
 	require.Equal(t, batchFee3.Token, myTokenContractAddr3)
 	require.Equal(t, batchFee3.TotalFees.Uint64(), uint64(totalFee3), fmt.Errorf("expected total fees %d but got %d", batchFee3.TotalFees.Uint64(), uint64(totalFee3)))
 	require.Equal(t, batchFee3.TxCount, uint64(100), fmt.Errorf("expected tx count %d but got %d", batchFee3.TxCount, uint64(100)))
-
 }
 
 func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
@@ -404,7 +405,7 @@ func TestRemoveFromOutgoingPoolAndRefund(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 		myTokenDenom        = "gravity" + myTokenContractAddr
 	)
 	require.NoError(t, e1)
@@ -471,7 +472,7 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 		myTokenDenom        = "grav"
 	)
 	require.NoError(t, e1)
@@ -541,7 +542,8 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 // 3. Require that `mySender` has been refunded the correct amount for the cancelled transaction
 // 4. Require that the unbatched transaction pool does not contain the refunded transaction via iterating its elements
 func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, fee uint64, amount uint64,
-	feesAndAmounts *uint64, originalBal uint64, mySender sdk.AccAddress, myTokenContractAddr string, myTokenDenom string) {
+	feesAndAmounts *uint64, originalBal uint64, mySender sdk.AccAddress, myTokenContractAddr string, myTokenDenom string,
+) {
 	err := input.GravityKeeper.RemoveFromOutgoingPoolAndRefund(ctx, id, mySender)
 	require.NoError(t, err)
 	*feesAndAmounts -= fee + amount // user should have regained the locked amounts from tx
@@ -550,7 +552,7 @@ func checkRemovedTx(t *testing.T, input TestInput, ctx sdk.Context, id uint64, f
 	expectedKey := myTokenContractAddr + fmt.Sprint(fee) + fmt.Sprint(id)
 	input.GravityKeeper.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotEqual(t, []byte(expectedKey), key)
-		found := id == tx.Id &&
+		found := id == tx.ID &&
 			fee == tx.Erc20Fee.Amount.Uint64() &&
 			amount == tx.Erc20Token.Amount.Uint64()
 		require.False(t, found)
@@ -589,7 +591,7 @@ func TestRefundInconsistentTx(t *testing.T) {
 	require.Error(t, err)
 	// But this unsafe override won't fail
 	err = input.GravityKeeper.addUnbatchedTX(ctx, &types.InternalOutgoingTransferTx{
-		Id:          uint64(5),
+		ID:          uint64(5),
 		Sender:      mySender,
 		DestAddress: myReceiver,
 		Erc20Token:  amountToken,
@@ -608,9 +610,7 @@ func TestRefundNonexistentTx(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
-	var (
-		mySender, e1 = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
-	)
+	mySender, e1 := sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 	require.NoError(t, e1)
 
 	//////// Refund a tx which never existed ////////
@@ -629,7 +629,7 @@ func TestRefundTwice(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 	)
 	require.NoError(t, e1)
 	receiver, err := types.NewEthAddress(myReceiver)
@@ -683,6 +683,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	ctx := input.Context
 
 	// token1
+	//nolint:gosec // this doesn't affect security because this is a test
 	var (
 		mySender1, e1                       = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		mySender2            sdk.AccAddress = []byte("gravity1ahx7f8wyertus")
@@ -796,7 +797,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	// GetUnbatchedTransactionsByContract
 	token1Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract1)
 	for _, v := range token1Txs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, myTokenContractAddr1, v.Erc20Fee.Contract.GetAddress().Hex())
 		require.Equal(t, myTokenContractAddr1, v.Erc20Token.Contract.GetAddress().Hex())
@@ -805,7 +806,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	}
 	token2Txs := input.GravityKeeper.GetUnbatchedTransactionsByContract(ctx, *tokenContract2)
 	for _, v := range token2Txs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, myTokenContractAddr2, v.Erc20Fee.Contract.GetAddress().Hex())
 		require.Equal(t, myTokenContractAddr2, v.Erc20Token.Contract.GetAddress().Hex())
@@ -815,7 +816,7 @@ func TestGetUnbatchedTransactions(t *testing.T) {
 	// GetUnbatchedTransactions
 	allTxs := input.GravityKeeper.GetUnbatchedTransactions(ctx)
 	for _, v := range allTxs {
-		expTx := idToTxMap[v.Id]
+		expTx := idToTxMap[v.ID]
 		require.NotNil(t, expTx)
 		require.Equal(t, expTx.DestAddress, v.DestAddress.GetAddress().Hex())
 		require.Equal(t, expTx.Sender, v.Sender.String())
@@ -832,6 +833,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	ctx := input.Context
 
 	// token1
+	//nolint:gosec // for testing only
 	var (
 		mySender1, e1                       = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		mySender2            sdk.AccAddress = []byte("gravity1ahx7f8wyertus")
@@ -907,7 +909,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	foundMap := make(map[uint64]bool)
 	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, *tokenContract1, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.Erc20Fee.Contract, myTokenContractAddr1)
 		require.Equal(t, fTx.Erc20Token.Contract, myTokenContractAddr1)
@@ -918,7 +920,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	})
 	input.GravityKeeper.IterateUnbatchedTransactionsByContract(ctx, *tokenContract2, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.Erc20Fee.Contract, myTokenContractAddr2)
 		require.Equal(t, fTx.Erc20Token.Contract, myTokenContractAddr2)
@@ -935,7 +937,7 @@ func TestIterateUnbatchedTransactions(t *testing.T) {
 	anotherFoundMap := make(map[uint64]bool)
 	input.GravityKeeper.IterateUnbatchedTransactions(ctx, func(key []byte, tx *types.InternalOutgoingTransferTx) bool {
 		require.NotNil(t, tx)
-		fTx := idToTxMap[tx.Id]
+		fTx := idToTxMap[tx.ID]
 		require.NotNil(t, fTx)
 		require.Equal(t, fTx.DestAddress, tx.DestAddress.GetAddress().Hex())
 
@@ -958,7 +960,7 @@ func TestAddToOutgoingPoolExportGenesis(t *testing.T) {
 	var (
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
-		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" //nolint:gosec // test address
 	)
 	require.NoError(t, e1)
 	receiver, err := types.NewEthAddress(myReceiver)

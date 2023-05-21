@@ -186,7 +186,7 @@ var (
 // MakeCodec creates the application codec. The codec is sealed before it is
 // returned.
 func MakeCodec() *codec.LegacyAmino {
-	var cdc = codec.NewLegacyAmino()
+	cdc := codec.NewLegacyAmino()
 	ModuleBasics.RegisterLegacyAminoCodec(cdc)
 	vesting.AppModuleBasic{}.RegisterLegacyAminoCodec(cdc)
 	sdk.RegisterLegacyAminoCodec(cdc)
@@ -354,8 +354,8 @@ func NewGravityApp(
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	// nolint: exhaustruct
-	var app = &Gravity{
+	//nolint: exhaustruct
+	app := &Gravity{
 		BaseApp:           &bApp,
 		legacyAmino:       legacyAmino,
 		appCodec:          appCodec,
@@ -551,7 +551,7 @@ func NewGravityApp(
 	)
 	app.evidenceKeeper = &evidenceKeeper
 
-	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	app.registerStoreLoaders()
 
@@ -741,8 +741,7 @@ func NewGravityApp(
 		SigGasConsumer:  ethante.DefaultSigVerificationGasConsumer,
 	}
 
-	// Note: If feegrant keeper is added, add it to the NewAnteHandler call instead of nil
-	ah, err := ante.NewAnteHandler(options, &gravityKeeper, &accountKeeper, &bankKeeper, nil, &ibcKeeper, appCodec)
+	ah, err := ante.NewAnteHandler(options, &ibcKeeper, appCodec)
 	if err != nil {
 		panic("invalid antehandler created")
 	}
@@ -899,13 +898,13 @@ func (app *Gravity) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 	// TODO: build the custom gravity swagger files and add here?
 	if apiConfig.Swagger {
-		RegisterSwaggerAPI(clientCtx, apiSvr.Router)
+		RegisterSwaggerAPI(apiSvr.Router)
 	}
 }
 
 // RegisterSwaggerAPI registers swagger route with API Server
 // TODO: build the custom gravity swagger files and add here?
-func RegisterSwaggerAPI(ctx client.Context, rtr *mux.Router) {
+func RegisterSwaggerAPI(rtr *mux.Router) {
 	statikFS, err := fs.New()
 	if err != nil {
 		panic(err)

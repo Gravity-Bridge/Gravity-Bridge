@@ -66,7 +66,6 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
-
 }
 
 // Gets the ClaimHash() output from every claims member and casts it to a string, panicing on any errors

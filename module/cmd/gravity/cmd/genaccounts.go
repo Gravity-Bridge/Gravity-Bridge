@@ -28,7 +28,7 @@ const (
 
 // AddGenesisAccountCmd returns add-genesis-account cobra Command.
 func AddGenesisAccountCmd(defaultNodeHome string) *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "add-genesis-account [address_or_key_name] [coin][,[coin]]",
 		Short: "Add a genesis account to genesis.json",
@@ -60,7 +60,6 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 				keyringBackend, errKeyringBackend := cmd.Flags().GetString(flags.FlagKeyringBackend)
 				if errKeyringBackend != nil {
 					panic(fmt.Sprintf("KeyringBackend has an issue: %v", errKeyringBackend))
-
 				}
 
 				// attempt to lookup address from Keybase if no address was provided

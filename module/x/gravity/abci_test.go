@@ -25,7 +25,7 @@ func TestValsetCreationIfNotAvailable(t *testing.T) {
 
 	// EndBlocker should set a new validator set if not available
 	EndBlocker(ctx, pk)
-	require.NotNil(t, pk.GetValset(ctx, uint64(pk.GetLatestValsetNonce(ctx))))
+	require.NotNil(t, pk.GetValset(ctx, pk.GetLatestValsetNonce(ctx)))
 	valsets := pk.GetValsets(ctx)
 	require.True(t, len(valsets) == 1)
 }
@@ -117,7 +117,6 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	// ensure that the  validator who attested the valset is not slashed.
 	val = input.StakingKeeper.Validator(ctx, keeper.ValAddrs[1])
 	require.False(t, val.IsJailed())
-
 }
 
 func TestNonValidatorValsetConfirm(t *testing.T) {
@@ -442,7 +441,6 @@ func TestBatchSlashing(t *testing.T) {
 	lastSlashedBatchBlock := input.GravityKeeper.GetLastSlashedBatchBlock(ctx)
 	assert.Equal(t, lastSlashedBatchBlock, batch.CosmosBlockCreated)
 	assert.True(t, len(pk.GetUnSlashedBatches(ctx, uint64(ctx.BlockHeight()))) == 0)
-
 }
 
 func TestValsetEmission(t *testing.T) {
@@ -465,7 +463,7 @@ func TestValsetEmission(t *testing.T) {
 
 	// EndBlocker should set a new validator set
 	EndBlocker(ctx, pk)
-	require.NotNil(t, pk.GetValset(ctx, uint64(pk.GetLatestValsetNonce(ctx))))
+	require.NotNil(t, pk.GetValset(ctx, pk.GetLatestValsetNonce(ctx)))
 	valsets := pk.GetValsets(ctx)
 	require.True(t, len(valsets) == 2)
 }
@@ -487,6 +485,7 @@ func TestBatchTimeout(t *testing.T) {
 
 	pk := input.GravityKeeper
 	params := pk.GetParams(ctx)
+	//nolint:gosec // pickle is for testing only
 	var (
 		now                 = time.Now().UTC()
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")

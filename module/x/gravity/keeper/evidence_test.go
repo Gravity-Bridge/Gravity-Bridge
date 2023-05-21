@@ -1,11 +1,10 @@
 package keeper
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 	"time"
-
-	"bytes"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -15,13 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// nolint: exhaustruct
 func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
 
+	//nolint:gosec // test address
 	var (
 		now                 = time.Now().UTC()
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -77,7 +76,6 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
-// nolint: exhaustruct
 func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	// input := CreateTestEnv(t)
 	input, ctx := SetupFiveValChain(t)
@@ -99,7 +97,6 @@ func TestSubmitBadSignatureEvidenceValsetExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
-// nolint: exhaustruct
 func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -132,7 +129,6 @@ func TestSubmitBadSignatureEvidenceLogicCallExists(t *testing.T) {
 	require.EqualError(t, err, "Checkpoint exists, cannot slash: invalid")
 }
 
-// nolint: exhaustruct
 func TestSubmitBadSignatureEvidenceSlash(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()

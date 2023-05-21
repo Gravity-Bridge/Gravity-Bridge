@@ -133,7 +133,8 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 			// we skip the other attestations and move on to the next nonce again.
 			// If no attestation becomes observed, when we get to the next nonce, every attestation in
 			// it will be skipped. The same will happen for every nonce after that.
-			if nonce == uint64(k.GetLastObservedEventNonce(ctx))+1 {
+			if nonce == k.GetLastObservedEventNonce(ctx)+1 {
+				att := att
 				k.TryAttestation(ctx, &att)
 			}
 		}
@@ -249,7 +250,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 								Address: consAddr.String(),
 							},
 						); err != nil {
-							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+							panic(fmt.Errorf("unable to emit slashing event: %v", err))
 						}
 
 						k.StakingKeeper.Jail(ctx, consAddr)
@@ -266,7 +267,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			if err != nil {
 				panic(err)
 			}
-			validator, found := k.StakingKeeper.GetValidator(ctx, sdk.ValAddress(addr))
+			validator, found := k.StakingKeeper.GetValidator(ctx, addr)
 			if !found {
 				panic("Unable to find validator!")
 			}
@@ -296,7 +297,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 								Address: valConsAddr.String(),
 							},
 						); err != nil {
-							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+							panic(fmt.Errorf("unable to emit slashing event: %v", err))
 						}
 						k.StakingKeeper.Jail(ctx, valConsAddr)
 					}
@@ -405,7 +406,7 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 								Address: consAddr.String(),
 							},
 						); err != nil {
-							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+							panic(fmt.Errorf("unable to emit slashing event: %v", err))
 						}
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}
@@ -425,6 +426,7 @@ func prepLogicCallConfirms(ctx sdk.Context, k keeper.Keeper, call types.Outgoing
 	// bytes are incomparable in go, so we convert the sdk.ValAddr bytes to a string (note this is NOT bech32)
 	ret := make(map[string]*types.MsgConfirmLogicCall)
 	for _, confirm := range confirms {
+		confirm := confirm
 		// TODO this presents problems for delegate key rotation see issue #344
 		confVal, err := sdk.AccAddressFromBech32(confirm.Orchestrator)
 		if err != nil {
@@ -484,7 +486,7 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 								Address: consAddr.String(),
 							},
 						); err != nil {
-							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+							panic(fmt.Errorf("unable to emit slashing event: %v", err))
 						}
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}
@@ -508,7 +510,7 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 	// minus some buffer value. This buffer value is purely to allow
 	// frontends and other UI components to view recent oracle history
 	const eventsToKeep = 1000
-	lastNonce := uint64(k.GetLastObservedEventNonce(ctx))
+	lastNonce := k.GetLastObservedEventNonce(ctx)
 	var cutoff uint64
 	if lastNonce <= eventsToKeep {
 		return

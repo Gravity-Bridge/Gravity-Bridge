@@ -256,7 +256,7 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedVa
 func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	validators := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
 	if len(validators) == 0 {
-		// nolint: exhaustruct
+		//nolint: exhaustruct
 		return types.Valset{}, types.ErrNoValidators
 	}
 	// allocate enough space for all validators, but len zero, we then append
@@ -374,7 +374,7 @@ func (k Keeper) SetValsetConfirm(ctx sdk.Context, valsetConf types.MsgValsetConf
 func (k Keeper) GetValsetConfirms(ctx sdk.Context, nonce uint64) (confirms []types.MsgValsetConfirm) {
 	store := ctx.KVStore(k.storeKey)
 	prefix := types.GetValsetConfirmNoncePrefix(nonce)
-	iterator := store.Iterator(prefixRange([]byte(prefix)))
+	iterator := store.Iterator(prefixRange(prefix))
 
 	defer iterator.Close()
 

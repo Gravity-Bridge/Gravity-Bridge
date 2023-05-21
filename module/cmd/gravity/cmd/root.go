@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
 
@@ -32,10 +34,8 @@ import (
 
 	ethermint "github.com/evmos/ethermint/crypto/hd"
 
-	"fmt"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
-	"math/rand"
 )
 
 // InvCheckPeriodPrimes A collection of all primes in (15, 200), for use with the crisis module's Invariant Check Period
@@ -49,7 +49,7 @@ var InvCheckPeriodPrimes = []uint{17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := app.MakeEncodingConfig()
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	initClientCtx := client.Context{}.
 		WithCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
@@ -61,7 +61,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithHomeDir(app.DefaultNodeHome).
 		WithKeyringOptions(ethermint.EthSecp256k1Option())
 
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	rootCmd := &cobra.Command{
 		Use:   "gravity",
 		Short: "Stargate Gravity App",
@@ -114,7 +114,7 @@ func Execute(rootCmd *cobra.Command) error {
 	// https://github.com/spf13/cobra/pull/1118.
 	srvCtx := server.NewDefaultContext()
 	ctx := context.Background()
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	ctx = context.WithValue(ctx, client.ClientContextKey, &client.Context{})
 	ctx = context.WithValue(ctx, server.ServerContextKey, srvCtx)
 
@@ -125,7 +125,6 @@ func Execute(rootCmd *cobra.Command) error {
 }
 
 func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
-
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
 		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
@@ -156,7 +155,7 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 }
 
 func queryCommand() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:                        "query",
 		Aliases:                    []string{"q"},
@@ -181,7 +180,7 @@ func queryCommand() *cobra.Command {
 }
 
 func txCommand() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:                        "tx",
 		Short:                      "Transactions subcommands",
@@ -270,8 +269,8 @@ func generatePrimeInvCheckPeriod() uint {
 
 func createSimappAndExport(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailAllowedAddrs []string,
-	appOpts servertypes.AppOptions) (servertypes.ExportedApp, error) {
-
+	appOpts servertypes.AppOptions,
+) (servertypes.ExportedApp, error) {
 	encCfg := app.MakeEncodingConfig() // Ideally, we would reuse the one created by NewRootCmd.
 	encCfg.Marshaler = codec.NewProtoCodec(encCfg.InterfaceRegistry)
 	var gravity *app.Gravity

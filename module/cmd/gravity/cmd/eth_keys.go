@@ -21,7 +21,7 @@ const flagPassphrase = "passphrase"
 // Commands registers a sub-tree of commands to interact with
 // local private key storage.
 func Commands(defaultNodeHome string) *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "eth_keys",
 		Short: "Manage your application's ethereum keys",
@@ -47,7 +47,7 @@ The keyring supports the following backends:
 
 // AddKeyCommand defines a keys command to generate a key
 func AddKeyCommand() *cobra.Command {
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "add",
 		Short: "Add an encrypted private ethereum key",
@@ -71,7 +71,7 @@ type EthereumKeyOutput struct {
 	Address    string `json:"address"`
 }
 
-func runAddCmd(cmd *cobra.Command, args []string) error {
+func runAddCmd(cmd *cobra.Command, _ []string) error {
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {
 		return err

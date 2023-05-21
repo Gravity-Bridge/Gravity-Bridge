@@ -123,7 +123,7 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 		return sdkerrors.Wrapf(types.ErrInvalid, "txId %d not in unbatched index! Must be in a batch!", txId)
 	}
 	// Make sure the tx was removed
-	oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
+	oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.ID)
 	if oldTx != nil || oldTxErr == nil {
 		return sdkerrors.Wrapf(types.ErrInvalid, "tx with id %d was not fully removed from the pool, a duplicate must exist", txId)
 	}
@@ -153,7 +153,7 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 // WARNING: Do not make this function public
 func (k Keeper) addUnbatchedTX(ctx sdk.Context, val *types.InternalOutgoingTransferTx) error {
 	store := ctx.KVStore(k.storeKey)
-	idxKey := types.GetOutgoingTxPoolKey(*val.Erc20Fee, val.Id)
+	idxKey := types.GetOutgoingTxPoolKey(*val.Erc20Fee, val.ID)
 	if store.Has(idxKey) {
 		return sdkerrors.Wrap(types.ErrDuplicate, "transaction already in pool")
 	}
@@ -209,7 +209,7 @@ func (k Keeper) GetUnbatchedTxByFeeAndId(ctx sdk.Context, fee types.InternalERC2
 func (k Keeper) GetUnbatchedTxById(ctx sdk.Context, txID uint64) (*types.InternalOutgoingTransferTx, error) {
 	var r *types.InternalOutgoingTransferTx = nil
 	k.IterateUnbatchedTransactions(ctx, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
-		if tx.Id == txID {
+		if tx.ID == txID {
 			r = tx
 			return true
 		}
@@ -308,7 +308,7 @@ func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, tokenContractAddr types.
 }
 
 // GetAllBatchFees creates a fee entry for every batch type currently in the store
-// this can be used by relayers to determine what batch types are desireable to request
+// this can be used by relayers to determine what batch types are desirable to request
 func (k Keeper) GetAllBatchFees(ctx sdk.Context, maxElements uint) (batchFees []types.BatchFees) {
 	batchFeesMap := k.createBatchFees(ctx, maxElements)
 	// create array of batchFees

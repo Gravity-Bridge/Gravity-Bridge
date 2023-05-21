@@ -128,12 +128,12 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, sdkerrors.Wrap(err, "invalid eth dest")
 	}
 
-	_, erc20, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
+	_, _, err = k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid denom")
 	}
 
-	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
+	if k.InvalidSendToEthAddress(ctx, *dest) {
 		return nil, sdkerrors.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted")
 	}
 
@@ -184,7 +184,7 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 	}
 
 	// Finally, collect any provided fees
-	// nolint: exhaustruct
+	//nolint: exhaustruct
 	if !(chainFee == sdk.Coin{}) && chainFee.Amount.IsPositive() {
 		senderAcc := k.accountKeeper.GetAccount(ctx, sender)
 
@@ -468,7 +468,6 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 // Performs additional checks on msg to determine if it is valid
 func additionalPatchChecks(ctx sdk.Context, k msgServer, msg *types.MsgBatchSendToEthClaim) {
 	contractAddress, err := types.NewEthAddress(msg.TokenContract)
-
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "Invalid TokenContract on MsgBatchSendToEthClaim"))
 	}

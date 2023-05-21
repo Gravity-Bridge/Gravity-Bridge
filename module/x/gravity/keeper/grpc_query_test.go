@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// nolint: exhaustruct
 func TestQueryGetAttestations(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	encCfg := app.MakeEncodingConfig()
@@ -118,6 +117,7 @@ func TestQueryGetAttestations(t *testing.T) {
 
 				nonces := make([]uint64, len(result.Attestations))
 				for i, att := range result.Attestations {
+					att := att
 					claim, err := k.UnpackAttestationClaim(&att)
 					require.NoError(t, err)
 					nonces[i] = claim.GetEventNonce()

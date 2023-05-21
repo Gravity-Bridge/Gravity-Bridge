@@ -141,7 +141,7 @@ func migrateBatchConfirms(store storetypes.KVStore) error {
 		newKey := tokenAddr.Bytes()
 		newKey = append(newKey, oldKey[42:]...)
 		prefixStore.Delete(oldKey)
-		prefixStore.Set([]byte(newKey), iterator.Value())
+		prefixStore.Set(newKey, iterator.Value())
 	}
 
 	return nil
@@ -158,7 +158,7 @@ func migrateOutgoingTxs(store storetypes.KVStore) error {
 		newKey := tokenAddr.Bytes()
 		newKey = append(newKey, oldKey[42:]...)
 		prefixStore.Delete(oldKey)
-		prefixStore.Set([]byte(newKey), iterator.Value())
+		prefixStore.Set(newKey, iterator.Value())
 	}
 
 	return nil

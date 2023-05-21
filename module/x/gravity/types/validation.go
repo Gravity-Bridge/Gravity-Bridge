@@ -211,14 +211,13 @@ func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmo
 	for _, val := range members {
 		mem = append(mem, val.ToExternal())
 	}
-	vs := Valset{Nonce: uint64(nonce), Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress().Hex()}
+	vs := Valset{Nonce: nonce, Members: mem, Height: height, RewardAmount: rewardAmount, RewardToken: rewardToken.GetAddress().Hex()}
 	return &vs,
 		nil
 }
 
 // GetCheckpoint returns the checkpoint
 func (v Valset) GetCheckpoint(gravityIDstring string) []byte {
-
 	// error case here should not occur outside of testing since the above is a constant
 	contractAbi, abiErr := abi.JSON(strings.NewReader(ValsetCheckpointABIJSON))
 	if abiErr != nil {
@@ -385,7 +384,6 @@ type EthereumSigned interface {
 	GetCheckpoint(gravityIDstring string) []byte
 }
 
-// nolint: exhaustruct
 var (
 	_ EthereumSigned = &Valset{}
 	_ EthereumSigned = &OutgoingTxBatch{}

@@ -13,7 +13,6 @@ import (
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
-// nolint: exhaustruct
 func TestPrefixRange(t *testing.T) {
 	cases := map[string]struct {
 		src      []byte
@@ -25,8 +24,10 @@ func TestPrefixRange(t *testing.T) {
 		"normal short":        {src: []byte{79}, expStart: []byte{79}, expEnd: []byte{80}},
 		"empty case":          {src: []byte{}},
 		"roll-over example 1": {src: []byte{17, 28, 255}, expStart: []byte{17, 28, 255}, expEnd: []byte{17, 29, 0}},
-		"roll-over example 2": {src: []byte{15, 42, 255, 255},
-			expStart: []byte{15, 42, 255, 255}, expEnd: []byte{15, 43, 0, 0}},
+		"roll-over example 2": {
+			src:      []byte{15, 42, 255, 255},
+			expStart: []byte{15, 42, 255, 255}, expEnd: []byte{15, 43, 0, 0},
+		},
 		"pathological roll-over": {src: []byte{255, 255, 255, 255}, expStart: []byte{255, 255, 255, 255}},
 		"nil prohibited":         {expPanic: true},
 	}
@@ -48,7 +49,7 @@ func TestPrefixRange(t *testing.T) {
 }
 
 // Test that valset creation produces the expected normalized power values
-// nolint: exhaustruct
+
 func TestCurrentValsetNormalization(t *testing.T) {
 	// Setup the overflow test
 	maxPower64 := make([]uint64, 64)             // users with max power (approx 2^63)
@@ -101,7 +102,6 @@ func TestCurrentValsetNormalization(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestAttestationIterator(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -160,7 +160,6 @@ func TestAttestationIterator(t *testing.T) {
 	require.Len(t, atts, 2)
 }
 
-// nolint: exhaustruct
 func TestDelegateKeys(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -168,16 +167,22 @@ func TestDelegateKeys(t *testing.T) {
 	ctx := input.Context
 	k := input.GravityKeeper
 	var (
-		ethAddrs = []string{"0x3146D2d6Eed46Afa423969f5dDC3152DfC359b09",
+		ethAddrs = []string{
+			"0x3146D2d6Eed46Afa423969f5dDC3152DfC359b09",
 			"0x610277F0208D342C576b991daFdCb36E36515e76", "0x835973768750b3ED2D5c3EF5AdcD5eDb44d12aD4",
-			"0xb2A7F3E84F8FdcA1da46c810AEa110dd96BAE6bF"}
+			"0xb2A7F3E84F8FdcA1da46c810AEa110dd96BAE6bF",
+		}
 
-		valAddrs = []string{"gravityvaloper1jpz0ahls2chajf78nkqczdwwuqcu97w6j77vg6",
+		valAddrs = []string{
+			"gravityvaloper1jpz0ahls2chajf78nkqczdwwuqcu97w6j77vg6",
 			"gravityvaloper15n79nty2fj37ant3p2gj4wju4ls6eu6tzpy7gq", "gravityvaloper16dnkc6ac6ruuyr6l372fc3p77jgjpet6eezum0",
-			"gravityvaloper1vrptwhl3ht2txmzy28j9msqkcvmn8gjzyqpjtn"}
+			"gravityvaloper1vrptwhl3ht2txmzy28j9msqkcvmn8gjzyqpjtn",
+		}
 
-		orchAddrs = []string{"gravity1g0etv93428tvxqftnmj25jn06mz6dtda5zxt8k", "gravity1rhfs24tlw4na04v35tzmjncy785kkw9jwwlvnw",
-			"gravity10upq3tmt04zf55f6hw67m0uyrda3mp72wsvhxx", "gravity1nt2uwjh5peg9vz2wfh2m3jjwqnu9kpjlncnrum"}
+		orchAddrs = []string{
+			"gravity1g0etv93428tvxqftnmj25jn06mz6dtda5zxt8k", "gravity1rhfs24tlw4na04v35tzmjncy785kkw9jwwlvnw",
+			"gravity10upq3tmt04zf55f6hw67m0uyrda3mp72wsvhxx", "gravity1nt2uwjh5peg9vz2wfh2m3jjwqnu9kpjlncnrum",
+		}
 	)
 
 	for i := range ethAddrs {
@@ -201,10 +206,8 @@ func TestDelegateKeys(t *testing.T) {
 		assert.Equal(t, orchAddrs[i], res.Orchestrator)
 		assert.Equal(t, ethAddrs[i], res.EthAddress)
 	}
-
 }
 
-// nolint: exhaustruct
 func TestLastSlashedValsetNonce(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()

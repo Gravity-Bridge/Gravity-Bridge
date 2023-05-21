@@ -1,7 +1,7 @@
 package v2
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // this is used for compatibility
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -9,7 +9,7 @@ import (
 // Hashing string using cryptographic MD5 function
 // returns 128bit(16byte) value
 func HashString(input string) []byte {
-	md5 := md5.New()
+	md5 := md5.New() //nolint:gosec // this is used for compatibility
 	md5.Write([]byte(input))
 	return md5.Sum(nil)
 }

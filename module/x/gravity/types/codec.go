@@ -52,7 +52,6 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 }
 
 // RegisterCodec registers concrete types on the Amino codec
-// nolint: exhaustruct
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterInterface((*EthereumClaim)(nil), nil)
 	cdc.RegisterConcrete(&MsgSetOrchestratorAddress{}, "gravity/MsgSetOrchestratorAddress", nil)

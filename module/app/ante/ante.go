@@ -1,14 +1,10 @@
 package ante
 
 import (
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	ibcante "github.com/cosmos/ibc-go/v3/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 )
@@ -22,10 +18,6 @@ import (
 // 2. it is not possible to modify an AnteHandler once it is constructed
 func NewAnteHandler(
 	options sdkante.HandlerOptions,
-	gravityKeeper *keeper.Keeper,
-	accountKeeper *authkeeper.AccountKeeper,
-	bankKeeper *bankkeeper.BaseKeeper,
-	feegrantKeeper *feegrantkeeper.Keeper,
 	ibcKeeper *ibckeeper.Keeper,
 	cdc codec.BinaryCodec,
 ) (*sdk.AnteHandler, error) {

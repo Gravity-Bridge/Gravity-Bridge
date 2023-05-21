@@ -58,7 +58,6 @@ func batchByNonceHandler(cliCtx client.Context, storeName string) http.HandlerFu
 // USED BY RUST
 func lastBatchesHandler(cliCtx client.Context, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		res, height, err := cliCtx.Query(fmt.Sprintf("custom/%s/lastBatches", storeName))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

@@ -69,7 +69,7 @@ func TestFullAppSimulation(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		StateFn(app.AppCodec(), app.SimulationManager()),
 		simtypes.RandomAccounts,
 		SimulationOperations(*app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
@@ -87,7 +87,6 @@ func TestFullAppSimulation(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestAppImportExport(t *testing.T) {
 	config, db, dir, logger, skip, err := SetupSimulation("leveldb-app-sim", "Simulation")
 	if skip {
@@ -108,7 +107,7 @@ func TestAppImportExport(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		StateFn(app.AppCodec(), app.SimulationManager()),
 		simtypes.RandomAccounts,
 		SimulationOperations(*app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
@@ -156,11 +155,13 @@ func TestAppImportExport(t *testing.T) {
 
 	storeKeysPrefixes := []StoreKeysPrefixes{
 		{app.keys[authtypes.StoreKey], newApp.keys[authtypes.StoreKey], [][]byte{}},
-		{app.keys[stakingtypes.StoreKey], newApp.keys[stakingtypes.StoreKey],
+		{
+			app.keys[stakingtypes.StoreKey], newApp.keys[stakingtypes.StoreKey],
 			[][]byte{
 				stakingtypes.UnbondingQueueKey, stakingtypes.RedelegationQueueKey, stakingtypes.ValidatorQueueKey,
 				stakingtypes.HistoricalInfoKey,
-			}}, // ordering may change but it doesn't matter
+			},
+		}, // ordering may change but it doesn't matter
 		{app.keys[slashingtypes.StoreKey], newApp.keys[slashingtypes.StoreKey], [][]byte{}},
 		{app.keys[minttypes.StoreKey], newApp.keys[minttypes.StoreKey], [][]byte{}},
 		{app.keys[distrtypes.StoreKey], newApp.keys[distrtypes.StoreKey], [][]byte{}},
@@ -186,7 +187,6 @@ func TestAppImportExport(t *testing.T) {
 	}
 }
 
-// nolint: exhaustruct
 func TestAppSimulationAfterImport(t *testing.T) {
 	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
 	if skip {
@@ -207,7 +207,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		StateFn(app.AppCodec(), app.SimulationManager()),
 		simtypes.RandomAccounts,
 		SimulationOperations(*app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
@@ -256,7 +256,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t,
 		os.Stdout,
 		newApp.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		StateFn(app.AppCodec(), app.SimulationManager()),
 		simtypes.RandomAccounts,
 		SimulationOperations(*newApp, newApp.AppCodec(), config),
 		newApp.ModuleAccountAddrs(),
@@ -305,7 +305,7 @@ func TestAppStateDeterminism(t *testing.T) {
 				t,
 				os.Stdout,
 				app.BaseApp,
-				AppStateFn(app.AppCodec(), app.SimulationManager()),
+				StateFn(app.AppCodec(), app.SimulationManager()),
 				simtypes.RandomAccounts,
 				SimulationOperations(*app, app.AppCodec(), config),
 				app.ModuleAccountAddrs(),
@@ -335,6 +335,6 @@ func TestAppStateDeterminism(t *testing.T) {
 type EmptyAppOptions struct{}
 
 // Get implements AppOptions
-func (ao EmptyAppOptions) Get(o string) interface{} {
+func (ao EmptyAppOptions) Get(_ string) interface{} {
 	return nil
 }

@@ -14,11 +14,11 @@ import (
 
 func (k Keeper) CheckBadSignatureEvidence(
 	ctx sdk.Context,
-	msg *types.MsgSubmitBadSignatureEvidence) error {
+	msg *types.MsgSubmitBadSignatureEvidence,
+) error {
 	var subject types.EthereumSigned
 
 	err := k.cdc.UnpackAny(msg.Subject, &subject)
-
 	if err != nil {
 		return sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("Invalid Any encoded evidence %s", err))
 	}

@@ -1,4 +1,6 @@
 package pleiades
 
-var PolarisToPleiadesPlanName = "pleiades"
-var PleiadesPart1ToPart2PlanName = "pleiades2"
+var (
+	PolarisToPleiadesPlanName    = "pleiades"
+	PleiadesPart1ToPart2PlanName = "pleiades2"
+)

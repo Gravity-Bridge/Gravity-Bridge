@@ -133,7 +133,7 @@ func (am AppModule) QuerierRoute() string {
 }
 
 // LegacyQuerierHandler returns the distribution module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
+func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
 	return keeper.NewQuerier(am.keeper)
 }
 
@@ -163,7 +163,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // BeginBlock implements app module
-func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
 // EndBlock implements app module
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
@@ -176,32 +176,32 @@ func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.Val
 // AppModuleSimulation functions
 
 // GenerateGenesisState creates a randomized GenState of the distribution module.
-func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
+func (AppModule) GenerateGenesisState(_ *module.SimulationState) {
 	// TODO: implement gravity simulation stuffs
 	// simulation.RandomizedGenState(simState)
 }
 
 // ProposalContents returns all the distribution content functions used to
 // simulate governance proposals.
-func (am AppModule) ProposalContents(simState module.SimulationState) []simtypes.WeightedProposalContent {
+func (am AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedProposalContent {
 	// TODO: implement gravity simulation stuffs
 	return nil
 }
 
 // RandomizedParams creates randomized distribution param changes for the simulator.
-func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
+func (AppModule) RandomizedParams(_ *rand.Rand) []simtypes.ParamChange {
 	// TODO: implement gravity simulation stuffs
 	return nil
 }
 
 // RegisterStoreDecoder registers a decoder for distribution module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
+func (am AppModule) RegisterStoreDecoder(_ sdk.StoreDecoderRegistry) {
 	// TODO: implement gravity simulation stuffs
 	// sdr[types.StoreKey] = simulation.NewDecodeStore(am.cdc)
 }
 
 // WeightedOperations returns the all the gov module operations with their respective weights.
-func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
+func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
 	// TODO: implement gravity simulation stuffs
 	// return simulation.WeightedOperations(
 	// simState.AppParams, simState.Cdc, am.accountKeeper, am.bankKeeper, am.keeper, am.stakingKeeper,

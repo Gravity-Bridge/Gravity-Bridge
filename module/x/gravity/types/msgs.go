@@ -9,7 +9,6 @@ import (
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
-// nolint: exhaustruct
 var (
 	_ sdk.Msg = &MsgSetOrchestratorAddress{}
 	_ sdk.Msg = &MsgValsetConfirm{}

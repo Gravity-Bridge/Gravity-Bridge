@@ -20,9 +20,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const denom string = "graviton"
-const tokenContract string = "0x2a24af0501a534fca004ee1bd667b783f205a546"
-const ethAddr string = "0x2a24af0501a534fca004ee1bd667b783f205a546"
+//nolint:gosec // for testing only
+const (
+	denom         string = "graviton"
+	tokenContract string = "0x2a24af0501a534fca004ee1bd667b783f205a546"
+	ethAddr       string = "0x2a24af0501a534fca004ee1bd667b783f205a546"
+)
 
 // denomToERC20Key hasn't changed
 func oldGetDenomToERC20Key(denom string) string {
@@ -94,7 +97,7 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	assert.True(t, found)
 	assert.Equal(t, denom, storedDenom)
 
-	var erc20ToDenoms = []types.ERC20ToDenom{}
+	erc20ToDenoms := []types.ERC20ToDenom{}
 	input.GravityKeeper.IterateERC20ToDenom(input.Context, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
 		erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
 		return false
@@ -123,7 +126,6 @@ func TestMigrateEthAddressByValidator(t *testing.T) {
 	assert.Equal(t, ethAddr, strings.ToLower(valEthAddr.GetAddress().Hex()))
 	assert.Equal(t, gethcommon.HexToAddress(ethAddr), valEthAddr.GetAddress())
 	assert.Equal(t, gethcommon.HexToAddress(ethAddr).Bytes(), valEthAddr.GetAddress().Bytes())
-
 }
 
 func TestMigrateValidatorByEthAddressKey(t *testing.T) {
@@ -146,7 +148,7 @@ func TestMigrateValidatorByEthAddressKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	key := types.GetValidatorByEthAddressKey(*addr)
-	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
+	res := input.Context.KVStore(input.GravityStoreKey).Get(key)
 	assert.Equal(t, validator.Bytes(), res)
 
 	assert.Nil(t, input.Context.KVStore(input.GravityStoreKey).
@@ -215,7 +217,7 @@ func TestMigrateOutgoingTxs(t *testing.T) {
 	assert.NoError(t, err)
 
 	key := types.GetOutgoingTxPoolKey(*internalTx, outtx.Id)
-	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
+	res := input.Context.KVStore(input.GravityStoreKey).Get(key)
 	assert.Equal(t, inputBytes, res)
 }
 
@@ -244,12 +246,11 @@ func TestMigrateOutgoingTxBatches(t *testing.T) {
 	assert.NoError(t, err)
 
 	key := types.GetOutgoingTxBatchKey(*addr, batch.BatchNonce)
-	res := input.Context.KVStore(input.GravityStoreKey).Get([]byte(key))
+	res := input.Context.KVStore(input.GravityStoreKey).Get(key)
 	assert.Equal(t, inputBytes, res)
 }
 
 func TestMigrateStoreForUnusedKeys(t *testing.T) {
-
 	// create old format prefixes KV store
 	gravityKey := sdk.NewKVStoreKey("gravity")
 	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
@@ -305,7 +306,6 @@ func TestMigrateStoreForUnusedKeys(t *testing.T) {
 // 2. migration of store
 // 3. check migration results: make sure the new keys are set in store and old values can be obtained
 func TestMigrateStoreKeys(t *testing.T) {
-
 	// create old format prefixes KV store
 	gravityKey := sdk.NewKVStoreKey("gravity")
 	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
@@ -511,7 +511,6 @@ func TestMigrateStoreKeysFromKeys(t *testing.T) {
 }
 
 func TestMigrateStoreKeysFromValues(t *testing.T) {
-
 	// create old prefixes KV store
 	gravityKey := sdk.NewKVStoreKey("gravity")
 	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
@@ -682,8 +681,8 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 		},
 		{
 			"OutgoingTXPoolKey",
-			v1.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.Id),
-			v2.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.Id),
+			v1.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.ID),
+			v2.GetOutgoingTxPoolKey(*dummyInternalOutgoingTransferTx.Erc20Fee, dummyInternalOutgoingTransferTx.ID),
 			bz,
 		},
 		{
@@ -725,7 +724,6 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 }
 
 func TestMigrateInvalidStore(t *testing.T) {
-
 	// create old prefixes KV store
 	gravityKey := sdk.NewKVStoreKey("gravity")
 

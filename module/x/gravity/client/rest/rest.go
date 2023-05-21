@@ -26,7 +26,6 @@ const (
 
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx client.Context, r *mux.Router, storeName string) {
-
 	// Valsets
 
 	// This endpoint gets all of the validator set confirmations for a given nonce. In order to determine if a valset is complete

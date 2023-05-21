@@ -124,7 +124,6 @@ func (s GenesisState) ValidateBasic() error {
 }
 
 // DefaultGenesisState returns empty genesis state
-// nolint: exhaustruct
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params:                 DefaultParams(),
@@ -443,7 +442,6 @@ func validateEthereumBlacklistAddresses(i interface{}) error {
 	}
 	for index, value := range strArr {
 		if err := ValidateEthAddress(value); err != nil {
-
 			if !strings.Contains(err.Error(), "empty, index is"+strconv.Itoa(index)) {
 				return err
 			}

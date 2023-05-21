@@ -19,7 +19,7 @@ func (o OutgoingTransferTx) ToInternal() (*InternalOutgoingTransferTx, error) {
 
 // InternalOutgoingTransferTx is an internal duplicate of OutgoingTransferTx with validation
 type InternalOutgoingTransferTx struct {
-	Id          uint64
+	ID          uint64
 	Sender      sdk.AccAddress
 	DestAddress *EthAddress
 	Erc20Token  *InternalERC20Token
@@ -51,7 +51,7 @@ func NewInternalOutgoingTransferTx(
 	}
 
 	return &InternalOutgoingTransferTx{
-		Id:          id,
+		ID:          id,
 		Sender:      send,
 		DestAddress: dest,
 		Erc20Token:  token,
@@ -61,7 +61,7 @@ func NewInternalOutgoingTransferTx(
 
 func (i InternalOutgoingTransferTx) ToExternal() OutgoingTransferTx {
 	return OutgoingTransferTx{
-		Id:          i.Id,
+		Id:          i.ID,
 		Sender:      i.Sender.String(),
 		DestAddress: i.DestAddress.GetAddress().Hex(),
 		Erc20Token:  i.Erc20Token.ToExternal(),
@@ -70,8 +70,8 @@ func (i InternalOutgoingTransferTx) ToExternal() OutgoingTransferTx {
 }
 
 func (i InternalOutgoingTransferTx) ValidateBasic() error {
-	//TODO: Validate id?
-	//TODO: Validate cosmos sender?
+	// TODO: Validate id?
+	// TODO: Validate cosmos sender?
 	err := i.DestAddress.ValidateBasic()
 	if err != nil {
 		return sdkerrors.Wrap(err, "invalid DestAddress")
@@ -104,8 +104,8 @@ func NewInternalOutgingTxBatch(
 	timeout uint64,
 	transactions []*InternalOutgoingTransferTx,
 	contract EthAddress,
-	blockCreated uint64) (*InternalOutgoingTxBatch, error) {
-
+	blockCreated uint64,
+) (*InternalOutgoingTxBatch, error) {
 	ret := &InternalOutgoingTxBatch{
 		BatchNonce:         nonce,
 		BatchTimeout:       timeout,
@@ -205,7 +205,6 @@ func (o OutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 
 // GetCheckpoint gets the checkpoint signature from the given outgoing tx batch
 func (i InternalOutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
-
 	abi, err := abi.JSON(strings.NewReader(OutgoingBatchTxCheckpointABIJSON))
 	if err != nil {
 		panic("Bad ABI constant!")
@@ -248,7 +247,6 @@ func (i InternalOutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 		i.TokenContract.GetAddress(),
 		big.NewInt(int64(i.BatchTimeout)),
 	)
-
 	// this should never happen outside of test since any case that could crash on encoding
 	// should be filtered above.
 	if err != nil {
@@ -284,7 +282,6 @@ func (c OutgoingLogicCall) ValidateBasic() error {
 
 // GetCheckpoint gets the checkpoint signature from the given outgoing tx batch
 func (c OutgoingLogicCall) GetCheckpoint(gravityIDstring string) []byte {
-
 	abi, err := abi.JSON(strings.NewReader(OutgoingLogicCallABIJSON))
 	if err != nil {
 		panic("Bad ABI constant!")
@@ -338,7 +335,6 @@ func (c OutgoingLogicCall) GetCheckpoint(gravityIDstring string) []byte {
 		invalidationId,
 		big.NewInt(int64(c.InvalidationNonce)),
 	)
-
 	// this should never happen outside of test since any case that could crash on encoding
 	// should be filtered above.
 	if err != nil {

@@ -1,5 +1,6 @@
 package types
 
+//nolint:gosec // this is not hard coded credentials
 const (
 	EventTypeObservation                 = "observation"
 	EventTypeOutgoingBatch               = "outgoing_batch"
