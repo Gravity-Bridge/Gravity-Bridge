@@ -1,9 +1,10 @@
 package keeper
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -25,7 +26,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		case QueryGravityID:
 			return queryGravityID(ctx, keeper)
 		default:
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unknown %s query endpoint", types.ModuleName)
+			return nil, sdkerrors.Wrapf(errors.ErrUnknownRequest, "unknown %s query endpoint", types.ModuleName)
 		}
 	}
 }
@@ -37,7 +38,7 @@ func queryCurrentValset(ctx sdk.Context, keeper Keeper) ([]byte, error) {
 	}
 	res, err := codec.MarshalJSONIndent(types.ModuleCdc, valset)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+		return nil, sdkerrors.Wrap(errors.ErrJSONMarshal, err.Error())
 	}
 
 	return res, nil
@@ -47,7 +48,7 @@ func queryGravityID(ctx sdk.Context, keeper Keeper) ([]byte, error) {
 	gravityID := keeper.GetGravityID(ctx)
 	res, err := codec.MarshalJSONIndent(types.ModuleCdc, gravityID)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+		return nil, sdkerrors.Wrap(errors.ErrJSONMarshal, err.Error())
 	} else {
 		return res, nil
 	}

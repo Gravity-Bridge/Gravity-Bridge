@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
@@ -150,7 +151,7 @@ func NewInternalERC20Token(amount sdk.Int, contract string) (*InternalERC20Token
 // ValidateBasic performs validation on all fields of an InternalERC20Token
 func (i *InternalERC20Token) ValidateBasic() error {
 	if i.Amount.IsNegative() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "coins must not be negative")
+		return sdkerrors.Wrap(errors.ErrInvalidCoins, "coins must not be negative")
 	}
 	err := i.Contract.ValidateBasic()
 	if err != nil {

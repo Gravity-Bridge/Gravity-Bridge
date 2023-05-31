@@ -1,9 +1,10 @@
 package ante
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -33,10 +34,10 @@ func (min MinCommissionDecorator) AnteHandle(
 			// commission set below 10%
 			c := msg.Commission
 			if c.Rate.LT(minCommissionRate) {
-				return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "commission can't be lower than 10%")
+				return sdkerrors.Wrap(errors.ErrUnauthorized, "commission can't be lower than 10%")
 			}
 			if c.MaxRate.LT(minCommissionRate) {
-				return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "commission max rate can't be lower than 10%")
+				return sdkerrors.Wrap(errors.ErrUnauthorized, "commission max rate can't be lower than 10%")
 			}
 		case *stakingtypes.MsgEditValidator:
 			// if commission rate is nil, it means only
@@ -45,7 +46,7 @@ func (min MinCommissionDecorator) AnteHandle(
 				break
 			}
 			if msg.CommissionRate.LT(minCommissionRate) {
-				return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "commission can't be lower than 10%")
+				return sdkerrors.Wrap(errors.ErrUnauthorized, "commission can't be lower than 10%")
 			}
 		}
 
@@ -57,7 +58,7 @@ func (min MinCommissionDecorator) AnteHandle(
 			var innerMsg sdk.Msg
 			err := min.cdc.UnpackAny(v, &innerMsg)
 			if err != nil {
-				return sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "cannot unmarshal authz exec msgs")
+				return sdkerrors.Wrapf(errors.ErrUnauthorized, "cannot unmarshal authz exec msgs")
 			}
 
 			err = validMsg(innerMsg)

@@ -8,10 +8,10 @@ import (
 	v100 "github.com/cosmos/ibc-go/v6/modules/core/legacy/v100"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -59,17 +59,17 @@ $ %s ibc-migrate /path/to/genesis.json --chain-id=gravity-bridge-2 --genesis-tim
 
 			var initialState gentypes.AppMap
 			if err := json.Unmarshal(genDoc.AppState, &initialState); err != nil {
-				return errors.Wrap(err, "failed to JSON unmarshal initial genesis state")
+				return sdkerrors.Wrap(err, "failed to JSON unmarshal initial genesis state")
 			}
 
 			newGenState, err := v100.MigrateGenesis(initialState, clientCtx, *genDoc, gravityMaxExpectedBlockDelay)
 			if err != nil {
-				return errors.Wrap(err, "failed to migrate ibc genesis state from v1 to v2")
+				return sdkerrors.Wrap(err, "failed to migrate ibc genesis state from v1 to v2")
 			}
 
 			genDoc.AppState, err = json.Marshal(newGenState)
 			if err != nil {
-				return errors.Wrap(err, "failed to JSON marshal migrated genesis state")
+				return sdkerrors.Wrap(err, "failed to JSON marshal migrated genesis state")
 			}
 
 			genesisTime, errGenesisTime := cmd.Flags().GetString(flagGenesisTime)
@@ -81,7 +81,7 @@ $ %s ibc-migrate /path/to/genesis.json --chain-id=gravity-bridge-2 --genesis-tim
 
 				err := t.UnmarshalText([]byte(genesisTime))
 				if err != nil {
-					return errors.Wrap(err, "failed to unmarshal genesis time")
+					return sdkerrors.Wrap(err, "failed to unmarshal genesis time")
 				}
 
 				genDoc.GenesisTime = t
@@ -97,12 +97,12 @@ $ %s ibc-migrate /path/to/genesis.json --chain-id=gravity-bridge-2 --genesis-tim
 
 			bz, err := tmjson.Marshal(genDoc)
 			if err != nil {
-				return errors.Wrap(err, "failed to marshal genesis doc")
+				return sdkerrors.Wrap(err, "failed to marshal genesis doc")
 			}
 
 			sortedBz, err := sdk.SortJSON(bz)
 			if err != nil {
-				return errors.Wrap(err, "failed to sort JSON genesis doc")
+				return sdkerrors.Wrap(err, "failed to sort JSON genesis doc")
 			}
 
 			cmd.Println(string(sortedBz))
