@@ -111,6 +111,14 @@ import (
 	// Tharsis Ethermint
 	ethante "github.com/evmos/ethermint/app/ante"
 
+	nftkeeper "github.com/irisnet/irismod/modules/nft/keeper"
+	nftmodule "github.com/irisnet/irismod/modules/nft/module"
+	nfttypes "github.com/irisnet/irismod/modules/nft/types"
+
+	nfttransfer "github.com/bianjieai/nft-transfer"
+	ibcnfttransferkeeper "github.com/bianjieai/nft-transfer/keeper"
+	ibcnfttransfertypes "github.com/bianjieai/nft-transfer/types"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/ante"
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
@@ -118,6 +126,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/internft"
 )
 
 const appName = "app"
@@ -159,6 +168,8 @@ var (
 		vesting.AppModuleBasic{},
 		gravity.AppModuleBasic{},
 		bech32ibc.AppModuleBasic{},
+		nftmodule.AppModuleBasic{},
+		nfttransfer.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -172,6 +183,7 @@ var (
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		gravitytypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
+		nfttypes.ModuleName:            nil,
 	}
 
 	// module accounts that are allowed to receive tokens
@@ -233,10 +245,14 @@ type Gravity struct {
 	gravityKeeper     *keeper.Keeper
 	bech32IbcKeeper   *bech32ibckeeper.Keeper
 
+	nftKeeper            nftkeeper.Keeper
+	ibcnftTransferKeeper ibcnfttransferkeeper.Keeper
+
 	// make scoped keepers public for test purposes
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
-	ScopedIBCKeeper      *capabilitykeeper.ScopedKeeper
-	ScopedTransferKeeper *capabilitykeeper.ScopedKeeper
+	ScopedIBCKeeper         *capabilitykeeper.ScopedKeeper
+	ScopedTransferKeeper    *capabilitykeeper.ScopedKeeper
+	ScopedNFTTransferKeeper *capabilitykeeper.ScopedKeeper
 
 	// Module Manager
 	mm *module.Manager
@@ -353,7 +369,7 @@ func NewGravityApp(
 		slashingtypes.StoreKey, govtypes.StoreKey, paramstypes.StoreKey,
 		ibchost.StoreKey, upgradetypes.StoreKey, evidencetypes.StoreKey,
 		ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		gravitytypes.StoreKey, bech32ibctypes.StoreKey,
+		gravitytypes.StoreKey, bech32ibctypes.StoreKey, nfttypes.StoreKey, ibcnfttransfertypes.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -387,6 +403,9 @@ func NewGravityApp(
 
 	scopedTransferKeeper := capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
 	app.ScopedTransferKeeper = &scopedTransferKeeper
+
+	scopedNFTTransferKeeper := capabilityKeeper.ScopeToModule(ibcnfttransfertypes.ModuleName)
+	app.ScopedNFTTransferKeeper = &scopedNFTTransferKeeper
 
 	// Applications that wish to enforce statically created ScopedKeepers should call `Seal` after creating
 	// their scoped modules in `NewApp` with `ScopeToModule`
@@ -520,6 +539,27 @@ func NewGravityApp(
 	)
 	app.crisisKeeper = &crisisKeeper
 
+	app.nftKeeper = nftkeeper.NewKeeper(
+		appCodec,
+		keys[nfttypes.StoreKey],
+		app.accountKeeper,
+		app.bankKeeper,
+	)
+
+	app.ibcnftTransferKeeper = ibcnfttransferkeeper.NewKeeper(
+		appCodec,
+		keys[ibcnfttransfertypes.StoreKey],
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		app.ibcKeeper.ChannelKeeper,
+		app.ibcKeeper.ChannelKeeper,
+		&app.ibcKeeper.PortKeeper,
+		app.accountKeeper,
+		internft.NewInterNftKeeper(appCodec, app.nftKeeper, app.accountKeeper),
+		scopedNFTTransferKeeper,
+	)
+	ibcnfttransferModule := nfttransfer.NewAppModule(app.ibcnftTransferKeeper)
+	nfttransferIBCModule := nfttransfer.NewIBCModule(app.ibcnftTransferKeeper)
+
 	// Deprecated: Avoid adding new handlers, instead use the new proposal flow
 	// by granting the governance module the right to execute the message.
 	// See: https://github.com/cosmos/cosmos-sdk/blob/release/v0.46.x/x/gov/spec/01_concepts.md#proposal-messages
@@ -554,7 +594,8 @@ func NewGravityApp(
 	ibcTransferIBCModule := transfer.NewIBCModule(ibcTransferKeeper)
 
 	ibcRouter := porttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibcTransferIBCModule)
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibcTransferIBCModule).
+		AddRoute(ibcnfttransfertypes.ModuleName, nfttransferIBCModule)
 	ibcKeeper.SetRouter(ibcRouter)
 
 	evidenceKeeper := *evidencekeeper.NewKeeper(
@@ -649,6 +690,8 @@ func NewGravityApp(
 			appCodec,
 			bech32IbcKeeper,
 		),
+		nftmodule.NewAppModule(appCodec, app.nftKeeper, app.accountKeeper, app.bankKeeper),
+		ibcnfttransferModule,
 	)
 	app.mm = &mm
 
@@ -673,6 +716,8 @@ func NewGravityApp(
 		authz.ModuleName,
 		govtypes.ModuleName,
 		paramstypes.ModuleName,
+		nfttypes.ModuleName,
+		ibcnfttransfertypes.ModuleName,
 	)
 	mm.SetOrderEndBlockers(
 		crisistypes.ModuleName,
@@ -694,6 +739,8 @@ func NewGravityApp(
 		genutiltypes.ModuleName,
 		authz.ModuleName,
 		paramstypes.ModuleName,
+		nfttypes.ModuleName,
+		ibcnfttransfertypes.ModuleName,
 	)
 	mm.SetOrderInitGenesis(
 		capabilitytypes.ModuleName,
@@ -715,6 +762,8 @@ func NewGravityApp(
 		crisistypes.ModuleName,
 		vestingtypes.ModuleName,
 		paramstypes.ModuleName,
+		nfttypes.ModuleName,
+		ibcnfttransfertypes.ModuleName,
 	)
 
 	mm.RegisterInvariants(&crisisKeeper)
