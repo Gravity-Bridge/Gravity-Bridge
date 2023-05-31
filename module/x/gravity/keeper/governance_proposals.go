@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypesv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
@@ -46,7 +47,7 @@ func NewGravityProposalHandler(k Keeper) govtypesv1beta1.Handler {
 			return k.HandleIBCMetadataProposal(ctx, c)
 
 		default:
-			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
+			return sdkerrors.Wrapf(errors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
 		}
 	}
 }

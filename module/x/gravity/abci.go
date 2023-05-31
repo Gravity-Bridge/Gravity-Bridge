@@ -1,10 +1,10 @@
 package gravity
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 

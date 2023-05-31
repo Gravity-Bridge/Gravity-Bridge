@@ -4,8 +4,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
@@ -45,10 +46,10 @@ func (msg *MsgSetOrchestratorAddress) Type() string { return "set_operator_addre
 // ValidateBasic performs stateless checks
 func (msg *MsgSetOrchestratorAddress) ValidateBasic() (err error) {
 	if _, err = sdk.ValAddressFromBech32(msg.Validator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Validator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, msg.Validator)
 	}
 	if _, err = sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Orchestrator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, msg.Orchestrator)
 	}
 	if err := ValidateEthAddress(msg.EthAddress); err != nil {
 		return sdkerrors.Wrap(err, "ethereum address")
@@ -94,7 +95,7 @@ func (msg *MsgValsetConfirm) Type() string { return "valset_confirm" }
 // ValidateBasic performs stateless checks
 func (msg *MsgValsetConfirm) ValidateBasic() (err error) {
 	if _, err = sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Orchestrator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, msg.Orchestrator)
 	}
 	if err := ValidateEthAddress(msg.EthAddress); err != nil {
 		return sdkerrors.Wrap(err, "ethereum address")
@@ -138,28 +139,28 @@ func (msg MsgSendToEth) Type() string { return "send_to_eth" }
 // Checks if the Eth address is valid
 func (msg MsgSendToEth) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Sender)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, msg.Sender)
 	}
 
 	// bridge fee (paid to relayers) and send must be of the same denom
 	if msg.Amount.Denom != msg.BridgeFee.Denom {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins,
+		return sdkerrors.Wrap(errors.ErrInvalidCoins,
 			fmt.Sprintf("bridge fee (paid to relayers) and amount must be the same type %s != %s", msg.Amount.Denom, msg.BridgeFee.Denom))
 	}
 	// chain fee (paid to cosmos stakers) and send must be of the same denom
 	if msg.Amount.Denom != msg.ChainFee.Denom {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins,
+		return sdkerrors.Wrap(errors.ErrInvalidCoins,
 			fmt.Sprintf("chain fee (paid to stakers) and amount must be the same type %s != %s", msg.Amount.Denom, msg.ChainFee.Denom))
 	}
 
 	if !msg.Amount.IsValid() || msg.Amount.IsZero() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "amount")
+		return sdkerrors.Wrap(errors.ErrInvalidCoins, "amount")
 	}
 	if !msg.BridgeFee.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "bridge fee")
+		return sdkerrors.Wrap(errors.ErrInvalidCoins, "bridge fee")
 	}
 	if !msg.ChainFee.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "chain fee")
+		return sdkerrors.Wrap(errors.ErrInvalidCoins, "chain fee")
 	}
 	if err := ValidateEthAddress(msg.EthDest); err != nil {
 		return sdkerrors.Wrap(err, "ethereum address")
@@ -200,7 +201,7 @@ func (msg MsgRequestBatch) Type() string { return "request_batch" }
 // ValidateBasic performs stateless checks
 func (msg MsgRequestBatch) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Sender)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, msg.Sender)
 	}
 	return nil
 }
@@ -229,7 +230,7 @@ func (msg MsgConfirmBatch) Type() string { return "confirm_batch" }
 // ValidateBasic performs stateless checks
 func (msg MsgConfirmBatch) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Orchestrator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, msg.Orchestrator)
 	}
 	if err := ValidateEthAddress(msg.EthSigner); err != nil {
 		return sdkerrors.Wrap(err, "eth signer")
@@ -267,18 +268,18 @@ func (msg MsgConfirmLogicCall) Type() string { return "confirm_logic" }
 // ValidateBasic performs stateless checks
 func (msg MsgConfirmLogicCall) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Orchestrator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, msg.Orchestrator)
 	}
 	if err := ValidateEthAddress(msg.EthSigner); err != nil {
 		return sdkerrors.Wrap(err, "eth signer")
 	}
 	_, err := hex.DecodeString(msg.Signature)
 	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Could not decode hex string %s", msg.Signature)
+		return sdkerrors.Wrapf(errors.ErrUnknownRequest, "Could not decode hex string %s", msg.Signature)
 	}
 	_, err = hex.DecodeString(msg.InvalidationId)
 	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Could not decode hex string %s", msg.InvalidationId)
+		return sdkerrors.Wrapf(errors.ErrUnknownRequest, "Could not decode hex string %s", msg.InvalidationId)
 	}
 	return nil
 }
@@ -344,7 +345,7 @@ func (msg *MsgSendToCosmosClaim) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "erc20 token")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "orchestrator")
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, "orchestrator")
 	}
 	// note the destination address is intentionally not validated here, since
 	// MsgSendToEth has it's destination as a string many invalid inputs are possible
@@ -442,7 +443,7 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "erc20 token")
 	}
 	if _, err := sdk.AccAddressFromBech32(e.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, e.Orchestrator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, e.Orchestrator)
 	}
 	return nil
 }
@@ -501,7 +502,7 @@ func (e *MsgERC20DeployedClaim) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "erc20 token")
 	}
 	if _, err := sdk.AccAddressFromBech32(e.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, e.Orchestrator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, e.Orchestrator)
 	}
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
@@ -561,7 +562,7 @@ func (e *MsgLogicCallExecutedClaim) GetType() ClaimType {
 // ValidateBasic performs stateless checks
 func (e *MsgLogicCallExecutedClaim) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(e.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, e.Orchestrator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, e.Orchestrator)
 	}
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")
@@ -621,7 +622,7 @@ func (e *MsgValsetUpdatedClaim) GetType() ClaimType {
 // ValidateBasic performs stateless checks
 func (e *MsgValsetUpdatedClaim) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(e.Orchestrator); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, e.Orchestrator)
+		return sdkerrors.Wrap(errors.ErrInvalidAddress, e.Orchestrator)
 	}
 	if e.EventNonce == 0 {
 		return fmt.Errorf("nonce == 0")

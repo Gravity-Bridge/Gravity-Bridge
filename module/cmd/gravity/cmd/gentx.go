@@ -12,20 +12,19 @@ import (
 	"sort"
 	"strings"
 
-	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	cfg "github.com/tendermint/tendermint/config"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -36,6 +35,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/client/cli"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 // GenTxCmd builds the application's gentx command.
@@ -90,7 +91,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			}
 			nodeID, valPubKey, err := genutil.InitializeNodeValidatorFiles(serverCtx.Config)
 			if err != nil {
-				return errors.Wrap(err, "failed to initialize node validator files")
+				return sdkerrors.Wrap(err, "failed to initialize node validator files")
 			}
 
 			// read --nodeID, if empty take it from priv_validator.json
@@ -109,22 +110,22 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 				var valPubKey crypto.PubKey
 				err := clientCtx.Codec.UnmarshalInterfaceJSON([]byte(valPubKeyString), &valPubKey)
 				if err != nil {
-					return errors.Wrap(err, "failed to get consensus node public key")
+					return sdkerrors.Wrap(err, "failed to get consensus node public key")
 				}
 			}
 
 			genDoc, err := tmtypes.GenesisDocFromFile(config.GenesisFile())
 			if err != nil {
-				return errors.Wrapf(err, "failed to read genesis doc file %s", config.GenesisFile())
+				return sdkerrors.Wrapf(err, "failed to read genesis doc file %s", config.GenesisFile())
 			}
 
 			var genesisState map[string]json.RawMessage
 			if err = json.Unmarshal(genDoc.AppState, &genesisState); err != nil {
-				return errors.Wrap(err, "failed to unmarshal genesis state")
+				return sdkerrors.Wrap(err, "failed to unmarshal genesis state")
 			}
 
 			if err = mbm.ValidateGenesis(cdc, txEncCfg, genesisState); err != nil {
-				return errors.Wrap(err, "failed to validate genesis state")
+				return sdkerrors.Wrap(err, "failed to validate genesis state")
 			}
 
 			inBuf := bufio.NewReader(cmd.InOrStdin())
@@ -132,18 +133,18 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			name := args[0]
 			key, err := clientCtx.Keyring.Key(name)
 			if err != nil {
-				return errors.Wrapf(err, "failed to fetch '%s' from the keyring", name)
+				return sdkerrors.Wrapf(err, "failed to fetch '%s' from the keyring", name)
 			}
 
 			ethAddress := args[2]
 
 			if err := gravitytypes.ValidateEthAddress(ethAddress); err != nil {
-				return errors.Wrapf(err, "invalid ethereum address")
+				return sdkerrors.Wrapf(err, "invalid ethereum address")
 			}
 
 			orchAddress, err := sdk.AccAddressFromBech32(args[3])
 			if err != nil {
-				return errors.Wrapf(err, "failed to parse orchAddress(%s)", args[3])
+				return sdkerrors.Wrapf(err, "failed to parse orchAddress(%s)", args[3])
 			}
 
 			moniker := config.Moniker
@@ -157,27 +158,27 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			// set flags for creating a gentx
 			createValCfg, err := cli.PrepareConfigForTxCreateValidator(cmd.Flags(), moniker, nodeID, genDoc.ChainID, valPubKey)
 			if err != nil {
-				return errors.Wrap(err, "error creating configuration to create validator msg")
+				return sdkerrors.Wrap(err, "error creating configuration to create validator msg")
 			}
 
 			amount := args[1]
 			coins, err := sdk.ParseCoinsNormalized(amount)
 			if err != nil {
-				return errors.Wrap(err, "failed to parse coins")
+				return sdkerrors.Wrap(err, "failed to parse coins")
 			}
 
 			keyAddr, err := key.GetAddress()
 			if err != nil {
-				return errors.Wrap(err, "failed to get address from Keyring Record")
+				return sdkerrors.Wrap(err, "failed to get address from Keyring Record")
 			}
 			// validate validator account in genesis
 			if err = genutil.ValidateAccountInGenesis(genesisState, genBalIterator, keyAddr, coins, cdc); err != nil {
-				return errors.Wrap(err, "failed to validate validator account in genesis")
+				return sdkerrors.Wrap(err, "failed to validate validator account in genesis")
 			}
 
 			txFactory := tx.NewFactoryCLI(clientCtx, cmd.Flags())
 			if err != nil {
-				return errors.Wrap(err, "error creating tx builder")
+				return sdkerrors.Wrap(err, "error creating tx builder")
 			}
 
 			clientCtx = clientCtx.WithInput(inBuf).WithFromAddress(keyAddr)
@@ -198,7 +199,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			// create a 'create-validator' message
 			txBldr, msg, err := cli.BuildCreateValidatorMsg(clientCtx, createValCfg, txFactory, true)
 			if err != nil {
-				return errors.Wrap(err, "failed to build create-validator message")
+				return sdkerrors.Wrap(err, "failed to build create-validator message")
 			}
 
 			delegateKeySetMsg := &gravitytypes.MsgSetOrchestratorAddress{
@@ -219,13 +220,13 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			clientCtx = clientCtx.WithOutput(w)
 
 			if err = txBldr.PrintUnsignedTx(clientCtx, msgs...); err != nil {
-				return errors.Wrap(err, "failed to print unsigned std tx")
+				return sdkerrors.Wrap(err, "failed to print unsigned std tx")
 			}
 
 			// read the transaction
 			stdTx, err := readUnsignedGenTxFile(clientCtx, w)
 			if err != nil {
-				return errors.Wrap(err, "failed to read unsigned gen tx file")
+				return sdkerrors.Wrap(err, "failed to read unsigned gen tx file")
 			}
 
 			// sign the transaction and write it to the output file
@@ -236,7 +237,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 
 			err = authclient.SignTx(txFactory, clientCtx, name, txBuilder, true, true)
 			if err != nil {
-				return errors.Wrap(err, "failed to sign std tx")
+				return sdkerrors.Wrap(err, "failed to sign std tx")
 			}
 
 			outputDocument, errOutputDocument := cmd.Flags().GetString(flags.FlagOutputDocument)
@@ -246,12 +247,12 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			if outputDocument == "" {
 				outputDocument, err = makeOutputFilepath(config.RootDir, nodeID)
 				if err != nil {
-					return errors.Wrap(err, "failed to create output file path")
+					return sdkerrors.Wrap(err, "failed to create output file path")
 				}
 			}
 
 			if err := writeSignedGenTx(clientCtx, outputDocument, stdTx); err != nil {
-				return errors.Wrap(err, "failed to write signed gen tx")
+				return sdkerrors.Wrap(err, "failed to write signed gen tx")
 			}
 
 			cmd.PrintErrf("Genesis transaction written to %q\n", outputDocument)
@@ -335,12 +336,12 @@ func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeH
 
 			nodeID, valPubKey, err := genutil.InitializeNodeValidatorFiles(config)
 			if err != nil {
-				return errors.Wrap(err, "failed to initialize node validator files")
+				return sdkerrors.Wrap(err, "failed to initialize node validator files")
 			}
 
 			genDoc, err := tmtypes.GenesisDocFromFile(config.GenesisFile())
 			if err != nil {
-				return errors.Wrap(err, "failed to read genesis doc from file")
+				return sdkerrors.Wrap(err, "failed to read genesis doc from file")
 			}
 
 			genTxDir, errGenTxDir := cmd.Flags().GetString(flagGenTxDir)
@@ -359,7 +360,7 @@ func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeH
 				clientCtx.TxConfig,
 				config, initCfg, *genDoc, genBalIterator)
 			if err != nil {
-				return errors.Wrap(err, "failed to get genesis app state from config")
+				return sdkerrors.Wrap(err, "failed to get genesis app state from config")
 			}
 
 			toPrint.AppMessage = appMessage

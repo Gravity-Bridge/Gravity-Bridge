@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"

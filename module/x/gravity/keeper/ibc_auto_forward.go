@@ -14,11 +14,12 @@ import (
 	"fmt"
 	"time"
 
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
 
@@ -54,7 +55,7 @@ func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, forward types.Pen
 	modBal := k.bankKeeper.GetBalance(ctx, modAcc, forward.Token.Denom)
 	if modBal.IsLT(*forward.Token) {
 		return sdkerrors.Wrapf(
-			sdkerrors.ErrInsufficientFunds, "Gravity Module account does not have enough funds (%s) for a forward of %s",
+			errors.ErrInsufficientFunds, "Gravity Module account does not have enough funds (%s) for a forward of %s",
 			modBal.String(), forward.Token.String(),
 		)
 	}

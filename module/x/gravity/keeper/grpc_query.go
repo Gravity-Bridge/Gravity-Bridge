@@ -4,11 +4,12 @@ import (
 	"context"
 	"strings"
 
+	sdkerrors "cosmossdk.io/errors"
 	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
@@ -59,7 +60,7 @@ func (k Keeper) ValsetConfirm(
 	req *types.QueryValsetConfirmRequest) (*types.QueryValsetConfirmResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(req.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
+		return nil, sdkerrors.Wrap(errors.ErrInvalidRequest, "address invalid")
 	}
 	return &types.QueryValsetConfirmResponse{Confirm: k.GetValsetConfirm(sdk.UnwrapSDKContext(c), req.Nonce, addr)}, nil
 }
@@ -96,7 +97,7 @@ func (k Keeper) LastPendingValsetRequestByAddr(
 	req *types.QueryLastPendingValsetRequestByAddrRequest) (*types.QueryLastPendingValsetRequestByAddrResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(req.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
+		return nil, sdkerrors.Wrap(errors.ErrInvalidRequest, "address invalid")
 	}
 
 	var pendingValsetReq []types.Valset
@@ -134,7 +135,7 @@ func (k Keeper) LastPendingBatchRequestByAddr(
 ) (*types.QueryLastPendingBatchRequestByAddrResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(req.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
+		return nil, sdkerrors.Wrap(errors.ErrInvalidRequest, "address invalid")
 	}
 
 	var pendingBatchReq types.InternalOutgoingTxBatches
@@ -165,7 +166,7 @@ func (k Keeper) LastPendingLogicCallByAddr(
 	req *types.QueryLastPendingLogicCallByAddrRequest) (*types.QueryLastPendingLogicCallByAddrResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(req.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "address invalid")
+		return nil, sdkerrors.Wrap(errors.ErrInvalidRequest, "address invalid")
 	}
 
 	var pendingLogicReq []types.OutgoingLogicCall
@@ -221,12 +222,12 @@ func (k Keeper) BatchRequestByNonce(
 ) (*types.QueryBatchRequestByNonceResponse, error) {
 	addr, err := types.NewEthAddress(req.ContractAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, err.Error())
+		return nil, sdkerrors.Wrap(errors.ErrUnknownRequest, err.Error())
 	}
 
 	foundBatch := k.GetOutgoingTXBatch(sdk.UnwrapSDKContext(c), *addr, req.Nonce)
 	if foundBatch == nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "cannot find tx batch")
+		return nil, sdkerrors.Wrap(errors.ErrUnknownRequest, "cannot find tx batch")
 	}
 
 	return &types.QueryBatchRequestByNonceResponse{Batch: foundBatch.ToExternal()}, nil
@@ -267,7 +268,7 @@ func (k Keeper) LastEventNonceByAddr(
 	var ret types.QueryLastEventNonceByAddrResponse
 	addr, err := sdk.AccAddressFromBech32(req.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, req.Address)
+		return nil, sdkerrors.Wrap(errors.ErrInvalidAddress, req.Address)
 	}
 	validator, found := k.GetOrchestratorValidator(ctx, addr)
 	if !found {
@@ -413,7 +414,7 @@ func (k Keeper) GetAttestations(
 	iterator(ctx, reverse, func(_ []byte, att types.Attestation) (abort bool) {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
-			iterErr = sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
+			iterErr = sdkerrors.Wrap(errors.ErrUnpackAny, "failed to unmarshal Ethereum claim")
 			return true
 		}
 
