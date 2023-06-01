@@ -1,11 +1,11 @@
 use crate::{
     airdrop_proposal::wait_for_proposals_to_execute,
+    batch_stress::{
+        lock_funds_in_pool, prep_users_for_deposit, test_bulk_send_to_cosmos, STARTING_ETH,
+    },
     get_fee,
     happy_path::test_erc20_deposit_panic,
     one_eth, one_hundred_eth,
-    transaction_stress_test::{
-        lock_funds_in_pool, prep_users_for_deposit, test_bulk_send_to_cosmos, STARTING_ETH,
-    },
     utils::*,
     TOTAL_TIMEOUT,
 };

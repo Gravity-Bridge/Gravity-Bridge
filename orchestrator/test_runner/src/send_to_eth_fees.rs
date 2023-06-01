@@ -36,7 +36,7 @@ pub async fn send_to_eth_fees_test(
     erc20_addresses: Vec<EthAddress>,
 ) {
     info!("Enter send to eth fees test");
-    let (ibc_metadata, staker_key) = setup(
+    let (ibc_metadata, _staker_key) = setup(
         web30,
         contact,
         &gravity_client,
@@ -47,7 +47,6 @@ pub async fn send_to_eth_fees_test(
     .await;
     let cosmos_denom = ibc_metadata.base;
     let erc20_denom: String = format!("gravity{}", erc20_addresses.get(0).unwrap().clone());
-    let (_staker_key, _staker_addr) = (staker_key.cosmos_key, staker_key.cosmos_address);
 
     let val0_cosmos_key = keys[0].validator_key;
     let val0_cosmos_addr = val0_cosmos_key.to_address(&ADDRESS_PREFIX).unwrap();
@@ -199,7 +198,7 @@ pub async fn setup(
     erc20_address: EthAddress,
 ) -> (Metadata, BridgeUserKey) {
     info!("Begin setup, create footoken erc20");
-    let ibc_metadata = footoken_metadata(contact).await;
+    let metadata = footoken_metadata(contact).await;
 
     let _ = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
@@ -207,12 +206,12 @@ pub async fn setup(
         Some(keys.clone()),
         &mut (grpc_client.clone()),
         false,
-        ibc_metadata.clone(),
+        metadata.clone(),
     )
     .await;
 
     info!("Send validators 100 x 10^18 of the native erc20");
-    // Send the validators generated address 100 units of each erc20 from ethereum to cosmos
+    // Send the validators generated address 100 units of the erc20 from ethereum to cosmos
     for v in &keys {
         let receiver = v.validator_key.to_address(ADDRESS_PREFIX.as_str()).unwrap();
         test_erc20_deposit_panic(
@@ -270,7 +269,7 @@ pub async fn setup(
         info!("Delegated to validator with response {:?}", res)
     }
 
-    (ibc_metadata, staker_key)
+    (metadata, staker_key)
 }
 
 /// Helpful data for verifying that fee tests execute as expected

@@ -1,8 +1,16 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+
 use clarity::abi::encode_call;
 use clarity::Address as EthAddress;
 use clarity::Uint256;
 use clarity::{abi::Token, constants::zero_address};
+use deep_space::error::CosmosGrpcError;
+use futures::future::join_all;
+use gravity_utils::error::GravityError;
 use gravity_utils::num_conversion::downcast_uint256;
+use gravity_utils::types::erc20::Erc20Token;
+use gravity_utils::types::Valset;
 use gravity_utils::types::*;
 use web30::{client::Web3, jsonrpc::error::Web3Error};
 
@@ -189,4 +197,134 @@ pub fn encode_valset_struct(valset: &Valset) -> Token {
         reward_token.into(),
     ];
     Token::Struct(struct_tokens.to_vec())
+}
+
+#[allow(clippy::too_many_arguments)]
+/// Collects the needed Gravity.sol balances for EthereumClaim submissions by first learning which
+/// contracts to monitor, then collecting all the ethereum heights needed and then finally
+/// querying the ERC20 balances required, packing it all up into a Map
+pub async fn collect_eth_balances_for_claims(
+    web3: &Web3,
+    querier_address: EthAddress,
+    gravity_contract: EthAddress,
+    monitored_erc20s: Vec<EthAddress>,
+    deposits: &[SendToCosmosEvent],
+    withdraws: &[TransactionBatchExecutedEvent],
+    erc20_deploys: &[Erc20DeployedEvent],
+    logic_calls: &[LogicCallExecutedEvent],
+    valsets: &[ValsetUpdatedEvent],
+) -> Result<HashMap<Uint256, Vec<Erc20Token>>, GravityError> {
+    let heights =
+        get_heights_from_eth_claims(deposits, withdraws, erc20_deploys, logic_calls, valsets).await;
+    if heights.is_empty()
+        && !(withdraws.is_empty()
+            && erc20_deploys.is_empty()
+            && logic_calls.is_empty()
+            && valsets.is_empty())
+    {
+        return Err(GravityError::CosmosGrpcError(CosmosGrpcError::BadInput(
+            "Invalid claims to collect balances for!".to_string(),
+        )));
+    }
+    info!("Collecting Eth balances at heights {:?}", heights);
+    collect_eth_balances_at_heights(
+        web3,
+        querier_address,
+        gravity_contract,
+        &monitored_erc20s,
+        &heights,
+    )
+    .await
+}
+
+/// Collects the block_height value from each of the input *Event collections
+pub async fn get_heights_from_eth_claims(
+    deposits: &[SendToCosmosEvent],
+    withdraws: &[TransactionBatchExecutedEvent],
+    erc20_deploys: &[Erc20DeployedEvent],
+    logic_calls: &[LogicCallExecutedEvent],
+    valsets: &[ValsetUpdatedEvent],
+) -> Vec<Uint256> {
+    let mut heights = HashSet::new();
+    for d in deposits {
+        heights.insert(d.block_height);
+    }
+    for w in withdraws {
+        heights.insert(w.block_height);
+    }
+    for e in erc20_deploys {
+        heights.insert(e.block_height);
+    }
+    for l in logic_calls {
+        heights.insert(l.block_height);
+    }
+    for v in valsets {
+        heights.insert(v.block_height);
+    }
+
+    heights.into_iter().collect::<Vec<Uint256>>()
+}
+
+/// Fetches the balances of the Gravity.sol contract balance of each erc20 at each ethereum height provided
+/// Does not populate the result for a height if any eth balance could not be obtained
+pub async fn collect_eth_balances_at_heights(
+    web3: &Web3,
+    querier_address: EthAddress,
+    gravity_contract: EthAddress,
+    erc20s: &[EthAddress],
+    heights: &[Uint256],
+) -> Result<HashMap<Uint256, Vec<Erc20Token>>, GravityError> {
+    let mut balances_by_height = HashMap::new();
+    for h in heights {
+        let bals =
+            collect_eth_balances_at_height(web3, querier_address, gravity_contract, erc20s, *h)
+                .await;
+        if bals.is_err() {
+            info!(
+                "Could not query gravity eth balances at height {}: {:?}",
+                h.to_string(),
+                bals.unwrap_err(),
+            );
+            continue;
+        }
+        balances_by_height.insert(*h, bals.unwrap());
+    }
+    if balances_by_height.is_empty() {
+        return Err(GravityError::EthereumRestError(Web3Error::BadResponse(
+            "Unable to collect ERC20 balances by height".to_string(),
+        )));
+    }
+    Ok(balances_by_height)
+}
+
+/// Fetches the balances of the Gravity.sol contract at the provided ethereum block height
+/// Returns an error if any of the underlying queries return an error
+pub async fn collect_eth_balances_at_height(
+    web3: &Web3,
+    querier_address: EthAddress,
+    gravity_contract: EthAddress,
+    erc20s: &[EthAddress],
+    height: Uint256,
+) -> Result<Vec<Erc20Token>, GravityError> {
+    let mut futs = vec![];
+    for e in erc20s {
+        futs.push(web3.get_erc20_balance_at_height_as_address(
+            Some(querier_address),
+            *e,
+            gravity_contract,
+            Some(height),
+        ));
+    }
+    let res = join_all(futs).await;
+    let mut results = vec![];
+    // Order of res is preserved, so we can assign the erc20 by index
+    for (i, r) in res.into_iter().enumerate() {
+        let erc20 = erc20s[i];
+        results.push(Erc20Token {
+            amount: r?,
+            token_contract_address: erc20,
+        });
+    }
+
+    Ok(results)
 }

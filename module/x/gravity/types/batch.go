@@ -261,6 +261,22 @@ func (i InternalOutgoingTxBatch) GetCheckpoint(gravityIDstring string) []byte {
 	return crypto.Keccak256Hash(abiEncodedBatch[4:]).Bytes()
 }
 
+// TotalValue computes the total amounts plus fees for this batch as a sdk.Coin
+func (i InternalOutgoingTxBatch) TotalValue() sdk.Coin {
+	// nolint: exhaustruct
+	var totalAmount sdk.Coin = sdk.Coin{}
+	for _, tx := range i.Transactions {
+		if totalAmount.Denom == "" { // Initialize an empty coin
+			totalAmount = tx.Erc20Fee.GravityCoin()
+		} else {
+			totalAmount = totalAmount.Add(tx.Erc20Fee.GravityCoin())
+		}
+		totalAmount = totalAmount.Add(tx.Erc20Token.GravityCoin())
+	}
+
+	return totalAmount
+}
+
 func (c OutgoingLogicCall) ValidateBasic() error {
 	for _, t := range c.Transfers {
 		_, err := t.ToInternal() // ToInternal calls ValidateBasic for us
@@ -346,4 +362,85 @@ func (c OutgoingLogicCall) GetCheckpoint(gravityIDstring string) []byte {
 	}
 
 	return crypto.Keccak256Hash(abiEncodedCall[4:]).Bytes()
+}
+
+func (o OutgoingLogicCall) ToInternal() (*InternalOutgoingLogicCall, error) {
+	logicContract, err := NewEthAddress(o.LogicContractAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid logic contract address (%v): %v", o.LogicContractAddress, err)
+	}
+	var xfers []*InternalERC20Token
+	for i, x := range o.Transfers {
+		intXfer, err := x.ToInternal()
+		if err != nil {
+			return nil, fmt.Errorf("invalid transfer (%v) in %v-th position: %v", x, i, err)
+		}
+		xfers = append(xfers, intXfer)
+	}
+	var fees []*InternalERC20Token
+	for i, f := range o.Fees {
+		intFee, err := f.ToInternal()
+		if err != nil {
+			return nil, fmt.Errorf("invalid fee (%v) in %v-th position: %v", f, i, err)
+		}
+		fees = append(fees, intFee)
+	}
+
+	return &InternalOutgoingLogicCall{
+		Transfers:            xfers,
+		Fees:                 fees,
+		LogicContractAddress: *logicContract,
+		Payload:              o.Payload,
+		Timeout:              o.Timeout,
+		InvalidationId:       o.InvalidationId,
+		InvalidationNonce:    o.InvalidationNonce,
+		CosmosBlockCreated:   o.CosmosBlockCreated,
+	}, nil
+}
+
+type InternalOutgoingLogicCall struct {
+	Transfers            []*InternalERC20Token
+	Fees                 []*InternalERC20Token
+	LogicContractAddress EthAddress
+	Payload              []byte
+	Timeout              uint64
+	InvalidationId       []byte
+	InvalidationNonce    uint64
+	CosmosBlockCreated   uint64
+}
+
+func (i InternalOutgoingLogicCall) ToExternal() OutgoingLogicCall {
+	logicContract := i.LogicContractAddress.GetAddress().String()
+	var xfers []ERC20Token
+	for _, x := range i.Transfers {
+		xfers = append(xfers, x.ToExternal())
+	}
+	var fees []ERC20Token
+	for _, f := range i.Fees {
+		fees = append(fees, f.ToExternal())
+	}
+
+	return OutgoingLogicCall{
+		Transfers:            xfers,
+		Fees:                 fees,
+		LogicContractAddress: logicContract,
+		Payload:              i.Payload,
+		Timeout:              i.Timeout,
+		InvalidationId:       i.InvalidationId,
+		InvalidationNonce:    i.InvalidationNonce,
+		CosmosBlockCreated:   i.CosmosBlockCreated,
+	}
+}
+
+// TotalValue computes the total amounts plus fees for this logic call as a sdk.Coin
+func (i InternalOutgoingLogicCall) TotalValue() sdk.Coins {
+	var totalAmount = make(InternalERC20Tokens, 0)
+
+	for _, x := range i.Transfers {
+		(&totalAmount).Add(*x)
+	}
+	for _, f := range i.Fees {
+		(&totalAmount).Add(*f)
+	}
+	return totalAmount.ToCoins()
 }

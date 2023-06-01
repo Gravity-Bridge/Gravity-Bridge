@@ -20,6 +20,7 @@ use gravity_proto::cosmos_sdk_proto::bech32ibc::bech32ibc::v1::UpdateHrpIbcChann
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::{
     v1beta1 as Bank, v1beta1::query_client::QueryClient as BankQueryClient,
 };
+use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::transfer::v1::MsgTransfer;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::transfer::{
@@ -29,6 +30,7 @@ use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::query_client::Query
 use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelsRequest,
 };
+use gravity_proto::cosmos_sdk_proto::ibc::core::client::v1::Height;
 use gravity_proto::cosmos_sdk_proto::ibc::lightclients::tendermint::v1::ClientState;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::{
@@ -177,7 +179,6 @@ pub async fn test_ibc_transfer(
     channel_id: String,       // The Src chain's ibc channel connecting to Dst
     packet_timeout: Duration, // Used to create ibc-transfer timeout-timestamp
 ) -> bool {
-    let sender_address = sender.to_address(&ADDRESS_PREFIX).unwrap().to_string();
     let pre_bal = get_ibc_balance(
         receiver,
         (*STAKING_TOKEN).to_string(),
@@ -188,41 +189,27 @@ pub async fn test_ibc_transfer(
     )
     .await;
 
-    let timeout_timestamp = SystemTime::now()
-        .add(packet_timeout)
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos() as u64;
-    info!("Calculated 150 minutes from now: {:?}", timeout_timestamp);
     let coin = coin.unwrap_or(Coin {
         denom: STAKING_TOKEN.to_string(),
         amount: one_atom().to_string(),
     });
-    let msg_transfer = MsgTransfer {
-        source_port: "transfer".to_string(),
-        source_channel: channel_id,
-        token: Some(coin.clone()),
-        sender: sender_address,
-        receiver: receiver.to_string(),
-        timeout_height: None,
-        timeout_timestamp, // 150 minutes from now
-        ..Default::default()
-    };
-    info!("Submitting MsgTransfer {:?}", msg_transfer);
-    let msg_transfer = Msg::new(MSG_TRANSFER_TYPE_URL, msg_transfer);
+
     let fee_coin = fee_coin.unwrap_or(DSCoin {
         amount: 100u16.into(),
         denom: (*STAKING_TOKEN).to_string(),
     });
-    let send_res = contact
-        .send_message(
-            &[msg_transfer],
-            Some("Test Relaying".to_string()),
-            &[fee_coin],
-            Some(OPERATION_TIMEOUT),
-            sender,
-        )
-        .await;
+    let send_res = ibc_transfer(
+        contact,
+        coin.clone(),
+        channel_id,
+        None,
+        sender,
+        receiver,
+        None,
+        Some(packet_timeout),
+        Some(fee_coin),
+    )
+    .await;
     info!("Sent MsgTransfer with response {:?}", send_res);
 
     // Give the ibc-relayer a bit of time to work in the event of multiple runs
@@ -242,6 +229,7 @@ pub async fn test_ibc_transfer(
         None,
     )
     .await;
+    info!("Asserting balance change: {start_bal:?} -> {post_bal:?}");
     match (pre_bal, post_bal) {
         (None, None) => {
             error!("Failed to transfer stake to ibc-test-1 user {}!", receiver);
@@ -287,6 +275,64 @@ pub async fn test_ibc_transfer(
         }
     }
     true
+}
+
+// Creates and executes an ibc MsgTransfer, sending `coin` from `sender` to `reciever` over channel `src_channel_id`
+// and port "transfer" (or `src_port_id`), using either `timeout_height` or `timeout_duration` as the timeout.
+// If no `fee_coin` is provided, 100 of the staking coin base denom will be used
+#[allow(clippy::too_many_arguments)]
+pub async fn ibc_transfer(
+    contact: &Contact,
+    coin: Coin,
+    src_channel_id: String,
+    src_port_id: Option<String>,
+    sender: impl PrivateKey,
+    receiver: CosmosAddress,
+    timeout_height: Option<Height>,
+    timeout_duration: Option<Duration>,
+    fee_coin: Option<DSCoin>,
+) -> Result<TxResponse, CosmosGrpcError> {
+    if timeout_height.is_none() && timeout_duration.is_none()
+        || timeout_height.is_some() && timeout_duration.is_some()
+    {
+        return Err(CosmosGrpcError::BadInput(
+            "Exactly one of timeout_height and timout_duration is required".to_string(),
+        ));
+    }
+    let timeout_timestamp = timeout_duration.map_or(0u64, |dur| {
+        SystemTime::now()
+            .add(dur)
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos() as u64
+    });
+    let sender_address = sender.to_address(&contact.get_prefix())?;
+    let src_port = src_port_id.unwrap_or("transfer".to_string());
+    let msg_transfer = MsgTransfer {
+        source_port: src_port,
+        source_channel: src_channel_id,
+        token: Some(coin.clone()),
+        sender: sender_address.to_string(),
+        receiver: receiver.to_string(),
+        timeout_height,
+        timeout_timestamp,
+        memo: "".to_string(),
+    };
+    info!("Submitting MsgTransfer {:?}", msg_transfer);
+    let msg_transfer = Msg::new(MSG_TRANSFER_TYPE_URL, msg_transfer);
+    let fee_coin = fee_coin.unwrap_or(DSCoin {
+        amount: 100u32.into(),
+        denom: (*STAKING_TOKEN).to_string(),
+    });
+    contact
+        .send_message(
+            &[msg_transfer],
+            Some("Test Relaying".to_string()),
+            &[fee_coin],
+            Some(OPERATION_TIMEOUT),
+            sender,
+        )
+        .await
 }
 
 // Retrieves the channel connecting the chain behind `ibc_channel_qc` and the chain with id `foreign_chain_id`
@@ -381,7 +427,7 @@ pub async fn get_ibc_balance(
 
         // Check each ibc/ balance the account holds
         for bal in res.into_inner().balances {
-            if bal.denom.clone()[..4] == *"ibc/".to_string() {
+            if bal.denom.clone()[..4].eq("ibc/") && !bal.denom.clone().eq("ibc/nometadatatoken") {
                 // only consider ibc denoms
                 let hash = bal.denom.clone();
                 let hash = &hash[4..]; // Strip leading 'ibc/'
@@ -390,7 +436,7 @@ pub async fn get_ibc_balance(
                         hash: hash.to_string(),
                     })
                     .await
-                    .unwrap();
+                    .unwrap_or_else(|_| panic!("Unable to get denom trace for hash {}", hash));
                 let denom_trace = denom_res.into_inner().denom_trace;
                 if denom_trace.is_none() {
                     // weird, but not critical for the test

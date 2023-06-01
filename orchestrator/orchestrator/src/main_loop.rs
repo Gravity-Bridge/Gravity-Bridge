@@ -2,7 +2,8 @@
 //! that can only be run by a validator. This single binary the 'Orchestrator' runs not only these two rules but also the untrusted role of a relayer, that does not need any permissions and has it's
 //! own crate and binary so that anyone may run it.
 
-use crate::{ethereum_event_watcher::check_for_events, oracle_resync::get_last_checked_block};
+use crate::ethereum_event_watcher::CheckedNonces;
+use crate::{ethereum_event_watcher::attest_to_events, oracle_resync::get_last_checked_block};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{address::Address as EthAddress, Uint256};
 use cosmos_gravity::query::get_gravity_params;
@@ -15,16 +16,19 @@ use cosmos_gravity::{
     utils::get_last_event_nonce_with_retry,
 };
 use deep_space::error::CosmosGrpcError;
-use deep_space::Contact;
 use deep_space::{client::ChainStatus, utils::FeeInfo};
+use deep_space::Contact;
 use deep_space::{
+    address::Address as CosmosAddress,
     coin::Coin,
     private_key::{CosmosPrivateKey, PrivateKey},
 };
 use futures::future::{join, join3};
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::types::GravityBridgeToolsConfig;
+use gravity_utils::types::{
+    cross_bridge_balances::check_cross_bridge_balances, GravityBridgeToolsConfig,
+};
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
 use num_traits::ToPrimitive;
 use relayer::main_loop::all_relayer_loops;
@@ -69,6 +73,7 @@ pub async fn orchestrator_main_loop(
 
     let a = eth_oracle_main_loop(
         cosmos_key,
+        ethereum_key,
         web3.clone(),
         contact.clone(),
         grpc_client.clone(),
@@ -77,10 +82,12 @@ pub async fn orchestrator_main_loop(
     );
     let b = eth_signer_main_loop(
         cosmos_key,
-        ethereum_key,
         contact.clone(),
         grpc_client.clone(),
         fee.clone(),
+        ethereum_key,
+        &web3,
+        gravity_contract_address,
     );
     let c = all_relayer_loops(
         Some(cosmos_key),
@@ -141,19 +148,23 @@ pub async fn test_eth_connection(web3: Web3) {
 
 /// This function is responsible for making sure that Ethereum events are retrieved from the Ethereum blockchain
 /// and ferried over to Cosmos where they will be used to issue tokens or process batches.
+/// The oracle will not perform any work if the bridge is determined to be insolvent, this is
+/// a security measure to protect the bridge.
 pub async fn eth_oracle_main_loop(
     cosmos_key: CosmosPrivateKey,
+    ethereum_key: EthPrivateKey,
     web3: Web3,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
     gravity_contract_address: EthAddress,
     fee: Coin,
 ) {
-    let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
+    let cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
+    let eth_address = ethereum_key.to_address();
     let long_timeout_web30 = Web3::new(&web3.get_url(), Duration::from_secs(120));
     let mut last_checked_block: Uint256 = get_last_checked_block(
         grpc_client.clone(),
-        our_cosmos_address,
+        cosmos_address,
         contact.get_prefix(),
         gravity_contract_address,
         &long_timeout_web30,
@@ -164,115 +175,27 @@ pub async fn eth_oracle_main_loop(
     // last checked event nonce to detect when this happens
     let mut last_checked_event: Uint256 = 0u8.into();
     info!("Oracle resync complete, Oracle now operational");
-    let mut grpc_client = grpc_client;
 
     loop {
         let loop_start = Instant::now();
 
-        let latest_eth_block = web3.eth_block_number().await;
-        let latest_cosmos_block = contact.get_chain_status().await;
-
-        match (&latest_eth_block, latest_cosmos_block) {
-            (Ok(latest_eth_block), Ok(ChainStatus::Moving { block_height })) => {
-                trace!(
-                    "Latest Eth block {} Latest Cosmos block {}",
-                    latest_eth_block,
-                    block_height,
-                );
-
-                metrics_latest(block_height, "latest_cosmos_block");
-                // Converting into u64
-                metrics_latest(latest_eth_block.to_u64().unwrap(), "latest_eth_block");
-            }
-            (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
-                warn!("Cosmos node syncing, Eth oracle paused");
-                metrics_warnings_counter(2, "Cosmos node syncing");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
-                warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
-                metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Ok(_), Err(_)) => {
-                warn!("Could not contact Cosmos grpc, trying again");
-                metrics_warnings_counter(2, "Could not contact Cosmos grpc");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Err(_), Ok(_)) => {
-                warn!("Could not contact Eth node, trying again");
-                metrics_warnings_counter(1, "Could not contact Eth node");
-                delay_for(DELAY).await;
-                continue;
-            }
-            (Err(_), Err(_)) => {
-                error!("Could not reach Ethereum or Cosmos rpc!");
-
-                metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc");
-
-                delay_for(DELAY).await;
-                continue;
-            }
-        }
-
-        // if the governance vote reset last event nonce sent by validator to some lower value, we can detect this
-        // by comparing last_event_nonce retrieved from the chain with last_checked_event saved by the orchestrator
-        // in order to reset last_checked_block and last_checked_event and continue from that point
-        let last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
-            &mut grpc_client,
-            our_cosmos_address,
-            contact.get_prefix().clone(),
-        )
-        .await
-        .into();
-
-        if last_event_nonce < last_checked_event {
-            // validator went back in history
-            info!("Governance unhalt vote must have happened, resetting the block to check!");
-            last_checked_event = last_event_nonce;
-            last_checked_block = get_last_checked_block(
-                grpc_client.clone(),
-                our_cosmos_address,
-                contact.get_prefix(),
-                gravity_contract_address,
-                &web3,
-            )
-            .await;
-        }
-
-        // Relays events from Ethereum -> Cosmos
-        match check_for_events(
-            &web3,
+        let res = single_oracle_iteration(
+            grpc_client.clone(),
             &contact,
-            &mut grpc_client,
+            &web3,
             gravity_contract_address,
             cosmos_key,
-            fee.clone(),
+            cosmos_address,
+            eth_address,
+            last_checked_event,
             last_checked_block,
+            fee.clone(),
         )
-        .await
-        {
-            Ok(nonces) => {
-                // If the governance happened while check_for_events() was executing and there were no new event nonces,
-                // nonces.event_nonce would return lower value than last_checked_event. We want to keep last_checked_event
-                // value so it could be used in the next iteration to check if we should return to the
-                // earlier block and continue from that point. CheckedNonces is accurate unless a governance vote happens.
-                last_checked_block = nonces.block_number;
-                if nonces.event_nonce > last_checked_event {
-                    last_checked_event = nonces.event_nonce;
-                }
-                metrics_latest(
-                    last_checked_event.to_string().parse().unwrap(),
-                    "last_checked_event",
-                );
-            }
-            Err(e) => {
-                error!("Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}", e);
-                metrics_errors_counter(0, "Failed to get events for block range");
-            }
+        .await;
+
+        if let Some(CheckedNonces{event_nonce, block_number}) = res {
+            last_checked_event = event_nonce;
+            last_checked_block = block_number;
         }
 
         // a bit of logic that tires to keep things running every LOOP_SPEED seconds exactly
@@ -285,180 +208,160 @@ pub async fn eth_oracle_main_loop(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+pub async fn single_oracle_iteration(
+    grpc_client: GravityQueryClient<Channel>,
+    contact: &Contact,
+    web30: &Web3,
+    gravity_contract_address: EthAddress,
+    cosmos_key: CosmosPrivateKey,
+    cosmos_address: CosmosAddress,
+    eth_address: EthAddress,
+    event_to_check: Uint256,
+    block_to_check: Uint256,
+    fee: Coin,
+) -> Option<CheckedNonces> {
+    let mut grpc_client = grpc_client;
+    let mut checked_event: Uint256 = event_to_check;
+    let mut checked_block: Uint256 = block_to_check;
+
+    let latest_eth_block = web30.eth_block_number().await;
+    let latest_cosmos_block = contact.get_chain_status().await;
+
+    match (&latest_eth_block, latest_cosmos_block) {
+        (Ok(latest_eth_block), Ok(ChainStatus::Moving { block_height })) => {
+            trace!(
+                "Latest Eth block {} Latest Cosmos block {}",
+                latest_eth_block,
+                block_height,
+            );
+
+            metrics_latest(block_height, "latest_cosmos_block");
+            // Converting into u64
+
+            metrics_latest(latest_eth_block.to_u64().unwrap(), "latest_eth_block");
+        }
+        (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
+            warn!("Cosmos node syncing, Eth oracle paused");
+            metrics_warnings_counter(2, "Cosmos node syncing");
+            delay_for(DELAY).await;
+            return None;
+        }
+        (Ok(_latest_eth_block), Ok(ChainStatus::WaitingToStart)) => {
+            warn!("Cosmos node syncing waiting for chain start, Eth oracle paused");
+            metrics_warnings_counter(2, "Cosmos node syncing waiting for chain start");
+            delay_for(DELAY).await;
+            return None;
+        }
+        (Ok(_), Err(_)) => {
+            warn!("Could not contact Cosmos grpc, trying again");
+            metrics_warnings_counter(2, "Could not contact Cosmos grpc");
+            delay_for(DELAY).await;
+            return None;
+        }
+        (Err(_), Ok(_)) => {
+            warn!("Could not contact Eth node, trying again");
+            metrics_warnings_counter(1, "Could not contact Eth node");
+            delay_for(DELAY).await;
+            return None;
+        }
+        (Err(_), Err(_)) => {
+            error!("Could not reach Ethereum or Cosmos rpc!");
+
+            metrics_errors_counter(0, "Could not reach Ethereum or Cosmos rpc");
+
+            delay_for(DELAY).await;
+            return None;
+        }
+    }
+
+    // if the governance vote reset last event nonce sent by validator to some lower value, we can detect this
+    // by comparing last_event_nonce retrieved from the chain with last_checked_event saved by the orchestrator
+    // in order to reset last_checked_block and last_checked_event and continue from that point
+    let last_event_nonce: Uint256 = get_last_event_nonce_with_retry(
+        &mut grpc_client,
+        cosmos_address,
+        contact.get_prefix().clone(),
+    )
+    .await
+    .into();
+
+    if last_event_nonce < event_to_check {
+        // validator went back in history
+        info!("Governance unhalt vote must have happened, resetting the block to check!");
+        checked_event = last_event_nonce;
+        checked_block = get_last_checked_block(
+            grpc_client.clone(),
+            cosmos_address,
+            contact.get_prefix(),
+            gravity_contract_address,
+            web30,
+        )
+        .await;
+    }
+
+    // Check the balances on both sides of the bridge, only submitting further events if the
+    // bridge is functioning as expected
+    let balances = check_cross_bridge_balances(
+        &grpc_client,
+        web30,
+        eth_address,
+        gravity_contract_address,
+    )
+    .await;
+    if balances.is_ok() {
+        // Relays events from Ethereum -> Cosmos, returns the latest nonces needed in future iterations
+        let updated_nonces = attest_to_events(
+            web30,
+            contact,
+            &grpc_client,
+            gravity_contract_address,
+            cosmos_key,
+            fee.clone(),
+            checked_block,
+            checked_event,
+        )
+        .await;
+        checked_block = updated_nonces.block_number;
+        checked_event = updated_nonces.event_nonce;
+
+        return Some(CheckedNonces{block_number: checked_block, event_nonce: checked_event})
+    }
+
+    None
+}
+
 /// The eth_signer simply signs off on any batches or validator sets provided by the validator
 /// since these are provided directly by a trusted Cosmsos node they can simply be assumed to be
 /// valid and signed off on.
+/// The eth_signer will not perform any work if the bridge is determined to be insolvent, this is
+/// a security measure to protect the bridge.
 pub async fn eth_signer_main_loop(
     cosmos_key: CosmosPrivateKey,
-    ethereum_key: EthPrivateKey,
     contact: Contact,
     grpc_client: GravityQueryClient<Channel>,
     fee: Coin,
+    ethereum_key: EthPrivateKey,
+    web30: &Web3,
+    gravity_contract_address: EthAddress,
 ) {
-    let our_cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
-    let mut grpc_client = grpc_client;
+    let cosmos_address = cosmos_key.to_address(&contact.get_prefix()).unwrap();
+    let eth_address = ethereum_key.to_address();
 
     loop {
         let loop_start = Instant::now();
-
-        // repeatedly refreshing the parameters here maintains loop correctness
-        // if the gravity_id is changed or slashing windows are changed. Neither of these
-        // is very probable
-        let params = match get_gravity_params(&mut grpc_client).await {
-            Ok(p) => p,
-            Err(e) => {
-                error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
-                metrics_errors_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
-                continue;
-            }
-        };
-        let blocks_until_slashing = min(
-            min(params.signed_valsets_window, params.signed_batches_window),
-            params.signed_logic_calls_window,
-        );
-        let gravity_id = params.gravity_id;
-
-        let latest_cosmos_block = contact.get_chain_status().await;
-        match latest_cosmos_block {
-            Ok(ChainStatus::Moving { block_height }) => {
-                trace!("Latest Cosmos block {}", block_height,);
-            }
-            Ok(ChainStatus::Syncing) => {
-                warn!("Cosmos node syncing, Eth signer paused");
-                warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
-                metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
-                metrics_latest(blocks_until_slashing, "blocks_until_slashing");
-                delay_for(DELAY).await;
-                continue;
-            }
-            Ok(ChainStatus::WaitingToStart) => {
-                warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
-                metrics_warnings_counter(
-                    2,
-                    "Cosmos node syncing waiting for chain start, Eth signer paused",
-                );
-                delay_for(DELAY).await;
-                continue;
-            }
-            Err(_) => {
-                error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
-                delay_for(DELAY).await;
-                metrics_latest(blocks_until_slashing, "blocks_until_slashing");
-                metrics_errors_counter(
-                    2,
-                    "Could not reach Cosmos rpc! You must correct this or you risk being slashed",
-                );
-                continue;
-            }
-        }
-
-        // sign the last unsigned valsets
-        match get_oldest_unsigned_valsets(
-            &mut grpc_client,
-            our_cosmos_address,
-            contact.get_prefix(),
+        single_eth_signer_iteration(
+            grpc_client.clone(),
+            &contact,
+            web30,
+            gravity_contract_address,
+            cosmos_key,
+            cosmos_address,
+            ethereum_key,
+            eth_address,
+            fee.clone(),
         )
-        .await
-        {
-            Ok(valsets) => {
-                if valsets.is_empty() {
-                    trace!("No validator sets to sign, node is caught up!")
-                } else {
-                    info!(
-                        "Sending {} valset confirms starting with nonce {}",
-                        valsets.len(),
-                        valsets[0].nonce
-                    );
-                    let res = send_valset_confirms(
-                        &contact,
-                        ethereum_key,
-                        fee.clone(),
-                        valsets,
-                        cosmos_key,
-                        gravity_id.clone(),
-                    )
-                    .await;
-                    trace!("Valset confirm result is {:?}", res);
-                    check_for_fee_error(res, &fee);
-                }
-            }
-            Err(e) => trace!(
-                "Failed to get unsigned valsets, check your Cosmos gRPC {:?}",
-                e
-            ),
-        }
-
-        // sign the last unsigned batch, TODO check if we already have signed this
-        match get_oldest_unsigned_transaction_batches(
-            &mut grpc_client,
-            our_cosmos_address,
-            contact.get_prefix(),
-        )
-        .await
-        {
-            Ok(last_unsigned_batches) => {
-                if last_unsigned_batches.is_empty() {
-                    trace!("No unsigned batch sets to sign, node is caught up!")
-                } else {
-                    info!(
-                        "Sending {} batch confirms starting with nonce {}",
-                        last_unsigned_batches.len(),
-                        last_unsigned_batches[0].nonce
-                    );
-
-                    let res = send_batch_confirm(
-                        &contact,
-                        ethereum_key,
-                        fee.clone(),
-                        last_unsigned_batches,
-                        cosmos_key,
-                        gravity_id.clone(),
-                    )
-                    .await;
-                    trace!("Batch confirm result is {:?}", res);
-                    check_for_fee_error(res, &fee);
-                }
-            }
-            Err(e) => trace!(
-                "Failed to get unsigned Batches, check your Cosmos gRPC {:?}",
-                e
-            ),
-        }
-
-        match get_oldest_unsigned_logic_calls(
-            &mut grpc_client,
-            our_cosmos_address,
-            contact.get_prefix(),
-        )
-        .await
-        {
-            Ok(last_unsigned_calls) => {
-                if last_unsigned_calls.is_empty() {
-                    trace!("No unsigned call sets to sign, node is caught up!")
-                } else {
-                    info!(
-                        "Sending {} logic call confirms starting with nonce {}",
-                        last_unsigned_calls.len(),
-                        last_unsigned_calls[0].invalidation_nonce
-                    );
-                    let res = send_logic_call_confirm(
-                        &contact,
-                        ethereum_key,
-                        fee.clone(),
-                        last_unsigned_calls,
-                        cosmos_key,
-                        gravity_id.clone(),
-                    )
-                    .await;
-                    trace!("call confirm result is {:?}", res);
-                    check_for_fee_error(res, &fee);
-                }
-            }
-            Err(e) => info!(
-                "Failed to get unsigned Logic Calls, check your Cosmos gRPC {:?}",
-                e
-            ),
-        }
+        .await;
 
         // a bit of logic that tires to keep things running every LOOP_SPEED seconds exactly
         // this is not required for any specific reason. In fact we expect and plan for
@@ -467,6 +370,206 @@ pub async fn eth_signer_main_loop(
         if elapsed < ETH_SIGNER_LOOP_SPEED {
             delay_for(ETH_SIGNER_LOOP_SPEED - elapsed).await;
         }
+    }
+}
+
+// Performs the eth signer duties, see eth_signer_main_loop
+pub async fn single_eth_signer_iteration(
+    grpc_client: GravityQueryClient<Channel>,
+    contact: &Contact,
+    web30: &Web3,
+    gravity_contract_address: EthAddress,
+    cosmos_key: CosmosPrivateKey,
+    cosmos_address: CosmosAddress,
+    ethereum_key: EthPrivateKey,
+    eth_address: EthAddress,
+    fee: Coin,
+) {
+    let mut grpc_client = grpc_client;
+    // repeatedly refreshing the parameters here maintains loop correctness
+    // if the gravity_id is changed or slashing windows are changed. Neither of these
+    // is very probable
+    let params = match get_gravity_params(&mut grpc_client).await {
+        Ok(p) => p,
+        Err(e) => {
+            error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
+            metrics_errors_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
+            return;
+        }
+    };
+    let blocks_until_slashing = min(
+        min(params.signed_valsets_window, params.signed_batches_window),
+        params.signed_logic_calls_window,
+    );
+    let gravity_id = params.gravity_id;
+
+    let latest_cosmos_block = contact.get_chain_status().await;
+    match latest_cosmos_block {
+        Ok(ChainStatus::Moving { block_height }) => {
+            trace!("Latest Cosmos block {}", block_height,);
+        }
+        Ok(ChainStatus::Syncing) => {
+            warn!("Cosmos node syncing, Eth signer paused");
+            warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
+            metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
+            metrics_latest(blocks_until_slashing, "blocks_until_slashing");
+            delay_for(DELAY).await;
+            return;
+        }
+        Ok(ChainStatus::WaitingToStart) => {
+            warn!("Cosmos node syncing waiting for chain start, Eth signer paused");
+            metrics_warnings_counter(
+                2,
+                "Cosmos node syncing waiting for chain start, Eth signer paused",
+            );
+            delay_for(DELAY).await;
+            return;
+        }
+        Err(_) => {
+            error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
+            delay_for(DELAY).await;
+            metrics_latest(blocks_until_slashing, "blocks_until_slashing");
+            metrics_errors_counter(
+                2,
+                "Could not reach Cosmos rpc! You must correct this or you risk being slashed",
+            );
+            return;
+        }
+    }
+
+    // Check the balances on both sides of the bridge, only submitting further events if the
+    // bridge is functioning as expected
+    let res = check_cross_bridge_balances(
+        &grpc_client,
+        web30,
+        eth_address,
+        gravity_contract_address,
+    )
+    .await;
+
+
+    if res.is_ok() {
+        sign_and_send(
+            contact,
+            &grpc_client,
+            cosmos_key,
+            cosmos_address,
+            ethereum_key,
+            fee.clone(),
+            gravity_id,
+        )
+        .await;
+    }
+}
+
+// Fetches, signs, and submits any outstanding work (valsets, batches, logic calls)
+async fn sign_and_send(
+    contact: &Contact,
+    grpc_client: &GravityQueryClient<Channel>,
+    cosmos_key: CosmosPrivateKey,
+    cosmos_address: CosmosAddress,
+    ethereum_key: EthPrivateKey,
+    fee: Coin,
+    gravity_id: String,
+) {
+    let mut grpc_client = grpc_client.clone();
+    // sign the last unsigned valsets
+    match get_oldest_unsigned_valsets(&mut grpc_client, cosmos_address, contact.get_prefix()).await
+    {
+        Ok(valsets) => {
+            if valsets.is_empty() {
+                trace!("No validator sets to sign, node is caught up!")
+            } else {
+                info!(
+                    "Sending {} valset confirms starting with nonce {}",
+                    valsets.len(),
+                    valsets[0].nonce
+                );
+                let res = send_valset_confirms(
+                    contact,
+                    ethereum_key,
+                    fee.clone(),
+                    valsets,
+                    cosmos_key,
+                    gravity_id.clone(),
+                )
+                .await;
+                trace!("Valset confirm result is {:?}", res);
+                check_for_fee_error(res, &fee);
+            }
+        }
+        Err(e) => trace!(
+            "Failed to get unsigned valsets, check your Cosmos gRPC {:?}",
+            e
+        ),
+    }
+
+    // sign the last unsigned batch, TODO check if we already have signed this
+    match get_oldest_unsigned_transaction_batches(
+        &mut grpc_client,
+        cosmos_address,
+        contact.get_prefix(),
+    )
+    .await
+    {
+        Ok(last_unsigned_batches) => {
+            if last_unsigned_batches.is_empty() {
+                trace!("No unsigned batch sets to sign, node is caught up!")
+            } else {
+                info!(
+                    "Sending {} batch confirms starting with nonce {}",
+                    last_unsigned_batches.len(),
+                    last_unsigned_batches[0].nonce
+                );
+
+                let res = send_batch_confirm(
+                    contact,
+                    ethereum_key,
+                    fee.clone(),
+                    last_unsigned_batches,
+                    cosmos_key,
+                    gravity_id.clone(),
+                )
+                .await;
+                trace!("Batch confirm result is {:?}", res);
+                check_for_fee_error(res, &fee);
+            }
+        }
+        Err(e) => trace!(
+            "Failed to get unsigned Batches, check your Cosmos gRPC {:?}",
+            e
+        ),
+    }
+
+    match get_oldest_unsigned_logic_calls(&mut grpc_client, cosmos_address, contact.get_prefix())
+        .await
+    {
+        Ok(last_unsigned_calls) => {
+            if last_unsigned_calls.is_empty() {
+                trace!("No unsigned call sets to sign, node is caught up!")
+            } else {
+                info!(
+                    "Sending {} logic call confirms starting with nonce {}",
+                    last_unsigned_calls.len(),
+                    last_unsigned_calls[0].invalidation_nonce
+                );
+                let res = send_logic_call_confirm(
+                    contact,
+                    ethereum_key,
+                    fee.clone(),
+                    last_unsigned_calls,
+                    cosmos_key,
+                    gravity_id.clone(),
+                )
+                .await;
+                trace!("call confirm result is {:?}", res);
+                check_for_fee_error(res, &fee);
+            }
+        }
+        Err(e) => info!(
+            "Failed to get unsigned Logic Calls, check your Cosmos gRPC {:?}",
+            e
+        ),
     }
 }
 

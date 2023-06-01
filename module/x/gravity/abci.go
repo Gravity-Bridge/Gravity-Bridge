@@ -10,6 +10,11 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
+// The number of Ethereum Event related values to keep in the store beyond what
+// is absolutely necessary for chain function, to avoid the need to query past
+// block heights
+const EventsToKeep uint64 = 1000
+
 // EndBlocker is called at the end of every block
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 	params := k.GetParams(ctx)
@@ -18,8 +23,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 	cleanupTimedOutBatches(ctx, k)
 	cleanupTimedOutLogicCalls(ctx, k)
 	createValsets(ctx, k)
-	pruneValsets(ctx, k, params)
-	pruneAttestations(ctx, k)
+	pruning(ctx, k, params)
 }
 
 func createValsets(ctx sdk.Context, k keeper.Keeper) {
@@ -64,27 +68,6 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 	if (latestValset == nil) || (lastUnbondingHeight == uint64(ctx.BlockHeight())) || significantPowerDiff {
 		// if the conditions are true, put in a new validator set request to be signed and submitted to Ethereum
 		k.SetValsetRequest(ctx)
-	}
-}
-
-func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
-	// Validator set pruning
-	// prune all validator sets with a nonce less than the
-	// last observed nonce, they can't be submitted any longer
-	// Only prune valsets after the signed valsets window has passed
-	// so that slashing can occur the block before we remove them
-	lastObserved := k.GetLastObservedValset(ctx)
-	currentBlock := uint64(ctx.BlockHeight())
-	tooEarly := currentBlock < params.SignedValsetsWindow
-	if lastObserved != nil && !tooEarly {
-		earliestToPrune := currentBlock - params.SignedValsetsWindow
-		sets := k.GetValsets(ctx)
-		for _, set := range sets {
-			if set.Nonce < lastObserved.Nonce && set.Height < earliestToPrune {
-				k.DeleteValset(ctx, set.Nonce)
-				k.DeleteValsetConfirms(ctx, set.Nonce)
-			}
-		}
 	}
 }
 
@@ -496,24 +479,53 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 	}
 }
 
+// pruning prunes all unneeded items from the store
+func pruning(ctx sdk.Context, k keeper.Keeper, params types.Params) {
+	pruneValsets(ctx, k, params)
+	pruneAttestations(ctx, k, EventsToKeep)
+	pruneBridgeBalanceSnapshots(ctx, k, EventsToKeep)
+}
+
+// pruneValsets will prune all validator sets whose nonces are less than the last
+// observed nonce. These valsets can no longer be accepted.
+func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
+	// Validator set pruning
+	// prune all validator sets with a nonce less than the
+	// last observed nonce, they can't be submitted any longer
+	// Only prune valsets after the signed valsets window has passed
+	// so that slashing can occur the block before we remove them
+	lastObserved := k.GetLastObservedValset(ctx)
+	currentBlock := uint64(ctx.BlockHeight())
+	tooEarly := currentBlock < params.SignedValsetsWindow
+	if lastObserved != nil && !tooEarly {
+		earliestToPrune := currentBlock - params.SignedValsetsWindow
+		sets := k.GetValsets(ctx)
+		for _, set := range sets {
+			if set.Nonce < lastObserved.Nonce && set.Height < earliestToPrune {
+				k.DeleteValset(ctx, set.Nonce)
+				k.DeleteValsetConfirms(ctx, set.Nonce)
+			}
+		}
+	}
+}
+
 // Iterate over all attestations currently being voted on in order of nonce
 // and prune those that are older than the current nonce and no longer have any
 // use. This could be combined with create attestation and save some computation
 // but (A) pruning keeps the iteration small in the first place and (B) there is
 // already enough nuance in the other handler that it's best not to complicate it further
-func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
+func pruneAttestations(ctx sdk.Context, k keeper.Keeper, attestationsToKeep uint64) {
 	attmap, keys := k.GetAttestationMapping(ctx)
 
 	// we delete all attestations earlier than the current event nonce
 	// minus some buffer value. This buffer value is purely to allow
 	// frontends and other UI components to view recent oracle history
-	const eventsToKeep = 1000
 	lastNonce := uint64(k.GetLastObservedEventNonce(ctx))
 	var cutoff uint64
-	if lastNonce <= eventsToKeep {
+	if lastNonce <= attestationsToKeep {
 		return
 	} else {
-		cutoff = lastNonce - eventsToKeep
+		cutoff = lastNonce - attestationsToKeep
 	}
 
 	// This iterates over all keys (event nonces) in the attestation mapping. Each value contains
@@ -525,9 +537,39 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 		// This order is not important.
 		for _, att := range attmap[nonce] {
 			// delete all before the cutoff
-			if nonce < cutoff {
+			if nonce <= cutoff {
 				k.DeleteAttestation(ctx, att)
 			}
 		}
 	}
+}
+
+// pruneBridgeBalanceSnapshots will iterate over all BridgeBalanceSnapshots currently in the
+// store and prune those that are older than the current nonce, retaining a minimum of `eventsToKeep`
+func pruneBridgeBalanceSnapshots(ctx sdk.Context, k keeper.Keeper, snapshotsToKeep uint64) {
+	lastNonce := uint64(k.GetLastObservedEventNonce(ctx))
+	var cutoff uint64
+	if lastNonce <= snapshotsToKeep {
+		return
+	} else {
+		cutoff = lastNonce - snapshotsToKeep
+	}
+
+	k.IterateBridgeBalanceSnapshots(
+		ctx,
+		false,
+		func(key []byte, snapshot types.BridgeBalanceSnapshot) (stop bool) {
+			if snapshot.EventNonce <= cutoff {
+				if err := k.DeleteBridgeBalanceSnapshot(ctx, snapshot.EventNonce); err != nil {
+					errMsg := fmt.Sprintf("Discovered nonexistent snapshot with nonce %v while iterating: %v", snapshot.EventNonce, snapshot)
+					ctx.Logger().Error(errMsg)
+					panic(errMsg)
+				}
+
+				return false // Continue iterating
+			} else {
+				return true // Stop iterating
+			}
+		},
+	)
 }

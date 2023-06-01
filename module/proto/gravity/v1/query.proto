@@ -92,12 +92,20 @@ service Query {
       returns (QueryDelegateKeysByOrchestratorAddressResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_delegate_keys_by_orchestrator";
   }
-
   rpc GetPendingSendToEth(QueryPendingSendToEth) returns (QueryPendingSendToEthResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_pending_send_to_eth";
   }
   rpc GetPendingIbcAutoForwards(QueryPendingIbcAutoForwards) returns (QueryPendingIbcAutoForwardsResponse) {
     option (google.api.http).get = "/gravity/v1beta/query_pending_ibc_auto_forwards";
+  }
+  rpc GetMonitoredERC20Addresses(QueryMonitoredERC20Addresses) returns (QueryMonitoredERC20AddressesResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_monitored_token_addresses";
+  }
+  rpc GetBridgeBalanceSnapshots(QueryBridgeBalanceSnapshots) returns (QueryBridgeBalanceSnapshotsResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_bridge_balance_snapshots";
+  }
+  rpc GetBridgeBalanceSnapshotByEventNonce(QueryBridgeBalanceSnapshotByEventNonce) returns (QueryBridgeBalanceSnapshotByEventNonceResponse) {
+    option (google.api.http).get = "/gravity/v1beta/query_bridge_balance_snapshot_by_event_nonce";
   }
 }
 
@@ -314,4 +322,31 @@ message QueryPendingIbcAutoForwards{
 
 message QueryPendingIbcAutoForwardsResponse{
   repeated PendingIbcAutoForward pending_ibc_auto_forwards = 1;
+}
+
+message QueryMonitoredERC20Addresses{}
+
+message QueryMonitoredERC20AddressesResponse{
+  repeated string addresses = 1;
+}
+
+// Query params for GetBridgeBalanceSnapshots, with a limit (0 for unlimited),
+// and boolean newest_first (true for descending by event nonce)
+message QueryBridgeBalanceSnapshots{
+  uint64 limit = 1;
+  bool   newest_first = 2;
+}
+
+message QueryBridgeBalanceSnapshotsResponse{
+  repeated BridgeBalanceSnapshot snapshots = 1;
+}
+
+// Query params for GetBridgeBalanceSnapshots, with a limit (0 for unlimited),
+// and boolean newest_first (true for descending by event nonce)
+message QueryBridgeBalanceSnapshotByEventNonce{
+  uint64 nonce = 1;
+}
+
+message QueryBridgeBalanceSnapshotByEventNonceResponse{
+  BridgeBalanceSnapshot snapshot = 1;
 }

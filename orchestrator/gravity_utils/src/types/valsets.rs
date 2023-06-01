@@ -3,6 +3,7 @@ use crate::error::GravityError;
 use clarity::constants::zero_address;
 use clarity::Address as EthAddress;
 use clarity::Signature as EthSignature;
+use clarity::Uint256;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Address as CosmosAddress;
 use std::convert::TryFrom;

@@ -9,6 +9,7 @@ extern crate log;
 use crate::airdrop_proposal::airdrop_proposal_test;
 use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
+use crate::cross_bridge_balances::cross_bridge_balance_test;
 use crate::deposit_overflow::deposit_overflow_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
@@ -19,11 +20,14 @@ use crate::pause_bridge::pause_bridge_test;
 use crate::send_to_eth_fees::send_to_eth_fees_test;
 use crate::signature_slashing::signature_slashing_test;
 use crate::slashing_delegation::slashing_delegation_test;
+use crate::snapshot_manipulation::snapshot_manipulation_test;
+use crate::test_gauntlet::the_gauntlet;
 use crate::tx_cancel::send_to_eth_and_cancel;
 use crate::upgrade::{run_upgrade, upgrade_part_1, upgrade_part_2};
 use crate::utils::*;
 use crate::valset_rewards::valset_rewards_test;
 use crate::vesting::vesting_test;
+use batch_stress::batch_stress_test;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
 use deep_space::coin::Coin;
@@ -42,13 +46,14 @@ use orch_only::orch_only_test;
 use relay_market::relay_market_test;
 use std::{env, time::Duration};
 use tokio::time::sleep;
-use transaction_stress_test::transaction_stress_test;
 use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
 
 mod airdrop_proposal;
+mod batch_stress;
 mod batch_timeout;
 mod bootstrapping;
+mod cross_bridge_balances;
 mod deposit_overflow;
 mod erc_721_happy_path;
 mod ethereum_blacklist_test;
@@ -66,7 +71,8 @@ mod relay_market;
 mod send_to_eth_fees;
 mod signature_slashing;
 mod slashing_delegation;
-mod transaction_stress_test;
+mod snapshot_manipulation;
+mod test_gauntlet;
 mod tx_cancel;
 mod unhalt_bridge;
 mod upgrade;
@@ -109,6 +115,8 @@ lazy_static! {
     // LOCAL ETHEREUM CONSTANTS
     static ref ETH_NODE: String =
         env::var("ETH_NODE").unwrap_or_else(|_| "http://localhost:8545".to_owned());
+
+    static ref GRAVITY_MODULE_ADDRESS: String = deep_space::address::get_module_account_address(GRAVITY_MODULE_NAME, Some(ADDRESS_PREFIX.as_str())).unwrap().to_string();
 }
 
 /// this value reflects the contents of /tests/container-scripts/setup-validator.sh
@@ -117,6 +125,9 @@ lazy_static! {
 pub const STAKE_SUPPLY_PER_VALIDATOR: u128 = 1000000000;
 /// this is the amount each validator bonds at startup
 pub const STARTING_STAKE_PER_VALIDATOR: u128 = STAKE_SUPPLY_PER_VALIDATOR / 2;
+// This is the address of the gravity module, which is the first 20 bytes of the sha256 hash of "gravity" treated as
+// the bytes for a bech32 account address.
+const GRAVITY_MODULE_NAME: &str = "gravity";
 
 lazy_static! {
     // this key is the private key for the public key defined in tests/assets/ETHGenesis.json
@@ -201,6 +212,12 @@ pub async fn main() {
         ADDRESS_PREFIX.as_str(),
     )
     .unwrap();
+    let ibc_contact = Contact::new(
+        IBC_NODE_GRPC.as_str(),
+        OPERATION_TIMEOUT,
+        IBC_ADDRESS_PREFIX.as_str(),
+    )
+    .unwrap();
 
     info!("Waiting for Cosmos chain to come online");
     wait_for_cosmos_online(&contact, TOTAL_TIMEOUT).await;
@@ -231,6 +248,7 @@ pub async fn main() {
     let erc721_addresses = contracts.erc721_addresses.clone();
     // before we start the orchestrators send them some funds so they can pay
     // for things
+    let vulnerable_erc20_address = contracts.vulnerable_erc20_address;
     send_eth_to_orchestrators(&keys, &web30).await;
 
     // assert that the validators have a balance of the footoken we use
@@ -304,7 +322,7 @@ pub async fn main() {
                 ADDRESS_PREFIX.as_str(),
             )
             .unwrap();
-            transaction_stress_test(
+            batch_stress_test(
                 &web30,
                 &contact,
                 grpc_client,
@@ -320,7 +338,15 @@ pub async fn main() {
             return;
         } else if test_type == "VALSET_REWARDS" {
             info!("Starting Valset rewards test");
-            valset_rewards_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            valset_rewards_test(
+                &web30,
+                grpc_client,
+                &contact,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
             return;
         } else if test_type == "V2_HAPPY_PATH" || test_type == "HAPPY_PATH_V2" {
             info!("Starting happy path for Gravity v2");
@@ -540,6 +566,41 @@ pub async fn main() {
                 erc20_addresses,
             )
             .await;
+            return;
+        } else if test_type == "CROSS_BRIDGE_BALANCES" {
+            let vulnerable_erc20 = vulnerable_erc20_address.expect("CROSS_BRIDGE_BALANCES MUST have a vulnerable ERC20 deployed, check the contract deployer output");
+            let grpc = GravityQueryClient::connect(contact.get_url())
+                .await
+                .expect("Could not connect to gravity grpc client");
+            cross_bridge_balance_test(
+                &web30,
+                grpc,
+                &contact,
+                &ibc_contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                erc20_addresses,
+                vulnerable_erc20,
+            )
+            .await;
+            return;
+        } else if test_type == "THE_GAUNTLET" {
+            let vulnerable_erc20 = vulnerable_erc20_address.expect("THE_GAUNTLET MUST have a vulnerable ERC20 deployed, check the contract deployer output");
+            the_gauntlet(
+                &web30,
+                grpc_client,
+                &contact,
+                &ibc_contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                erc20_addresses,
+                vulnerable_erc20,
+            ).await;
+            return;
+        } else if test_type == "SNAPSHOT_MANIPULATION" {
+            snapshot_manipulation_test(&web30, grpc_client, &contact, keys, gravity_address, erc20_addresses).await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;

@@ -1,5 +1,11 @@
 #!/bin/bash
-set -eux
+set -ex
+
+if [[ -z "${LOG_LEVEL}" ]]; then
+  echo "Setting log level to the default of INFO"
+  export LOG_LEVEL="INFO"
+fi
+
 # the directory of this script, useful for allowing this script
 # to be run with any PWD
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -41,5 +47,5 @@ echo "Skip $TEST_TYPE"
 elif [[ -z ${ALCHEMY_ID} ]] && [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* ]] ; then
 echo "Skip $TEST_TYPE"
 else 
-docker run --name gravity_all_up_test_instance $PLATFORM_CMD --cap-add=NET_ADMIN -t gravity-base /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh $NODES $TEST_TYPE $ALCHEMY_ID
+docker run --name gravity_all_up_test_instance $PLATFORM_CMD --cap-add=NET_ADMIN -t gravity-base /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh $NODES $LOG_LEVEL $TEST_TYPE $ALCHEMY_ID
 fi

@@ -10,6 +10,9 @@ use tokio::time::error::Elapsed;
 use tonic::Status;
 use web30::jsonrpc::error::Web3Error;
 
+// A substring used to detect when the ethereum endpoint is missing the queried historical height
+pub const ETHEREUM_MISSING_NODE: &str = "missing trie node";
+
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum GravityError {
@@ -28,6 +31,7 @@ pub enum GravityError {
     InsufficientVotingPowerToPass(String),
     ParseBigIntError(ParseError),
     ValsetUpToDate,
+    InvalidBridgeBalances(String),
 }
 
 impl fmt::Display for GravityError {
@@ -62,6 +66,9 @@ impl fmt::Display for GravityError {
                     f,
                     "latest validator set is synced between Ethereum and Cosmos"
                 )
+            }
+            GravityError::InvalidBridgeBalances(val) => {
+                write!(f, "Invalid cross bridge balances: {}", val)
             }
         }
     }
