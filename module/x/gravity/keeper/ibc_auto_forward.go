@@ -15,14 +15,16 @@ import (
 	"time"
 
 	sdkerrors "cosmossdk.io/errors"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/cosmos/cosmos-sdk/types/errors"
-	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v5/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v5/modules/core/02-client/types"
+
+	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 // ValidatePendingIbcAutoForward performs basic validation, asserts the nonce is not ahead of what gravity is aware of,
@@ -254,7 +256,7 @@ func createIbcMsgTransfer(portId string, forward types.PendingIbcAutoForward, se
 		RevisionNumber: 0,
 		RevisionHeight: 0,
 	}
-	return *ibctransfertypes.NewMsgTransfer(
+	msg := *ibctransfertypes.NewMsgTransfer(
 		portId,
 		forward.IbcChannel,
 		*forward.Token,
@@ -262,8 +264,9 @@ func createIbcMsgTransfer(portId string, forward types.PendingIbcAutoForward, se
 		forward.ForeignReceiver,
 		zeroHeight, // Do not use block height based timeout
 		timeoutTimestampNs,
-		"IBC Auto-Forwarded by Gravity Bridge",
 	)
+	msg.Memo = "IBC Auto-Forwarded by Gravity Bridge"
+	return msg
 }
 
 // thirtyDaysInFuture creates a time.Time exactly 30 days from the last BlockTime for use in createIbcMsgTransfer
