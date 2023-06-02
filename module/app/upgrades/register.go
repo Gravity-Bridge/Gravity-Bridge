@@ -1,7 +1,6 @@
 package upgrades
 
 import (
-	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -10,7 +9,8 @@ import (
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
+	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
