@@ -14,7 +14,7 @@ relayer = {path = "../relayer/"}
 ethereum_gravity = {path = "../ethereum_gravity"}
 cosmos_gravity = {path = "../cosmos_gravity"}
 gravity_utils = {path = "../gravity_utils"}
-gravity_proto = {path = "../gravity_proto/"}
+gravity_proto = {workspace = true}
 metrics_exporter = {path = "../metrics_exporter/"}
 
 deep_space = {workspace = true}
