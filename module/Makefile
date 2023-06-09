@@ -53,12 +53,17 @@ BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)' -gcflags="all=-N -l"
 
 all: install
 
-install: go.sum
+# First run `go mod verify` then `go install`
+install: go.sum install-no-verify
+
+# Runs go install without verifying dependencies, used to make testing faster
+install-no-verify:
 		export GOFLAGS='-buildmode=pie'
 		export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
 		export CGO_LDFLAGS="-Wl,-z,relro,-z,now -fstack-protector"
 		go install $(BUILD_FLAGS) ./cmd/gravity
 
+# Verifies the go modules
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
 		GO111MODULE=on go mod verify
