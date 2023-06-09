@@ -14,6 +14,7 @@ use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
+use crate::ica_host::ica_host_happy_path;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
 use crate::send_to_eth_fees::send_to_eth_fees_test;
@@ -58,6 +59,7 @@ mod happy_path;
 mod happy_path_v2;
 mod ibc_auto_forward;
 mod ibc_metadata;
+mod ica_host;
 mod invalid_events;
 mod orch_keys;
 mod orch_only;
@@ -131,7 +133,8 @@ lazy_static! {
     // it's a distinct address to prevent sequence collisions
     static ref RELAYER_MNEMONIC: String = "below great use captain upon ship tiger exhaust orient burger network uphold wink theory focus cloud energy flavor recall joy phone beach symptom hobby".to_string();
     static ref RELAYER_PRIVATE_KEY: CosmosPrivateKey = CosmosPrivateKey::from_phrase(&RELAYER_MNEMONIC, "").unwrap();
-    static ref RELAYER_ADDRESS: CosmosAddress = RELAYER_PRIVATE_KEY.to_address(ADDRESS_PREFIX.as_str()).unwrap();
+    static ref GRAVITY_RELAYER_ADDRESS: CosmosAddress = RELAYER_PRIVATE_KEY.to_address(ADDRESS_PREFIX.as_str()).unwrap(); // IBC relayer on Gravity
+    static ref IBC_RELAYER_ADDRESS: CosmosAddress = RELAYER_PRIVATE_KEY.to_address(IBC_ADDRESS_PREFIX.as_str()).unwrap(); // IBC relayer on test chain
 }
 
 /// Gets the standard non-token fee for the testnet. We deploy the test chain with STAKE
@@ -151,9 +154,10 @@ pub fn get_fee(denom: Option<String>) -> Coin {
     }
 }
 
-pub fn get_deposit() -> Coin {
+pub fn get_deposit(denom_override: Option<String>) -> Coin {
+    let denom = denom_override.unwrap_or_else(|| STAKING_TOKEN.to_string());
     Coin {
-        denom: STAKING_TOKEN.to_string(),
+        denom,
         amount: 1_000_000_000u64.into(),
     }
 }
@@ -195,15 +199,21 @@ pub fn should_deploy_contracts() -> bool {
 pub async fn main() {
     env_logger::init();
     info!("Starting Gravity test-runner");
-    let contact = Contact::new(
+    let gravity_contact = Contact::new(
         COSMOS_NODE_GRPC.as_str(),
         OPERATION_TIMEOUT,
         ADDRESS_PREFIX.as_str(),
     )
     .unwrap();
+    let ibc_contact = Contact::new(
+        IBC_NODE_GRPC.as_str(),
+        OPERATION_TIMEOUT,
+        IBC_ADDRESS_PREFIX.as_str(),
+    )
+    .unwrap();
 
     info!("Waiting for Cosmos chain to come online");
-    wait_for_cosmos_online(&contact, TOTAL_TIMEOUT).await;
+    wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
 
     let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await
@@ -212,11 +222,11 @@ pub async fn main() {
     // keys for the primary test chain
     let keys = get_keys();
     // keys for the IBC chain connected to the main test chain
-    let (ibc_keys, ibc_phrases) = parse_ibc_validator_keys();
+    let (ibc_keys, _ibc_phrases) = parse_ibc_validator_keys();
     // if we detect this env var we are only deploying contracts, do that then exit.
     if should_deploy_contracts() {
         info!("test-runner in contract deploying mode, deploying contracts, then exiting");
-        deploy_contracts(&contact).await;
+        deploy_contracts(&gravity_contact).await;
         return;
     }
 
@@ -235,11 +245,11 @@ pub async fn main() {
 
     // assert that the validators have a balance of the footoken we use
     // for test transfers
-    assert!(contact
+    assert!(gravity_contact
         .get_balance(
             keys[0]
                 .validator_key
-                .to_address(&contact.get_prefix())
+                .to_address(&gravity_contact.get_prefix())
                 .unwrap(),
             get_test_token_name(),
         )
@@ -247,7 +257,7 @@ pub async fn main() {
         .unwrap()
         .is_some());
 
-    start_ibc_relayer(&contact, &keys, &ibc_phrases).await;
+    start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
 
     // This segment contains optional tests, by default we run a happy path test
     // this tests all major functionality of Gravity once or twice.
@@ -276,11 +286,14 @@ pub async fn main() {
     // ERC721_HAPPY_PATH tests ERC721 extension for Gravity.sol, solidity only
     // UPGRADE_PART_1 handles creating a chain upgrade proposal and passing it
     // UPGRADE_PART_2 upgrades the chain binaries and starts the upgraded chain after being halted in part 1
+    // UPGRADE_ONLY performs an upgrade without making any testing assertions
     // IBC_AUTO_FORWARD tests ibc auto forwarding functionality.
-    // RUN_ORCH_ONLY runs only the orchestrators, for local testing where you want the chain to just run.
     // ETHERMINT_KEYS runs a gamut of transactions using a Ethermint key to test no loss of functionality
     // BATCH_TIMEOUT is a stress test for batch timeouts, setting an extremely agressive timeout value
     // VESTING checks that the vesting module delivers partially and fully vested accounts
+    // SEND_TO_ETH_FEES tests that Cosmos->Eth fees are collected and in the right amounts
+    // ICA_HOST_HAPPY_PATH tests that the interchain accounts host module is correctly configured on Gravity
+    // RUN_ORCH_ONLY runs only the orchestrators, for local testing where you want the chain to just run.
     let test_type = env::var("TEST_TYPE");
     info!("Starting tests with {:?}", test_type);
     if let Ok(test_type) = test_type {
@@ -289,7 +302,7 @@ pub async fn main() {
             happy_path_test(
                 &web30,
                 grpc_client,
-                &contact,
+                &gravity_contact,
                 keys,
                 gravity_address,
                 erc20_addresses[0],
@@ -298,6 +311,7 @@ pub async fn main() {
             .await;
             return;
         } else if test_type == "BATCH_STRESS" {
+            // 300s timeout contact instead of 30s
             let contact = Contact::new(
                 COSMOS_NODE_GRPC.as_str(),
                 TOTAL_TIMEOUT,
@@ -316,18 +330,19 @@ pub async fn main() {
             return;
         } else if test_type == "VALSET_STRESS" {
             info!("Starting Valset update stress test");
-            validator_set_stress_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            validator_set_stress_test(&web30, grpc_client, &gravity_contact, keys, gravity_address)
+                .await;
             return;
         } else if test_type == "VALSET_REWARDS" {
             info!("Starting Valset rewards test");
-            valset_rewards_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            valset_rewards_test(&web30, grpc_client, &gravity_contact, keys, gravity_address).await;
             return;
         } else if test_type == "V2_HAPPY_PATH" || test_type == "HAPPY_PATH_V2" {
             info!("Starting happy path for Gravity v2");
             happy_path_test_v2(
                 &web30,
                 grpc_client,
-                &contact,
+                &gravity_contact,
                 keys,
                 gravity_address,
                 false,
@@ -337,25 +352,33 @@ pub async fn main() {
             return;
         } else if test_type == "V2_HAPPY_PATH_NATIVE" || test_type == "HAPPY_PATH_V2_NATIVE" {
             info!("Starting happy path for ERC20 representation of the Native staking token");
-            happy_path_test_v2_native(&web30, grpc_client, &contact, keys, gravity_address, false)
-                .await;
+            happy_path_test_v2_native(
+                &web30,
+                grpc_client,
+                &gravity_contact,
+                keys,
+                gravity_address,
+                false,
+            )
+            .await;
             return;
         } else if test_type == "RELAY_MARKET" {
             info!("Starting relay market tests!");
-            relay_market_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            relay_market_test(&web30, grpc_client, &gravity_contact, keys, gravity_address).await;
             return;
         } else if test_type == "ORCHESTRATOR_KEYS" {
             info!("Starting orchestrator key update tests!");
-            orch_keys(grpc_client, &contact, keys).await;
+            orch_keys(grpc_client, &gravity_contact, keys).await;
             return;
         } else if test_type == "EVIDENCE" {
             info!("Starting evidence based slashing tests!");
-            evidence_based_slashing(&web30, grpc_client, &contact, keys, gravity_address).await;
+            evidence_based_slashing(&web30, grpc_client, &gravity_contact, keys, gravity_address)
+                .await;
             return;
         } else if test_type == "TXCANCEL" {
             info!("Starting SendToEth cancellation test!");
             send_to_eth_and_cancel(
-                &contact,
+                &gravity_contact,
                 grpc_client,
                 &web30,
                 keys,
@@ -368,7 +391,7 @@ pub async fn main() {
             info!("Starting invalid events test!");
             invalid_events(
                 &web30,
-                &contact,
+                &gravity_contact,
                 keys,
                 gravity_address,
                 erc20_addresses[0],
@@ -381,7 +404,7 @@ pub async fn main() {
             unhalt_bridge_test(
                 &web30,
                 grpc_client,
-                &contact,
+                &gravity_contact,
                 keys,
                 gravity_address,
                 erc20_addresses[0],
@@ -393,7 +416,7 @@ pub async fn main() {
             pause_bridge_test(
                 &web30,
                 grpc_client,
-                &contact,
+                &gravity_contact,
                 keys,
                 gravity_address,
                 erc20_addresses[0],
@@ -402,33 +425,43 @@ pub async fn main() {
             return;
         } else if test_type == "DEPOSIT_OVERFLOW" {
             info!("Starting deposit overflow test!");
-            deposit_overflow_test(&web30, &contact, keys, erc20_addresses, grpc_client).await;
+            deposit_overflow_test(&web30, &gravity_contact, keys, erc20_addresses, grpc_client)
+                .await;
             return;
         } else if test_type == "ETHEREUM_BLACKLIST" {
             info!("Starting ethereum blacklist test");
-            ethereum_blacklist_test(grpc_client, &contact, keys).await;
+            ethereum_blacklist_test(grpc_client, &gravity_contact, keys).await;
             return;
         } else if test_type == "AIRDROP_PROPOSAL" {
             info!("Starting airdrop governance proposal test");
-            airdrop_proposal_test(&contact, keys).await;
+            airdrop_proposal_test(&gravity_contact, keys).await;
             return;
         } else if test_type == "SIGNATURE_SLASHING" {
             info!("Starting Signature Slashing test");
-            signature_slashing_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            signature_slashing_test(&web30, grpc_client, &gravity_contact, keys, gravity_address)
+                .await;
             return;
         } else if test_type == "SLASHING_DELEGATION" {
             info!("Starting Slashing Delegation test");
-            slashing_delegation_test(&web30, grpc_client, &contact, keys, gravity_address).await;
+            slashing_delegation_test(&web30, grpc_client, &gravity_contact, keys, gravity_address)
+                .await;
             return;
         } else if test_type == "IBC_METADATA" {
             info!("Starting IBC metadata proposal test");
-            ibc_metadata_proposal_test(gravity_address, keys, grpc_client, &contact, &web30).await;
+            ibc_metadata_proposal_test(
+                gravity_address,
+                keys,
+                grpc_client,
+                &gravity_contact,
+                &web30,
+            )
+            .await;
             return;
         } else if test_type == "ERC721_HAPPY_PATH" {
             info!("Starting ERC 721 transfer test");
             erc721_happy_path_test(
                 &web30,
-                &contact,
+                &gravity_contact,
                 keys,
                 gravity_address,
                 gravity_erc721_address,
@@ -491,7 +524,7 @@ pub async fn main() {
             ibc_auto_forward_test(
                 &web30,
                 grpc_client,
-                &contact,
+                &gravity_contact,
                 keys,
                 ibc_keys,
                 gravity_address,
@@ -504,7 +537,7 @@ pub async fn main() {
             let result = ethereum_keys_test(
                 &web30,
                 grpc_client,
-                &contact,
+                &gravity_contact,
                 keys,
                 ibc_keys,
                 gravity_address,
@@ -517,7 +550,7 @@ pub async fn main() {
             info!("Starting Batch Timeout/Timeout Stress test");
             batch_timeout_test(
                 &web30,
-                &contact,
+                &gravity_contact,
                 grpc_client,
                 keys,
                 gravity_address,
@@ -528,16 +561,29 @@ pub async fn main() {
         } else if test_type == "VESTING" {
             info!("Starting Vesting test");
             let vesting_keys = parse_vesting_keys();
-            vesting_test(&contact, vesting_keys).await;
+            vesting_test(&gravity_contact, vesting_keys).await;
             return;
         } else if test_type == "SEND_TO_ETH_FEES" {
             send_to_eth_fees_test(
                 &web30,
-                &contact,
+                &gravity_contact,
                 grpc_client,
                 keys,
                 gravity_address,
                 erc20_addresses,
+            )
+            .await;
+            return;
+        } else if test_type == "ICA_HOST_HAPPY_PATH" {
+            info!("Starting Interchain Accounts Host Module Happy Path Test");
+            ica_host_happy_path(
+                &web30,
+                grpc_client,
+                &gravity_contact,
+                &ibc_contact,
+                keys,
+                ibc_keys,
+                gravity_address,
             )
             .await;
             return;
@@ -559,7 +605,7 @@ pub async fn main() {
     happy_path_test(
         &web30,
         grpc_client,
-        &contact,
+        &gravity_contact,
         keys,
         gravity_address,
         erc20_addresses[0],
@@ -568,7 +614,7 @@ pub async fn main() {
     .await;
 
     // this checks that the chain is continuing at the end of each test.
-    contact
+    gravity_contact
         .wait_for_next_block(TOTAL_TIMEOUT)
         .await
         .expect("Error chain has halted unexpectedly!");
