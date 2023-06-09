@@ -455,7 +455,7 @@ pub async fn create_parameter_change_proposal(
     };
     let res = submit_parameter_change_proposal(
         proposal,
-        get_deposit(),
+        get_deposit(None),
         fee_coin,
         contact,
         key,
@@ -522,7 +522,7 @@ pub async fn execute_upgrade_proposal(
     };
     let res = submit_upgrade_proposal(
         proposal,
-        get_deposit(),
+        get_deposit(None),
         get_fee(None),
         contact,
         keys[0].validator_key,

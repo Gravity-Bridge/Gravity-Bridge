@@ -137,7 +137,7 @@ pub async fn submit_and_pass_ibc_metadata_proposal(
     };
     let res = submit_ibc_metadata_proposal(
         proposal_content,
-        get_deposit(),
+        get_deposit(None),
         get_fee(None),
         contact,
         keys[0].validator_key,
@@ -163,7 +163,7 @@ async fn submit_and_fail_ibc_metadata_proposal(
     };
     let res = submit_ibc_metadata_proposal(
         proposal_content,
-        get_deposit(),
+        get_deposit(None),
         get_fee(None),
         contact,
         keys[0].validator_key,

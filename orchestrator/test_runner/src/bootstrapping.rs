@@ -1,11 +1,16 @@
 use core::str::FromStr;
 use std::thread;
+use std::time::Duration;
 
 use crate::get_deposit;
+use crate::ibc_auto_forward::get_channel;
+use crate::COSMOS_NODE_GRPC;
+use crate::GRAVITY_RELAYER_ADDRESS;
 use crate::HERMES_CONFIG;
+use crate::IBC_RELAYER_ADDRESS;
+use crate::IBC_STAKING_TOKEN;
 use crate::MINER_PRIVATE_KEY;
 use crate::OPERATION_TIMEOUT;
-use crate::RELAYER_ADDRESS;
 use crate::RELAYER_MNEMONIC;
 use crate::TOTAL_TIMEOUT;
 use crate::{get_gravity_chain_id, get_ibc_chain_id, ETH_NODE};
@@ -14,6 +19,7 @@ use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey, DEFAULT_COSMOS_HD_PATH};
 use deep_space::Contact;
+use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::query_client::QueryClient as IbcChannelQueryClient;
 use ibc::core::ics24_host::identifier::ChainId;
 use ibc_relayer::config::AddressType;
 use ibc_relayer::keyring::{HDPath, KeyRing, Store};
@@ -271,34 +277,31 @@ fn return_existing<'a>(a: [&'a str; 3], b: [&'a str; 3]) -> [&'a str; 3] {
 // Creates a key in the relayer's test keyring, which the relayer should use
 // Hermes stores its keys in hermes_home/ gravity_phrase is for the main chain
 /// ibc phrase is for the test chain
-pub fn setup_relayer_keys(
-    gravity_phrase: &str,
-    ibc_phrase: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut keyring = KeyRing::new(
+pub fn setup_relayer_keys(shared_phrase: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut gkeyring = KeyRing::new(
         Store::Test,
         "gravity",
         &ChainId::from_string(&get_gravity_chain_id()),
     )?;
 
-    let key = keyring.key_from_mnemonic(
-        gravity_phrase,
+    let key = gkeyring.key_from_mnemonic(
+        shared_phrase,
         &HDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
         &AddressType::Cosmos,
     )?;
-    keyring.add_key("gravitykey", key)?;
+    gkeyring.add_key("gravitykey", key)?;
 
-    keyring = KeyRing::new(
+    let mut ckeyring = KeyRing::new(
         Store::Test,
         "cosmos",
         &ChainId::from_string(&get_ibc_chain_id()),
     )?;
-    let key = keyring.key_from_mnemonic(
-        ibc_phrase,
+    let key = ckeyring.key_from_mnemonic(
+        shared_phrase,
         &HDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
         &AddressType::Cosmos,
     )?;
-    keyring.add_key("ibckey", key)?;
+    ckeyring.add_key("ibckey", key)?;
 
     Ok(())
 }
@@ -361,22 +364,60 @@ pub fn run_ibc_relayer(hermes_base: &mut Command, full_scan: bool) {
 }
 
 // starts up the IBC relayer (hermes) in a background thread
-pub async fn start_ibc_relayer(contact: &Contact, keys: &[ValidatorKeys], ibc_phrases: &[String]) {
-    contact
+pub async fn start_ibc_relayer(
+    gravity_contact: &Contact,
+    ibc_contact: &Contact,
+    keys: &[ValidatorKeys],
+    ibc_keys: &[CosmosPrivateKey],
+) {
+    let grav_deposit = get_deposit(None);
+    let ibc_deposit = get_deposit(Some(IBC_STAKING_TOKEN.to_string()));
+    info!("Sending relayer {grav_deposit:?} on gravity");
+    gravity_contact
         .send_coins(
-            get_deposit(),
+            grav_deposit,
             None,
-            *RELAYER_ADDRESS,
+            *GRAVITY_RELAYER_ADDRESS,
             Some(OPERATION_TIMEOUT),
             keys[0].validator_key,
+        )
+        .await
+        .unwrap();
+    info!("Sending relayer {ibc_deposit:?} on ibc-test");
+    ibc_contact
+        .send_coins(
+            ibc_deposit,
+            Some(deep_space::Coin {
+                amount: 100u8.into(),
+                denom: IBC_STAKING_TOKEN.to_string(),
+            }),
+            *IBC_RELAYER_ADDRESS,
+            Some(OPERATION_TIMEOUT),
+            ibc_keys[0],
         )
         .await
         .unwrap();
     info!("test-runner starting IBC relayer mode: init hermes, create ibc channel, start hermes");
     let mut hermes_base = Command::new("hermes");
     let hermes_base = hermes_base.arg("--config").arg(HERMES_CONFIG);
-    setup_relayer_keys(&RELAYER_MNEMONIC, &ibc_phrases[0]).unwrap();
-    create_ibc_channel(hermes_base);
+    setup_relayer_keys(&RELAYER_MNEMONIC).unwrap();
+
+    let gravity_channel_qc = IbcChannelQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+        .await
+        .expect("Could not connect channel query client");
+
+    // Wait for the ibc channel to be created and find the channel ids
+    let channel_id_timeout = Duration::from_secs(60 * 5);
+    let gravity_channel = get_channel(
+        gravity_channel_qc,
+        get_ibc_chain_id(),
+        Some(channel_id_timeout),
+    )
+    .await;
+    if gravity_channel.is_err() {
+        info!("No IBC channels exist between gravity-test-1 and ibc-test-1, creating one now...");
+        create_ibc_channel(hermes_base);
+    }
     thread::spawn(|| {
         let mut hermes_base = Command::new("hermes");
         let hermes_base = hermes_base.arg("--config").arg(HERMES_CONFIG);

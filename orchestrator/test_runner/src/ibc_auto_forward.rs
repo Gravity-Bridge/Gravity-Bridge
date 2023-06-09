@@ -26,6 +26,7 @@ use gravity_proto::cosmos_sdk_proto::ibc::applications::transfer::{
     v1 as IbcTransferV1, v1::query_client::QueryClient as IbcTransferQueryClient,
 };
 use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::query_client::QueryClient as IbcChannelQueryClient;
+use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::IdentifiedChannel;
 use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelsRequest,
 };
@@ -291,11 +292,11 @@ pub async fn test_ibc_transfer(
 
 // Retrieves the channel connecting the chain behind `ibc_channel_qc` and the chain with id `foreign_chain_id`
 // Retries up to `timeout` (or OPERATION_TIMEOUT if None), checking each channel's client state to find the foreign chain's id
-pub async fn get_channel_id(
+pub async fn get_channel(
     ibc_channel_qc: IbcChannelQueryClient<Channel>, // The Src chain's IbcChannelQueryClient
     foreign_chain_id: String,                       // The chain-id of the Dst chain
     timeout: Option<Duration>,
-) -> Result<String, CosmosGrpcError> {
+) -> Result<IdentifiedChannel, CosmosGrpcError> {
     let mut ibc_channel_qc = ibc_channel_qc;
     let timeout = match timeout {
         Some(t) => t,
@@ -340,11 +341,23 @@ pub async fn get_channel_id(
             // Check to see if this client state contains foreign_chain_id (e.g. "cavity-1")
             let client_state = decode_any::<ClientState>(client_state_any).unwrap();
             if client_state.chain_id == foreign_chain_id {
-                return Ok(channel.channel_id);
+                return Ok(channel);
             }
         }
     }
     Err(CosmosGrpcError::BadResponse("No such channel".to_string()))
+}
+
+// Retrieves just the ID of the channel connecting the chain behind `ibc_channel_qc` and the chain with id `foreign_chain_id`
+// Retries up to `timeout` (or OPERATION_TIMEOUT if None), checking each channel's client state to find the foreign chain's id
+pub async fn get_channel_id(
+    ibc_channel_qc: IbcChannelQueryClient<Channel>, // The Src chain's IbcChannelQueryClient
+    foreign_chain_id: String,                       // The chain-id of the Dst chain
+    timeout: Option<Duration>,
+) -> Result<String, CosmosGrpcError> {
+    Ok(get_channel(ibc_channel_qc, foreign_chain_id, timeout)
+        .await?
+        .channel_id)
 }
 
 // Retrieves the balance `account` holds of `src_denom`'s IBC representation

@@ -992,7 +992,7 @@ pub async fn submit_and_pass_send_to_eth_fees_proposal(
     };
     let res = submit_send_to_eth_fees_proposal(
         proposal_content,
-        get_deposit(),
+        get_deposit(None),
         get_fee(None),
         contact,
         keys[0].validator_key,
