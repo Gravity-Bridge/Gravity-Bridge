@@ -310,12 +310,16 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
     let create_channel = hermes_base.args([
         "create",
         "channel",
+        "--a-chain",
         &get_gravity_chain_id(),
+        "--b-chain",
         &get_ibc_chain_id(),
-        "--port-a",
+        "--a-port",
         "transfer",
-        "--port-b",
+        "--b-port",
         "transfer",
+        "--new-client-connection",
+        "--yes",
     ]);
 
     let out_file = File::options()
@@ -339,7 +343,7 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
 pub fn run_ibc_relayer(hermes_base: &mut Command, full_scan: bool) {
     let mut start = hermes_base.arg("start");
     if full_scan {
-        start = start.arg("-f");
+        start = start.arg("--full-scan");
     }
     let out_file = File::options()
         .write(true)
@@ -370,12 +374,12 @@ pub async fn start_ibc_relayer(contact: &Contact, keys: &[ValidatorKeys], ibc_ph
         .unwrap();
     info!("test-runner starting IBC relayer mode: init hermes, create ibc channel, start hermes");
     let mut hermes_base = Command::new("hermes");
-    let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+    let hermes_base = hermes_base.arg("--config").arg(HERMES_CONFIG);
     setup_relayer_keys(&RELAYER_MNEMONIC, &ibc_phrases[0]).unwrap();
     create_ibc_channel(hermes_base);
     thread::spawn(|| {
         let mut hermes_base = Command::new("hermes");
-        let hermes_base = hermes_base.arg("-c").arg(HERMES_CONFIG);
+        let hermes_base = hermes_base.arg("--config").arg(HERMES_CONFIG);
         run_ibc_relayer(hermes_base, true); // likely will not return from here, just keep running
     });
     info!("Running ibc relayer in the background, directing output to /ibc-relayer-logs");
