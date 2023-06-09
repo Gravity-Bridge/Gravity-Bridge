@@ -3,7 +3,7 @@ members = ["orchestrator", "cosmos_gravity", "ethereum_gravity", "gravity_utils"
 default-members = ["gbt"]
 
 [workspace.dependencies]
-gravity_proto = "0.2.1"
+gravity_proto = "0.2.2"
 num256 = "0.5"
 clarity = "0.7"
 web30 = "0.23"
