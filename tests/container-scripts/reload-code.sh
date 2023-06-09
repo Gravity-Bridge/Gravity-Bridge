@@ -19,8 +19,7 @@ done
 
 pushd /gravity/module/
 export PATH=$PATH:/usr/local/go/bin
-make
-make install
+make install-no-verify
 popd
 pushd /gravity/
 tests/container-scripts/setup-validators.sh $NODES
