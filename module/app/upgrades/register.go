@@ -12,6 +12,7 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
@@ -60,8 +61,15 @@ func RegisterUpgradeHandlers(
 		pleiades.GetPleiades2UpgradeHandler(mm, configurator, crisisKeeper, stakingKeeper),
 	)
 
+	// Orion upgrade handler
 	upgradeKeeper.SetUpgradeHandler(
 		orion.PleiadesPart2ToOrionPlanName,
 		orion.GetOrionUpgradeHandler(mm, configurator, crisisKeeper),
+	)
+
+	// Antares upgrade handler
+	upgradeKeeper.SetUpgradeHandler(
+		antares.OrionToAntaresPlanName,
+		antares.GetAntaresUpgradeHandler(mm, configurator, crisisKeeper),
 	)
 }

@@ -481,6 +481,7 @@ pub async fn main() {
             upgrade_part_1(
                 &web30,
                 &contact,
+                &ibc_contact,
                 grpc_client,
                 keys,
                 ibc_keys,
@@ -500,6 +501,7 @@ pub async fn main() {
             upgrade_part_2(
                 &web30,
                 &contact,
+                &ibc_contact,
                 grpc_client,
                 keys,
                 ibc_keys,
