@@ -117,6 +117,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/ante"
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
@@ -999,22 +1000,36 @@ func (app *Gravity) registerStoreLoaders() {
 	if err != nil {
 		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
 	}
+	if app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		return
+	}
+
+	// STORE LOADER CONFIGURATION:
+	// Added: []string{"newmodule"}, // We are adding these modules
+	// Renamed: []storetypes.StoreRename{{"foo", "bar"}}, example foo to bar rename
+	// Deleted: []string{"bazmodule"}, example deleted bazmodule
 
 	// v1->v2 STORE LOADER SETUP
 	// Register the new v2 modules and the special StoreLoader to add them
 	if upgradeInfo.Name == v2.V1ToV2PlanName {
-		if !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) { // Recognized the plan, need to skip this one though
-			storeUpgrades := storetypes.StoreUpgrades{
-				Added: []string{bech32ibctypes.ModuleName}, // We are adding these modules
-				// Check upgrade docs to see which type of store loader is necessary for deletes/renames
-				// Renamed: []storetypes.StoreRename{{"foo", "bar"}}, example foo to bar rename
-				// Deleted: []string{"bazmodule"}, example deleted bazmodule
-				Renamed: nil,
-				Deleted: nil,
-			}
-
-			// configure store loader that checks if version == upgradeHeight and applies store upgrades
-			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+		storeUpgrades := storetypes.StoreUpgrades{
+			Added:   []string{bech32ibctypes.ModuleName},
+			Renamed: nil,
+			Deleted: nil,
 		}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
+	// ANTARES ICA Host module store loader setup
+	if upgradeInfo.Name == antares.OrionToAntaresPlanName {
+		storeUpgrades := storetypes.StoreUpgrades{
+			Added:   []string{icahosttypes.StoreKey},
+			Renamed: nil,
+			Deleted: nil,
+		}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
 }

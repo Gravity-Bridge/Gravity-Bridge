@@ -328,8 +328,8 @@ jobs:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
-      - name: Test Pleiades upgrade
-        run: tests/run-upgrade-test.sh v1.8.2
+      - name: Test Antares upgrade
+        run: tests/run-upgrade-test.sh v1.9.3
         env:
           NO_IMAGE_BUILD: True
   ibc_auto_forward_test:
