@@ -50,8 +50,13 @@ pub async fn upgrade_part_1(
 ) {
     info!("Starting upgrade test part 1");
     let metadata = footoken_metadata(gravity_contact).await;
-    submit_and_pass_ibc_metadata_proposal(metadata.name.clone(), metadata.clone(), gravity_contact, &keys)
-        .await;
+    submit_and_pass_ibc_metadata_proposal(
+        metadata.name.clone(),
+        metadata.clone(),
+        gravity_contact,
+        &keys,
+    )
+    .await;
     run_all_recoverable_tests(
         web30,
         gravity_contact,
@@ -101,6 +106,7 @@ pub async fn upgrade_part_1(
 /// Perform a series of integration tests after an upgrade has executed
 /// NOTE: To run this test, follow the instructions for v2_upgrade_part_1 and WAIT FOR CHAIN HALT,
 /// then finally run tests/run-tests.sh with V2_UPGRADE_PART_2 as the test type.
+#[allow(clippy::too_many_arguments)]
 pub async fn upgrade_part_2(
     web30: &Web3,
     gravity_contact: &Contact,
@@ -129,8 +135,13 @@ pub async fn upgrade_part_2(
     }
     let metadata = metadata.unwrap();
 
-    submit_and_pass_ibc_metadata_proposal(metadata.name.clone(), metadata.clone(), gravity_contact, &keys)
-        .await;
+    submit_and_pass_ibc_metadata_proposal(
+        metadata.name.clone(),
+        metadata.clone(),
+        gravity_contact,
+        &keys,
+    )
+    .await;
     run_all_recoverable_tests(
         web30,
         gravity_contact,
@@ -252,7 +263,16 @@ pub async fn run_upgrade_specific_tests(
     post_upgrade: bool,
 ) {
     if post_upgrade {
-        ica_host_happy_path(web30, grpc_client, gravity_contact, ibc_contact, keys, ibc_keys, gravity_address).await;
+        ica_host_happy_path(
+            web30,
+            grpc_client,
+            gravity_contact,
+            ibc_contact,
+            keys,
+            ibc_keys,
+            gravity_address,
+        )
+        .await;
     }
 }
 
