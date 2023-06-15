@@ -119,9 +119,14 @@ pub async fn ica_host_happy_path(
         .expect("Failed to fund ICA");
 
     let footoken = footoken_metadata(gravity_contact).await;
-    let footoken_deployed = grpc_client.denom_to_erc20(QueryDenomToErc20Request{ denom: footoken.base.clone() }).await;
+    let footoken_deployed = grpc_client
+        .denom_to_erc20(QueryDenomToErc20Request {
+            denom: footoken.base.clone(),
+        })
+        .await;
     let erc20_contract = match footoken_deployed {
-        Ok(res) => EthAddress::from_str(&res.into_inner().erc20).expect("invalid erc20 returned from grpc query"),
+        Ok(res) => EthAddress::from_str(&res.into_inner().erc20)
+            .expect("invalid erc20 returned from grpc query"),
         Err(_) => {
             deploy_cosmos_representing_erc20_and_check_adoption(
                 gravity_address,
