@@ -3,9 +3,9 @@ syntax = "proto3";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-package gravitybridge;
+package auction.v1;
 
-// Params defines the parameters for the GravityBridge module.
+// Params defines the parameters for the GravityBridge auction module.
 message Params {
   // AuctionEpoch is the number of blocks to start new auctions
   uint64 auction_epoch = 1;
