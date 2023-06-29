@@ -11,7 +11,8 @@ message AuctionPeriod {
     repeated Auction aucitons = 3;
 }
 
-enum Auction_Status{
+// status of auction
+enum AuctionStatus{
     IN_PROGRESS = 0;
     FINISH = 1;
  }
@@ -19,12 +20,12 @@ enum Auction_Status{
 message Auction {
     uint64 id = 1;
     cosmos.base.v1beta1.Coin auction_amount = 2;
-    Auction_Status status = 3;
+    AuctionStatus status = 3;
     Bid highest_bid = 4;
 }
 
 message Bid {
-    uint64 id = 1;
+    uint64 auction_id = 1;
     cosmos.base.v1beta1.Coin bid_amount = 2;
     string bidder_address = 3;
 }

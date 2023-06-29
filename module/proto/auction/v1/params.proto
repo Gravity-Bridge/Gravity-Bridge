@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+package gravitybridge;
+
+// Params defines the parameters for the GravityBridge module.
+message Params {
+  // AuctionEpoch is the number of blocks to start new auctions
+  uint64 auction_epoch = 1;
+
+  // AuctionPeriod is the number of blocks that the auction will occur
+  uint64 auction_period = 2;
+
+  // MinBidAmount is the minimum bid amount
+  uint64 min_bid_amount = 3;
+
+  // BidGap is the minimum gap required to raise a bid
+  uint64 bid_gap = 4;
+
+  // AuctionRate is the percentage of the token to be auctioned from the community pool
+  cosmos.base.v1beta1.Dec auction_rate = 5;
+
+  // AllowTokens is a list of allowed tokens to be auctioned
+  map<string, bool> allow_tokens = 6;
+}
