@@ -1,4 +1,4 @@
-use clarity::abi::{encode_tokens, Token};
+use clarity::abi::{encode_tokens, AbiToken as Token};
 use clarity::constants::zero_address;
 use clarity::utils::get_ethereum_msg_hash;
 use gravity_utils::types::{LogicCall, TransactionBatch, Valset};
@@ -230,7 +230,7 @@ mod test {
         // checkpoint is correct lets make sure our signature code works
         let mut rng = rand::thread_rng();
         let secret: [u8; 32] = rng.gen();
-        let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
+        let eth_key = EthPrivateKey::from_bytes(secret).unwrap();
         let eth_address = eth_key.to_address();
         let checkpoint = encode_tx_batch_confirm_hashed("foo".to_string(), batch);
 
@@ -272,7 +272,7 @@ mod test {
         let mut rng = rand::thread_rng();
         let secret: [u8; 32] = rng.gen();
         // the starting location of the funds
-        let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
+        let eth_key = EthPrivateKey::from_bytes(secret).unwrap();
         let eth_address = eth_key.to_address();
 
         let checkpoint = encode_tx_batch_confirm_hashed("foo".to_string(), batch);

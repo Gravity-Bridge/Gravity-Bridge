@@ -61,6 +61,7 @@ mod happy_path_v2;
 mod ibc_auto_forward;
 mod ibc_metadata;
 mod ica_host;
+mod inflation_knockdown;
 mod invalid_events;
 mod orch_keys;
 mod orch_only;
@@ -77,7 +78,6 @@ mod utils;
 mod valset_rewards;
 mod valset_stress;
 mod vesting;
-mod inflation_knockdown;
 
 /// the timeout for individual requests
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
@@ -258,8 +258,6 @@ pub async fn main() {
         .await
         .unwrap()
         .is_some());
-
-    start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
 
     // This segment contains optional tests, by default we run a happy path test
     // this tests all major functionality of Gravity once or twice.
@@ -475,6 +473,7 @@ pub async fn main() {
             return;
         } else if test_type == "UPGRADE_PART_1" {
             info!("Starting Gravity Upgrade test Part 1");
+            start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
             let contact = Contact::new(
                 COSMOS_NODE_GRPC.as_str(),
                 TOTAL_TIMEOUT,
@@ -495,6 +494,7 @@ pub async fn main() {
             return;
         } else if test_type == "UPGRADE_PART_2" {
             info!("Starting Gravity Upgrade test Part 2");
+            start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
             let contact = Contact::new(
                 COSMOS_NODE_GRPC.as_str(),
                 TOTAL_TIMEOUT,
@@ -515,6 +515,7 @@ pub async fn main() {
             return;
         } else if test_type == "UPGRADE_ONLY" {
             info!("Running a gravity upgrade with no assertions");
+            start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
             let contact = Contact::new(
                 COSMOS_NODE_GRPC.as_str(),
                 TOTAL_TIMEOUT,
@@ -526,6 +527,7 @@ pub async fn main() {
             return;
         } else if test_type == "IBC_AUTO_FORWARD" {
             info!("Starting IBC Auto-Forward test");
+            start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
             ibc_auto_forward_test(
                 &web30,
                 grpc_client,
@@ -539,6 +541,7 @@ pub async fn main() {
             return;
         } else if test_type == "ETHEREUM_KEYS" || test_type == "ETHERMINT_KEYS" {
             info!("Starting Ethereum Keys test");
+            start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
             let result = ethereum_keys_test(
                 &web30,
                 grpc_client,
@@ -582,6 +585,7 @@ pub async fn main() {
             return;
         } else if test_type == "ICA_HOST_HAPPY_PATH" {
             info!("Starting Interchain Accounts Host Module Happy Path Test");
+            start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
             ica_host_happy_path(
                 &web30,
                 grpc_client,

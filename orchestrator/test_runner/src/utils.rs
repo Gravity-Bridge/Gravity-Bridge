@@ -10,7 +10,7 @@ use crate::{one_eth, MINER_PRIVATE_KEY};
 use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
 use clarity::{Address as EthAddress, Uint256};
-use clarity::{PrivateKey as EthPrivateKey, Transaction};
+use clarity::{PrivateKey as EthPrivateKey};
 use cosmos_gravity::proposals::{submit_parameter_change_proposal, submit_upgrade_proposal};
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
@@ -123,10 +123,6 @@ pub fn get_coins(denom: &str, balances: &[Coin]) -> Option<Coin> {
     None
 }
 
-/// This is a hardcoded very high gas value used in transaction stress test to counteract rollercoaster
-/// gas prices due to the way that test fills blocks
-pub const HIGH_GAS_PRICE: u64 = 1_000_000_000u64;
-
 /// This function efficiently distributes ERC20 tokens to a large number of provided Ethereum addresses
 /// the real problem here is that you can't do more than one send operation at a time from a
 /// single address without your sequence getting out of whack. By manually setting the nonce
@@ -152,8 +148,6 @@ pub async fn send_erc20_bulk(
             Some(OPERATION_TIMEOUT),
             vec![
                 SendTxOption::Nonce(nonce),
-                SendTxOption::GasLimit(100_000u32.into()),
-                SendTxOption::GasPriceMultiplier(5.0),
             ],
         );
         transactions.push(send);
@@ -174,31 +168,23 @@ pub async fn send_erc20_bulk(
 /// single address without your sequence getting out of whack. By manually setting the nonce
 /// here we can quickly send thousands of transactions in only a few blocks
 pub async fn send_eth_bulk(amount: Uint256, destinations: &[EthAddress], web3: &Web3) {
-    let net_version = web3.net_version().await.unwrap();
     let mut nonce = web3
         .eth_get_transaction_count(*MINER_ADDRESS)
         .await
         .unwrap();
     let mut transactions = Vec::new();
     for address in destinations {
-        let t = Transaction {
-            to: *address,
-            nonce,
-            gas_price: HIGH_GAS_PRICE.into(),
-            gas_limit: 24000u64.into(),
-            value: amount,
-            data: Vec::new(),
-            signature: None,
-        };
-        let t = t.sign(&MINER_PRIVATE_KEY, Some(net_version));
+        let t = web3.send_transaction(
+            *address,
+            Vec::new(),
+            amount,
+            *MINER_PRIVATE_KEY,
+            vec![SendTxOption::Nonce(nonce)],
+        );
         transactions.push(t);
         nonce += 1u64.into();
     }
-    let mut sends = Vec::new();
-    for tx in transactions {
-        sends.push(web3.eth_send_raw_transaction(tx.to_bytes().unwrap()));
-    }
-    let txids = join_all(sends).await;
+    let txids = join_all(transactions).await;
     wait_for_txids(txids, web3).await;
 }
 
@@ -256,7 +242,7 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
     // the starting location of the funds
-    let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
+    let eth_key = EthPrivateKey::from_bytes(secret).unwrap();
     let eth_address = eth_key.to_address();
     // the destination on cosmos that sends along to the final ethereum destination
     let cosmos_key = CosmosPrivateKey::from_secret(&secret);
@@ -264,7 +250,7 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
     // the final destination of the tokens back on Ethereum
-    let eth_dest_key = EthPrivateKey::from_slice(&secret).unwrap();
+    let eth_dest_key = EthPrivateKey::from_bytes(secret).unwrap();
     let eth_dest_address = eth_key.to_address();
     BridgeUserKey {
         eth_address,

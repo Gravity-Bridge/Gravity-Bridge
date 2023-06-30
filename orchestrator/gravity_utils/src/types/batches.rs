@@ -3,7 +3,7 @@ use crate::error::GravityError;
 use crate::num_conversion::print_eth;
 use crate::prices::{get_dai_price, get_weth_price};
 use clarity::Signature as EthSignature;
-use clarity::{abi::Token, Address as EthAddress};
+use clarity::{abi::AbiToken as Token, Address as EthAddress};
 use deep_space::Address as CosmosAddress;
 use log::LevelFilter;
 use std::convert::TryFrom;

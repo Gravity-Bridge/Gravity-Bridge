@@ -5,8 +5,8 @@ default-members = ["gbt"]
 [workspace.dependencies]
 gravity_proto = "0.2.2"
 num256 = "0.5"
-clarity = "0.7"
-web30 = "0.23"
+clarity = "1.2.3"
+web30 = "1.1.2"
 deep_space = "2.18"
 prost = "0.10"
 prost-types = "0.10"

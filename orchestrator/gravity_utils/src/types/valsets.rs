@@ -145,9 +145,9 @@ impl Valset {
                     out.push(GravitySignature {
                         power: member.power,
                         eth_address: sig.get_eth_address(),
-                        v: sig.get_signature().v,
-                        r: sig.get_signature().r,
-                        s: sig.get_signature().s,
+                        v: sig.get_signature().get_v(),
+                        r: sig.get_signature().get_r(),
+                        s: sig.get_signature().get_s(),
                     });
                     power_of_good_sigs += member.power;
                 } else {

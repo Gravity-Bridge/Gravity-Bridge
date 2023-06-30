@@ -1,6 +1,6 @@
 //! Helper functions for sending tokens to Cosmos
 
-use clarity::abi::{encode_call, Token};
+use clarity::abi::{encode_call, AbiToken as Token};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address, Uint256};
 use deep_space::address::Address as CosmosAddress;
@@ -95,7 +95,6 @@ pub async fn send_to_cosmos(
                 &[erc20.into(), encoded_destination_address, amount.into()],
             )?,
             0u32.into(),
-            sender_address,
             sender_secret,
             options,
         )
