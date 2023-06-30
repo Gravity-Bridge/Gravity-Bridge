@@ -147,12 +147,14 @@ proto-update-deps:
 	mkdir -p $(SDK_COIN_TYPES)
 	curl -sSL $(COSMOS_SDK_PROTO_URL)/v1beta1/coin.proto > $(SDK_COIN_TYPES)/coin.proto
 
+# /usr/local will not be accessible by curl on mac by default, do smt like 
+# export PREFIX="/Users/$(whoami)"
 PREFIX ?= /usr/local
 BIN ?= $(PREFIX)/bin
 UNAME_S ?= $(shell uname -s)
 UNAME_M ?= $(shell uname -m)
 
-BUF_VERSION ?= 0.41.0
+BUF_VERSION ?= 1.23.0
 
 PROTOC_VERSION ?= 3.16.0
 ifeq ($(UNAME_S),Linux)
