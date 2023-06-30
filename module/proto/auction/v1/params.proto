@@ -1,9 +1,10 @@
 syntax = "proto3";
+package auction.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-package auction.v1;
+option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
 
 // Params defines the parameters for the GravityBridge auction module.
 message Params {
