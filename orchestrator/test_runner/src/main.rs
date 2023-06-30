@@ -15,6 +15,7 @@ use crate::ethereum_keys::ethereum_keys_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::ica_host::ica_host_happy_path;
+use crate::inflation_knockdown::inflation_knockdown_test;
 use crate::invalid_events::invalid_events;
 use crate::pause_bridge::pause_bridge_test;
 use crate::send_to_eth_fees::send_to_eth_fees_test;
@@ -76,6 +77,7 @@ mod utils;
 mod valset_rewards;
 mod valset_stress;
 mod vesting;
+mod inflation_knockdown;
 
 /// the timeout for individual requests
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
@@ -294,6 +296,7 @@ pub async fn main() {
     // SEND_TO_ETH_FEES tests that Cosmos->Eth fees are collected and in the right amounts
     // ICA_HOST_HAPPY_PATH tests that the interchain accounts host module is correctly configured on Gravity
     // RUN_ORCH_ONLY runs only the orchestrators, for local testing where you want the chain to just run.
+    // INFLATION_KNOCKDOWN tests a governance proposal to reduce inflation
     let test_type = env::var("TEST_TYPE");
     info!("Starting tests with {:?}", test_type);
     if let Ok(test_type) = test_type {
@@ -566,6 +569,7 @@ pub async fn main() {
             vesting_test(&gravity_contact, vesting_keys).await;
             return;
         } else if test_type == "SEND_TO_ETH_FEES" {
+            info!("Starting Send to Eth fees test!");
             send_to_eth_fees_test(
                 &web30,
                 &gravity_contact,
@@ -592,6 +596,10 @@ pub async fn main() {
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;
             sleep(Duration::from_secs(1_000_000_000)).await;
+            return;
+        } else if test_type == "INFLATION_KNOCKDOWN" {
+            info!("Starting Inflation knockdown test!");
+            inflation_knockdown_test(&gravity_contact, keys).await;
             return;
         } else if !test_type.is_empty() {
             panic!("Err Unknown test type")
