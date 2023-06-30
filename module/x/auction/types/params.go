@@ -32,14 +32,14 @@ var (
 	KeyAllowTokens   = []byte("AllowTokens")
 )
 
-type Params struct {
-	AuctionEpoch  uint64          `json:"auction_epoch" yaml:"auction_epoch"`
-	AuctionPeriod uint64          `json:"auction_period" yaml:"auction_period"`
-	MinBidAmount  uint64          `json:"min_bid_amount" yaml:"min_bid_amount"`
-	BidGap        uint64          `json:"bid_gap" yaml:"bid_gap"`
-	AuctionRate   sdk.Dec         `json:"auction_rate" yaml:"auction_rate"`
-	AllowTokens   map[string]bool `json:"allow_tokens" yaml:"allow_tokens"`
-}
+// type Params struct {
+// 	AuctionEpoch  uint64          `json:"auction_epoch" yaml:"auction_epoch"`
+// 	AuctionPeriod uint64          `json:"auction_period" yaml:"auction_period"`
+// 	MinBidAmount  uint64          `json:"min_bid_amount" yaml:"min_bid_amount"`
+// 	BidGap        uint64          `json:"bid_gap" yaml:"bid_gap"`
+// 	AuctionRate   sdk.Dec         `json:"auction_rate" yaml:"auction_rate"`
+// 	AllowTokens   map[string]bool `json:"allow_tokens" yaml:"allow_tokens"`
+// }
 
 // NewParams creates a new Params object
 func NewParams(auctionEpoch uint64, auctionPeriod uint64, minBidAmount uint64, bidGap uint64, auctionRate sdk.Dec, allowTokens map[string]bool) Params {
