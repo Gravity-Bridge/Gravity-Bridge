@@ -17,8 +17,12 @@ message AuctionPeriod {
 // AuctionStatus represents the status of an Auction.
 // An Auction can be either in progress or finished.
 enum AuctionStatus{
-    IN_PROGRESS = 0;  // The Auction is still ongoing.
-    FINISH = 1;  // The Auction has ended.
+    // The Auction status is unspecified. Probaly haven't started yet.
+    AUCTION_STATUS_UNSPECIFIED = 0;
+    // The Auction is still ongoing.
+    AUCTION_STATUS_IN_PROGRESS = 1;
+    // The Auction has ended.
+    AUCTION_STATUS_FINISH = 2; 
 }
 
 // Auction represents a single auction.
