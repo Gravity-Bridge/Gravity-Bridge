@@ -9,8 +9,8 @@ use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_PRIVATE_KEY};
 use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
+use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
-use clarity::{PrivateKey as EthPrivateKey};
 use cosmos_gravity::proposals::{submit_parameter_change_proposal, submit_upgrade_proposal};
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
@@ -146,9 +146,7 @@ pub async fn send_erc20_bulk(
             erc20,
             *MINER_PRIVATE_KEY,
             Some(OPERATION_TIMEOUT),
-            vec![
-                SendTxOption::Nonce(nonce),
-            ],
+            vec![SendTxOption::Nonce(nonce)],
         );
         transactions.push(send);
         nonce += 1u64.into();

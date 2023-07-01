@@ -5,10 +5,7 @@ use clarity::{Address as EthAddress, Uint256};
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
 use std::{cmp::min, time::Duration};
-use web30::{
-    client::Web3,
-    types::{TransactionRequest},
-};
+use web30::{client::Web3, types::TransactionRequest};
 
 /// this function generates an appropriate Ethereum transaction
 /// to submit the provided transaction batch

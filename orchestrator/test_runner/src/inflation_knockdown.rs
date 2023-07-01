@@ -51,7 +51,10 @@ pub async fn inflation_knockdown_test(contact: &Contact, keys: Vec<ValidatorKeys
     vote_yes_on_proposals(contact, &keys, None).await;
     wait_for_proposals_to_execute(contact).await;
 
-    assert_eq!(get_mint_param_as_float("InflationRateChange", contact).await, 1.0);
+    assert_eq!(
+        get_mint_param_as_float("InflationRateChange", contact).await,
+        1.0
+    );
     assert_eq!(get_mint_param_as_float("InflationMin", contact).await, 0.01);
     assert_eq!(get_mint_param_as_float("InflationMax", contact).await, 0.01);
 
