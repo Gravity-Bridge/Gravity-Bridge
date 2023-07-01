@@ -1,6 +1,7 @@
 [workspace]
 members = ["orchestrator", "cosmos_gravity", "ethereum_gravity", "gravity_utils", "test_runner", "relayer", "gbt", "metrics_exporter"]
 default-members = ["gbt"]
+resolver = "2"
 
 [workspace.dependencies]
 gravity_proto = "0.2.2"
