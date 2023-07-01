@@ -9,17 +9,15 @@ import (
 )
 
 // GetAuctionPeriodByID returns the auction period with the given id.
-func (k Keeper) GetAuctionPeriodByID(ctx sdk.Context, id uint64) (types.AuctionPeriod, bool) {
+func (k Keeper) GetAuctionPeriodByID(ctx sdk.Context, id uint64) (val types.AuctionPeriod, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuctionPeriod))
-
 	bz := store.Get(uint64ToBytes(id))
 	if bz == nil {
-		return types.AuctionPeriod{}, false
+		return val, false
 	}
 
-	var auctionPeriod types.AuctionPeriod
-	k.cdc.MustUnmarshal(bz, &auctionPeriod)
-	return auctionPeriod, true
+	k.cdc.MustUnmarshal(bz, &val)
+	return val, true
 }
 
 // GetAllAuctionPeriods returns all auction periods.
@@ -40,10 +38,10 @@ func (k Keeper) GetAllAuctionPeriods(ctx sdk.Context) []types.AuctionPeriod {
 }
 
 // GetLatestAuctionPeriod returns the latest auction period.
-func (k Keeper) GetLatestAuctionPeriod(ctx sdk.Context) (types.AuctionPeriod, bool) {
+func (k Keeper) GetLatestAuctionPeriod(ctx sdk.Context) (val types.AuctionPeriod, found bool) {
 	auctionPeriods := k.GetAllAuctionPeriods(ctx)
 	if len(auctionPeriods) == 0 {
-		return types.AuctionPeriod{}, false
+		return val, false
 	}
 	return auctionPeriods[len(auctionPeriods)-1], true
 }

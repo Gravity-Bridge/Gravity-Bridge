@@ -7,29 +7,27 @@ import (
 )
 
 // GetBidByID returns the bids by auction ID
-func (k Keeper) GetBidByID(ctx sdk.Context, auctionID uint64) (types.Bid, bool) {
+func (k Keeper) GetBidByID(ctx sdk.Context, auctionID uint64) (val types.Bid, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixBid))
-	bidKey := append(uint64ToByte(auctionID))
+	bidKey := uint64ToByte(auctionID)
 	bz := store.Get(bidKey)
 	if len(bz) == 0 {
-		return types.Bid{}, false
+		return val, false
 	}
-	var bid types.Bid
-	k.cdc.MustUnmarshal(bz, &bid)
-	return bid, true
+	k.cdc.MustUnmarshal(bz, &val)
+	return val, true
 }
 
 // GetBidByID returns the bid by auction ID and bidder address
-func (k Keeper) GetBidByAddressAndID(ctx sdk.Context, auctionID uint64, bidderAddress string) (types.Bid, bool) {
+func (k Keeper) GetBidByAddressAndID(ctx sdk.Context, auctionID uint64, bidderAddress string) (val types.Bid, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixBid))
 	bidKey := append(uint64ToByte(auctionID), []byte(bidderAddress)...)
 	bz := store.Get(bidKey)
 	if len(bz) == 0 {
-		return types.Bid{}, false
+		return val, false
 	}
-	var bid types.Bid
-	k.cdc.MustUnmarshal(bz, &bid)
-	return bid, true
+	k.cdc.MustUnmarshal(bz, &val)
+	return val, true
 }
 
 // SetBid sets the bid for a specific auction and bidder.
@@ -52,9 +50,9 @@ func (k Keeper) UpdateBidAmount(ctx sdk.Context, auctionID uint64, bidderAddress
 }
 
 // DeleteBid deletes the bid for a specific auction and bidder.
-func (k Keeper) DeleteBid(ctx sdk.Context, auctionID uint64, BidderAddress string) {
+func (k Keeper) DeleteBid(ctx sdk.Context, auctionID uint64, bidderAddress string) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixBid))
-	bidKey := append(uint64ToByte(auctionID), []byte(BidderAddress)...)
+	bidKey := append(uint64ToByte(auctionID), []byte(bidderAddress)...)
 	store.Delete(bidKey)
 }
 
