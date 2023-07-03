@@ -19,3 +19,12 @@ type Keeper struct {
 	bankKeeper    *bankkeeper.BaseKeeper
 	accountKeeper *authkeeper.AccountKeeper
 }
+
+// GetParams get params
+func (k Keeper) GetParams(ctx sdk.Context) (types.Params, error) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get([]byte(types.ParamsKey))
+	params := types.Params{}
+	err := k.cdc.UnmarshalJSON(bz, &params)
+	return params, err
+}
