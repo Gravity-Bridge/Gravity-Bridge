@@ -38,12 +38,12 @@ func (k Keeper) GetAllAuctionPeriods(ctx sdk.Context) []types.AuctionPeriod {
 }
 
 // GetLatestAuctionPeriod returns the latest auction period.
-func (k Keeper) GetLatestAuctionPeriod(ctx sdk.Context) (val types.AuctionPeriod, found bool) {
+func (k Keeper) GetLatestAuctionPeriod(ctx sdk.Context) (*types.AuctionPeriod, bool) {
 	auctionPeriods := k.GetAllAuctionPeriods(ctx)
 	if len(auctionPeriods) == 0 {
-		return val, false
+		return nil, false
 	}
-	return auctionPeriods[len(auctionPeriods)-1], true
+	return &auctionPeriods[len(auctionPeriods)-1], true
 }
 
 // SetAuctionPeriod sets the given auction period.
