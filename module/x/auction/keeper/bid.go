@@ -18,18 +18,6 @@ func (k Keeper) GetBidByID(ctx sdk.Context, auctionID uint64) (val types.Bid, fo
 	return val, true
 }
 
-// GetBidByID returns the bid by auction ID and bidder address
-func (k Keeper) GetBidByAddressAndID(ctx sdk.Context, auctionID uint64, bidderAddress string) (val types.Bid, found bool) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixBid))
-	bidKey := append(uint64ToByte(auctionID), []byte(bidderAddress)...)
-	bz := store.Get(bidKey)
-	if len(bz) == 0 {
-		return val, false
-	}
-	k.cdc.MustUnmarshal(bz, &val)
-	return val, true
-}
-
 // SetBid sets the bid for a specific auction and bidder.
 func (k Keeper) SetBid(ctx sdk.Context, auctionID uint64, bid types.Bid) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixBid))
@@ -39,8 +27,8 @@ func (k Keeper) SetBid(ctx sdk.Context, auctionID uint64, bid types.Bid) {
 }
 
 // UpdateBidAmount updates the bid amount for a specific auction and bidder.
-func (k Keeper) UpdateBidAmount(ctx sdk.Context, auctionID uint64, bidderAddress string, newAmount sdk.Coin) bool {
-	bid, found := k.GetBidByAddressAndID(ctx, auctionID, bidderAddress)
+func (k Keeper) UpdateBidAmount(ctx sdk.Context, auctionID uint64, newAmount sdk.Coin) bool {
+	bid, found := k.GetBidByID(ctx, auctionID)
 	if !found {
 		return false
 	}
@@ -54,18 +42,4 @@ func (k Keeper) DeleteBid(ctx sdk.Context, auctionID uint64, bidderAddress strin
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixBid))
 	bidKey := append(uint64ToByte(auctionID), []byte(bidderAddress)...)
 	store.Delete(bidKey)
-}
-
-// GetAllBids returns all bids for the given auction id.
-func (k Keeper) GetAllBids(ctx sdk.Context, auctionID uint64) ([]types.Bid, bool) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixBid))
-	iterator := sdk.KVStorePrefixIterator(store, uint64ToByte(auctionID))
-	defer iterator.Close()
-	var bids []types.Bid
-	for ; iterator.Valid(); iterator.Next() {
-		var bid types.Bid
-		k.cdc.MustUnmarshal(iterator.Value(), &bid)
-		bids = append(bids, bid)
-	}
-	return bids, true
 }
