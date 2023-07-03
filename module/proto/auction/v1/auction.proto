@@ -5,26 +5,35 @@ import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
 
+// AuctionPeriod represents a period of auctions.
+// Each AuctionPeriod has a unique identifier and a starting block height.
+// An AuctionPeriod can have multiple Auctions.
 message AuctionPeriod {
-    uint64 id = 1;
-    uint64 start_block_height = 2;
-    repeated Auction aucitons = 3;
+    uint64 id = 1;  // Unique identifier for the AuctionPeriod.
+    uint64 start_block_height = 2;  // Block height at which the AuctionPeriod starts.
+    repeated Auction aucitons = 3;  // List of Auctions during the AuctionPeriod.
 }
 
-enum Auction_Status{
-    IN_PROGRESS = 0;
-    FINISH = 1;
- }
+// AuctionStatus represents the status of an Auction.
+// An Auction can be either in progress or finished.
+enum AuctionStatus{
+    IN_PROGRESS = 0;  // The Auction is still ongoing.
+    FINISH = 1;  // The Auction has ended.
+}
 
+// Auction represents a single auction.
+// An Auction has a unique identifier, an amount being auctioned, a status, and a highest bid.
 message Auction {
-    uint64 id = 1;
-    cosmos.base.v1beta1.Coin auction_amount = 2;
-    Auction_Status status = 3;
-    Bid highest_bid = 4;
+    uint64 id = 1;  // Unique identifier for the Auction.
+    cosmos.base.v1beta1.Coin auction_amount = 2;  // Amount being auctioned.
+    AuctionStatus status = 3;  // Status of the Auction.
+    Bid highest_bid = 4;  // Highest bid on the Auction.
 }
 
+// Bid represents a bid on an Auction.
+// A Bid includes the identifier of the Auction, the amount of the bid, and the address of the bidder.
 message Bid {
-    uint64 id = 1;
-    cosmos.base.v1beta1.Coin bid_amount = 2;
-    string bidder_address = 3;
+    uint64 auction_id = 1;  // Identifier of the Auction.
+    cosmos.base.v1beta1.Coin bid_amount = 2;  // Amount of the bid.
+    string bidder_address = 3;  // Address of the bidder.
 }
