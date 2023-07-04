@@ -30,7 +30,7 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 
 		sdkcoin := sdk.NewCoin(token, amount)
 
-		//Send fund from community pool to auction module
+		// Send fund from community pool to auction module
 		err := k.SendFromCommunityPool(ctx, sdk.Coins{sdkcoin})
 		if err != nil {
 			return err
@@ -40,6 +40,7 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 			Id:            uint64(len(newAuctionPeriods.Auctions)),
 			AuctionAmount: &sdkcoin,
 			Status:        1,
+			HighestBid:    nil,
 		}
 
 		// Set new auction to store
@@ -74,14 +75,19 @@ func endAuctionPeriod(
 		}
 
 		// Send in the winning token to the highest bidder address
-		bk.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sdk.AccAddress(auction.HighestBid.BidderAddress), sdk.Coins{*auction.AuctionAmount})
+		err := bk.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sdk.AccAddress(auction.HighestBid.BidderAddress), sdk.Coins{*auction.AuctionAmount})
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	balances := bk.GetAllBalances(ctx, ak.GetModuleAccount(ctx, types.ModuleName).GetAddress())
 
 	// Empty the rest of the auction module balances back to community pool
-	k.SendFromCommunityPool(ctx, balances)
-
+	err := k.SendFromCommunityPool(ctx, balances)
+	if err != nil {
+		panic(err)
+	}
 	return nil
 }
 
