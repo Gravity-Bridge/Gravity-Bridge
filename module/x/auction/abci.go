@@ -8,8 +8,6 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
-// TODO: ADD BeginBlocker function to check for if the auction periods has started or not
-// TODO: ADD EndBlocker function to check for if the auction periods has ended or not,
 func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper, bk types.BankKeeper, ak types.AccountKeeper) error {
 	auctionRate := params.AuctionRate
 
