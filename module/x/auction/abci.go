@@ -10,7 +10,7 @@ import (
 
 // TODO: ADD BeginBlocker function to check for if the auction periods has started or not
 // TODO: ADD EndBlocker function to check for if the auction periods has ended or not,
-func StartMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper, bk types.BankKeeper, ak types.AccountKeeper) error {
+func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper, bk types.BankKeeper, ak types.AccountKeeper) error {
 	auctionRate := params.AuctionRate
 
 	increamentId, err := k.IncreamentAuctionPeriodId(ctx)
@@ -58,7 +58,7 @@ func StartMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 
 }
 
-func EndAuctionPeriod(
+func endAuctionPeriod(
 	ctx sdk.Context,
 	params types.Params,
 	latestAuctionPeriod types.AuctionPeriod,
@@ -97,7 +97,7 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, bk types.BankKeeper, ak type
 	}
 
 	if uint64(ctx.BlockHeight())-lastAuctionPeriods.StartBlockHeight == params.AuctionEpoch {
-		err := StartMewAuctionPeriod(ctx, params, k, bk, ak)
+		err := startMewAuctionPeriod(ctx, params, k, bk, ak)
 		if err != nil {
 			return
 		}
@@ -114,7 +114,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper, bk types.BankKeeper, ak types.
 	}
 
 	if lastAuctionPeriods.StartBlockHeight-uint64(ctx.BlockHeight()) == params.AuctionPeriod {
-		err := EndAuctionPeriod(ctx, params, *lastAuctionPeriods, k, bk, ak)
+		err := endAuctionPeriod(ctx, params, *lastAuctionPeriods, k, bk, ak)
 		if err != nil {
 			return
 		}
