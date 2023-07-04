@@ -79,6 +79,11 @@ func EndAuctionPeriod(
 		bk.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sdk.AccAddress(auction.HighestBid.BidderAddress), sdk.Coins{*auction.AuctionAmount})
 	}
 
+	balances := bk.GetAllBalances(ctx, ak.GetModuleAccount(ctx, types.ModuleName).GetAddress())
+
+	// Empty the rest of the auction module balances back to community pool
+	k.SendFromCommunityPool(ctx, balances)
+
 	return nil
 }
 
