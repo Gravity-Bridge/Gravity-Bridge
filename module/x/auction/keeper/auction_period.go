@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -77,6 +78,14 @@ func (k Keeper) GetAllAuctionsByPeriodID(ctx sdk.Context, id uint64) ([]types.Au
 		auctions[i] = *auction
 	}
 	return auctions, true
+}
+
+func (k Keeper) IncreamentAuctionPeriodId(ctx sdk.Context) (uint64, error) {
+	lastAuctionPeriod, found := k.GetLatestAuctionPeriod(ctx)
+	if !found {
+		return 0, fmt.Errorf("An initial auction period must be set during upgrade handler")
+	}
+	return lastAuctionPeriod.Id + 1, nil
 }
 
 // Helper function to convert uint64 to bytes.

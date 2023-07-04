@@ -22,6 +22,9 @@ const (
 	// PortID is the default port id that module binds to
 	PortID = "auction"
 
+	// ParamsKey defines the store key for auction module parameters
+	ParamsKey = "params"
+
 	// Auction
 	// KeyPrefixAuction is the key used to store the auction in the KVStore
 	KeyPrefixAuction = "auction-value-"
