@@ -44,3 +44,10 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 	k.DistKeeper.SetFeePool(ctx, feePool)
 	return nil
 }
+
+func (k Keeper) SendFromCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
+	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, distrtypes.ModuleName, types.ModuleName, coins); err != nil {
+		return sdkerrors.Wrap(err, "transfer to auction module failed")
+	}
+	return nil
+}

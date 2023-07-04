@@ -33,7 +33,7 @@ func StartMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 		sdkcoin := sdk.NewCoin(token, amount)
 
 		//Send fund from community pool to auction module
-		err := k.SendToCommunityPool(ctx, sdk.Coins{sdkcoin})
+		err := k.SendFromCommunityPool(ctx, sdk.Coins{sdkcoin})
 		if err != nil {
 			return err
 		}
