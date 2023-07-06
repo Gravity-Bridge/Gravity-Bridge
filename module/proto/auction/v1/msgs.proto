@@ -1,4 +1,18 @@
 syntax = "proto3";
 package auction.v1;
 
+import "auction/v1/auction.proto";
+import "gogoproto/gogo.proto";
+
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
+
+// MsgBid is a message type for placing a bid on an auction
+message MsgBid {
+    Bid bid = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+  
+message MsgBidResponse {
+    bool success = 1;
+}
