@@ -88,6 +88,14 @@ func (k Keeper) IncreamentAuctionPeriodId(ctx sdk.Context) (uint64, error) {
 	return lastAuctionPeriod.Id + 1, nil
 }
 
+func (k Keeper) IncreamentAuctionId(ctx sdk.Context, id uint64) (uint64, error) {
+	auctionPeriod, found := k.GetAuctionPeriodByID(ctx, id)
+	if !found {
+		return 0, fmt.Errorf("Auction Period with id %v not found", id)
+	}
+	return uint64(len(auctionPeriod.Auctions)) + 1, nil
+}
+
 // Helper function to convert uint64 to bytes.
 func uint64ToBytes(i uint64) []byte {
 	b := make([]byte, 8)
