@@ -3,8 +3,16 @@ package auction.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
+
+// Msg defines the state transitions possible within auction
+service Msg {
+    rpc Bid(MsgBid) returns (MsgBidResponse) {
+        option (google.api.http).post = "/auction/v1/bid";
+    }
+}
 
 // MsgBid is a message type for placing a bid on an auction
 message MsgBid {
