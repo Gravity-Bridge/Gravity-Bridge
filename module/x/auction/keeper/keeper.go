@@ -32,6 +32,11 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	return
 }
 
+// SetParams sets the parameters in the store
+func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
+	k.paramSpace.SetParamSet(ctx, &ps)
+}
+
 // SendToCommunityPool handles incorrect SendToCosmos calls to the community pool, since the calls
 // have already been made on Ethereum there's nothing we can do to reverse them, and we should at least
 // make use of the tokens which would otherwise be lost
