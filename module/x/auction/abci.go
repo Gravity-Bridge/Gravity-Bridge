@@ -19,7 +19,6 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 	newAuctionPeriods := types.AuctionPeriod{
 		Id:               increamentId,
 		StartBlockHeight: uint64(ctx.BlockHeight()),
-		Auctions:         []*types.Auction{},
 	}
 
 	for token := range params.AllowTokens {
@@ -35,9 +34,13 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 		if err != nil {
 			return err
 		}
+		newId, err := k.IncreamentAuctionId(ctx, increamentId)
+		if err != nil {
+			return err
+		}
 
 		newAuction := types.Auction{
-			Id:            uint64(len(newAuctionPeriods.Auctions)),
+			Id:            newId,
 			AuctionAmount: &sdkcoin,
 			Status:        1,
 			HighestBid:    nil,
@@ -47,7 +50,7 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 		k.SetAuction(ctx, newAuction)
 
 		// Update auction in auction period auction list
-		newAuctionPeriods.Auctions = append(newAuctionPeriods.Auctions, &newAuction)
+		k.AddNewAuctionToAuctionPeriod(ctx, increamentId, newAuction)
 	}
 
 	// Set new auction period to store
@@ -65,7 +68,7 @@ func endAuctionPeriod(
 	bk types.BankKeeper,
 	ak types.AccountKeeper,
 ) error {
-	for _, auction := range latestAuctionPeriod.Auctions {
+	for _, auction := range k.GetAllAuctionsByPeriodID(ctx, latestAuctionPeriod.Id) {
 		if auction.HighestBid == nil {
 			err := k.SendToCommunityPool(ctx, sdk.Coins{*auction.AuctionAmount})
 			if err != nil {

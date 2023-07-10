@@ -55,31 +55,6 @@ func (k Keeper) SetAuctionPeriod(ctx sdk.Context, auctionPeriod types.AuctionPer
 	store.Set(uint64ToBytes(auctionPeriod.Id), bz)
 }
 
-// UpdateAuctionPeriod updates the auction period with the given id with the given auction.
-func (k Keeper) UpdateAuctionPeriod(ctx sdk.Context, id uint64, auction types.Auction) bool {
-	auctionPeriod, found := k.GetAuctionPeriodByID(ctx, id)
-	if !found {
-		return false
-	}
-
-	auctionPeriod.Auctions = append(auctionPeriod.Auctions, &auction)
-	k.SetAuctionPeriod(ctx, auctionPeriod)
-	return true
-}
-
-// GetAllAuctionsByPeriodID returns all auctions for the given auction period id.
-func (k Keeper) GetAllAuctionsByPeriodID(ctx sdk.Context, id uint64) ([]types.Auction, bool) {
-	auctionPeriod, found := k.GetAuctionPeriodByID(ctx, id)
-	if !found {
-		return nil, false
-	}
-	auctions := make([]types.Auction, len(auctionPeriod.Auctions))
-	for i, auction := range auctionPeriod.Auctions {
-		auctions[i] = *auction
-	}
-	return auctions, true
-}
-
 func (k Keeper) IncreamentAuctionPeriodId(ctx sdk.Context) (uint64, error) {
 	lastAuctionPeriod, found := k.GetLatestAuctionPeriod(ctx)
 	if !found {

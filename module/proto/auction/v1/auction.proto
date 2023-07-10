@@ -11,7 +11,6 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/t
 message AuctionPeriod {
     uint64 id = 1;  // Unique identifier for the AuctionPeriod.
     uint64 start_block_height = 2;  // Block height at which the AuctionPeriod starts.
-    repeated Auction auctions = 3;  // List of Auctions during the AuctionPeriod.
 }
 
 // AuctionStatus represents the status of an Auction.
@@ -32,6 +31,7 @@ message Auction {
     cosmos.base.v1beta1.Coin auction_amount = 2;  // Amount being auctioned.
     AuctionStatus status = 3;  // Status of the Auction.
     Bid highest_bid = 4;  // Highest bid on the Auction.
+    uint64 auction_period_id = 5;  // Identifier of the AuctionPeriod the Auction belongs to.
 }
 
 // Bid represents a bid on an Auction.
