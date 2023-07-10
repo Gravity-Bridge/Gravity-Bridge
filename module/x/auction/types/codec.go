@@ -8,7 +8,10 @@ import (
 )
 
 // ModuleCdc is the codec for the module
-var ModuleCdc = codec.NewLegacyAmino()
+var (
+	ModuleCdc = codec.NewLegacyAmino()
+	Amino     = codec.NewLegacyAmino()
+)
 
 func init() {
 	RegisterCodec(ModuleCdc)
@@ -28,4 +31,5 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 // nolint: exhaustruct
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgBid{}, "auction/MsgBid", nil)
+	sdk.RegisterLegacyAminoCodec(Amino)
 }
