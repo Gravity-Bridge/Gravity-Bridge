@@ -37,8 +37,7 @@ func (AppModuleBasic) Name() string {
 
 // RegisterLegacyAminoCodec implements app module basic
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	// TODO: implement
-	// types.RegisterCodec(cdc)
+	types.RegisterCodec(cdc)
 }
 
 // DefaultGenesis implements app module basic
@@ -95,8 +94,7 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 
 // RegisterInterfaces implements app module basic
 func (b AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
-	// TODO: Implement
-	// types.RegisterInterfaces(registry)
+	types.RegisterInterfaces(registry)
 }
 
 // ___________________________________________________________________________
@@ -154,8 +152,9 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 
 // RegisterServices registers module services.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	// TODO: Register msgServer
-	// types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
+	// TODO: Register query server
+
 	// types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
