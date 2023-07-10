@@ -1,31 +1,20 @@
 package cli
 
 import (
-	// "strconv"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	// sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
-)
-
-const (
-	FlagOrder     = "order"
-	FlagClaimType = "claim-type"
-	FlagNonce     = "nonce"
-	FlagEthHeight = "eth-height"
-	FlagUseV1Key  = "use-v1-key"
 )
 
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd() *cobra.Command {
 	// Group auction queries under a subcommand
 
-	gravityQueryCmd := &cobra.Command{
+	auctionQueryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -33,9 +22,9 @@ func GetQueryCmd() *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	gravityQueryCmd.AddCommand([]*cobra.Command{GetCmdQueryParams()}...)
+	auctionQueryCmd.AddCommand([]*cobra.Command{GetCmdQueryParams()}...)
 
-	return gravityQueryCmd
+	return auctionQueryCmd
 }
 func GetCmdQueryParams() *cobra.Command {
 	cmd := &cobra.Command{
