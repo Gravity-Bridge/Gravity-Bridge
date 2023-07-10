@@ -35,11 +35,11 @@ func (k msgServer) Bid(ctx context.Context, msg *types.MsgBid) (res *types.MsgBi
 		return nil, types.ErrNoPreviousAuctionPeriod
 	}
 
-	if msg.AuctionId >= uint64(len(latestAuctionPeriod.Auctions)) {
-		return nil, fmt.Errorf("Auction with id %v exceeded the number of this auction period auctions", msg.AuctionId)
-	}
+	currentAuction, found := k.GetAllAuctionsByPeriodIDAndAuctionId(sdkCtx, latestAuctionPeriod.Id, msg.AuctionId)
 
-	currentAuction := latestAuctionPeriod.Auctions[msg.AuctionId]
+	if !found {
+		return nil, types.ErrAuctionNotFound
+	}
 	highestBid := currentAuction.HighestBid
 
 	// Check bid maount gap

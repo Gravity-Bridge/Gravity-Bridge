@@ -8,4 +8,6 @@ import (
 var (
 	ErrNoPreviousAuctionPeriod = sdkerrors.Register(ModuleName, 1, "Previous auction period not found")
 	ErrInvalidBidAmountGap     = sdkerrors.Register(ModuleName, 2, "Invalid bid amount gap")
+	ErrAuctionPeriodNotFound   = sdkerrors.Register(ModuleName, 3, "Auction period not found")
+	ErrAuctionNotFound         = sdkerrors.Register(ModuleName, 4, "Auction not found")
 )
