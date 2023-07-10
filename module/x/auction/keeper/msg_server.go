@@ -42,7 +42,7 @@ func (k msgServer) Bid(ctx context.Context, msg *types.MsgBid) (res *types.MsgBi
 	}
 	highestBid := currentAuction.HighestBid
 
-	// Check bid maount gap
+	// Check bid amount gap
 	if ((*msg.Amount).Sub(*highestBid.BidAmount)).Amount.Uint64() < params.BidGap {
 		return nil, types.ErrInvalidBidAmountGap
 	}
@@ -65,7 +65,7 @@ func (k msgServer) Bid(ctx context.Context, msg *types.MsgBid) (res *types.MsgBi
 		// Return fund to the pervious highest bidder
 		err := k.returnPrevioudBidAmount(sdkCtx, highestBid.BidderAddress, *highestBid.BidAmount)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to retunr fund to the previous highest bidder: %s", err.Error())
+			return nil, fmt.Errorf("Unable to return fund to the previous highest bidder: %s", err.Error())
 		}
 
 		err = k.lockBidAmount(sdkCtx, msg.Bidder, *msg.Amount)
