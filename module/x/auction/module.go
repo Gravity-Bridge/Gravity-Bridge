@@ -168,10 +168,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 
 // ExportGenesis exports the current genesis state to a json.RawMessage
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	// TODO: implement
-	// gs := keeper.ExportGenesis(ctx, am.keeper)
-	// return cdc.MustMarshalJSON(&gs)
-	return nil
+	genState := keeper.ExportGenesis(ctx, am.keeper)
+	return cdc.MustMarshalJSON(genState)
 }
 
 // BeginBlock implements app module
