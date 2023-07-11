@@ -136,11 +136,9 @@ func (am AppModule) QuerierRoute() string {
 	return types.QuerierRoute
 }
 
-// LegacyQuerierHandler returns the distribution module sdk.Querier.
+// LegacyQuerierHandler returns the module sdk.Querier.
 func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	// TODO: Implement
-	// return keeper.NewQuerier(am.keeper)
-	return nil
+	return keeper.NewQuerier(am.keeper)
 }
 
 // RegisterServices registers module services.
