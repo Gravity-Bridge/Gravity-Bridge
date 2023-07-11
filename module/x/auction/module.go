@@ -126,9 +126,7 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 
 // Route implements app module
 func (am AppModule) Route() sdk.Route {
-	// TODO: Implement
-	// return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
-	return sdk.Route{}
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
 }
 
 // QuerierRoute implements app module
