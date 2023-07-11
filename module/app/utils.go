@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	tmcfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
@@ -41,6 +42,7 @@ func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string,
 			Commit:             false,
 			OnOperation:        false,
 			AllInvariants:      false,
+			DBBackend:          "",
 		}, nil, "", nil, true, nil
 	}
 
@@ -59,7 +61,7 @@ func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string,
 		return simtypes.Config{}, nil, "", nil, false, err
 	}
 
-	db, err := sdk.NewLevelDB(dbName, dir)
+	db, err := dbm.NewDB(dbName, dbm.BackendType(tmcfg.DefaultConfig().DBBackend), dir)
 	if err != nil {
 		return simtypes.Config{}, nil, "", nil, false, err
 	}

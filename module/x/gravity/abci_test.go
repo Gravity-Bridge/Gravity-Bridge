@@ -43,7 +43,8 @@ func TestValsetCreationUponUnbonding(t *testing.T) {
 	// begin unbonding
 	stakingMsgSvr := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
 	undelegateMsg := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[0], keeper.StakingAmount)
-	stakingMsgSvr.Undelegate(input.Context, undelegateMsg)
+	_, err := stakingMsgSvr.Undelegate(input.Context, undelegateMsg)
+	require.NoError(t, err)
 
 	// Run the staking endblocker to ensure valset is set in state
 	staking.EndBlocker(input.Context, input.StakingKeeper)
@@ -241,9 +242,11 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	input.Context = ctx.WithBlockHeight(valUnbondingHeight)
 	stakingMsgSvr := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
 	undelegateMsg1 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[0], keeper.StakingAmount)
-	stakingMsgSvr.Undelegate(input.Context, undelegateMsg1)
+	_, err := stakingMsgSvr.Undelegate(input.Context, undelegateMsg1)
+	require.NoError(t, err)
 	undelegateMsg2 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[1], keeper.StakingAmount)
-	stakingMsgSvr.Undelegate(input.Context, undelegateMsg2)
+	_, err = stakingMsgSvr.Undelegate(input.Context, undelegateMsg2)
+	require.NoError(t, err)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {

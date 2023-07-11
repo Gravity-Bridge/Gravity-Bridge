@@ -3,9 +3,11 @@ package gravity
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	sdkmath "cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -68,6 +70,8 @@ func addDenomToERC20Relation(tv *testingVars) {
 		},
 		Base:    "ugraviton",
 		Display: "graviton",
+		URI:     "",
+		URIHash: "",
 	})
 
 	var (
@@ -114,15 +118,15 @@ func addDenomToERC20Relation(tv *testingVars) {
 
 func lockCoinsInModule(tv *testingVars) {
 	var (
-		userCosmosAddr, err           = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
-		denom                         = "ugraviton"
-		startingCoinAmount  sdk.Int   = sdk.NewIntFromUint64(150)
-		sendAmount          sdk.Int   = sdk.NewIntFromUint64(50)
-		feeAmount           sdk.Int   = sdk.NewIntFromUint64(5)
-		startingCoins       sdk.Coins = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
-		sendingCoin         sdk.Coin  = sdk.NewCoin(denom, sendAmount)
-		feeCoin             sdk.Coin  = sdk.NewCoin(denom, feeAmount)
-		ethDestination                = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
+		userCosmosAddr, err             = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
+		denom                           = "ugraviton"
+		startingCoinAmount  sdkmath.Int = sdk.NewIntFromUint64(150)
+		sendAmount          sdkmath.Int = sdk.NewIntFromUint64(50)
+		feeAmount           sdkmath.Int = sdk.NewIntFromUint64(5)
+		startingCoins       sdk.Coins   = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
+		sendingCoin         sdk.Coin    = sdk.NewCoin(denom, sendAmount)
+		feeCoin             sdk.Coin    = sdk.NewCoin(denom, feeAmount)
+		ethDestination                  = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
 	)
 	assert.Nil(tv.t, err)
 
@@ -228,6 +232,8 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 				Exponent: 6,
 			},
 		},
+		URI:     "",
+		URIHash: "",
 	}
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, metadata)
 

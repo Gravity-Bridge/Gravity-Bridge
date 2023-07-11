@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	sdkerrors "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -202,7 +203,7 @@ func (b InternalBridgeValidators) ValidateBasic() error {
 //////////////////////////////////////
 
 // NewValset returns a new valset
-func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmount sdk.Int, rewardToken EthAddress) (*Valset, error) {
+func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmount sdkmath.Int, rewardToken EthAddress) (*Valset, error) {
 	if err := members.ValidateBasic(); err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid members")
 	}
@@ -284,7 +285,7 @@ func (v *Valset) WithoutEmptyMembers() *Valset {
 		Nonce:        v.Nonce,
 		Members:      make([]BridgeValidator, 0, len(v.Members)),
 		Height:       0,
-		RewardAmount: sdk.Int{},
+		RewardAmount: sdkmath.Int{},
 		RewardToken:  "",
 	}
 	for i := range v.Members {
@@ -370,7 +371,7 @@ func (v Valsets) ValidateBasic() error {
 }
 
 // GetFees returns the total fees contained within a given batch
-func (b OutgoingTxBatch) GetFees() sdk.Int {
+func (b OutgoingTxBatch) GetFees() sdkmath.Int {
 	sum := sdk.ZeroInt()
 	for _, t := range b.Transactions {
 		sum = sum.Add(t.Erc20Fee.Amount)

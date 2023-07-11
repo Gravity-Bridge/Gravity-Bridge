@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	sdkerrors "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
@@ -395,7 +396,7 @@ func (a AttestationHandler) assertNothingSent(ctx sdk.Context, moduleAddr sdk.Ac
 
 // assertSentAmount performs a runtime assertion that the actual sent amount of `denom` equals the MsgSendToCosmos
 // claim's amount to send
-func (a AttestationHandler) assertSentAmount(ctx sdk.Context, moduleAddr sdk.AccAddress, preSendBalance sdk.Coin, denom string, amount sdk.Int) {
+func (a AttestationHandler) assertSentAmount(ctx sdk.Context, moduleAddr sdk.AccAddress, preSendBalance sdk.Coin, denom string, amount sdkmath.Int) {
 	postSendBalance := a.keeper.bankKeeper.GetBalance(ctx, moduleAddr, denom)
 	if !preSendBalance.Sub(postSendBalance).Amount.Equal(amount) {
 		panic(fmt.Sprintf(

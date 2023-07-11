@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -738,7 +739,7 @@ func MintVouchersFromAir(t *testing.T, ctx sdk.Context, k Keeper, dest sdk.AccAd
 	return coin
 }
 
-func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, amt sdk.Int) *stakingtypes.MsgCreateValidator {
+func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, amt sdkmath.Int) *stakingtypes.MsgCreateValidator {
 	commission := stakingtypes.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec())
 	out, err := stakingtypes.NewMsgCreateValidator(
 		address, pubKey, sdk.NewCoin("stake", amt),
@@ -756,7 +757,7 @@ func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, am
 	return out
 }
 
-func NewTestMsgUnDelegateValidator(address sdk.ValAddress, amt sdk.Int) *stakingtypes.MsgUndelegate {
+func NewTestMsgUnDelegateValidator(address sdk.ValAddress, amt sdkmath.Int) *stakingtypes.MsgUndelegate {
 	msg := stakingtypes.NewMsgUndelegate(sdk.AccAddress(address), address, sdk.NewCoin("stake", amt))
 	return msg
 }

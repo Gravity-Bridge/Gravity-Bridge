@@ -43,9 +43,6 @@ import (
 // c) a recent improvement to the sdk brings faster invariant checks
 var InvCheckPeriodPrimes = []uint{17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199}
 
-// A default value for the min gas prices if the default app template is unused and no flag is provided
-const defaultGravMinGasPrices = "0ugraviton"
-
 // NewRootCmd creates a new root command for simd. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
@@ -72,8 +69,6 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
-			setDefaultFlagValues(initClientCtx, cmd)
-
 			initClientCtx, err := client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
 			if err != nil {
 				return err
@@ -98,13 +93,6 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	initRootCmd(rootCmd, encodingConfig)
 
 	return rootCmd, encodingConfig
-}
-
-// Sets default values if the appropriate flags have not been provided
-func setDefaultFlagValues(initClientCtx client.Context, cmd *cobra.Command) {
-	if v, err := cmd.Flags().GetString(server.FlagMinGasPrices); err != nil || v == "" {
-		cmd.Flags().Set(server.FlagMinGasPrices, defaultGravMinGasPrices)
-	}
 }
 
 // Note: Copied from github.com/cosmos/cosmos-sdk over at simapp/simd/cmd/root.go
@@ -180,7 +168,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		MigrateGravityGenesisCmd(),
 	)
 
-	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, createSimappAndExport, addModuleInitFlags)
+	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, createSimappAndExport, addStartFlags)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
@@ -192,7 +180,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	)
 }
 
-func addModuleInitFlags(startCmd *cobra.Command) {
+func addStartFlags(startCmd *cobra.Command) {
 	crisis.AddModuleInitFlags(startCmd)
 }
 

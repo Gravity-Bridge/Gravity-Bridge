@@ -346,7 +346,7 @@ func TestMsgSendToCosmosOverflow(t *testing.T) {
 		CosmosReceiver: myCosmosAddr.String(),
 		Orchestrator:   "",
 	}
-	// Absoulte max value of 2^256 - 1. Previous versions (v0.43 or v0.44) of cosmos-sdk did not support sdk.Int of this size
+	// Absoulte max value of 2^256 - 1. Previous versions (v0.43 or v0.44) of cosmos-sdk did not support sdkmath.Int of this size
 	maxSend := types.ERC20Token{
 		Amount:   sdk.NewIntFromBigInt(biggestBigInt),
 		Contract: tokenETHAddr2,

@@ -226,7 +226,10 @@ func bumpMinValidatorCommissions(stakingKeeper *stakingkeeper.Keeper, ctx sdk.Co
 
 			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): calling the hook")
 			// call the before-modification hook since we're about to update the commission
-			stakingKeeper.BeforeValidatorModified(ctx, v.GetOperator())
+			err := stakingKeeper.BeforeValidatorModified(ctx, v.GetOperator())
+			if err != nil {
+				panic(err)
+			}
 
 			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): setting the validator")
 			stakingKeeper.SetValidator(ctx, v)

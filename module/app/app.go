@@ -779,6 +779,7 @@ func NewGravityApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 
+	// nolint: exhaustruct
 	options := sdkante.HandlerOptions{
 		AccountKeeper:   accountKeeper,
 		BankKeeper:      bankKeeper,

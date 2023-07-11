@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	sdkerrors "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -385,7 +386,7 @@ func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 		Nonce:        0,
 		Members:      []types.BridgeValidator{},
 		Height:       0,
-		RewardAmount: sdk.Int{},
+		RewardAmount: sdkmath.Int{},
 		RewardToken:  "",
 	}
 	k.cdc.MustUnmarshal(bytes, &valset)

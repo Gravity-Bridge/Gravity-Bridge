@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	sdkerrors "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -292,7 +293,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	// get the reward from the params store
 	reward := k.GetParams(ctx).ValsetReward
 	var rewardToken *types.EthAddress
-	var rewardAmount sdk.Int
+	var rewardAmount sdkmath.Int
 	if !reward.IsValid() || reward.IsZero() {
 		// the case where a validator has 'no reward'. The 'no reward' value is interpreted as having a zero
 		// address for the ERC20 token and a zero value for the reward amount. Since we store a coin with the
@@ -321,7 +322,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 // result: (2^63 - 1) * 2^32 / (2^63 - 1) = 2^32 = 4294967296 [this is the multiplier value below, our max output]
 // Example: rawPower = max (2^63 - 1), totalValidatorPower = 1000 validators with the same power: 1000*(2^63 - 1)
 // result: (2^63 - 1) * 2^32 / (1000(2^63 - 1)) = 2^32 / 1000 = 4294967
-func normalizeValidatorPower(rawPower uint64, totalValidatorPower sdk.Int) uint64 {
+func normalizeValidatorPower(rawPower uint64, totalValidatorPower sdkmath.Int) uint64 {
 	// Compute rawPower * multiplier / quotient
 	// Set the upper limit to 2^32, which would happen if there is a single validator with all the power
 	multiplier := new(big.Int).SetUint64(4294967296)
