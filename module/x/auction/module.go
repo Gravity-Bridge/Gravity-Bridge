@@ -151,17 +151,15 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 // RegisterServices registers module services.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
-	// TODO: Register query server
-
-	// types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+	querier := keeper.Querier{Keeper: am.keeper}
+	types.RegisterQueryServer(cfg.QueryServer(), querier)
 }
 
 // InitGenesis initializes the genesis state for this module and implements app module.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	keeper.InitGenesis(ctx, am.keeper, genesisState)
-	return []abci.ValidatorUpdate{}
+	return keeper.InitGenesis(ctx, am.keeper, genesisState)
 }
 
 // ExportGenesis exports the current genesis state to a json.RawMessage
