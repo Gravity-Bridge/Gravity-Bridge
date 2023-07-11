@@ -43,9 +43,7 @@ func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 
 // DefaultGenesis implements app module basic
 func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
-	// TODO: Implement
-	// return cdc.MustMarshalJSON(types.DefaultGenesisState())
-	return nil
+	return cdc.MustMarshalJSON(types.DefaultGenesis())
 }
 
 // ValidateGenesis implements app module basic
