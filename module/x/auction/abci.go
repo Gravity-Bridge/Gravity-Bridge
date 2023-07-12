@@ -50,7 +50,10 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 		k.SetAuction(ctx, newAuction)
 
 		// Update auction in auction period auction list
-		k.AddNewAuctionToAuctionPeriod(ctx, increamentId, newAuction)
+		err = k.AddNewAuctionToAuctionPeriod(ctx, increamentId, newAuction)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Set new auction period to store

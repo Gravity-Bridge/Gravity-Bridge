@@ -43,14 +43,14 @@ func (k msgServer) Bid(ctx context.Context, msg *types.MsgBid) (res *types.MsgBi
 	highestBid := currentAuction.HighestBid
 
 	// Check bid amount gap
-	if ((*msg.Amount).Sub(*highestBid.BidAmount)).Amount.Uint64() < params.BidGap {
+	if (msg.Amount.Sub(*highestBid.BidAmount)).Amount.Uint64() < params.BidGap {
 		return nil, types.ErrInvalidBidAmountGap
 	}
 
 	var bid *types.Bid
 
 	if highestBid.BidderAddress == msg.Bidder {
-		bidAmountGap := (*msg.Amount).Sub(*highestBid.BidAmount)
+		bidAmountGap := msg.Amount.Sub(*highestBid.BidAmount)
 		// Send the added amount to auction module
 		err := k.lockBidAmount(sdkCtx, msg.Bidder, bidAmountGap)
 		if err != nil {
