@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -34,9 +32,6 @@ func (msg *MsgBid) ValidateBasic() error {
 	}
 	if !msg.Amount.IsValid() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, msg.Amount.String())
-	}
-	if msg.AuctionId < 0 {
-		return fmt.Errorf("Invalid auction id %v", msg.AuctionId)
 	}
 	return nil
 }
