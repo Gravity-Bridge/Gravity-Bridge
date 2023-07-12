@@ -126,9 +126,7 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 
 // Route implements app module
 func (am AppModule) Route() sdk.Route {
-	// TODO: Implement
-	// return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
-	return sdk.Route{}
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
 }
 
 // QuerierRoute implements app module
@@ -136,11 +134,9 @@ func (am AppModule) QuerierRoute() string {
 	return types.QuerierRoute
 }
 
-// LegacyQuerierHandler returns the distribution module sdk.Querier.
+// LegacyQuerierHandler returns the module sdk.Querier.
 func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	// TODO: Implement
-	// return keeper.NewQuerier(am.keeper)
-	return nil
+	return keeper.NewQuerier(am.keeper)
 }
 
 // RegisterServices registers module services.
