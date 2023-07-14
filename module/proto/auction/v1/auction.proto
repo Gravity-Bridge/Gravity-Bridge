@@ -25,7 +25,7 @@ enum AuctionStatus{
 }
 
 // Auction represents a single auction.
-// An Auction has a unique identifier, an amount being auctioned, a status, and a highest bid.
+// An Auction has a unique identifier relative to its Auction Period Id , an amount being auctioned, a status, and a highest bid.
 message Auction {
     uint64 id = 1;  // Unique identifier for the Auction.
     cosmos.base.v1beta1.Coin auction_amount = 2;  // Amount being auctioned.

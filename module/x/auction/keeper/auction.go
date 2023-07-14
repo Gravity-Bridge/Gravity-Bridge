@@ -15,17 +15,6 @@ func uint64ToByte(num uint64) []byte {
 	return buf[:n]
 }
 
-// GetAuction returns auction by id
-func (k Keeper) GetAuction(ctx sdk.Context, id uint64) (val types.Auction, found bool) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
-	bz := store.Get(uint64ToByte(id))
-	if len(bz) == 0 {
-		return val, false
-	}
-	k.cdc.MustUnmarshal(bz, &val)
-	return val, true
-}
-
 // GetAllAuctionPeriods returns all auction periods.
 func (k Keeper) GetAllAuctions(ctx sdk.Context) []types.Auction {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))

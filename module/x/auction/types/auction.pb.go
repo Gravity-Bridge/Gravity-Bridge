@@ -112,7 +112,7 @@ func (m *AuctionPeriod) GetStartBlockHeight() uint64 {
 }
 
 // Auction represents a single auction.
-// An Auction has a unique identifier, an amount being auctioned, a status, and a highest bid.
+// An Auction has a unique identifier relative to its Auction Period Id , an amount being auctioned, a status, and a highest bid.
 type Auction struct {
 	Id              uint64        `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	AuctionAmount   *types.Coin   `protobuf:"bytes,2,opt,name=auction_amount,json=auctionAmount,proto3" json:"auction_amount,omitempty"`
