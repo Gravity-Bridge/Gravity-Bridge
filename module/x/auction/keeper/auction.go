@@ -15,7 +15,7 @@ func uint64ToByte(num uint64) []byte {
 	return buf[:n]
 }
 
-// GetAllAuctionPeriods returns all auction periods.
+// GetAllAuction returns all auctions.
 func (k Keeper) GetAllAuctions(ctx sdk.Context) []types.Auction {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
 
