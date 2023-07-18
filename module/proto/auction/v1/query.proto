@@ -4,6 +4,7 @@ package auction.v1;
 
 import "gogoproto/gogo.proto";
 import "auction/v1/params.proto";
+import "auction/v1/auction.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
@@ -14,6 +15,22 @@ service Query {
     rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
       option (google.api.http).get = "/auction/params";
     }
+
+    rpc AuctionPeriodByAuctionId(QueryAuctionPeriodById) returns (QueryAuctionPeriodByIdResponse) {
+      option (google.api.http).get = "/auction/period/{id}";
+    }
+
+    rpc AuctionByAuctionIdAndPeriodId(QueryAuctionByAuctionIdAndPeriodId) returns (QueryAuctionByAuctionIdAndPeriodIdResponse) {
+      option (google.api.http).get = "/auction/item";
+    }
+
+    rpc AllAuctionsByBidderAndPeriodId(QueryAllAuctionsByBidderAndPeriodId) returns (QueryAllAuctionsByBidderAndPeriodIdResponse) {
+      option (google.api.http).get = "/auction/all-by-bidder-period";
+    }
+
+    rpc HighestBidByAuctionIdAndPeriodId(QueryHighestBidByAuctionIdAndPeriodId) returns (QueryHighestBidByAuctionIdAndPeriodIdResponse) {
+      option (google.api.http).get = "/auction/highest-bid";
+    }
   }
   // QueryParamsRequest is request type for the Query/Params RPC method.
   message QueryParamsRequest {}
@@ -23,3 +40,34 @@ service Query {
     // params holds all the parameters of this module.
     Params params = 1 [ (gogoproto.nullable) = false ];
   }
+
+message QueryAuctionPeriodById {
+  uint64 id = 1;
+}
+message QueryAuctionPeriodByIdResponse {
+  AuctionPeriod auction_period = 1;
+}
+
+message QueryAuctionByAuctionIdAndPeriodId{
+  uint64 auction_id = 1;
+  uint64 period_id = 2;
+}
+message QueryAuctionByAuctionIdAndPeriodIdResponse {
+  Auction auction = 1;
+}
+
+message QueryAllAuctionsByBidderAndPeriodId{
+  string address = 1;
+  uint64 period_id = 2;
+}
+message QueryAllAuctionsByBidderAndPeriodIdResponse {
+  repeated Auction auctions = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryHighestBidByAuctionIdAndPeriodId {
+  uint64 auction_id = 1;
+  uint64 period_id = 2;
+}
+message QueryHighestBidByAuctionIdAndPeriodIdResponse {
+  Bid bid = 1;
+}

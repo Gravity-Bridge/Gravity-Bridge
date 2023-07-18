@@ -90,8 +90,8 @@ func (k Keeper) GetAllAuctionsByPeriodID(ctx sdk.Context, periodId uint64) []typ
 	return auctionsFound
 }
 
-// GetAllAuctionsByPeriodID returns all auctions for the given auction period id.
-func (k Keeper) GetAllAuctionsByPeriodIDAndAuctionId(ctx sdk.Context, periodId uint64, id uint64) (types.Auction, bool) {
+// GetAuctionByPeriodID returns all auctions for the given auction period id.
+func (k Keeper) GetAuctionByPeriodIDAndAuctionId(ctx sdk.Context, periodId uint64, id uint64) (types.Auction, bool) {
 	auctions := k.GetAllAuctions(ctx)
 
 	auctionsFound := []types.Auction{}
@@ -113,3 +113,50 @@ func (k Keeper) IncreamentAuctionId(ctx sdk.Context, periodId uint64) (uint64, e
 }
 
 // TODO get auction by status? or by token? by auction period ID ?
+
+// GetAllAuctionsByAuctionID returns all auctions for the given auction period id.
+func (k Keeper) GetAllAuctionsByAuctionID(ctx sdk.Context, auctionId uint64) []types.Auction {
+	auctions := k.GetAllAuctions(ctx)
+
+	auctionsFound := []types.Auction{}
+	for _, auction := range auctions {
+		if auction.Id == auctionId {
+			auctionsFound = append(auctionsFound, auction)
+		}
+	}
+	return auctionsFound
+}
+
+// GetAllAuctionByBidderAndPeriodId returns all auctions for the given auction period id and bidder address.
+func (k Keeper) GetAllAuctionByBidderAndPeriodId(ctx sdk.Context, bidder string, periodId uint64) []types.Auction {
+	auctions := k.GetAllAuctions(ctx)
+
+	auctionsFound := []types.Auction{}
+	for _, auction := range auctions {
+		if auction.AuctionPeriodId == periodId && auction.HighestBid.BidderAddress == bidder {
+			auctionsFound = append(auctionsFound, auction)
+		}
+	}
+	return auctionsFound
+}
+
+// GetAllAuctionByBidderAndPeriodId returns all auctions for the given auction period id and bidder address.
+func (k Keeper) GetHighestBidByAuctionIdAndPeriodID(ctx sdk.Context, auctionId uint64, periodId uint64) (types.Bid, bool) {
+	auctions := k.GetAllAuctions(ctx)
+
+	found := false
+	var bid *types.Bid
+
+	for _, auction := range auctions {
+		if auction.AuctionPeriodId == periodId && auction.Id == auctionId {
+			bid = auction.HighestBid
+			found = true
+			break
+		}
+	}
+	if found {
+		return *bid, true
+	}
+
+	return *bid, false
+}

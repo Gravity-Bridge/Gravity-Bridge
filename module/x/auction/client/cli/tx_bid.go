@@ -14,6 +14,7 @@ import (
 )
 
 func CmdMsgBid() *cobra.Command {
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "bid [auction-id] [amount]",
 		Short: "Broadcast message bid",

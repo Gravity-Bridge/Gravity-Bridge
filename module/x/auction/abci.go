@@ -40,10 +40,11 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 		}
 
 		newAuction := types.Auction{
-			Id:            newId,
-			AuctionAmount: &sdkcoin,
-			Status:        1,
-			HighestBid:    nil,
+			Id:              newId,
+			AuctionPeriodId: increamentId,
+			AuctionAmount:   &sdkcoin,
+			Status:          1,
+			HighestBid:      nil,
 		}
 
 		// Set new auction to store

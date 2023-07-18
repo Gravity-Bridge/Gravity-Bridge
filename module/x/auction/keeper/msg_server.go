@@ -35,7 +35,7 @@ func (k msgServer) Bid(ctx context.Context, msg *types.MsgBid) (res *types.MsgBi
 		return nil, types.ErrNoPreviousAuctionPeriod
 	}
 
-	currentAuction, found := k.GetAllAuctionsByPeriodIDAndAuctionId(sdkCtx, latestAuctionPeriod.Id, msg.AuctionId)
+	currentAuction, found := k.GetAuctionByPeriodIDAndAuctionId(sdkCtx, latestAuctionPeriod.Id, msg.AuctionId)
 
 	if !found {
 		return nil, types.ErrAuctionNotFound
