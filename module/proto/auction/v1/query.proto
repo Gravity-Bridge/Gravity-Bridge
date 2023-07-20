@@ -13,23 +13,23 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/t
 service Query {
     // Parameters queries the parameters of the module.
     rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
-      option (google.api.http).get = "/auction/params";
+      option (google.api.http).get = "/auction/v1beta/params";
     }
 
     rpc AuctionPeriodByAuctionId(QueryAuctionPeriodById) returns (QueryAuctionPeriodByIdResponse) {
-      option (google.api.http).get = "/auction/period/{id}";
+      option (google.api.http).get = "/auction/v1beta/period/{id}";
     }
 
     rpc AuctionByAuctionIdAndPeriodId(QueryAuctionByAuctionIdAndPeriodId) returns (QueryAuctionByAuctionIdAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/item";
+      option (google.api.http).get = "/auction/v1beta/auction/{periodId}/{auctionId}";
     }
 
     rpc AllAuctionsByBidderAndPeriodId(QueryAllAuctionsByBidderAndPeriodId) returns (QueryAllAuctionsByBidderAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/all-by-bidder-period";
+      option (google.api.http).get = "/auction/v1beta/auctions-by-bidder-period/{bidderAddress}/{periodId}";
     }
 
     rpc HighestBidByAuctionIdAndPeriodId(QueryHighestBidByAuctionIdAndPeriodId) returns (QueryHighestBidByAuctionIdAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/highest-bid";
+      option (google.api.http).get = "/auction/v1beta/highest-bid/{periodId}/{auctionId}";
     }
   }
   // QueryParamsRequest is request type for the Query/Params RPC method.
