@@ -129,26 +129,26 @@ func (k Keeper) GetAllAuctionsByAuctionID(ctx sdk.Context, auctionId uint64) []t
 
 // GetAllAuctionByBidderAndPeriodId returns all auctions for the given auction period id and bidder address.
 func (k Keeper) GetAllAuctionByBidderAndPeriodId(ctx sdk.Context, bidder string, periodId uint64) []types.Auction {
-	auctions := k.GetAllAuctions(ctx)
+	auctions := k.GetAllAuctionsByPeriodID(ctx, periodId)
 
 	auctionsFound := []types.Auction{}
 	for _, auction := range auctions {
-		if auction.AuctionPeriodId == periodId && auction.HighestBid.BidderAddress == bidder {
+		if auction.HighestBid.BidderAddress == bidder {
 			auctionsFound = append(auctionsFound, auction)
 		}
 	}
 	return auctionsFound
 }
 
-// GetAllAuctionByBidderAndPeriodId returns all auctions for the given auction period id and bidder address.
+// GetHighestBidByAuctionIdAndPeriodID returns highest bid entry at a given auction id and period id.
 func (k Keeper) GetHighestBidByAuctionIdAndPeriodID(ctx sdk.Context, auctionId uint64, periodId uint64) (types.Bid, bool) {
-	auctions := k.GetAllAuctions(ctx)
+	auctions := k.GetAllAuctionsByPeriodID(ctx, periodId)
 
 	found := false
 	var bid *types.Bid
 
 	for _, auction := range auctions {
-		if auction.AuctionPeriodId == periodId && auction.Id == auctionId {
+		if auction.Id == auctionId {
 			bid = auction.HighestBid
 			found = true
 			break

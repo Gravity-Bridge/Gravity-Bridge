@@ -168,8 +168,7 @@ proto-tools: proto-tools-stamp buf
 
 proto-tools-stamp:
 	echo "Installing protoc compiler..."
-	(cd /tmp; \
-	curl -OL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}"; \
+	(curl -OL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}"; \
 	unzip -o ${PROTOC_ZIP} -d $(PREFIX) bin/protoc; \
 	unzip -o ${PROTOC_ZIP} -d $(PREFIX) 'include/*'; \
 	rm -f ${PROTOC_ZIP})
