@@ -119,9 +119,14 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction"
+	auckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
+	auctiontypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
 const appName = "app"
@@ -160,6 +165,7 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		gravity.AppModuleBasic{},
+		auction.AppModuleBasic{},
 		bech32ibc.AppModuleBasic{},
 		ica.AppModuleBasic{},
 	)
@@ -175,6 +181,7 @@ var (
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		gravitytypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
+		auctiontypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
 		icatypes.ModuleName:            nil,
 	}
 
@@ -235,6 +242,7 @@ type Gravity struct {
 	evidenceKeeper    *evidencekeeper.Keeper
 	ibcTransferKeeper *ibctransferkeeper.Keeper
 	gravityKeeper     *keeper.Keeper
+	autionKeeper      *auckeeper.Keeper
 	bech32IbcKeeper   *bech32ibckeeper.Keeper
 	icaHostKeeper     *icahostkeeper.Keeper
 
@@ -362,7 +370,7 @@ func NewGravityApp(
 		slashingtypes.StoreKey, govtypes.StoreKey, paramstypes.StoreKey,
 		ibchost.StoreKey, upgradetypes.StoreKey, evidencetypes.StoreKey,
 		ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		gravitytypes.StoreKey, bech32ibctypes.StoreKey,
+		gravitytypes.StoreKey, auctiontypes.StoreKey, bech32ibctypes.StoreKey,
 		icahosttypes.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -512,6 +520,16 @@ func NewGravityApp(
 	)
 	app.gravityKeeper = &gravityKeeper
 
+	auctionKeeper := auckeeper.NewKeeper(
+		keys[auctiontypes.StoreKey],
+		app.GetSubspace(auctiontypes.ModuleName),
+		appCodec,
+		&bankKeeper,
+		&accountKeeper,
+		&distrKeeper,
+	)
+	app.autionKeeper = &auctionKeeper
+
 	// Add the staking hooks from distribution, slashing, and gravity to staking
 	stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(
@@ -548,6 +566,7 @@ func NewGravityApp(
 		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(ibcKeeper.ClientKeeper)).
 		AddRoute(gravitytypes.RouterKey, keeper.NewGravityProposalHandler(gravityKeeper)).
 		AddRoute(bech32ibctypes.RouterKey, bech32ibc.NewBech32IBCProposalHandler(*app.bech32IbcKeeper))
+		// AddRoute(auctiontypes.RouterKey, auckeeper.NewAuctionProposalHandler(auctionKeeper)).
 
 	govKeeper := govkeeper.NewKeeper(
 		appCodec,
@@ -657,6 +676,11 @@ func NewGravityApp(
 			gravityKeeper,
 			bankKeeper,
 		),
+		auction.NewAppModule(
+			auctionKeeper,
+			bankKeeper,
+			accountKeeper,
+		),
 		bech32ibc.NewAppModule(
 			appCodec,
 			bech32IbcKeeper,
@@ -682,6 +706,7 @@ func NewGravityApp(
 		ibctransfertypes.ModuleName,
 		bech32ibctypes.ModuleName,
 		gravitytypes.ModuleName,
+		auctiontypes.ModuleName,
 		genutiltypes.ModuleName,
 		authz.ModuleName,
 		govtypes.ModuleName,
@@ -694,6 +719,7 @@ func NewGravityApp(
 		stakingtypes.ModuleName,
 		icatypes.ModuleName,
 		gravitytypes.ModuleName,
+		auctiontypes.ModuleName,
 		upgradetypes.ModuleName,
 		capabilitytypes.ModuleName,
 		minttypes.ModuleName,
@@ -727,6 +753,7 @@ func NewGravityApp(
 		authz.ModuleName,
 		bech32ibctypes.ModuleName, // Must go before gravity so that pending ibc auto forwards can be restored
 		gravitytypes.ModuleName,
+		auctiontypes.ModuleName,
 		crisistypes.ModuleName,
 		vestingtypes.ModuleName,
 		paramstypes.ModuleName,
@@ -1008,6 +1035,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(gravitytypes.ModuleName)
+	paramsKeeper.Subspace(auctiontypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 
