@@ -21,15 +21,15 @@ service Query {
     }
 
     rpc AuctionByAuctionIdAndPeriodId(QueryAuctionByAuctionIdAndPeriodId) returns (QueryAuctionByAuctionIdAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/v1beta/auction/{periodId}/{auctionId}";
+      option (google.api.http).get = "/auction/v1beta/auction/{period_id}/{auction_id}";
     }
 
     rpc AllAuctionsByBidderAndPeriodId(QueryAllAuctionsByBidderAndPeriodId) returns (QueryAllAuctionsByBidderAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/v1beta/auctions-by-bidder-period/{bidderAddress}/{periodId}";
+      option (google.api.http).get = "/auction/v1beta/auctions-by-bidder-period/{address}/{period_id}";
     }
 
     rpc HighestBidByAuctionIdAndPeriodId(QueryHighestBidByAuctionIdAndPeriodId) returns (QueryHighestBidByAuctionIdAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/v1beta/highest-bid/{periodId}/{auctionId}";
+      option (google.api.http).get = "/auction/v1beta/highest-bid/{period_id}/{auction_id}";
     }
   }
   // QueryParamsRequest is request type for the Query/Params RPC method.

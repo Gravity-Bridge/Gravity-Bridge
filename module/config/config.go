@@ -17,6 +17,7 @@ const (
 	bech32PrefixConsAddr = "gravityvalcons"
 	// bech32PrefixConsPub defines the bech32 prefix of a consensus node public key
 	bech32PrefixConsPub = "gravityvalconspub"
+	// kk = params.DefaultWeightCommunitySpendProposal
 )
 
 func init() {

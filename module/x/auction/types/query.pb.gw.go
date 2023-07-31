@@ -105,19 +105,37 @@ func local_request_Query_AuctionPeriodByAuctionId_0(ctx context.Context, marshal
 
 }
 
-var (
-	filter_Query_AuctionByAuctionIdAndPeriodId_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_Query_AuctionByAuctionIdAndPeriodId_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq QueryAuctionByAuctionIdAndPeriodId
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["period_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "period_id")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_AuctionByAuctionIdAndPeriodId_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.PeriodId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "period_id", err)
+	}
+
+	val, ok = pathParams["auction_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "auction_id")
+	}
+
+	protoReq.AuctionId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "auction_id", err)
 	}
 
 	msg, err := client.AuctionByAuctionIdAndPeriodId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -129,11 +147,33 @@ func local_request_Query_AuctionByAuctionIdAndPeriodId_0(ctx context.Context, ma
 	var protoReq QueryAuctionByAuctionIdAndPeriodId
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["period_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "period_id")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_AuctionByAuctionIdAndPeriodId_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.PeriodId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "period_id", err)
+	}
+
+	val, ok = pathParams["auction_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "auction_id")
+	}
+
+	protoReq.AuctionId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "auction_id", err)
 	}
 
 	msg, err := server.AuctionByAuctionIdAndPeriodId(ctx, &protoReq)
@@ -141,19 +181,37 @@ func local_request_Query_AuctionByAuctionIdAndPeriodId_0(ctx context.Context, ma
 
 }
 
-var (
-	filter_Query_AllAuctionsByBidderAndPeriodId_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_Query_AllAuctionsByBidderAndPeriodId_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq QueryAllAuctionsByBidderAndPeriodId
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["address"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_AllAuctionsByBidderAndPeriodId_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Address, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
+	}
+
+	val, ok = pathParams["period_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "period_id")
+	}
+
+	protoReq.PeriodId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "period_id", err)
 	}
 
 	msg, err := client.AllAuctionsByBidderAndPeriodId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -165,11 +223,33 @@ func local_request_Query_AllAuctionsByBidderAndPeriodId_0(ctx context.Context, m
 	var protoReq QueryAllAuctionsByBidderAndPeriodId
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["address"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_AllAuctionsByBidderAndPeriodId_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Address, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
+	}
+
+	val, ok = pathParams["period_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "period_id")
+	}
+
+	protoReq.PeriodId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "period_id", err)
 	}
 
 	msg, err := server.AllAuctionsByBidderAndPeriodId(ctx, &protoReq)
@@ -177,19 +257,37 @@ func local_request_Query_AllAuctionsByBidderAndPeriodId_0(ctx context.Context, m
 
 }
 
-var (
-	filter_Query_HighestBidByAuctionIdAndPeriodId_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_Query_HighestBidByAuctionIdAndPeriodId_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq QueryHighestBidByAuctionIdAndPeriodId
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["period_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "period_id")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_HighestBidByAuctionIdAndPeriodId_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.PeriodId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "period_id", err)
+	}
+
+	val, ok = pathParams["auction_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "auction_id")
+	}
+
+	protoReq.AuctionId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "auction_id", err)
 	}
 
 	msg, err := client.HighestBidByAuctionIdAndPeriodId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -201,11 +299,33 @@ func local_request_Query_HighestBidByAuctionIdAndPeriodId_0(ctx context.Context,
 	var protoReq QueryHighestBidByAuctionIdAndPeriodId
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["period_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "period_id")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_HighestBidByAuctionIdAndPeriodId_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.PeriodId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "period_id", err)
+	}
+
+	val, ok = pathParams["auction_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "auction_id")
+	}
+
+	protoReq.AuctionId, err = runtime.Uint64(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "auction_id", err)
 	}
 
 	msg, err := server.HighestBidByAuctionIdAndPeriodId(ctx, &protoReq)
@@ -479,15 +599,15 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Query_Params_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"auction", "params"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_Params_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "params"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_AuctionPeriodByAuctionId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"auction", "period", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AuctionPeriodByAuctionId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "period", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_AuctionByAuctionIdAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"auction", "item"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AuctionByAuctionIdAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 0, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "period_id", "auction_id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_AllAuctionsByBidderAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"auction", "all-by-bidder-period"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AllAuctionsByBidderAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"auction", "v1beta", "auctions-by-bidder-period", "address", "period_id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_HighestBidByAuctionIdAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"auction", "highest-bid"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_HighestBidByAuctionIdAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"auction", "v1beta", "highest-bid", "period_id", "auction_id"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

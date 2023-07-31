@@ -919,6 +919,35 @@ func (app *Gravity) SimulationManager() *module.SimulationManager {
 	return app.sm
 }
 
+// GetIBCKeeper implements the TestingApp interface.
+func (app *Gravity) GetIBCKeeper() *ibckeeper.Keeper {
+	return app.ibcKeeper
+}
+
+// GetStakingKeeper implements the TestingApp interface.
+func (app *Gravity) GetStakingKeeper() stakingkeeper.Keeper {
+	return *app.stakingKeeper
+}
+
+// GetIBCKeeper implements the TestingApp interface.
+func (app *Gravity) GetTransferKeeper() *ibctransferkeeper.Keeper {
+	return app.ibcTransferKeeper
+}
+
+// GetScopedIBCKeeper implements the TestingApp interface.
+func (app *Gravity) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
+	return *app.ScopedIBCKeeper
+}
+
+// GetTxConfig implements the TestingApp interface.
+func (app *Gravity) GetTxConfig() client.TxConfig {
+	cfg := MakeEncodingConfig()
+	return cfg.TxConfig
+}
+
+// GetBaseApp returns the base app of the application
+func (app *Gravity) GetBaseApp() *baseapp.BaseApp { return app.BaseApp }
+
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
 func (app *Gravity) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
