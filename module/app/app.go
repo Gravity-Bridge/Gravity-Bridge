@@ -317,6 +317,9 @@ func (app Gravity) ValidateMembers() {
 	if app.gravityKeeper == nil {
 		panic("Nil gravityKeeper!")
 	}
+	if app.autionKeeper == nil {
+		panic("Nil auctionKeeper!")
+	}
 	if app.bech32IbcKeeper == nil {
 		panic("Nil bech32IbcKeeper!")
 	}
@@ -964,6 +967,26 @@ func (app *Gravity) GetTransferKeeper() *ibctransferkeeper.Keeper {
 // GetScopedIBCKeeper implements the TestingApp interface.
 func (app *Gravity) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
 	return *app.ScopedIBCKeeper
+}
+
+func (app *Gravity) GetAccountKeeper() authkeeper.AccountKeeper {
+	return *app.accountKeeper
+}
+
+// func (app *Gravity) GetAccountKeeper() authkeeper.AccountKeeper {
+// 	return *app.accountKeeper
+// }
+
+func (app *Gravity) GetAuctionKeeper() auckeeper.Keeper {
+	return *app.autionKeeper
+}
+
+func (app *Gravity) GetBankKeeper() bankkeeper.Keeper {
+	return *app.bankKeeper
+}
+
+func (app *Gravity) GetDistriKeeper() distrkeeper.Keeper {
+	return *app.distrKeeper
 }
 
 // GetTxConfig implements the TestingApp interface.
