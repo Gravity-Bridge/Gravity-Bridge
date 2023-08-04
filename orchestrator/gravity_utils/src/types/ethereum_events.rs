@@ -18,6 +18,7 @@ use gravity_proto::gravity::{
     MsgValsetUpdatedClaim,
 };
 use num256::Uint256;
+use serde_json::to_string;
 use std::iter::zip;
 use std::str::FromStr;
 use std::unimplemented;
@@ -35,6 +36,18 @@ pub const MSG_VALSET_UPDATED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgValsetUpdate
 /// Used to limit the length of variable length user provided inputs like
 /// ERC20 names and deposit destination strings
 const ONE_MEGABYTE: usize = 1000usize.pow(3);
+
+pub fn extract_event_nonce(
+    result: &serde_json::Map<String, serde_json::Value>,
+) -> Result<u64, Web3Error> {
+    if let Some(event_nonce) = result["_eventNonce"].as_str() {
+        let event_nonce: u64 = event_nonce.parse::<u64>()?;
+        return Ok(event_nonce);
+    }
+    Err(Web3Error::InvalidEventLog(
+        to_string(&result).unwrap_or_default(),
+    ))
+}
 
 /// A type of event which must be sent to Gravity by Orchestrators in a claim, parsed from the
 /// ethereum logs
@@ -320,6 +333,8 @@ impl ContractEvent for ValsetUpdatedEvent {
             ..
         } = event_data;
 
+        // guard code
+        let event_nonce = extract_event_nonce(result)?;
         let powers: Vec<&str> = result["_powers"].as_str().unwrap().split("\n").collect();
 
         let validators: Vec<&str> = result["_validators"]
@@ -338,7 +353,7 @@ impl ContractEvent for ValsetUpdatedEvent {
 
         Ok(Self {
             valset_nonce: result["_newValsetNonce"].as_str().unwrap().parse().unwrap(),
-            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            event_nonce,
             block_height: block_number.to_owned().into(),
             reward_amount: Uint256::from_str(result["_rewardAmount"].as_str().unwrap()).unwrap(),
             reward_token: result["_rewardToken"].as_str().unwrap().parse().ok(),
@@ -479,10 +494,12 @@ impl ContractEvent for TransactionBatchExecutedEvent {
             ..
         } = event_data;
 
+        // guard code
+        let event_nonce = extract_event_nonce(result)?;
         // based on abi
         Ok(Self {
             block_height: block_number.to_owned().into(),
-            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            event_nonce,
             erc20: result["_token"].as_str().unwrap().parse().unwrap(),
             batch_nonce: result["_batchNonce"].as_str().unwrap().parse().unwrap(),
         })
@@ -726,11 +743,12 @@ impl ContractEvent for SendToCosmosEvent {
             ..
         } = event_data;
 
+        // guard code
+        let event_nonce = extract_event_nonce(result)?;
         let destination = result["_destination"].as_str().unwrap();
-
         Ok(Self {
             block_height: block_number.to_owned().into(),
-            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            event_nonce,
             erc20: result["_tokenContract"].as_str().unwrap().parse().unwrap(),
             sender: result["_sender"].as_str().unwrap().parse().unwrap(),
             destination: destination.to_string(),
@@ -1080,9 +1098,11 @@ impl ContractEvent for Erc20DeployedEvent {
             ..
         } = event_data;
 
+        // guard code
+        let event_nonce = extract_event_nonce(result)?;
         Ok(Self {
             block_height: block_number.to_owned().into(),
-            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            event_nonce,
             erc20_address: result["_tokenContract"].as_str().unwrap().parse().unwrap(),
             cosmos_denom: result["_cosmosDenom"].as_str().unwrap().to_string(),
             name: result["_name"].as_str().unwrap().to_string(),
@@ -1178,10 +1198,12 @@ impl ContractEvent for LogicCallExecutedEvent {
             ..
         } = event_data;
 
+        // guard code
+        let event_nonce = extract_event_nonce(result)?;
         // bytes are shown as hex string
         Ok(Self {
             block_height: block_number.to_owned().into(),
-            event_nonce: result["_eventNonce"].as_str().unwrap().parse().unwrap(),
+            event_nonce,
             invalidation_id: hex_str_to_bytes(result["_invalidationId"].as_str().unwrap()).unwrap(),
             invalidation_nonce: result["_invalidationNonce"]
                 .as_str()
