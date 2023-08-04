@@ -1390,7 +1390,7 @@ dependencies = [
 
 [[package]]
 name = "gbt"
-version = "1.8.1"
+version = "1.8.1-hot-fix-valset-opt-contiguous-nonce-error"
 dependencies = [
  "actix-rt",
  "clap",
