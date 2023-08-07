@@ -57,7 +57,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyMinBidAmount, &p.MinBidAmount, isPositive),
 		paramtypes.NewParamSetPair(KeyBidGap, &p.BidGap, isPositive),
 		paramtypes.NewParamSetPair(KeyAuctionRate, &p.AuctionRate, isDecPositive),
-		paramtypes.NewParamSetPair(KeyAllowTokens, &p.AllowTokens, nil),
+		paramtypes.NewParamSetPair(KeyAllowTokens, &p.AllowTokens, isEmpty),
 	}
 }
 
@@ -78,6 +78,10 @@ func (p Params) Validate() error {
 	if p.AuctionRate.IsNegative() || p.AuctionRate.GT(sdk.NewDec(1)) {
 		return fmt.Errorf("auction rate should be between 0 and 1")
 	}
+	return nil
+}
+
+func isEmpty(i interface{}) error {
 	return nil
 }
 
