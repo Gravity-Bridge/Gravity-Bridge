@@ -28,4 +28,8 @@ message Params {
 
   // AllowTokens is a list of allowed tokens to be auctioned
   map<string, bool> allow_tokens = 6;
+
+  // Recovery when a period fail to initiate 
+  // Start a new period after N blocks
+  // uint64 recover_blocks = 7;
 }

@@ -69,3 +69,49 @@ func uint64ToBytes(i uint64) []byte {
 	binary.BigEndian.PutUint64(b, i)
 	return b
 }
+
+// SetLastAuctionPeriodBlockHeight sets the block height for given height.
+func (k Keeper) SetLastAuctionPeriodBlockHeight(ctx sdk.Context, blockHeight uint64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixLastAuctionPeriodBlockHeight))
+
+	lastBlockHeight := types.LastAuctionPeriodHeight{
+		Height: blockHeight,
+	}
+
+	bz := k.cdc.MustMarshal(&lastBlockHeight)
+	store.Set([]byte(types.KeyAuctionPeriodBlockHeight), bz)
+}
+
+// SetLastAuctionPeriodBlockHeight sets the block height for given height.
+func (k Keeper) SetEstimateAuctionPeriodBlockHeight(ctx sdk.Context, blockHeight uint64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixEstimateNextAuctionPeriodBlockHeight))
+
+	nextBlockHeight := types.EstimateNextAuctionPeriodHeight{
+		Height: blockHeight,
+	}
+
+	bz := k.cdc.MustMarshal(&nextBlockHeight)
+	store.Set([]byte(types.KeyAuctionPeriodBlockHeight), bz)
+}
+
+func (k Keeper) GetEstimateAuctionPeriodBlockHeight(ctx sdk.Context) (blockHeight types.EstimateNextAuctionPeriodHeight, found bool) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixEstimateNextAuctionPeriodBlockHeight))
+	bz := store.Get([]byte(types.KeyAuctionPeriodBlockHeight))
+	if bz == nil {
+		return blockHeight, false
+	}
+
+	k.cdc.MustUnmarshal(bz, &blockHeight)
+	return blockHeight, true
+}
+
+func (k Keeper) GetLastAuctionPeriodBlockHeight(ctx sdk.Context) (blockHeight types.LastAuctionPeriodHeight, found bool) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixLastAuctionPeriodBlockHeight))
+	bz := store.Get([]byte(types.KeyAuctionPeriodBlockHeight))
+	if bz == nil {
+		return blockHeight, false
+	}
+
+	k.cdc.MustUnmarshal(bz, &blockHeight)
+	return blockHeight, true
+}
