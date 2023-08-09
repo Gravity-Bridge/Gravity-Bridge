@@ -19,7 +19,8 @@ func MakeEncodingConfig() gravityparams.EncodingConfig {
 	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
-	// The EIP-712 signature extension option must be registered separately, as we do not want EthAccount to be registered
+	// The EIP-712 signature extension option must be registered separately, as we do not want ethermint.v1.EthAccount to be registered
+	// (Gravity only supports SDK x/auth accounts since it is not an Ethermint chain)
 	encodingConfig.InterfaceRegistry.RegisterInterface(
 		"ethermint.v1.ExtensionOptionsWeb3Tx",
 		(*etherminttypes.ExtensionOptionsWeb3TxI)(nil),

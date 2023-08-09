@@ -6,7 +6,7 @@ require (
 	github.com/althea-net/bech32-ibc v0.4.5
 	github.com/cosmos/cosmos-sdk v0.45.16
 	github.com/cosmos/ibc-go/v4 v4.3.1
-	github.com/evmos/ethermint v0.19.5 // Replaced
+	github.com/evmos/ethermint v0.19.8 // Replaced
 )
 
 replace (
@@ -14,7 +14,7 @@ replace (
 	github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.45.16
 
 	// Althea-net fork removes ibc-go v3 dep, tendermint->cometbft issue
-	github.com/evmos/ethermint => github.com/althea-net/ethermint v0.19.5
+	github.com/evmos/ethermint => github.com/althea-net/ethermint v0.19.8
 
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 

@@ -119,6 +119,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
+	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -773,7 +774,7 @@ func NewGravityApp(
 	}
 
 	// Note: If feegrant keeper is added, add it to the NewAnteHandler call instead of nil
-	ah, err := ante.NewAnteHandler(options, &gravityKeeper, &accountKeeper, &bankKeeper, nil, &ibcKeeper, appCodec)
+	ah, err := ante.NewAnteHandler(options, &gravityKeeper, &accountKeeper, &bankKeeper, nil, &ibcKeeper, appCodec, gravityconfig.GravityEvmChainID)
 	if err != nil {
 		panic("invalid antehandler created")
 	}
