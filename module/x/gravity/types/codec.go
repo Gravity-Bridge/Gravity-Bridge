@@ -32,6 +32,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgValsetUpdatedClaim{},
 		&MsgCancelSendToEth{},
 		&MsgSubmitBadSignatureEvidence{},
+		&MsgExecuteIbcAutoForwards{},
 	)
 
 	registry.RegisterInterface(
@@ -74,4 +75,5 @@ func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&IDSet{}, "gravity/IDSet", nil)
 	cdc.RegisterConcrete(&Attestation{}, "gravity/Attestation", nil)
 	cdc.RegisterConcrete(&MsgSubmitBadSignatureEvidence{}, "gravity/MsgSubmitBadSignatureEvidence", nil)
+	cdc.RegisterConcrete(&MsgExecuteIbcAutoForwards{}, "gravity/MsgExecuteIbcAutoForwards", nil)
 }

@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authlegacy "github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
@@ -27,6 +28,43 @@ var (
 	_ sdk.Msg = &MsgSubmitBadSignatureEvidence{}
 )
 
+// Ensure Gravity's Msgs all implement the LegacyAmino interface
+// nolint: exhaustruct
+var (
+	_ authlegacy.LegacyMsg = &MsgSetOrchestratorAddress{}
+	_ authlegacy.LegacyMsg = &MsgValsetConfirm{}
+	_ authlegacy.LegacyMsg = &MsgSendToEth{}
+	_ authlegacy.LegacyMsg = &MsgCancelSendToEth{}
+	_ authlegacy.LegacyMsg = &MsgRequestBatch{}
+	_ authlegacy.LegacyMsg = &MsgConfirmBatch{}
+	_ authlegacy.LegacyMsg = &MsgERC20DeployedClaim{}
+	_ authlegacy.LegacyMsg = &MsgConfirmLogicCall{}
+	_ authlegacy.LegacyMsg = &MsgLogicCallExecutedClaim{}
+	_ authlegacy.LegacyMsg = &MsgSendToCosmosClaim{}
+	_ authlegacy.LegacyMsg = &MsgExecuteIbcAutoForwards{}
+	_ authlegacy.LegacyMsg = &MsgBatchSendToEthClaim{}
+	_ authlegacy.LegacyMsg = &MsgValsetUpdatedClaim{}
+	_ authlegacy.LegacyMsg = &MsgSubmitBadSignatureEvidence{}
+)
+
+// These are the type values for signed LegacyAmino messages. The newer Protobuf messages use the path url instead.
+const (
+	AMINO_TYPE_SET_ORCHESTRATOR_ADDRESS      = "set_operator_address"
+	AMINO_TYPE_VALSET_CONFIRM                = "valset_confirm"
+	AMINO_TYPE_SEND_TO_ETH                   = "send_to_eth"
+	AMINO_TYPE_REQUEST_BATCH                 = "request_batch"
+	AMINO_TYPE_CONFIRM_BATCH                 = "confirm_batch"
+	AMINO_TYPE_CONFIRM_LOGIC                 = "confirm_logic"
+	AMINO_TYPE_SEND_TO_COSMOS                = "send_to_cosmos_claim"
+	AMINO_TYPE_EXECUTE_IBC_AUTO_FORWARDS     = "execute_ibc_auto_forwards"
+	AMINO_TYPE_BATCH_SEND_TO_ETH             = "batch_send_to_eth_claim"
+	AMINO_TYPE_SUBMIT_BAD_SIGNATURE_EVIDENCE = "Submit_Bad_Signature_Evidence"
+	AMINO_TYPE_CANCEL_SEND_TO_ETH            = "cancel_send_to_eth"
+	AMINO_TYPE_VALSET_UPDATED                = "Valset_Updated_Claim"
+	AMINO_TYPE_LOGIC_CALL_EXECUTED           = "Logic_Call_Executed_Claim"
+	AMINO_TYPE_ERC20_DEPLOYED                = "ERC20_deployed_claim"
+)
+
 // NewMsgSetOrchestratorAddress returns a new msgSetOrchestratorAddress
 func NewMsgSetOrchestratorAddress(val sdk.ValAddress, oper sdk.AccAddress, eth EthAddress) *MsgSetOrchestratorAddress {
 	return &MsgSetOrchestratorAddress{
@@ -40,7 +78,7 @@ func NewMsgSetOrchestratorAddress(val sdk.ValAddress, oper sdk.AccAddress, eth E
 func (msg *MsgSetOrchestratorAddress) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg *MsgSetOrchestratorAddress) Type() string { return "set_operator_address" }
+func (msg *MsgSetOrchestratorAddress) Type() string { return AMINO_TYPE_SET_ORCHESTRATOR_ADDRESS }
 
 // ValidateBasic performs stateless checks
 func (msg *MsgSetOrchestratorAddress) ValidateBasic() (err error) {
@@ -89,7 +127,7 @@ func NewMsgValsetConfirm(
 func (msg *MsgValsetConfirm) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg *MsgValsetConfirm) Type() string { return "valset_confirm" }
+func (msg *MsgValsetConfirm) Type() string { return AMINO_TYPE_VALSET_CONFIRM }
 
 // ValidateBasic performs stateless checks
 func (msg *MsgValsetConfirm) ValidateBasic() (err error) {
@@ -132,7 +170,7 @@ func NewMsgSendToEth(sender sdk.AccAddress, destAddress EthAddress, send sdk.Coi
 func (msg MsgSendToEth) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgSendToEth) Type() string { return "send_to_eth" }
+func (msg MsgSendToEth) Type() string { return AMINO_TYPE_SEND_TO_ETH }
 
 // ValidateBasic runs stateless checks on the message
 // Checks if the Eth address is valid
@@ -195,7 +233,7 @@ func NewMsgRequestBatch(orchestrator sdk.AccAddress) *MsgRequestBatch {
 func (msg MsgRequestBatch) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgRequestBatch) Type() string { return "request_batch" }
+func (msg MsgRequestBatch) Type() string { return AMINO_TYPE_REQUEST_BATCH }
 
 // ValidateBasic performs stateless checks
 func (msg MsgRequestBatch) ValidateBasic() error {
@@ -224,7 +262,7 @@ func (msg MsgRequestBatch) GetSigners() []sdk.AccAddress {
 func (msg MsgConfirmBatch) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgConfirmBatch) Type() string { return "confirm_batch" }
+func (msg MsgConfirmBatch) Type() string { return AMINO_TYPE_CONFIRM_BATCH }
 
 // ValidateBasic performs stateless checks
 func (msg MsgConfirmBatch) ValidateBasic() error {
@@ -262,7 +300,7 @@ func (msg MsgConfirmBatch) GetSigners() []sdk.AccAddress {
 func (msg MsgConfirmLogicCall) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgConfirmLogicCall) Type() string { return "confirm_logic" }
+func (msg MsgConfirmLogicCall) Type() string { return AMINO_TYPE_CONFIRM_LOGIC }
 
 // ValidateBasic performs stateless checks
 func (msg MsgConfirmLogicCall) ValidateBasic() error {
@@ -396,14 +434,10 @@ func (msg MsgSendToCosmosClaim) GetSigners() []sdk.AccAddress {
 }
 
 // Type should return the action
-func (msg MsgSendToCosmosClaim) Type() string { return "send_to_cosmos_claim" }
+func (msg MsgSendToCosmosClaim) Type() string { return AMINO_TYPE_SEND_TO_COSMOS }
 
 // Route should return the name of the module
 func (msg MsgSendToCosmosClaim) Route() string { return RouterKey }
-
-const (
-	TypeMsgSendToCosmosClaim = "send_to_cosmos_claim"
-)
 
 // Hash implements BridgeDeposit.Hash
 // modify this with care as it is security sensitive. If an element of the claim is not in this hash a single hostile validator
@@ -430,6 +464,17 @@ func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {
 	}
 	return []sdk.AccAddress{acc}
 }
+
+// GetSignBytes encodes the message for signing
+func (msg MsgExecuteIbcAutoForwards) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// Route should return the name of the module
+func (msg MsgExecuteIbcAutoForwards) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgExecuteIbcAutoForwards) Type() string { return AMINO_TYPE_EXECUTE_IBC_AUTO_FORWARDS }
 
 func (msg *MsgBatchSendToEthClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
 	msg.Orchestrator = orchestrator.String()
@@ -494,11 +539,7 @@ func (msg MsgBatchSendToEthClaim) GetSigners() []sdk.AccAddress {
 func (msg MsgBatchSendToEthClaim) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgBatchSendToEthClaim) Type() string { return "batch_send_to_eth_claim" }
-
-const (
-	TypeMsgBatchSendToEthClaim = "batch_send_to_eth_claim"
-)
+func (msg MsgBatchSendToEthClaim) Type() string { return AMINO_TYPE_BATCH_SEND_TO_ETH }
 
 // EthereumClaim implementation for MsgERC20DeployedClaim
 // ======================================================
@@ -555,7 +596,7 @@ func (msg MsgERC20DeployedClaim) GetSigners() []sdk.AccAddress {
 }
 
 // Type should return the action
-func (msg MsgERC20DeployedClaim) Type() string { return "ERC20_deployed_claim" }
+func (msg MsgERC20DeployedClaim) Type() string { return AMINO_TYPE_ERC20_DEPLOYED }
 
 // Route should return the name of the module
 func (msg MsgERC20DeployedClaim) Route() string { return RouterKey }
@@ -622,7 +663,7 @@ func (msg MsgLogicCallExecutedClaim) GetSigners() []sdk.AccAddress {
 }
 
 // Type should return the action
-func (msg MsgLogicCallExecutedClaim) Type() string { return "Logic_Call_Executed_Claim" }
+func (msg MsgLogicCallExecutedClaim) Type() string { return AMINO_TYPE_LOGIC_CALL_EXECUTED }
 
 // Route should return the name of the module
 func (msg MsgLogicCallExecutedClaim) Route() string { return RouterKey }
@@ -701,7 +742,7 @@ func (msg MsgValsetUpdatedClaim) GetSigners() []sdk.AccAddress {
 }
 
 // Type should return the action
-func (msg MsgValsetUpdatedClaim) Type() string { return "Valset_Updated_Claim" }
+func (msg MsgValsetUpdatedClaim) Type() string { return AMINO_TYPE_VALSET_UPDATED }
 
 // Route should return the name of the module
 func (msg MsgValsetUpdatedClaim) Route() string { return RouterKey }
@@ -734,7 +775,7 @@ func NewMsgCancelSendToEth(user sdk.AccAddress, id uint64) *MsgCancelSendToEth {
 func (msg *MsgCancelSendToEth) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg *MsgCancelSendToEth) Type() string { return "cancel_send_to_eth" }
+func (msg *MsgCancelSendToEth) Type() string { return AMINO_TYPE_CANCEL_SEND_TO_ETH }
 
 // ValidateBasic performs stateless checks
 func (msg *MsgCancelSendToEth) ValidateBasic() (err error) {
@@ -786,7 +827,9 @@ func (msg MsgSubmitBadSignatureEvidence) GetSigners() []sdk.AccAddress {
 }
 
 // Type should return the action
-func (msg MsgSubmitBadSignatureEvidence) Type() string { return "Submit_Bad_Signature_Evidence" }
+func (msg MsgSubmitBadSignatureEvidence) Type() string {
+	return AMINO_TYPE_SUBMIT_BAD_SIGNATURE_EVIDENCE
+}
 
 // Route should return the name of the module
 func (msg MsgSubmitBadSignatureEvidence) Route() string { return RouterKey }
