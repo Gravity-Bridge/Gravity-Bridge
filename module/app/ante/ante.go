@@ -1,6 +1,8 @@
 package ante
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -33,9 +35,15 @@ func NewAnteHandler(
 	feegrantKeeper *feegrantkeeper.Keeper,
 	ibcKeeper *ibckeeper.Keeper,
 	cdc codec.Codec,
+	evmChainID string,
 ) (*sdk.AnteHandler, error) {
+	if evmChainID == "" {
+		return nil, fmt.Errorf("evmChainID not specified, EIP-712 signing will fail")
+	}
+
 	fullHandler := sdk.ChainAnteDecorators(
-		ethermintante.RejectMessagesDecorator{}, // Do not support EVM transactions, easy mistake to make when using MetaMask
+		// Do not support EVM txs (e.g. solidity contract call txs), easy mistake to make when using MetaMask
+		ethermintante.RejectMessagesDecorator{},
 		sdkante.NewSetUpContextDecorator(),
 		// Allows exactly 1 type of extension options, and only one of that type to be provided
 		NewGravityRejectExtensionsDecorator(cdc),
@@ -49,7 +57,7 @@ func NewAnteHandler(
 		sdkante.NewValidateSigCountDecorator(accountKeeper),
 		sdkante.NewSigGasConsumeDecorator(accountKeeper, options.SigGasConsumer),
 		// Delegates to EIP-712 verification OR to regular SDK verification depending on the extension option
-		NewGravitySigVerificationDecorator(cdc, accountKeeper, options.SignModeHandler),
+		NewGravitySigVerificationDecorator(cdc, accountKeeper, options.SignModeHandler, evmChainID),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),
 		ibcante.NewAnteDecorator(ibcKeeper),
 		// Enforces the minimum commission for Gravity Prop #1
