@@ -13,10 +13,10 @@ import (
 // The Juno project obtained their initial version of this decorator from github.com/public-awesome/stargaze with original
 // author Jorge Hernandez https://github.com/jhernandezb
 type MinCommissionDecorator struct {
-	cdc codec.BinaryCodec
+	cdc codec.Codec
 }
 
-func NewMinCommissionDecorator(cdc codec.BinaryCodec) MinCommissionDecorator {
+func NewMinCommissionDecorator(cdc codec.Codec) MinCommissionDecorator {
 	return MinCommissionDecorator{cdc}
 }
 
