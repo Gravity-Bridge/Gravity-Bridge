@@ -58,7 +58,7 @@ func startNewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 		}
 	}
 
-	k.SetEstimateAuctionPeriodBlockHeight(ctx, uint64(ctx.BlockHeight())+params.AuctionEpoch)
+	k.SetEstimateAuctionPeriodBlockHeight(ctx, uint64(ctx.BlockHeight())+params.AuctionEpoch+params.AuctionPeriod)
 
 	return nil
 
@@ -124,7 +124,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper, bk types.BankKeeper, ak types.
 		return
 	}
 
-	if lastAuctionPeriods.EndBlockHeight == params.AuctionPeriod {
+	if lastAuctionPeriods.EndBlockHeight == uint64(ctx.BlockHeight()) {
 		err := endAuctionPeriod(ctx, params, *lastAuctionPeriods, k, bk, ak)
 		if err != nil {
 			return
