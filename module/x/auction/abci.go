@@ -19,7 +19,11 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 	newAuctionPeriods := types.AuctionPeriod{
 		Id:               increamentId,
 		StartBlockHeight: uint64(ctx.BlockHeight()),
+		EndBlockHeight:   uint64(ctx.BlockHeight()) + params.AuctionPeriod,
 	}
+
+	// Set new auction period to store
+	k.SetAuctionPeriod(ctx, newAuctionPeriods)
 
 	for token := range params.AllowTokens {
 		balance := bk.GetBalance(ctx, ak.GetModuleAccount(ctx, distrtypes.ModuleName).GetAddress(), token)
@@ -47,9 +51,6 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 			HighestBid:      nil,
 		}
 
-		// Set new auction to store
-		k.SetAuction(ctx, newAuction)
-
 		// Update auction in auction period auction list
 		err = k.AddNewAuctionToAuctionPeriod(ctx, increamentId, newAuction)
 		if err != nil {
@@ -57,8 +58,7 @@ func startMewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 		}
 	}
 
-	// Set new auction period to store
-	k.SetAuctionPeriod(ctx, newAuctionPeriods)
+	k.SetEstimateAuctionPeriodBlockHeight(ctx, uint64(ctx.BlockHeight())+params.AuctionEpoch)
 
 	return nil
 
@@ -101,13 +101,13 @@ func endAuctionPeriod(
 func BeginBlocker(ctx sdk.Context, k keeper.Keeper, bk types.BankKeeper, ak types.AccountKeeper) {
 	params := k.GetParams(ctx)
 
-	// An initial auction period need to be set as a starting point
-	lastAuctionPeriods, found := k.GetLatestAuctionPeriod(ctx)
+	// An initial estimateNextBlockHeight need to be set as a starting point
+	estimateNextBlockHeight, found := k.GetEstimateAuctionPeriodBlockHeight(ctx)
 	if !found {
 		return
 	}
 
-	if uint64(ctx.BlockHeight())-lastAuctionPeriods.StartBlockHeight == params.AuctionEpoch {
+	if uint64(ctx.BlockHeight()) == estimateNextBlockHeight.Height {
 		err := startMewAuctionPeriod(ctx, params, k, bk, ak)
 		if err != nil {
 			return
@@ -124,7 +124,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper, bk types.BankKeeper, ak types.
 		return
 	}
 
-	if lastAuctionPeriods.StartBlockHeight-uint64(ctx.BlockHeight()) == params.AuctionPeriod {
+	if lastAuctionPeriods.EndBlockHeight == params.AuctionPeriod {
 		err := endAuctionPeriod(ctx, params, *lastAuctionPeriods, k, bk, ak)
 		if err != nil {
 			return

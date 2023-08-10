@@ -62,6 +62,7 @@ func (AuctionStatus) EnumDescriptor() ([]byte, []int) {
 type AuctionPeriod struct {
 	Id               uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	StartBlockHeight uint64 `protobuf:"varint,2,opt,name=start_block_height,json=startBlockHeight,proto3" json:"start_block_height,omitempty"`
+	EndBlockHeight   uint64 `protobuf:"varint,3,opt,name=end_block_height,json=endBlockHeight,proto3" json:"end_block_height,omitempty"`
 }
 
 func (m *AuctionPeriod) Reset()         { *m = AuctionPeriod{} }
@@ -107,6 +108,13 @@ func (m *AuctionPeriod) GetId() uint64 {
 func (m *AuctionPeriod) GetStartBlockHeight() uint64 {
 	if m != nil {
 		return m.StartBlockHeight
+	}
+	return 0
+}
+
+func (m *AuctionPeriod) GetEndBlockHeight() uint64 {
+	if m != nil {
+		return m.EndBlockHeight
 	}
 	return 0
 }
@@ -251,46 +259,189 @@ func (m *Bid) GetBidderAddress() string {
 	return ""
 }
 
+// Store the block height of the last auction period
+type LastAuctionPeriodHeight struct {
+	Height uint64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
+}
+
+func (m *LastAuctionPeriodHeight) Reset()         { *m = LastAuctionPeriodHeight{} }
+func (m *LastAuctionPeriodHeight) String() string { return proto.CompactTextString(m) }
+func (*LastAuctionPeriodHeight) ProtoMessage()    {}
+func (*LastAuctionPeriodHeight) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efe336ece9e41ddd, []int{3}
+}
+func (m *LastAuctionPeriodHeight) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LastAuctionPeriodHeight) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LastAuctionPeriodHeight.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LastAuctionPeriodHeight) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LastAuctionPeriodHeight.Merge(m, src)
+}
+func (m *LastAuctionPeriodHeight) XXX_Size() int {
+	return m.Size()
+}
+func (m *LastAuctionPeriodHeight) XXX_DiscardUnknown() {
+	xxx_messageInfo_LastAuctionPeriodHeight.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LastAuctionPeriodHeight proto.InternalMessageInfo
+
+func (m *LastAuctionPeriodHeight) GetHeight() uint64 {
+	if m != nil {
+		return m.Height
+	}
+	return 0
+}
+
+// Estimate the block height of the next auction period
+type EstimateNextAuctionPeriodHeight struct {
+	Height uint64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
+}
+
+func (m *EstimateNextAuctionPeriodHeight) Reset()         { *m = EstimateNextAuctionPeriodHeight{} }
+func (m *EstimateNextAuctionPeriodHeight) String() string { return proto.CompactTextString(m) }
+func (*EstimateNextAuctionPeriodHeight) ProtoMessage()    {}
+func (*EstimateNextAuctionPeriodHeight) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efe336ece9e41ddd, []int{4}
+}
+func (m *EstimateNextAuctionPeriodHeight) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EstimateNextAuctionPeriodHeight) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EstimateNextAuctionPeriodHeight.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EstimateNextAuctionPeriodHeight) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EstimateNextAuctionPeriodHeight.Merge(m, src)
+}
+func (m *EstimateNextAuctionPeriodHeight) XXX_Size() int {
+	return m.Size()
+}
+func (m *EstimateNextAuctionPeriodHeight) XXX_DiscardUnknown() {
+	xxx_messageInfo_EstimateNextAuctionPeriodHeight.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EstimateNextAuctionPeriodHeight proto.InternalMessageInfo
+
+func (m *EstimateNextAuctionPeriodHeight) GetHeight() uint64 {
+	if m != nil {
+		return m.Height
+	}
+	return 0
+}
+
+// Queue of Bids for 1 auction
+type BidsQueue struct {
+	Queue []*Bid `protobuf:"bytes,1,rep,name=queue,proto3" json:"queue,omitempty"`
+}
+
+func (m *BidsQueue) Reset()         { *m = BidsQueue{} }
+func (m *BidsQueue) String() string { return proto.CompactTextString(m) }
+func (*BidsQueue) ProtoMessage()    {}
+func (*BidsQueue) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efe336ece9e41ddd, []int{5}
+}
+func (m *BidsQueue) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BidsQueue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BidsQueue.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BidsQueue) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BidsQueue.Merge(m, src)
+}
+func (m *BidsQueue) XXX_Size() int {
+	return m.Size()
+}
+func (m *BidsQueue) XXX_DiscardUnknown() {
+	xxx_messageInfo_BidsQueue.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BidsQueue proto.InternalMessageInfo
+
+func (m *BidsQueue) GetQueue() []*Bid {
+	if m != nil {
+		return m.Queue
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("auction.v1.AuctionStatus", AuctionStatus_name, AuctionStatus_value)
 	proto.RegisterType((*AuctionPeriod)(nil), "auction.v1.AuctionPeriod")
 	proto.RegisterType((*Auction)(nil), "auction.v1.Auction")
 	proto.RegisterType((*Bid)(nil), "auction.v1.Bid")
+	proto.RegisterType((*LastAuctionPeriodHeight)(nil), "auction.v1.LastAuctionPeriodHeight")
+	proto.RegisterType((*EstimateNextAuctionPeriodHeight)(nil), "auction.v1.EstimateNextAuctionPeriodHeight")
+	proto.RegisterType((*BidsQueue)(nil), "auction.v1.BidsQueue")
 }
 
 func init() { proto.RegisterFile("auction/v1/auction.proto", fileDescriptor_efe336ece9e41ddd) }
 
 var fileDescriptor_efe336ece9e41ddd = []byte{
-	// 461 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0xc1, 0x6e, 0xd3, 0x40,
-	0x10, 0x8d, 0xd3, 0x52, 0x94, 0xa9, 0x92, 0x86, 0x95, 0x90, 0x9c, 0x4a, 0x58, 0x55, 0x24, 0xa4,
-	0xaa, 0x02, 0x9b, 0x94, 0x0b, 0x37, 0xb0, 0x43, 0xda, 0xfa, 0x40, 0x1a, 0xd9, 0xc9, 0x01, 0x2e,
-	0x2b, 0xdb, 0xbb, 0x8a, 0x07, 0x9a, 0x6c, 0xe4, 0x5d, 0x47, 0xf4, 0x03, 0xb8, 0xf3, 0x59, 0x1c,
-	0x7b, 0xe4, 0x88, 0x92, 0x2b, 0x1f, 0x81, 0xb2, 0xde, 0x94, 0xaa, 0x70, 0xe8, 0xcd, 0xfb, 0xde,
-	0x9b, 0x99, 0xf7, 0xc6, 0x03, 0x76, 0x52, 0x66, 0x0a, 0xc5, 0xdc, 0x5b, 0xf6, 0x3c, 0xf3, 0xe9,
-	0x2e, 0x0a, 0xa1, 0x04, 0x81, 0xed, 0x73, 0xd9, 0x3b, 0x74, 0x32, 0x21, 0x67, 0x42, 0x7a, 0x69,
-	0x22, 0xb9, 0xb7, 0xec, 0xa5, 0x5c, 0x25, 0x3d, 0x2f, 0x13, 0x68, 0xb4, 0xdd, 0x0f, 0xd0, 0xf4,
-	0x2b, 0xf5, 0x88, 0x17, 0x28, 0x18, 0x69, 0x41, 0x1d, 0x99, 0x6d, 0x1d, 0x59, 0xc7, 0xbb, 0x51,
-	0x1d, 0x19, 0x79, 0x01, 0x44, 0xaa, 0xa4, 0x50, 0x34, 0xbd, 0x12, 0xd9, 0x17, 0x9a, 0x73, 0x9c,
-	0xe6, 0xca, 0xae, 0x6b, 0xbe, 0xad, 0x99, 0x60, 0x43, 0x5c, 0x68, 0xbc, 0xfb, 0xdb, 0x82, 0xc7,
-	0xa6, 0xdf, 0x3f, 0x9d, 0xde, 0x41, 0xcb, 0x18, 0xa3, 0xc9, 0x4c, 0x94, 0xf3, 0xaa, 0xcb, 0xfe,
-	0x69, 0xc7, 0xad, 0x3c, 0xba, 0x1b, 0x8f, 0xae, 0xf1, 0xe8, 0xf6, 0x05, 0xce, 0xa3, 0xa6, 0x29,
-	0xf0, 0xb5, 0x9e, 0xf4, 0x60, 0x4f, 0xaa, 0x44, 0x95, 0xd2, 0xde, 0x39, 0xb2, 0x8e, 0x5b, 0xa7,
-	0x1d, 0xf7, 0x6f, 0x52, 0xd7, 0x8c, 0x8d, 0xb5, 0x20, 0x32, 0x42, 0xf2, 0x0a, 0xf6, 0x73, 0x9c,
-	0xe6, 0x5c, 0x2a, 0x9a, 0x22, 0xb3, 0x77, 0xf5, 0xc4, 0x83, 0xbb, 0x75, 0x01, 0xb2, 0x08, 0x8c,
-	0x26, 0x40, 0x46, 0x4e, 0xe0, 0xc9, 0xd6, 0xe6, 0x42, 0xaf, 0x84, 0x22, 0xb3, 0x1f, 0xe9, 0x14,
-	0x07, 0xc9, 0xdd, 0x55, 0x85, 0xac, 0xfb, 0xcd, 0x82, 0x9d, 0x4d, 0xcd, 0x33, 0xd8, 0xee, 0x9c,
-	0xde, 0x46, 0x6e, 0x18, 0x24, 0x64, 0xe4, 0x0d, 0x40, 0x8a, 0xec, 0xc1, 0xa9, 0x1b, 0x29, 0x32,
-	0x93, 0xf8, 0x39, 0xb4, 0x52, 0x64, 0x8c, 0x17, 0x34, 0x61, 0xac, 0xe0, 0xb2, 0x4a, 0xde, 0x88,
-	0x9a, 0x15, 0xea, 0x57, 0xe0, 0xc9, 0xe7, 0xdb, 0xbf, 0x58, 0xc5, 0x27, 0x0e, 0x1c, 0xfa, 0x93,
-	0xfe, 0x38, 0xbc, 0x1c, 0xd2, 0x78, 0xec, 0x8f, 0x27, 0x31, 0x9d, 0x0c, 0xe3, 0xd1, 0xa0, 0x1f,
-	0x9e, 0x85, 0x83, 0xf7, 0xed, 0xda, 0x7f, 0xf8, 0x70, 0x48, 0x47, 0xd1, 0xe5, 0x79, 0x34, 0x88,
-	0xe3, 0xb6, 0x45, 0x3a, 0xf0, 0xf4, 0x1e, 0x7f, 0x16, 0x0e, 0xc3, 0xf8, 0xa2, 0x5d, 0x0f, 0x3e,
-	0xfe, 0x58, 0x39, 0xd6, 0xcd, 0xca, 0xb1, 0x7e, 0xad, 0x1c, 0xeb, 0xfb, 0xda, 0xa9, 0xdd, 0xac,
-	0x9d, 0xda, 0xcf, 0xb5, 0x53, 0xfb, 0xf4, 0x76, 0x8a, 0x2a, 0x2f, 0x53, 0x37, 0x13, 0x33, 0xef,
-	0xbc, 0x48, 0x96, 0xa8, 0xae, 0x5f, 0x06, 0x05, 0xb2, 0x29, 0xbf, 0xff, 0x9c, 0x09, 0x56, 0x5e,
-	0x71, 0xef, 0xeb, 0xf6, 0x70, 0x3d, 0x75, 0xbd, 0xe0, 0x32, 0xdd, 0xd3, 0x37, 0xf9, 0xfa, 0x4f,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x02, 0xbc, 0xc4, 0x76, 0xdb, 0x02, 0x00, 0x00,
+	// 531 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x53, 0x41, 0x6f, 0xd3, 0x4c,
+	0x10, 0x8d, 0x93, 0x36, 0x9f, 0x32, 0x55, 0xd2, 0x7c, 0x2b, 0x01, 0x4e, 0x25, 0x4c, 0x15, 0xa9,
+	0x52, 0x55, 0x81, 0x8d, 0xc3, 0x05, 0x4e, 0x10, 0x87, 0xb4, 0xb5, 0x84, 0xd2, 0x60, 0x27, 0x07,
+	0xb8, 0x58, 0xeb, 0xec, 0x2a, 0x59, 0x68, 0xbc, 0xc1, 0xbb, 0x0e, 0xed, 0x0f, 0xe0, 0xce, 0xcf,
+	0xe2, 0xd8, 0x23, 0x47, 0x94, 0x5c, 0xf9, 0x11, 0x28, 0xeb, 0x4d, 0x49, 0x4b, 0x0f, 0x70, 0xdb,
+	0x99, 0xf7, 0x46, 0x6f, 0xdf, 0xbc, 0x5d, 0x30, 0x71, 0x36, 0x92, 0x8c, 0x27, 0xce, 0xdc, 0x75,
+	0xf4, 0xd1, 0x9e, 0xa5, 0x5c, 0x72, 0x04, 0xeb, 0x72, 0xee, 0xee, 0x59, 0x23, 0x2e, 0xa6, 0x5c,
+	0x38, 0x31, 0x16, 0xd4, 0x99, 0xbb, 0x31, 0x95, 0xd8, 0x75, 0x46, 0x9c, 0x69, 0x6e, 0xf3, 0x33,
+	0x54, 0xdb, 0x39, 0xbb, 0x4f, 0x53, 0xc6, 0x09, 0xaa, 0x41, 0x91, 0x11, 0xd3, 0xd8, 0x37, 0x0e,
+	0xb7, 0x82, 0x22, 0x23, 0xe8, 0x31, 0x20, 0x21, 0x71, 0x2a, 0xa3, 0xf8, 0x9c, 0x8f, 0x3e, 0x46,
+	0x13, 0xca, 0xc6, 0x13, 0x69, 0x16, 0x15, 0x5e, 0x57, 0x88, 0xb7, 0x02, 0x4e, 0x55, 0x1f, 0x1d,
+	0x42, 0x9d, 0x26, 0xe4, 0x26, 0xb7, 0xa4, 0xb8, 0x35, 0x9a, 0x90, 0x0d, 0x66, 0xf3, 0xa7, 0x01,
+	0xff, 0x69, 0xe5, 0x3f, 0x34, 0x5f, 0x41, 0x4d, 0x5b, 0x88, 0xf0, 0x94, 0x67, 0x49, 0xae, 0xb7,
+	0xd3, 0x6a, 0xd8, 0xb9, 0x1b, 0x7b, 0xe5, 0xc6, 0xd6, 0x6e, 0xec, 0x0e, 0x67, 0x49, 0x50, 0xd5,
+	0x03, 0x6d, 0xc5, 0x47, 0x2e, 0x94, 0x85, 0xc4, 0x32, 0x13, 0x4a, 0xbd, 0xd6, 0x6a, 0xd8, 0xbf,
+	0x77, 0x62, 0x6b, 0xd9, 0x50, 0x11, 0x02, 0x4d, 0x44, 0x4f, 0x61, 0x67, 0xc2, 0xc6, 0x13, 0x2a,
+	0x64, 0x14, 0x33, 0x62, 0x6e, 0x29, 0xc5, 0xdd, 0xcd, 0x39, 0x8f, 0x91, 0x00, 0x34, 0xc7, 0x63,
+	0x04, 0x1d, 0xc1, 0xff, 0xeb, 0x6b, 0xce, 0xd4, 0xf2, 0x22, 0x46, 0xcc, 0x6d, 0xe5, 0x62, 0x17,
+	0x6f, 0x2e, 0xd5, 0x27, 0xcd, 0x2f, 0x06, 0x94, 0x56, 0x33, 0x0f, 0x61, 0x9d, 0x4e, 0x74, 0x6d,
+	0xb9, 0xa2, 0x3b, 0x3e, 0x41, 0xcf, 0x01, 0x62, 0x46, 0xfe, 0xda, 0x75, 0x25, 0x66, 0x44, 0x3b,
+	0x3e, 0x80, 0x5a, 0xcc, 0x08, 0xa1, 0x69, 0x84, 0x09, 0x49, 0xa9, 0xc8, 0x9d, 0x57, 0x82, 0x6a,
+	0xde, 0x6d, 0xe7, 0xcd, 0xa6, 0x0b, 0x0f, 0xde, 0x60, 0x21, 0x6f, 0x64, 0xae, 0xb3, 0xbb, 0x0f,
+	0x65, 0x9d, 0x58, 0x7e, 0x2d, 0x5d, 0x35, 0x5f, 0xc0, 0xa3, 0xae, 0x90, 0x6c, 0x8a, 0x25, 0xed,
+	0xd1, 0x8b, 0x7f, 0x1a, 0x6d, 0x41, 0xc5, 0x63, 0x44, 0xbc, 0xcd, 0x68, 0x46, 0xd1, 0x01, 0x6c,
+	0x7f, 0x5a, 0x1d, 0x4c, 0x63, 0xbf, 0x74, 0xd7, 0x6a, 0x73, 0xf4, 0xe8, 0xc3, 0xf5, 0x8b, 0xcc,
+	0x03, 0x42, 0x16, 0xec, 0xb5, 0x87, 0x9d, 0x81, 0x7f, 0xd6, 0x8b, 0xc2, 0x41, 0x7b, 0x30, 0x0c,
+	0xa3, 0x61, 0x2f, 0xec, 0x77, 0x3b, 0xfe, 0xb1, 0xdf, 0x7d, 0x5d, 0x2f, 0xdc, 0x81, 0xfb, 0xbd,
+	0xa8, 0x1f, 0x9c, 0x9d, 0x04, 0xdd, 0x30, 0xac, 0x1b, 0xa8, 0x01, 0xf7, 0x6e, 0xe1, 0xc7, 0x7e,
+	0xcf, 0x0f, 0x4f, 0xeb, 0x45, 0xef, 0xdd, 0xb7, 0x85, 0x65, 0x5c, 0x2d, 0x2c, 0xe3, 0xc7, 0xc2,
+	0x32, 0xbe, 0x2e, 0xad, 0xc2, 0xd5, 0xd2, 0x2a, 0x7c, 0x5f, 0x5a, 0x85, 0xf7, 0x2f, 0xc7, 0x4c,
+	0x4e, 0xb2, 0xd8, 0x1e, 0xf1, 0xa9, 0x73, 0x92, 0xe2, 0x39, 0x93, 0x97, 0x4f, 0xbc, 0x94, 0x91,
+	0x31, 0xbd, 0x5d, 0x4e, 0x39, 0xc9, 0xce, 0xa9, 0x73, 0xb1, 0xfe, 0x84, 0x8e, 0xbc, 0x9c, 0x51,
+	0x11, 0x97, 0xd5, 0xff, 0x7a, 0xf6, 0x2b, 0x00, 0x00, 0xff, 0xff, 0x35, 0xcc, 0xa2, 0x81, 0xa7,
+	0x03, 0x00, 0x00,
 }
 
 func (m *AuctionPeriod) Marshal() (dAtA []byte, err error) {
@@ -313,6 +464,11 @@ func (m *AuctionPeriod) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.EndBlockHeight != 0 {
+		i = encodeVarintAuction(dAtA, i, uint64(m.EndBlockHeight))
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.StartBlockHeight != 0 {
 		i = encodeVarintAuction(dAtA, i, uint64(m.StartBlockHeight))
 		i--
@@ -435,6 +591,99 @@ func (m *Bid) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *LastAuctionPeriodHeight) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LastAuctionPeriodHeight) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LastAuctionPeriodHeight) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Height != 0 {
+		i = encodeVarintAuction(dAtA, i, uint64(m.Height))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EstimateNextAuctionPeriodHeight) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EstimateNextAuctionPeriodHeight) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EstimateNextAuctionPeriodHeight) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Height != 0 {
+		i = encodeVarintAuction(dAtA, i, uint64(m.Height))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BidsQueue) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BidsQueue) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BidsQueue) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Queue) > 0 {
+		for iNdEx := len(m.Queue) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Queue[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintAuction(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintAuction(dAtA []byte, offset int, v uint64) int {
 	offset -= sovAuction(v)
 	base := offset
@@ -457,6 +706,9 @@ func (m *AuctionPeriod) Size() (n int) {
 	}
 	if m.StartBlockHeight != 0 {
 		n += 1 + sovAuction(uint64(m.StartBlockHeight))
+	}
+	if m.EndBlockHeight != 0 {
+		n += 1 + sovAuction(uint64(m.EndBlockHeight))
 	}
 	return n
 }
@@ -503,6 +755,45 @@ func (m *Bid) Size() (n int) {
 	l = len(m.BidderAddress)
 	if l > 0 {
 		n += 1 + l + sovAuction(uint64(l))
+	}
+	return n
+}
+
+func (m *LastAuctionPeriodHeight) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Height != 0 {
+		n += 1 + sovAuction(uint64(m.Height))
+	}
+	return n
+}
+
+func (m *EstimateNextAuctionPeriodHeight) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Height != 0 {
+		n += 1 + sovAuction(uint64(m.Height))
+	}
+	return n
+}
+
+func (m *BidsQueue) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Queue) > 0 {
+		for _, e := range m.Queue {
+			l = e.Size()
+			n += 1 + l + sovAuction(uint64(l))
+		}
 	}
 	return n
 }
@@ -576,6 +867,25 @@ func (m *AuctionPeriod) Unmarshal(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.StartBlockHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EndBlockHeight", wireType)
+			}
+			m.EndBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuction
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EndBlockHeight |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -895,6 +1205,228 @@ func (m *Bid) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.BidderAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuction(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuction
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LastAuctionPeriodHeight) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuction
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LastAuctionPeriodHeight: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LastAuctionPeriodHeight: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
+			}
+			m.Height = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuction
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Height |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuction(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuction
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EstimateNextAuctionPeriodHeight) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuction
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EstimateNextAuctionPeriodHeight: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EstimateNextAuctionPeriodHeight: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
+			}
+			m.Height = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuction
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Height |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuction(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuction
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BidsQueue) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuction
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BidsQueue: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BidsQueue: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Queue", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuction
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuction
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuction
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Queue = append(m.Queue, &Bid{})
+			if err := m.Queue[len(m.Queue)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
