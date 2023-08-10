@@ -124,7 +124,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper, bk types.BankKeeper, ak types.
 		return
 	}
 
-	if lastAuctionPeriods.EndBlockHeight == uint64(ctx.BlockHeight()) {
+	if uint64(ctx.BlockHeight()) == lastAuctionPeriods.EndBlockHeight {
 		err := endAuctionPeriod(ctx, params, *lastAuctionPeriods, k, bk, ak)
 		if err != nil {
 			return
