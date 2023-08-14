@@ -85,7 +85,7 @@ func (s *IntegrationTestSuite) TestGetCmdAuctionPeriods() {
 	id := "1"
 
 	// because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
-	//  defau params.AuctionEpoch=10.So we will have more than 2 AuctionPeriodId
+	// default params.AuctionEpoch=10 so we will have more than 2 AuctionPeriodId
 	_, err := s.network.WaitForHeightWithTimeout(30, 20*time.Second)
 	s.Require().NoError(err)
 
@@ -121,8 +121,8 @@ func (s *IntegrationTestSuite) TestGetCmdAuction() {
 	auction_id := "1"
 	period_id := "1"
 
-	//because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
-	//  defau params.AuctionEpoch=10.So we will have more than 2 AuctionPeriodId
+	// because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
+	// default params.AuctionEpoch=10 so we will have more than 2 AuctionPeriodId
 	_, err := s.network.WaitForHeightWithTimeout(30, 20*time.Second)
 	s.Require().NoError(err)
 
@@ -157,8 +157,8 @@ func (s *IntegrationTestSuite) TestGetCmdAllAuction() {
 	address := s.network.Validators[0].Address
 	period_id := "1"
 
-	//because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
-	//  defau params.AuctionEpoch=10.So we will have more than 2 AuctionPeriodId
+	// because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
+	// default params.AuctionEpoch=10 so we will have more than 2 AuctionPeriodId
 	_, err := s.network.WaitForHeightWithTimeout(30, 20*time.Second)
 	s.Require().NoError(err)
 

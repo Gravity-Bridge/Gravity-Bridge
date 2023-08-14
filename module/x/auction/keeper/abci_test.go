@@ -12,7 +12,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
-func (suite KeeperTestSuite) TestBeginBlockerAndEndBlockerAuction() {
+func (suite *KeeperTestSuite) TestBeginBlockerAndEndBlockerAuction() {
 	suite.SetupTest()
 	ctx := suite.Ctx
 	// params set
