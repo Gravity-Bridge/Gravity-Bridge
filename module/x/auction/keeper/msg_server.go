@@ -20,6 +20,7 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 	return &msgServer{Keeper: keeper}
 }
 
+// nolint: exhaustruct
 var _ types.MsgServer = msgServer{}
 
 func (k msgServer) Bid(ctx context.Context, msg *types.MsgBid) (res *types.MsgBidResponse, err error) {
@@ -82,6 +83,7 @@ func (k msgServer) Bid(ctx context.Context, msg *types.MsgBid) (res *types.MsgBi
 	// Update the new bid entry
 	k.UpdateAuctionNewBid(sdkCtx, msg.AuctionId, *bid)
 
+	// nolint: exhaustruct
 	return &types.MsgBidResponse{}, nil
 }
 

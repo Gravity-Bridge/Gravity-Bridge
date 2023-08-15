@@ -47,6 +47,7 @@ func InitGravityTestApp(initChain bool) *Gravity {
 		}
 
 		app.InitChain(
+			// nolint: exhaustruct
 			abci.RequestInitChain{
 				Validators:      []abci.ValidatorUpdate{},
 				ConsensusParams: simapp.DefaultConsensusParams,

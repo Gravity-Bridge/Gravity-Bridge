@@ -94,6 +94,7 @@ func NewConfigFromFlags() simulation.Config {
 func DefaultConfig() network.Config {
 	encCfg := MakeEncodingConfig()
 
+	// nolint: exhaustruct
 	return network.Config{
 		Codec:             encCfg.Marshaler,
 		TxConfig:          encCfg.TxConfig,

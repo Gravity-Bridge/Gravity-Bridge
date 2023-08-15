@@ -38,6 +38,7 @@ type AppTestHelper struct {
 // AppTestHelper Constructor
 func (s *AppTestHelper) Setup() {
 	s.App = app.InitGravityTestApp(true)
+	// nolint: exhaustruct
 	s.Ctx = s.App.BaseApp.NewContext(false, tmtypes.Header{Height: 1, ChainID: ChainID})
 	s.QueryHelper = &baseapp.QueryServiceTestHelper{
 		GRPCQueryRouter: s.App.GRPCQueryRouter(),

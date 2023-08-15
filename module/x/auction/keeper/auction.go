@@ -102,6 +102,7 @@ func (k Keeper) GetAuctionByPeriodIDAndAuctionId(ctx sdk.Context, periodId uint6
 	}
 
 	if len(auctionsFound) == 0 {
+		// nolint: exhaustruct
 		return types.Auction{}, false
 	}
 	return auctionsFound[0], true

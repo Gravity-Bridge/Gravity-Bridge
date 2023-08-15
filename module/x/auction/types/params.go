@@ -29,6 +29,7 @@ var _ paramtypes.ParamSet = (*Params)(nil)
 
 // ParamKeyTable for auction module
 func ParamKeyTable() paramtypes.KeyTable {
+	// nolint: exhaustruct
 	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
 }
 

@@ -19,9 +19,6 @@ const (
 	// Version defines the current version the IBC module supports
 	Version = "auction-1"
 
-	// PortID is the default port id that module binds to
-	PortID = "auction"
-
 	// ParamsKey defines the store key for auction module parameters
 	ParamsKey = "params"
 
