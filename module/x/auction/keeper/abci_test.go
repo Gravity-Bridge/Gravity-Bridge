@@ -48,7 +48,7 @@ func (suite *KeeperTestSuite) TestBeginBlockerAndEndBlockerAuction() {
 
 	}
 	fmt.Printf("param: %v\n", params)
-	fmt.Printf("coin dist module:%v \n", coins_dist)
+	fmt.Printf("coin dist module begin:%v \n", coins_dist)
 
 	//set a Auction finish (Auction has ended.)
 	CoinAuction := sdk.NewCoin("atomm", sdk.NewIntFromUint64(0))
@@ -75,7 +75,7 @@ func (suite *KeeperTestSuite) TestBeginBlockerAndEndBlockerAuction() {
 		coins_auc = append(coins_auc, balance)
 
 	}
-	fmt.Printf("coin auct module new:%v \n", coins_auc)
+	fmt.Printf("coin auction module mid:%v \n", coins_auc)
 
 	coins_new := []sdk.Coin{}
 	for token := range params.AllowTokens {
@@ -83,7 +83,7 @@ func (suite *KeeperTestSuite) TestBeginBlockerAndEndBlockerAuction() {
 		coins_new = append(coins_new, balance)
 
 	}
-	fmt.Printf("coin dist module new:%v \n", coins_new)
+	fmt.Printf("coin dist module mid:%v \n", coins_new)
 	println("============================end block=============================")
 	ctx = ctx.WithBlockHeight(3)
 	auction.EndBlocker(ctx, suite.App.GetAuctionKeeper(), suite.App.GetBankKeeper(), suite.App.GetAccountKeeper())
@@ -94,7 +94,7 @@ func (suite *KeeperTestSuite) TestBeginBlockerAndEndBlockerAuction() {
 		coins_auc = append(coins_auc, balance)
 
 	}
-	fmt.Printf("coin auct module new:%v \n", coins_auc)
+	fmt.Printf("coin auction module end:%v \n", coins_auc)
 
 	coins_new = []sdk.Coin{}
 	for token := range params.AllowTokens {
@@ -102,5 +102,5 @@ func (suite *KeeperTestSuite) TestBeginBlockerAndEndBlockerAuction() {
 		coins_new = append(coins_new, balance)
 
 	}
-	fmt.Printf("coin dist module new:%v \n", coins_new)
+	fmt.Printf("coin dist module end:%v \n", coins_new)
 }
