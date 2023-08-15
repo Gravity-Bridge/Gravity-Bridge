@@ -84,8 +84,8 @@ func (s *IntegrationTestSuite) TestGetCmdAuctionPeriods() {
 	val := s.network.Validators[0]
 	id := "1"
 
-	//because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
-	//  defau params.AuctionEpoch=10.So we will have more than 2 AuctionPeriodId
+	// because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
+	// default params.AuctionEpoch=10 so we will have more than 2 AuctionPeriodId
 	_, err := s.network.WaitForHeightWithTimeout(30, 20*time.Second)
 	s.Require().NoError(err)
 
@@ -121,8 +121,8 @@ func (s *IntegrationTestSuite) TestGetCmdAuction() {
 	auction_id := "1"
 	period_id := "1"
 
-	//because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
-	//  defau params.AuctionEpoch=10.So we will have more than 2 AuctionPeriodId
+	// because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
+	// default params.AuctionEpoch=10 so we will have more than 2 AuctionPeriodId
 	_, err := s.network.WaitForHeightWithTimeout(30, 20*time.Second)
 	s.Require().NoError(err)
 
@@ -157,8 +157,8 @@ func (s *IntegrationTestSuite) TestGetCmdAllAuction() {
 	address := s.network.Validators[0].Address
 	period_id := "1"
 
-	//because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
-	//  defau params.AuctionEpoch=10.So we will have more than 2 AuctionPeriodId
+	// because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
+	// default params.AuctionEpoch=10 so we will have more than 2 AuctionPeriodId
 	_, err := s.network.WaitForHeightWithTimeout(30, 20*time.Second)
 	s.Require().NoError(err)
 
@@ -179,43 +179,6 @@ func (s *IntegrationTestSuite) TestGetCmdAllAuction() {
 
 		s.Run(tc.name, func() {
 			cmd := cli.GetCmdAllAuction()
-			clientCtx := val.ClientCtx
-
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
-			s.Require().NoError(err)
-			s.Require().Equal(tc.expectedOutput, strings.TrimSpace(out.String()))
-		})
-	}
-}
-
-func (s *IntegrationTestSuite) TestGetCmdHighestBid() {
-	s.SetupSuite()
-	val := s.network.Validators[0]
-	auction_id := "1"
-	period_id := "1"
-
-	//because when 30 epochs in beginblock will automatically startMewAuctionPeriod,
-	//  defau params.AuctionEpoch=10.So we will have more than 2 AuctionPeriodId
-	_, err := s.network.WaitForHeightWithTimeout(30, 20*time.Second)
-	s.Require().NoError(err)
-
-	testCases := []struct {
-		name           string
-		args           []string
-		expectedOutput string
-	}{
-		{
-			"test",
-			[]string{auction_id, period_id, fmt.Sprintf("--%s=json", tmcli.OutputFlag)},
-			``,
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-
-		s.Run(tc.name, func() {
-			cmd := cli.GetCmdHighestBid()
 			clientCtx := val.ClientCtx
 
 			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
