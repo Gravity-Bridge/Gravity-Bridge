@@ -23,84 +23,90 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 // nolint: exhaustruct
 var _ types.MsgServer = msgServer{}
 
+// Bid msg add a bid entry to the queue to be processed by the end of each block
 func (k msgServer) Bid(ctx context.Context, msg *types.MsgBid) (res *types.MsgBidResponse, err error) {
 	err = msg.ValidateBasic()
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	params := k.GetParams(sdkCtx)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Key not valid")
 	}
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	params := k.GetParams(sdkCtx)
+
+	// Only accept native token denom only
+	if msg.Amount.Denom != k.StakingKeeper.BondDenom(sdkCtx) {
+		return nil, fmt.Errorf("Invalid denom %s should be %s", msg.Amount.Denom, k.StakingKeeper.BondDenom(sdkCtx))
+	}
+
+	// Check if bidder has enough balance to submit a bid
+	bidderBalance := k.BankKeeper.GetBalance(sdkCtx, sdk.AccAddress(msg.Bidder), msg.Amount.Denom)
+	if bidderBalance.IsLT(*msg.Amount) {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "Insurfficient balance, expect to have: %v instead have: %v", msg.Amount.Amount, bidderBalance.Amount)
+	}
+
+	// Check if bid amount is greater than min bid amount allowed
+	if msg.Amount.IsLT(sdk.NewCoin(msg.Amount.Denom, sdk.NewIntFromUint64(params.MinBidAmount))) {
+		return nil, types.ErrInvalidBidAmount
+	}
+
+	bidsQueue, found := k.GetBidsQueue(sdkCtx, msg.AuctionId)
+	if !found {
+		return nil, fmt.Errorf("Bids queue for auction with id %v", msg.AuctionId)
+	}
+
 	// Fetch current auction period
 	latestAuctionPeriod, found := k.GetLatestAuctionPeriod(sdkCtx)
 	if !found {
 		return nil, types.ErrNoPreviousAuctionPeriod
 	}
 
-	currentAuction, found := k.GetAuctionByPeriodIDAndAuctionId(sdkCtx, latestAuctionPeriod.Id, msg.AuctionId)
+	// check if an auction periods is occuring
+	if latestAuctionPeriod.EndBlockHeight < uint64(sdkCtx.BlockHeight()) {
+		return nil, fmt.Errorf("Cannot submit bid for Auction Periods that is had passed")
+	}
 
+	currentAuction, found := k.GetAuctionByPeriodIDAndAuctionId(sdkCtx, latestAuctionPeriod.Id, msg.AuctionId)
 	if !found {
 		return nil, types.ErrAuctionNotFound
 	}
 	highestBid := currentAuction.HighestBid
 
-	// Check bid amount gap
-	if (msg.Amount.Sub(*highestBid.BidAmount)).Amount.Uint64() < params.BidGap {
+	// If highest bid exist need to check the bid gap
+	if highestBid != nil &&
+		msg.Amount.IsGTE(*highestBid.BidAmount) &&
+		(msg.Amount.Sub(*highestBid.BidAmount)).IsLT(sdk.NewCoin(msg.Amount.Denom, sdk.NewIntFromUint64(params.BidGap))) {
 		return nil, types.ErrInvalidBidAmountGap
 	}
 
-	var bid *types.Bid
-
-	if highestBid.BidderAddress == msg.Bidder {
-		bidAmountGap := msg.Amount.Sub(*highestBid.BidAmount)
-		// Send the added amount to auction module
-		err := k.lockBidAmount(sdkCtx, msg.Bidder, bidAmountGap)
-		if err != nil {
-			return nil, fmt.Errorf("Unable to send fund to the auction module account: %s", err.Error())
-		}
-		bid = &types.Bid{
-			AuctionId:     highestBid.AuctionId,
-			BidAmount:     msg.Amount,
-			BidderAddress: highestBid.BidderAddress,
-		}
-	} else {
-		// Return fund to the pervious highest bidder
-		err := k.returnPrevioudBidAmount(sdkCtx, highestBid.BidderAddress, *highestBid.BidAmount)
-		if err != nil {
-			return nil, fmt.Errorf("Unable to return fund to the previous highest bidder: %s", err.Error())
-		}
-
-		err = k.lockBidAmount(sdkCtx, msg.Bidder, *msg.Amount)
-		if err != nil {
-			return nil, fmt.Errorf("Unable to send fund to the auction module account: %s", err.Error())
-		}
-		bid = &types.Bid{
-			AuctionId:     highestBid.AuctionId,
+	if len(bidsQueue.Queue) == 0 {
+		// For empty queue just add the new entry
+		newBid := &types.Bid{
+			AuctionId:     msg.AuctionId,
 			BidAmount:     msg.Amount,
 			BidderAddress: msg.Bidder,
 		}
-	}
+		k.AddBidToQueue(sdkCtx, *newBid, &bidsQueue)
+	} else {
+		for i, bid := range bidsQueue.Queue {
+			// Check if bid entry from exact bidder exist yet
+			if bid.AuctionId == msg.AuctionId && bid.BidderAddress == msg.Bidder {
+				// Update bid amount of old entry
+				bid.BidAmount = msg.Amount
 
-	// Update the new bid entry
-	k.UpdateAuctionNewBid(sdkCtx, msg.AuctionId, *bid)
+				bidsQueue.Queue[i] = bid
+
+				k.SetBidsQueue(sdkCtx, bidsQueue, msg.AuctionId)
+			} else {
+				newBid := &types.Bid{
+					AuctionId:     msg.AuctionId,
+					BidAmount:     msg.Amount,
+					BidderAddress: msg.Bidder,
+				}
+				k.AddBidToQueue(sdkCtx, *newBid, &bidsQueue)
+			}
+		}
+	}
 
 	// nolint: exhaustruct
 	return &types.MsgBidResponse{}, nil
-}
-
-func (k msgServer) returnPrevioudBidAmount(ctx sdk.Context, recipient string, amount sdk.Coin) error {
-	sdkAcc, err := sdk.AccAddressFromBech32(recipient)
-	if err != nil {
-		return fmt.Errorf("Unable to get account from Bech32 address: %s", err.Error())
-	}
-	err = k.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sdkAcc, sdk.NewCoins(amount))
-	return err
-}
-
-func (k msgServer) lockBidAmount(ctx sdk.Context, sender string, amount sdk.Coin) error {
-	sdkAcc, err := sdk.AccAddressFromBech32(sender)
-	if err != nil {
-		return fmt.Errorf("Unable to get account from Bech32 address: %s", err.Error())
-	}
-	err = k.BankKeeper.SendCoinsFromAccountToModule(ctx, sdkAcc, types.ModuleName, sdk.NewCoins(amount))
-	return err
 }

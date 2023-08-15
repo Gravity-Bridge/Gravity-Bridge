@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -36,19 +37,16 @@ func (k Keeper) GetAllAuctions(ctx sdk.Context) []types.Auction {
 func (k Keeper) SetAuction(ctx sdk.Context, auction types.Auction) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
 	bz := k.cdc.MustMarshal(&auction)
-	store.Set(uint64ToByte(auction.Id), bz)
+	store.Set([]byte(getKeyForAuction(auction)), bz)
 }
 
 // UpdateAuctionStatus updates the status of an auction
-func (k Keeper) UpdateAuctionStatus(ctx sdk.Context, id uint64, newStatus types.AuctionStatus) {
+func (k Keeper) UpdateAuctionStatus(ctx sdk.Context, auction *types.Auction, newStatus types.AuctionStatus) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
-	bz := store.Get(uint64ToByte(id))
-	if len(bz) > 0 {
-		var auction types.Auction
-		k.cdc.MustUnmarshal(bz, &auction)
+	if auction != nil {
 		auction.Status = newStatus
-		newBz := k.cdc.MustMarshal(&auction)
-		store.Set(uint64ToByte(id), newBz)
+		newBz := k.cdc.MustMarshal(auction)
+		store.Set([]byte(getKeyForAuction(*auction)), newBz)
 	}
 }
 
@@ -62,19 +60,6 @@ func (k Keeper) AddNewAuctionToAuctionPeriod(ctx sdk.Context, periodId uint64, a
 	auction.AuctionPeriodId = periodId
 	k.SetAuction(ctx, auction)
 	return nil
-}
-
-// UpdateAuctionNewBid updates the new bid of an auction
-func (k Keeper) UpdateAuctionNewBid(ctx sdk.Context, id uint64, newBid types.Bid) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
-	bz := store.Get(uint64ToByte(id))
-	if len(bz) > 0 {
-		var auction types.Auction
-		k.cdc.MustUnmarshal(bz, &auction)
-		auction.HighestBid = &newBid
-		newBz := k.cdc.MustMarshal(&auction)
-		store.Set(uint64ToByte(id), newBz)
-	}
 }
 
 // GetAllAuctionsByPeriodID returns all auctions for the given auction period id.
@@ -160,4 +145,8 @@ func (k Keeper) GetHighestBidByAuctionIdAndPeriodID(ctx sdk.Context, auctionId u
 	}
 
 	return *bid, false
+}
+
+func getKeyForAuction(auction types.Auction) string {
+	return fmt.Sprintf("%v-%v", auction.AuctionPeriodId, auction.Id)
 }

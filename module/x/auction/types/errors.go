@@ -10,4 +10,5 @@ var (
 	ErrInvalidBidAmountGap     = sdkerrors.Register(ModuleName, 2, "Invalid bid amount gap")
 	ErrAuctionPeriodNotFound   = sdkerrors.Register(ModuleName, 3, "Auction period not found")
 	ErrAuctionNotFound         = sdkerrors.Register(ModuleName, 4, "Auction not found")
+	ErrInvalidBidAmount        = sdkerrors.Register(ModuleName, 5, "Invalid bid amount")
 )

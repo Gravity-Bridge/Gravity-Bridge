@@ -36,7 +36,9 @@ const (
 
 	KeyPrefixLastAuctionPeriodBlockHeight = "last-auctionPeriod-"
 
+	KeyPrefixEstimateNextAuctionPeriodBlockHeight = "estimate-next-auctionPeriod-"
+
 	KeyAuctionPeriodBlockHeight = "block-height"
 
-	KeyPrefixEstimateNextAuctionPeriodBlockHeight = "estimate-next-auctionPeriod-"
+	KeyPrefixBidsQueue = "bids-queue-"
 )

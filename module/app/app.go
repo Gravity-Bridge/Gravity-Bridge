@@ -530,6 +530,7 @@ func NewGravityApp(
 		&bankKeeper,
 		&accountKeeper,
 		&distrKeeper,
+		&stakingKeeper,
 	)
 	app.autionKeeper = &auctionKeeper
 
