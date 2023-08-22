@@ -11,6 +11,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 var (
@@ -47,6 +48,18 @@ func (s *AppTestHelper) Setup() {
 	s.TestAccs = CreateRandomAccounts(3)
 	s.IbcEnabled = false
 	s.IcaAddresses = make(map[string]string)
+}
+
+func (s *AppTestHelper) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) {
+	bankkeeper := s.App.GetBankKeeper()
+	bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
+	bankkeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
+}
+
+func (s *AppTestHelper) FundModule(ctx sdk.Context, moduleName string, amounts sdk.Coins) {
+	bankkeeper := s.App.GetBankKeeper()
+	bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
+	bankkeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, moduleName, amounts)
 }
 
 // Generate random account addresss
