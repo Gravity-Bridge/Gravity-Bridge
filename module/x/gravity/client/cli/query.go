@@ -279,6 +279,7 @@ func CmdGetAttestations() *cobra.Command {
 	long := short + "\n\n" + "Optionally provide a limit to reduce the number of attestations returned" + "\n" +
 		"Note that when querying with --height less than 1282013 '--use-v1-key' must be provided to locate the attestations"
 
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "attestations [optional limit]",
 		Args:  cobra.MaximumNArgs(1),
@@ -439,6 +440,7 @@ func CmdGetLastObservedEthNonce() *cobra.Command {
 
 // GetCmdQueryParams fetches the current Gravity module params
 func GetCmdQueryParams() *cobra.Command {
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "params",
 		Args:  cobra.NoArgs,

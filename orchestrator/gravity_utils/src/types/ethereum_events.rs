@@ -10,7 +10,7 @@
 use super::ValsetMember;
 use crate::error::GravityError;
 use crate::num_conversion::downcast_uint256;
-use clarity::constants::ZERO_ADDRESS;
+use clarity::constants::zero_address;
 use clarity::Address as EthAddress;
 use deep_space::utils::bytes_to_hex_str;
 use deep_space::{Address as CosmosAddress, Address, Msg};
@@ -89,7 +89,7 @@ impl ValsetUpdatedEvent {
         let index_start = 0;
         let index_end = index_start + 32;
         let nonce_data = &input[index_start..index_end];
-        let event_nonce = Uint256::from_bytes_be(nonce_data);
+        let event_nonce = Uint256::from_be_bytes(nonce_data);
         if event_nonce > u64::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
                 "Nonce overflow, probably incorrect parsing".to_string(),
@@ -101,7 +101,7 @@ impl ValsetUpdatedEvent {
         let index_start = 32;
         let index_end = index_start + 32;
         let reward_amount_data = &input[index_start..index_end];
-        let reward_amount = Uint256::from_bytes_be(reward_amount_data);
+        let reward_amount = Uint256::from_be_bytes(reward_amount_data);
 
         // reward token
         let index_start = 2 * 32;
@@ -118,7 +118,7 @@ impl ValsetUpdatedEvent {
         let reward_token = reward_token.unwrap();
         // zero address represents no reward, so we replace it here with a none
         // for ease of checking in the future
-        let reward_token = if reward_token == *ZERO_ADDRESS {
+        let reward_token = if reward_token == zero_address() {
             None
         } else {
             Some(reward_token)
@@ -134,7 +134,7 @@ impl ValsetUpdatedEvent {
             ));
         }
 
-        let len_eth_addresses = Uint256::from_bytes_be(&input[index_start..index_end]);
+        let len_eth_addresses = Uint256::from_be_bytes(&input[index_start..index_end]);
         if len_eth_addresses > usize::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
                 "Ethereum array len overflow, probably incorrect parsing".to_string(),
@@ -150,7 +150,7 @@ impl ValsetUpdatedEvent {
             ));
         }
 
-        let len_powers = Uint256::from_bytes_be(&input[index_start..index_end]);
+        let len_powers = Uint256::from_be_bytes(&input[index_start..index_end]);
         if len_powers > usize::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
                 "Powers array len overflow, probably incorrect parsing".to_string(),
@@ -176,7 +176,7 @@ impl ValsetUpdatedEvent {
                 ));
             }
 
-            let power = Uint256::from_bytes_be(&input[power_start..power_end]);
+            let power = Uint256::from_be_bytes(&input[power_start..power_end]);
             // an eth address at 20 bytes is 12 bytes shorter than the Uint256 it's stored in.
             let eth_address = EthAddress::from_slice(&input[address_start + 12..address_end]);
             if eth_address.is_err() {
@@ -215,7 +215,7 @@ impl ValsetUpdatedEvent {
 
 impl EthereumEvent for ValsetUpdatedEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height.clone()).unwrap()
+        downcast_uint256(self.block_height).unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -233,7 +233,7 @@ impl EthereumEvent for ValsetUpdatedEvent {
             ));
         }
         let valset_nonce_data = &input.topics[1];
-        let valset_nonce = Uint256::from_bytes_be(valset_nonce_data);
+        let valset_nonce = Uint256::from_be_bytes(valset_nonce_data);
         if valset_nonce > u64::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
                 "Nonce overflow, probably incorrect parsing".to_string(),
@@ -241,7 +241,7 @@ impl EthereumEvent for ValsetUpdatedEvent {
         }
         let valset_nonce: u64 = valset_nonce.to_string().parse().unwrap();
 
-        let block_height = if let Some(bn) = input.block_number.clone() {
+        let block_height = if let Some(bn) = input.block_number {
             if bn > u64::MAX.into() {
                 return Err(GravityError::InvalidEventLogError(
                     "Event nonce overflow! probably incorrect parsing".to_string(),
@@ -290,7 +290,7 @@ impl EthereumEvent for ValsetUpdatedEvent {
     fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
-                return Some(item.block_height.clone());
+                return Some(item.block_height);
             }
         }
         None
@@ -303,7 +303,7 @@ impl EthereumEvent for ValsetUpdatedEvent {
             eth_block_height: self.get_block_height(),
             members: self.members.iter().map(|v| v.into()).collect(),
             reward_amount: self.reward_amount.to_string(),
-            reward_token: self.reward_token.unwrap_or(*ZERO_ADDRESS).to_string(),
+            reward_token: self.reward_token.unwrap_or(zero_address()).to_string(),
             orchestrator: orchestrator.to_string(),
         };
         Msg::new(MSG_VALSET_UPDATED_CLAIM_TYPE_URL, claim)
@@ -330,7 +330,7 @@ pub struct TransactionBatchExecutedEvent {
 
 impl EthereumEvent for TransactionBatchExecutedEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height.clone()).unwrap()
+        downcast_uint256(self.block_height).unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -341,10 +341,10 @@ impl EthereumEvent for TransactionBatchExecutedEvent {
         if let (Some(batch_nonce_data), Some(erc20_data)) =
             (input.topics.get(1), input.topics.get(2))
         {
-            let batch_nonce = Uint256::from_bytes_be(batch_nonce_data);
+            let batch_nonce = Uint256::from_be_bytes(batch_nonce_data);
             let erc20 = EthAddress::from_slice(&erc20_data[12..32])?;
-            let event_nonce = Uint256::from_bytes_be(&input.data);
-            let block_height = if let Some(bn) = input.block_number.clone() {
+            let event_nonce = Uint256::from_be_bytes(&input.data);
+            let block_height = if let Some(bn) = input.block_number {
                 if bn > u64::MAX.into() {
                     return Err(GravityError::InvalidEventLogError(
                         "Block height overflow! probably incorrect parsing".to_string(),
@@ -404,7 +404,7 @@ impl EthereumEvent for TransactionBatchExecutedEvent {
     fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
-                return Some(item.block_height.clone());
+                return Some(item.block_height);
             }
         }
         None
@@ -467,14 +467,14 @@ impl SendToCosmosEvent {
             ));
         }
 
-        let amount = Uint256::from_bytes_be(&data[32..64]);
-        let event_nonce = Uint256::from_bytes_be(&data[64..96]);
+        let amount = Uint256::from_be_bytes(&data[32..64]);
+        let event_nonce = Uint256::from_be_bytes(&data[64..96]);
 
         // discard words three and four which contain the data type and length
         let destination_str_len_start = 3 * 32;
         let destination_str_len_end = 4 * 32;
         let destination_str_len =
-            Uint256::from_bytes_be(&data[destination_str_len_start..destination_str_len_end]);
+            Uint256::from_be_bytes(&data[destination_str_len_start..destination_str_len_end]);
 
         if destination_str_len > u32::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
@@ -528,7 +528,7 @@ impl SendToCosmosEvent {
 }
 impl EthereumEvent for SendToCosmosEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height.clone()).unwrap()
+        downcast_uint256(self.block_height).unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -540,7 +540,7 @@ impl EthereumEvent for SendToCosmosEvent {
         if let (Some(erc20_data), Some(sender_data)) = topics {
             let erc20 = EthAddress::from_slice(&erc20_data[12..32])?;
             let sender = EthAddress::from_slice(&sender_data[12..32])?;
-            let block_height = if let Some(bn) = input.block_number.clone() {
+            let block_height = if let Some(bn) = input.block_number {
                 if bn > u64::MAX.into() {
                     return Err(GravityError::InvalidEventLogError(
                         "Block height overflow! probably incorrect parsing".to_string(),
@@ -613,7 +613,7 @@ impl EthereumEvent for SendToCosmosEvent {
     fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
-                return Some(item.block_height.clone());
+                return Some(item.block_height);
             }
         }
         None
@@ -680,7 +680,7 @@ impl Erc20DeployedEvent {
         let index_start = 3 * 32;
         let index_end = index_start + 32;
 
-        let decimals = Uint256::from_bytes_be(&data[index_start..index_end]);
+        let decimals = Uint256::from_be_bytes(&data[index_start..index_end]);
         if decimals > u8::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
                 "Decimals overflow, probably incorrect parsing".to_string(),
@@ -690,7 +690,7 @@ impl Erc20DeployedEvent {
 
         let index_start = 4 * 32;
         let index_end = index_start + 32;
-        let nonce = Uint256::from_bytes_be(&data[index_start..index_end]);
+        let nonce = Uint256::from_be_bytes(&data[index_start..index_end]);
         if nonce > u64::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
                 "Nonce overflow, probably incorrect parsing".to_string(),
@@ -700,7 +700,7 @@ impl Erc20DeployedEvent {
 
         let index_start = 5 * 32;
         let index_end = index_start + 32;
-        let denom_len = Uint256::from_bytes_be(&data[index_start..index_end]);
+        let denom_len = Uint256::from_be_bytes(&data[index_start..index_end]);
         // it's not probable that we have 4+ gigabytes of event data
         if denom_len > u32::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
@@ -753,7 +753,7 @@ impl Erc20DeployedEvent {
             ));
         }
 
-        let erc20_name_len = Uint256::from_bytes_be(&data[index_start..index_end]);
+        let erc20_name_len = Uint256::from_be_bytes(&data[index_start..index_end]);
         // it's not probable that we have 4+ gigabytes of event data
         if erc20_name_len > u32::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
@@ -807,7 +807,7 @@ impl Erc20DeployedEvent {
             ));
         }
 
-        let symbol_len = Uint256::from_bytes_be(&data[index_start..index_end]);
+        let symbol_len = Uint256::from_be_bytes(&data[index_start..index_end]);
         // it's not probable that we have 4+ gigabytes of event data
         if symbol_len > u32::MAX.into() {
             return Err(GravityError::InvalidEventLogError(
@@ -864,7 +864,7 @@ impl Erc20DeployedEvent {
 
 impl EthereumEvent for Erc20DeployedEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height.clone()).unwrap()
+        downcast_uint256(self.block_height).unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -876,7 +876,7 @@ impl EthereumEvent for Erc20DeployedEvent {
         if let Some(new_token_contract_data) = token_contract {
             let erc20 = EthAddress::from_slice(&new_token_contract_data[12..32])?;
 
-            let block_height = if let Some(bn) = input.block_number.clone() {
+            let block_height = if let Some(bn) = input.block_number {
                 if bn > u64::MAX.into() {
                     return Err(GravityError::InvalidEventLogError(
                         "Event nonce overflow! probably incorrect parsing".to_string(),
@@ -932,7 +932,7 @@ impl EthereumEvent for Erc20DeployedEvent {
     fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
-                return Some(item.block_height.clone());
+                return Some(item.block_height);
             }
         }
         None
@@ -965,7 +965,7 @@ pub struct LogicCallExecutedEvent {
 
 impl EthereumEvent for LogicCallExecutedEvent {
     fn get_block_height(&self) -> u64 {
-        downcast_uint256(self.block_height.clone()).unwrap()
+        downcast_uint256(self.block_height).unwrap()
     }
 
     fn get_event_nonce(&self) -> u64 {
@@ -998,7 +998,7 @@ impl EthereumEvent for LogicCallExecutedEvent {
     fn get_block_for_nonce(event_nonce: u64, input: &[Self]) -> Option<Uint256> {
         for item in input {
             if item.event_nonce == event_nonce {
-                return Some(item.block_height.clone());
+                return Some(item.block_height);
             }
         }
         None

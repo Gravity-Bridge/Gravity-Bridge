@@ -14,24 +14,25 @@ relayer = {path = "../relayer/"}
 ethereum_gravity = {path = "../ethereum_gravity"}
 cosmos_gravity = {path = "../cosmos_gravity"}
 gravity_utils = {path = "../gravity_utils"}
-gravity_proto = {path = "../gravity_proto/"}
+gravity_proto = {workspace = true}
 metrics_exporter = {path = "../metrics_exporter/"}
 
-deep_space = "2.15"
+deep_space = {workspace = true}
 serde_derive = "1.0"
-clarity = "0.5"
+clarity = {workspace = true}
 docopt = "1"
 serde = "1.0"
 actix-rt = "2.2"
 lazy_static = "1"
-web30 = "0.22"
-num256 = "0.3"
+web30 = {workspace = true}
+num256 = {workspace = true}
+num-traits = "0.2"
 log = "0.4"
 env_logger = "0.10"
 serde_json = "1.0"
 tokio = "1.4.0"
 rand = "0.8"
-tonic = "0.7"
+tonic = {workspace = true}
 futures = "0.3"
 openssl-probe = "0.1"
 

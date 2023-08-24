@@ -131,16 +131,11 @@ async fn should_relay_batch(
         return (true, None);
     }
 
-    let batch_reward_amount = batch.total_fee.amount.clone();
+    let batch_reward_amount = batch.total_fee.amount;
     let batch_reward_token = batch.total_fee.token_contract_address;
     // gets the price of the provided amount of the provided token in weth
-    let price = get_weth_price_with_retries(
-        pubkey,
-        batch_reward_token,
-        batch_reward_amount.clone(),
-        web3,
-    )
-    .await;
+    let price =
+        get_weth_price_with_retries(pubkey, batch_reward_token, batch_reward_amount, web3).await;
 
     match config {
         BatchRelayingMode::EveryBatch | BatchRelayingMode::Altruistic => (true, None),
@@ -195,7 +190,7 @@ async fn should_relay_batch(
 fn get_whitelist_price(erc20: EthAddress, whitelist: &[WhitelistToken]) -> Option<(Uint256, u8)> {
     for i in whitelist {
         if i.token == erc20 {
-            return Some((i.price.clone(), i.decimals));
+            return Some((i.price, i.decimals));
         }
     }
     None
@@ -294,7 +289,7 @@ async fn submit_batches(
                 info!(
                     "We have detected a batch to relay. This batch is estimated to cost {} Gas @ {} gwei / {:.4} ETH to submit",
                     cost.gas.clone(),
-                    print_gwei(cost.gas_price.clone()),
+                    print_gwei(cost.gas_price),
                     print_eth(cost.get_total())
                 );
                 oldest_signed_batch
@@ -316,7 +311,7 @@ async fn submit_batches(
                         oldest_signed_batch.token_contract,
                         oldest_signed_batch.nonce,
                         print_eth(cost.get_total()),
-                        reward_in_weth.clone().map(print_eth),
+                        reward_in_weth.map(print_eth),
                     );
                     let res = send_eth_transaction_batch(
                         current_valset.clone(),
@@ -335,7 +330,7 @@ async fn submit_batches(
                 } else {
                     info!(
                         "Not relaying batch {}/{} due to it not being profitable. Cost: {}, Reward: {:?}",
-                        oldest_signed_batch.token_contract, oldest_signed_batch.nonce, print_eth(cost.get_total()), reward_in_weth.clone().map(print_eth),
+                        oldest_signed_batch.token_contract, oldest_signed_batch.nonce, print_eth(cost.get_total()), reward_in_weth.map(print_eth),
                     );
                 }
             }

@@ -76,7 +76,7 @@ pub async fn register_orchestrator_address(
             generated_eth = true;
             let mut rng = thread_rng();
             let e: [u8; 32] = rng.gen();
-            key = Some(EthPrivateKey::from_slice(&e).unwrap())
+            key = Some(EthPrivateKey::from_bytes(e).unwrap())
         }
         key.unwrap()
     };

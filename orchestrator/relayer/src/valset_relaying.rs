@@ -124,7 +124,7 @@ async fn relay_valid_valset(
        "We have detected that valset {} is valid to submit. Latest on Ethereum is {} This update is estimated to cost {} Gas @ {} Gwei/ {:.4} ETH to submit",
         valset_to_relay.nonce, current_valset.nonce,
         cost.gas.clone(),
-        print_gwei(cost.gas_price.clone()),
+        print_gwei(cost.gas_price),
         print_eth(cost.get_total())
     );
 
@@ -139,7 +139,7 @@ async fn relay_valid_valset(
     .await;
 
     if should_relay {
-        let _res = send_eth_valset_update(
+        let res = send_eth_valset_update(
             valset_to_relay,
             current_valset,
             &conformations,
@@ -150,6 +150,9 @@ async fn relay_valid_valset(
             ethereum_key,
         )
         .await;
+        if let Err(e) = res {
+            error!("Failed to relay validator set with {:?}", e);
+        }
     }
 }
 
@@ -229,13 +232,9 @@ async fn should_relay_valset(
         // if the user has configured only profitable relaying then it is our only consideration
         ValsetRelayingMode::ProfitableOnly { margin } => match valset.reward_token {
             Some(reward_token) => {
-                let price = get_weth_price_with_retries(
-                    pubkey,
-                    reward_token,
-                    valset.reward_amount.clone(),
-                    web3,
-                )
-                .await;
+                let price =
+                    get_weth_price_with_retries(pubkey, reward_token, valset.reward_amount, web3)
+                        .await;
                 let cost_with_margin = get_cost_with_margin(cost.get_total(), *margin);
                 // we need to see how much WETH we can get for the reward token amount,
                 // and compare that value to the gas cost times the margin

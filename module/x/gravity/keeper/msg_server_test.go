@@ -33,8 +33,11 @@ func TestConfirmHandlerCommon(t *testing.T) {
 	input.GravityKeeper.SetOrchestratorValidator(ctx, ValAddrs[0], AccAddrs[0])
 
 	batch := types.OutgoingTxBatch{
-		TokenContract: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
-		BatchTimeout:  420,
+		BatchNonce:         0,
+		BatchTimeout:       420,
+		Transactions:       []types.OutgoingTransferTx{},
+		TokenContract:      "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+		CosmosBlockCreated: 0,
 	}
 
 	checkpoint := batch.GetCheckpoint(input.GravityKeeper.GetGravityID(ctx))
@@ -59,8 +62,11 @@ func confirmHandlerCommonWithAddress(t *testing.T, address string, testVar testI
 	input.GravityKeeper.SetOrchestratorValidator(ctx, ValAddrs[0], AccAddrs[0])
 
 	batch := types.OutgoingTxBatch{
-		TokenContract: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
-		BatchTimeout:  420,
+		BatchNonce:         0,
+		BatchTimeout:       420,
+		Transactions:       []types.OutgoingTransferTx{},
+		TokenContract:      "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+		CosmosBlockCreated: 0,
 	}
 
 	checkpoint := batch.GetCheckpoint(input.GravityKeeper.GetGravityID(ctx))

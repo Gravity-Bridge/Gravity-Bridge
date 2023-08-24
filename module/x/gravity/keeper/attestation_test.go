@@ -100,10 +100,12 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdktypes.Context
 		}
 		msgs = append(msgs, msg)
 
-		any, _ := codectypes.NewAnyWithValue(&msg)
+		any, err := codectypes.NewAnyWithValue(&msg)
+		require.NoError(t, err)
 		anys = append(anys, *any)
 		att := &types.Attestation{
 			Observed: false,
+			Votes:    []string{},
 			Height:   uint64(ctx.BlockHeight()),
 			Claim:    any,
 		}
@@ -176,7 +178,8 @@ func TestGetSetLastEventNonceByValidator(t *testing.T) {
 	ctx := input.Context
 
 	valAddrString := "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm"
-	valAccAddress, _ := sdktypes.AccAddressFromBech32(valAddrString)
+	valAccAddress, err := sdktypes.AccAddressFromBech32(valAddrString)
+	require.NoError(t, err)
 	valAccount := k.accountKeeper.NewAccountWithAddress(ctx, valAccAddress)
 	require.NotNil(t, valAccount)
 

@@ -1,6 +1,6 @@
 //! Helper functions for sending tokens to Cosmos
 
-use clarity::abi::{encode_call, Token};
+use clarity::abi::{encode_call, AbiToken as Token};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address, Uint256};
 use deep_space::address::Address as CosmosAddress;
@@ -36,14 +36,14 @@ pub async fn send_erc721_to_cosmos(
     }
 
     let mut address_approved = web3
-        .check_erc721_approved(erc721, sender_address, token_id.clone())
+        .check_erc721_approved(erc721, sender_address, token_id)
         .await;
     if let Some(w) = wait_timeout {
         let start = Instant::now();
         // keep trying while there's still time
         while address_approved.is_err() && Instant::now() - start < w {
             address_approved = web3
-                .check_erc721_approved(erc721, sender_address, token_id.clone())
+                .check_erc721_approved(erc721, sender_address, token_id)
                 .await;
         }
     }
@@ -55,7 +55,7 @@ pub async fn send_erc721_to_cosmos(
         );
         let mut options = options.clone();
         let nonce = web3.eth_get_transaction_count(sender_address).await?;
-        options.push(SendTxOption::Nonce(nonce.clone()));
+        options.push(SendTxOption::Nonce(nonce));
         approve_nonce = Some(nonce);
 
         let txid = web3
@@ -63,7 +63,7 @@ pub async fn send_erc721_to_cosmos(
                 erc721,
                 sender_secret,
                 gravityerc721_contract,
-                token_id.clone(),
+                token_id,
                 None,
                 options,
             )
@@ -105,22 +105,16 @@ pub async fn send_erc721_to_cosmos(
             gravityerc721_contract,
             encode_call(
                 "sendERC721ToCosmos(address,string,uint256)",
-                &[
-                    erc721.into(),
-                    encoded_destination_address,
-                    token_id.clone().into(),
-                ],
+                &[erc721.into(), encoded_destination_address, token_id.into()],
             )?,
             0u32.into(),
-            sender_address,
             sender_secret,
             options,
         )
         .await?;
 
     if let Some(timeout) = wait_timeout {
-        web3.wait_for_transaction(tx_hash.clone(), timeout, None)
-            .await?;
+        web3.wait_for_transaction(tx_hash, timeout, None).await?;
     }
 
     Ok(tx_hash)

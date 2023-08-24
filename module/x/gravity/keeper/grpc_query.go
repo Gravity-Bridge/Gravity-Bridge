@@ -9,21 +9,12 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-var _ types.QueryServer = Keeper{
-	StakingKeeper:      nil,
-	storeKey:           nil,
-	paramSpace:         paramstypes.Subspace{},
-	cdc:                nil,
-	bankKeeper:         &bankkeeper.BaseKeeper{},
-	SlashingKeeper:     nil,
-	AttestationHandler: nil,
-}
+// nolint: exhaustruct
+var _ types.QueryServer = Keeper{}
 
 const MERCURY_UPGRADE_HEIGHT uint64 = 1282013
 const QUERY_ATTESTATIONS_LIMIT uint64 = 1000
@@ -41,6 +32,7 @@ func (k Keeper) CurrentValset(
 	req *types.QueryCurrentValsetRequest) (*types.QueryCurrentValsetResponse, error) {
 	vs, err := k.GetCurrentValset(sdk.UnwrapSDKContext(c))
 	if err != nil {
+		// nolint: exhaustruct
 		return &types.QueryCurrentValsetResponse{}, err
 	}
 	return &types.QueryCurrentValsetResponse{Valset: vs}, nil

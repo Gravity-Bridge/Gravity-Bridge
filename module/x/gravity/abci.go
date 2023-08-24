@@ -1,6 +1,8 @@
 package gravity
 
 import (
+	"fmt"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -140,7 +142,7 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 
 // cleanupTimedOutBatches deletes batches that have passed their expiration on Ethereum
 // keep in mind several things when modifying this function
-// A) unlike nonces timeouts are not monotonically increasing, meaning batch 5 can have a later timeout than batch 6
+// A) unlike nonces timeouts are not strictly increasing, meaning batch 5 can have a later timeout than batch 6
 // this means that we MUST only cleanup a single batch at a time
 // B) it is possible for ethereumHeight to be zero if no events have ever occurred, make sure your code accounts for this
 // C) When we compute the timeout we do our best to estimate the Ethereum block height at that very second. But what we work with
@@ -162,7 +164,7 @@ func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
 
 // cleanupTimedOutBatches deletes logic calls that have passed their expiration on Ethereum
 // keep in mind several things when modifying this function
-// A) unlike nonces timeouts are not monotonically increasing, meaning call 5 can have a later timeout than batch 6
+// A) unlike nonces timeouts are not strictly increasing, meaning call 5 can have a later timeout than batch 6
 // this means that we MUST only cleanup a single call at a time
 // B) it is possible for ethereumHeight to be zero if no events have ever occurred, make sure your code accounts for this
 // C) When we compute the timeout we do our best to estimate the Ethereum block height at that very second. But what we work with
@@ -241,12 +243,14 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					val = updateValidator(ctx, k, val.GetOperator())
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
-						ctx.EventManager().EmitTypedEvent(
+						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
 								Type:    types.AttributeKeyValsetSignatureSlashing,
 								Address: consAddr.String(),
 							},
-						)
+						); err != nil {
+							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+						}
 
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}
@@ -286,12 +290,14 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					validator = updateValidator(ctx, k, validator.GetOperator())
 					if !validator.IsJailed() {
 						k.StakingKeeper.Slash(ctx, valConsAddr, ctx.BlockHeight(), validator.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
-						ctx.EventManager().EmitTypedEvent(
+						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
 								Type:    types.AttributeKeyValsetSignatureSlashing,
 								Address: valConsAddr.String(),
 							},
-						)
+						); err != nil {
+							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+						}
 						k.StakingKeeper.Jail(ctx, valConsAddr)
 					}
 				}
@@ -393,12 +399,14 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					val = updateValidator(ctx, k, val.GetOperator())
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBatch)
-						ctx.EventManager().EmitTypedEvent(
+						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
 								Type:    types.AttributeKeyBatchSignatureSlashing,
 								Address: consAddr.String(),
 							},
-						)
+						); err != nil {
+							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+						}
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}
 				}
@@ -470,12 +478,14 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					val = updateValidator(ctx, k, val.GetOperator())
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionLogicCall)
-						ctx.EventManager().EmitTypedEvent(
+						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
 								Type:    types.AttributeKeyLogicCallSignatureSlashing,
 								Address: consAddr.String(),
 							},
-						)
+						); err != nil {
+							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
+						}
 						k.StakingKeeper.Jail(ctx, consAddr)
 					}
 				}

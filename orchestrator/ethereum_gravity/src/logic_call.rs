@@ -1,6 +1,6 @@
 use crate::message_signatures::encode_logic_call_confirm_hashed;
 use crate::utils::{encode_valset_struct, get_logic_call_nonce, GasCost};
-use clarity::{abi::Token, utils::bytes_to_hex_str, PrivateKey as EthPrivateKey};
+use clarity::{abi::AbiToken as Token, utils::bytes_to_hex_str, PrivateKey as EthPrivateKey};
 use clarity::{Address as EthAddress, Uint256};
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
@@ -59,7 +59,6 @@ pub async fn send_eth_logic_call(
             gravity_contract_address,
             payload,
             0u32.into(),
-            eth_address,
             our_eth_key,
             // we maintain a 20% gas price increase to compensate for the 12.5% maximum
             // base fee increase allowed per block in eip1559, if we overpay we'll
@@ -69,7 +68,7 @@ pub async fn send_eth_logic_call(
         .await?;
     info!("Sent batch update with txid {:#066x}", tx);
 
-    web3.wait_for_transaction(tx.clone(), timeout, None).await?;
+    web3.wait_for_transaction(tx, timeout, None).await?;
 
     let last_nonce = get_logic_call_nonce(
         gravity_contract_address,
@@ -108,17 +107,24 @@ pub async fn estimate_logic_call_cost(
 ) -> Result<GasCost, GravityError> {
     let our_balance = web3.eth_get_balance(our_eth_address).await?;
     let our_nonce = web3.eth_get_transaction_count(our_eth_address).await?;
-    let gas_limit = min((u64::MAX - 1).into(), our_balance.clone());
+    let chain_id = web3
+        .eth_chainid()
+        .await?
+        .expect("Eth node does not return chain id?");
+    let gas_limit = min((u64::MAX - 1).into(), our_balance);
     let gas_price = web3.eth_gas_price().await?;
     // increase the value by 20% without using floating point multiplication
-    let gas_price = gas_price.clone() + (gas_price / 5u8.into());
+    let gas_price = gas_price + (gas_price / 5u8.into());
     let zero: Uint256 = 0u8.into();
     let val = web3
-        .eth_estimate_gas(TransactionRequest {
-            from: Some(our_eth_address),
+        .eth_estimate_gas(TransactionRequest::Eip1559 {
+            chain_id: Some(chain_id.into()),
+            access_list: None,
+            from: our_eth_address,
             to: gravity_contract_address,
-            nonce: Some(our_nonce.clone().into()),
-            gas_price: Some(gas_price.clone().into()),
+            nonce: Some(our_nonce.into()),
+            max_fee_per_gas: Some(gas_price.into()),
+            max_priority_fee_per_gas: None,
             gas: Some(gas_limit.into()),
             value: Some(zero.into()),
             data: Some(
@@ -150,11 +156,11 @@ fn encode_logic_call_payload(
     let mut fee_amounts = Vec::new();
     let mut fee_token_contracts = Vec::new();
     for item in call.transfers.iter() {
-        transfer_amounts.push(Token::Uint(item.amount.clone()));
+        transfer_amounts.push(Token::Uint(item.amount));
         transfer_token_contracts.push(item.token_contract_address);
     }
     for item in call.fees.iter() {
-        fee_amounts.push(Token::Uint(item.amount.clone()));
+        fee_amounts.push(Token::Uint(item.amount));
         fee_token_contracts.push(item.token_contract_address);
     }
 
@@ -271,15 +277,15 @@ mod tests {
             invalidation_id,
             invalidation_nonce,
             ethereum_signer,
-            eth_signature: Signature {
-                v: 27u8.into(),
-                r: Uint256::from_bytes_be(
+            eth_signature: Signature::ModernSignature {
+                v: false,
+                r: Uint256::from_be_bytes(
                     &hex_str_to_bytes(
                         "0x324da548f6070e8c8d78b205f139138e263d4bad21751e437a7ef31bc53928a8",
                     )
                     .unwrap(),
                 ),
-                s: Uint256::from_bytes_be(
+                s: Uint256::from_be_bytes(
                     &hex_str_to_bytes(
                         "0x03a5f8acc4b6662f839c0f60f5dbfb276957241b7b38feb360d3d7a0b32d63e2",
                     )

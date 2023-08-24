@@ -300,7 +300,7 @@ func (msg MsgConfirmLogicCall) GetSigners() []sdk.AccAddress {
 // EthereumClaim represents a claim on ethereum state
 type EthereumClaim interface {
 	// All Ethereum claims that we relay from the Gravity contract and into the module
-	// have a nonce that is monotonically increasing and unique, since this nonce is
+	// have a nonce that is strictly increasing and unique, since this nonce is
 	// issued by the Ethereum contract it is immutable and must be agreed on by all validators
 	// any disagreement on what claim goes to what nonce means someone is lying.
 	GetEventNonce() uint64
@@ -320,6 +320,8 @@ type EthereumClaim interface {
 	// validators claims agree. Therefore it's extremely important that this include all elements of the claim
 	// with the exception of the orchestrator who sent it in, which will be used as a different part of the index
 	ClaimHash() ([]byte, error)
+	// Sets the orchestrator value on the claim
+	SetOrchestrator(sdk.AccAddress)
 }
 
 // nolint: exhaustruct
@@ -329,6 +331,10 @@ var (
 	_ EthereumClaim = &MsgERC20DeployedClaim{}
 	_ EthereumClaim = &MsgLogicCallExecutedClaim{}
 )
+
+func (msg *MsgSendToCosmosClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	msg.Orchestrator = orchestrator.String()
+}
 
 // GetType returns the type of the claim
 func (msg *MsgSendToCosmosClaim) GetType() ClaimType {
@@ -425,6 +431,10 @@ func (msg *MsgExecuteIbcAutoForwards) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{acc}
 }
 
+func (msg *MsgBatchSendToEthClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	msg.Orchestrator = orchestrator.String()
+}
+
 // GetType returns the claim type
 func (msg *MsgBatchSendToEthClaim) GetType() ClaimType {
 	return CLAIM_TYPE_BATCH_SEND_TO_ETH
@@ -461,9 +471,12 @@ func (msg MsgBatchSendToEthClaim) GetSignBytes() []byte {
 func (msg MsgBatchSendToEthClaim) GetClaimer() sdk.AccAddress {
 	err := msg.ValidateBasic()
 	if err != nil {
-		panic("MsgBatchSendToEthClaim failed ValidateBasic! Should have been handled earlier")
+		panic(fmt.Errorf("MsgBatchSendToEthClaim failed ValidateBasic! Should have been handled earlier: %v", err))
 	}
-	val, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	val, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		panic(fmt.Errorf("Invalid orchestrator: %v", err))
+	}
 	return val
 }
 
@@ -489,6 +502,10 @@ const (
 
 // EthereumClaim implementation for MsgERC20DeployedClaim
 // ======================================================
+
+func (msg *MsgERC20DeployedClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	msg.Orchestrator = orchestrator.String()
+}
 
 // GetType returns the type of the claim
 func (e *MsgERC20DeployedClaim) GetType() ClaimType {
@@ -520,7 +537,10 @@ func (msg MsgERC20DeployedClaim) GetClaimer() sdk.AccAddress {
 		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
 	}
 
-	val, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	val, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		panic(err)
+	}
 	return val
 }
 
@@ -553,6 +573,10 @@ func (b *MsgERC20DeployedClaim) ClaimHash() ([]byte, error) {
 // EthereumClaim implementation for MsgLogicCallExecutedClaim
 // ======================================================
 
+func (msg *MsgLogicCallExecutedClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	msg.Orchestrator = orchestrator.String()
+}
+
 // GetType returns the type of the claim
 func (e *MsgLogicCallExecutedClaim) GetType() ClaimType {
 	return CLAIM_TYPE_LOGIC_CALL_EXECUTED
@@ -580,7 +604,10 @@ func (msg MsgLogicCallExecutedClaim) GetClaimer() sdk.AccAddress {
 		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
 	}
 
-	val, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	val, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		panic(err)
+	}
 	return val
 }
 
@@ -606,12 +633,15 @@ func (msg MsgLogicCallExecutedClaim) Route() string { return RouterKey }
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (b *MsgLogicCallExecutedClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d,%d,%s/%d/", b.EventNonce, b.EthBlockHeight, b.InvalidationId, b.InvalidationNonce)
+	path := fmt.Sprintf("%d/%d/%s/%d", b.EventNonce, b.EthBlockHeight, b.InvalidationId, b.InvalidationNonce)
 	return tmhash.Sum([]byte(path)), nil
 }
 
 // EthereumClaim implementation for MsgValsetUpdatedClaim
 // ======================================================
+func (e *MsgValsetUpdatedClaim) SetOrchestrator(orchestrator sdk.AccAddress) {
+	e.Orchestrator = orchestrator.String()
+}
 
 // GetType returns the type of the claim
 func (e *MsgValsetUpdatedClaim) GetType() ClaimType {
@@ -650,10 +680,13 @@ func (msg MsgValsetUpdatedClaim) GetSignBytes() []byte {
 func (msg MsgValsetUpdatedClaim) GetClaimer() sdk.AccAddress {
 	err := msg.ValidateBasic()
 	if err != nil {
-		panic("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier")
+		panic(fmt.Errorf("MsgERC20DeployedClaim failed ValidateBasic! Should have been handled earlier: %v", err))
 	}
 
-	val, _ := sdk.AccAddressFromBech32(msg.Orchestrator)
+	val, err := sdk.AccAddressFromBech32(msg.Orchestrator)
+	if err != nil {
+		panic(fmt.Errorf("Orchestrator is invalid: %v", err))
+	}
 	return val
 }
 

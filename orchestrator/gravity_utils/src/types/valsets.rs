@@ -1,6 +1,6 @@
 use super::*;
 use crate::error::GravityError;
-use clarity::constants::ZERO_ADDRESS;
+use clarity::constants::zero_address;
 use clarity::Address as EthAddress;
 use clarity::Signature as EthSignature;
 use deep_space::error::CosmosGrpcError;
@@ -73,7 +73,7 @@ impl Confirm for ValsetConfirmResponse {
 /// a list of validators, powers, and eth addresses at a given block height
 #[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq)]
 pub struct Valset {
-    /// The monotonically increasing nonce value used to prevent
+    /// The strictly increasing nonce value used to prevent
     /// validator set update replay
     pub nonce: u64,
     /// Members of the validator set, these are the Ethereum keys of
@@ -145,9 +145,9 @@ impl Valset {
                     out.push(GravitySignature {
                         power: member.power,
                         eth_address: sig.get_eth_address(),
-                        v: sig.get_signature().v.clone(),
-                        r: sig.get_signature().r.clone(),
-                        s: sig.get_signature().s.clone(),
+                        v: sig.get_signature().get_v(),
+                        r: sig.get_signature().get_r(),
+                        s: sig.get_signature().get_s(),
                     });
                     power_of_good_sigs += member.power;
                 } else {
@@ -300,7 +300,7 @@ impl From<gravity_proto::gravity::Valset> for Valset {
 impl From<&gravity_proto::gravity::Valset> for Valset {
     fn from(input: &gravity_proto::gravity::Valset) -> Self {
         let parsed_reward_token = input.reward_token.parse().unwrap();
-        let reward_token = if parsed_reward_token == *ZERO_ADDRESS {
+        let reward_token = if parsed_reward_token == zero_address() {
             None
         } else {
             Some(parsed_reward_token)
@@ -427,10 +427,7 @@ impl Into<gravity_proto::gravity::Valset> for &Valset {
             height: 0,
             members: self.members.iter().map(|v| v.into()).collect(),
             reward_amount: self.reward_amount.to_string(),
-            reward_token: self
-                .reward_token
-                .unwrap_or(*clarity::constants::ZERO_ADDRESS)
-                .to_string(),
+            reward_token: self.reward_token.unwrap_or(zero_address()).to_string(),
         }
     }
 }

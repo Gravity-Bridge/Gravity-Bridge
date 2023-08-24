@@ -1,5 +1,5 @@
 use clarity::Signature as EthSignature;
-use clarity::{abi::Token, Address as EthAddress};
+use clarity::{abi::AbiToken as Token, Address as EthAddress};
 use num256::Uint256;
 use std::cmp::Ordering;
 
@@ -68,7 +68,7 @@ pub fn to_arrays(input: Vec<GravitySignature>) -> GravitySignatureArrays {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct SigWithAddress {
     pub eth_address: EthAddress,
     pub eth_signature: EthSignature,

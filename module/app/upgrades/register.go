@@ -1,6 +1,7 @@
 package upgrades
 
 import (
+	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -9,9 +10,10 @@ import (
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
-	bech32ibckeeper "github.com/osmosis-labs/bech32-ibc/x/bech32ibc/keeper"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
@@ -57,5 +59,17 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		pleiades.PleiadesPart1ToPart2PlanName,
 		pleiades.GetPleiades2UpgradeHandler(mm, configurator, crisisKeeper, stakingKeeper),
+	)
+
+	// Orion upgrade handler
+	upgradeKeeper.SetUpgradeHandler(
+		orion.PleiadesPart2ToOrionPlanName,
+		orion.GetOrionUpgradeHandler(mm, configurator, crisisKeeper),
+	)
+
+	// Antares upgrade handler
+	upgradeKeeper.SetUpgradeHandler(
+		antares.OrionToAntaresPlanName,
+		antares.GetAntaresUpgradeHandler(mm, configurator, crisisKeeper),
 	)
 }

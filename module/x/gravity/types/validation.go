@@ -385,6 +385,7 @@ type EthereumSigned interface {
 	GetCheckpoint(gravityIDstring string) []byte
 }
 
+// nolint: exhaustruct
 var (
 	_ EthereumSigned = &Valset{}
 	_ EthereumSigned = &OutgoingTxBatch{}

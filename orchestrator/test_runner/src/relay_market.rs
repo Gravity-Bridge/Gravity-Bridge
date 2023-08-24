@@ -134,7 +134,7 @@ async fn setup_batch_test(
     let dest_cosmos_address = dest_cosmos_private_key
         .to_address(ADDRESS_PREFIX.as_str())
         .unwrap();
-    let dest_eth_private_key = EthPrivateKey::from_slice(&secret).unwrap();
+    let dest_eth_private_key = EthPrivateKey::from_bytes(secret).unwrap();
     let dest_eth_address = dest_eth_private_key.to_address();
 
     // Send the generated address 300 dai from ethereum to cosmos
@@ -176,7 +176,7 @@ async fn setup_batch_test(
         .unwrap()
         .unwrap();
     let cdai_name = cdai_held.denom.clone();
-    let cdai_amount = cdai_held.amount.clone();
+    let cdai_amount = cdai_held.amount;
     info!(
         "generated address' cosmos balance of {} is {}",
         cdai_name, cdai_amount
@@ -197,7 +197,7 @@ async fn setup_batch_test(
         dest_eth_address,
         Coin {
             denom: cdai_name.clone(),
-            amount: send_amount.clone(),
+            amount: send_amount,
         },
         bridge_denom_fee.clone(),
         None,
@@ -310,7 +310,6 @@ async fn test_good_batch(
             dest_eth_address,
             Vec::new(),
             1_000_000_000_000_000_000u128.into(),
-            *MINER_ADDRESS,
             *MINER_PRIVATE_KEY,
             vec![],
         )

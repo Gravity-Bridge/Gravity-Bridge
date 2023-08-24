@@ -4,7 +4,7 @@
 use clarity::Error as ClarityError;
 use deep_space::error::AddressError as CosmosAddressError;
 use deep_space::error::CosmosGrpcError;
-use num_bigint::ParseBigIntError;
+use num256::ParseError;
 use std::fmt::{self, Debug};
 use tokio::time::error::Elapsed;
 use tonic::Status;
@@ -13,7 +13,7 @@ use web30::jsonrpc::error::Web3Error;
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum GravityError {
-    InvalidBigInt(ParseBigIntError),
+    InvalidBigInt(ParseError),
     CosmosGrpcError(CosmosGrpcError),
     CosmosAddressError(CosmosAddressError),
     EthereumRestError(Web3Error),
@@ -26,7 +26,7 @@ pub enum GravityError {
     InvalidEventLogError(String),
     GravityGrpcError(Status),
     InsufficientVotingPowerToPass(String),
-    ParseBigIntError(ParseBigIntError),
+    ParseBigIntError(ParseError),
     ValsetUpToDate,
 }
 
@@ -102,8 +102,8 @@ impl From<CosmosAddressError> for GravityError {
         GravityError::CosmosAddressError(error)
     }
 }
-impl From<ParseBigIntError> for GravityError {
-    fn from(error: ParseBigIntError) -> Self {
+impl From<ParseError> for GravityError {
+    fn from(error: ParseError) -> Self {
         GravityError::InvalidBigInt(error)
     }
 }

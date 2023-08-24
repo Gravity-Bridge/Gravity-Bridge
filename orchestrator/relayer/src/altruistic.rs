@@ -77,10 +77,7 @@ pub async fn gas_tracker_loop(web3: &Web3, relayer_config: RelayerConfig) {
         let loop_start = Instant::now();
 
         let current = update_gas_tracker(web3).await;
-        debug!(
-            "Updated gas price history {:?}",
-            current.clone().map(print_gwei),
-        );
+        debug!("Updated gas price history {:?}", current.map(print_gwei),);
 
         delay_until_next_iteration(loop_start, relayer_config.gas_tracker_loop_speed).await;
     }

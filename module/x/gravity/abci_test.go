@@ -42,7 +42,8 @@ func TestValsetCreationUponUnbonding(t *testing.T) {
 	// begin unbonding
 	sh := staking.NewHandler(input.StakingKeeper)
 	undelegateMsg := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[0], keeper.StakingAmount)
-	sh(input.Context, undelegateMsg)
+	_, err := sh(input.Context, undelegateMsg)
+	require.NoError(t, err)
 
 	// Run the staking endblocker to ensure valset is set in state
 	staking.EndBlocker(input.Context, input.StakingKeeper)
@@ -143,18 +144,19 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	)
 
 	require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, keeper.InitCoins))
-	input.BankKeeper.SendCoinsFromModuleToAccount(
+	err := input.BankKeeper.SendCoinsFromModuleToAccount(
 		input.Context,
 		types.ModuleName,
 		accAddr,
 		keeper.InitCoins,
 	)
+	require.NoError(t, err)
 
 	// Set the account in state
 	input.AccountKeeper.SetAccount(input.Context, acc)
 
 	sh := staking.NewHandler(input.StakingKeeper)
-	_, err := sh(
+	_, err = sh(
 		input.Context,
 		keeper.NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(1)),
 	)
@@ -239,9 +241,11 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	input.Context = ctx.WithBlockHeight(valUnbondingHeight)
 	sh := staking.NewHandler(input.StakingKeeper)
 	undelegateMsg1 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[0], keeper.StakingAmount)
-	sh(input.Context, undelegateMsg1)
+	_, err := sh(input.Context, undelegateMsg1)
+	require.NoError(t, err)
 	undelegateMsg2 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[1], keeper.StakingAmount)
-	sh(input.Context, undelegateMsg2)
+	_, err = sh(input.Context, undelegateMsg2)
+	require.NoError(t, err)
 
 	for i, orch := range keeper.OrchAddrs {
 		if i == 0 {
@@ -295,18 +299,19 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	)
 
 	require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, keeper.InitCoins))
-	input.BankKeeper.SendCoinsFromModuleToAccount(
+	err := input.BankKeeper.SendCoinsFromModuleToAccount(
 		input.Context,
 		types.ModuleName,
 		accAddr,
 		keeper.InitCoins,
 	)
+	require.NoError(t, err)
 
 	// Set the account in state
 	input.AccountKeeper.SetAccount(input.Context, acc)
 
 	sh := staking.NewHandler(input.StakingKeeper)
-	_, err := sh(
+	_, err = sh(
 		input.Context,
 		keeper.NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(1)),
 	)
@@ -400,7 +405,8 @@ func TestBatchSlashing(t *testing.T) {
 		if i == 1 {
 			// don't sign with 2nd validator. set val bond height > batch block height
 			validator := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[i])
-			valConsAddr, _ := validator.GetConsAddr()
+			valConsAddr, err := validator.GetConsAddr()
+			require.NoError(t, err)
 			valSigningInfo := slashingtypes.ValidatorSigningInfo{
 				Address:             "",
 				StartHeight:         int64(batch.CosmosBlockCreated + 1),
@@ -483,13 +489,14 @@ func TestBatchTimeout(t *testing.T) {
 	params := pk.GetParams(ctx)
 	var (
 		now                 = time.Now().UTC()
-		mySender, _         = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
+		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
-		token, err          = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+		token, e2           = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
-	require.NoError(t, err)
+	require.NoError(t, e1)
+	require.NoError(t, e2)
 	receiver, err := types.NewEthAddress(myReceiver)
 	require.NoError(t, err)
 	tokenContract, err := types.NewEthAddress(myTokenContractAddr)

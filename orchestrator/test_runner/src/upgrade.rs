@@ -1,4 +1,5 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
+use crate::ica_host::ica_host_happy_path;
 use crate::{happy_path_test, happy_path_test_v2, utils::*};
 use clarity::Address as EthAddress;
 use deep_space::client::ChainStatus;
@@ -39,7 +40,8 @@ const MINIMUM_VALSETS: u64 = 4; // There may be more valsets depending on how lo
 #[allow(clippy::too_many_arguments)]
 pub async fn upgrade_part_1(
     web30: &Web3,
-    contact: &Contact,
+    gravity_contact: &Contact,
+    ibc_contact: &Contact,
     grpc_client: GravityQueryClient<Channel>,
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
@@ -47,12 +49,17 @@ pub async fn upgrade_part_1(
     erc20_addresses: Vec<EthAddress>,
 ) {
     info!("Starting upgrade test part 1");
-    let metadata = footoken_metadata(contact).await;
-    submit_and_pass_ibc_metadata_proposal(metadata.name.clone(), metadata.clone(), contact, &keys)
-        .await;
+    let metadata = footoken_metadata(gravity_contact).await;
+    submit_and_pass_ibc_metadata_proposal(
+        metadata.name.clone(),
+        metadata.clone(),
+        gravity_contact,
+        &keys,
+    )
+    .await;
     run_all_recoverable_tests(
         web30,
-        contact,
+        gravity_contact,
         grpc_client.clone(),
         keys.clone(),
         gravity_address,
@@ -62,7 +69,8 @@ pub async fn upgrade_part_1(
     .await;
     run_upgrade_specific_tests(
         web30,
-        contact,
+        gravity_contact,
+        ibc_contact,
         grpc_client.clone(),
         keys.clone(),
         ibc_keys.clone(),
@@ -72,7 +80,7 @@ pub async fn upgrade_part_1(
     )
     .await;
 
-    let upgrade_height = run_upgrade(contact, keys, "pleiades2".to_string(), false).await;
+    let upgrade_height = run_upgrade(gravity_contact, keys, "antares".to_string(), false).await;
 
     // Check that the expected attestations exist
     check_attestations(grpc_client.clone(), MINIMUM_ATTESTATIONS).await;
@@ -82,13 +90,13 @@ pub async fn upgrade_part_1(
         upgrade_height
     );
     // Wait for the block before the upgrade height, we won't get a response from the chain
-    let res = wait_for_block(contact, (upgrade_height - 1) as u64).await;
+    let res = wait_for_block(gravity_contact, (upgrade_height - 1) as u64).await;
     if res.is_err() {
         panic!("Unable to wait for upgrade! {}", res.err().unwrap());
     }
 
     delay_for(Duration::from_secs(10)).await; // wait for the new block to halt the chain
-    let status = contact.get_chain_status().await;
+    let status = gravity_contact.get_chain_status().await;
     info!(
         "Done waiting, chain should be halted, status response: {:?}",
         status
@@ -98,9 +106,11 @@ pub async fn upgrade_part_1(
 /// Perform a series of integration tests after an upgrade has executed
 /// NOTE: To run this test, follow the instructions for v2_upgrade_part_1 and WAIT FOR CHAIN HALT,
 /// then finally run tests/run-tests.sh with V2_UPGRADE_PART_2 as the test type.
+#[allow(clippy::too_many_arguments)]
 pub async fn upgrade_part_2(
     web30: &Web3,
-    contact: &Contact,
+    gravity_contact: &Contact,
+    ibc_contact: &Contact,
     grpc_client: GravityQueryClient<Channel>,
     keys: Vec<ValidatorKeys>,
     ibc_keys: Vec<CosmosPrivateKey>,
@@ -113,7 +123,7 @@ pub async fn upgrade_part_2(
 
     let mut metadata: Option<Metadata> = None;
     {
-        let all_metadata = contact.get_all_denoms_metadata().await.unwrap();
+        let all_metadata = gravity_contact.get_all_denoms_metadata().await.unwrap();
         for m in all_metadata {
             if m.base == "footoken2" {
                 metadata = Some(m)
@@ -125,11 +135,16 @@ pub async fn upgrade_part_2(
     }
     let metadata = metadata.unwrap();
 
-    submit_and_pass_ibc_metadata_proposal(metadata.name.clone(), metadata.clone(), contact, &keys)
-        .await;
+    submit_and_pass_ibc_metadata_proposal(
+        metadata.name.clone(),
+        metadata.clone(),
+        gravity_contact,
+        &keys,
+    )
+    .await;
     run_all_recoverable_tests(
         web30,
-        contact,
+        gravity_contact,
         grpc_client.clone(),
         keys.clone(),
         gravity_address,
@@ -139,7 +154,8 @@ pub async fn upgrade_part_2(
     .await;
     run_upgrade_specific_tests(
         web30,
-        contact,
+        gravity_contact,
+        ibc_contact,
         grpc_client.clone(),
         keys.clone(),
         ibc_keys,
@@ -236,28 +252,28 @@ pub async fn run_all_recoverable_tests(
 // These tests should fail in upgrade_part_1() but pass in upgrade_part_2()
 #[allow(clippy::too_many_arguments)]
 pub async fn run_upgrade_specific_tests(
-    _web30: &Web3,
-    _contact: &Contact,
-    _grpc_client: GravityQueryClient<Channel>,
-    _keys: Vec<ValidatorKeys>,
-    _ibc_keys: Vec<CosmosPrivateKey>,
-    _gravity_address: EthAddress,
+    web30: &Web3,
+    gravity_contact: &Contact,
+    ibc_contact: &Contact,
+    grpc_client: GravityQueryClient<Channel>,
+    keys: Vec<ValidatorKeys>,
+    ibc_keys: Vec<CosmosPrivateKey>,
+    gravity_address: EthAddress,
     _erc20_addresses: Vec<EthAddress>,
-    _post_upgrade: bool,
+    post_upgrade: bool,
 ) {
-    // TODO: Add a new test for Pleiades let res = new_test().await;
-    // if !post_upgrade {
-    //     // Expect failure
-    //     assert!(!res);
-    //     info!("Ethereum keys are not supported before the upgrade, waiting for upgrade then testing again!");
-    // } else {
-    //     // Expect success
-    //     assert!(
-    //         res,
-    //         "Ethereum keys are not supported after the upgrade, investigation needed!!"
-    //     );
-    //     info!("Successful Ethereum keys test after the upgrade!");
-    // }
+    if post_upgrade {
+        ica_host_happy_path(
+            web30,
+            grpc_client,
+            gravity_contact,
+            ibc_contact,
+            keys,
+            ibc_keys,
+            gravity_address,
+        )
+        .await;
+    }
 }
 
 /// Checks that the expected attestations are returned from the grpc endpoint

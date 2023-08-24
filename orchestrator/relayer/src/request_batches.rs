@@ -76,7 +76,7 @@ pub async fn request_batches(
 
         match config.batch_request_mode {
             BatchRequestMode::ProfitableOnly => {
-                let weth_cost_estimate = eth_gas_price.clone() * BATCH_GAS.into();
+                let weth_cost_estimate = eth_gas_price * BATCH_GAS.into();
                 match get_weth_price_with_retries(eth_address, token, total_fee, web30).await {
                     Ok(price) => {
                         if price > weth_cost_estimate {
@@ -110,7 +110,7 @@ pub async fn request_batches(
             BatchRequestMode::Altruistic => {
                 let ideal_gas =
                     get_acceptable_gas_price(config.altruistic_acceptable_gas_price_percentage);
-                let should_request_altruistic = if let Some(good_price) = ideal_gas.clone() {
+                let should_request_altruistic = if let Some(good_price) = ideal_gas {
                     eth_gas_price <= good_price
                 } else {
                     false

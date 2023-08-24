@@ -1,8 +1,6 @@
 linters:
   enable:
       - bodyclose
-      - deadcode
-      - depguard
       - dogsled
       - dupl
       - goconst
@@ -13,16 +11,10 @@ linters:
       - govet
       - ineffassign
       - staticcheck
-      - structcheck
       - typecheck
       - unused
-      - varcheck
-
       - exhaustruct
       - errcheck
-    # - gosec
-    # - goimports
-
 
 linters-settings:
   govet:
@@ -47,7 +39,6 @@ issues:
     - path: config/
       linters:
         - exhaustruct
-        - errcheck
     - path: contrib/
       linters:
         - exhaustruct
@@ -57,10 +48,6 @@ issues:
         - exhaustruct
         - errcheck
     - path: third_party/
-      linters:
-        - exhaustruct
-        - errcheck
-    - path: x/
       linters:
         - exhaustruct
         - errcheck

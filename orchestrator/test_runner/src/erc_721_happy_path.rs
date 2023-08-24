@@ -63,19 +63,19 @@ pub async fn erc721_happy_path_test(
             gravity_address,
             gravity_erc721_address,
             erc721_address,
-            Uint256::from_bytes_be(&i.to_be_bytes()),
+            Uint256::from_be_bytes(&i.to_be_bytes()),
             None,
         )
         .await;
     }
 
     info!("testing ERC721 approval utility");
-    let token_id_for_approval = Uint256::from_bytes_be(&203_i32.to_be_bytes());
+    let token_id_for_approval = Uint256::from_be_bytes(&203_i32.to_be_bytes());
     test_erc721_transfer_utils(
         web30,
         gravity_erc721_address,
         erc721_address,
-        token_id_for_approval.clone(),
+        token_id_for_approval,
     )
     .await;
 }
@@ -99,7 +99,7 @@ pub async fn test_erc721_deposit_panic(
         gravity_address,
         gravity_erc721_address,
         erc721_address,
-        token_id.clone(),
+        token_id,
         timeout,
     )
     .await
@@ -145,7 +145,7 @@ pub async fn test_erc721_deposit_result(
     let tx_id = send_erc721_to_cosmos(
         erc721_address,
         gravityerc721_address,
-        token_id.clone(),
+        token_id,
         dest,
         *MINER_PRIVATE_KEY,
         None,
@@ -168,7 +168,7 @@ pub async fn test_erc721_deposit_result(
     while Instant::now() - start < duration {
         // in this while loop wait for owner to change OR wait for event to fire
         let owner = web30
-            .get_erc721_owner_of(erc721_address, *MINER_ADDRESS, token_id.clone())
+            .get_erc721_owner_of(erc721_address, *MINER_ADDRESS, token_id)
             .await;
 
         if owner.unwrap() == gravityerc721_address {
@@ -197,14 +197,14 @@ pub async fn test_erc721_transfer_utils(
         .eth_get_transaction_count(*MINER_ADDRESS)
         .await
         .expect("Error retrieving nonce from eth");
-    options.push(SendTxOption::Nonce(nonce.clone()));
+    options.push(SendTxOption::Nonce(nonce));
 
     match web30
         .approve_erc721_transfers(
             erc721_address,
             *MINER_PRIVATE_KEY,
             gravity_erc721_address,
-            token_id.clone(),
+            token_id,
             None,
             options,
         )

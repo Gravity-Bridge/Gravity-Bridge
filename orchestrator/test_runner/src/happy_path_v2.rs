@@ -7,6 +7,7 @@ use crate::utils::get_erc20_balance_safe;
 use crate::utils::get_event_nonce_safe;
 use crate::utils::get_user_key;
 use crate::utils::send_one_eth;
+use crate::utils::stake_metadata;
 use crate::utils::start_orchestrators;
 use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
@@ -33,6 +34,27 @@ use tonic::transport::Channel;
 use web30::client::Web3;
 use web30::types::SendTxOption;
 
+pub async fn happy_path_test_v2_native(
+    web30: &Web3,
+    grpc_client: GravityQueryClient<Channel>,
+    contact: &Contact,
+    keys: Vec<ValidatorKeys>,
+    gravity_address: EthAddress,
+    validator_out: bool,
+) {
+    let native_metadata = stake_metadata(contact).await;
+    deploy_and_bridge_cosmos_token(
+        web30,
+        grpc_client.clone(),
+        contact,
+        keys.clone(),
+        gravity_address,
+        validator_out,
+        native_metadata,
+    )
+    .await;
+}
+
 pub async fn happy_path_test_v2(
     web30: &Web3,
     grpc_client: GravityQueryClient<Channel>,
@@ -42,13 +64,33 @@ pub async fn happy_path_test_v2(
     validator_out: bool,
     ibc_metadata: Option<Metadata>,
 ) {
-    let mut grpc_client = grpc_client;
-
     let ibc_metadata = match ibc_metadata {
         Some(metadata) => metadata,
         None => footoken_metadata(contact).await,
     };
 
+    deploy_and_bridge_cosmos_token(
+        web30,
+        grpc_client.clone(),
+        contact,
+        keys.clone(),
+        gravity_address,
+        validator_out,
+        ibc_metadata.clone(),
+    )
+    .await;
+}
+
+pub async fn deploy_and_bridge_cosmos_token(
+    web30: &Web3,
+    grpc_client: GravityQueryClient<Channel>,
+    contact: &Contact,
+    keys: Vec<ValidatorKeys>,
+    gravity_address: EthAddress,
+    validator_out: bool,
+    ibc_metadata: Metadata,
+) {
+    let mut grpc_client = grpc_client;
     let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,
@@ -66,11 +108,11 @@ pub async fn happy_path_test_v2(
     let chain_fee: Uint256 = 500u64.into(); // A typical chain fee is 2 basis points, this gives us a bit of wiggle room
     let send_to_user_coin = Coin {
         denom: token_to_send_to_eth.clone(),
-        amount: amount_to_bridge.clone() + chain_fee.clone() + 100u8.into(),
+        amount: amount_to_bridge + chain_fee + 100u8.into(),
     };
     let send_to_eth_coin = Coin {
         denom: token_to_send_to_eth.clone(),
-        amount: amount_to_bridge.clone(),
+        amount: amount_to_bridge,
     };
     let chain_fee_coin = Coin {
         denom: token_to_send_to_eth.clone(),
@@ -180,7 +222,7 @@ pub async fn send_to_eth_and_confirm(
     let starting_balance = get_erc20_balance_safe(erc20_contract, web30, eth_receiver)
         .await
         .unwrap();
-    let amount_to_bridge = send_to_eth_coin.amount.clone();
+    let amount_to_bridge = send_to_eth_coin.amount;
     let res = send_to_eth(
         cosmos_key,
         eth_receiver,
@@ -208,11 +250,11 @@ pub async fn send_to_eth_and_confirm(
             continue;
         }
         let balance = new_balance.unwrap();
-        if balance.clone() - starting_balance.clone() == amount_to_bridge {
+        if balance - starting_balance == amount_to_bridge {
             info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
-            assert!(balance == amount_to_bridge.clone());
+            assert!(balance == amount_to_bridge);
             return true;
-        } else if balance.clone() - starting_balance.clone() != 0u8.into() {
+        } else if balance - starting_balance != 0u8.into() {
             error!("Expected {} but got {} instead", amount_to_bridge, balance);
             return false;
         }

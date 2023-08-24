@@ -9,8 +9,8 @@ use crate::TOTAL_TIMEOUT;
 use crate::{one_eth, MINER_PRIVATE_KEY};
 use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
+use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
-use clarity::{PrivateKey as EthPrivateKey, Transaction};
 use cosmos_gravity::proposals::{submit_parameter_change_proposal, submit_upgrade_proposal};
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
@@ -47,13 +47,23 @@ use web30::{client::Web3, types::SendTxOption};
 /// returns the required denom metadata for deployed the Footoken
 /// token defined in our test environment
 pub async fn footoken_metadata(contact: &Contact) -> Metadata {
+    get_metadata(contact, "footoken").await
+}
+
+/// returns the required denom metadata for the native staking token
+/// token defined in our test environment
+pub async fn stake_metadata(contact: &Contact) -> Metadata {
+    get_metadata(contact, "stake").await
+}
+
+pub async fn get_metadata(contact: &Contact, base_denom: &str) -> Metadata {
     let metadata = contact.get_all_denoms_metadata().await.unwrap();
     for m in metadata {
-        if m.base == "footoken" {
+        if m.base == base_denom {
             return m;
         }
     }
-    panic!("Footoken metadata not set?");
+    panic!("{} metadata not set?", base_denom);
 }
 
 pub fn get_decimals(meta: &Metadata) -> u32 {
@@ -113,10 +123,6 @@ pub fn get_coins(denom: &str, balances: &[Coin]) -> Option<Coin> {
     None
 }
 
-/// This is a hardcoded very high gas value used in transaction stress test to counteract rollercoaster
-/// gas prices due to the way that test fills blocks
-pub const HIGH_GAS_PRICE: u64 = 1_000_000_000u64;
-
 /// This function efficiently distributes ERC20 tokens to a large number of provided Ethereum addresses
 /// the real problem here is that you can't do more than one send operation at a time from a
 /// single address without your sequence getting out of whack. By manually setting the nonce
@@ -127,7 +133,7 @@ pub async fn send_erc20_bulk(
     destinations: &[EthAddress],
     web3: &Web3,
 ) {
-    check_erc20_balance(erc20, amount.clone(), *MINER_ADDRESS, web3).await;
+    check_erc20_balance(erc20, amount, *MINER_ADDRESS, web3).await;
     let mut nonce = web3
         .eth_get_transaction_count(*MINER_ADDRESS)
         .await
@@ -135,16 +141,12 @@ pub async fn send_erc20_bulk(
     let mut transactions = Vec::new();
     for address in destinations {
         let send = web3.erc20_send(
-            amount.clone(),
+            amount,
             *address,
             erc20,
             *MINER_PRIVATE_KEY,
             Some(OPERATION_TIMEOUT),
-            vec![
-                SendTxOption::Nonce(nonce.clone()),
-                SendTxOption::GasLimit(100_000u32.into()),
-                SendTxOption::GasPriceMultiplier(5.0),
-            ],
+            vec![SendTxOption::Nonce(nonce)],
         );
         transactions.push(send);
         nonce += 1u64.into();
@@ -153,7 +155,7 @@ pub async fn send_erc20_bulk(
     wait_for_txids(txids, web3).await;
     let mut balance_checks = Vec::new();
     for address in destinations {
-        let check = check_erc20_balance(erc20, amount.clone(), *address, web3);
+        let check = check_erc20_balance(erc20, amount, *address, web3);
         balance_checks.push(check);
     }
     join_all(balance_checks).await;
@@ -164,31 +166,23 @@ pub async fn send_erc20_bulk(
 /// single address without your sequence getting out of whack. By manually setting the nonce
 /// here we can quickly send thousands of transactions in only a few blocks
 pub async fn send_eth_bulk(amount: Uint256, destinations: &[EthAddress], web3: &Web3) {
-    let net_version = web3.net_version().await.unwrap();
     let mut nonce = web3
         .eth_get_transaction_count(*MINER_ADDRESS)
         .await
         .unwrap();
     let mut transactions = Vec::new();
     for address in destinations {
-        let t = Transaction {
-            to: *address,
-            nonce: nonce.clone(),
-            gas_price: HIGH_GAS_PRICE.into(),
-            gas_limit: 24000u64.into(),
-            value: amount.clone(),
-            data: Vec::new(),
-            signature: None,
-        };
-        let t = t.sign(&MINER_PRIVATE_KEY, Some(net_version));
+        let t = web3.send_transaction(
+            *address,
+            Vec::new(),
+            amount,
+            *MINER_PRIVATE_KEY,
+            vec![SendTxOption::Nonce(nonce)],
+        );
         transactions.push(t);
         nonce += 1u64.into();
     }
-    let mut sends = Vec::new();
-    for tx in transactions {
-        sends.push(web3.eth_send_raw_transaction(tx.to_bytes().unwrap()));
-    }
-    let txids = join_all(sends).await;
+    let txids = join_all(transactions).await;
     wait_for_txids(txids, web3).await;
 }
 
@@ -212,7 +206,7 @@ pub async fn check_erc20_balance(
 ) {
     let new_balance = get_erc20_balance_safe(erc20, web3, address).await;
     let new_balance = new_balance.unwrap();
-    assert!(new_balance >= amount.clone());
+    assert!(new_balance >= amount);
 }
 
 /// utility function for bulk checking erc20 balances, used to provide
@@ -246,7 +240,7 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
     // the starting location of the funds
-    let eth_key = EthPrivateKey::from_slice(&secret).unwrap();
+    let eth_key = EthPrivateKey::from_bytes(secret).unwrap();
     let eth_address = eth_key.to_address();
     // the destination on cosmos that sends along to the final ethereum destination
     let cosmos_key = CosmosPrivateKey::from_secret(&secret);
@@ -254,7 +248,7 @@ pub fn get_user_key(cosmos_prefix: Option<&str>) -> BridgeUserKey {
     let mut rng = rand::thread_rng();
     let secret: [u8; 32] = rng.gen();
     // the final destination of the tokens back on Ethereum
-    let eth_dest_key = EthPrivateKey::from_slice(&secret).unwrap();
+    let eth_dest_key = EthPrivateKey::from_bytes(secret).unwrap();
     let eth_dest_address = eth_key.to_address();
     BridgeUserKey {
         eth_address,
@@ -445,7 +439,7 @@ pub async fn create_parameter_change_proposal(
     };
     let res = submit_parameter_change_proposal(
         proposal,
-        get_deposit(),
+        get_deposit(None),
         fee_coin,
         contact,
         key,
@@ -501,9 +495,9 @@ pub async fn execute_upgrade_proposal(
 
     let plan = Plan {
         name: upgrade_params.plan_name,
-        time: None,
         height: upgrade_params.upgrade_height,
         info: upgrade_params.plan_info,
+        ..Default::default()
     };
     let proposal = SoftwareUpgradeProposal {
         title: upgrade_params.proposal_title,
@@ -512,7 +506,7 @@ pub async fn execute_upgrade_proposal(
     };
     let res = submit_upgrade_proposal(
         proposal,
-        get_deposit(),
+        get_deposit(None),
         get_fee(None),
         contact,
         keys[0].validator_key,
@@ -709,7 +703,7 @@ pub async fn get_validator_to_delegate_to(contact: &Contact) -> (CosmosAddress, 
     let mut lowest = 0u8.into();
     for v in validators {
         let amount: Uint256 = v.tokens.parse().unwrap();
-        total_bonded_stake += amount.clone();
+        total_bonded_stake += amount;
 
         if lowest == 0u8.into() || amount < lowest {
             lowest = amount;

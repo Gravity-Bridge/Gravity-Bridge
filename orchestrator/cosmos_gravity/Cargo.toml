@@ -9,22 +9,22 @@ edition = "2018"
 [dependencies]
 gravity_utils = {path = "../gravity_utils"}
 ethereum_gravity = {path = "../ethereum_gravity"}
-gravity_proto = {path = "../gravity_proto/"}
+gravity_proto = {workspace = true}
 
-deep_space = "2.15"
-clarity = "0.5"
+deep_space = {workspace = true}
+clarity = {workspace = true}
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-num256 = "0.3"
+num256 = {workspace = true}
 log = "0.4"
 sha3 = "0.10"
 tokio = "1.4"
-web30 = "0.22"
-tonic = "0.7"
+web30 = {workspace = true}
+tonic = {workspace = true}
 bytes = "1.1"
-prost-types = "0.10"
-prost = "0.10"
+prost-types = {workspace = true}
+prost = {workspace = true}
 num = "0.4.0"
 
 [dev-dependencies]

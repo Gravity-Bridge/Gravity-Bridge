@@ -137,7 +137,7 @@ pub async fn unhalt_bridge_test(
 
     info!("Checking that bridge is halted!");
 
-    let halted_bridge_amt = Uint256::from_str("100_000_000_000_000_000").unwrap();
+    let halted_bridge_amt = Uint256::from_str("100000000000000000").unwrap();
     // Attempt transaction on halted bridge
     let res = test_erc20_deposit_result(
         web30,
@@ -146,7 +146,7 @@ pub async fn unhalt_bridge_test(
         bridge_user.cosmos_address,
         gravity_address,
         erc20_address,
-        halted_bridge_amt.clone(),
+        halted_bridge_amt,
         Some(Duration::from_secs(30)),
         None,
     )
@@ -209,7 +209,7 @@ pub async fn unhalt_bridge_test(
     info!("Observing attestations before bridging asset to cosmos!");
     print_sends_to_cosmos(&grpc_client, true).await;
 
-    let fixed_bridge_amt = Uint256::from_str("50_000_000_000_000_000").unwrap();
+    let fixed_bridge_amt = Uint256::from_str("50000000000000000").unwrap();
     info!("Attempting to resend now that the bridge should be fixed");
     // After the reset, we checked that the deposit submitted during the period when the bridge
     // was halted has been bridged after the chain was unhalted. Increase for the new deposit call
@@ -221,7 +221,7 @@ pub async fn unhalt_bridge_test(
         bridge_user.cosmos_address,
         gravity_address,
         erc20_address,
-        fixed_bridge_amt.clone(),
+        fixed_bridge_amt,
         None,
         None,
     )
@@ -246,7 +246,7 @@ async fn submit_and_pass_unhalt_bridge_proposal(
     info!("Submit and pass gov proposal: nonce is {}", nonce);
     let res = submit_unhalt_bridge_proposal(
         proposal_content,
-        get_deposit(),
+        get_deposit(None),
         get_fee(None),
         contact,
         keys[0].validator_key,

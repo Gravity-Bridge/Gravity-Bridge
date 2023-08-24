@@ -52,17 +52,17 @@ pub async fn check_for_events(
     // if the latest block is more than BLOCKS_TO_SEARCH ahead do not search the full history
     // comparison only to prevent panic on underflow.
     let latest_block = if latest_block > starting_block
-        && latest_block.clone() - starting_block.clone() > BLOCKS_TO_SEARCH.into()
+        && latest_block - starting_block > BLOCKS_TO_SEARCH.into()
     {
-        starting_block.clone() + BLOCKS_TO_SEARCH.into()
+        starting_block + BLOCKS_TO_SEARCH.into()
     } else {
         latest_block
     };
 
     let deposits = web3
         .check_for_events(
-            starting_block.clone(),
-            Some(latest_block.clone()),
+            starting_block,
+            Some(latest_block),
             vec![gravity_contract_address],
             vec![SENT_TO_COSMOS_EVENT_SIG],
         )
@@ -71,8 +71,8 @@ pub async fn check_for_events(
 
     let batches = web3
         .check_for_events(
-            starting_block.clone(),
-            Some(latest_block.clone()),
+            starting_block,
+            Some(latest_block),
             vec![gravity_contract_address],
             vec![TRANSACTION_BATCH_EXECUTED_EVENT_SIG],
         )
@@ -81,8 +81,8 @@ pub async fn check_for_events(
 
     let valsets = web3
         .check_for_events(
-            starting_block.clone(),
-            Some(latest_block.clone()),
+            starting_block,
+            Some(latest_block),
             vec![gravity_contract_address],
             vec![VALSET_UPDATED_EVENT_SIG],
         )
@@ -91,8 +91,8 @@ pub async fn check_for_events(
 
     let erc20_deployed = web3
         .check_for_events(
-            starting_block.clone(),
-            Some(latest_block.clone()),
+            starting_block,
+            Some(latest_block),
             vec![gravity_contract_address],
             vec![ERC20_DEPLOYED_EVENT_SIG],
         )
@@ -101,8 +101,8 @@ pub async fn check_for_events(
 
     let logic_call_executed = web3
         .check_for_events(
-            starting_block.clone(),
-            Some(latest_block.clone()),
+            starting_block,
+            Some(latest_block),
             vec![gravity_contract_address],
             vec![LOGIC_CALL_EVENT_SIG],
         )

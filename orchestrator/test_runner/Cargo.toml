@@ -13,29 +13,29 @@ path = "src/main.rs"
 ethereum_gravity = {path = "../ethereum_gravity"}
 cosmos_gravity = {path = "../cosmos_gravity"}
 gravity_utils = {path = "../gravity_utils"}
-gravity_proto = {path = "../gravity_proto/"}
+gravity_proto = {workspace = true}
 orchestrator = {path = "../orchestrator/"}
 
 bytes = "1"
-prost = "0.10"
-prost-types = "0.10"
-deep_space = {version = "2.15", features = ["ethermint"]}
+prost = {workspace = true}
+prost-types = {workspace = true}
+deep_space = {workspace = true, features = ["ethermint"]}
 serde_derive = "1.0"
-clarity = "0.5"
+clarity = {workspace = true}
 docopt = "1"
 serde = "1.0"
 actix = "0.13"
 actix-rt = "2.2"
 lazy_static = "1"
 url = "2"
-web30 = "0.22"
+web30 = {workspace = true}
 num = "0.4.0"
-num256 = "0.3"
+num256 = {workspace = true}
 log = "0.4"
 env_logger = "0.10"
 tokio = "1.4.0"
 rand = "0.8"
-tonic = "0.7"
+tonic = {workspace = true}
 futures = "0.3"
 serde_json = "1.0"
 ibc = "0.19.0"

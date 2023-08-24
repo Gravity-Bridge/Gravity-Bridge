@@ -64,7 +64,10 @@ func getAllKeys() [][]byte {
 	// sdk.AccAddress, sdk.ValAddress
 	dummyAddr := []byte("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 	// EthAddress
-	ethAddr, _ := NewEthAddress("0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B")
+	ethAddr, err := NewEthAddress("0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B")
+	if err != nil {
+		panic(err)
+	}
 	dummyEthAddr := *ethAddr
 	// Nonce
 	dummyNonce := uint64(1)

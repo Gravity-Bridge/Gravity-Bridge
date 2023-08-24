@@ -1,6 +1,6 @@
 //! Helper functions for sending tokens to Cosmos
 
-use clarity::abi::{encode_call, Token};
+use clarity::abi::{encode_call, AbiToken as Token};
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address, Uint256};
 use deep_space::address::Address as CosmosAddress;
@@ -51,7 +51,7 @@ pub async fn send_to_cosmos(
     if !approved {
         let mut options = options.clone();
         let nonce = web3.eth_get_transaction_count(sender_address).await?;
-        options.push(SendTxOption::Nonce(nonce.clone()));
+        options.push(SendTxOption::Nonce(nonce));
         approve_nonce = Some(nonce);
         let txid = web3
             .approve_erc20_transfers(erc20, sender_secret, gravity_contract, None, options)
@@ -92,22 +92,16 @@ pub async fn send_to_cosmos(
             gravity_contract,
             encode_call(
                 "sendToCosmos(address,string,uint256)",
-                &[
-                    erc20.into(),
-                    encoded_destination_address,
-                    amount.clone().into(),
-                ],
+                &[erc20.into(), encoded_destination_address, amount.into()],
             )?,
             0u32.into(),
-            sender_address,
             sender_secret,
             options,
         )
         .await?;
 
     if let Some(timeout) = wait_timeout {
-        web3.wait_for_transaction(tx_hash.clone(), timeout, None)
-            .await?;
+        web3.wait_for_transaction(tx_hash, timeout, None).await?;
     }
 
     Ok(tx_hash)

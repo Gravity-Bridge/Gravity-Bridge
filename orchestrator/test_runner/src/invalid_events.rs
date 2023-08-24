@@ -15,7 +15,7 @@ use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
 use clarity::abi::encode_call;
-use clarity::abi::Token;
+use clarity::abi::AbiToken as Token;
 use clarity::Address as EthAddress;
 use clarity::Address;
 use deep_space::Contact;
@@ -265,7 +265,7 @@ pub async fn send_to_cosmos_invalid(
             .eth_get_transaction_count(*MINER_ADDRESS)
             .await
             .unwrap();
-        let options = vec![SendTxOption::Nonce(nonce.clone())];
+        let options = vec![SendTxOption::Nonce(nonce)];
         approve_nonce = Some(nonce);
         let txid = web3
             .approve_erc20_transfers(erc20, *MINER_PRIVATE_KEY, gravity_contract, None, options)
@@ -295,22 +295,17 @@ pub async fn send_to_cosmos_invalid(
             gravity_contract,
             encode_call(
                 "sendToCosmos(address,string,uint256)",
-                &[
-                    erc20.into(),
-                    encoded_destination_address,
-                    one_eth().clone().into(),
-                ],
+                &[erc20.into(), encoded_destination_address, one_eth().into()],
             )
             .unwrap(),
             0u32.into(),
-            *MINER_ADDRESS,
             *MINER_PRIVATE_KEY,
             vec![SendTxOption::GasLimitMultiplier(3.0)],
         )
         .await
         .unwrap();
 
-    web3.wait_for_transaction(tx_hash.clone(), TOTAL_TIMEOUT, None)
+    web3.wait_for_transaction(tx_hash, TOTAL_TIMEOUT, None)
         .await
         .unwrap();
 }
@@ -347,7 +342,6 @@ async fn deploy_invalid_erc20(
             )
             .unwrap(),
             0u32.into(),
-            *MINER_ADDRESS,
             *MINER_PRIVATE_KEY,
             vec![SendTxOption::GasPriceMultiplier(2.0)],
         )
@@ -355,7 +349,7 @@ async fn deploy_invalid_erc20(
         .unwrap();
 
     web30
-        .wait_for_transaction(tx_hash.clone(), TOTAL_TIMEOUT, None)
+        .wait_for_transaction(tx_hash, TOTAL_TIMEOUT, None)
         .await
         .unwrap();
 

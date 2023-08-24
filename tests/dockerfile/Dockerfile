@@ -6,11 +6,11 @@ RUN dnf install -y git make gcc gcc-c++ which iproute iputils procps-ng vim-mini
 RUN npm install -g ts-node && npm install -g typescript
 ADD https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.10.10-bb74230f.tar.gz /geth/
 RUN cd /geth && tar -xvf * && mv /geth/**/geth /usr/bin/geth
-# Download gaia as a IBC test chain
-ADD https://github.com/cosmos/gaia/releases/download/v7.0.0/gaiad-v7.0.0-linux-amd64 /usr/bin/gaiad
+# Download the althea gaia fork as a IBC test chain
+ADD https://github.com/althea-net/ibc-test-chain/releases/download/v9.1.2/gaiad-v9.1.2-linux-amd64 /usr/bin/gaiad
 # Setup Hermes for IBC connections between chains
-ADD https://github.com/informalsystems/ibc-rs/releases/download/v0.13.0/hermes-v0.13.0-x86_64-unknown-linux-gnu.tar.gz /tmp/
-RUN cd /tmp/ && tar -xvf hermes-v0.13.0-x86_64-unknown-linux-gnu.tar.gz && mv hermes /usr/bin/
+ADD https://github.com/informalsystems/ibc-rs/releases/download/v1.5.1/hermes-v1.5.1-x86_64-unknown-linux-gnu.tar.gz /tmp/
+RUN cd /tmp/ && tar -xvf hermes-v1.5.1-x86_64-unknown-linux-gnu.tar.gz && mv hermes /usr/bin/
 RUN mkdir /ibc-relayer-logs && touch /ibc-relayer-logs/hermes-logs && touch /ibc-relayer-logs/channel-creation
 # the actual source code for this repo, this **only** includes checked in files!
 # this is a bit of a pain but it does speed things up a lot

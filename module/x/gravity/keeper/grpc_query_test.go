@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// nolint: exhaustruct
 func TestQueryGetAttestations(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	encCfg := app.MakeEncodingConfig()
@@ -147,6 +148,7 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 
 		att := &types.Attestation{
 			Observed: false,
+			Votes:    []string{},
 			Height:   uint64(ctx.BlockHeight()),
 			Claim:    any,
 		}

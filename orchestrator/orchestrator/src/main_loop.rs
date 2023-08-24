@@ -26,6 +26,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
+use num_traits::ToPrimitive;
 use relayer::main_loop::all_relayer_loops;
 use std::cmp::min;
 use std::process::exit;
@@ -116,7 +117,7 @@ pub async fn test_eth_connection(web3: Web3) {
         match (latest_res, finalized_res) {
             (Ok(latest), Ok(finalized)) => {
                 if latest.number < finalized.number
-                    || finalized.number.clone() + 32u8.into() > latest.number
+                    || finalized.number + 32u8.into() > latest.number
                 {
                     panic!(
                         "Ethereum RPC returned an invalid 'finalized' block, expecting at least a 32 block difference but found latest block ({}) and 'finalized' block ({})",
@@ -181,7 +182,7 @@ pub async fn eth_oracle_main_loop(
 
                 metrics_latest(block_height, "latest_cosmos_block");
                 // Converting into u64
-                metrics_latest(latest_eth_block.to_u64_digits()[0], "latest_eth_block");
+                metrics_latest(latest_eth_block.to_u64().unwrap(), "latest_eth_block");
             }
             (Ok(_latest_eth_block), Ok(ChainStatus::Syncing)) => {
                 warn!("Cosmos node syncing, Eth oracle paused");
@@ -250,7 +251,7 @@ pub async fn eth_oracle_main_loop(
             gravity_contract_address,
             cosmos_key,
             fee.clone(),
-            last_checked_block.clone(),
+            last_checked_block,
         )
         .await
         {
