@@ -1,0 +1,81 @@
+
+syntax = "proto3";
+package auction.v1;
+
+import "gogoproto/gogo.proto";
+import "auction/v1/params.proto";
+import "auction/v1/auction.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Params returns the current module parameters (decided by governance)
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/auction/v1beta/params";
+  }
+
+  // AuctionPeriod returns the current active auction period, or a future one if no period is active
+  rpc AuctionPeriod(QueryAuctionPeriodRequest) returns (QueryAuctionPeriodResponse) {
+    option (google.api.http).get = "/auction/v1beta/period";
+  }
+
+  // Auctions returns all current active auctions
+  rpc Auctions(QueryAuctionsRequest) returns (QueryAuctionsResponse) {
+    option (google.api.http).get = "/auction/v1beta/auctions";
+  }
+
+  // AuctionById returns an open auction given by its `id`
+  rpc AuctionById(QueryAuctionByIdRequest) returns (QueryAuctionByIdResponse) {
+    option (google.api.http).get = "/auction/v1beta/auction-id/{auction_id}";
+  }
+
+  // AuctionByDenom returns an open auction given by its `denom`
+  rpc AuctionByDenom(QueryAuctionByDenomRequest) returns (QueryAuctionByDenomResponse) {
+    option (google.api.http).get = "/auction/v1beta/auction-denom/{auction_denom}";
+  }
+
+  // AllAuctionsByBidder returns all open auctions with the given highest bidder address
+  rpc AllAuctionsByBidder(QueryAllAuctionsByBidderRequest) returns (QueryAllAuctionsByBidderResponse) {
+    option (google.api.http).get = "/auction/v1beta/auctions-bidder/{address}";
+  }
+}
+
+message QueryParamsRequest {}
+message QueryParamsResponse {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryAuctionPeriodRequest {
+}
+message QueryAuctionPeriodResponse {
+  AuctionPeriod auction_period = 1;
+}
+
+message QueryAuctionsRequest {
+}
+message QueryAuctionsResponse {
+  repeated Auction auctions = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryAuctionByIdRequest {
+  uint64 auction_id = 1;
+}
+message QueryAuctionByIdResponse {
+  Auction auction = 1;
+}
+
+message QueryAuctionByDenomRequest {
+  string auction_denom = 1;
+}
+message QueryAuctionByDenomResponse {
+  Auction auction = 1;
+}
+
+message QueryAllAuctionsByBidderRequest {
+  string address = 1;
+}
+message QueryAllAuctionsByBidderResponse {
+  repeated Auction auctions = 1 [ (gogoproto.nullable) = false ];
+}
