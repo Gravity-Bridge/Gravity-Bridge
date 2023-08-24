@@ -1,0 +1,35 @@
+syntax = "proto3";
+package auction.v1;
+
+import "cosmos/base/v1beta1/coin.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
+
+// AuctionPeriod represents a period of auctions.
+// An AuctionPeriod applies to as many auctionable tokens exist in the community pool
+// Note: see params for a list of non-auctionable tokens
+message AuctionPeriod {
+    uint64 start_block_height = 1;  // Block height at which the AuctionPeriod starts.
+    uint64 end_block_height = 2; // Block height at which the AuctionPeriod end.
+}
+
+// Auction represents a single auction.
+// An Auction has a unique identifier relative to its Auction Period Id , an amount being auctioned, a status, and a highest bid.
+message Auction {
+    uint64 id = 1;  // Unique identifier for the Auction.
+    cosmos.base.v1beta1.Coin amount = 2 [(gogoproto.nullable)   = false];  // Amount being auctioned.
+    Bid highest_bid = 3;  // Highest bid on the Auction.
+}
+
+// Bid represents a bid on an Auction.
+// A Bid includes the identifier of the Auction, the amount of the bid, and the address of the bidder.
+message Bid {
+    uint64 bid_amount = 1;  // Amount of the bid.
+    string bidder_address = 2;  // Address of the bidder.
+}
+
+// AuctionId enables easy storage and retrieval of the most recently used AuctionId
+message AuctionId {
+    uint64 id = 1;
+}
