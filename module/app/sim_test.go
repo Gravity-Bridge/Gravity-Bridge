@@ -69,12 +69,12 @@ func TestFullAppSimulation(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		AppStateFn(app.AppCodec, app.SimulationManager()),
 		simtypes.RandomAccounts,
-		SimulationOperations(*app, app.AppCodec(), config),
+		SimulationOperations(*app, app.AppCodec, config),
 		app.ModuleAccountAddrs(),
 		config,
-		app.AppCodec(),
+		app.AppCodec,
 	)
 
 	// export state and simParams before the simulation error is checked
@@ -108,12 +108,12 @@ func TestAppImportExport(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		AppStateFn(app.AppCodec, app.SimulationManager()),
 		simtypes.RandomAccounts,
-		SimulationOperations(*app, app.AppCodec(), config),
+		SimulationOperations(*app, app.AppCodec, config),
 		app.ModuleAccountAddrs(),
 		config,
-		app.AppCodec(),
+		app.AppCodec,
 	)
 
 	// export state and simParams before the simulation error is checked
@@ -150,7 +150,7 @@ func TestAppImportExport(t *testing.T) {
 
 	ctxA := app.NewContext(true, tmproto.Header{Height: app.LastBlockHeight()})
 	ctxB := newApp.NewContext(true, tmproto.Header{Height: app.LastBlockHeight()})
-	newApp.mm.InitGenesis(ctxB, app.AppCodec(), genesisState)
+	newApp.mm.InitGenesis(ctxB, app.AppCodec, genesisState)
 
 	fmt.Printf("comparing stores...\n")
 
@@ -207,12 +207,12 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		AppStateFn(app.AppCodec, app.SimulationManager()),
 		simtypes.RandomAccounts,
-		SimulationOperations(*app, app.AppCodec(), config),
+		SimulationOperations(*app, app.AppCodec, config),
 		app.ModuleAccountAddrs(),
 		config,
-		app.AppCodec(),
+		app.AppCodec,
 	)
 
 	// export state and simParams before the simulation error is checked
@@ -256,12 +256,12 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t,
 		os.Stdout,
 		newApp.BaseApp,
-		AppStateFn(app.AppCodec(), app.SimulationManager()),
+		AppStateFn(app.AppCodec, app.SimulationManager()),
 		simtypes.RandomAccounts,
-		SimulationOperations(*newApp, newApp.AppCodec(), config),
+		SimulationOperations(*newApp, newApp.AppCodec, config),
 		newApp.ModuleAccountAddrs(),
 		config,
-		app.AppCodec(),
+		app.AppCodec,
 	)
 	require.NoError(t, err)
 }
@@ -305,12 +305,12 @@ func TestAppStateDeterminism(t *testing.T) {
 				t,
 				os.Stdout,
 				app.BaseApp,
-				AppStateFn(app.AppCodec(), app.SimulationManager()),
+				AppStateFn(app.AppCodec, app.SimulationManager()),
 				simtypes.RandomAccounts,
-				SimulationOperations(*app, app.AppCodec(), config),
+				SimulationOperations(*app, app.AppCodec, config),
 				app.ModuleAccountAddrs(),
 				config,
-				app.AppCodec(),
+				app.AppCodec,
 			)
 			require.NoError(t, err)
 

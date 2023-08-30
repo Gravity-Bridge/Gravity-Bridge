@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -12,10 +13,10 @@ import (
 // just once on startup since sdkConfig is immutable and NativeHrp is not set by users.
 func (app *Gravity) assertBech32PrefixMatches(ctx sdk.Context) {
 	config := sdk.GetConfig()
-	if app == nil || config == nil || app.bech32IbcKeeper == nil {
+	if app == nil || config == nil || app.Bech32IbcKeeper == nil {
 		panic("Invalid app/config/keeper state")
 	}
-	nativePrefix, err := app.bech32IbcKeeper.GetNativeHrp(ctx)
+	nativePrefix, err := app.Bech32IbcKeeper.GetNativeHrp(ctx)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "Error obtaining bech32ibc NativeHrp"))
 	}
