@@ -752,7 +752,7 @@ impl ContractEvent for SendToCosmosEvent {
             erc20: result["_tokenContract"].as_str().unwrap().parse().unwrap(),
             sender: result["_sender"].as_str().unwrap().parse().unwrap(),
             destination: destination.to_string(),
-            validated_destination: destination.split('/').last().unwrap().parse().ok(),
+            validated_destination: None, //destination.split('/').last().unwrap().parse().ok(),
             amount: result["_amount"].as_str().unwrap().parse().unwrap(),
         })
     }
