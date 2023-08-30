@@ -9,15 +9,27 @@ import (
 // Mints `amounts` and sends them to `addr`
 func (s *AppTestHelper) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) {
 	bankkeeper := s.App.AuctionKeeper.BankKeeper
-	bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
-	bankkeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
+	err := bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
+	if err != nil {
+		panic("Failed to mint coins")
+	}
+	err = bankkeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
+	if err != nil {
+		panic("Failed to send coins to account")
+	}
 }
 
 // Mints `amounts` and sends them to the module with the given `moduleName`
 func (s *AppTestHelper) FundModule(ctx sdk.Context, moduleName string, amounts sdk.Coins) {
 	bankkeeper := s.App.AuctionKeeper.BankKeeper
-	bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
-	bankkeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, moduleName, amounts)
+	err := bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
+	if err != nil {
+		panic("Failed to mint coins")
+	}
+	err = bankkeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, moduleName, amounts)
+	if err != nil {
+		panic("Failed to send coins to module")
+	}
 }
 
 // Mints tokens and places them in the community pool
