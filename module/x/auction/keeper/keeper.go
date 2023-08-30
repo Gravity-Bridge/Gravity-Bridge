@@ -73,7 +73,7 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 	return nil
 }
 
-// RemoveFromCommunityPool sends the auction tokens from community pool to auction module account
+// RemoveFromCommunityPool removes the auction tokens from community pool and locks them in the auction module account
 func (k Keeper) RemoveFromCommunityPool(ctx sdk.Context, coin sdk.Coin) error {
 	feePool := k.DistKeeper.GetFeePool(ctx)
 	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, distrtypes.ModuleName, types.ModuleName, sdk.NewCoins(coin)); err != nil {
@@ -97,9 +97,23 @@ func (k Keeper) LockBidAmount(ctx sdk.Context, sender sdk.AccAddress, amount sdk
 	return sdkerrors.Wrap(err, types.ErrBidCollectionFailure.Error())
 }
 
+// AwardAuction pays out the locked balance of `amount` to `bidder`
 func (k Keeper) AwardAuction(ctx sdk.Context, bidder sdk.AccAddress, amount sdk.Coin) error {
 	err := k.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, bidder, sdk.NewCoins(amount))
 	return sdkerrors.Wrap(err, types.ErrAwardFailure.Error())
+}
+
+// IsDenomAuctionable Checks `denom“ against the NonAuctionableTokens list
+// Returns true if not in the list and false otherwise
+func (k Keeper) IsDenomAuctionable(ctx sdk.Context, denom string) bool {
+	nonAuctionableTokens := k.GetParams(ctx).NonAuctionableTokens
+	for _, nonAuctionable := range nonAuctionableTokens {
+		if denom == nonAuctionable {
+			return false
+		}
+	}
+
+	return true
 }
 
 // prefixRange turns a prefix into a (start, end) range. The start is the given prefix value and
