@@ -659,28 +659,28 @@ impl EthereumEvent for SendToCosmosEvent {
                 ))
             } else {
                 let event_nonce: u64 = data.event_nonce.to_string().parse().unwrap();
-                let validated_destination = match data
-                    .destination
-                    .split('/')
-                    .last()
-                    .unwrap()
-                    .parse()
-                {
-                    Ok(v) => Some(v),
-                    Err(_) => {
-                        if data.destination.len() < 1000 {
-                            warn!("Event nonce {} sends tokens to {} which is invalid bech32, these funds will be allocated to the community pool", event_nonce, data.destination);
-                        } else {
-                            warn!("Event nonce {} sends tokens to a destination which is invalid bech32, these funds will be allocated to the community pool", event_nonce);
-                        }
-                        None
-                    }
-                };
+                // let validated_destination = match data
+                //     .destination
+                //     .split('/')
+                //     .last()
+                //     .unwrap()
+                //     .parse()
+                // {
+                //     Ok(v) => Some(v),
+                //     Err(_) => {
+                //         if data.destination.len() < 1000 {
+                //             warn!("Event nonce {} sends tokens to {} which is invalid bech32, these funds will be allocated to the community pool", event_nonce, data.destination);
+                //         } else {
+                //             warn!("Event nonce {} sends tokens to a destination which is invalid bech32, these funds will be allocated to the community pool", event_nonce);
+                //         }
+                //         None
+                //     }
+                // };
                 Ok(SendToCosmosEvent {
                     erc20,
                     sender,
                     destination: data.destination,
-                    validated_destination,
+                    validated_destination: None,
                     amount: data.amount,
                     event_nonce,
                     block_height,
