@@ -23,6 +23,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, genState types.GenesisState) []abci.
 		k.CreateNewAuctionPeriod(ctx)
 	}
 
+	// Test that the module was correctly initialized by running auction module invariants
+	if errMsg, failure := AllInvariants(k)(ctx); failure {
+		panic(fmt.Sprintf("Invariant failure after auction init genesis: %v", errMsg))
+	}
+
 	return []abci.ValidatorUpdate{}
 }
 

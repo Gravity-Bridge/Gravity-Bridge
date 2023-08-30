@@ -9,9 +9,6 @@ import (
 
 // UpdateAuctionPeriod replaces the current auction period with the given one
 func (k Keeper) UpdateAuctionPeriod(ctx sdk.Context, auctionPeriod types.AuctionPeriod) error {
-	if auctionPeriod.EndBlockHeight < uint64(ctx.BlockHeight()) {
-		return sdkerrors.Wrap(types.ErrInvalidAuctionPeriod, "cannot update auction end to be in the past")
-	}
 	lastPeriod := k.GetAuctionPeriod(ctx)
 	if lastPeriod != nil && lastPeriod.EndBlockHeight > uint64(ctx.BlockHeight()) {
 		return sdkerrors.Wrap(types.ErrInvalidAuctionPeriod, "cannot update auction period during the current auction period")
@@ -25,8 +22,15 @@ func (k Keeper) UpdateAuctionPeriod(ctx sdk.Context, auctionPeriod types.Auction
 	return nil
 }
 
-// updateAuctionPeriodUnsafe forces the auction period update without any safety checks
+// updateAuctionPeriodUnsafe forces the auction period update with minimal safety checks
+// in particular it checks to see if the end block height is
 func (k Keeper) updateAuctionPeriodUnsafe(ctx sdk.Context, auctionPeriod types.AuctionPeriod) {
+	if auctionPeriod.StartBlockHeight > uint64(ctx.BlockHeight()+1) { // This is invalid in all situations, so the check is used here
+		panic("cannot update auction end to start after the next block")
+	}
+	if auctionPeriod.EndBlockHeight < uint64(ctx.BlockHeight()) { // This is invalid in all situations, so the check is used here
+		panic("cannot update auction end to be in the past")
+	}
 	store := ctx.KVStore(k.storeKey)
 	key := []byte(types.KeyAuctionPeriod)
 

@@ -81,6 +81,10 @@ func (k Keeper) UpdateAuction(ctx sdk.Context, auction types.Auction) error {
 
 // DeleteAllAuctions will clear the current auctions to prepare for storing the next period's auctions
 func (k Keeper) DeleteAllAuctions(ctx sdk.Context) {
+	auctionPeriod := k.GetAuctionPeriod(ctx)
+	if auctionPeriod != nil && auctionPeriod.EndBlockHeight > uint64(ctx.BlockHeight()) {
+		panic(fmt.Sprintf("attempted to delete all auctions during active auction period %v", auctionPeriod))
+	}
 	// Collect the keys to avoid deleting while iterating
 	keys := [][]byte{} // Each key is a []byte
 	k.IterateAuctions(ctx, func(key []byte, _ types.Auction) (stop bool) {
@@ -105,6 +109,10 @@ func (k Keeper) StoreAuction(ctx sdk.Context, auction types.Auction) error {
 	expectedId := k.GetNextAuctionId(ctx)
 	if auction.Id != expectedId {
 		return sdkerrors.Wrapf(types.ErrInvalidAuction, "expected next auction to have id %v, received %v", expectedId, auction.Id)
+	}
+
+	if !k.IsDenomAuctionable(ctx, auction.Amount.Denom) {
+		return sdkerrors.Wrapf(types.ErrInvalidAuction, "denom %v is on the NonAuctionableTokens list", auction.Amount.Denom)
 	}
 
 	store := ctx.KVStore(k.storeKey)
