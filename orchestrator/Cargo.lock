@@ -2434,6 +2434,7 @@ dependencies = [
 name = "orchestrator"
 version = "0.4.3"
 dependencies = [
+ "actix",
  "actix-rt",
  "clarity",
  "cosmos_gravity",
