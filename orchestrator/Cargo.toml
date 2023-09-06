@@ -1,12 +1,23 @@
 [workspace]
-members = ["orchestrator", "cosmos_gravity", "ethereum_gravity", "gravity_utils", "proto_build", "test_runner", "gravity_proto", "relayer", "gbt", "metrics_exporter"]
+members = [
+    "orchestrator",
+    "cosmos_gravity",
+    "ethereum_gravity",
+    "gravity_utils",
+    "proto_build",
+    "test_runner",
+    "gravity_proto",
+    "relayer",
+    "gbt",
+    "metrics_exporter",
+]
 default-members = ["gbt"]
 resolver = "2"
 
 [workspace.dependencies]
-web30 = {git = "https://github.com/oraichain/web30.git", rev = "29e0729"}
-deep_space = {git ="https://github.com/oraichain/deep_space.git", rev = "a2e1353"}
-cosmos-sdk-proto = {git = "https://github.com/oraichain/cosmos-rust", rev = "19f3de7", package = "cosmos-sdk-proto-althea"}
+web30 = { git = "https://github.com/oraichain/web30.git", rev = "d719ca4" }
+deep_space = { git = "https://github.com/oraichain/deep_space.git", rev = "a2e1353" }
+cosmos-sdk-proto = { git = "https://github.com/oraichain/cosmos-rust", rev = "19f3de7", package = "cosmos-sdk-proto-althea" }
 
 
 [profile.release]
