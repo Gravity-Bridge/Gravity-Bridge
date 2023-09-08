@@ -306,12 +306,17 @@ async fn test_good_batch(
     .await;
 
     let txid = web30
-        .send_transaction(
-            dest_eth_address,
-            Vec::new(),
-            1_000_000_000_000_000_000u128.into(),
-            *MINER_PRIVATE_KEY,
-            vec![],
+        .send_prepared_transaction(
+            web30
+                .prepare_transaction(
+                    dest_eth_address,
+                    Vec::new(),
+                    1_000_000_000_000_000_000u128.into(),
+                    *MINER_PRIVATE_KEY,
+                    vec![],
+                )
+                .await
+                .unwrap(),
         )
         .await
         .expect("Failed to send Eth to validator {}");

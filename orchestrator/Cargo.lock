@@ -175,7 +175,7 @@ dependencies = [
  "impl-more",
  "openssl",
  "pin-project-lite",
- "rustls 0.21.8",
+ "rustls 0.21.7",
  "rustls-webpki",
  "tokio",
  "tokio-openssl",
@@ -3257,12 +3257,12 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.21.8"
+version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "446e14c5cda4f3f30fe71863c34ec70f5ac79d6087097ad0bb433e1be5edf04c"
+checksum = "cd8d6c9f025a446bc4d18ad9632e69aec8f287aa84499ee335599fabd20c3fd8"
 dependencies = [
  "log",
- "ring 0.17.5",
+ "ring 0.16.20",
  "rustls-webpki",
  "sct 0.7.1",
 ]
@@ -4246,7 +4246,7 @@ version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c28327cf380ac148141087fbfb9de9d7bd4e84ab5d2c28fbc911d753de8a7081"
 dependencies = [
- "rustls 0.21.8",
+ "rustls 0.21.7",
  "tokio",
 ]
 
@@ -4339,7 +4339,7 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "prost 0.12.1",
- "rustls 0.21.8",
+ "rustls 0.21.7",
  "rustls-native-certs 0.6.3",
  "rustls-pemfile 1.0.3",
  "tokio",

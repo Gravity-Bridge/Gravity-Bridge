@@ -55,15 +55,18 @@ pub async fn send_eth_logic_call(
     let payload = encode_logic_call_payload(current_valset, &call, confirms, gravity_id)?;
 
     let tx = web3
-        .send_transaction(
-            gravity_contract_address,
-            payload,
-            0u32.into(),
-            our_eth_key,
-            // we maintain a 20% gas price increase to compensate for the 12.5% maximum
-            // base fee increase allowed per block in eip1559, if we overpay we'll
-            // be refunded.
-            vec![SendTxOption::GasPriceMultiplier(1.20f32)],
+        .send_prepared_transaction(
+            web3.prepare_transaction(
+                gravity_contract_address,
+                payload,
+                0u32.into(),
+                our_eth_key,
+                // we maintain a 20% gas price increase to compensate for the 12.5% maximum
+                // base fee increase allowed per block in eip1559, if we overpay we'll
+                // be refunded.
+                vec![SendTxOption::GasPriceMultiplier(1.20f32)],
+            )
+            .await?,
         )
         .await?;
     info!("Sent batch update with txid {:#066x}", tx);

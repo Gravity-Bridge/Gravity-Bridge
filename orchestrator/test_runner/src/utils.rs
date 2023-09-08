@@ -172,12 +172,16 @@ pub async fn send_eth_bulk(amount: Uint256, destinations: &[EthAddress], web3: &
         .unwrap();
     let mut transactions = Vec::new();
     for address in destinations {
-        let t = web3.send_transaction(
-            *address,
-            Vec::new(),
-            amount,
-            *MINER_PRIVATE_KEY,
-            vec![SendTxOption::Nonce(nonce)],
+        let t = web3.send_prepared_transaction(
+            web3.prepare_transaction(
+                *address,
+                Vec::new(),
+                amount,
+                *MINER_PRIVATE_KEY,
+                vec![SendTxOption::Nonce(nonce)],
+            )
+            .await
+            .unwrap(),
         );
         transactions.push(t);
         nonce += 1u64.into();

@@ -40,12 +40,15 @@ pub async fn send_eth_valset_update(
     let payload = encode_valset_update_payload(new_valset, old_valset, confirms, gravity_id)?;
 
     let tx = web3
-        .send_transaction(
-            gravity_contract_address,
-            payload,
-            0u32.into(),
-            our_eth_key,
-            vec![],
+        .send_prepared_transaction(
+            web3.prepare_transaction(
+                gravity_contract_address,
+                payload,
+                0u32.into(),
+                our_eth_key,
+                vec![],
+            )
+            .await?,
         )
         .await?;
     info!("Sent valset update with txid {:#066x}", tx);

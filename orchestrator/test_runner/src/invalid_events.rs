@@ -291,16 +291,20 @@ pub async fn send_to_cosmos_invalid(
     let encoded_destination_address = Token::UnboundedBytes(cosmos_destination);
 
     let tx_hash = web3
-        .send_transaction(
-            gravity_contract,
-            encode_call(
-                "sendToCosmos(address,string,uint256)",
-                &[erc20.into(), encoded_destination_address, one_eth().into()],
+        .send_prepared_transaction(
+            web3.prepare_transaction(
+                gravity_contract,
+                encode_call(
+                    "sendToCosmos(address,string,uint256)",
+                    &[erc20.into(), encoded_destination_address, one_eth().into()],
+                )
+                .unwrap(),
+                0u32.into(),
+                *MINER_PRIVATE_KEY,
+                vec![SendTxOption::GasLimitMultiplier(3.0)],
             )
+            .await
             .unwrap(),
-            0u32.into(),
-            *MINER_PRIVATE_KEY,
-            vec![SendTxOption::GasLimitMultiplier(3.0)],
         )
         .await
         .unwrap();
@@ -329,21 +333,26 @@ async fn deploy_invalid_erc20(
             .unwrap();
 
     let tx_hash = web30
-        .send_transaction(
-            gravity_address,
-            encode_call(
-                "deployERC20(string,string,string,uint8)",
-                &[
-                    Token::UnboundedBytes(erc20_params.cosmos_denom),
-                    Token::UnboundedBytes(erc20_params.erc20_name),
-                    Token::UnboundedBytes(erc20_params.erc20_symbol),
-                    erc20_params.decimals.into(),
-                ],
-            )
-            .unwrap(),
-            0u32.into(),
-            *MINER_PRIVATE_KEY,
-            vec![SendTxOption::GasPriceMultiplier(2.0)],
+        .send_prepared_transaction(
+            web30
+                .prepare_transaction(
+                    gravity_address,
+                    encode_call(
+                        "deployERC20(string,string,string,uint8)",
+                        &[
+                            Token::UnboundedBytes(erc20_params.cosmos_denom),
+                            Token::UnboundedBytes(erc20_params.erc20_name),
+                            Token::UnboundedBytes(erc20_params.erc20_symbol),
+                            erc20_params.decimals.into(),
+                        ],
+                    )
+                    .unwrap(),
+                    0u32.into(),
+                    *MINER_PRIVATE_KEY,
+                    vec![SendTxOption::GasPriceMultiplier(2.0)],
+                )
+                .await
+                .unwrap(),
         )
         .await
         .unwrap();
