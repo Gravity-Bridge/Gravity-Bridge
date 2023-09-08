@@ -52,12 +52,15 @@ pub async fn send_eth_transaction_batch(
 
     let payload = encode_batch_payload(current_valset, &batch, confirms, gravity_id)?;
     let tx = web3
-        .send_transaction(
-            gravity_contract_address,
-            payload,
-            0u32.into(),
-            our_eth_key,
-            vec![],
+        .send_prepared_transaction(
+            web3.prepare_transaction(
+                gravity_contract_address,
+                payload,
+                0u32.into(),
+                our_eth_key,
+                vec![],
+            )
+            .await?,
         )
         .await?;
     info!("Sent batch update with txid {:#066x}", tx);

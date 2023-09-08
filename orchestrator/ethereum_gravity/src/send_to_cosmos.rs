@@ -88,15 +88,18 @@ pub async fn send_to_cosmos(
     let encoded_destination_address = Token::String(cosmos_destination.to_string());
 
     let tx_hash = web3
-        .send_transaction(
-            gravity_contract,
-            encode_call(
-                "sendToCosmos(address,string,uint256)",
-                &[erc20.into(), encoded_destination_address, amount.into()],
-            )?,
-            0u32.into(),
-            sender_secret,
-            options,
+        .send_prepared_transaction(
+            web3.prepare_transaction(
+                gravity_contract,
+                encode_call(
+                    "sendToCosmos(address,string,uint256)",
+                    &[erc20.into(), encoded_destination_address, amount.into()],
+                )?,
+                0u32.into(),
+                sender_secret,
+                options,
+            )
+            .await?,
         )
         .await?;
 

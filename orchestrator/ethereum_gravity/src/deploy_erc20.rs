@@ -27,20 +27,23 @@ pub async fn deploy_erc20(
     options: Vec<SendTxOption>,
 ) -> Result<Uint256, GravityError> {
     let tx_hash = web3
-        .send_transaction(
-            gravity_contract,
-            encode_call(
-                "deployERC20(string,string,string,uint8)",
-                &[
-                    Token::String(cosmos_denom),
-                    Token::String(erc20_name),
-                    Token::String(erc20_symbol),
-                    decimals.into(),
-                ],
-            )?,
-            0u32.into(),
-            sender_secret,
-            options,
+        .send_prepared_transaction(
+            web3.prepare_transaction(
+                gravity_contract,
+                encode_call(
+                    "deployERC20(string,string,string,uint8)",
+                    &[
+                        Token::String(cosmos_denom),
+                        Token::String(erc20_name),
+                        Token::String(erc20_symbol),
+                        decimals.into(),
+                    ],
+                )?,
+                0u32.into(),
+                sender_secret,
+                options,
+            )
+            .await?,
         )
         .await?;
 
