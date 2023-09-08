@@ -87,6 +87,11 @@ var (
 	// submitted with too low of a ChainFee value, it will be rejected in the AnteHandler
 	ParamStoreMinChainFeeBasisPoints = []byte("MinChainFeeBasisPoints")
 
+	// ParamStoreChainFeeCommunityPoolFraction allows governance to set the fraction of the SendToEth `ChainFee` that goes to
+	// the community pool with the remainder going to stakers. If this is set to "0.1" then 10% of the fee will go to the pool
+	// with 90% going to stakers, and if set to "0.5" then it will be a 50/50 split
+	ParamStoreChainFeeCommunityPoolFraction = []byte("ChainFeeCommunityPoolFraction")
+
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
 		GravityId:                    "",
@@ -108,9 +113,10 @@ var (
 			Denom:  "",
 			Amount: sdk.Int{},
 		},
-		BridgeActive:           true,
-		EthereumBlacklist:      []string{},
-		MinChainFeeBasisPoints: 0,
+		BridgeActive:                  true,
+		EthereumBlacklist:             []string{},
+		MinChainFeeBasisPoints:        0,
+		ChainFeeCommunityPoolFraction: sdk.Dec{},
 	}
 )
 
@@ -146,25 +152,26 @@ func DefaultGenesisState() *GenesisState {
 // DefaultParams returns a copy of the default params
 func DefaultParams() *Params {
 	return &Params{
-		GravityId:                    "defaultgravityid",
-		ContractSourceHash:           "",
-		BridgeEthereumAddress:        "0x0000000000000000000000000000000000000000",
-		BridgeChainId:                0,
-		SignedValsetsWindow:          10000,
-		SignedBatchesWindow:          10000,
-		SignedLogicCallsWindow:       10000,
-		TargetBatchTimeout:           43200000,
-		AverageBlockTime:             5000,
-		AverageEthereumBlockTime:     15000,
-		SlashFractionValset:          sdk.NewDec(1).Quo(sdk.NewDec(1000)),
-		SlashFractionBatch:           sdk.NewDec(1).Quo(sdk.NewDec(1000)),
-		SlashFractionLogicCall:       sdk.NewDec(1).Quo(sdk.NewDec(1000)),
-		UnbondSlashingValsetsWindow:  10000,
-		SlashFractionBadEthSignature: sdk.NewDec(1).Quo(sdk.NewDec(1000)),
-		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
-		BridgeActive:                 true,
-		EthereumBlacklist:            []string{},
-		MinChainFeeBasisPoints:       2,
+		GravityId:                     "defaultgravityid",
+		ContractSourceHash:            "",
+		BridgeEthereumAddress:         "0x0000000000000000000000000000000000000000",
+		BridgeChainId:                 0,
+		SignedValsetsWindow:           10000,
+		SignedBatchesWindow:           10000,
+		SignedLogicCallsWindow:        10000,
+		TargetBatchTimeout:            43200000,
+		AverageBlockTime:              5000,
+		AverageEthereumBlockTime:      15000,
+		SlashFractionValset:           sdk.NewDec(1).Quo(sdk.NewDec(1000)),
+		SlashFractionBatch:            sdk.NewDec(1).Quo(sdk.NewDec(1000)),
+		SlashFractionLogicCall:        sdk.NewDec(1).Quo(sdk.NewDec(1000)),
+		UnbondSlashingValsetsWindow:   10000,
+		SlashFractionBadEthSignature:  sdk.NewDec(1).Quo(sdk.NewDec(1000)),
+		ValsetReward:                  sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
+		BridgeActive:                  true,
+		EthereumBlacklist:             []string{},
+		MinChainFeeBasisPoints:        2,
+		ChainFeeCommunityPoolFraction: sdk.NewDecWithPrec(50, 2), // 50%, the prec parameter moves the decimal to the left that many places
 	}
 }
 
@@ -227,31 +234,35 @@ func (p Params) ValidateBasic() error {
 	if err := validateMinChainFeeBasisPoints(p.MinChainFeeBasisPoints); err != nil {
 		return sdkerrors.Wrap(err, "min chain fee basis points parameter")
 	}
+	if err := validateChainFeeCommunityPoolFraction(p.ChainFeeCommunityPoolFraction); err != nil {
+		return sdkerrors.Wrap(err, "chain fee community pool fraction parameter")
+	}
 	return nil
 }
 
 // ParamKeyTable for auth module
 func ParamKeyTable() paramtypes.KeyTable {
 	return paramtypes.NewKeyTable().RegisterParamSet(&Params{
-		GravityId:                    "",
-		ContractSourceHash:           "",
-		BridgeEthereumAddress:        "",
-		BridgeChainId:                0,
-		SignedValsetsWindow:          0,
-		SignedBatchesWindow:          0,
-		SignedLogicCallsWindow:       0,
-		TargetBatchTimeout:           0,
-		AverageBlockTime:             0,
-		AverageEthereumBlockTime:     0,
-		SlashFractionValset:          sdk.Dec{},
-		SlashFractionBatch:           sdk.Dec{},
-		SlashFractionLogicCall:       sdk.Dec{},
-		UnbondSlashingValsetsWindow:  0,
-		SlashFractionBadEthSignature: sdk.Dec{},
-		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.Int{}},
-		BridgeActive:                 false,
-		EthereumBlacklist:            []string{},
-		MinChainFeeBasisPoints:       0,
+		GravityId:                     "",
+		ContractSourceHash:            "",
+		BridgeEthereumAddress:         "",
+		BridgeChainId:                 0,
+		SignedValsetsWindow:           0,
+		SignedBatchesWindow:           0,
+		SignedLogicCallsWindow:        0,
+		TargetBatchTimeout:            0,
+		AverageBlockTime:              0,
+		AverageEthereumBlockTime:      0,
+		SlashFractionValset:           sdk.Dec{},
+		SlashFractionBatch:            sdk.Dec{},
+		SlashFractionLogicCall:        sdk.Dec{},
+		UnbondSlashingValsetsWindow:   0,
+		SlashFractionBadEthSignature:  sdk.Dec{},
+		ValsetReward:                  sdk.Coin{Denom: "", Amount: sdk.Int{}},
+		BridgeActive:                  false,
+		EthereumBlacklist:             []string{},
+		MinChainFeeBasisPoints:        0,
+		ChainFeeCommunityPoolFraction: sdk.Dec{},
 	})
 }
 
@@ -277,6 +288,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreBridgeActive, &p.BridgeActive, validateBridgeActive),
 		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
 		paramtypes.NewParamSetPair(ParamStoreMinChainFeeBasisPoints, &p.MinChainFeeBasisPoints, validateMinChainFeeBasisPoints),
+		paramtypes.NewParamSetPair(ParamStoreChainFeeCommunityPoolFraction, &p.ChainFeeCommunityPoolFraction, validateChainFeeCommunityPoolFraction),
 	}
 }
 
@@ -457,9 +469,28 @@ func validateMinChainFeeBasisPoints(i interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
-	if v >= 10000 {
-		return fmt.Errorf("MinChainFeeBasisPoints is set to 10000 or more, this is an unreasonable fee amount")
+	if v > 10000 {
+		return fmt.Errorf("MinChainFeeBasisPoints is set to over 10000, this is an unreasonable fee amount")
 	}
+	return nil
+}
+
+func validateChainFeeCommunityPoolFraction(i interface{}) error {
+	v, ok := i.(sdk.Dec)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.IsNil() {
+		return fmt.Errorf("chain fee community pool fraction must be not nil")
+	}
+	if v.IsNegative() {
+		return fmt.Errorf("chain fee community pool fraction must be non-negative: %s", v)
+	}
+	if v.GT(sdk.OneDec()) {
+		return fmt.Errorf("chain fee community pool fraction too large: %s", v)
+	}
+
 	return nil
 }
 

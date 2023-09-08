@@ -155,7 +155,8 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	)
 }
 
-// checkAndDeductSendToEthFees asserts that the minimum chainFee has been met for the given sendAmount
+// checkAndDeductSendToEthFees asserts that the minimum chainFee has been met for the given sendAmount,
+// then deducts the chain fee from sender, giving half of the fee to the community pool and the other half to stakers
 func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAddress, sendAmount sdk.Coin, chainFee sdk.Coin) error {
 	// Compute the minimum fee which must be paid
 	minFeeBasisPoints := int64(0)
@@ -188,12 +189,22 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 	if !(chainFee == sdk.Coin{}) && chainFee.Amount.IsPositive() {
 		senderAcc := k.accountKeeper.GetAccount(ctx, sender)
 
-		err = sdkante.DeductFees(k.bankKeeper, ctx, senderAcc, sdk.NewCoins(chainFee))
+		poolFee := params.ChainFeeCommunityPoolFraction.Mul(sdk.Dec(chainFee.Amount)).TruncateInt() // Community pool gets a fraction
+		stakerFee := chainFee.Amount.Sub(poolFee)                                                   // Stakers get the rest
+
+		// Send fee to stakers
+		err = sdkante.DeductFees(k.bankKeeper, ctx, senderAcc, sdk.NewCoins(sdk.NewCoin(chainFee.Denom, stakerFee)))
 		if err != nil {
-			ctx.Logger().Error("Could not deduct MsgSendToEth fee!", "error", err, "account", senderAcc, "chainFee", chainFee)
+			ctx.Logger().Error("Could not deduct MsgSendToEth staker fee!", "error", err, "account", senderAcc, "chainFee", chainFee, "stakerFee", stakerFee)
 			return err
 		}
 
+		// Send fee to pool
+		err = k.DistKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(chainFee.Denom, poolFee)), sender)
+		if err != nil {
+			ctx.Logger().Error("Could not deduct MsgSendToEth community pool fee!", "error", err, "account", senderAcc, "chainFee", chainFee, "communityPoolFee", stakerFee)
+			return err
+		}
 		// Report the fee collection to the event log
 		return ctx.EventManager().EmitTypedEvent(
 			&types.EventSendToEthFeeCollected{
