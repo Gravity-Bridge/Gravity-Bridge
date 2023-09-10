@@ -444,3 +444,31 @@ jobs:
         run: tests/all-up-test.sh EIP712
         env:
           NO_IMAGE_BUILD: True
+  auction-static:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jpribyl/action-docker-layer-caching@v0.1.1
+        with:
+          key: integration-test-cache-{hash}
+          restore-keys: |
+            integration-test-cache-
+      - name: Test the auction module with static bids
+        run: tests/all-up-test.sh AUCTION_STATIC
+        env:
+          NO_IMAGE_BUILD: True
+  auction-random:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jpribyl/action-docker-layer-caching@v0.1.1
+        with:
+          key: integration-test-cache-{hash}
+          restore-keys: |
+            integration-test-cache-
+      - name: Test the auction module with random bids
+        run: tests/all-up-test.sh AUCTION_RANDOM
+        env:
+          NO_IMAGE_BUILD: True

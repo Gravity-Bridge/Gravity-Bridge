@@ -304,3 +304,75 @@ pub async fn submit_send_to_eth_fees_proposal(
     };
     submit_parameter_change_proposal(proposal, deposit, fee, contact, key, wait_timeout).await
 }
+
+/// The proposal.json representation for setting any and all of the Auction module params
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+pub struct AuctionParamsProposalJson {
+    pub title: String,
+    pub description: String,
+
+    pub auction_length: Option<u64>,
+    pub min_bid_fee: Option<u64>,
+    pub non_auctionable_tokens: Option<Vec<String>>,
+    pub burn_winning_bids: Option<bool>,
+    pub enabled: Option<bool>,
+}
+
+/// Submit a parameter change proposal to set the auction module's params
+pub async fn submit_auction_params_proposal(
+    proposal: AuctionParamsProposalJson,
+    deposit: Coin,
+    fee: Coin,
+    contact: &Contact,
+    key: impl PrivateKey,
+    wait_timeout: Option<Duration>,
+) -> Result<TxResponse, CosmosGrpcError> {
+    let mut params_to_change = Vec::new();
+    if let Some(val) = proposal.auction_length {
+        let param = ParamChange {
+            subspace: "auction".to_string(),
+            key: "AuctionLength".to_string(),
+            value: format!("\"{}\"", val),
+        };
+        params_to_change.push(param);
+    }
+    if let Some(val) = proposal.min_bid_fee {
+        let param = ParamChange {
+            subspace: "auction".to_string(),
+            key: "MinBidFee".to_string(),
+            value: format!("\"{}\"", val),
+        };
+        params_to_change.push(param);
+    }
+    if let Some(val) = proposal.non_auctionable_tokens {
+        let json_value = serde_json::to_string(&val).unwrap();
+        let param = ParamChange {
+            subspace: "auction".to_string(),
+            key: "NonAuctionableTokens".to_string(),
+            value: json_value,
+        };
+        params_to_change.push(param);
+    }
+    if let Some(val) = proposal.burn_winning_bids {
+        let param = ParamChange {
+            subspace: "auction".to_string(),
+            key: "BurnWinningBids".to_string(),
+            value: format!("{}", val),
+        };
+        params_to_change.push(param);
+    }
+    if let Some(val) = proposal.enabled {
+        let param = ParamChange {
+            subspace: "auction".to_string(),
+            key: "Enabled".to_string(),
+            value: format!("{}", val),
+        };
+        params_to_change.push(param);
+    }
+    let proposal = ParameterChangeProposal {
+        title: proposal.title,
+        description: proposal.description,
+        changes: params_to_change,
+    };
+    submit_parameter_change_proposal(proposal, deposit, fee, contact, key, wait_timeout).await
+}
