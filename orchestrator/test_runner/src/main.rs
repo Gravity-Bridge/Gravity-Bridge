@@ -7,6 +7,7 @@
 extern crate log;
 
 use crate::airdrop_proposal::airdrop_proposal_test;
+use crate::auction::{auction_test_random, auction_test_static};
 use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
@@ -50,6 +51,7 @@ use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
 
 mod airdrop_proposal;
+mod auction;
 mod batch_timeout;
 mod bootstrapping;
 mod deposit_overflow;
@@ -613,6 +615,30 @@ pub async fn main() {
                 ibc_keys,
                 gravity_address,
                 erc20_addresses[0],
+            )
+            .await;
+            return;
+        } else if test_type == "AUCTION_STATIC" {
+            info!("Starting Auction test");
+            auction_test_static(
+                &web30,
+                &gravity_contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
+            return;
+        } else if test_type == "AUCTION_RANDOM" {
+            info!("Starting Auction test");
+            auction_test_random(
+                &web30,
+                &gravity_contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
             )
             .await;
             return;

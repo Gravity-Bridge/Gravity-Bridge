@@ -4,6 +4,9 @@ use clarity::Address as EthAddress;
 use deep_space::address::Address;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
+use gravity_proto::auction::query_client::QueryClient as AuctionQueryClient;
+use gravity_proto::auction::Params as AuctionParams;
+use gravity_proto::auction::QueryParamsRequest as QueryAuctionParamsRequest;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::Params;
 use gravity_proto::gravity::QueryAttestationsRequest;
@@ -357,4 +360,22 @@ pub async fn get_min_chain_fee_basis_points(contact: &Contact) -> Result<u64, Co
         }
         None => 0u64,
     })
+}
+
+// Gets the auction module params
+pub async fn get_auction_module_params(
+    contact: &Contact,
+) -> Result<AuctionParams, CosmosGrpcError> {
+    let mut auction_qc = AuctionQueryClient::connect(contact.get_url()).await?;
+
+    let params = auction_qc
+        .params(QueryAuctionParamsRequest {})
+        .await?
+        .into_inner()
+        .params
+        .ok_or(CosmosGrpcError::BadResponse(
+            "no params returned".to_string(),
+        ))?;
+
+    Ok(params)
 }
