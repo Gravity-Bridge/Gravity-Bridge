@@ -28,7 +28,7 @@ func GetQueryCmd() *cobra.Command {
 		GetCmdAllAuction(),
 		GetCmdAuction(),
 		GetCmdAuctionPeriods(),
-		GetCmdAuctionPeriods(),
+		GetCmdHighestBid(),
 	}...)
 
 	return auctionQueryCmd
