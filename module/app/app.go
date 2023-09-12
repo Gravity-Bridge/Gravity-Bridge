@@ -123,6 +123,10 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction"
+	auckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
+	auctiontypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
 const appName = "app"
@@ -161,6 +165,7 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		gravity.AppModuleBasic{},
+		auction.AppModuleBasic{},
 		bech32ibc.AppModuleBasic{},
 		ica.AppModuleBasic{},
 	)
@@ -176,6 +181,7 @@ var (
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		gravitytypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
+		auctiontypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
 		icatypes.ModuleName:            nil,
 	}
 
@@ -236,6 +242,7 @@ type Gravity struct {
 	EvidenceKeeper    *evidencekeeper.Keeper
 	IbcTransferKeeper *ibctransferkeeper.Keeper
 	GravityKeeper     *keeper.Keeper
+	AuctionKeeper     *auckeeper.Keeper
 	Bech32IbcKeeper   *bech32ibckeeper.Keeper
 	IcaHostKeeper     *icahostkeeper.Keeper
 
@@ -310,6 +317,9 @@ func (app Gravity) ValidateMembers() {
 	if app.GravityKeeper == nil {
 		panic("Nil gravityKeeper!")
 	}
+	if app.AuctionKeeper == nil {
+		panic("Nil auctionKeeper!")
+	}
 	if app.Bech32IbcKeeper == nil {
 		panic("Nil bech32IbcKeeper!")
 	}
@@ -363,7 +373,7 @@ func NewGravityApp(
 		slashingtypes.StoreKey, govtypes.StoreKey, paramstypes.StoreKey,
 		ibchost.StoreKey, upgradetypes.StoreKey, evidencetypes.StoreKey,
 		ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		gravitytypes.StoreKey, bech32ibctypes.StoreKey,
+		gravitytypes.StoreKey, auctiontypes.StoreKey, bech32ibctypes.StoreKey,
 		icahosttypes.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -533,6 +543,17 @@ func NewGravityApp(
 	)
 	app.MintKeeper = &mintKeeper
 
+	auctionKeeper := auckeeper.NewKeeper(
+		keys[auctiontypes.StoreKey],
+		app.GetSubspace(auctiontypes.ModuleName),
+		appCodec,
+		&bankKeeper,
+		&accountKeeper,
+		&distrKeeper,
+		&mintKeeper,
+	)
+	app.AuctionKeeper = &auctionKeeper
+
 	crisisKeeper := crisiskeeper.NewKeeper(
 		app.GetSubspace(crisistypes.ModuleName),
 		invCheckPeriod,
@@ -658,6 +679,11 @@ func NewGravityApp(
 			gravityKeeper,
 			bankKeeper,
 		),
+		auction.NewAppModule(
+			auctionKeeper,
+			bankKeeper,
+			accountKeeper,
+		),
 		bech32ibc.NewAppModule(
 			appCodec,
 			bech32IbcKeeper,
@@ -683,6 +709,7 @@ func NewGravityApp(
 		ibctransfertypes.ModuleName,
 		bech32ibctypes.ModuleName,
 		gravitytypes.ModuleName,
+		auctiontypes.ModuleName,
 		genutiltypes.ModuleName,
 		authz.ModuleName,
 		govtypes.ModuleName,
@@ -695,6 +722,7 @@ func NewGravityApp(
 		stakingtypes.ModuleName,
 		icatypes.ModuleName,
 		gravitytypes.ModuleName,
+		auctiontypes.ModuleName,
 		upgradetypes.ModuleName,
 		capabilitytypes.ModuleName,
 		minttypes.ModuleName,
@@ -728,6 +756,7 @@ func NewGravityApp(
 		authz.ModuleName,
 		bech32ibctypes.ModuleName, // Must go before gravity so that pending ibc auto forwards can be restored
 		gravitytypes.ModuleName,
+		auctiontypes.ModuleName,
 		crisistypes.ModuleName,
 		vestingtypes.ModuleName,
 		paramstypes.ModuleName,
@@ -877,7 +906,6 @@ func (app *Gravity) GetSubspace(moduleName string) paramstypes.Subspace {
 func (app *Gravity) SimulationManager() *module.SimulationManager {
 	return app.sm
 }
-
 func (app *Gravity) LegacyAmino() *codec.LegacyAmino {
 	return app.legacyAmino
 }
@@ -951,6 +979,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(gravitytypes.ModuleName)
+	paramsKeeper.Subspace(auctiontypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 
