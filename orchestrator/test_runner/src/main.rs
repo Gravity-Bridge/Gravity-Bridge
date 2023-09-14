@@ -10,6 +10,7 @@ use crate::airdrop_proposal::airdrop_proposal_test;
 use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
+use crate::eip_712::eip_712_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
@@ -52,6 +53,7 @@ mod airdrop_proposal;
 mod batch_timeout;
 mod bootstrapping;
 mod deposit_overflow;
+mod eip_712;
 mod erc_721_happy_path;
 mod ethereum_blacklist_test;
 mod ethereum_keys;
@@ -597,13 +599,26 @@ pub async fn main() {
             )
             .await;
             return;
-        } else if test_type == "RUN_ORCH_ONLY" {
-            orch_only_test(keys, gravity_address).await;
-            sleep(Duration::from_secs(1_000_000_000)).await;
-            return;
         } else if test_type == "INFLATION_KNOCKDOWN" {
             info!("Starting Inflation knockdown test!");
             inflation_knockdown_test(&gravity_contact, keys).await;
+            return;
+        } else if test_type == "EIP712" || test_type == "EIP_712" {
+            info!("Starting EIP-712 signing test!");
+            eip_712_test(
+                &web30,
+                grpc_client,
+                &gravity_contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                erc20_addresses[0],
+            )
+            .await;
+            return;
+        } else if test_type == "RUN_ORCH_ONLY" {
+            orch_only_test(keys, gravity_address).await;
+            sleep(Duration::from_secs(1_000_000_000)).await;
             return;
         } else if !test_type.is_empty() {
             panic!("Err Unknown test type")
