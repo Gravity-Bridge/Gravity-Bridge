@@ -18,7 +18,7 @@ service Msg {
 message MsgBid {
     uint64 auction_id = 1 [(gogoproto.customname) = "AuctionId"]; // ID of the auction to bid on
     string bidder = 2 [(gogoproto.customname) = "Bidder"]; // Address of the bidder
-    cosmos.base.v1beta1.Coin amount = 3 [(gogoproto.customname) = "Amount"]; // Amount of the bid
+    cosmos.base.v1beta1.Coin amount = 3 [(gogoproto.customname) = "Amount", (gogoproto.nullable) = false]; // Amount of the bid
 }
   
 message MsgBidResponse {

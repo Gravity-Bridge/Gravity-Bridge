@@ -13,6 +13,9 @@ func InitGenesis(ctx sdk.Context, k Keeper, genState types.GenesisState) []abci.
 
 	// this line is used by starport scaffolding # genesis/module/init
 	k.SetParams(ctx, genState.Params)
+
+	k.AccountKeeper.GetModuleAccount(ctx, types.ModuleName)
+
 	return []abci.ValidatorUpdate{}
 }
 

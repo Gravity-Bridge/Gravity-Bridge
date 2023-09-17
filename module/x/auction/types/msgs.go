@@ -16,7 +16,7 @@ func NewMsgBid(auctionId uint64, bidder string, amount sdk.Coin) *MsgBid {
 	return &MsgBid{
 		AuctionId: auctionId,
 		Bidder:    bidder,
-		Amount:    &amount,
+		Amount:    amount,
 	}
 }
 

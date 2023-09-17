@@ -1,20 +1,12 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
-
-// helper function to convert uint64 to []byte
-func uint64ToByte(num uint64) []byte {
-	buf := make([]byte, binary.MaxVarintLen64)
-	n := binary.PutUvarint(buf, num)
-	return buf[:n]
-}
 
 // GetAllAuction returns all auctions.
 func (k Keeper) GetAllAuctions(ctx sdk.Context) []types.Auction {
@@ -47,6 +39,20 @@ func (k Keeper) UpdateAuctionStatus(ctx sdk.Context, auction *types.Auction, new
 		auction.Status = newStatus
 		newBz := k.cdc.MustMarshal(auction)
 		store.Set([]byte(getKeyForAuction(*auction)), newBz)
+	}
+}
+
+// UpdateAuctionNewBid updates the new bid of an auction
+func (k Keeper) UpdateAuctionNewBid(ctx sdk.Context, auctionPeriodId, auctionId uint64, newBid types.Bid) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
+	key := []byte(fmt.Sprintf("%v-%v", auctionPeriodId, auctionId))
+	bz := store.Get(key)
+	if len(bz) > 0 {
+		var auction types.Auction
+		k.cdc.MustUnmarshal(bz, &auction)
+		auction.HighestBid = &newBid
+		newBz := k.cdc.MustMarshal(&auction)
+		store.Set(key, newBz)
 	}
 }
 
@@ -150,3 +156,5 @@ func (k Keeper) GetHighestBidByAuctionIdAndPeriodID(ctx sdk.Context, auctionId u
 func getKeyForAuction(auction types.Auction) string {
 	return fmt.Sprintf("%v-%v", auction.AuctionPeriodId, auction.Id)
 }
+
+// TODO: remove aution func

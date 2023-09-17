@@ -12,7 +12,10 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
 
+	auctionkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
+	auctionmodule "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/auction_module"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
@@ -26,7 +29,7 @@ func RegisterUpgradeHandlers(
 	mm *module.Manager, configurator *module.Configurator, accountKeeper *authkeeper.AccountKeeper,
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper, upgradeKeeper *upgradekeeper.Keeper,
-	crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper,
+	crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper, auctionkeeper *auctionkeeper.Keeper,
 ) {
 	if mm == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
 		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil || upgradeKeeper == nil {
@@ -71,5 +74,11 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		antares.OrionToAntaresPlanName,
 		antares.GetAntaresUpgradeHandler(mm, configurator, crisisKeeper),
+	)
+
+	// Add auction module
+	upgradeKeeper.SetUpgradeHandler(
+		auctionmodule.AddAuctionModulePlanName,
+		auctionmodule.CreateUpgradeHandler(mm, *configurator, auctionkeeper),
 	)
 }

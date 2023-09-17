@@ -192,17 +192,6 @@ func request_Query_AllAuctionsByBidderAndPeriodId_0(ctx context.Context, marshal
 		_   = err
 	)
 
-	val, ok = pathParams["address"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
-	}
-
-	protoReq.Address, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
 	val, ok = pathParams["period_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "period_id")
@@ -212,6 +201,17 @@ func request_Query_AllAuctionsByBidderAndPeriodId_0(ctx context.Context, marshal
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "period_id", err)
+	}
+
+	val, ok = pathParams["address"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
+	}
+
+	protoReq.Address, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
 	}
 
 	msg, err := client.AllAuctionsByBidderAndPeriodId(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -230,17 +230,6 @@ func local_request_Query_AllAuctionsByBidderAndPeriodId_0(ctx context.Context, m
 		_   = err
 	)
 
-	val, ok = pathParams["address"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
-	}
-
-	protoReq.Address, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
-	}
-
 	val, ok = pathParams["period_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "period_id")
@@ -250,6 +239,17 @@ func local_request_Query_AllAuctionsByBidderAndPeriodId_0(ctx context.Context, m
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "period_id", err)
+	}
+
+	val, ok = pathParams["address"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
+	}
+
+	protoReq.Address, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
 	}
 
 	msg, err := server.AllAuctionsByBidderAndPeriodId(ctx, &protoReq)
@@ -603,11 +603,11 @@ var (
 
 	pattern_Query_AuctionPeriodByAuctionId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "period", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_AuctionByAuctionIdAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 0, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "period_id", "auction_id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AuctionByAuctionIdAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 0, 1, 0, 4, 1, 5, 4}, []string{"auction", "v1beta", "period", "period_id", "auction_id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_AllAuctionsByBidderAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"auction", "v1beta", "auctions-by-bidder-period", "address", "period_id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AllAuctionsByBidderAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5, 1, 0, 4, 1, 5, 6}, []string{"auction", "v1beta", "auctions-by-bidder-period", "period", "period_id", "bidder", "address"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_HighestBidByAuctionIdAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"auction", "v1beta", "highest-bid", "period_id", "auction_id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_HighestBidByAuctionIdAndPeriodId_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 0, 1, 0, 4, 1, 5, 5}, []string{"auction", "v1beta", "highest-bid", "period", "period_id", "auction_id"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

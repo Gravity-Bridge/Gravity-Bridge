@@ -2,6 +2,7 @@ syntax = "proto3";
 package auction.v1;
 
 import "cosmos/base/v1beta1/coin.proto";
+import "gogoproto/gogo.proto";
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
 
@@ -29,7 +30,7 @@ enum AuctionStatus{
 // An Auction has a unique identifier relative to its Auction Period Id , an amount being auctioned, a status, and a highest bid.
 message Auction {
     uint64 id = 1;  // Unique identifier for the Auction.
-    cosmos.base.v1beta1.Coin auction_amount = 2;  // Amount being auctioned.
+    cosmos.base.v1beta1.Coin auction_amount = 2 [(gogoproto.nullable) = false];  // Amount being auctioned.
     AuctionStatus status = 3;  // Status of the Auction.
     Bid highest_bid = 4;  // Highest bid on the Auction.
     uint64 auction_period_id = 5;  // Identifier of the AuctionPeriod the Auction belongs to.
@@ -39,21 +40,11 @@ message Auction {
 // A Bid includes the identifier of the Auction, the amount of the bid, and the address of the bidder.
 message Bid {
     uint64 auction_id = 1;  // Identifier of the Auction.
-    cosmos.base.v1beta1.Coin bid_amount = 2;  // Amount of the bid.
+    cosmos.base.v1beta1.Coin bid_amount = 2 [(gogoproto.nullable) = false];  // Amount of the bid.
     string bidder_address = 3;  // Address of the bidder.
-}
-
-// Store the block height of the last auction period
-message LastAuctionPeriodHeight {
-    uint64 height = 1;
 }
 
 // Estimate the block height of the next auction period
 message EstimateNextAuctionPeriodHeight {
     uint64 height = 1;
-}
-
-// Queue of Bids for 1 auction
-message BidsQueue {
-    repeated Bid queue = 1;
 }

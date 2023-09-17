@@ -52,14 +52,20 @@ func (s *AppTestHelper) Setup() {
 
 func (s *AppTestHelper) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) {
 	bankkeeper := s.App.GetBankKeeper()
-	bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
-	bankkeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
+	err := bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
+	s.Require().NoError(err)
+
+	err = bankkeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
+	s.Require().NoError(err)
 }
 
 func (s *AppTestHelper) FundModule(ctx sdk.Context, moduleName string, amounts sdk.Coins) {
 	bankkeeper := s.App.GetBankKeeper()
-	bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
-	bankkeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, moduleName, amounts)
+	err := bankkeeper.MintCoins(ctx, minttypes.ModuleName, amounts)
+	s.Require().NoError(err)
+
+	err = bankkeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, moduleName, amounts)
+	s.Require().NoError(err)
 }
 
 // Generate random account addresss

@@ -89,6 +89,10 @@ func (b AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry
 	types.RegisterInterfaces(registry)
 }
 
+func (b AppModuleBasic) ConsensusVersion() uint64 {
+	return 1
+}
+
 // ___________________________________________________________________________
 
 // AppModule object for module implementation
