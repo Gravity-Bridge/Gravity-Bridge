@@ -696,8 +696,7 @@ pub async fn test_ibc_auto_forward_failure<
         .await;
 
         // Attempt to clear the Pending forward
-        if pending.is_ok() {
-            let pending = pending.unwrap();
+        if let Ok(pending) = pending {
             if !pending.is_empty() {
                 info!("Discovered pending IBC Auto Forward(s) that the relayer hasn't picked up, checking to see if it is invalid!");
                 for pend in pending {

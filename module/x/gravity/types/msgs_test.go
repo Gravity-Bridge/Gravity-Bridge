@@ -27,9 +27,11 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 			srcCosmosAddr: cosmosAddress,
 			srcValAddr:    valAddress,
 			srcETHAddr:    ethAddress,
+			expErr:        false,
 		},
 		"empty validator address": {
 			srcETHAddr:    ethAddress,
+			srcValAddr:    []byte{},
 			srcCosmosAddr: cosmosAddress,
 			expErr:        true,
 		},
@@ -40,9 +42,10 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 			expErr:        false,
 		},
 		"empty cosmos address": {
-			srcValAddr: valAddress,
-			srcETHAddr: ethAddress,
-			expErr:     true,
+			srcCosmosAddr: []byte{},
+			srcValAddr:    valAddress,
+			srcETHAddr:    ethAddress,
+			expErr:        true,
 		},
 		"short cosmos address": {
 			srcCosmosAddr: []byte{0x1},

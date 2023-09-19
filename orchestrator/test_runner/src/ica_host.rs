@@ -266,9 +266,9 @@ pub async fn get_or_register_ica(
         None,
     )
     .await;
-    if ica_already_exists.is_ok() {
-        ica_addr = ica_already_exists.unwrap();
+    let ica = if let Ok(ica_addr) = ica_already_exists {
         info!("Interchain account {ica_addr} already registered");
+        ica_addr
     } else {
         let register_res = register_interchain_account(
             ctrl_contact,
@@ -288,8 +288,9 @@ pub async fn get_or_register_ica(
         )
         .await?;
         info!("Discovered interchain account with address {ica_addr:?}");
-    }
-    Ok(ica_addr)
+        ica_addr
+    };
+    Ok(ica)
 }
 
 /// Creates and ratifies a ParameterChangeProposal to enable the ICA Host module and allow all messages
