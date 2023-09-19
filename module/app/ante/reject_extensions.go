@@ -10,6 +10,7 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 )
 
+// nolint: exhaustruct
 var _ sdk.AnteDecorator = GravityRejectExtensionsDecorator{}
 
 // ExtensionOptionsWeb3Tx does not have this constant stored on it anywhere, so we copy the value here
