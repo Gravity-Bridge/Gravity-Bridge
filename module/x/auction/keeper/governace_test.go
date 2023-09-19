@@ -49,7 +49,8 @@ func (suite *KeeperTestSuite) TestHandleUpdateAllowListProposal() {
 			suite.App.GetAuctionKeeper().SetParams(suite.Ctx, params)
 
 			// HandleUpdate
-			suite.App.GetAuctionKeeper().HandleUpdateAllowListProposal(suite.Ctx, tc.update)
+			err := suite.App.GetAuctionKeeper().HandleUpdateAllowListProposal(suite.Ctx, tc.update)
+			suite.Require().NoError(err)
 			preParams := suite.App.GetAuctionKeeper().GetParams(suite.Ctx)
 			suite.Require().Equal(preParams.AllowTokens, tc.expectedAllowList)
 		})
