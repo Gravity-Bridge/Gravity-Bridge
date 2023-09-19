@@ -255,7 +255,7 @@ func TestMigrateStoreForUnusedKeys(t *testing.T) {
 	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
 	store := ctx.KVStore(gravityKey)
 
-	marshaler := keeper.MakeTestMarshaler()
+	marshaler := keeper.MakeTestEncodingConfig().Marshaler
 	dummyValue := []byte("dummy")
 
 	// test cases for unused keys consisting of dummy values, since we should only confirm they will be deleted.
@@ -311,7 +311,7 @@ func TestMigrateStoreKeys(t *testing.T) {
 	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
 	store := ctx.KVStore(gravityKey)
 
-	marshaler := keeper.MakeTestMarshaler()
+	marshaler := keeper.MakeTestEncodingConfig().Marshaler
 	dummyValue := []byte("dummy")
 
 	migrateKeyTestCases := []struct {
@@ -406,7 +406,7 @@ func TestMigrateStoreKeysFromKeys(t *testing.T) {
 	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
 	store := ctx.KVStore(gravityKey)
 
-	marshaler := keeper.MakeTestMarshaler()
+	marshaler := keeper.MakeTestEncodingConfig().Marshaler
 	dummyValue := []byte("dummy")
 
 	nonce := uint64(1234)
@@ -517,7 +517,7 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
 	store := ctx.KVStore(gravityKey)
 
-	marshaler := keeper.MakeTestMarshaler()
+	marshaler := keeper.MakeTestEncodingConfig().Marshaler
 
 	ethAddr, err := types.NewEthAddress("0x2a24af0501a534fca004ee1bd667b783f205a546")
 	require.NoError(t, err)
@@ -729,7 +729,7 @@ func TestMigrateInvalidStore(t *testing.T) {
 	// create old prefixes KV store
 	gravityKey := sdk.NewKVStoreKey("gravity")
 
-	marshaler := keeper.MakeTestMarshaler()
+	marshaler := keeper.MakeTestEncodingConfig().Marshaler
 
 	ethAddr, err := types.NewEthAddress("0x2a24af0501a534fca004ee1bd667b783f205a546")
 	require.NoError(t, err)
