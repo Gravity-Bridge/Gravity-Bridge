@@ -55,7 +55,7 @@ pub async fn slashing_delegation_test(
     let user_d = get_user_key(None);
 
     // send test users their required coins
-    for coin in vec![amount_to_delegate.clone(), fee_send] {
+    for coin in [amount_to_delegate.clone(), fee_send] {
         for dest in vec![user_a, user_b, user_c, user_d] {
             contact
                 .send_coins(

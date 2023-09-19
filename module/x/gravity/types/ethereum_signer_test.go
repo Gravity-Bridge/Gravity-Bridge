@@ -26,6 +26,7 @@ func TestValsetConfirmSig(t *testing.T) {
 			srcHash:      hash,
 			srcSignature: correctSig,
 			srcETHAddr:   ethAddress,
+			expErr:       false,
 		},
 		"invalid signature": {
 			srcHash:      hash,
@@ -34,6 +35,7 @@ func TestValsetConfirmSig(t *testing.T) {
 			expErr:       true,
 		},
 		"empty hash": {
+			srcHash:      "",
 			srcSignature: correctSig,
 			srcETHAddr:   ethAddress,
 			expErr:       true,
@@ -51,9 +53,10 @@ func TestValsetConfirmSig(t *testing.T) {
 			expErr:       true,
 		},
 		"empty signature": {
-			srcHash:    hash,
-			srcETHAddr: ethAddress,
-			expErr:     true,
+			srcHash:      hash,
+			srcSignature: "",
+			srcETHAddr:   ethAddress,
+			expErr:       true,
 		},
 		"signature too short": {
 			srcHash:      hash,
