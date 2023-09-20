@@ -32,6 +32,7 @@ func V3ToV4Params(v3Params v3.Params) types.Params {
 	// NEW PARAMS: MonitoredTokenAddresses
 	minChainFeeBasisPoints := v4DefaultParams.MinChainFeeBasisPoints
 
+	// nolint: exhaustruct
 	v4Params := types.Params{
 		GravityId:                    v3Params.GravityId,
 		ContractSourceHash:           v3Params.ContractSourceHash,

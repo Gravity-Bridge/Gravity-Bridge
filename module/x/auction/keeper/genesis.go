@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -16,11 +18,17 @@ func InitGenesis(ctx sdk.Context, k Keeper, genState types.GenesisState) []abci.
 	if genState.ActivePeriod != nil {
 		k.updateAuctionPeriodUnsafe(ctx, *genState.ActivePeriod)
 		for _, auction := range genState.ActiveAuctions {
-			k.StoreAuction(ctx, auction)
+			err := k.StoreAuction(ctx, auction)
+			if err != nil {
+				panic(fmt.Sprintf("Unable to store auction: %v", err))
+			}
 		}
 	} else {
 		// Initialize the first auction period
-		k.CreateNewAuctionPeriod(ctx)
+		_, err := k.CreateNewAuctionPeriod(ctx)
+		if err != nil {
+			panic(fmt.Sprintf("Unable to create a new auction period: %v", err))
+		}
 	}
 
 	// Test that the module was correctly initialized by running auction module invariants

@@ -113,7 +113,7 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 
 // Increments the ctx block height and runs EndBlocker
 func AdvanceBlock(ctx *sdk.Context, k *keeper.Keeper) {
-	*ctx = (*ctx).WithBlockHeight((*ctx).BlockHeight() + 1)
+	*ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
 	auction.EndBlocker(*ctx, *k)
 }
 

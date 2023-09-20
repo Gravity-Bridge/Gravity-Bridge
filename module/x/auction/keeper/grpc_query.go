@@ -8,6 +8,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
+// nolint: exhaustruct
 var _ types.QueryServer = Keeper{}
 
 // Params returns the current module Params
