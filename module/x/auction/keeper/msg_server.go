@@ -100,7 +100,11 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 	if highestBid != nil {
 		oldBid := sdk.NewCoin(bidToken, sdk.NewIntFromUint64(highestBid.BidAmount))
 		oldBidder := sdk.MustAccAddressFromBech32(highestBid.BidderAddress)
-		m.Keeper.ReturnPreviousBidAmount(ctx, oldBidder, oldBid)
+		err := m.Keeper.ReturnPreviousBidAmount(ctx, oldBidder, oldBid)
+		if err != nil {
+			ctx.Logger().Error("Could not return previous highest bid!", "error", err, "oldBidder", oldBidder, "oldBid", oldBid)
+			return nil, err
+		}
 	}
 
 	// Transfer the bid amount to the module

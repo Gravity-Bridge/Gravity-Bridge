@@ -10,7 +10,8 @@ import (
 
 func TestMsgBid_ValidateBasic(t *testing.T) {
 	addrBz := make([]byte, 20)
-	_, _ = rand.Read(addrBz)
+	_, err := rand.Read(addrBz)
+	require.NoError(t, err)
 	validAddress := sdk.AccAddress(addrBz)
 	invalidAddress := "invalid-address"
 

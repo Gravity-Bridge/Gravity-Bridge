@@ -27,7 +27,8 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 	suite.CreateAndFundRandomAccounts(3, sdk.NewCoins(sdk.NewCoin(gravDenom, one_eth.Mul(sdk.NewInt(10)))))
 	suite.FundCommunityPool(ctx, testCoins)
 	// Create auctions for all of testCoins
-	ak.CreateAuctionsForAuctionPeriod(ctx)
+	err := ak.CreateAuctionsForAuctionPeriod(ctx)
+	require.NoError(t, err)
 	auctions := ak.GetAllAuctions(ctx)
 	require.Equal(t, 3, len(auctions))
 	minFee := ak.GetParams(ctx).MinBidFee

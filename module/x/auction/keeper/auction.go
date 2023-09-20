@@ -20,6 +20,7 @@ func (k Keeper) IterateAuctions(ctx sdk.Context, cb func(key []byte, auction typ
 
 	for ; iterator.Valid(); iterator.Next() {
 		value := iterator.Value()
+		// nolint: exhaustruct
 		var auction = types.Auction{}
 		if err := k.cdc.Unmarshal(value, &auction); err != nil {
 			panic(fmt.Sprintf("Got error when unmarshaling bytes %x: %v", value, err))

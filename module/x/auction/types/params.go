@@ -123,14 +123,13 @@ func allValidDenoms(i interface{}) error {
 }
 
 func isNonNegative(i interface{}) error {
-	ival, ok := i.(uint64)
+	_, ok := i.(uint64)
 	if !ok {
 		return fmt.Errorf("parameter not accepted: %T", i)
 	}
 
-	if ival < 0 {
-		return fmt.Errorf("parameter must be non-negative: %d", ival)
-	}
+	// If the value is a uint of any kind, it is non-negative
+
 	return nil
 }
 
@@ -142,22 +141,6 @@ func isPositive(i interface{}) error {
 
 	if ival <= 0 {
 		return fmt.Errorf("parameter must be positive: %d", ival)
-	}
-	return nil
-}
-
-// Determines that the Dec is within (0, 1] (0 exclusive, 1 inclusive)
-func isDecZeroToOne(i interface{}) error {
-	ival, ok := i.(sdk.Dec)
-	if !ok {
-		return fmt.Errorf("parameter not accepted: %T", i)
-	}
-
-	if ival.IsNegative() {
-		return fmt.Errorf("parameter must be non-negative: %d", ival)
-	}
-	if ival.GT(sdk.OneDec()) {
-		return fmt.Errorf("parameter must not be larger than 1: %d", ival)
 	}
 	return nil
 }

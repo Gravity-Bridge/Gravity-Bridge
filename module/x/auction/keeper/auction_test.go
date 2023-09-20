@@ -23,7 +23,8 @@ func (suite *KeeperTestSuite) TestAuctionStorage() {
 
 	// Create and store multiple Auctions
 	auction := types.NewAuction(1, sdk.NewCoin("test", sdk.OneInt()))
-	ak.StoreAuction(ctx, auction)
+	err := ak.StoreAuction(ctx, auction)
+	require.NoError(t, err)
 	stored := ak.GetAllAuctions(ctx)
 	require.Equal(t, 1, len(stored))
 	require.Equal(t, auction, stored[0])
@@ -33,7 +34,8 @@ func (suite *KeeperTestSuite) TestAuctionStorage() {
 		random, err := rand.Int(rand.Reader, (&big.Int{}).Exp(big.NewInt(2), big.NewInt(256), nil))
 		require.NoError(t, err)
 		auction := types.NewAuction(uint64(i+1), sdk.NewCoin(fmt.Sprintf("test%d", i+2), sdk.NewIntFromBigInt(random)))
-		ak.StoreAuction(ctx, auction)
+		err = ak.StoreAuction(ctx, auction)
+		require.NoError(t, err)
 	}
 
 	// Fetch auctions using all the functions
@@ -50,7 +52,7 @@ func (suite *KeeperTestSuite) TestAuctionStorage() {
 
 	// Update the highest bidder (fail with a bad address first)
 	bid := types.Bid{BidAmount: 1, BidderAddress: "hello"}
-	err := ak.UpdateHighestBidder(ctx, 1, bid)
+	err = ak.UpdateHighestBidder(ctx, 1, bid)
 	require.Error(t, err)
 	bid.BidderAddress = accounts[0].String()
 	err = ak.UpdateHighestBidder(ctx, 1, bid)
@@ -137,9 +139,11 @@ func (suite *KeeperTestSuite) TestEmptyAuctionFunctions() {
 	allAuctions := ak.GetAllAuctions(ctx)
 	require.Empty(t, allAuctions)
 
+	// nolint: exhaustruct
 	err := ak.UpdateHighestBidder(ctx, 1, types.Bid{})
 	require.Error(t, err)
 
+	// nolint: exhaustruct
 	err = ak.UpdateAuction(ctx, types.NewAuction(1, sdk.Coin{}))
 	require.Error(t, err)
 
