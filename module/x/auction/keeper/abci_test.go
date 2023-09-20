@@ -17,13 +17,13 @@ const (
 	TestDenom2 = "ibc/18DB4F18E0C631514AFA67261BCC5FA62F46B2E453778D0CE5AE5234D3B7C1CF"
 )
 
-var testBalances sdk.Coins
-var testAccounts []sdk.AccAddress
-var gravDenom string
-var moduleAccount sdk.AccAddress
+var TestBalances sdk.Coins
+var TestAccounts []sdk.AccAddress
+var GravDenom string
+var ModuleAccount sdk.AccAddress
 
 func (suite *KeeperTestSuite) TestEndBlockerAuction() {
-	InitPoolAndAuctions(suite)
+	InitPoolAndAuctionTokens(suite)
 
 	ctx := suite.Ctx
 	auctionKeeper := suite.App.AuctionKeeper
@@ -50,29 +50,33 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 		auctionCoins = append(auctionCoins, auction.Amount)
 	}
 
-	require.Equal(suite.T(), testBalances, auctionCoins)
+	require.Equal(suite.T(), TestBalances, auctionCoins)
 
 	// Bid on some of the auctions
-	Bid(suite, testAccounts[0], 1000, 0, 0, false)   // Fail to bid 1000 - insufficient fee
-	Bid(suite, testAccounts[0], 1000, 500, 0, true)  // Bid 1000 on first
-	Bid(suite, testAccounts[0], 1000, 1000, 1, true) // Bid 1000 on second
+	Bid(suite, TestAccounts[0], 1000, 0, 0, false)  // Fail to bid 1000 - insufficient fee
+	Bid(suite, TestAccounts[0], 1000, 500, 0, true) // Bid 1000 on first
+	AdvanceBlock(&ctx, auctionKeeper)
+	Bid(suite, TestAccounts[0], 1000, 1000, 1, true) // Bid 1000 on second
+	AdvanceBlock(&ctx, auctionKeeper)
 
 	// Rebid, outbid, rebid, ...
-	Bid(suite, testAccounts[0], 2000, 1, 0, false)    // Rebid 2000 - insufficient fee
-	Bid(suite, testAccounts[0], 2000, 500, 0, false)  // Rebid 2000 - rebids not allowed
-	Bid(suite, testAccounts[1], 2000, 500, 0, true)   // Bid 2000 on first
-	Bid(suite, testAccounts[0], 1500, 10, 0, false)   // Insufficient fee, insufficient amount
-	Bid(suite, testAccounts[0], 1500, 500, 0, false)  // Outbid the initial bid but not the current highest
-	Bid(suite, testAccounts[0], 2500, 2500, 0, true)  // Outbid the the current highest
-	Bid(suite, testAccounts[0], 2300, 3000, 0, false) // Rebid but for too low
-	Bid(suite, testAccounts[0], 2500, 700, 0, false)  // Rebid but at current highest
-	Bid(suite, testAccounts[0], 2500, 3000, 0, false) // Fail to outbid
+	Bid(suite, TestAccounts[0], 2000, 1, 0, false)   // Rebid 2000 - insufficient fee
+	Bid(suite, TestAccounts[0], 2000, 500, 0, false) // Rebid 2000 - rebids not allowed
+	AdvanceBlock(&ctx, auctionKeeper)
+	Bid(suite, TestAccounts[1], 2000, 500, 0, true)  // Bid 2000 on first
+	Bid(suite, TestAccounts[0], 1500, 10, 0, false)  // Insufficient fee, insufficient amount
+	Bid(suite, TestAccounts[0], 1500, 500, 0, false) // Outbid the initial bid but not the current highest
+	Bid(suite, TestAccounts[0], 2500, 2500, 0, true) // Outbid the the current highest
+	AdvanceBlock(&ctx, auctionKeeper)
+	Bid(suite, TestAccounts[0], 2300, 3000, 0, false) // Rebid but for too low
+	Bid(suite, TestAccounts[0], 2500, 700, 0, false)  // Rebid but at current highest
+	Bid(suite, TestAccounts[0], 2500, 3000, 0, false) // Fail to outbid
 
 	// End the auction period
 	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))
 	auction.EndBlocker(ctx, *auctionKeeper)
-	VerifyAuctionPayout(suite, testAccounts[0], auctions[0], 2500, true)
-	VerifyAuctionPayout(suite, testAccounts[0], auctions[1], 1000, true)
+	VerifyAuctionPayout(suite, TestAccounts[0], auctions[0], 2500, true)
+	VerifyAuctionPayout(suite, TestAccounts[0], auctions[1], 1000, true)
 
 	AssertModuleBalanceStrict(suite, sdk.NewCoins())
 
@@ -81,7 +85,7 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 	require.Empty(suite.T(), auctions)
 
 	// Create one auction this time
-	auctionCoins = sdk.NewCoins(testBalances[0])
+	auctionCoins = sdk.NewCoins(TestBalances[0])
 	suite.FundCommunityPool(ctx, auctionCoins)
 
 	// Run endblocker with no active auctions, observe one auction created
@@ -107,8 +111,14 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 	require.Nil(suite.T(), newAuctions[0].HighestBid)
 }
 
+// Increments the ctx block height and runs EndBlocker
+func AdvanceBlock(ctx *sdk.Context, k *keeper.Keeper) {
+	*ctx = (*ctx).WithBlockHeight((*ctx).BlockHeight() + 1)
+	auction.EndBlocker(*ctx, *k)
+}
+
 func (suite *KeeperTestSuite) TestWinningBidBurning() {
-	InitPoolAndAuctions(suite)
+	InitPoolAndAuctionTokens(suite)
 
 	ctx := suite.Ctx
 	auctionKeeper := suite.App.AuctionKeeper
@@ -139,50 +149,50 @@ func (suite *KeeperTestSuite) TestWinningBidBurning() {
 		auctionCoins = append(auctionCoins, auction.Amount)
 	}
 
-	require.Equal(suite.T(), testBalances, auctionCoins)
+	require.Equal(suite.T(), TestBalances, auctionCoins)
 
 	// Bid on some of the auctions
-	Bid(suite, testAccounts[0], 1000, 500, 0, true)  // Bid 1000 on first
-	Bid(suite, testAccounts[0], 1000, 1000, 1, true) // Bid 1000 on second
-	Bid(suite, testAccounts[1], 2000, 500, 0, true)  // Bid 2000 on first
+	Bid(suite, TestAccounts[0], 1000, 500, 0, true)  // Bid 1000 on first
+	Bid(suite, TestAccounts[0], 1000, 1000, 1, true) // Bid 1000 on second
+	Bid(suite, TestAccounts[1], 2000, 500, 0, true)  // Bid 2000 on first
 
 	// Expecting to have 3k burned
-	preBurn := auctionKeeper.BankKeeper.GetSupply(ctx, gravDenom)
+	preBurn := auctionKeeper.BankKeeper.GetSupply(ctx, GravDenom)
 	// End the auction period
 	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))
 	auction.EndBlocker(ctx, *auctionKeeper)
-	postBurn := auctionKeeper.BankKeeper.GetSupply(ctx, gravDenom)
-	VerifyAuctionPayout(suite, testAccounts[1], auctions[0], 2500, false)
-	VerifyAuctionPayout(suite, testAccounts[0], auctions[1], 1000, false)
+	postBurn := auctionKeeper.BankKeeper.GetSupply(ctx, GravDenom)
+	VerifyAuctionPayout(suite, TestAccounts[1], auctions[0], 2500, false)
+	VerifyAuctionPayout(suite, TestAccounts[0], auctions[1], 1000, false)
 
 	require.Equal(suite.T(), int64(3000), preBurn.Sub(postBurn).Amount.Int64())
 }
 
-// Initializes the community pool, funds several accounts and populates some auctions in state before re-initializing the chain
-func InitPoolAndAuctions(suite *KeeperTestSuite) {
+// Initializes the community pool, funds several accounts and populates some tokens to be used in future auctions
+func InitPoolAndAuctionTokens(suite *KeeperTestSuite) {
 	ctx := suite.Ctx
 
-	gravDenom = suite.App.MintKeeper.GetParams(ctx).MintDenom // Native Token: Use the mint denom for flexibility
-	fmt.Printf("Grav in test env is %s\n", gravDenom)
+	GravDenom = suite.App.MintKeeper.GetParams(ctx).MintDenom // Native Token: Use the mint denom for flexibility
+	fmt.Printf("Grav in test env is %s\n", GravDenom)
 
 	// Create test balances for the community pool
 	testAmount := sdk.NewInt(helpers.OneAtom() * 1000)
-	testBalances = sdk.NewCoins(
+	TestBalances = sdk.NewCoins(
 		sdk.NewCoin(TestDenom1, testAmount),
 		sdk.NewCoin(TestDenom2, testAmount),
 	)
-	suite.FundCommunityPool(ctx, testBalances)
+	suite.FundCommunityPool(ctx, TestBalances)
 
 	// Fund some users with the native coin (aka GRAV)
-	testGrav := sdk.NewCoin(gravDenom, testAmount)
-	testAccounts = suite.CreateAndFundRandomAccounts(3, sdk.NewCoins(testGrav))
+	testGrav := sdk.NewCoin(GravDenom, testAmount)
+	TestAccounts = suite.CreateAndFundRandomAccounts(3, sdk.NewCoins(testGrav))
 
 	// Set the bid token to be the gravDenom
 	params := suite.App.AuctionKeeper.GetParams(ctx)
-	params.NonAuctionableTokens = []string{gravDenom}
+	params.NonAuctionableTokens = []string{GravDenom}
 	suite.App.AuctionKeeper.SetParams(ctx, params)
 
-	moduleAccount = suite.App.AccountKeeper.GetModuleAddress(types.ModuleName)
+	ModuleAccount = suite.App.AccountKeeper.GetModuleAddress(types.ModuleName)
 }
 
 // Performs a bid and checks the balance changes of the bidder and the auction module
@@ -196,16 +206,16 @@ func Bid(suite *KeeperTestSuite, account sdk.AccAddress, amount int64, fee int64
 	auction := auctionKeeper.GetAllAuctions(ctx)[whichAuction]
 	rebid := auction.HighestBid != nil && auction.HighestBid.BidderAddress == account.String()
 
-	preGravBalAcc := suite.App.BankKeeper.GetBalance(ctx, account, gravDenom)
-	preGravBalMod := suite.App.BankKeeper.GetBalance(ctx, moduleAccount, gravDenom)
+	preGravBalAcc := suite.App.BankKeeper.GetBalance(ctx, account, GravDenom)
+	preGravBalMod := suite.App.BankKeeper.GetBalance(ctx, ModuleAccount, GravDenom)
 
 	_, err := msgServer.Bid(sdk.WrapSDKContext(ctx), types.NewMsgBid(auction.Id, account.String(), uint64(amount), uint64(fee)))
 	if expNewHighestBid {
 		require.NoError(t, err)
 	}
 
-	postGravBalAcc := suite.App.BankKeeper.GetBalance(ctx, account, gravDenom)
-	postGravBalMod := suite.App.BankKeeper.GetBalance(ctx, moduleAccount, gravDenom)
+	postGravBalAcc := suite.App.BankKeeper.GetBalance(ctx, account, GravDenom)
+	postGravBalMod := suite.App.BankKeeper.GetBalance(ctx, ModuleAccount, GravDenom)
 
 	if expNewHighestBid {
 		var expectedUserDifference, expectedModDifference uint64
@@ -258,7 +268,7 @@ func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, aucti
 	require.True(t, poolCoin.IsZero(), "Positive community pool balance of reward token after auction success")
 
 	if verifyPoolGrav {
-		poolGrav := communityPool.AmountOf(gravDenom).TruncateInt()
+		poolGrav := communityPool.AmountOf(GravDenom).TruncateInt()
 		expGrav := sdk.NewIntFromUint64(winningBid)
 		require.True(t, poolGrav.GTE(expGrav), "community pool does not have the bidders tokens")
 	}
@@ -267,7 +277,7 @@ func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, aucti
 // Asserts that the module's balances exactly match `coins`, and that no other coins are held by the module
 func AssertModuleBalanceStrict(suite *KeeperTestSuite, coins sdk.Coins) {
 	bankKeeper := suite.App.AuctionKeeper.BankKeeper
-	balances := bankKeeper.GetAllBalances(suite.Ctx, moduleAccount)
+	balances := bankKeeper.GetAllBalances(suite.Ctx, ModuleAccount)
 
 	require.Equal(suite.T(), coins, balances, "module balance does not match coins")
 }
