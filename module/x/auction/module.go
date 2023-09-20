@@ -116,7 +116,7 @@ func (AppModule) Name() string {
 
 // RegisterInvariants implements app module
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
-	// TODO: Implement
+	ir.RegisterRoute(types.ModuleName, "module-balance", keeper.ModuleBalanceInvariant(am.keeper))
 }
 
 // Route implements app module
