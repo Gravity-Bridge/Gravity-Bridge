@@ -39,7 +39,10 @@ jq '.app_state.bank.denom_metadata += [{"name": "Foo Token2", "symbol": "F20", "
 jq '.app_state.bech32ibc.nativeHRP = "gravity"' /bech32ibc-genesis.json > /gov-genesis.json
 
 # a 60 second voting period to allow us to pass governance proposals in the tests
-jq '.app_state.gov.voting_params.voting_period = "120s"' /gov-genesis.json > /eip712-genesis.json
+jq '.app_state.gov.voting_params.voting_period = "120s"' /gov-genesis.json > /auction-genesis.json
+
+# Set the non-auctionable tokens
+jq '.app_state.auction.params.non_auctionable_tokens = ["ugraviton"]' /auction-genesis.json > /eip712-genesis.json
 
 # Create a user for EIP-712 testing with a reliable account number (13) so that the hardcoded transaction routinely succeeds
 # 13 seems to be the first user account which can be created, but this is more reliable than waiting for test time
@@ -49,7 +52,7 @@ jq '.app_state.bank.balances += [{"address": "gravity1hanqss6jsq66tfyjz56wz44z0e
 # Add some funds to the community pool to test Airdrops, note that the gravity address here is the first 20 bytes
 # of the sha256 hash of 'distribution' to create the address of the module
 jq '.app_state.distribution.fee_pool.community_pool = [{"denom": "ugraviton", "amount": "1000000000000000000000000.0"}]' /community-pool-genesis.json > /community-pool2-genesis.json
-jq '.app_state.auth.accounts += [{"@type": "/cosmos.auth.v1beta1.ModuleAccount", "base_account": { "account_number": "1", "address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh","pub_key": null,"sequence": "0"},"name": "distribution","permissions": ["basic"]}]' /community-pool2-genesis.json > /community-pool3-genesis.json
+jq '.app_state.auth.accounts += [{"@type": "/cosmos.auth.v1beta1.ModuleAccount", "base_account": { "account_number": "0", "address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh","pub_key": null,"sequence": "0"},"name": "distribution","permissions": ["basic"]}]' /community-pool2-genesis.json > /community-pool3-genesis.json
 jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"amount": "1000000000000000000000000", "denom": "ugraviton"}]}]' /community-pool3-genesis.json > /edited-genesis.json
 
 # Change the stake token to be ugraviton instead
