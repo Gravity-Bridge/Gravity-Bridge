@@ -17,6 +17,8 @@ func (suite *KeeperTestSuite) TestAuctionStorage() {
 	t := suite.T()
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
+	initialPeriod := ak.GetAuctionPeriod(ctx)
+	ctx = ctx.WithBlockHeight(int64(initialPeriod.EndBlockHeight))
 	ak.DeleteAllAuctions(ctx)
 
 	// Create and store multiple Auctions
@@ -120,6 +122,8 @@ func (suite *KeeperTestSuite) TestEmptyAuctionFunctions() {
 	accounts := suite.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdk.NewInt(1))))
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
+	initialPeriod := ak.GetAuctionPeriod(ctx)
+	ctx = ctx.WithBlockHeight(int64(initialPeriod.EndBlockHeight))
 
 	// Must delete auctions first, potentially some value in community pool on chain init
 	ak.DeleteAllAuctions(ctx)
