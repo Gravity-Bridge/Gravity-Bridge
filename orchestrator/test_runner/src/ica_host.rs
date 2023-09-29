@@ -83,6 +83,10 @@ pub async fn ica_host_happy_path(
     enable_ica_host(gravity_contact, &keys).await;
     enable_ica_controller(ibc_contact, &keys).await;
 
+    let ibc_fee = Coin {
+        amount: 1u8.into(),
+        denom: IBC_STAKING_TOKEN.to_string(),
+    };
     let zero_fee = Coin {
         amount: 0u8.into(),
         denom: STAKING_TOKEN.to_string(),
@@ -96,7 +100,7 @@ pub async fn ica_host_happy_path(
         ica_owner,
         ica_owner_addr.to_string(),
         gravity_connection_id.clone(),
-        zero_fee.clone(),
+        ibc_fee.clone(),
     )
     .await
     .expect("Could not get/register interchain account");
