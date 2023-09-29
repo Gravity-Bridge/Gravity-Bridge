@@ -39,7 +39,6 @@ func (suite *KeeperTestSuite) TestParams() {
 
 	params.MinBidFee = 100
 	params.BurnWinningBids = true
-	params.MinBidAmount = 10000
 	params.NonAuctionableTokens = []string{"hi-there", "this", "is-not", "a-token", "ibc/abcdefg"}
 
 	ak.SetParams(ctx, params)
