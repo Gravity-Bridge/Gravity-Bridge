@@ -851,6 +851,7 @@ func (app *Gravity) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 // Note: This should ONLY be called once, it should be called at the top of BeginBlocker guarded by firstBlock
 func (app *Gravity) firstBeginBlocker(ctx sdk.Context) {
 	app.assertBech32PrefixMatches(ctx)
+	app.assertNativeTokenMatchesConstant(ctx)
 	app.assertNativeTokenIsNonAuctionable(ctx)
 }
 

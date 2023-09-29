@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -43,4 +44,14 @@ func (app *Gravity) assertNativeTokenIsNonAuctionable(ctx sdk.Context) {
 
 	// Failure!
 	panic(fmt.Sprintf("Auction module's nonAuctionableTokens (%v) MUST contain GRAV (%s)\n", nonAuctionableTokens, nativeToken))
+}
+
+// In the config directory is a constant which should represent the native token, this check ensures that constant is correct
+func (app *Gravity) assertNativeTokenMatchesConstant(ctx sdk.Context) {
+	hardcoded := config.NativeTokenDenom
+	nativeToken := app.MintKeeper.GetParams(ctx).MintDenom
+
+	if hardcoded != nativeToken {
+		panic(fmt.Sprintf("The hard-coded native token denom (%s) must equal the actual native token (%s)\n", hardcoded, nativeToken))
+	}
 }
