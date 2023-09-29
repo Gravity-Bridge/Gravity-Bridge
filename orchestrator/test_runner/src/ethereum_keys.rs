@@ -334,21 +334,21 @@ pub async fn example_ethermint_key_usage(
     info!("Got delegation rewards: {:?}", rewards);
     let mut stake_rewards = None;
     for reward in &rewards {
-        if reward.denom == "stake" {
+        if reward.denom == *STAKING_TOKEN {
             stake_rewards = Some(reward.clone());
         }
     }
     let _reward = stake_rewards
         .unwrap_or_else(|| panic!("Could not find a reward in stake from {:?}", rewards));
     let stake_balance = contact
-        .get_balance(user_cosmos_address, "stake".to_string())
+        .get_balance(user_cosmos_address, STAKING_TOKEN.to_string())
         .await
         .expect("Could not get stake balance");
     let _res = contact
         .withdraw_delegator_rewards(
             delegate_to,
             Coin {
-                denom: "stake".to_string(),
+                denom: STAKING_TOKEN.to_string(),
                 amount: 0u8.into(),
             },
             user_key,
@@ -356,7 +356,7 @@ pub async fn example_ethermint_key_usage(
         )
         .await;
     let rewarded_stake_balance = contact
-        .get_balance(user_cosmos_address, "stake".to_string())
+        .get_balance(user_cosmos_address, STAKING_TOKEN.to_string())
         .await
         .expect("Could not get stake balance");
     match (stake_balance, rewarded_stake_balance) {

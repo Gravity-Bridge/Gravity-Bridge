@@ -7,8 +7,8 @@ use crate::utils::get_erc20_balance_safe;
 use crate::utils::get_event_nonce_safe;
 use crate::utils::get_user_key;
 use crate::utils::send_one_eth;
-use crate::utils::stake_metadata;
 use crate::utils::start_orchestrators;
+use crate::utils::ugraviton_metadata;
 use crate::MINER_ADDRESS;
 use crate::MINER_PRIVATE_KEY;
 use crate::TOTAL_TIMEOUT;
@@ -42,7 +42,7 @@ pub async fn happy_path_test_v2_native(
     gravity_address: EthAddress,
     validator_out: bool,
 ) {
-    let native_metadata = stake_metadata(contact).await;
+    let native_metadata = ugraviton_metadata(contact).await;
     deploy_and_bridge_cosmos_token(
         web30,
         grpc_client.clone(),

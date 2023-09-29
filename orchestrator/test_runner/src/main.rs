@@ -93,7 +93,7 @@ lazy_static! {
     static ref ADDRESS_PREFIX: String =
         env::var("ADDRESS_PREFIX").unwrap_or_else(|_| "gravity".to_string());
     static ref STAKING_TOKEN: String =
-        env::var("STAKING_TOKEN").unwrap_or_else(|_| "stake".to_owned());
+        env::var("STAKING_TOKEN").unwrap_or_else(|_| "ugraviton".to_owned());
     static ref COSMOS_NODE_GRPC: String =
         env::var("COSMOS_NODE_GRPC").unwrap_or_else(|_| "http://localhost:9090".to_owned());
     static ref COSMOS_NODE_ABCI: String =
