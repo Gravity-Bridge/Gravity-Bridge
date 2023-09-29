@@ -29,6 +29,9 @@ const (
 	// and EVM Chain IDs are required the chance of replay attacks on other chains is very low,
 	// but ensuring this is a unique value is good practice.
 	GravityEvmChainID = "999999"
+
+	// The native token, useful in situations where we do not have access to the sdk Context
+	NativeTokenDenom = "ugraviton"
 )
 
 func init() {
