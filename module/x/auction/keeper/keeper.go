@@ -9,6 +9,7 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -75,6 +76,11 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 
 // RemoveFromCommunityPool removes the auction tokens from community pool and locks them in the auction module account
 func (k Keeper) RemoveFromCommunityPool(ctx sdk.Context, coin sdk.Coin) error {
+	native := config.NativeTokenDenom
+	if coin.Denom == native {
+		return sdkerrors.Wrapf(types.ErrInvalidAuction, "not allowed to collect community pool native token balance")
+	}
+
 	feePool := k.DistKeeper.GetFeePool(ctx)
 	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, distrtypes.ModuleName, types.ModuleName, sdk.NewCoins(coin)); err != nil {
 		return sdkerrors.Wrap(err, "Failure to transfer tokens from community pool to auction module")
