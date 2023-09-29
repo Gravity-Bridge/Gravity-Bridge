@@ -10,9 +10,8 @@ import (
 
 // Default Params values
 var (
-	DefaultAuctionLength        uint64 = 100 // TODO: Determine default length of auctions
-	DefaultMinBidAmount         uint64 = 1   // TODO: Determine default min bid amount ugraviton
-	DefaultMinBidFee            uint64 = 1   // TODO: Determine default min bid fee ugraviton
+	DefaultAuctionLength        uint64 = 85600 // This default should be longer than the governance period to allow for disabling the auction module, determined with Proposal #204
+	DefaultMinBidFee            uint64 = 3110  // This default was determined with Proposal #203
 	DefaultNonAuctionableTokens        = []string{"ugraviton"}
 	DefaultBurnWinningBids             = true
 	DefaultEnabled                     = true
@@ -21,7 +20,6 @@ var (
 // Param store keys
 var (
 	ParamsStoreKeyAuctionLength        = []byte("AuctionLength")
-	ParamsStoreKeyMinBidAmount         = []byte("MinBidAmount")
 	ParamsStoreKeyMinBidFee            = []byte("MinBidFee")
 	ParamsStoreKeyNonAuctionableTokens = []byte("NonAuctionableTokens")
 	ParamsStoreKeyBurnWinningBids      = []byte("BurnWinningBids")
@@ -39,7 +37,6 @@ func ParamKeyTable() paramtypes.KeyTable {
 // NewParams creates a new Params object
 func NewParams(
 	auctionLength uint64,
-	minBidAmount uint64,
 	minBidFee uint64,
 	nonAuctionableTokens []string,
 	burnWinningBids bool,
@@ -47,7 +44,6 @@ func NewParams(
 ) Params {
 	return Params{
 		AuctionLength:        auctionLength,
-		MinBidAmount:         minBidAmount,
 		MinBidFee:            minBidFee,
 		NonAuctionableTokens: nonAuctionableTokens,
 		BurnWinningBids:      burnWinningBids,
@@ -59,7 +55,6 @@ func NewParams(
 func DefaultParams() Params {
 	return NewParams(
 		DefaultAuctionLength,
-		DefaultMinBidAmount,
 		DefaultMinBidFee,
 		DefaultNonAuctionableTokens,
 		DefaultBurnWinningBids,
@@ -71,7 +66,6 @@ func DefaultParams() Params {
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(ParamsStoreKeyAuctionLength, &p.AuctionLength, isPositive),
-		paramtypes.NewParamSetPair(ParamsStoreKeyMinBidAmount, &p.MinBidAmount, isNonNegative),
 		paramtypes.NewParamSetPair(ParamsStoreKeyMinBidFee, &p.MinBidFee, isNonNegative),
 		paramtypes.NewParamSetPair(ParamsStoreKeyNonAuctionableTokens, &p.NonAuctionableTokens, allValidDenoms),
 		paramtypes.NewParamSetPair(ParamsStoreKeyBurnWinningBids, &p.BurnWinningBids, isBoolean),
@@ -83,10 +77,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 func (p Params) ValidateBasic() error {
 	if err := isPositive(p.AuctionLength); err != nil {
 		return sdkerrors.Wrap(ErrInvalidParams, "auction length must be positive")
-	}
-
-	if err := isNonNegative(p.MinBidAmount); err != nil {
-		return sdkerrors.Wrap(ErrInvalidParams, "min bid amount must be non-negative")
 	}
 
 	if err := isNonNegative(p.MinBidFee); err != nil {

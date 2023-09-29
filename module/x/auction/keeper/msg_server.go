@@ -34,7 +34,6 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 	params := m.GetParams(ctx)
 	bidToken := m.MintKeeper.GetParams(ctx).MintDenom
 	minBidFee := sdk.NewIntFromUint64(params.MinBidFee)
-	minBidAmount := sdk.NewIntFromUint64(params.MinBidAmount)
 
 	// Check the bidderAddress's address is valid
 	bidderAddress, err := sdk.AccAddressFromBech32(msg.Bidder)
@@ -45,9 +44,6 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 
 	// Check the bid meets min bid amount
 	bidAmount := sdk.NewIntFromUint64(msg.Amount)
-	if bidAmount.LT(minBidAmount) {
-		return nil, sdkerrors.Wrapf(types.ErrBidTooLow, "bid must be at least %d", params.MinBidAmount)
-	}
 
 	// Check the supplied fee meets the minimum
 	feeInt := sdk.NewIntFromUint64(msg.BidFee)
