@@ -17,8 +17,12 @@ message Params {
   uint64 min_bid_fee = 3;
 
   // NonAuctionableTokens is a list of token denomss which should never be auctioned from the community pool
-  repeated string non_auctionable_tokens = 5;
+  repeated string non_auctionable_tokens = 4;
 
   // BurnWinningBids controls if we burn the tokens of the winning bidder instead of sending them to the community pool
-  bool burn_winning_bids = 6;
+  bool burn_winning_bids = 5;
+
+  // Enabled controls whether auctions progress as usual, or are preserved in an inactive halted state.
+  // When Enabled is false, bids will also fail to be processed.
+  bool enabled = 6;
 }
