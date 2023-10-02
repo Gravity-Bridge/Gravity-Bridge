@@ -7,7 +7,7 @@
 extern crate log;
 
 use crate::airdrop_proposal::airdrop_proposal_test;
-use crate::auction::{auction_test_random, auction_test_static};
+use crate::auction::{auction_invalid_params_test, auction_test_random, auction_test_static};
 use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
@@ -641,6 +641,10 @@ pub async fn main() {
                 erc20_addresses,
             )
             .await;
+            return;
+        } else if test_type == "AUCTION_INVALID_PARAMS" {
+            info!("Starting Auction test");
+            auction_invalid_params_test(&gravity_contact, keys).await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;
