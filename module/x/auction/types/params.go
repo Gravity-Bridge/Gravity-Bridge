@@ -14,7 +14,8 @@ var (
 	DefaultMinBidAmount         uint64 = 1   // TODO: Determine default min bid amount ugraviton
 	DefaultMinBidFee            uint64 = 1   // TODO: Determine default min bid fee ugraviton
 	DefaultNonAuctionableTokens        = []string{"ugraviton"}
-	DefaultBurnWinningBids             = false
+	DefaultBurnWinningBids             = true
+	DefaultEnabled                     = true
 )
 
 // Param store keys
@@ -24,6 +25,7 @@ var (
 	ParamsStoreKeyMinBidFee            = []byte("MinBidFee")
 	ParamsStoreKeyNonAuctionableTokens = []byte("NonAuctionableTokens")
 	ParamsStoreKeyBurnWinningBids      = []byte("BurnWinningBids")
+	ParamsStoreKeyEnabled              = []byte("Enabled")
 )
 
 var _ paramtypes.ParamSet = (*Params)(nil)
@@ -41,6 +43,7 @@ func NewParams(
 	minBidFee uint64,
 	nonAuctionableTokens []string,
 	burnWinningBids bool,
+	enabled bool,
 ) Params {
 	return Params{
 		AuctionLength:        auctionLength,
@@ -48,6 +51,7 @@ func NewParams(
 		MinBidFee:            minBidFee,
 		NonAuctionableTokens: nonAuctionableTokens,
 		BurnWinningBids:      burnWinningBids,
+		Enabled:              enabled,
 	}
 }
 
@@ -59,6 +63,7 @@ func DefaultParams() Params {
 		DefaultMinBidFee,
 		DefaultNonAuctionableTokens,
 		DefaultBurnWinningBids,
+		DefaultEnabled,
 	)
 }
 
@@ -70,6 +75,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamsStoreKeyMinBidFee, &p.MinBidFee, isNonNegative),
 		paramtypes.NewParamSetPair(ParamsStoreKeyNonAuctionableTokens, &p.NonAuctionableTokens, allValidDenoms),
 		paramtypes.NewParamSetPair(ParamsStoreKeyBurnWinningBids, &p.BurnWinningBids, isBoolean),
+		paramtypes.NewParamSetPair(ParamsStoreKeyEnabled, &p.Enabled, isBoolean),
 	}
 }
 
@@ -93,6 +99,11 @@ func (p Params) ValidateBasic() error {
 
 	if err := isBoolean(p.BurnWinningBids); err != nil {
 		return sdkerrors.Wrap(ErrInvalidParams, "burn winning bids must be a boolean")
+	}
+
+	// Enabled (boolean type check)
+	if err := isBoolean(p.Enabled); err != nil {
+		return sdkerrors.Wrap(ErrInvalidParams, "enabled must be a boolean")
 	}
 
 	return nil
