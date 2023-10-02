@@ -28,19 +28,19 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 	ctx := suite.Ctx
 	auctionKeeper := suite.App.AuctionKeeper
 	auctionParams := auctionKeeper.GetParams(ctx)
+	auctionParams.BurnWinningBids = false
+	auctionKeeper.SetParams(ctx, auctionParams)
 
 	ctx = ctx.WithBlockHeight(int64(auctionParams.AuctionLength) + ctx.BlockHeight())
 	auction.EndBlocker(ctx, *auctionKeeper)
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
 
 	// Create an auction period
-	params := auctionKeeper.GetParams(ctx)
-
 	block := uint64(ctx.BlockHeight())
 	period := auctionKeeper.GetAuctionPeriod(ctx)
 	require.Equal(suite.T(), &types.AuctionPeriod{
 		StartBlockHeight: block,
-		EndBlockHeight:   block + params.AuctionLength,
+		EndBlockHeight:   block + auctionParams.AuctionLength,
 	}, period)
 
 	// Observe created auctions
@@ -53,24 +53,24 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 	require.Equal(suite.T(), TestBalances, auctionCoins)
 
 	// Bid on some of the auctions
-	Bid(suite, TestAccounts[0], 1000, 0, 0, false)  // Fail to bid 1000 - insufficient fee
-	Bid(suite, TestAccounts[0], 1000, 500, 0, true) // Bid 1000 on first
+	Bid(suite, TestAccounts[0], 1000, 3000, 0, false) // Fail to bid 1000 - insufficient fee
+	Bid(suite, TestAccounts[0], 1000, 3500, 0, true)  // Bid 1000 on first
 	AdvanceBlock(&ctx, auctionKeeper)
-	Bid(suite, TestAccounts[0], 1000, 1000, 1, true) // Bid 1000 on second
+	Bid(suite, TestAccounts[0], 1000, 3110, 1, true) // Bid 1000 on second
 	AdvanceBlock(&ctx, auctionKeeper)
 
 	// Rebid, outbid, rebid, ...
-	Bid(suite, TestAccounts[0], 2000, 1, 0, false)   // Rebid 2000 - insufficient fee
-	Bid(suite, TestAccounts[0], 2000, 500, 0, false) // Rebid 2000 - rebids not allowed
+	Bid(suite, TestAccounts[0], 2000, 3109, 0, false) // Rebid 2000 - insufficient fee
+	Bid(suite, TestAccounts[0], 2000, 3500, 0, false) // Rebid 2000 - rebids not allowed
 	AdvanceBlock(&ctx, auctionKeeper)
-	Bid(suite, TestAccounts[1], 2000, 500, 0, true)  // Bid 2000 on first
-	Bid(suite, TestAccounts[0], 1500, 10, 0, false)  // Insufficient fee, insufficient amount
-	Bid(suite, TestAccounts[0], 1500, 500, 0, false) // Outbid the initial bid but not the current highest
-	Bid(suite, TestAccounts[0], 2500, 2500, 0, true) // Outbid the the current highest
+	Bid(suite, TestAccounts[1], 2000, 999999, 0, true) // Bid 2000 on first
+	Bid(suite, TestAccounts[0], 1500, 10, 0, false)    // Insufficient fee, insufficient amount
+	Bid(suite, TestAccounts[0], 1500, 3500, 0, false)  // Outbid the initial bid but not the current highest
+	Bid(suite, TestAccounts[0], 2500, 5500, 0, true)   // Outbid the the current highest
 	AdvanceBlock(&ctx, auctionKeeper)
-	Bid(suite, TestAccounts[0], 2300, 3000, 0, false) // Rebid but for too low
-	Bid(suite, TestAccounts[0], 2500, 700, 0, false)  // Rebid but at current highest
-	Bid(suite, TestAccounts[0], 2500, 3000, 0, false) // Fail to outbid
+	Bid(suite, TestAccounts[0], 2300, 9999000, 0, false)  // Rebid but for too low
+	Bid(suite, TestAccounts[0], 2500, 70000700, 0, false) // Rebid but at current highest
+	Bid(suite, TestAccounts[0], 2500, 9000, 0, false)     // Fail to outbid
 
 	// End the auction period
 	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))
@@ -152,9 +152,9 @@ func (suite *KeeperTestSuite) TestWinningBidBurning() {
 	require.Equal(suite.T(), TestBalances, auctionCoins)
 
 	// Bid on some of the auctions
-	Bid(suite, TestAccounts[0], 1000, 500, 0, true)  // Bid 1000 on first
-	Bid(suite, TestAccounts[0], 1000, 1000, 1, true) // Bid 1000 on second
-	Bid(suite, TestAccounts[1], 2000, 500, 0, true)  // Bid 2000 on first
+	Bid(suite, TestAccounts[0], 1000, 3500, 0, true) // Bid 1000 on first
+	Bid(suite, TestAccounts[0], 1000, 4000, 1, true) // Bid 1000 on second
+	Bid(suite, TestAccounts[1], 2000, 3500, 0, true) // Bid 2000 on first
 
 	// Expecting to have 3k burned
 	preBurn := auctionKeeper.BankKeeper.GetSupply(ctx, GravDenom)
@@ -187,7 +187,6 @@ func InitPoolAndAuctionTokens(suite *KeeperTestSuite) {
 	testGrav := sdk.NewCoin(GravDenom, testAmount)
 	TestAccounts = suite.CreateAndFundRandomAccounts(3, sdk.NewCoins(testGrav))
 
-	// Set the bid token to be the gravDenom
 	params := suite.App.AuctionKeeper.GetParams(ctx)
 	params.NonAuctionableTokens = []string{GravDenom}
 	suite.App.AuctionKeeper.SetParams(ctx, params)

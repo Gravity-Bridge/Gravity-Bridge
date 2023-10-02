@@ -26,18 +26,18 @@ func (suite *KeeperTestSuite) TestModuleBalanceInvariant() {
 	expBalances := keeper.ExpectedAuctionModuleBalances(ctx, *auctionKeeper)
 	AssertCorrectInvariant(suite.T(), ctx, *auctionKeeper, expBalances)
 
-	Bid(suite, TestAccounts[0], 1000, 500, 0, true) // Bid 1000 on first
+	Bid(suite, TestAccounts[0], 1000, 3500, 0, true) // Bid 1000 on first
 	firstBidBalances := TestBalances.Add(sdk.NewInt64Coin(GravDenom, 1000))
 	AssertCorrectInvariant(suite.T(), ctx, *auctionKeeper, firstBidBalances)
 
-	Bid(suite, TestAccounts[0], 1000, 1000, 1, true) // Bid 1000 on second
+	Bid(suite, TestAccounts[0], 1000, 4000, 1, true) // Bid 1000 on second
 	secondBidBalances := firstBidBalances.Add(sdk.NewInt64Coin(GravDenom, 1000))
 	AssertCorrectInvariant(suite.T(), ctx, *auctionKeeper, secondBidBalances)
 
-	Bid(suite, TestAccounts[0], 2000, 500, 0, false) // Rebid 2000 - rebids not allowed
+	Bid(suite, TestAccounts[0], 2000, 3500, 0, false) // Rebid 2000 - rebids not allowed
 	AssertCorrectInvariant(suite.T(), ctx, *auctionKeeper, secondBidBalances)
 
-	Bid(suite, TestAccounts[1], 2000, 500, 0, true) // Bid 2000 on first
+	Bid(suite, TestAccounts[1], 2000, 4500, 0, true) // Bid 2000 on first
 	thirdBidBalances := secondBidBalances.Add(sdk.NewInt64Coin(GravDenom, 1000))
 	AssertCorrectInvariant(suite.T(), ctx, *auctionKeeper, thirdBidBalances)
 
