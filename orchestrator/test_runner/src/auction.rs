@@ -30,6 +30,12 @@ use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
+// Ensure that the auction module params cannot be updated to auction off the ugraviton supply
+#[allow(clippy::too_many_arguments)]
+pub async fn auction_invalid_params_test(contact: &Contact, keys: Vec<ValidatorKeys>) {
+    set_non_auctionable_tokens(contact, &keys, vec![]).await;
+}
+
 // Populate the community pool with tokens before bidding on auctions
 #[allow(clippy::too_many_arguments)]
 pub async fn auction_test_static(
@@ -523,6 +529,31 @@ async fn set_auction_length(contact: &Contact, keys: &[ValidatorKeys], length: u
     };
 
     submit_and_pass_auction_params_proposal(contact, keys, params).await;
+}
+
+async fn set_non_auctionable_tokens(
+    contact: &Contact,
+    keys: &[ValidatorKeys],
+    non_auctionable_tokens: Vec<String>,
+) {
+    let params = AuctionParamsProposalJson {
+        title: "Set non_auctionable_tokens".to_string(),
+        description: "Set non_auctionable_tokens".to_string(),
+        non_auctionable_tokens: Some(non_auctionable_tokens),
+        ..Default::default()
+    };
+
+    let res = submit_auction_params_proposal(
+        params,
+        get_deposit(None),
+        get_fee(None),
+        contact,
+        keys[0].validator_key,
+        Some(TOTAL_TIMEOUT),
+    )
+    .await;
+    assert!(res.is_err());
+    info!("Successfully tested auction params validation");
 }
 
 // Submits, votes yes, and waits for a proposal to update the Auction params
