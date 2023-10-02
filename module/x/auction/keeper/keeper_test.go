@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
@@ -39,7 +40,8 @@ func (suite *KeeperTestSuite) TestParams() {
 
 	params.MinBidFee = 100
 	params.BurnWinningBids = true
-	params.NonAuctionableTokens = []string{"hi-there", "this", "is-not", "a-token", "ibc/abcdefg"}
+	grav := config.NativeTokenDenom
+	params.NonAuctionableTokens = []string{grav, "hi-there", "this", "is-not", "a-token", "ibc/abcdefg"}
 
 	ak.SetParams(ctx, params)
 	stored := ak.GetParams(ctx)

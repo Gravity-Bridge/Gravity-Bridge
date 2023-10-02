@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -54,7 +55,7 @@ func (suite *KeeperTestSuite) TestInvalidGenesis() {
 			HighestBid: nil,
 		}},
 	}
-	genesis.Params.NonAuctionableTokens = []string{nonAuctionable}
+	genesis.Params.NonAuctionableTokens = append(genesis.Params.NonAuctionableTokens, nonAuctionable)
 
 	// This could panic because of the NonAuctionableTokens list or due to the bank balance of the module
 	cacheCtx, _ := ctx.CacheContext() // cache so future tests work correctly
@@ -71,7 +72,7 @@ func (suite *KeeperTestSuite) TestInvalidGenesis() {
 		keeper.InitGenesis(cacheCtx, *ak, genesis)
 	})
 
-	genesis.Params.NonAuctionableTokens = []string{TestDenom2}
+	genesis.Params.NonAuctionableTokens = []string{config.NativeTokenDenom, TestDenom2}
 	// This must not panic because we removed the denom from the NonAuctionbleTokens list
 	cacheCtx, _ = ctx.CacheContext() // cache so future tests work correctly
 	require.NotPanics(t, func() {
