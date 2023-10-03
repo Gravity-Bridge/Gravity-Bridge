@@ -32,6 +32,10 @@ const BASIS_POINTS_DIVISOR uint64 = 10000 // one basis point is one hundredth of
 func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.MsgBidResponse, err error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	params := m.GetParams(ctx)
+	if !params.Enabled {
+		return nil, types.ErrDisabledModule
+	}
+
 	bidToken := m.MintKeeper.GetParams(ctx).MintDenom
 	minBidFee := sdk.NewIntFromUint64(params.MinBidFee)
 
