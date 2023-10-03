@@ -25,9 +25,19 @@ func InitGenesis(ctx sdk.Context, k Keeper, genState types.GenesisState) []abci.
 		}
 	} else {
 		// Initialize the first auction period
+		// even if the module is not enabled, a previous auction period is expected
 		_, err := k.CreateNewAuctionPeriod(ctx)
 		if err != nil {
 			panic(fmt.Sprintf("Unable to create a new auction period: %v", err))
+		}
+
+		// If the module is starting enabled, create auctions for it
+		if genState.Params.Enabled {
+			if err := k.CreateAuctionsForAuctionPeriod(ctx); err != nil {
+				errMsg := fmt.Sprintf("unable to create auctions for genesis auction period: %v", err)
+				ctx.Logger().Error(errMsg)
+				panic(errMsg)
+			}
 		}
 	}
 

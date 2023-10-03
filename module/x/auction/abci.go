@@ -11,12 +11,19 @@ import (
 
 // EndBlocker resolves a finished AuctionPeriod and schedules a new one
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
+	// Do nothing if the module is disabled, the current auctions must remain locked
+	if enabled := k.GetParams(ctx).Enabled; !enabled {
+		return
+	}
+
 	auctionPeriod := k.GetAuctionPeriod(ctx)
 	if auctionPeriod == nil {
 		panic("nil auction period discovered in EndBlocker - should have been initialized by now")
 	}
-	// AuctionPeriod cannot be stored with end height in the past
-	if auctionPeriod.EndBlockHeight == uint64(ctx.BlockHeight()) {
+
+	// The end height should only be in the past if the module was disabled through the end of the period
+	// otherwise we expect to observe the exact end of the period
+	if auctionPeriod.EndBlockHeight <= uint64(ctx.BlockHeight()) {
 		endAuctionPeriod(ctx, k)
 		scheduleNextAuctionPeriod(ctx, k)
 	}
@@ -29,9 +36,9 @@ func endAuctionPeriod(ctx sdk.Context, k keeper.Keeper) {
 	// Resolve the open auctions
 	k.IterateAuctions(ctx, func(_ []byte, auction types.Auction) (stop bool) {
 		if auction.HighestBid != nil {
-			closeError = k.CloseAuctionWithWinner(ctx, auction)
+			closeError = k.CloseAuctionWithWinner(ctx, auction.Id)
 		} else {
-			closeError = k.CloseAuctionNoWinner(ctx, auction)
+			closeError = k.CloseAuctionNoWinner(ctx, auction.Id)
 		}
 
 		if closeError != nil {

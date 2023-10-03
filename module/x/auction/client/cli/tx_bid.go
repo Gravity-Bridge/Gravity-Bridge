@@ -29,9 +29,13 @@ func CmdMsgBid() *cobra.Command {
 				return err
 			}
 
-			// If the user provided a custom fee, use that. Otherwise fetch the minimum and provide that amount.
-			var bidFee uint64
-			if len(args) == 2 {
+			offline, err := cmd.Flags().GetBool(flags.FlagOffline)
+			if err != nil {
+				return fmt.Errorf("unable to read offline flag: %v", err)
+			}
+
+			var params *types.Params
+			if !clientCtx.Offline && !offline {
 				queryCtx, err := client.GetClientQueryContext(cmd)
 				if err != nil {
 					return err
@@ -41,7 +45,19 @@ func CmdMsgBid() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				bidFee = res.Params.MinBidFee
+				params = &res.Params
+			}
+
+			// If the user provided a custom fee, use that. Otherwise fetch the minimum and provide that amount.
+			var bidFee uint64
+			if len(args) == 2 {
+				if offline {
+					return fmt.Errorf("unable to respect '--%s' when no fee value is provided", flags.FlagOffline)
+				}
+				if params == nil {
+					return fmt.Errorf("failed to get auction module params, try again or provide a bid fee")
+				}
+				bidFee = params.MinBidFee
 			} else {
 				intFee, err := strconv.Atoi(args[2])
 				if err != nil {
@@ -55,12 +71,12 @@ func CmdMsgBid() *cobra.Command {
 				return fmt.Errorf("invalid amount: %v", err)
 			}
 
-			offline, err := cmd.Flags().GetBool(flags.FlagOffline)
-			if err != nil {
-				return fmt.Errorf("unable to read offline flag: %v", err)
-			}
+			// Helpful checks if the params have been fetched
+			if params != nil {
+				if !params.Enabled {
+					return fmt.Errorf("the auction module is currently disabled, bidding will fail")
+				}
 
-			if !clientCtx.Offline && !offline {
 				// Check the current auction highest bid and error if bid is too low
 				queryCtx, err := client.GetClientQueryContext(cmd)
 				if err != nil {

@@ -64,7 +64,13 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 }
 
 // SendToCommunityPool sends the `coins` from module account to the community pool
+// Returns an error if the module is disabled, or on failure to send tokens
 func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
+	enabled := k.GetParams(ctx).Enabled
+	if !enabled {
+		return types.ErrDisabledModule
+	}
+
 	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distrtypes.ModuleName, coins); err != nil {
 		return sdkerrors.Wrap(err, "Failure to transfer tokens from auction module to community pool")
 	}
@@ -75,10 +81,15 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 }
 
 // RemoveFromCommunityPool removes the auction tokens from community pool and locks them in the auction module account
+// Returns an error if the module is disabled, or on failure to lock tokens
 func (k Keeper) RemoveFromCommunityPool(ctx sdk.Context, coin sdk.Coin) error {
 	native := config.NativeTokenDenom
 	if coin.Denom == native {
 		return sdkerrors.Wrapf(types.ErrInvalidAuction, "not allowed to collect community pool native token balance")
+	}
+	enabled := k.GetParams(ctx).Enabled
+	if !enabled {
+		return types.ErrDisabledModule
 	}
 
 	feePool := k.DistKeeper.GetFeePool(ctx)
@@ -92,19 +103,37 @@ func (k Keeper) RemoveFromCommunityPool(ctx sdk.Context, coin sdk.Coin) error {
 }
 
 // ReturnPreviousBidAmount sends the `amount` from the module account to the `recipient`
+// Returns an error if the module is disabled, or on failure to return tokens
 func (k Keeper) ReturnPreviousBidAmount(ctx sdk.Context, recipient sdk.AccAddress, amount sdk.Coin) error {
+	enabled := k.GetParams(ctx).Enabled
+	if !enabled {
+		return types.ErrDisabledModule
+	}
+
 	err := k.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, recipient, sdk.NewCoins(amount))
 	return sdkerrors.Wrap(err, types.ErrFundReturnFailure.Error())
 }
 
 // LockBidAmount sends the `amount` from the `sender` to the module account
+// Returns an error if the module is disabled, or on failure to lock tokens
 func (k Keeper) LockBidAmount(ctx sdk.Context, sender sdk.AccAddress, amount sdk.Coin) error {
+	enabled := k.GetParams(ctx).Enabled
+	if !enabled {
+		return types.ErrDisabledModule
+	}
+
 	err := k.BankKeeper.SendCoinsFromAccountToModule(ctx, sender, types.ModuleName, sdk.NewCoins(amount))
 	return sdkerrors.Wrap(err, types.ErrBidCollectionFailure.Error())
 }
 
 // AwardAuction pays out the locked balance of `amount` to `bidder`
+// Returns an error if the module is disabled, or on failure to award tokens
 func (k Keeper) AwardAuction(ctx sdk.Context, bidder sdk.AccAddress, amount sdk.Coin) error {
+	enabled := k.GetParams(ctx).Enabled
+	if !enabled {
+		return types.ErrDisabledModule
+	}
+
 	err := k.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, bidder, sdk.NewCoins(amount))
 	return sdkerrors.Wrap(err, types.ErrAwardFailure.Error())
 }

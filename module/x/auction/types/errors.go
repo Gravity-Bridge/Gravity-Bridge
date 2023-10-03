@@ -16,4 +16,5 @@ var (
 	ErrFundReturnFailure    = sdkerrors.Register(ModuleName, 8, "Failed to return funds to bidder")
 	ErrBidCollectionFailure = sdkerrors.Register(ModuleName, 9, "Failed to collect bid")
 	ErrAwardFailure         = sdkerrors.Register(ModuleName, 10, "Failed to award auction to highest bidder")
+	ErrDisabledModule       = sdkerrors.Register(ModuleName, 11, "Auction Module is not currently enabled")
 )

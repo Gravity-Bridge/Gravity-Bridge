@@ -63,6 +63,10 @@ func (k Keeper) UpdateAuction(ctx sdk.Context, auction types.Auction) error {
 		return err
 	}
 
+	if enabled := k.GetParams(ctx).Enabled; !enabled {
+		return types.ErrDisabledModule
+	}
+
 	// Check that the previous auction exists
 	previousAuction := k.GetAuctionById(ctx, auction.Id)
 	if previousAuction == nil {
@@ -82,6 +86,9 @@ func (k Keeper) UpdateAuction(ctx sdk.Context, auction types.Auction) error {
 
 // DeleteAllAuctions will clear the current auctions to prepare for storing the next period's auctions
 func (k Keeper) DeleteAllAuctions(ctx sdk.Context) {
+	if enabled := k.GetParams(ctx).Enabled; !enabled {
+		panic("cannot delete auctions while the module is disabled")
+	}
 	auctionPeriod := k.GetAuctionPeriod(ctx)
 	if auctionPeriod != nil && auctionPeriod.EndBlockHeight > uint64(ctx.BlockHeight()) {
 		panic(fmt.Sprintf("attempted to delete all auctions during active auction period %v", auctionPeriod))
@@ -103,6 +110,7 @@ func (k Keeper) DeleteAllAuctions(ctx sdk.Context) {
 // StoreAuction stores the given `auction`
 // Returns an error if the auction is invalid or if an auction with the same Id is already stored
 // Panics if auction cannot be marshaled
+// Note: This function does not check the Enabled param because it may be used by InitGenesis to restore a disabled module with active auctions
 func (k Keeper) StoreAuction(ctx sdk.Context, auction types.Auction) error {
 	if err := auction.ValidateBasic(); err != nil {
 		return err
@@ -147,7 +155,7 @@ func (k Keeper) GetAuctionById(ctx sdk.Context, id uint64) *types.Auction {
 	return &auction
 }
 
-// GetAuctionById returns the auction with the given `id`, if any exists
+// GetAuctionByDenom returns the auction with the given `denom`, if any exists
 func (k Keeper) GetAuctionByDenom(ctx sdk.Context, denom string) *types.Auction {
 	var foundAuction *types.Auction = nil
 	k.IterateAuctions(ctx, func(_ []byte, auction types.Auction) (stop bool) {
@@ -161,7 +169,7 @@ func (k Keeper) GetAuctionByDenom(ctx sdk.Context, denom string) *types.Auction 
 	return foundAuction
 }
 
-// GetAllAuctionByBidderAndPeriodId returns all auctions for the given auction period id and bidder address.
+// GetAllAuctionByBidder returns all auctions with `bidder` as their current highest bidder
 func (k Keeper) GetAllAuctionsByBidder(ctx sdk.Context, bidder string) []types.Auction {
 	auctions := []types.Auction{}
 	k.IterateAuctions(ctx, func(_ []byte, auction types.Auction) (stop bool) {
@@ -222,7 +230,18 @@ func (k Keeper) unsafeSetAuctionNonce(ctx sdk.Context, nonce types.AuctionId) {
 // send their bid to the community pool or burn it,
 // and emits a related event
 // Panics if the auction had no winning bid
-func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction types.Auction) error {
+// Note this function takes the auction_id instead of the auction itself to ensure
+// correct payouts of auctions
+func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error {
+	enabled := k.GetParams(ctx).Enabled
+	if !enabled {
+		return sdkerrors.Wrap(types.ErrDisabledModule, "unable to close an auction when the module is not enabled")
+	}
+	// Ensure this auction is currently stored
+	auction := k.GetAuctionById(ctx, auction_id)
+	if auction == nil {
+		return types.ErrAuctionNotFound
+	}
 	if auction.HighestBid == nil {
 		panic(fmt.Sprintf("unexpected unsuccessful auction: %s", auction.String()))
 	}
@@ -258,7 +277,18 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction types.Auction) e
 
 // CloseAuctionNoWinner will transfer auction funds to the community pool, and emit a related event
 // Panics if the auction actually had a winning bid
-func (k Keeper) CloseAuctionNoWinner(ctx sdk.Context, auction types.Auction) error {
+// Note this function takes the auction_id instead of the auction itself to ensure
+// correct payouts of auctions
+func (k Keeper) CloseAuctionNoWinner(ctx sdk.Context, auction_id uint64) error {
+	enabled := k.GetParams(ctx).Enabled
+	if !enabled {
+		return sdkerrors.Wrap(types.ErrDisabledModule, "unable to close an auction when the module is not enabled")
+	}
+	// Ensure this auction is currently stored
+	auction := k.GetAuctionById(ctx, auction_id)
+	if auction == nil {
+		return types.ErrAuctionNotFound
+	}
 	if auction.HighestBid != nil {
 		panic(fmt.Sprintf("unexpected successful auction: %v", auction))
 	}
