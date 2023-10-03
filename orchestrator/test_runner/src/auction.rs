@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
@@ -12,10 +13,12 @@ use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::{submit_auction_params_proposal, AuctionParamsProposalJson};
 use cosmos_gravity::send::MSG_BID_TYPE_URL;
 use deep_space::client::type_urls::MSG_FUND_COMMUNITY_POOL_TYPE_URL;
-use deep_space::{Coin, Contact, Msg, PrivateKey};
+use deep_space::error::CosmosGrpcError;
+use deep_space::{Address as CosmosAddress, Coin, Contact, Msg, PrivateKey};
 use gravity_proto::auction::query_client::QueryClient as AuctionQueryClient;
 use gravity_proto::auction::{
-    Auction, MsgBid, Params, QueryAuctionPeriodRequest, QueryAuctionsRequest, QueryParamsRequest,
+    Auction, MsgBid, QueryAuctionByIdRequest, QueryAuctionPeriodRequest, QueryAuctionsRequest,
+    QueryParamsRequest,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::distribution::v1beta1::query_client::QueryClient as DistributionQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::distribution::v1beta1::{
@@ -24,11 +27,18 @@ use gravity_proto::cosmos_sdk_proto::cosmos::distribution::v1beta1::{
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::QueryDenomToErc20Request;
 use gravity_utils::num_conversion::one_atom;
+use lazy_static::lazy_static;
 use num256::Uint256;
 use rand::Rng;
 use tokio::time::sleep;
 use tonic::transport::Channel;
 use web30::client::Web3;
+
+lazy_static! {
+    pub static ref AUCTION_ADDRESS: CosmosAddress =
+        deep_space::address::get_module_account_address("auction", Some(&*ADDRESS_PREFIX))
+            .expect("Failed to get auction module address");
+}
 
 // Ensure that the auction module params cannot be updated to auction off the ugraviton supply
 #[allow(clippy::too_many_arguments)]
@@ -172,24 +182,8 @@ pub async fn auction_test_static(
         },
     )); // Successful bid
 
-    for (exp_success, user, bid) in bids {
-        info!("Executing msg {bid:?}");
-        let msg = Msg::new(MSG_BID_TYPE_URL, bid);
-        let res = contact
-            .send_message(
-                &[msg],
-                None,
-                &[get_fee(Some(STAKING_TOKEN.to_string()))],
-                Some(OPERATION_TIMEOUT),
-                user.cosmos_key,
-            )
-            .await;
-        if exp_success {
-            let res = res.expect("expected success");
-            info!("Successful Bid response: {:?}", res.raw_log);
-        } else {
-            res.expect_err("expected failure");
-        }
+    for bid_params in bids {
+        execute_and_validate_bid(contact, bid_params).await;
     }
 }
 
@@ -276,25 +270,8 @@ pub async fn auction_test_random(
         bids.push((false, user, create_low_amt_bid(*user, h1, min_bid_fee, id1)));
     }
 
-    // Execute this round of bids
-    for (exp_success, user, bid) in &bids {
-        info!("Executing msg {bid:?}");
-        let msg = Msg::new(MSG_BID_TYPE_URL, bid.clone());
-        let res = contact
-            .send_message(
-                &[msg],
-                None,
-                &[get_fee(Some(STAKING_TOKEN.to_string()))],
-                Some(OPERATION_TIMEOUT),
-                user.cosmos_key,
-            )
-            .await;
-        if *exp_success {
-            let res = res.expect("expected success");
-            info!("Successful Bid response: {:?}", res.raw_log);
-        } else {
-            res.expect_err("expected failure");
-        }
+    for bid_params in bids.clone() {
+        execute_and_validate_bid(contact, bid_params).await;
     }
 
     // Re-seed the pool to set up the next round of auctions
@@ -342,25 +319,8 @@ pub async fn auction_test_random(
         bids.push((false, user, create_low_amt_bid(*user, h1, min_bid_fee, id1)));
     }
 
-    // Execute the bids for this round
-    for (exp_success, user, bid) in &bids {
-        info!("Executing msg {bid:?}");
-        let msg = Msg::new(MSG_BID_TYPE_URL, bid.clone());
-        let res = contact
-            .send_message(
-                &[msg],
-                None,
-                &[get_fee(Some(STAKING_TOKEN.to_string()))],
-                Some(OPERATION_TIMEOUT),
-                user.cosmos_key,
-            )
-            .await;
-        if *exp_success {
-            let res = res.expect("expected success");
-            info!("Successful Bid response: {:?}", res.raw_log);
-        } else {
-            res.expect_err("expected failure");
-        }
+    for bid_params in bids.clone() {
+        execute_and_validate_bid(contact, bid_params).await;
     }
 
     // Check that the successful bidder received the auction tokens
@@ -658,6 +618,144 @@ pub fn create_low_amt_bid(
     }
 }
 
+// Executes the given bid, validating balance changes as a result of the transaction
+pub async fn execute_and_validate_bid(
+    contact: &Contact,
+    bid_params: (bool, &BridgeUserKey, MsgBid),
+) {
+    let (exp_success, user, bid) = bid_params;
+    let pre_user_balances = contact
+        .get_balances(user.cosmos_address)
+        .await
+        .expect("unable to get user balances before bid");
+    let pre_module_balances = contact
+        .get_balances(*AUCTION_ADDRESS)
+        .await
+        .expect("unable to get module balances before bid");
+    info!("Executing msg {bid:?}");
+
+    let bid_amount = bid.amount;
+    let bid_fee = bid.bid_fee;
+    let bid_id = bid.auction_id;
+    // previous_bid is 0 or whatever the previous bid amount for this auction was
+    let previous_bid: Uint256 =
+        get_auction(contact.get_url(), bid_id)
+            .await
+            .map_or(0u8.into(), |auction| {
+                auction
+                    .highest_bid
+                    .map_or(0u8.into(), |prev_bid| prev_bid.bid_amount.into())
+            });
+    let tx_fee = get_fee(Some(STAKING_TOKEN.to_string()));
+    let msg = Msg::new(MSG_BID_TYPE_URL, bid);
+    let res = contact
+        .send_message(
+            &[msg],
+            None,
+            &[tx_fee.clone()],
+            Some(OPERATION_TIMEOUT),
+            user.cosmos_key,
+        )
+        .await;
+    let post_user_balances = contact
+        .get_balances(user.cosmos_address)
+        .await
+        .expect("unable to get user balances after bid");
+    let post_module_balances = contact
+        .get_balances(*AUCTION_ADDRESS)
+        .await
+        .expect("unable to get module balances after bid");
+
+    if exp_success {
+        let res = res.expect("expected success");
+        let expected_user_change: Uint256 = tx_fee.amount + bid_amount.into() + bid_fee.into();
+        let expected_module_change: Uint256 = Uint256::from(bid_amount) - previous_bid;
+
+        info!(
+            "Expecting user balance change: {} ({:?} -> {:?})",
+            expected_user_change, pre_user_balances, post_user_balances
+        );
+        info!("Log: {}", res.raw_log);
+        validate_balance_changes(
+            pre_user_balances,
+            post_user_balances,
+            Coin {
+                amount: expected_user_change,
+                denom: STAKING_TOKEN.to_string(),
+            },
+            true,
+        );
+        info!(
+            "Expecting module balance change: {} ({:?} -> {:?})",
+            expected_module_change, pre_module_balances, post_module_balances
+        );
+        validate_balance_changes(
+            pre_module_balances,
+            post_module_balances,
+            Coin {
+                amount: expected_module_change,
+                denom: STAKING_TOKEN.to_string(),
+            },
+            false,
+        );
+    } else {
+        res.expect_err("expected failure");
+        assert_eq!(pre_user_balances, post_user_balances);
+        assert_eq!(pre_module_balances, post_module_balances);
+    }
+}
+
+fn validate_balance_changes(
+    pre_balances: Vec<Coin>,
+    post_balances: Vec<Coin>,
+    expected_change: Coin,
+    expecting_decrease: bool,
+) {
+    let zero = Coin {
+        denom: expected_change.denom.clone(),
+        amount: 0u8.into(),
+    };
+    let pre_map = coins_to_map(pre_balances);
+    let post_map = coins_to_map(post_balances);
+
+    let pre_change = pre_map.get(&expected_change.denom).unwrap_or(&zero);
+    let post_change = post_map.get(&expected_change.denom).unwrap_or(&zero);
+
+    let actual: Uint256 = if expecting_decrease {
+        pre_change.amount - post_change.amount
+    } else {
+        post_change.amount - pre_change.amount
+    };
+    let actual_coin = Coin {
+        denom: expected_change.denom.clone(),
+        amount: actual,
+    };
+    assert_eq!(expected_change, actual_coin);
+
+    for (denom, pre_coin) in pre_map {
+        if denom == expected_change.denom {
+            // already validated
+            continue;
+        }
+
+        let post_coin = post_map.get(&denom).unwrap_or_else(|| {
+            panic!(
+                "No balance of {} after the transaction",
+                expected_change.denom
+            )
+        });
+        assert_eq!(pre_coin, *post_coin);
+    }
+}
+
+fn coins_to_map(coins: Vec<Coin>) -> HashMap<String, Coin> {
+    let mut map: HashMap<String, Coin> = HashMap::new();
+    for coin in coins {
+        map.insert(coin.denom.clone(), coin);
+    }
+    map
+}
+
 // Waits until a new AuctionPeriod begins
 // Panics if over `TOTAL_TIMEOUT` seconds elapse
 pub async fn wait_for_next_period(auction_qc: AuctionQueryClient<Channel>) {
@@ -705,4 +803,22 @@ async fn assert_user_won_auctions(contact: &Contact, user: BridgeUserKey, auctio
             );
         }
     }
+}
+
+async fn get_auction(grpc_url: String, auction_id: u64) -> Result<Auction, CosmosGrpcError> {
+    let mut auction_qc = AuctionQueryClient::connect(grpc_url)
+        .await
+        .expect("Unable to connect to auction query client");
+    let auction = auction_qc
+        .auction_by_id(QueryAuctionByIdRequest { auction_id })
+        .await?
+        .into_inner()
+        .auction;
+
+    auction.map_or(
+        Err(CosmosGrpcError::BadResponse(
+            "No such auction returned".to_string(),
+        )),
+        |a| Ok(a),
+    )
 }
