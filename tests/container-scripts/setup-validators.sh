@@ -16,7 +16,7 @@ else
 fi
 set -u
 
-ALLOCATION="1000000000000000ugraviton,1000000000000000footoken,1000000000000000footoken2,1000000000000000ibc/nometadatatoken"
+ALLOCATION="1000000000000000footoken,1000000000000000footoken2,1000000000000000ibc/nometadatatoken,1000000000000000ugraviton"
 
 # first we start a genesis.json with validator 1
 # validator 1 will also collect the gentx's once gnerated
@@ -31,9 +31,9 @@ $BIN init $STARTING_VALIDATOR_HOME --chain-id=$CHAIN_ID validator1
 ## testing the generated one with the default values provided by the module.
 
 # add in denom metadata for both native tokens
-jq '.app_state.bank.denom_metadata += [{"name": "Foo Token", "symbol": "FOO", "base": "footoken", display: "mfootoken", "description": "A non-staking test token", "denom_units": [{"denom": "footoken", "exponent": 0}, {"denom": "mfootoken", "exponent": 6}]}]' /validator$STARTING_VALIDATOR/config/genesis.json > /stake-genesis.json
-jq '.app_state.bank.denom_metadata += [{"name": "Stake Token", "symbol": "GRAV", "base": "ugraviton", display: "ugraviton", "description": "A staking test token", "denom_units": [{"denom": "ugraviton", "exponent": 0}, {"denom": "graviton", "exponent": 6}]}]' /stake-genesis.json > /footoken2-genesis.json
-jq '.app_state.bank.denom_metadata += [{"name": "Foo Token2", "symbol": "F20", "base": "footoken2", display: "mfootoken2", "description": "A second non-staking test token", "denom_units": [{"denom": "footoken2", "exponent": 0}, {"denom": "mfootoken2", "exponent": 6}]}]' /footoken2-genesis.json > /bech32ibc-genesis.json
+jq '.app_state.bank.denom_metadata += [{"name": "Foo Token", "symbol": "FOO", "base": "footoken", display: "mfootoken", "description": "A non-staking test token", "denom_units": [{"denom": "footoken", "exponent": 0}, {"denom": "mfootoken", "exponent": 6}]}]' /validator$STARTING_VALIDATOR/config/genesis.json > /footoken2-genesis.json
+jq '.app_state.bank.denom_metadata += [{"name": "Foo Token2", "symbol": "F20", "base": "footoken2", display: "mfootoken2", "description": "A second non-staking test token", "denom_units": [{"denom": "footoken2", "exponent": 0}, {"denom": "mfootoken2", "exponent": 6}]}]' /footoken2-genesis.json > /stake-genesis.json
+jq '.app_state.bank.denom_metadata += [{"name": "Stake Token", "symbol": "GRAV", "base": "ugraviton", display: "ugraviton", "description": "A staking test token", "denom_units": [{"denom": "ugraviton", "exponent": 0}, {"denom": "graviton", "exponent": 6}]}]' /stake-genesis.json > /bech32ibc-genesis.json
 
 # Set the chain's native bech32 prefix
 jq '.app_state.bech32ibc.nativeHRP = "gravity"' /bech32ibc-genesis.json > /gov-genesis.json
@@ -41,8 +41,9 @@ jq '.app_state.bech32ibc.nativeHRP = "gravity"' /bech32ibc-genesis.json > /gov-g
 # a 60 second voting period to allow us to pass governance proposals in the tests
 jq '.app_state.gov.voting_params.voting_period = "120s"' /gov-genesis.json > /auction-genesis.json
 
-# Set the non-auctionable tokens
-jq '.app_state.auction.params.non_auctionable_tokens = ["ugraviton"]' /auction-genesis.json > /eip712-genesis.json
+# Set the auction module params
+jq '.app_state.auction.params.non_auctionable_tokens = ["ugraviton"]' /auction-genesis.json > /auction2-genesis.json
+jq '.app_state.auction.params.auction_length = 30' /auction2-genesis.json > /eip712-genesis.json
 
 # Create a user for EIP-712 testing with a reliable account number (13) so that the hardcoded transaction routinely succeeds
 # 13 seems to be the first user account which can be created, but this is more reliable than waiting for test time
@@ -51,9 +52,10 @@ jq '.app_state.bank.balances += [{"address": "gravity1hanqss6jsq66tfyjz56wz44z0e
 
 # Add some funds to the community pool to test Airdrops, note that the gravity address here is the first 20 bytes
 # of the sha256 hash of 'distribution' to create the address of the module
-jq '.app_state.distribution.fee_pool.community_pool = [{"denom": "ugraviton", "amount": "1000000000000000000000000.0"}]' /community-pool-genesis.json > /community-pool2-genesis.json
+jq '.app_state.distribution.fee_pool.community_pool = [{"denom": "footoken", "amount": "1000000000000000000000000"},{"denom": "ugraviton", "amount": "1000000000000000000000000"}]' /community-pool-genesis.json > /community-pool2-genesis.json
 jq '.app_state.auth.accounts += [{"@type": "/cosmos.auth.v1beta1.ModuleAccount", "base_account": { "account_number": "0", "address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh","pub_key": null,"sequence": "0"},"name": "distribution","permissions": ["basic"]}]' /community-pool2-genesis.json > /community-pool3-genesis.json
-jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"amount": "1000000000000000000000000", "denom": "ugraviton"}]}]' /community-pool3-genesis.json > /edited-genesis.json
+jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"denom": "footoken", "amount": "1000000000000000000000000"},{"amount": "1000000000000000000000000", "denom": "ugraviton"}]}]' /community-pool3-genesis.json > /edited-genesis.json
+
 
 # Change the stake token to be ugraviton instead
 sed -i 's/\<stake\>/ugraviton/g' /edited-genesis.json
