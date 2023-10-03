@@ -1579,9 +1579,9 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "gravity_proto"
-version = "0.4.3"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f55505edecf612bb2269e9e70e294f8f102b7421c2f61da4c3476f02342300d"
+checksum = "c5d2cf0d891349794e8d5a441b70d7d6d01f5ad5b4c24ac451380dbada6f45ec"
 dependencies = [
  "cosmos-sdk-proto-althea",
  "prost 0.12.1",
