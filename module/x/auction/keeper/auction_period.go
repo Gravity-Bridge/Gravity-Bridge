@@ -79,9 +79,25 @@ func (k Keeper) initializeAuctionPeriodFromParams(startBlock uint64, params type
 }
 
 // CreateAuctionsForActivePeriod will iterate through all acceptable community pool balances and store auctions for them
-// Warning: assumes the auction period for these auctions has been initialized in the store
+// Returns an error if the module is disabled, an active period is detected, or on failure
 func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
 	params := k.GetParams(ctx)
+	var foundAuctions = false
+	k.IterateAuctions(ctx, func(_ []byte, _ types.Auction) (stop bool) {
+		foundAuctions = true
+		return true
+	})
+	// Auctions should have been deleted after they were closed
+	if foundAuctions {
+		return sdkerrors.Wrapf(types.ErrInvalidAuction, "attempted to create auctions without removing old auctions from store")
+	}
+	period := k.GetAuctionPeriod(ctx)
+	nextBlock := uint64(ctx.BlockHeight() + 1)
+	// The only valid call is when a new period begins the next block, and ends in the future
+	if period.StartBlockHeight != nextBlock || period.EndBlockHeight <= nextBlock {
+		return sdkerrors.Wrapf(types.ErrInvalidAuction, "attempted to create auctions in the middle of an active period")
+	}
+
 	auctionBlacklist := params.NonAuctionableTokens
 	blacklistMap := listToMap(auctionBlacklist)
 	communityPool := k.DistKeeper.GetFeePoolCommunityCoins(ctx)
