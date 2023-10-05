@@ -56,3 +56,44 @@ func (suite *KeeperTestSuite) TestAuctionPeriodStorage() {
 	require.Equal(suite.T(), createdAP.EndBlockHeight+1, finalAP.StartBlockHeight)
 	require.Equal(suite.T(), createdAP.EndBlockHeight+1+params.AuctionLength, finalAP.EndBlockHeight)
 }
+
+// Tests auction period function behavior when the module is disabled
+func (suite *KeeperTestSuite) TestAuctionPeriodWhileDisabled() {
+	ctx := suite.Ctx
+	ak := suite.App.AuctionKeeper
+	t := suite.T()
+	params := ak.GetParams(ctx)
+	// Create and store multiple AuctionPeriods
+	startAP := ak.GetAuctionPeriod(ctx)
+	// The first period should start on the first block
+	require.Equal(t, startAP.StartBlockHeight, uint64(1))
+	// And end auctionLength blocks later
+	require.Equal(t, startAP.EndBlockHeight, params.AuctionLength+1)
+
+	newAP := types.AuctionPeriod{
+		StartBlockHeight: startAP.EndBlockHeight + 1,
+		EndBlockHeight:   startAP.EndBlockHeight + 2,
+	}
+
+	// Disable the module
+	params.Enabled = false
+	ak.SetParams(ctx, params)
+	ctx = ctx.WithBlockHeight(int64(startAP.EndBlockHeight))
+
+	// Fail to update the auction period to the new auction
+	err := ak.UpdateAuctionPeriod(ctx, newAP)
+	require.Error(t, err)
+
+	// Fail to create new auctions (at the wrong time but still should fail)
+	suite.FundCommunityPool(ctx, TestBalances)
+	err = ak.CreateAuctionsForAuctionPeriod(ctx)
+	require.Error(t, err)
+
+	// Ensure that the attempted behavior works as normal when enabled
+	params.Enabled = true
+	ak.SetParams(ctx, params)
+	err = ak.UpdateAuctionPeriod(ctx, newAP)
+	require.NoError(t, err)
+	err = ak.CreateAuctionsForAuctionPeriod(ctx)
+	require.NoError(t, err)
+}

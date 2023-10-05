@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
@@ -164,4 +165,92 @@ func (suite *KeeperTestSuite) TestEmptyAuctionFunctions() {
 
 	nonce = ak.GetAuctionNonce(ctx)
 	require.Equal(t, uint64(1), nonce.Id)
+}
+
+// Test the auction function behavior when the Enabled parameter is false
+func (suite *KeeperTestSuite) TestDisabledAuctionFunctions() {
+	InitPoolAndAuctionTokens(suite)
+	ctx := suite.Ctx
+	ak := suite.App.AuctionKeeper
+	t := suite.T()
+	params := ak.GetParams(ctx)
+
+	ctx = ctx.WithBlockHeight(int64(params.AuctionLength) + ctx.BlockHeight())
+	auction.EndBlocker(ctx, *ak)
+	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
+
+	// Get auctions before the module is disabled
+	allAuctions := ak.GetAllAuctions(ctx)
+	require.True(t, len(allAuctions) > 0)
+
+	// Disable the module
+	params.Enabled = false
+	ak.SetParams(ctx, params)
+
+	// Get the auctions after disable, assert they haven't changed
+	postDisableAuctions := ak.GetAllAuctions(ctx)
+	require.Equal(t, allAuctions, postDisableAuctions)
+
+	// Advance past the end of the auction period while disabled
+	period := ak.GetAuctionPeriod(ctx)
+	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))
+	auction.EndBlocker(ctx, *ak)
+	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
+
+	// Get the auctions after period end, assert they have not been processed
+	postPeriodAuctions := ak.GetAllAuctions(ctx)
+	require.Equal(t, postDisableAuctions, postPeriodAuctions)
+
+	// Try to update the highest bidder, observe failure
+	auc0 := postPeriodAuctions[0]
+	newBidder := suite.CreateAndFundRandomAccounts(1, TestBalances)[0]
+	newBid := types.Bid{
+		BidAmount:     100000000,
+		BidderAddress: string(sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), newBidder)),
+	}
+	err := ak.UpdateHighestBidder(ctx, auc0.Id, newBid)
+	require.Error(t, err)
+	// Check that the stored value hasn't changed
+	updatedAuc0 := ak.GetAuctionById(ctx, auc0.Id)
+	require.Equal(t, auc0.Id, updatedAuc0.Id)
+	require.Equal(t, auc0.Amount, updatedAuc0.Amount)
+	require.Equal(t, auc0.HighestBid, updatedAuc0.HighestBid)
+
+	// Try to use UpdateAuction directly, observe failure
+	changedAuc0 := types.NewAuction(auc0.Id, auc0.Amount)
+	changedAuc0.HighestBid = &newBid
+	err = ak.UpdateAuction(ctx, changedAuc0)
+	require.Error(t, err)
+	// Check that the stored value hasn't changed
+	updatedAuc0 = ak.GetAuctionById(ctx, auc0.Id)
+	require.Equal(t, auc0.Id, updatedAuc0.Id)
+	require.Equal(t, auc0.Amount, updatedAuc0.Amount)
+	require.Equal(t, auc0.HighestBid, updatedAuc0.HighestBid)
+
+	// Try to delete auctions, observe failure
+	require.Panics(t, func() { ak.DeleteAllAuctions(ctx) })
+	postDeleteAuctions := ak.GetAllAuctions(ctx)
+	require.Equal(t, postPeriodAuctions, postDeleteAuctions)
+
+	// Try to close an aucion, observe failure
+	err = ak.CloseAuctionNoWinner(ctx, auc0.Id)
+	require.Error(t, err)
+
+	// Re-enable to update the auction without running end blocker
+	params.Enabled = true
+	ak.SetParams(ctx, params)
+	// Set a highest bidder so we can call CloseAuctionWithWinner
+	err = ak.UpdateHighestBidder(ctx, auc0.Id, newBid)
+	require.NoError(t, err)
+	params.Enabled = true
+	ak.SetParams(ctx, params)
+
+	auc0WithBid := ak.GetAuctionById(ctx, auc0.Id)
+	require.NotNil(t, auc0WithBid)
+	require.NotNil(t, auc0WithBid.HighestBid)
+	require.Equal(t, newBid, *auc0WithBid.HighestBid)
+
+	// Try to pay out the auction, observe failure
+	err = ak.CloseAuctionWithWinner(ctx, auc0.Id)
+	require.Error(t, err)
 }
