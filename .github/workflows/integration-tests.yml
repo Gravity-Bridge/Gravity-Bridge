@@ -486,3 +486,17 @@ jobs:
         run: tests/all-up-test.sh AUCTION_INVALID_PARAMS
         env:
           NO_IMAGE_BUILD: True
+  auction-disable:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jpribyl/action-docker-layer-caching@v0.1.1
+        with:
+          key: integration-test-cache-{hash}
+          restore-keys: |
+            integration-test-cache-
+      - name: Test auction module params validation
+        run: tests/all-up-test.sh AUCTION_DISABLE
+        env:
+          NO_IMAGE_BUILD: True

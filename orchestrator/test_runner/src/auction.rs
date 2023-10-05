@@ -13,13 +13,15 @@ use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::{submit_auction_params_proposal, AuctionParamsProposalJson};
 use cosmos_gravity::send::MSG_BID_TYPE_URL;
 use deep_space::client::type_urls::MSG_FUND_COMMUNITY_POOL_TYPE_URL;
+use deep_space::client::types::LatestBlock;
 use deep_space::error::CosmosGrpcError;
 use deep_space::{Address as CosmosAddress, Coin, Contact, Msg, PrivateKey};
 use gravity_proto::auction::query_client::QueryClient as AuctionQueryClient;
 use gravity_proto::auction::{
-    Auction, MsgBid, QueryAuctionByIdRequest, QueryAuctionPeriodRequest, QueryAuctionsRequest,
-    QueryParamsRequest,
+    Auction, MsgBid, Params, QueryAuctionByIdRequest, QueryAuctionPeriodRequest,
+    QueryAuctionsRequest, QueryParamsRequest,
 };
+use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::cosmos_sdk_proto::cosmos::distribution::v1beta1::query_client::QueryClient as DistributionQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::distribution::v1beta1::{
     MsgFundCommunityPool, QueryCommunityPoolRequest,
@@ -41,9 +43,140 @@ lazy_static! {
 }
 
 // Ensure that the auction module params cannot be updated to auction off the ugraviton supply
-#[allow(clippy::too_many_arguments)]
 pub async fn auction_invalid_params_test(contact: &Contact, keys: Vec<ValidatorKeys>) {
-    set_non_auctionable_tokens(contact, &keys, vec![]).await;
+    let res = set_non_auctionable_tokens(contact, &keys, vec![]).await;
+    assert!(res.is_err());
+    info!("Successfully tested auction params validation");
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn auction_disabled_test(
+    web30: &Web3,
+    contact: &Contact,
+    grpc_client: GravityQueryClient<Channel>,
+    keys: Vec<ValidatorKeys>,
+    gravity_address: EthAddress,
+    erc20_addresses: Vec<EthAddress>,
+) {
+    let no_relay_market_config = create_no_batch_requests_config();
+    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
+
+    let auction_params = AuctionParamsProposalJson {
+        title: "Disable the auction module after setup".to_string(),
+        description: "Disable the auction module after setup".to_string(),
+        enabled: Some(false),
+        auction_length: Some(10), // Shorten the auction period for quicker testing
+        ..Default::default()
+    };
+    let auction_users = setup(
+        web30,
+        contact,
+        &grpc_client,
+        keys.clone(),
+        gravity_address,
+        erc20_addresses[0],
+        Some(auction_params),
+    )
+    .await;
+    let mut auction_qc = AuctionQueryClient::connect(contact.get_url())
+        .await
+        .expect("Unable to connect to auction query client");
+    let period = auction_qc
+        .auction_period(QueryAuctionPeriodRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .auction_period
+        .unwrap();
+    info!("Current period: {period:?}");
+    let auctions = auction_qc
+        .auctions(QueryAuctionsRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .auctions;
+
+    if auctions.is_empty() {
+        panic!("Expecting at least some auctions to be open, found none");
+    }
+    info!("Found auctions {:?}", auctions);
+
+    wait_for_block(contact, period.end_block_height)
+        .await
+        .expect("Unable to wait until end of auction period");
+
+    let current_height = match contact.get_latest_block().await {
+        Ok(LatestBlock::Latest { block }) => block.header.unwrap().height,
+        Ok(_) => panic!("Node is not running or is not up to date"),
+        Err(_) => panic!("Failure to get latest block!"),
+    };
+    wait_for_block(contact, (current_height + 1) as u64)
+        .await
+        .expect("Could not wait for block");
+
+    let new_period = auction_qc
+        .auction_period(QueryAuctionPeriodRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .auction_period
+        .unwrap();
+    info!("Current period: {period:?}");
+    let new_auctions = auction_qc
+        .auctions(QueryAuctionsRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .auctions;
+
+    // If the module is truly disabled, the new period and new auctions should be the same
+    assert_eq!(new_period, period);
+    assert_eq!(new_auctions, auctions);
+
+    // Bidding should fail now that the module is halted
+    let min_bid_fee = auction_qc
+        .params(QueryParamsRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .params
+        .unwrap()
+        .min_bid_fee;
+    let user = auction_users.get(0).unwrap();
+    let bid = create_successful_bid(*user, 0, min_bid_fee, new_auctions.get(0).unwrap().id);
+    execute_and_validate_bid(contact, (false, user, bid)).await;
+
+    // Re-enable the module and check that the auction period and auctions update
+    let enabled_auction_params = AuctionParamsProposalJson {
+        title: "Enable the auction module".to_string(),
+        description: "Enable the auction module".to_string(),
+        enabled: Some(true),
+        ..Default::default()
+    };
+    submit_and_pass_auction_params_proposal(contact, &keys, enabled_auction_params).await;
+
+    let period = auction_qc
+        .auction_period(QueryAuctionPeriodRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .auction_period
+        .unwrap();
+    info!("Current period: {period:?}");
+    let auctions = auction_qc
+        .auctions(QueryAuctionsRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .auctions;
+
+    assert_ne!(new_period, period);
+    assert_ne!(new_auctions, auctions);
+
+    let user = auction_users.get(0).unwrap();
+    let bid = create_successful_bid(*user, 0, min_bid_fee, auctions.get(0).unwrap().id);
+    execute_and_validate_bid(contact, (true, user, bid)).await;
+    info!("Successfully tested auction module disable function");
 }
 
 // Populate the community pool with tokens before bidding on auctions
@@ -59,6 +192,13 @@ pub async fn auction_test_static(
     let no_relay_market_config = create_no_batch_requests_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
+    let length = 30u64;
+    let auction_params = AuctionParamsProposalJson {
+        title: "Set auction length to 30".to_string(),
+        description: "Set auction length to 30".to_string(),
+        auction_length: Some(length),
+        ..Default::default()
+    };
     let auction_users = setup(
         web30,
         contact,
@@ -66,6 +206,7 @@ pub async fn auction_test_static(
         keys,
         gravity_address,
         erc20_addresses[0],
+        Some(auction_params),
     )
     .await;
 
@@ -203,6 +344,14 @@ pub async fn auction_test_random(
         .await
         .expect("Unable to connect to auction query client");
 
+    let length = 30u64;
+    let auction_params = AuctionParamsProposalJson {
+        title: "Set auction length to 30".to_string(),
+        description: "Set auction length to 30".to_string(),
+        auction_length: Some(length),
+        ..Default::default()
+    };
+
     // Set up the first round of auctions
     let auction_users = setup(
         web30,
@@ -211,6 +360,7 @@ pub async fn auction_test_random(
         keys.clone(),
         gravity_address,
         erc20_addresses[0],
+        Some(auction_params),
     )
     .await;
     wait_for_next_period(auction_qc.clone()).await;
@@ -331,6 +481,7 @@ pub async fn auction_test_random(
 }
 
 // Creates a footoken representation, sends 100 of the given erc20 to each of the validators, and sets the send to eth fee at a 100% rate
+// Optionally proposes and passes a provided AuctionParamsProposalJson with all the validators
 pub async fn setup(
     web30: &Web3,
     contact: &Contact,
@@ -338,6 +489,7 @@ pub async fn setup(
     keys: Vec<ValidatorKeys>,
     gravity_address: EthAddress,
     erc20_address: EthAddress,
+    auction_params: Option<AuctionParamsProposalJson>,
 ) -> Vec<BridgeUserKey> {
     let mut grpc_client = grpc_client.clone();
 
@@ -379,8 +531,6 @@ pub async fn setup(
         .await;
     }
     let denom = format!("gravity{}", erc20_address);
-
-    set_auction_length(contact, &keys, 45).await;
 
     let mut dist_qc = DistributionQueryClient::connect(contact.get_url())
         .await
@@ -434,6 +584,11 @@ pub async fn setup(
             .await;
         res.expect("Failed to send ERC20 coins to auction user");
     }
+
+    if let Some(auction_params_prop) = auction_params {
+        submit_and_pass_auction_params_proposal(contact, &keys, auction_params_prop).await;
+    }
+
     users
 }
 
@@ -479,23 +634,11 @@ async fn seed_pool(contact: &Contact, keys: &[ValidatorKeys], denom: String) {
     }
 }
 
-/// Sets the auction length parameter to the given value
-async fn set_auction_length(contact: &Contact, keys: &[ValidatorKeys], length: u64) {
-    let params = AuctionParamsProposalJson {
-        title: "Set auction params".to_string(),
-        description: "Auction Params!".to_string(),
-        auction_length: Some(length),
-        ..Default::default()
-    };
-
-    submit_and_pass_auction_params_proposal(contact, keys, params).await;
-}
-
 async fn set_non_auctionable_tokens(
     contact: &Contact,
     keys: &[ValidatorKeys],
     non_auctionable_tokens: Vec<String>,
-) {
+) -> Result<TxResponse, CosmosGrpcError> {
     let params = AuctionParamsProposalJson {
         title: "Set non_auctionable_tokens".to_string(),
         description: "Set non_auctionable_tokens".to_string(),
@@ -503,7 +646,7 @@ async fn set_non_auctionable_tokens(
         ..Default::default()
     };
 
-    let res = submit_auction_params_proposal(
+    submit_auction_params_proposal(
         params,
         get_deposit(None),
         get_fee(None),
@@ -511,9 +654,7 @@ async fn set_non_auctionable_tokens(
         keys[0].validator_key,
         Some(TOTAL_TIMEOUT),
     )
-    .await;
-    assert!(res.is_err());
-    info!("Successfully tested auction params validation");
+    .await
 }
 
 // Submits, votes yes, and waits for a proposal to update the Auction params
@@ -819,6 +960,6 @@ async fn get_auction(grpc_url: String, auction_id: u64) -> Result<Auction, Cosmo
         Err(CosmosGrpcError::BadResponse(
             "No such auction returned".to_string(),
         )),
-        |a| Ok(a),
+        Ok,
     )
 }

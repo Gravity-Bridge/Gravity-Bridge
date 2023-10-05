@@ -7,7 +7,9 @@
 extern crate log;
 
 use crate::airdrop_proposal::airdrop_proposal_test;
-use crate::auction::{auction_invalid_params_test, auction_test_random, auction_test_static};
+use crate::auction::{
+    auction_disabled_test, auction_invalid_params_test, auction_test_random, auction_test_static,
+};
 use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
 use crate::deposit_overflow::deposit_overflow_test;
@@ -619,7 +621,7 @@ pub async fn main() {
             .await;
             return;
         } else if test_type == "AUCTION_STATIC" {
-            info!("Starting Auction test");
+            info!("Starting Auction Static test");
             auction_test_static(
                 &web30,
                 &gravity_contact,
@@ -631,7 +633,7 @@ pub async fn main() {
             .await;
             return;
         } else if test_type == "AUCTION_RANDOM" {
-            info!("Starting Auction test");
+            info!("Starting Auction Random bids test");
             auction_test_random(
                 &web30,
                 &gravity_contact,
@@ -643,8 +645,20 @@ pub async fn main() {
             .await;
             return;
         } else if test_type == "AUCTION_INVALID_PARAMS" {
-            info!("Starting Auction test");
+            info!("Starting Auction Invalid Params test");
             auction_invalid_params_test(&gravity_contact, keys).await;
+            return;
+        } else if test_type == "AUCTION_DISABLE" {
+            info!("Starting Auction Disabled param test");
+            auction_disabled_test(
+                &web30,
+                &gravity_contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses,
+            )
+            .await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;
