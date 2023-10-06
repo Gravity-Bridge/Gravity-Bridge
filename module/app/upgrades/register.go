@@ -13,10 +13,12 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/apollo"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
+	auctionkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 )
 
 // RegisterUpgradeHandlers registers handlers for all upgrades
@@ -26,10 +28,10 @@ func RegisterUpgradeHandlers(
 	mm *module.Manager, configurator *module.Configurator, accountKeeper *authkeeper.AccountKeeper,
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper, upgradeKeeper *upgradekeeper.Keeper,
-	crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper,
+	crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper, auctionKeeper *auctionkeeper.Keeper,
 ) {
 	if mm == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
-		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil || upgradeKeeper == nil {
+		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil || upgradeKeeper == nil || auctionKeeper == nil {
 		panic("Nil argument to RegisterUpgradeHandlers()!")
 	}
 	// Mercury aka v1->v2 UPGRADE HANDLER SETUP
@@ -71,5 +73,11 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		antares.OrionToAntaresPlanName,
 		antares.GetAntaresUpgradeHandler(mm, configurator, crisisKeeper),
+	)
+
+	// Apollo upgrade handler
+	upgradeKeeper.SetUpgradeHandler(
+		apollo.AntaresToApolloPlanName,
+		apollo.GetApolloUpgradeHandler(mm, configurator, crisisKeeper, auctionKeeper),
 	)
 }

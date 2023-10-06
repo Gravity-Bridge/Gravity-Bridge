@@ -1,5 +1,5 @@
+use crate::auction::auction_test_random;
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
-use crate::ica_host::ica_host_happy_path;
 use crate::{happy_path_test, happy_path_test_v2, utils::*};
 use clarity::Address as EthAddress;
 use deep_space::client::ChainStatus;
@@ -21,6 +21,8 @@ use std::time::Duration;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+
+pub const UPGRADE_NAME: &str = "apollo";
 
 // The number of attestations run_all_recoverable_tests and run_upgrade_specific_tests should create
 const MINIMUM_ATTESTATIONS: u64 = 10;
@@ -80,7 +82,7 @@ pub async fn upgrade_part_1(
     )
     .await;
 
-    let upgrade_height = run_upgrade(gravity_contact, keys, "antares".to_string(), false).await;
+    let upgrade_height = run_upgrade(gravity_contact, keys, UPGRADE_NAME.to_string(), false).await;
 
     // Check that the expected attestations exist
     check_attestations(grpc_client.clone(), MINIMUM_ATTESTATIONS).await;
@@ -254,23 +256,22 @@ pub async fn run_all_recoverable_tests(
 pub async fn run_upgrade_specific_tests(
     web30: &Web3,
     gravity_contact: &Contact,
-    ibc_contact: &Contact,
+    _ibc_contact: &Contact,
     grpc_client: GravityQueryClient<Channel>,
     keys: Vec<ValidatorKeys>,
-    ibc_keys: Vec<CosmosPrivateKey>,
+    _ibc_keys: Vec<CosmosPrivateKey>,
     gravity_address: EthAddress,
-    _erc20_addresses: Vec<EthAddress>,
+    erc20_addresses: Vec<EthAddress>,
     post_upgrade: bool,
 ) {
     if post_upgrade {
-        ica_host_happy_path(
+        auction_test_random(
             web30,
-            grpc_client,
             gravity_contact,
-            ibc_contact,
+            grpc_client,
             keys,
-            ibc_keys,
             gravity_address,
+            erc20_addresses,
         )
         .await;
     }

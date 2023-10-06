@@ -328,8 +328,8 @@ jobs:
           key: integration-test-cache-{hash}
           restore-keys: |
             integration-test-cache-
-      - name: Test Antares upgrade
-        run: tests/run-upgrade-test.sh v1.9.3
+      - name: Test Apollo upgrade
+        run: tests/run-upgrade-test.sh v1.10.1
         env:
           NO_IMAGE_BUILD: True
   ibc_auto_forward_test:

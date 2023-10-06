@@ -118,6 +118,7 @@ import (
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/apollo"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
@@ -182,8 +183,8 @@ var (
 		ibctransfertypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
 		gravitytypes.ModuleName:             {authtypes.Minter, authtypes.Burner},
 		auctiontypes.ModuleName:             {authtypes.Minter, authtypes.Burner},
-		icatypes.ModuleName:                 nil,
 		auctiontypes.AuctionPoolAccountName: nil,
+		icatypes.ModuleName:                 nil,
 	}
 
 	// module accounts that are allowed to receive tokens
@@ -994,7 +995,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 func (app *Gravity) registerUpgradeHandlers() {
 	upgrades.RegisterUpgradeHandlers(
 		app.mm, app.configurator, app.AccountKeeper, app.BankKeeper, app.Bech32IbcKeeper, app.DistrKeeper,
-		app.MintKeeper, app.StakingKeeper, app.UpgradeKeeper, app.CrisisKeeper, app.IbcTransferKeeper,
+		app.MintKeeper, app.StakingKeeper, app.UpgradeKeeper, app.CrisisKeeper, app.IbcTransferKeeper, app.AuctionKeeper,
 	)
 }
 
@@ -1017,24 +1018,35 @@ func (app *Gravity) registerStoreLoaders() {
 	// v1->v2 STORE LOADER SETUP
 	// Register the new v2 modules and the special StoreLoader to add them
 	if upgradeInfo.Name == v2.V1ToV2PlanName {
+		// Register the bech32ibc module as a new module that needs a new store allocated
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added:   []string{bech32ibctypes.ModuleName},
 			Renamed: nil,
 			Deleted: nil,
 		}
 
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
 	// ANTARES ICA Host module store loader setup
 	if upgradeInfo.Name == antares.OrionToAntaresPlanName {
+		// Register the ICA Host module as a new module that needs a new store allocated
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added:   []string{icahosttypes.StoreKey},
 			Renamed: nil,
 			Deleted: nil,
 		}
 
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
+	// Apollo Auction module store loader setup
+	if upgradeInfo.Name == apollo.AntaresToApolloPlanName {
+		// Register the Auction module as a new module that needs a new store allocated
+		storeUpgrades := storetypes.StoreUpgrades{
+			Added:   []string{auctiontypes.StoreKey},
+			Renamed: nil,
+			Deleted: nil,
+		}
+
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
 }
