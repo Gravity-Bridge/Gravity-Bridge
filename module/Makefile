@@ -8,6 +8,11 @@ DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bu
 BUILDDIR ?= $(CURDIR)/build
 LEDGER_ENABLED ?= true
 
+# enable binary security features
+export GOFLAGS='-buildmode=pie'
+export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
+export CGO_LDFLAGS="-Wl,-z,relro,-z,now"
+
 build_tags = netgo
 ifeq ($(LEDGER_ENABLED),true)
   ifeq ($(OS),Windows_NT)
@@ -26,6 +31,7 @@ ifeq ($(LEDGER_ENABLED),true)
       ifeq ($(GCC),)
         $(error gcc not installed for ledger support, please install or set LEDGER_ENABLED=false)
       else
+        # security features required when linking to C code
         build_tags += ledger
       endif
     endif
@@ -58,9 +64,6 @@ install: go.sum install-no-verify
 
 # Runs go install without verifying dependencies, used to make testing faster
 install-no-verify:
-		export GOFLAGS='-buildmode=pie'
-		export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
-		export CGO_LDFLAGS="-Wl,-z,relro,-z,now -fstack-protector"
 		go install $(BUILD_FLAGS) ./cmd/gravity
 
 # Verifies the go modules

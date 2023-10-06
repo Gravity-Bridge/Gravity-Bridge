@@ -39,7 +39,7 @@ for platform in ${TARGET_PLATFORMS} ; do
     then
         export GOFLAGS='-buildmode=pie'
         export CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
-        export CGO_LDFLAGS="-Wl,-z,relro,-z,now -fstack-protector"
+        export CGO_LDFLAGS="-Wl,-z,relro,-z,now"
     fi
 
     make clean
