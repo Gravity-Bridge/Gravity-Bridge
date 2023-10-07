@@ -21,4 +21,4 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
        echo "Setting --platform=linux/amd64 for Mac M1 compatibility"
        PLATFORM_CMD="--platform=linux/amd64"; fi
 fi
-docker build -t gravity-base $PLATFORM_CMD .
+docker build --ulimit nofile=65536:65536 -t gravity-base $PLATFORM_CMD .
