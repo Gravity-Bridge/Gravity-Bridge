@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	sdkerrors "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -106,7 +107,7 @@ var (
 		SlashFractionBadEthSignature: sdk.Dec{},
 		ValsetReward: sdk.Coin{
 			Denom:  "",
-			Amount: sdk.Int{},
+			Amount: sdkmath.Int{},
 		},
 		BridgeActive:           true,
 		EthereumBlacklist:      []string{},
@@ -248,7 +249,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 		SlashFractionLogicCall:       sdk.Dec{},
 		UnbondSlashingValsetsWindow:  0,
 		SlashFractionBadEthSignature: sdk.Dec{},
-		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.Int{}},
+		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdkmath.Int{}},
 		BridgeActive:                 false,
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,

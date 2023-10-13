@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	sdkerrors "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
@@ -114,8 +116,8 @@ func NewERC20Token(amount uint64, contract string) ERC20Token {
 	return ERC20Token{Amount: sdk.NewIntFromUint64(amount), Contract: contract}
 }
 
-// NewSDKIntERC20Token returns a new instance of an ERC20, accepting a sdk.Int
-func NewSDKIntERC20Token(amount sdk.Int, contract string) ERC20Token {
+// NewSDKIntERC20Token returns a new instance of an ERC20, accepting a sdkmath.Int
+func NewSDKIntERC20Token(amount sdkmath.Int, contract string) ERC20Token {
 	return ERC20Token{Amount: amount, Contract: contract}
 }
 
@@ -126,12 +128,12 @@ func (e ERC20Token) ToInternal() (*InternalERC20Token, error) {
 
 // InternalERC20Token contains validated fields, used for all internal computation
 type InternalERC20Token struct {
-	Amount   sdk.Int
+	Amount   sdkmath.Int
 	Contract EthAddress
 }
 
 // NewInternalERC20Token creates an InternalERC20Token, performing validation and returning any errors
-func NewInternalERC20Token(amount sdk.Int, contract string) (*InternalERC20Token, error) {
+func NewInternalERC20Token(amount sdkmath.Int, contract string) (*InternalERC20Token, error) {
 	ethAddress, err := NewEthAddress(contract)
 	if err != nil { // ethAddress could be nil, must return here
 		return nil, sdkerrors.Wrap(err, "invalid contract")
@@ -150,7 +152,7 @@ func NewInternalERC20Token(amount sdk.Int, contract string) (*InternalERC20Token
 // ValidateBasic performs validation on all fields of an InternalERC20Token
 func (i *InternalERC20Token) ValidateBasic() error {
 	if i.Amount.IsNegative() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "coins must not be negative")
+		return sdkerrors.Wrap(errors.ErrInvalidCoins, "coins must not be negative")
 	}
 	err := i.Contract.ValidateBasic()
 	if err != nil {

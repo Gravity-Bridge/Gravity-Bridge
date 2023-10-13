@@ -7,8 +7,11 @@ import (
 	"os"
 	"time"
 
+	tmcfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+
+	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp/helpers"
@@ -39,6 +42,7 @@ func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string,
 			Commit:             false,
 			OnOperation:        false,
 			AllInvariants:      false,
+			DBBackend:          "",
 		}, nil, "", nil, true, nil
 	}
 
@@ -57,7 +61,7 @@ func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string,
 		return simtypes.Config{}, nil, "", nil, false, err
 	}
 
-	db, err := sdk.NewLevelDB(dbName, dir)
+	db, err := dbm.NewDB(dbName, dbm.BackendType(tmcfg.DefaultConfig().DBBackend), dir)
 	if err != nil {
 		return simtypes.Config{}, nil, "", nil, false, err
 	}
@@ -74,7 +78,7 @@ func SimulationOperations(app Gravity, cdc codec.JSONCodec, config simtypes.Conf
 		Rand:         &rand.Rand{},
 		GenState:     map[string]json.RawMessage{},
 		Accounts:     []simtypes.Account{},
-		InitialStake: 0,
+		InitialStake: math.ZeroInt(),
 		NumBonded:    0,
 		GenTimestamp: time.Time{},
 		UnbondTime:   0,

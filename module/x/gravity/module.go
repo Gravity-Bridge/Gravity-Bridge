@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
@@ -20,7 +19,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/client/cli"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/client/rest"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -58,11 +56,6 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 	}
 
 	return data.ValidateBasic()
-}
-
-// RegisterRESTRoutes implements app module basic
-func (AppModuleBasic) RegisterRESTRoutes(ctx client.Context, rtr *mux.Router) {
-	rest.RegisterRoutes(ctx, rtr, types.StoreKey)
 }
 
 // GetQueryCmd implements app module basic

@@ -72,5 +72,6 @@ func NewConfigFromFlags() simulation.Config {
 		Commit:             FlagCommitValue,
 		OnOperation:        FlagOnOperationValue,
 		AllInvariants:      FlagAllInvariantsValue,
+		DBBackend:          "",
 	}
 }

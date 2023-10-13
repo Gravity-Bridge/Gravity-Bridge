@@ -61,11 +61,11 @@ func TestAddGenesisAccountCmd(t *testing.T) {
 			require.NoError(t, err)
 
 			appCodec := simapp.MakeTestEncodingConfig()
-			err = genutiltest.ExecInitCmd(testMbm, home, appCodec.Marshaler)
+			err = genutiltest.ExecInitCmd(testMbm, home, appCodec.Codec)
 			require.NoError(t, err)
 
 			serverCtx := server.NewContext(viper.New(), cfg, logger)
-			clientCtx := client.Context{}.WithCodec(appCodec.Marshaler).WithHomeDir(home)
+			clientCtx := client.Context{}.WithCodec(appCodec.Codec).WithHomeDir(home)
 
 			ctx := context.Background()
 			ctx = context.WithValue(ctx, client.ClientContextKey, &clientCtx)

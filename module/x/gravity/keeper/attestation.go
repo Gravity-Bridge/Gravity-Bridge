@@ -5,10 +5,11 @@ import (
 	"sort"
 	"strconv"
 
+	sdkerrors "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -385,7 +386,7 @@ func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 		Nonce:        0,
 		Members:      []types.BridgeValidator{},
 		Height:       0,
-		RewardAmount: sdk.Int{},
+		RewardAmount: sdkmath.Int{},
 		RewardToken:  "",
 	}
 	k.cdc.MustUnmarshal(bytes, &valset)

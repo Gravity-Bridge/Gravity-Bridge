@@ -2,8 +2,9 @@ package app
 
 import (
 	"fmt"
+
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // There are two places where the bech32 "gravity" account prefix can be set: the default sdkConfig and also NativeHrp

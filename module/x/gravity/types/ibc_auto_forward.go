@@ -1,9 +1,10 @@
 package types
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // ValidateBasic checks the ForeignReceiver is valid and foreign, the Amount is non-zero, the IbcChannel is
@@ -15,11 +16,11 @@ func (p PendingIbcAutoForward) ValidateBasic() error {
 	}
 	nativePrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
 	if prefix == nativePrefix {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "ForeignReceiver cannot have the native chain prefix")
+		return sdkerrors.Wrapf(errors.ErrInvalidAddress, "ForeignReceiver cannot have the native chain prefix")
 	}
 
 	if p.Token.IsZero() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "Token must be non-zero")
+		return sdkerrors.Wrap(errors.ErrInvalidCoins, "Token must be non-zero")
 	}
 
 	if p.IbcChannel == "" {

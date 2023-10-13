@@ -5,9 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	sdkerrors "cosmossdk.io/errors"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -174,7 +175,7 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 		minFeeCoin := sdk.NewCoin(sendAmount.GetDenom(), minFee)
 		if chainFee.IsLT(minFeeCoin) {
 			err := sdkerrors.Wrapf(
-				sdkerrors.ErrInsufficientFee,
+				errors.ErrInsufficientFee,
 				"chain fee provided [%s] is insufficient, need at least [%s]",
 				chainFee,
 				minFeeCoin,
@@ -325,7 +326,7 @@ func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator
 	// return an error if the validator isn't in the active set
 	val := k.StakingKeeper.Validator(ctx, validator.GetOperator())
 	if val == nil || !val.IsBonded() {
-		return sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, "validator not in active set")
+		return sdkerrors.Wrap(errors.ErrorInvalidSigner, "validator not in active set")
 	}
 
 	return nil

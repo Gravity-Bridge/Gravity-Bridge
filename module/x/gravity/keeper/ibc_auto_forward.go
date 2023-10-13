@@ -14,14 +14,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
+	"github.com/cosmos/cosmos-sdk/types/errors"
+	ibctransfertypes "github.com/cosmos/ibc-go/v5/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v5/modules/core/02-client/types"
+
+	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 // ValidatePendingIbcAutoForward performs basic validation, asserts the nonce is not ahead of what gravity is aware of,
@@ -53,7 +56,7 @@ func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, forward types.Pen
 	modBal := k.bankKeeper.GetBalance(ctx, modAcc, forward.Token.Denom)
 	if modBal.IsLT(*forward.Token) {
 		return sdkerrors.Wrapf(
-			sdkerrors.ErrInsufficientFunds, "Gravity Module account does not have enough funds (%s) for a forward of %s",
+			errors.ErrInsufficientFunds, "Gravity Module account does not have enough funds (%s) for a forward of %s",
 			modBal.String(), forward.Token.String(),
 		)
 	}
@@ -253,7 +256,7 @@ func createIbcMsgTransfer(portId string, forward types.PendingIbcAutoForward, se
 		RevisionNumber: 0,
 		RevisionHeight: 0,
 	}
-	return *ibctransfertypes.NewMsgTransfer(
+	msg := *ibctransfertypes.NewMsgTransfer(
 		portId,
 		forward.IbcChannel,
 		*forward.Token,
@@ -262,6 +265,8 @@ func createIbcMsgTransfer(portId string, forward types.PendingIbcAutoForward, se
 		zeroHeight, // Do not use block height based timeout
 		timeoutTimestampNs,
 	)
+	msg.Memo = "IBC Auto-Forwarded by Gravity Bridge"
+	return msg
 }
 
 // thirtyDaysInFuture creates a time.Time exactly 30 days from the last BlockTime for use in createIbcMsgTransfer

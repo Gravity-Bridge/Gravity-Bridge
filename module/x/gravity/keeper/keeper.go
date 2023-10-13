@@ -6,9 +6,11 @@ import (
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdkstore "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
@@ -17,7 +19,7 @@ import (
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v5/modules/apps/transfer/keeper"
 	"github.com/tendermint/tendermint/libs/log"
 
 	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
@@ -34,7 +36,7 @@ var _ types.DistributionKeeper = (*distrkeeper.Keeper)(nil)
 // Keeper maintains the link to storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
-	storeKey   sdk.StoreKey // Unexposed key to access store from sdk.Context
+	storeKey   sdkstore.StoreKey // Unexposed key to access store from sdk.Context
 	paramSpace paramtypes.Subspace
 
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
@@ -79,7 +81,7 @@ func (k Keeper) ValidateMembers() {
 
 // NewKeeper returns a new instance of the gravity keeper
 func NewKeeper(
-	storeKey sdk.StoreKey,
+	storeKey sdkstore.StoreKey,
 	paramSpace paramtypes.Subspace,
 	cdc codec.BinaryCodec,
 	bankKeeper *bankkeeper.BaseKeeper,
@@ -145,7 +147,7 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 func (k Keeper) GetParamsIfSet(ctx sdk.Context) (params types.Params, err error) {
 	for _, pair := range params.ParamSetPairs() {
 		if !k.paramSpace.Has(ctx, pair.Key) {
-			return types.Params{}, sdkerrors.Wrapf(sdkerrors.ErrNotFound, "the param key %s has not been set", string(pair.Key))
+			return types.Params{}, sdkerrors.Wrapf(errors.ErrNotFound, "the param key %s has not been set", string(pair.Key))
 		}
 		k.paramSpace.Get(ctx, pair.Key, pair.Value)
 	}

@@ -3,8 +3,10 @@ package types
 import (
 	"testing"
 
-	types "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	sdkmath "cosmossdk.io/math"
+	types "github.com/cosmos/cosmos-sdk/types"
 )
 
 // nolint: exhaustruct
@@ -33,7 +35,7 @@ func TestGenesisStateValidate(t *testing.T) {
 				SlashFractionBadEthSignature: types.Dec{},
 				ValsetReward: types.Coin{
 					Denom:  "",
-					Amount: types.Int{},
+					Amount: sdkmath.Int{},
 				},
 			},
 			GravityNonces:      GravityNonces{},
@@ -67,7 +69,7 @@ func TestGenesisStateValidate(t *testing.T) {
 				SlashFractionBadEthSignature: types.Dec{},
 				ValsetReward: types.Coin{
 					Denom:  "",
-					Amount: types.Int{},
+					Amount: sdkmath.Int{},
 				},
 			},
 			GravityNonces:      GravityNonces{},
