@@ -31,7 +31,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // MsgBid is a message type for placing a bid on an auction with given `auction_id`
 // `bidder` is the signer of the Msg
 // `amount` is the native token amount locked by the auction module if the bid is accepted as the highest bid
-// `bid_fee` is the native token amount sent to the community pool, and should be at least equal to the min bid fee param
+// `bid_fee` is the native token amount sent to the auction pool, and should be at least equal to the min bid fee param
 //
 // Additionally, all bids must meet or exceed `min_bid_amount`
 type MsgBid struct {

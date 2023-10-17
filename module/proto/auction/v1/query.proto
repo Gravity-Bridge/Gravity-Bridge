@@ -6,6 +6,7 @@ import "gogoproto/gogo.proto";
 import "auction/v1/params.proto";
 import "auction/v1/auction.proto";
 import "google/api/annotations.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
 
@@ -39,6 +40,12 @@ service Query {
   // AllAuctionsByBidder returns all open auctions with the given highest bidder address
   rpc AllAuctionsByBidder(QueryAllAuctionsByBidderRequest) returns (QueryAllAuctionsByBidderResponse) {
     option (google.api.http).get = "/auction/v1beta/auctions-bidder/{address}";
+  }
+
+  // AuctionPool returns the auction pool account address and the tokens which will be up for auction next,
+  // (but does not return any amounts from auctions with no bidder)
+  rpc AuctionPool(QueryAuctionPoolRequest) returns (QueryAuctionPoolResponse) {
+    option (google.api.http).get = "/auction/v1beta/auction-pool";
   }
 }
 
@@ -78,4 +85,10 @@ message QueryAllAuctionsByBidderRequest {
 }
 message QueryAllAuctionsByBidderResponse {
   repeated Auction auctions = 1 [ (gogoproto.nullable) = false ];
+}
+
+message QueryAuctionPoolRequest {}
+message QueryAuctionPoolResponse {
+  string account = 1;
+  repeated cosmos.base.v1beta1.Coin balances = 2 [(gogoproto.nullable)   = false];
 }

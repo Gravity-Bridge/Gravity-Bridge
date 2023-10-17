@@ -17,6 +17,11 @@ const (
 	// QuerierRoute defines the module's query routing key
 	QuerierRoute = ModuleName
 
+	// The source name for an account where all auctionable tokens are contained, active auction balances
+	// are held by the Auction module account
+	// this string is used with AccountKeeper.GetModuleAccount() or BankKeeper.SendCoinsFromAccountToModule()
+	AuctionPoolAccountName = "auction_pool"
+
 	// ParamsKey defines the store key for auction module param
 	KeyParams = "KeyParams"
 

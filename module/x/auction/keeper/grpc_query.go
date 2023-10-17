@@ -52,3 +52,13 @@ func (k Keeper) Auctions(c context.Context, req *types.QueryAuctionsRequest) (*t
 
 	return &types.QueryAuctionsResponse{Auctions: auctions}, nil
 }
+
+// AuctionPool returns the balances waiting to be included in the next auction period. Note that this does not include
+// the balances from active auctions which have no highest bidder, but those will be recycled into new auctions as well
+func (k Keeper) AuctionPool(c context.Context, req *types.QueryAuctionPoolRequest) (*types.QueryAuctionPoolResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	account := k.GetAuctionPoolAccount(ctx).String()
+	balances := k.GetAuctionPoolBalances(ctx)
+
+	return &types.QueryAuctionPoolResponse{Account: account, Balances: balances}, nil
+}

@@ -261,7 +261,7 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error
 		}
 	} else {
 		// Send bid to community pool
-		if err := k.SendToCommunityPool(ctx, sdk.NewCoins(highestBidCoin)); err != nil {
+		if err := k.SendToAuctionPool(ctx, sdk.NewCoins(highestBidCoin)); err != nil {
 			return sdkerrors.Wrapf(err, "unable to send highest bid (%v) to community pool", highestBidCoin)
 		}
 	}
@@ -294,7 +294,7 @@ func (k Keeper) CloseAuctionNoWinner(ctx sdk.Context, auction_id uint64) error {
 	}
 
 	// Send amount to community pool
-	if err := k.SendToCommunityPool(ctx, sdk.NewCoins(auction.Amount)); err != nil {
+	if err := k.SendToAuctionPool(ctx, sdk.NewCoins(auction.Amount)); err != nil {
 		return sdkerrors.Wrapf(err, "unable to send auction amount (%v) to community pool", auction.Amount)
 	}
 

@@ -25,7 +25,7 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // AuctionPeriod represents a period of auctions.
-// An AuctionPeriod applies to as many auctionable tokens exist in the community pool
+// An AuctionPeriod applies to as many auctionable tokens exist in the auction pool
 // Note: see params for a list of non-auctionable tokens
 type AuctionPeriod struct {
 	StartBlockHeight uint64 `protobuf:"varint,1,opt,name=start_block_height,json=startBlockHeight,proto3" json:"start_block_height,omitempty"`

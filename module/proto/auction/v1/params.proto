@@ -9,14 +9,14 @@ message Params {
   uint64 auction_length = 1;
 
   // MinBidFee defines the required minimum fee that must be paid by bidders for their bid to be considered by the module.
-  // This fee is paid out to the community pool. This fee is separate from the standard Cosmos Tx spam protection fee.
+  // This fee is paid out to the auction pool. This fee is separate from the standard Cosmos Tx spam protection fee.
   // This fee will not be charged unless a bid is successful.
   uint64 min_bid_fee = 2;
 
-  // NonAuctionableTokens is a list of token denomss which should never be auctioned from the community pool
+  // NonAuctionableTokens is a list of token denomss which should never be auctioned from the auction pool
   repeated string non_auctionable_tokens = 3;
 
-  // BurnWinningBids controls if we burn the tokens of the winning bidder instead of sending them to the community pool
+  // BurnWinningBids controls if we burn the tokens of the winning bidder instead of sending them to the auction pool
   bool burn_winning_bids = 4;
 
   // Enabled controls whether auctions progress as usual, or are preserved in an inactive halted state.

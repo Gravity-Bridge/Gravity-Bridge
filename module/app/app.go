@@ -173,16 +173,17 @@ var (
 	// module account permissions
 	// NOTE: We believe that this is giving various modules access to functions of the supply module? We will probably need to use this.
 	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
-		minttypes.ModuleName:           {authtypes.Minter},
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
-		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		gravitytypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
-		auctiontypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
-		icatypes.ModuleName:            nil,
+		authtypes.FeeCollectorName:          nil,
+		distrtypes.ModuleName:               nil,
+		minttypes.ModuleName:                {authtypes.Minter},
+		stakingtypes.BondedPoolName:         {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName:      {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:                 {authtypes.Burner},
+		ibctransfertypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
+		gravitytypes.ModuleName:             {authtypes.Minter, authtypes.Burner},
+		auctiontypes.ModuleName:             {authtypes.Minter, authtypes.Burner},
+		icatypes.ModuleName:                 nil,
+		auctiontypes.AuctionPoolAccountName: nil,
 	}
 
 	// module accounts that are allowed to receive tokens
