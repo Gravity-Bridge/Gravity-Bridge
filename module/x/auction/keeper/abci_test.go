@@ -275,19 +275,88 @@ func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, aucti
 
 // Asserts that the module's balances exactly match `coins`, and that no other coins are held by the module
 func AssertModuleBalanceStrict(suite *KeeperTestSuite, coins sdk.Coins) {
+	require.True(suite.T(), checkModuleBalanceStrict(suite, coins), "module balance does not match coins")
+}
+func checkModuleBalanceStrict(suite *KeeperTestSuite, coins sdk.Coins) bool {
 	bankKeeper := suite.App.AuctionKeeper.BankKeeper
 	balances := bankKeeper.GetAllBalances(suite.Ctx, ModuleAccount)
 
-	require.Equal(suite.T(), coins, balances, "module balance does not match coins")
+	return coins.IsEqual(balances)
 }
 
 // Asserts that the pool contains the exact same amount of each coin provided in `coins`
 // Makes no assertions about other coins that may exist in the pool
 func AssertPoolBalanceRelaxed(suite *KeeperTestSuite, coins sdk.Coins) {
+	require.True(suite.T(), checkPoolBalanceRelaxed(suite, coins))
+}
+func checkPoolBalanceRelaxed(suite *KeeperTestSuite, coins sdk.Coins) bool {
 	poolCoins, _ := suite.App.DistrKeeper.GetFeePoolCommunityCoins(suite.Ctx).TruncateDecimal()
 
 	for _, coin := range coins {
 		poolAmt := poolCoins.AmountOf(coin.Denom)
-		require.Equal(suite.T(), poolAmt, coin)
+		if !poolAmt.Equal(coin.Amount) {
+			fmt.Printf("Pool Balance (%v) != Coin balance (%v)\n", poolAmt, coin)
+			return false
+		}
 	}
+	return true
+}
+
+// Tests the helper functions to make sure the above tests are actually checking what is expected
+func (suite *KeeperTestSuite) TestHelpers() {
+	InitPoolAndAuctionTokens(suite)
+
+	ctx := suite.Ctx
+	t := suite.T()
+	bankKeeper := suite.App.BankKeeper
+	distKeeper := suite.App.DistrKeeper
+	auctionKeeper := suite.App.AuctionKeeper
+
+	expectedAuctionAccount := suite.App.AccountKeeper.GetModuleAccount(ctx, types.ModuleName).GetAddress()
+	require.Equal(t, ModuleAccount, expectedAuctionAccount) // The ModuleAccount is cached, ensure it is correct
+
+	// Check the empty balances first
+	actualBalances := bankKeeper.GetAllBalances(ctx, ModuleAccount)
+	require.Equal(t, sdk.NewCoins(), actualBalances)
+	require.True(t, checkModuleBalanceStrict(suite, actualBalances))
+
+	// Check the base pool coins
+	actualCoins, actualDust := distKeeper.GetFeePoolCommunityCoins(ctx).TruncateDecimal()
+	require.Equal(t, sdk.DecCoins(nil), actualDust) // No dust in the pool
+	require.True(t, checkPoolBalanceRelaxed(suite, actualCoins))
+	require.True(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins()))
+	require.False(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins(sdk.NewCoin("fakecoin", sdk.OneInt()))))
+	require.False(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins(actualCoins[0], sdk.NewCoin("fakecoin", sdk.OneInt()))))
+
+	// Produce some auctions
+	period := auctionKeeper.GetAuctionPeriod(ctx)
+	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))
+	auction.EndBlocker(ctx, *suite.App.AuctionKeeper)
+
+	// Ensure the auction now holds the amounts from the community pool
+	auctionBalances := bankKeeper.GetAllBalances(ctx, ModuleAccount)
+	require.Equal(t, actualCoins, auctionBalances)
+	require.True(t, checkModuleBalanceStrict(suite, auctionBalances))
+
+	// Ensure the pool is empty now
+	require.False(t, checkPoolBalanceRelaxed(suite, actualCoins))
+	require.True(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins()))
+	actualCoins, actualDust = distKeeper.GetFeePoolCommunityCoins(ctx).TruncateDecimal()
+	require.Equal(t, sdk.Coins(nil), actualCoins)
+	require.True(t, actualDust.IsZero())
+
+	// Make a bid and ensure balance updates
+	Bid(suite, TestAccounts[0], 10_000000, 50000, 0, true) // Bid 10 stake on first
+	auctionWithBid := auctionKeeper.GetAllAuctions(ctx)[0]
+	expectedCoins := auctionBalances.Add(sdk.NewCoin(GravDenom, sdk.NewInt(10_000000)))
+	require.True(t, checkModuleBalanceStrict(suite, expectedCoins))
+
+	// After the auction ends, check balance changes
+	ctx = ctx.WithBlockHeight(int64(auctionKeeper.GetAuctionPeriod(ctx).EndBlockHeight))
+	auction.EndBlocker(ctx, *auctionKeeper)
+	require.False(t, checkModuleBalanceStrict(suite, expectedCoins))
+	require.False(t, checkModuleBalanceStrict(suite, sdk.NewCoins()))
+	expectedCoins = auctionBalances.Sub(sdk.NewCoins(auctionWithBid.Amount))
+	require.True(t, checkModuleBalanceStrict(suite, expectedCoins))
+	require.True(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins()))
 }
