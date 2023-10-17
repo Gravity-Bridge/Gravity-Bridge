@@ -223,3 +223,30 @@ func GetCmdAllAuctionsByBidder() *cobra.Command {
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
+
+// GetCmdAuctionPool fetches the auction pool account and its balances
+func GetCmdAuctionPool() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "auction-pool",
+		Args:  cobra.NoArgs,
+		Short: "Query the auction pool and its balances",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.AuctionPool(cmd.Context(), &types.QueryAuctionPoolRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}

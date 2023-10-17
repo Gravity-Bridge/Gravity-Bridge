@@ -108,29 +108,25 @@ func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
 
 	auctionBlacklist := params.NonAuctionableTokens
 	blacklistMap := listToMap(auctionBlacklist)
-	communityPool := k.DistKeeper.GetFeePoolCommunityCoins(ctx)
+	auctionPool := k.GetAuctionPoolBalances(ctx)
 
 	// For all elligible coins, remove them from the community pool and create an auction for them
-	for _, poolCoin := range communityPool {
-		if poolCoin.Amount.TruncateInt().LT(sdk.OneInt()) {
-			continue // Skip coins which are only fractional
-		}
+	for _, poolCoin := range auctionPool {
 		if blacklistMap[poolCoin.Denom] { // Coin in blacklist
 			continue // Do nothing with that coin
 		}
 
-		coin := sdk.NewCoin(poolCoin.Denom, poolCoin.Amount.TruncateInt())
 		id := k.GetNextAuctionId(ctx)
-		auction := types.NewAuction(id, coin)
+		auction := types.NewAuction(id, poolCoin)
 
-		if err := k.RemoveFromCommunityPool(ctx, coin); err != nil {
+		if err := k.RemoveFromAuctionPool(ctx, poolCoin); err != nil {
 			return sdkerrors.Wrapf(err, "unable to take auction amount out of pool")
 		}
 		if err := k.StoreAuction(ctx, auction); err != nil {
 			return sdkerrors.Wrapf(err, "unable to store auction")
 		}
 
-		ctx.EventManager().EmitEvent(types.NewEventAuction(id, coin.Denom, coin.Amount))
+		ctx.EventManager().EmitEvent(types.NewEventAuction(id, poolCoin.Denom, poolCoin.Amount))
 	}
 
 	return nil

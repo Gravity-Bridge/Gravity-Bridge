@@ -6,7 +6,6 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
@@ -63,26 +62,34 @@ func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
 	k.paramSpace.SetParamSet(ctx, &ps)
 }
 
-// SendToCommunityPool sends the `coins` from module account to the community pool
+// Fetches the auction pool account, which holds tokens to be auctioned in the next period
+func (k Keeper) GetAuctionPoolAccount(ctx sdk.Context) sdk.AccAddress {
+	return k.AccountKeeper.GetModuleAddress(types.AuctionPoolAccountName)
+}
+
+// Fetches the balances to use in the next auction period
+func (k Keeper) GetAuctionPoolBalances(ctx sdk.Context) sdk.Coins {
+	return k.BankKeeper.GetAllBalances(ctx, k.GetAuctionPoolAccount(ctx))
+}
+
+// SendToAuctionPool sends the `coins` from module account to the auction pool
 // Returns an error if the module is disabled, or on failure to send tokens
-func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
+func (k Keeper) SendToAuctionPool(ctx sdk.Context, coins sdk.Coins) error {
 	enabled := k.GetParams(ctx).Enabled
 	if !enabled {
 		return types.ErrDisabledModule
 	}
 
-	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distrtypes.ModuleName, coins); err != nil {
-		return sdkerrors.Wrap(err, "Failure to transfer tokens from auction module to community pool")
+	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, types.AuctionPoolAccountName, coins); err != nil {
+		return sdkerrors.Wrap(err, "Failure to transfer tokens from auction module to auction pool")
 	}
-	feePool := k.DistKeeper.GetFeePool(ctx)
-	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
-	k.DistKeeper.SetFeePool(ctx, feePool)
 	return nil
 }
 
-// RemoveFromCommunityPool removes the auction tokens from community pool and locks them in the auction module account
+// RemoveFromAuctionPool removes the auction tokens from auction pool and locks them in the auction module account
 // Returns an error if the module is disabled, or on failure to lock tokens
-func (k Keeper) RemoveFromCommunityPool(ctx sdk.Context, coin sdk.Coin) error {
+func (k Keeper) RemoveFromAuctionPool(ctx sdk.Context, coin sdk.Coin) error {
+	// TODO: No longer check for native denom?
 	native := config.NativeTokenDenom
 	if coin.Denom == native {
 		return sdkerrors.Wrapf(types.ErrInvalidAuction, "not allowed to collect community pool native token balance")
@@ -92,13 +99,10 @@ func (k Keeper) RemoveFromCommunityPool(ctx sdk.Context, coin sdk.Coin) error {
 		return types.ErrDisabledModule
 	}
 
-	feePool := k.DistKeeper.GetFeePool(ctx)
-	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, distrtypes.ModuleName, types.ModuleName, sdk.NewCoins(coin)); err != nil {
-		return sdkerrors.Wrap(err, "Failure to transfer tokens from community pool to auction module")
+	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.AuctionPoolAccountName, types.ModuleName, sdk.NewCoins(coin)); err != nil {
+		return sdkerrors.Wrap(err, "Failure to transfer tokens from auction pool to auction module")
 	}
 
-	feePool.CommunityPool = feePool.CommunityPool.Sub(sdk.NewDecCoinsFromCoins(coin))
-	k.DistKeeper.SetFeePool(ctx, feePool)
 	return nil
 }
 

@@ -73,7 +73,7 @@ func (suite *KeeperTestSuite) TestSendRemoveCommunityPool() {
 
 	// Remove from community pool
 	for _, coin := range removeFromPool {
-		err := ak.RemoveFromCommunityPool(ctx, coin)
+		err := ak.RemoveFromAuctionPool(ctx, coin)
 		require.NoError(t, err)
 	}
 
@@ -95,7 +95,7 @@ func (suite *KeeperTestSuite) TestSendRemoveCommunityPool() {
 		sdk.NewCoin("test12", sdk.NewInt(5009900_000000)),
 		sdk.NewCoin("stake", sdk.NewInt(50)),
 	)
-	err := ak.SendToCommunityPool(ctx, invalidAddToPool)
+	err := ak.SendToAuctionPool(ctx, invalidAddToPool)
 	require.Error(t, err)
 
 	// Mint everything except the test4 token
@@ -114,7 +114,7 @@ func (suite *KeeperTestSuite) TestSendRemoveCommunityPool() {
 		sdk.NewCoin("stake", sdk.NewInt(50)),
 	)
 	expectedPostAddPool := preAddToPool.Add(sdk.NewDecCoinsFromCoins(addToPool...)...)
-	err = ak.SendToCommunityPool(ctx, addToPool)
+	err = ak.SendToAuctionPool(ctx, addToPool)
 	require.NoError(t, err)
 	postAddToPool := dk.GetFeePoolCommunityCoins(ctx)
 	require.Equal(t, expectedPostAddPool, postAddToPool)
