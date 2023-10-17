@@ -24,7 +24,7 @@ popd
 pushd /gravity/
 tests/container-scripts/setup-validators.sh $NODES
 tests/container-scripts/setup-ibc-validators.sh $NODES
-tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE $ALCHEMY_ID
+tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE $ALCHEMY_ID &
 popd
 
 # Setup relayer files to avoid permissions issues later
