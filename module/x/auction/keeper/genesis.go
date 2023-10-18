@@ -12,6 +12,8 @@ import (
 
 // InitGenesis initializes the module's state from a provided genesis state.
 func InitGenesis(ctx sdk.Context, k Keeper, genState types.GenesisState) []abci.ValidatorUpdate {
+	fmt.Println("Creating auction pool account (", types.AuctionPoolAccountName, ")")
+	k.AccountKeeper.GetModuleAccount(ctx, types.AuctionPoolAccountName)
 	k.SetParams(ctx, genState.Params)
 
 	// Previous module state

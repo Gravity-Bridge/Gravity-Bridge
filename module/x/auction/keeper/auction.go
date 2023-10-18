@@ -227,7 +227,7 @@ func (k Keeper) unsafeSetAuctionNonce(ctx sdk.Context, nonce types.AuctionId) {
 }
 
 // CloseAuctionWithWinner will transfer auction funds to the highest bidder,
-// send their bid to the community pool or burn it,
+// send their bid to the auction pool or burn it,
 // and emits a related event
 // Panics if the auction had no winning bid
 // Note this function takes the auction_id instead of the auction itself to ensure
@@ -260,9 +260,9 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error
 			return sdkerrors.Wrapf(err, "unable to burn highest bid (%v)", highestBidCoin)
 		}
 	} else {
-		// Send bid to community pool
+		// Send bid to auction pool
 		if err := k.SendToAuctionPool(ctx, sdk.NewCoins(highestBidCoin)); err != nil {
-			return sdkerrors.Wrapf(err, "unable to send highest bid (%v) to community pool", highestBidCoin)
+			return sdkerrors.Wrapf(err, "unable to send highest bid (%v) to auction pool", highestBidCoin)
 		}
 	}
 
@@ -275,7 +275,7 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error
 	return nil
 }
 
-// CloseAuctionNoWinner will transfer auction funds to the community pool, and emit a related event
+// CloseAuctionNoWinner will transfer auction funds to the auction pool, and emit a related event
 // Panics if the auction actually had a winning bid
 // Note this function takes the auction_id instead of the auction itself to ensure
 // correct payouts of auctions
@@ -293,9 +293,9 @@ func (k Keeper) CloseAuctionNoWinner(ctx sdk.Context, auction_id uint64) error {
 		panic(fmt.Sprintf("unexpected successful auction: %v", auction))
 	}
 
-	// Send amount to community pool
+	// Send amount to auction pool
 	if err := k.SendToAuctionPool(ctx, sdk.NewCoins(auction.Amount)); err != nil {
-		return sdkerrors.Wrapf(err, "unable to send auction amount (%v) to community pool", auction.Amount)
+		return sdkerrors.Wrapf(err, "unable to send auction amount (%v) to auction pool", auction.Amount)
 	}
 
 	ctx.EventManager().EmitEvent(types.NewEventAuctionFailure(auction.Id, auction.Amount.Denom, auction.Amount.Amount))

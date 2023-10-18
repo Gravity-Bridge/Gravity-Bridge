@@ -128,7 +128,7 @@ func (suite *KeeperTestSuite) TestEmptyAuctionFunctions() {
 	initialPeriod := ak.GetAuctionPeriod(ctx)
 	ctx = ctx.WithBlockHeight(int64(initialPeriod.EndBlockHeight))
 
-	// Must delete auctions first, potentially some value in community pool on chain init
+	// Must delete auctions first, potentially some value in auction pool on chain init
 	ak.DeleteAllAuctions(ctx)
 
 	ak.IterateAuctions(ctx, func(_ []byte, _ types.Auction) bool {

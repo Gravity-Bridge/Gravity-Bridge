@@ -25,7 +25,7 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 	gravDenom := ak.MintKeeper.GetParams(ctx).MintDenom
 	// Give everyone 10 * 10^18 aka 10 Eth worth
 	suite.CreateAndFundRandomAccounts(3, sdk.NewCoins(sdk.NewCoin(gravDenom, one_eth.Mul(sdk.NewInt(10)))))
-	suite.FundCommunityPool(ctx, testCoins)
+	suite.FundAuctionPool(ctx, testCoins)
 
 	periodEnd := ak.GetAuctionPeriod(ctx).EndBlockHeight
 	ctx = ctx.WithBlockHeight(int64(periodEnd))

@@ -48,12 +48,11 @@ func (suite *KeeperTestSuite) TestParams() {
 	require.Equal(t, params, stored)
 }
 
-// Tests taking from and adding to the community pool
-func (suite *KeeperTestSuite) TestSendRemoveCommunityPool() {
+// Tests taking from and adding to the auction pool
+func (suite *KeeperTestSuite) TestSendRemoveAuctionPool() {
 	t := suite.T()
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
-	dk := ak.DistKeeper
 
 	testCoins := sdk.NewCoins(
 		sdk.NewCoin("test1", sdk.NewInt(1000_000000)),
@@ -61,33 +60,33 @@ func (suite *KeeperTestSuite) TestSendRemoveCommunityPool() {
 		sdk.NewCoin("test3", sdk.NewInt(3000_000000)),
 		sdk.NewCoin("test4", sdk.NewInt(4000_000000)),
 	)
-	suite.FundCommunityPool(ctx, testCoins)
+	suite.FundAuctionPool(ctx, testCoins)
 
 	removeFromPool := sdk.NewCoins(
 		sdk.NewCoin("test1", sdk.NewInt(10_000000)),
 		sdk.NewCoin("test4", sdk.NewInt(500_000000)),
 	)
-	preRemovePool := dk.GetFeePoolCommunityCoins(ctx)
-	expectedPostRemovalPool := dk.GetFeePoolCommunityCoins(ctx)
-	expectedPostRemovalPool = expectedPostRemovalPool.Sub(sdk.NewDecCoinsFromCoins(removeFromPool...))
+	preRemovePool := ak.GetAuctionPoolBalances(ctx)
+	expectedPostRemovalPool := ak.GetAuctionPoolBalances(ctx)
+	expectedPostRemovalPool = expectedPostRemovalPool.Sub(removeFromPool)
 
-	// Remove from community pool
+	// Remove from auction pool
 	for _, coin := range removeFromPool {
 		err := ak.RemoveFromAuctionPool(ctx, coin)
 		require.NoError(t, err)
 	}
 
-	postRemovePool := dk.GetFeePoolCommunityCoins(ctx)
+	postRemovePool := ak.GetAuctionPoolBalances(ctx)
 	require.Equal(t, expectedPostRemovalPool, postRemovePool)
 	difference := preRemovePool.Sub(postRemovePool)
-	require.Equal(t, sdk.NewDecCoinsFromCoins(removeFromPool...), difference)
+	require.Equal(t, removeFromPool, difference)
 
 	aucAcc := ak.AccountKeeper.GetModuleAddress(types.ModuleName)
 	auctionBalances := ak.BankKeeper.GetAllBalances(ctx, aucAcc)
 	require.Equal(t, removeFromPool, auctionBalances)
 
 	// Send to pool
-	preAddToPool := dk.GetFeePoolCommunityCoins(ctx)
+	preAddToPool := ak.GetAuctionPoolBalances(ctx)
 	// Contains coins the module does not hold
 	invalidAddToPool := sdk.NewCoins(
 		sdk.NewCoin("ibc/abcdefg", sdk.NewInt(99990_000000)),
@@ -113,13 +112,13 @@ func (suite *KeeperTestSuite) TestSendRemoveCommunityPool() {
 		sdk.NewCoin("test12", sdk.NewInt(5009900_000000)),
 		sdk.NewCoin("stake", sdk.NewInt(50)),
 	)
-	expectedPostAddPool := preAddToPool.Add(sdk.NewDecCoinsFromCoins(addToPool...)...)
+	expectedPostAddPool := preAddToPool.Add(addToPool...)
 	err = ak.SendToAuctionPool(ctx, addToPool)
 	require.NoError(t, err)
-	postAddToPool := dk.GetFeePoolCommunityCoins(ctx)
+	postAddToPool := ak.GetAuctionPoolBalances(ctx)
 	require.Equal(t, expectedPostAddPool, postAddToPool)
 	difference = postAddToPool.Sub(preAddToPool)
-	require.Equal(t, sdk.NewDecCoinsFromCoins(addToPool...), difference)
+	require.Equal(t, addToPool, difference)
 
 	auctionPostAdd := ak.BankKeeper.GetAllBalances(ctx, aucAcc)
 	expectedAucBalances := postMint.Sub(addToPool)

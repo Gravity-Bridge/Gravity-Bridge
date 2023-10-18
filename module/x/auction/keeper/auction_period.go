@@ -83,7 +83,7 @@ func (k Keeper) initializeAuctionPeriodFromParams(startBlock uint64, params type
 	}
 }
 
-// CreateAuctionsForActivePeriod will iterate through all acceptable community pool balances and store auctions for them
+// CreateAuctionsForActivePeriod will iterate through all acceptable auction pool balances and store auctions for them
 // Returns an error if the module is disabled, an active period is detected, or on failure
 func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
 	params := k.GetParams(ctx)
@@ -110,7 +110,7 @@ func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
 	blacklistMap := listToMap(auctionBlacklist)
 	auctionPool := k.GetAuctionPoolBalances(ctx)
 
-	// For all elligible coins, remove them from the community pool and create an auction for them
+	// For all elligible coins, remove them from the auction pool and create an auction for them
 	for _, poolCoin := range auctionPool {
 		if blacklistMap[poolCoin.Denom] { // Coin in blacklist
 			continue // Do nothing with that coin
