@@ -510,29 +510,6 @@ func NewGravityApp(
 	)
 	app.IcaHostKeeper = &icaHostKeeper
 
-	gravityKeeper := keeper.NewKeeper(
-		keys[gravitytypes.StoreKey],
-		app.GetSubspace(gravitytypes.ModuleName),
-		appCodec,
-		&bankKeeper,
-		&stakingKeeper,
-		&slashingKeeper,
-		&distrKeeper,
-		&accountKeeper,
-		&ibcTransferKeeper,
-		&bech32IbcKeeper,
-	)
-	app.GravityKeeper = &gravityKeeper
-
-	// Add the staking hooks from distribution, slashing, and gravity to staking
-	stakingKeeper.SetHooks(
-		stakingtypes.NewMultiStakingHooks(
-			distrKeeper.Hooks(),
-			slashingKeeper.Hooks(),
-			gravityKeeper.Hooks(),
-		),
-	)
-
 	mintKeeper := mintkeeper.NewKeeper(
 		appCodec,
 		keys[minttypes.StoreKey],
@@ -554,6 +531,30 @@ func NewGravityApp(
 		&mintKeeper,
 	)
 	app.AuctionKeeper = &auctionKeeper
+
+	gravityKeeper := keeper.NewKeeper(
+		keys[gravitytypes.StoreKey],
+		app.GetSubspace(gravitytypes.ModuleName),
+		appCodec,
+		&bankKeeper,
+		&stakingKeeper,
+		&slashingKeeper,
+		&distrKeeper,
+		&accountKeeper,
+		&ibcTransferKeeper,
+		&bech32IbcKeeper,
+		&auctionKeeper,
+	)
+	app.GravityKeeper = &gravityKeeper
+
+	// Add the staking hooks from distribution, slashing, and gravity to staking
+	stakingKeeper.SetHooks(
+		stakingtypes.NewMultiStakingHooks(
+			distrKeeper.Hooks(),
+			slashingKeeper.Hooks(),
+			gravityKeeper.Hooks(),
+		),
+	)
 
 	crisisKeeper := crisiskeeper.NewKeeper(
 		app.GetSubspace(crisistypes.ModuleName),

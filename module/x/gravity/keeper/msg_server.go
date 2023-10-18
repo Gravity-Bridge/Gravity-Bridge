@@ -11,6 +11,7 @@ import (
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	auctiontypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
@@ -156,7 +157,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 }
 
 // checkAndDeductSendToEthFees asserts that the minimum chainFee has been met for the given sendAmount,
-// then deducts the chain fee from sender, giving half of the fee to the community pool and the other half to stakers
+// then deducts the chain fee from sender, giving a portion of the fee to the auction pool and the remainder to stakers
 func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAddress, sendAmount sdk.Coin, chainFee sdk.Coin) error {
 	// Compute the minimum fee which must be paid
 	minFeeBasisPoints := int64(0)
@@ -184,13 +185,31 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 		}
 	}
 
+	// First, check if we will split the ChainFee between the Auction pool and
+	chainFeeAuctionable := k.auctionKeeper.IsDenomAuctionable(ctx, chainFee.Denom)
+
 	// Finally, collect any provided fees
 	// nolint: exhaustruct
 	if !(chainFee == sdk.Coin{}) && chainFee.Amount.IsPositive() {
 		senderAcc := k.accountKeeper.GetAccount(ctx, sender)
 
-		poolFee := params.ChainFeeCommunityPoolFraction.Mul(sdk.Dec(chainFee.Amount)).TruncateInt() // Community pool gets a fraction
-		stakerFee := chainFee.Amount.Sub(poolFee)                                                   // Stakers get the rest
+		var stakerFee sdk.Int
+		if chainFeeAuctionable {
+			// Determine the pool's share by first multiplying the total with the [0,1] fraction param, ignoring any dust
+			poolFee := params.ChainFeeAuctionPoolFraction.Mul(sdk.NewDecFromInt(chainFee.Amount)).TruncateInt()
+			// Then the stakers will receive the remainder
+			stakerFee = chainFee.Amount.Sub(poolFee)
+
+			// Send fee to pool
+			err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, sender, auctiontypes.AuctionPoolAccountName, sdk.NewCoins(sdk.NewCoin(chainFee.Denom, poolFee)))
+			if err != nil {
+				ctx.Logger().Error("Could not deduct MsgSendToEth auction pool fee!", "error", err, "account", senderAcc, "chainFee", chainFee, "auctionPoolFee", poolFee)
+				return err
+			}
+		} else {
+			// Non Auctionable Token, stakers receive the full amount
+			stakerFee = chainFee.Amount
+		}
 
 		// Send fee to stakers
 		err = sdkante.DeductFees(k.bankKeeper, ctx, senderAcc, sdk.NewCoins(sdk.NewCoin(chainFee.Denom, stakerFee)))
@@ -199,12 +218,6 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 			return err
 		}
 
-		// Send fee to pool
-		err = k.DistKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(chainFee.Denom, poolFee)), sender)
-		if err != nil {
-			ctx.Logger().Error("Could not deduct MsgSendToEth community pool fee!", "error", err, "account", senderAcc, "chainFee", chainFee, "communityPoolFee", stakerFee)
-			return err
-		}
 		// Report the fee collection to the event log
 		return ctx.EventManager().EmitTypedEvent(
 			&types.EventSendToEthFeeCollected{
