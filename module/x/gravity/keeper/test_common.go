@@ -35,6 +35,8 @@ import (
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/mint"
+	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
@@ -70,6 +72,8 @@ import (
 	etherminttypes "github.com/evmos/ethermint/types"
 
 	gravityparams "github.com/Gravity-Bridge/Gravity-Bridge/module/app/params"
+	auctionkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
+	auctiontypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
@@ -221,26 +225,26 @@ var (
 
 	// TestingGravityParams is a set of gravity params for testing
 	TestingGravityParams = types.Params{
-		GravityId:                     "testgravityid",
-		ContractSourceHash:            "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713",
-		BridgeEthereumAddress:         "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf",
-		BridgeChainId:                 11,
-		SignedValsetsWindow:           10,
-		SignedBatchesWindow:           10,
-		SignedLogicCallsWindow:        10,
-		TargetBatchTimeout:            60001,
-		AverageBlockTime:              5000,
-		AverageEthereumBlockTime:      15000,
-		SlashFractionValset:           sdk.NewDecWithPrec(1, 2),
-		SlashFractionBatch:            sdk.NewDecWithPrec(1, 2),
-		SlashFractionLogicCall:        sdk.Dec{},
-		UnbondSlashingValsetsWindow:   15,
-		SlashFractionBadEthSignature:  sdk.NewDecWithPrec(1, 2),
-		ValsetReward:                  sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
-		BridgeActive:                  true,
-		EthereumBlacklist:             []string{},
-		MinChainFeeBasisPoints:        0,
-		ChainFeeCommunityPoolFraction: sdk.NewDecWithPrec(50, 2), // 50%
+		GravityId:                    "testgravityid",
+		ContractSourceHash:           "62328f7bc12efb28f86111d08c29b39285680a906ea0e524e0209d6f6657b713",
+		BridgeEthereumAddress:        "0x8858eeb3dfffa017d4bce9801d340d36cf895ccf",
+		BridgeChainId:                11,
+		SignedValsetsWindow:          10,
+		SignedBatchesWindow:          10,
+		SignedLogicCallsWindow:       10,
+		TargetBatchTimeout:           60001,
+		AverageBlockTime:             5000,
+		AverageEthereumBlockTime:     15000,
+		SlashFractionValset:          sdk.NewDecWithPrec(1, 2),
+		SlashFractionBatch:           sdk.NewDecWithPrec(1, 2),
+		SlashFractionLogicCall:       sdk.Dec{},
+		UnbondSlashingValsetsWindow:  15,
+		SlashFractionBadEthSignature: sdk.NewDecWithPrec(1, 2),
+		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
+		BridgeActive:                 true,
+		EthereumBlacklist:            []string{},
+		MinChainFeeBasisPoints:       0,
+		ChainFeeAuctionPoolFraction:  sdk.NewDecWithPrec(50, 2), // 50%
 	}
 )
 
@@ -255,6 +259,8 @@ type TestInput struct {
 	GovKeeper         govkeeper.Keeper
 	IbcKeeper         ibckeeper.Keeper
 	IbcTransferKeeper ibctransferkeeper.Keeper
+	MintKeeper        mintkeeper.Keeper
+	AuctionKeeper     auctionkeeper.Keeper
 	Context           sdk.Context
 	Marshaler         codec.Codec
 	LegacyAmino       *codec.LegacyAmino
@@ -409,6 +415,8 @@ func CreateTestEnv(t *testing.T) TestInput {
 	keyIbc := sdk.NewKVStoreKey(ibchost.StoreKey)
 	keyIbcTransfer := sdk.NewKVStoreKey(ibctransfertypes.StoreKey)
 	keyBech32Ibc := sdk.NewKVStoreKey(bech32ibctypes.StoreKey)
+	keyMint := sdk.NewKVStoreKey(minttypes.StoreKey)
+	keyAuction := sdk.NewKVStoreKey(auctiontypes.StoreKey)
 
 	// Initialize memory database and mount stores on it
 	db := dbm.NewMemDB()
@@ -427,6 +435,8 @@ func CreateTestEnv(t *testing.T) TestInput {
 	ms.MountStoreWithDB(keyIbc, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIbcTransfer, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyBech32Ibc, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyMint, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyAuction, sdk.StoreTypeIAVL, db)
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
@@ -471,16 +481,20 @@ func CreateTestEnv(t *testing.T) TestInput {
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(bech32ibctypes.ModuleName)
+	paramsKeeper.Subspace(minttypes.ModuleName)
+	paramsKeeper.Subspace(auctiontypes.ModuleName)
 
 	// this is also used to initialize module accounts for all the map keys
 	maccPerms := map[string][]string{
-		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
-		types.ModuleName:               {authtypes.Minter, authtypes.Burner},
-		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+		authtypes.FeeCollectorName:          nil,
+		distrtypes.ModuleName:               nil,
+		stakingtypes.BondedPoolName:         {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName:      {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:                 {authtypes.Burner},
+		types.ModuleName:                    {authtypes.Minter, authtypes.Burner},
+		ibctransfertypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
+		minttypes.ModuleName:                {authtypes.Minter, authtypes.Burner},
+		auctiontypes.AuctionPoolAccountName: nil,
 	}
 
 	accountKeeper := authkeeper.NewAccountKeeper(
@@ -618,8 +632,14 @@ func CreateTestEnv(t *testing.T) TestInput {
 		panic("Test Env Creation failure, could not set native hrp")
 	}
 
+	mintKeeper := mintkeeper.NewKeeper(marshaler, keyMint, getSubspace(paramsKeeper, minttypes.ModuleName), stakingKeeper, accountKeeper, bankKeeper, authtypes.FeeCollectorName)
+	mintKeeper.SetParams(ctx, minttypes.DefaultParams())
+
+	auctionKeeper := auctionkeeper.NewKeeper(keyAuction, getSubspace(paramsKeeper, auctiontypes.ModuleName), marshaler, &bankKeeper, &accountKeeper, &distKeeper, &mintKeeper)
+	auctionKeeper.SetParams(ctx, auctiontypes.DefaultParams())
+
 	k := NewKeeper(gravityKey, getSubspace(paramsKeeper, types.DefaultParamspace), marshaler, &bankKeeper,
-		&stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper, &ibcTransferKeeper, &bech32IbcKeeper)
+		&stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper, &ibcTransferKeeper, &bech32IbcKeeper, &auctionKeeper)
 
 	stakingKeeper = *stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(
@@ -650,6 +670,8 @@ func CreateTestEnv(t *testing.T) TestInput {
 		GovKeeper:         govKeeper,
 		IbcKeeper:         ibcKeeper,
 		IbcTransferKeeper: ibcTransferKeeper,
+		MintKeeper:        mintKeeper,
+		AuctionKeeper:     auctionKeeper,
 		Context:           ctx,
 		Marshaler:         marshaler,
 		LegacyAmino:       encodingConfig.Amino,
