@@ -63,15 +63,14 @@ func GetCmdQueryParams() *cobra.Command {
 func GetCmdAuctionPeriods() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "auction-periods-by-id [id]",
+		Use:   "auction-period-by-id",
 		Args:  cobra.ExactArgs(1),
-		Short: "Query auction periods by id",
+		Short: "Query latest auction period",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
-			argId, err := strconv.ParseUint(args[0], 10, 64)
 
 			if err != nil {
 				return err
@@ -79,9 +78,7 @@ func GetCmdAuctionPeriods() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.AuctionPeriodByAuctionId(cmd.Context(), &types.QueryAuctionPeriodById{
-				Id: argId,
-			})
+			res, err := queryClient.LatestAuctionPeriod(cmd.Context(), &types.QueryLatestAuctionPeriod{})
 			if err != nil {
 				return err
 			}
@@ -99,9 +96,9 @@ func GetCmdAuctionPeriods() *cobra.Command {
 func GetCmdAuction() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "auction-by-aid-pid [auction-id] [period-id]",
+		Use:   "auction-by-aid [auction-id]",
 		Args:  cobra.ExactArgs(2),
-		Short: "Query auction by auction id and period id",
+		Short: "Query auction by auction id",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -112,16 +109,10 @@ func GetCmdAuction() *cobra.Command {
 				return err
 			}
 
-			argPeriodId, err := strconv.ParseUint(args[1], 10, 64)
-			if err != nil {
-				return err
-			}
-
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.AuctionByAuctionIdAndPeriodId(cmd.Context(), &types.QueryAuctionByAuctionIdAndPeriodId{
+			res, err := queryClient.AuctionByAuctionId(cmd.Context(), &types.QueryAuctionByAuctionId{
 				AuctionId: argAuctionId,
-				PeriodId:  argPeriodId,
 			})
 			if err != nil {
 				return err
@@ -139,9 +130,9 @@ func GetCmdAuction() *cobra.Command {
 func GetCmdAllAuction() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "autions-by-bidder-pid [address] [period-id]",
+		Use:   "autions-by-bidder-pid [address]",
 		Args:  cobra.ExactArgs(2),
-		Short: "Query all auctions by bidder address and auction period id",
+		Short: "Query all auctions by bidder address",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -149,14 +140,8 @@ func GetCmdAllAuction() *cobra.Command {
 			}
 			queryClient := types.NewQueryClient(clientCtx)
 
-			argPeriodId, err := strconv.ParseUint(args[1], 10, 64)
-			if err != nil {
-				return err
-			}
-
-			res, err := queryClient.AllAuctionsByBidderAndPeriodId(cmd.Context(), &types.QueryAllAuctionsByBidderAndPeriodId{
-				Address:  args[0],
-				PeriodId: argPeriodId,
+			res, err := queryClient.AllAuctionsByBidder(cmd.Context(), &types.QueryAllAuctionsByBidder{
+				Address: args[0],
 			})
 			if err != nil {
 				return err
@@ -189,16 +174,10 @@ func GetCmdHighestBid() *cobra.Command {
 				return err
 			}
 
-			argPeriodId, err := strconv.ParseUint(args[1], 10, 64)
-			if err != nil {
-				return err
-			}
-
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.HighestBidByAuctionIdAndPeriodId(cmd.Context(), &types.QueryHighestBidByAuctionIdAndPeriodId{
+			res, err := queryClient.HighestBidByAuctionId(cmd.Context(), &types.QueryHighestBidByAuctionId{
 				AuctionId: argAuctionId,
-				PeriodId:  argPeriodId,
 			})
 			if err != nil {
 				return err

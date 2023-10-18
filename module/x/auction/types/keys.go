@@ -32,13 +32,11 @@ const (
 
 	// AuctionPeriod
 	// KeyPrefixAuctionPeriod defines the prefix to store auction period
-	KeyPrefixAuctionPeriod = "auctionPeriod-value-"
+	KeyPrefixAuctionPeriod = "auction-period"
 
 	KeyPrefixLastAuctionPeriodBlockHeight = "last-auctionPeriod-"
 
 	KeyPrefixEstimateNextAuctionPeriodBlockHeight = "estimate-next-auctionPeriod-"
 
 	KeyAuctionPeriodBlockHeight = "block-height"
-
-	KeyPrefixBidsQueue = "bids-queue-"
 )

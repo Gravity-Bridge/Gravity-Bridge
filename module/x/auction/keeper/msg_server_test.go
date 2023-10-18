@@ -45,7 +45,7 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 		},
 		"Bid amount less than the highest bid": {
 			msg:          *types.NewMsgBid(1, addr0.String(), sdk.NewCoin("stake", sdk.NewInt(50000))),
-			expectedPass: true,
+			expectedPass: false,
 			currentHighestBid: &types.Bid{
 				AuctionId:     1,
 				BidAmount:     sdk.NewCoin("stake", sdk.NewInt(1_000_000)),
@@ -92,16 +92,14 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 
 			// Set new auction period to store
 			newAuctionPeriods := types.AuctionPeriod{
-				Id:               1,
 				StartBlockHeight: uint64(suite.Ctx.BlockHeight()),
 				EndBlockHeight:   uint64(suite.Ctx.BlockHeight()) + suite.App.GetAuctionKeeper().GetParams(suite.Ctx).AuctionPeriod,
 			}
 			suite.App.GetAuctionKeeper().SetAuctionPeriod(suite.Ctx, newAuctionPeriods)
 
 			// Confirm that aution was set
-			lastAution, found := suite.App.GetAuctionKeeper().GetLatestAuctionPeriod(suite.Ctx)
+			_, found := suite.App.GetAuctionKeeper().GetLatestAuctionPeriod(suite.Ctx)
 			suite.Require().True(found)
-			suite.Require().Equal(uint64(1), lastAution.Id)
 
 			// Set auction for tokens
 
@@ -113,7 +111,7 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 				AuctionAmount:   atomAmount,
 				Status:          1,
 			}
-			err := suite.App.GetAuctionKeeper().AddNewAuctionToAuctionPeriod(suite.Ctx, 1, atomAuction)
+			err := suite.App.GetAuctionKeeper().AddNewAuctionToAuctionPeriod(suite.Ctx, atomAuction)
 			suite.Require().NoError(err)
 
 			// Fund a account & auction module
@@ -126,7 +124,7 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 			suite.App.GetAuctionKeeper().SetParams(suite.Ctx, params)
 
 			if tc.currentHighestBid != nil {
-				auction, _ := suite.App.GetAuctionKeeper().GetAuctionByPeriodIDAndAuctionId(suite.Ctx, 1, 1)
+				auction, _ := suite.App.GetAuctionKeeper().GetAuctionById(suite.Ctx, 1)
 				auction.HighestBid = tc.currentHighestBid
 				suite.App.GetAuctionKeeper().SetAuction(suite.Ctx, auction)
 			}
@@ -143,7 +141,7 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 			if tc.expectedPass {
 				suite.Require().NoError(err)
 				suite.Require().NotNil(resp)
-				auction, _ := suite.App.GetAuctionKeeper().GetAuctionByPeriodIDAndAuctionId(suite.Ctx, 1, 1)
+				auction, _ := suite.App.GetAuctionKeeper().GetAuctionById(suite.Ctx, 1)
 				newHighestBid := auction.HighestBid
 				suite.Require().Equal(tc.msg.Amount, newHighestBid.BidAmount)
 			} else {

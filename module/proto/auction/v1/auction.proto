@@ -10,9 +10,8 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/t
 // Each AuctionPeriod has a unique identifier and a starting block height.
 // An AuctionPeriod can have multiple Auctions.
 message AuctionPeriod {
-    uint64 id = 1;  // Unique identifier for the AuctionPeriod.
-    uint64 start_block_height = 2;  // Block height at which the AuctionPeriod starts.
-    uint64 end_block_height = 3; // Block height at which the AuctionPeriod end.
+    uint64 start_block_height = 1;  // Block height at which the AuctionPeriod starts.
+    uint64 end_block_height = 2; // Block height at which the AuctionPeriod end.
 }
 
 // AuctionStatus represents the status of an Auction.

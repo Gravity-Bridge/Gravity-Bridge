@@ -6,16 +6,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
 // TODO: Switch to black list ( remove native token , ..etc.. )
 var (
-	allowTokens = map[string]bool{
-		// USDC
-		"gravity0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": true,
-		// USDT
-		"gravity0xdAC17F958D2ee523a2206206994597C13D831ec7": true,
+	blacklistedTokens = map[string]struct{}{
+		"ugraviton": {},
 	}
 	NextAuctionPeriodHeightMargin = uint64(5)
 )
@@ -24,6 +24,8 @@ func CreateUpgradeHandler(
 	mm *module.Manager,
 	configurator module.Configurator,
 	auctionKeeper *auctionkeeper.Keeper,
+	bankKeeper *bankkeeper.BaseKeeper,
+	accountKeeper *authkeeper.AccountKeeper,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		ctx.Logger().Info("Starting upgrade...")
@@ -37,7 +39,18 @@ func CreateUpgradeHandler(
 		defaultParams := auctiontypes.DefaultParams()
 
 		defaultParams.AuctionRate = sdk.NewDecWithPrec(2, 1)
-		defaultParams.AllowTokens = allowTokens
+
+		balances := bankKeeper.GetAllBalances(ctx, accountKeeper.GetModuleAccount(ctx, distrtypes.ModuleName).GetAddress())
+		allowList := make(map[string]bool)
+
+		// Remove blacklisted denom from the list
+		for _, coin := range balances {
+			if _, found := blacklistedTokens[coin.Denom]; !found {
+				continue
+			}
+			allowList[coin.Denom] = true
+		}
+		defaultParams.AllowTokens = allowList
 
 		auctionKeeper.SetParams(ctx, defaultParams)
 

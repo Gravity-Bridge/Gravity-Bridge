@@ -19,36 +19,36 @@ func (k Querier) Params(c context.Context, _ *types.QueryParamsRequest) (*types.
 	return &types.QueryParamsResponse{Params: params}, nil
 }
 
-func (k Querier) AuctionPeriodByAuctionId(c context.Context, req *types.QueryAuctionPeriodById) (*types.QueryAuctionPeriodByIdResponse, error) {
+func (k Querier) LatestAuctionPeriod(c context.Context, req *types.QueryLatestAuctionPeriod) (*types.QueryLatestAuctionPeriodResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	auctionPeriod, found := k.GetAuctionPeriodByID(ctx, req.Id)
+	auctionPeriod, found := k.GetLatestAuctionPeriod(ctx)
 	if !found {
-		return &types.QueryAuctionPeriodByIdResponse{AuctionPeriod: nil}, nil
+		return &types.QueryLatestAuctionPeriodResponse{AuctionPeriod: nil}, nil
 	}
-	return &types.QueryAuctionPeriodByIdResponse{AuctionPeriod: &auctionPeriod}, nil
+	return &types.QueryLatestAuctionPeriodResponse{AuctionPeriod: &auctionPeriod}, nil
 }
 
-func (k Querier) AuctionByAuctionIdAndPeriodId(c context.Context, req *types.QueryAuctionByAuctionIdAndPeriodId) (*types.QueryAuctionByAuctionIdAndPeriodIdResponse, error) {
+func (k Querier) AuctionByAuctionId(c context.Context, req *types.QueryAuctionByAuctionId) (*types.QueryAuctionByAuctionIdResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	auction, found := k.GetAuctionByPeriodIDAndAuctionId(ctx, req.PeriodId, req.AuctionId)
+	auction, found := k.GetAuctionById(ctx, req.AuctionId)
 	if !found {
-		return &types.QueryAuctionByAuctionIdAndPeriodIdResponse{Auction: nil}, nil
+		return &types.QueryAuctionByAuctionIdResponse{Auction: nil}, nil
 	}
-	return &types.QueryAuctionByAuctionIdAndPeriodIdResponse{Auction: &auction}, nil
+	return &types.QueryAuctionByAuctionIdResponse{Auction: &auction}, nil
 }
 
-func (k Querier) AllAuctionsByBidderAndPeriodId(c context.Context, req *types.QueryAllAuctionsByBidderAndPeriodId) (*types.QueryAllAuctionsByBidderAndPeriodIdResponse, error) {
+func (k Querier) AllAuctionsByBidder(c context.Context, req *types.QueryAllAuctionsByBidder) (*types.QueryAllAuctionsByBidderResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	auctions := k.GetAllAuctionByBidderAndPeriodId(ctx, req.Address, req.PeriodId)
+	auctions := k.GetAllAuctionByBidder(ctx, req.Address)
 
-	return &types.QueryAllAuctionsByBidderAndPeriodIdResponse{Auctions: auctions}, nil
+	return &types.QueryAllAuctionsByBidderResponse{Auctions: auctions}, nil
 }
 
-func (k Querier) HighestBidByAuctionIdAndPeriodId(c context.Context, req *types.QueryHighestBidByAuctionIdAndPeriodId) (*types.QueryHighestBidByAuctionIdAndPeriodIdResponse, error) {
+func (k Querier) HighestBidByAuctionId(c context.Context, req *types.QueryHighestBidByAuctionId) (*types.QueryHighestBidByAuctionIdResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	bid, found := k.GetHighestBidByAuctionIdAndPeriodID(ctx, req.AuctionId, req.PeriodId)
+	bid, found := k.GetHighestBidByAuctionId(ctx, req.AuctionId)
 	if !found {
-		return &types.QueryHighestBidByAuctionIdAndPeriodIdResponse{Bid: nil}, nil
+		return &types.QueryHighestBidByAuctionIdResponse{Bid: nil}, nil
 	}
-	return &types.QueryHighestBidByAuctionIdAndPeriodIdResponse{Bid: &bid}, nil
+	return &types.QueryHighestBidByAuctionIdResponse{Bid: &bid}, nil
 }

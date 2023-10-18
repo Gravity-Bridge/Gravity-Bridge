@@ -16,20 +16,20 @@ service Query {
       option (google.api.http).get = "/auction/v1beta/params";
     }
 
-    rpc AuctionPeriodByAuctionId(QueryAuctionPeriodById) returns (QueryAuctionPeriodByIdResponse) {
-      option (google.api.http).get = "/auction/v1beta/period/{id}";
+    rpc LatestAuctionPeriod(QueryLatestAuctionPeriod) returns (QueryLatestAuctionPeriodResponse) {
+      option (google.api.http).get = "/auction/v1beta/latest-auction-period";
     }
 
-    rpc AuctionByAuctionIdAndPeriodId(QueryAuctionByAuctionIdAndPeriodId) returns (QueryAuctionByAuctionIdAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/v1beta/period/{period_id}/auction/{auction_id}";
+    rpc AuctionByAuctionId(QueryAuctionByAuctionId) returns (QueryAuctionByAuctionIdResponse) {
+      option (google.api.http).get = "/auction/v1beta/auction/{auction_id}";
     }
 
-    rpc AllAuctionsByBidderAndPeriodId(QueryAllAuctionsByBidderAndPeriodId) returns (QueryAllAuctionsByBidderAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/v1beta/auctions-by-bidder-period/period/{period_id}/bidder/{address}";
+    rpc AllAuctionsByBidder(QueryAllAuctionsByBidder) returns (QueryAllAuctionsByBidderResponse) {
+      option (google.api.http).get = "/auction/v1beta/auctions-by-bidder/bidder/{address}";
     }
 
-    rpc HighestBidByAuctionIdAndPeriodId(QueryHighestBidByAuctionIdAndPeriodId) returns (QueryHighestBidByAuctionIdAndPeriodIdResponse) {
-      option (google.api.http).get = "/auction/v1beta/highest-bid/period/{period_id}/auction/{auction_id}";
+    rpc HighestBidByAuctionId(QueryHighestBidByAuctionId) returns (QueryHighestBidByAuctionIdResponse) {
+      option (google.api.http).get = "/auction/v1beta/highest-bid/auction/{auction_id}";
     }
   }
   // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -41,33 +41,29 @@ service Query {
     Params params = 1 [ (gogoproto.nullable) = false ];
   }
 
-message QueryAuctionPeriodById {
-  uint64 id = 1;
+message QueryLatestAuctionPeriod {
 }
-message QueryAuctionPeriodByIdResponse {
+message QueryLatestAuctionPeriodResponse {
   AuctionPeriod auction_period = 1;
 }
 
-message QueryAuctionByAuctionIdAndPeriodId{
+message QueryAuctionByAuctionId{
   uint64 auction_id = 1;
-  uint64 period_id = 2;
 }
-message QueryAuctionByAuctionIdAndPeriodIdResponse {
+message QueryAuctionByAuctionIdResponse {
   Auction auction = 1;
 }
 
-message QueryAllAuctionsByBidderAndPeriodId{
+message QueryAllAuctionsByBidder{
   string address = 1;
-  uint64 period_id = 2;
 }
-message QueryAllAuctionsByBidderAndPeriodIdResponse {
+message QueryAllAuctionsByBidderResponse {
   repeated Auction auctions = 1 [ (gogoproto.nullable) = false ];
 }
 
-message QueryHighestBidByAuctionIdAndPeriodId {
+message QueryHighestBidByAuctionId {
   uint64 auction_id = 1;
-  uint64 period_id = 2;
 }
-message QueryHighestBidByAuctionIdAndPeriodIdResponse {
+message QueryHighestBidByAuctionIdResponse {
   Bid bid = 1;
 }

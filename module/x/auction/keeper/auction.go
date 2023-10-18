@@ -1,12 +1,19 @@
 package keeper
 
 import (
-	"fmt"
+	"encoding/binary"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+// helper function to convert uint64 to []byte
+func uint64ToByte(num uint64) []byte {
+	buf := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutUvarint(buf, num)
+	return buf[:n]
+}
 
 // GetAllAuction returns all auctions.
 func (k Keeper) GetAllAuctions(ctx sdk.Context) []types.Auction {
@@ -29,7 +36,7 @@ func (k Keeper) GetAllAuctions(ctx sdk.Context) []types.Auction {
 func (k Keeper) SetAuction(ctx sdk.Context, auction types.Auction) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
 	bz := k.cdc.MustMarshal(&auction)
-	store.Set([]byte(getKeyForAuction(auction)), bz)
+	store.Set(uint64ToByte(auction.Id), bz)
 }
 
 // UpdateAuctionStatus updates the status of an auction
@@ -38,14 +45,14 @@ func (k Keeper) UpdateAuctionStatus(ctx sdk.Context, auction *types.Auction, new
 	if auction != nil {
 		auction.Status = newStatus
 		newBz := k.cdc.MustMarshal(auction)
-		store.Set([]byte(getKeyForAuction(*auction)), newBz)
+		store.Set(uint64ToByte(auction.Id), newBz)
 	}
 }
 
 // UpdateAuctionNewBid updates the new bid of an auction
-func (k Keeper) UpdateAuctionNewBid(ctx sdk.Context, auctionPeriodId, auctionId uint64, newBid types.Bid) {
+func (k Keeper) UpdateAuctionNewBid(ctx sdk.Context, auctionId uint64, newBid types.Bid) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
-	key := []byte(fmt.Sprintf("%v-%v", auctionPeriodId, auctionId))
+	key := uint64ToByte(auctionId)
 	bz := store.Get(key)
 	if len(bz) > 0 {
 		var auction types.Auction
@@ -57,71 +64,36 @@ func (k Keeper) UpdateAuctionNewBid(ctx sdk.Context, auctionPeriodId, auctionId 
 }
 
 // UpdateAuctionPeriod updates the auction period with the given id with the given auction.
-func (k Keeper) AddNewAuctionToAuctionPeriod(ctx sdk.Context, periodId uint64, auction types.Auction) error {
-	_, found := k.GetAuctionPeriodByID(ctx, periodId)
+func (k Keeper) AddNewAuctionToAuctionPeriod(ctx sdk.Context, auction types.Auction) error {
+	_, found := k.GetLatestAuctionPeriod(ctx)
 	if !found {
 		return types.ErrAuctionPeriodNotFound
 	}
 
-	auction.AuctionPeriodId = periodId
 	k.SetAuction(ctx, auction)
 	return nil
 }
 
-// GetAllAuctionsByPeriodID returns all auctions for the given auction period id.
-func (k Keeper) GetAllAuctionsByPeriodID(ctx sdk.Context, periodId uint64) []types.Auction {
-	auctions := k.GetAllAuctions(ctx)
-
-	auctionsFound := []types.Auction{}
-	for _, auction := range auctions {
-		if auction.AuctionPeriodId == periodId {
-			auctionsFound = append(auctionsFound, auction)
-		}
+// GetAuctionById returns all auctions for the given auction id.
+func (k Keeper) GetAuctionById(ctx sdk.Context, id uint64) (val types.Auction, found bool) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
+	bz := store.Get(uint64ToByte(id))
+	if bz == nil {
+		return val, false
 	}
-	return auctionsFound
+
+	k.cdc.MustUnmarshal(bz, &val)
+	return val, true
 }
 
-// GetAuctionByPeriodID returns all auctions for the given auction period id.
-func (k Keeper) GetAuctionByPeriodIDAndAuctionId(ctx sdk.Context, periodId uint64, id uint64) (types.Auction, bool) {
+func (k Keeper) IncreamentAuctionId(ctx sdk.Context) (uint64, error) {
 	auctions := k.GetAllAuctions(ctx)
-
-	auctionsFound := []types.Auction{}
-	for _, auction := range auctions {
-		if auction.AuctionPeriodId == periodId && auction.Id == id {
-			auctionsFound = append(auctionsFound, auction)
-		}
-	}
-
-	if len(auctionsFound) == 0 {
-		// nolint: exhaustruct
-		return types.Auction{}, false
-	}
-	return auctionsFound[0], true
-}
-
-func (k Keeper) IncreamentAuctionId(ctx sdk.Context, periodId uint64) (uint64, error) {
-	auctions := k.GetAllAuctionsByPeriodID(ctx, periodId)
 	return uint64(len(auctions)) + 1, nil
 }
 
-// TODO get auction by status? or by token? by auction period ID ?
-
-// GetAllAuctionsByAuctionID returns all auctions for the given auction period id.
-func (k Keeper) GetAllAuctionsByAuctionID(ctx sdk.Context, auctionId uint64) []types.Auction {
+// GetAllAuctionByBidder returns all auctions for the given bidder address.
+func (k Keeper) GetAllAuctionByBidder(ctx sdk.Context, bidder string) []types.Auction {
 	auctions := k.GetAllAuctions(ctx)
-
-	auctionsFound := []types.Auction{}
-	for _, auction := range auctions {
-		if auction.Id == auctionId {
-			auctionsFound = append(auctionsFound, auction)
-		}
-	}
-	return auctionsFound
-}
-
-// GetAllAuctionByBidderAndPeriodId returns all auctions for the given auction period id and bidder address.
-func (k Keeper) GetAllAuctionByBidderAndPeriodId(ctx sdk.Context, bidder string, periodId uint64) []types.Auction {
-	auctions := k.GetAllAuctionsByPeriodID(ctx, periodId)
 
 	auctionsFound := []types.Auction{}
 	for _, auction := range auctions {
@@ -132,9 +104,9 @@ func (k Keeper) GetAllAuctionByBidderAndPeriodId(ctx sdk.Context, bidder string,
 	return auctionsFound
 }
 
-// GetHighestBidByAuctionIdAndPeriodID returns highest bid entry at a given auction id and period id.
-func (k Keeper) GetHighestBidByAuctionIdAndPeriodID(ctx sdk.Context, auctionId uint64, periodId uint64) (types.Bid, bool) {
-	auctions := k.GetAllAuctionsByPeriodID(ctx, periodId)
+// GetHighestBidByAuctionId returns highest bid entry at a given auction id.
+func (k Keeper) GetHighestBidByAuctionId(ctx sdk.Context, auctionId uint64) (types.Bid, bool) {
+	auctions := k.GetAllAuctions(ctx)
 
 	found := false
 	var bid *types.Bid
@@ -153,8 +125,11 @@ func (k Keeper) GetHighestBidByAuctionIdAndPeriodID(ctx sdk.Context, auctionId u
 	return *bid, false
 }
 
-func getKeyForAuction(auction types.Auction) string {
-	return fmt.Sprintf("%v-%v", auction.AuctionPeriodId, auction.Id)
+// TODO: remove aution func
+func (k Keeper) RemoveAuction(ctx sdk.Context, id uint64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), []byte(types.KeyPrefixAuction))
+
+	store.Delete(uint64ToByte(id))
 }
 
 // TODO: remove aution func

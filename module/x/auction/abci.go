@@ -13,13 +13,7 @@ import (
 func startNewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper, bk types.BankKeeper, ak types.AccountKeeper) error {
 	auctionRate := params.AuctionRate
 
-	increamentId, err := k.IncreamentAuctionPeriodId(ctx)
-	if err != nil {
-		panic(err)
-	}
-
 	newAuctionPeriods := types.AuctionPeriod{
-		Id:               increamentId,
 		StartBlockHeight: uint64(ctx.BlockHeight()),
 		EndBlockHeight:   uint64(ctx.BlockHeight()) + params.AuctionPeriod,
 	}
@@ -52,21 +46,20 @@ func startNewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 		if err != nil {
 			return err
 		}
-		newId, err := k.IncreamentAuctionId(ctx, increamentId)
+		newId, err := k.IncreamentAuctionId(ctx)
 		if err != nil {
 			return err
 		}
 
 		newAuction := types.Auction{
-			Id:              newId,
-			AuctionPeriodId: increamentId,
-			AuctionAmount:   sdkcoin,
-			Status:          1,
-			HighestBid:      nil,
+			Id:            newId,
+			AuctionAmount: sdkcoin,
+			Status:        1,
+			HighestBid:    nil,
 		}
 
 		// Update auction in auction period auction list
-		err = k.AddNewAuctionToAuctionPeriod(ctx, increamentId, newAuction)
+		err = k.AddNewAuctionToAuctionPeriod(ctx, newAuction)
 		if err != nil {
 			return err
 		}
@@ -79,12 +72,11 @@ func startNewAuctionPeriod(ctx sdk.Context, params types.Params, k keeper.Keeper
 func endAuctionPeriod(
 	ctx sdk.Context,
 	params types.Params,
-	latestAuctionPeriod types.AuctionPeriod,
 	k keeper.Keeper,
 	bk types.BankKeeper,
 	ak types.AccountKeeper,
 ) error {
-	for _, auction := range k.GetAllAuctionsByPeriodID(ctx, latestAuctionPeriod.Id) {
+	for _, auction := range k.GetAllAuctions(ctx) {
 		// Update auction status to finished
 		auction.Status = types.AuctionStatus_AUCTION_STATUS_FINISH
 		k.SetAuction(ctx, auction)
@@ -101,6 +93,8 @@ func endAuctionPeriod(
 			panic(err)
 		}
 
+		// Clear the aution from state
+		k.RemoveAuction(ctx, auction.Id)
 	}
 
 	balances := bk.GetAllBalances(ctx, ak.GetModuleAccount(ctx, types.ModuleName).GetAddress())
@@ -110,6 +104,7 @@ func endAuctionPeriod(
 	if err != nil {
 		ctx.Logger().Error("Fail to return fund to community pool, will try again in the end of the next auction period")
 	}
+
 	return nil
 }
 
@@ -143,7 +138,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper, bk types.BankKeeper, ak types.
 	}
 
 	if lastestAuctionPeriods.EndBlockHeight == uint64(ctx.BlockHeight()) {
-		err := endAuctionPeriod(ctx, params, *lastestAuctionPeriods, k, bk, ak)
+		err := endAuctionPeriod(ctx, params, k, bk, ak)
 		if err != nil {
 			ctx.Logger().Error(fmt.Sprintf("Fail to end the current auction period at height %v, detail log: %s", ctx.BlockHeight(), err.Error()))
 			return

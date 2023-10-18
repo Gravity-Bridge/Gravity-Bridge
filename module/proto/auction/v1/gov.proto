@@ -3,9 +3,13 @@ package auction.v1;
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types";
 
+// Type of auction
 enum ActionType{
-    ADD_TOKEN = 0;
-    REMOVE_TOKEN = 1;
+    // AddToken adds a token to the allow list
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    ACTION_TYPE_ADD_TOKEN = 0; 
+    // RemoveToken removes a token from the allow list
+    ACTION_TYPE_REMOVE_TOKEN = 1; 
 }
 
 message UpdateAllowListProposal {

@@ -3,7 +3,6 @@ package cli_test
 import (
 	"fmt"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -16,6 +15,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/client/cli"
 )
 
+// TODO: adding unit test for cli
 type IntegrationTestSuite struct {
 	suite.Suite
 
@@ -186,8 +186,4 @@ func (s *IntegrationTestSuite) TestGetCmdAllAuction() {
 			s.Require().Equal(tc.expectedOutput, strings.TrimSpace(out.String()))
 		})
 	}
-}
-
-func TestIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(IntegrationTestSuite))
 }

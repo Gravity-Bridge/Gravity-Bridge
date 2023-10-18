@@ -79,6 +79,6 @@ func RegisterUpgradeHandlers(
 	// Add auction module
 	upgradeKeeper.SetUpgradeHandler(
 		auctionmodule.AddAuctionModulePlanName,
-		auctionmodule.CreateUpgradeHandler(mm, *configurator, auctionkeeper),
+		auctionmodule.CreateUpgradeHandler(mm, *configurator, auctionkeeper, bankKeeper, accountKeeper),
 	)
 }

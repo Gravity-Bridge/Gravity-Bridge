@@ -21,7 +21,7 @@ func NewGravityProposalHandler(k Keeper) govtypes.Handler {
 func (k Keeper) HandleUpdateAllowListProposal(ctx sdk.Context, p *types.UpdateAllowListProposal) error {
 	params := k.GetParams(ctx)
 
-	if p.ActionType == types.ActionType_ADD_TOKEN {
+	if p.ActionType == types.ActionType_ACTION_TYPE_ADD_TOKEN {
 		params.AllowTokens[p.Denom] = true
 	} else {
 		delete(params.AllowTokens, p.Denom)

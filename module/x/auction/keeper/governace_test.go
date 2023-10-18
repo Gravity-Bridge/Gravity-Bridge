@@ -1,8 +1,6 @@
 package keeper_test
 
 import (
-	// "fmt"
-
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
@@ -15,7 +13,7 @@ func (suite *KeeperTestSuite) TestHandleUpdateAllowListProposal() {
 		"add denom osmo": {
 			update: &types.UpdateAllowListProposal{
 				Denom:       "osmo",
-				ActionType:  types.ActionType_ADD_TOKEN,
+				ActionType:  types.ActionType_ACTION_TYPE_ADD_TOKEN,
 				Title:       "",
 				Description: "",
 			},
@@ -28,7 +26,7 @@ func (suite *KeeperTestSuite) TestHandleUpdateAllowListProposal() {
 		"delete denom atom": {
 			update: &types.UpdateAllowListProposal{
 				Denom:       "atom",
-				ActionType:  types.ActionType_REMOVE_TOKEN,
+				ActionType:  types.ActionType_ACTION_TYPE_REMOVE_TOKEN,
 				Title:       "",
 				Description: "",
 			},
