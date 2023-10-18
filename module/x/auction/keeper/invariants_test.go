@@ -50,9 +50,9 @@ func (suite *KeeperTestSuite) TestModuleBalanceInvariant() {
 	postPeriodBalances := sdk.NewCoins()
 	AssertCorrectInvariant(suite.T(), ctx, *auctionKeeper, postPeriodBalances)
 
-	// Fund the community pool with a new coin during the current period
+	// Fund the auction pool with a new coin during the current period
 	heyCoin := sdk.NewCoins(sdk.NewCoin("Hey", sdk.NewInt(1000000000000000000)))
-	suite.FundCommunityPool(ctx, heyCoin)
+	suite.FundAuctionPool(ctx, heyCoin)
 	period = auctionKeeper.GetAuctionPeriod(ctx)
 	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))
 

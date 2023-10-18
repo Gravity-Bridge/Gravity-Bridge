@@ -85,7 +85,7 @@ func (suite *KeeperTestSuite) TestAuctionPeriodWhileDisabled() {
 	require.Error(t, err)
 
 	// Fail to create new auctions (at the wrong time but still should fail)
-	suite.FundCommunityPool(ctx, TestBalances)
+	suite.FundAuctionPool(ctx, TestBalances)
 	err = ak.CreateAuctionsForAuctionPeriod(ctx)
 	require.Error(t, err)
 

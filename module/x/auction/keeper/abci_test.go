@@ -86,7 +86,7 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 
 	// Create one auction this time
 	auctionCoins = sdk.NewCoins(TestBalances[0])
-	suite.FundCommunityPool(ctx, auctionCoins)
+	suite.FundAuctionPool(ctx, auctionCoins)
 
 	// Run endblocker with no active auctions, observe one auction created
 	period = auctionKeeper.GetAuctionPeriod(ctx)
@@ -168,20 +168,20 @@ func (suite *KeeperTestSuite) TestWinningBidBurning() {
 	require.Equal(suite.T(), int64(3000), preBurn.Sub(postBurn).Amount.Int64())
 }
 
-// Initializes the community pool, funds several accounts and populates some tokens to be used in future auctions
+// Initializes the auction pool, funds several accounts and populates some tokens to be used in future auctions
 func InitPoolAndAuctionTokens(suite *KeeperTestSuite) {
 	ctx := suite.Ctx
 
 	GravDenom = suite.App.MintKeeper.GetParams(ctx).MintDenom // Native Token: Use the mint denom for flexibility
 	fmt.Printf("Grav in test env is %s\n", GravDenom)
 
-	// Create test balances for the community pool
+	// Create test balances for the auction pool
 	testAmount := sdk.NewInt(helpers.OneAtom() * 1000)
 	TestBalances = sdk.NewCoins(
 		sdk.NewCoin(TestDenom1, testAmount),
 		sdk.NewCoin(TestDenom2, testAmount),
 	)
-	suite.FundCommunityPool(ctx, TestBalances)
+	suite.FundAuctionPool(ctx, TestBalances)
 
 	// Fund some users with the native coin (aka GRAV)
 	testGrav := sdk.NewCoin(GravDenom, testAmount)
@@ -249,8 +249,8 @@ func Bid(suite *KeeperTestSuite, account sdk.AccAddress, amount int64, fee int64
 	}
 }
 
-// Verifies that the given `auction` was paid to `expWinner` and their `winningBid` has been paid to the community pool
-// Optionally verifies that the community pool has received the bid amounts if `verifyPoolGrav` is true
+// Verifies that the given `auction` was paid to `expWinner` and their `winningBid` has been paid to the auction pool
+// Optionally verifies that the auction pool has received the bid amounts if `verifyPoolGrav` is true
 func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, auction types.Auction, winningBid uint64, verifyPoolGrav bool) {
 	ctx := suite.Ctx
 	t := suite.T()
@@ -262,14 +262,14 @@ func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, aucti
 	awardBalance := auctionKeeper.BankKeeper.GetBalance(ctx, expWinner, auction.Amount.Denom)
 	require.True(t, awardBalance.IsGTE(auction.Amount), "winner %v has insufficient award token balance", expWinner.String())
 
-	communityPool := auctionKeeper.DistKeeper.GetFeePoolCommunityCoins(ctx)
-	poolCoin := communityPool.AmountOf(auction.Amount.Denom).TruncateInt()
-	require.True(t, poolCoin.IsZero(), "Positive community pool balance of reward token after auction success")
+	auctionPool := auctionKeeper.GetAuctionPoolBalances(ctx)
+	poolCoin := auctionPool.AmountOf(auction.Amount.Denom)
+	require.True(t, poolCoin.IsZero(), "Positive auction pool balance of reward token after auction success")
 
 	if verifyPoolGrav {
-		poolGrav := communityPool.AmountOf(GravDenom).TruncateInt()
+		poolGrav := auctionPool.AmountOf(GravDenom)
 		expGrav := sdk.NewIntFromUint64(winningBid)
-		require.True(t, poolGrav.GTE(expGrav), "community pool does not have the bidders tokens")
+		require.True(t, poolGrav.GTE(expGrav), "auction pool does not have the bidders tokens")
 	}
 }
 
@@ -290,7 +290,7 @@ func AssertPoolBalanceRelaxed(suite *KeeperTestSuite, coins sdk.Coins) {
 	require.True(suite.T(), checkPoolBalanceRelaxed(suite, coins))
 }
 func checkPoolBalanceRelaxed(suite *KeeperTestSuite, coins sdk.Coins) bool {
-	poolCoins, _ := suite.App.DistrKeeper.GetFeePoolCommunityCoins(suite.Ctx).TruncateDecimal()
+	poolCoins := suite.App.AuctionKeeper.GetAuctionPoolBalances(suite.Ctx)
 
 	for _, coin := range coins {
 		poolAmt := poolCoins.AmountOf(coin.Denom)
@@ -309,7 +309,6 @@ func (suite *KeeperTestSuite) TestHelpers() {
 	ctx := suite.Ctx
 	t := suite.T()
 	bankKeeper := suite.App.BankKeeper
-	distKeeper := suite.App.DistrKeeper
 	auctionKeeper := suite.App.AuctionKeeper
 
 	expectedAuctionAccount := suite.App.AccountKeeper.GetModuleAccount(ctx, types.ModuleName).GetAddress()
@@ -321,8 +320,7 @@ func (suite *KeeperTestSuite) TestHelpers() {
 	require.True(t, checkModuleBalanceStrict(suite, actualBalances))
 
 	// Check the base pool coins
-	actualCoins, actualDust := distKeeper.GetFeePoolCommunityCoins(ctx).TruncateDecimal()
-	require.Equal(t, sdk.DecCoins(nil), actualDust) // No dust in the pool
+	actualCoins := bankKeeper.GetAllBalances(ctx, auctionKeeper.GetAuctionPoolAccount(ctx))
 	require.True(t, checkPoolBalanceRelaxed(suite, actualCoins))
 	require.True(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins()))
 	require.False(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins(sdk.NewCoin("fakecoin", sdk.OneInt()))))
@@ -333,7 +331,7 @@ func (suite *KeeperTestSuite) TestHelpers() {
 	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))
 	auction.EndBlocker(ctx, *suite.App.AuctionKeeper)
 
-	// Ensure the auction now holds the amounts from the community pool
+	// Ensure the auction now holds the amounts from the auction pool
 	auctionBalances := bankKeeper.GetAllBalances(ctx, ModuleAccount)
 	require.Equal(t, actualCoins, auctionBalances)
 	require.True(t, checkModuleBalanceStrict(suite, auctionBalances))
@@ -341,9 +339,8 @@ func (suite *KeeperTestSuite) TestHelpers() {
 	// Ensure the pool is empty now
 	require.False(t, checkPoolBalanceRelaxed(suite, actualCoins))
 	require.True(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins()))
-	actualCoins, actualDust = distKeeper.GetFeePoolCommunityCoins(ctx).TruncateDecimal()
-	require.Equal(t, sdk.Coins(nil), actualCoins)
-	require.True(t, actualDust.IsZero())
+	actualCoins = bankKeeper.GetAllBalances(ctx, auctionKeeper.GetAuctionPoolAccount(ctx))
+	require.Equal(t, sdk.NewCoins(), actualCoins)
 
 	// Make a bid and ensure balance updates
 	Bid(suite, TestAccounts[0], 10_000000, 50000, 0, true) // Bid 10 stake on first

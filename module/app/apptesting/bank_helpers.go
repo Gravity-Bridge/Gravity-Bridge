@@ -4,6 +4,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+
+	auctiontypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
 // Mints `amounts` and sends them to `addr`
@@ -41,6 +43,11 @@ func (s *AppTestHelper) FundCommunityPool(ctx sdk.Context, amounts sdk.Coins) {
 	communityPool.CommunityPool = communityPool.CommunityPool.Add(decAmounts...)
 
 	distKeeper.SetFeePool(ctx, communityPool)
+}
+
+// Mints tokens and places them in the auction module pool
+func (s *AppTestHelper) FundAuctionPool(ctx sdk.Context, amounts sdk.Coins) {
+	s.FundModule(ctx, auctiontypes.AuctionPoolAccountName, amounts)
 }
 
 // Creates `numAccounts` accounts and mints for them the specified `amounts`
