@@ -260,9 +260,9 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error
 			return sdkerrors.Wrapf(err, "unable to burn highest bid (%v)", highestBidCoin)
 		}
 	} else {
-		// Send bid to auction pool
-		if err := k.SendToAuctionPool(ctx, sdk.NewCoins(highestBidCoin)); err != nil {
-			return sdkerrors.Wrapf(err, "unable to send highest bid (%v) to auction pool", highestBidCoin)
+		// Send bid to community pool
+		if err := k.SendFromAuctionAccountToCommunityPool(ctx, highestBidCoin); err != nil {
+			return sdkerrors.Wrapf(err, "unable to send highest bid (%v) to community pool", highestBidCoin)
 		}
 	}
 
@@ -293,7 +293,7 @@ func (k Keeper) CloseAuctionNoWinner(ctx sdk.Context, auction_id uint64) error {
 		panic(fmt.Sprintf("unexpected successful auction: %v", auction))
 	}
 
-	// Send amount to auction pool
+	// Send amount back to auction pool for future auctions
 	if err := k.SendToAuctionPool(ctx, sdk.NewCoins(auction.Amount)); err != nil {
 		return sdkerrors.Wrapf(err, "unable to send auction amount (%v) to auction pool", auction.Amount)
 	}

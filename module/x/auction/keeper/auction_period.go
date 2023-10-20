@@ -113,7 +113,12 @@ func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
 	// For all elligible coins, remove them from the auction pool and create an auction for them
 	for _, poolCoin := range auctionPool {
 		if blacklistMap[poolCoin.Denom] { // Coin in blacklist
-			continue // Do nothing with that coin
+			// If a token is NonAuctionable send it to the community pool instead
+			if err := k.SendFromAuctionPoolToCommunityPool(ctx, poolCoin); err != nil {
+				return sdkerrors.Wrapf(err, "unable to transfer non auctionable balance to community pool")
+			}
+			// Do not create an auction as the balance is no longer under the auction module's control
+			continue
 		}
 
 		id := k.GetNextAuctionId(ctx)
