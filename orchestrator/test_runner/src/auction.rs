@@ -11,8 +11,7 @@ use crate::{
 };
 use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::{submit_auction_params_proposal, AuctionParamsProposalJson};
-use cosmos_gravity::send::MSG_BID_TYPE_URL;
-use deep_space::client::type_urls::MSG_FUND_COMMUNITY_POOL_TYPE_URL;
+use cosmos_gravity::send::{MSG_BID_TYPE_URL, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::client::types::LatestBlock;
 use deep_space::error::CosmosGrpcError;
 use deep_space::{Address as CosmosAddress, Coin, Contact, Msg, PrivateKey};
@@ -22,12 +21,8 @@ use gravity_proto::auction::{
     QueryAuctionsRequest, QueryParamsRequest,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
-use gravity_proto::cosmos_sdk_proto::cosmos::distribution::v1beta1::query_client::QueryClient as DistributionQueryClient;
-use gravity_proto::cosmos_sdk_proto::cosmos::distribution::v1beta1::{
-    MsgFundCommunityPool, QueryCommunityPoolRequest,
-};
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::QueryDenomToErc20Request;
+use gravity_proto::gravity::{MsgSendToEth, QueryDenomToErc20Request};
 use gravity_utils::num_conversion::one_atom;
 use lazy_static::lazy_static;
 use num256::Uint256;
@@ -39,6 +34,9 @@ use web30::client::Web3;
 lazy_static! {
     pub static ref AUCTION_ADDRESS: CosmosAddress =
         deep_space::address::get_module_account_address("auction", Some(&*ADDRESS_PREFIX))
+            .expect("Failed to get auction module address");
+    pub static ref AUCTION_POOL_ADDRESS: CosmosAddress =
+        deep_space::address::get_module_account_address("auction_pool", Some(&*ADDRESS_PREFIX))
             .expect("Failed to get auction module address");
 }
 
@@ -241,91 +239,100 @@ pub async fn auction_test_static(
         .params
         .unwrap()
         .min_bid_fee;
-    let mut bids = Vec::new();
-    bids.push((
-        true,
-        auction_users.get(0).unwrap(),
-        MsgBid {
-            auction_id: auctions.get(0).unwrap().id,
-            bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
-            amount: 100_000,
-            bid_fee: min_bid_fee,
-        },
-    )); // Successful bid
-    bids.push((
-        true,
-        auction_users.get(1).unwrap(),
-        MsgBid {
-            auction_id: auctions.get(0).unwrap().id,
-            bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
-            amount: 150_000,
-            bid_fee: min_bid_fee + 1,
-        },
-    )); // Successful bid
-    bids.push((
-        true,
-        auction_users.get(1).unwrap(),
-        MsgBid {
-            auction_id: auctions.get(1).unwrap().id,
-            bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
-            amount: 50_000,
-            bid_fee: min_bid_fee,
-        },
-    )); // Successful bid
-    bids.push((
-        false,
-        auction_users.get(1).unwrap(),
-        MsgBid {
-            auction_id: auctions.get(0).unwrap().id,
-            bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
-            amount: 170_000,
-            bid_fee: min_bid_fee,
-        },
-    )); // Rebid not allowed
-    bids.push((
-        false,
-        auction_users.get(1).unwrap(),
-        MsgBid {
-            auction_id: auctions.get(1).unwrap().id,
-            bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
-            amount: 75_000,
-            bid_fee: min_bid_fee,
-        },
-    )); // Rebid not allowed
-    bids.push((
-        true,
-        auction_users.get(0).unwrap(),
-        MsgBid {
-            auction_id: auctions.get(1).unwrap().id,
-            bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
-            amount: 75_000,
-            bid_fee: min_bid_fee,
-        },
-    )); // Successful bid
-    bids.push((
-        false,
-        auction_users.get(0).unwrap(),
-        MsgBid {
-            auction_id: auctions.get(0).unwrap().id,
-            bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
-            amount: 170_000,
-            bid_fee: 5,
-        },
-    )); // Fee too low
-    bids.push((
-        true,
-        auction_users.get(0).unwrap(),
-        MsgBid {
-            auction_id: auctions.get(0).unwrap().id,
-            bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
-            amount: 170_000,
-            bid_fee: min_bid_fee,
-        },
-    )); // Successful bid
+    let bids = vec![
+        // Successful Bid
+        (
+            true,
+            auction_users.get(0).unwrap(),
+            MsgBid {
+                auction_id: auctions.get(0).unwrap().id,
+                bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
+                amount: 100_000,
+                bid_fee: min_bid_fee,
+            },
+        ),
+        // Successful Bid
+        (
+            true,
+            auction_users.get(1).unwrap(),
+            MsgBid {
+                auction_id: auctions.get(0).unwrap().id,
+                bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
+                amount: 150_000,
+                bid_fee: min_bid_fee + 1,
+            },
+        ),
+        // Successful bid
+        (
+            true,
+            auction_users.get(1).unwrap(),
+            MsgBid {
+                auction_id: auctions.get(1).unwrap().id,
+                bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
+                amount: 50_000,
+                bid_fee: min_bid_fee,
+            },
+        ), // Rebid not allowed
+        (
+            false,
+            auction_users.get(1).unwrap(),
+            MsgBid {
+                auction_id: auctions.get(0).unwrap().id,
+                bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
+                amount: 170_000,
+                bid_fee: min_bid_fee,
+            },
+        ), // Rebid not allowed
+        (
+            false,
+            auction_users.get(1).unwrap(),
+            MsgBid {
+                auction_id: auctions.get(1).unwrap().id,
+                bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
+                amount: 75_000,
+                bid_fee: min_bid_fee,
+            },
+        ),
+        // Successful bid
+        (
+            true,
+            auction_users.get(0).unwrap(),
+            MsgBid {
+                auction_id: auctions.get(1).unwrap().id,
+                bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
+                amount: 75_000,
+                bid_fee: min_bid_fee,
+            },
+        ),
+        // Fee too low
+        (
+            false,
+            auction_users.get(0).unwrap(),
+            MsgBid {
+                auction_id: auctions.get(0).unwrap().id,
+                bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
+                amount: 170_000,
+                bid_fee: 5,
+            },
+        ),
+        // Successful bid
+        (
+            true,
+            auction_users.get(0).unwrap(),
+            MsgBid {
+                auction_id: auctions.get(0).unwrap().id,
+                bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
+                amount: 170_000,
+                bid_fee: min_bid_fee,
+            },
+        ),
+    ];
 
     for bid_params in bids {
         execute_and_validate_bid(contact, bid_params).await;
     }
+
+    info!("Successful auciton static test!");
 }
 
 // Similar to auction_test_static but randomly generates bids based on criteria, and executes over multiple auction periods
@@ -512,7 +519,25 @@ pub async fn setup(
         )
         .await;
     }
-
+    let footoken2 = footoken2_metadata(contact).await;
+    if grpc_client
+        .denom_to_erc20(QueryDenomToErc20Request {
+            denom: footoken2.base.clone(),
+        })
+        .await
+        .is_err()
+    {
+        info!("Begin setup, create footoken2 erc20");
+        let _ = deploy_cosmos_representing_erc20_and_check_adoption(
+            gravity_address,
+            web30,
+            Some(keys.clone()),
+            &mut (grpc_client.clone()),
+            false,
+            footoken2.clone(),
+        )
+        .await;
+    }
     info!("Send validators 1000 x 10^18 of an eth native erc20");
     // Send the validators generated address 100 units of each erc20 from ethereum to cosmos
     for v in &keys {
@@ -532,20 +557,7 @@ pub async fn setup(
     }
     let denom = format!("gravity{}", erc20_address);
 
-    let mut dist_qc = DistributionQueryClient::connect(contact.get_url())
-        .await
-        .expect("Unable to connect to distribution query client");
-    let pool = dist_qc
-        .community_pool(QueryCommunityPoolRequest {})
-        .await
-        .expect("Unable to get community pool")
-        .into_inner()
-        .pool;
-    if pool.iter().any(|v| v.denom == denom) {
-        info!("The community pool has already been seeded with the bridged ERC20, skipping pool seeding");
-    } else {
-        seed_pool_multi(contact, &keys, erc20_address).await;
-    }
+    seed_pool_multi(contact, &keys, erc20_address).await;
 
     let mut users = Vec::new();
     for _ in 0..keys.len() {
@@ -592,35 +604,44 @@ pub async fn setup(
     users
 }
 
-// Seeds the community pool with the bridged `erc20_address`, footoken, and footoken2
+// Seeds the auction pool with the bridged `erc20_address`, footoken, and footoken2
 async fn seed_pool_multi(contact: &Contact, keys: &[ValidatorKeys], erc20_address: EthAddress) {
     let denom = format!("gravity{}", erc20_address);
     seed_pool(contact, keys, denom).await;
     let footoken = footoken_metadata(contact).await;
     seed_pool(contact, keys, footoken.base).await;
-    let footoken2 = get_metadata(contact, "footoken2").await;
+    let footoken2 = footoken2_metadata(contact).await;
     seed_pool(contact, keys, footoken2.base).await;
 }
 
-// Populates the community pool by submitting MsgFundCommunityPool
+// Populates the auction pool by submitting MsgSendToEth with a large chain fee
 async fn seed_pool(contact: &Contact, keys: &[ValidatorKeys], denom: String) {
-    let bridge: Uint256 = 10_000000u64.into();
+    info!("Sending {denom} to ethereum to fund the auction pool");
+    let chain_fee: Uint256 = 100_000000u64.into();
+    let bridge: Uint256 = 100u64.into();
+    let ste_coin = Coin {
+        denom: denom.clone(),
+        amount: bridge,
+    };
+    let chain_fee_coin = Coin {
+        denom: denom.clone(),
+        amount: chain_fee,
+    };
     for _ in 0..3 {
         for v in keys {
-            let seed_coin = Coin {
-                denom: denom.clone(),
-                amount: bridge,
-            };
-            let seed_msg = MsgFundCommunityPool {
-                amount: vec![seed_coin.into()],
-                depositor: v
+            let ste_msg = MsgSendToEth {
+                amount: Some(ste_coin.clone().into()),
+                sender: v
                     .validator_key
-                    .to_address(&contact.get_prefix())
+                    .to_address(&ADDRESS_PREFIX)
                     .unwrap()
                     .to_string(),
+                eth_dest: v.eth_key.to_address().to_string(),
+                bridge_fee: Some(get_fee(Some(denom.clone())).into()),
+                chain_fee: Some(chain_fee_coin.clone().into()),
             };
-            let msg = Msg::new(MSG_FUND_COMMUNITY_POOL_TYPE_URL, seed_msg);
-            contact
+            let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, ste_msg);
+            let send_tx = contact
                 .send_message(
                     &[msg],
                     None,
@@ -629,7 +650,8 @@ async fn seed_pool(contact: &Contact, keys: &[ValidatorKeys], denom: String) {
                     v.validator_key,
                 )
                 .await
-                .expect("Failed to fund community pool");
+                .expect("Failed to fund auction pool");
+            info!("Sent to ethereum, tx id: {}", send_tx.txhash);
         }
     }
 }
@@ -677,7 +699,7 @@ pub async fn submit_and_pass_auction_params_proposal(
     .await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-    info!("Gov proposal executed with {:?}", res);
+    info!("Gov proposal executed with: {:?}", res.map(|r| r.raw_log));
 
     let post_params = auction_qc
         .params(QueryParamsRequest {})
