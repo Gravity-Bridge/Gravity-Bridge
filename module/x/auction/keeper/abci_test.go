@@ -249,8 +249,8 @@ func Bid(suite *KeeperTestSuite, account sdk.AccAddress, amount int64, fee int64
 	}
 }
 
-// Verifies that the given `auction` was paid to `expWinner` and their `winningBid` has been paid to the auction pool
-// Optionally verifies that the auction pool has received the bid amounts if `verifyPoolGrav` is true
+// Verifies that the given `auction` was paid to `expWinner` and their `winningBid` has been paid to the community pool or burned
+// Optionally verifies that the community pool has received the bid amounts if `verifyPoolGrav` is true
 func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, auction types.Auction, winningBid uint64, verifyPoolGrav bool) {
 	ctx := suite.Ctx
 	t := suite.T()
@@ -267,9 +267,10 @@ func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, aucti
 	require.True(t, poolCoin.IsZero(), "Positive auction pool balance of reward token after auction success")
 
 	if verifyPoolGrav {
-		poolGrav := auctionPool.AmountOf(GravDenom)
+		communityPool, _ := auctionKeeper.DistKeeper.GetFeePoolCommunityCoins(ctx).TruncateDecimal()
+		poolGrav := communityPool.AmountOf(GravDenom)
 		expGrav := sdk.NewIntFromUint64(winningBid)
-		require.True(t, poolGrav.GTE(expGrav), "auction pool does not have the bidders tokens")
+		require.True(t, poolGrav.GTE(expGrav), "community pool does not have the bidders tokens")
 	}
 }
 

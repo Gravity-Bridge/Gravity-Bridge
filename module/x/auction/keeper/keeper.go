@@ -6,6 +6,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
@@ -153,6 +154,31 @@ func (k Keeper) IsDenomAuctionable(ctx sdk.Context, denom string) bool {
 	}
 
 	return true
+}
+
+// Sends tokens from the Auction module's account (for active auctions and bids) to the community pool
+// particularly useful when not burning winning bids
+func (k Keeper) SendFromAuctionAccountToCommunityPool(ctx sdk.Context, coin sdk.Coin) error {
+	return k.sendFromModuleAccountToCommunityPool(ctx, coin, types.ModuleName)
+}
+
+// Sends tokens from the Auction Pool's account (for future auctions) to the community pool
+// particularly useful when holding a non-auctionable token
+func (k Keeper) SendFromAuctionPoolToCommunityPool(ctx sdk.Context, coin sdk.Coin) error {
+	return k.sendFromModuleAccountToCommunityPool(ctx, coin, types.AuctionPoolAccountName)
+}
+
+// Handles transferring auction module account balances to the community pool
+func (k Keeper) sendFromModuleAccountToCommunityPool(ctx sdk.Context, coin sdk.Coin, moduleName string) error {
+	coins := sdk.NewCoins(coin)
+	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, moduleName, distrtypes.ModuleName, coins); err != nil {
+		return sdkerrors.Wrap(err, "Failure to transfer tokens from auction pool to community pool")
+	}
+	feePool := k.DistKeeper.GetFeePool(ctx)
+	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
+	k.DistKeeper.SetFeePool(ctx, feePool)
+
+	return nil
 }
 
 // prefixRange turns a prefix into a (start, end) range. The start is the given prefix value and
