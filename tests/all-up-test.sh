@@ -27,11 +27,11 @@ TEST_TYPE=$1
 ALCHEMY_ID=$2
 set -u
 
-# setup for Mac M1 Compatibility 
+# setup for Mac apple silicon Compatibility 
 PLATFORM_CMD=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -n $(sysctl -a | grep brand | grep "M1") ]]; then
-       echo "Setting --platform=linux/amd64 for Mac M1 compatibility"
+    if [[ -n $(sysctl -a | grep brand | grep "Apple") ]]; then
+       echo "Setting --platform=linux/amd64 for Mac apple silicon compatibility"
        PLATFORM_CMD="--platform=linux/amd64"; fi
 fi
 
