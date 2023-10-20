@@ -14,11 +14,11 @@ pushd $REPOFOLDER
 git archive --format=tar.gz -o $DOCKERFOLDER/gravity.tar.gz --prefix=gravity/ HEAD
 pushd $DOCKERFOLDER
 
-# setup for Mac M1 Compatibility 
+# setup for Mac apple silicon Compatibility 
 PLATFORM_CMD=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -n $(sysctl -a | grep brand | grep "M1") ]]; then
-       echo "Setting --platform=linux/amd64 for Mac M1 compatibility"
+    if [[ -n $(sysctl -a | grep brand | grep "Apple") ]]; then
+       echo "Setting --platform=linux/amd64 for Mac apple silicon compatibility"
        PLATFORM_CMD="--platform=linux/amd64"; fi
 fi
 docker build --ulimit nofile=65536:65536 -t gravity-base $PLATFORM_CMD .
