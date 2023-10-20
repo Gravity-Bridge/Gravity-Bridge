@@ -50,6 +50,11 @@ pub async fn footoken_metadata(contact: &Contact) -> Metadata {
     get_metadata(contact, "footoken").await
 }
 
+/// returns the required denom metadata for deployed the footoken2
+/// token defined in our test environment
+pub async fn footoken2_metadata(contact: &Contact) -> Metadata {
+    get_metadata(contact, "footoken2").await
+}
 /// returns the required denom metadata for the native staking token
 /// token defined in our test environment
 pub async fn ugraviton_metadata(contact: &Contact) -> Metadata {
