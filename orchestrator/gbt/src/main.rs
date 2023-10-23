@@ -6,7 +6,7 @@ extern crate serde_derive;
 use crate::args::{ClientSubcommand, KeysSubcommand, SubCommand};
 use crate::config::init_config;
 use crate::keys::{recover_funds, show_keys};
-use crate::{orchestrator::orchestrator, relayer::relayer};
+use crate::{jsonrpc_server::jsonrpc_server, orchestrator::orchestrator, relayer::relayer};
 use args::{GovQuerySubcommand, GovSubcommand, GovSubmitSubcommand, Opts};
 use clap::Parser;
 use client::cosmos_to_eth::cosmos_to_eth_cmd;
@@ -27,6 +27,7 @@ mod args;
 mod client;
 mod config;
 mod gov;
+mod jsonrpc_server;
 mod keys;
 mod orchestrator;
 mod relayer;
@@ -92,6 +93,7 @@ async fn main() {
         SubCommand::Relayer(relayer_opts) => {
             relayer(relayer_opts, address_prefix, &home_dir, config.relayer).await
         }
+        SubCommand::JsonrpcServer(server_opts) => jsonrpc_server(server_opts).await,
         SubCommand::Init(init_opts) => init_config(init_opts, home_dir),
         SubCommand::Gov(gov_opts) => match gov_opts.subcmd {
             GovSubcommand::Submit(submit_opts) => match submit_opts {

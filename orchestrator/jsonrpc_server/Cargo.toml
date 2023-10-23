@@ -1,0 +1,36 @@
+[package]
+name = "jsonrpc_server"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "jsonrpc_server"
+path = "src/lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+num256 = {workspace = true}
+
+env_logger = "0.9"
+log = "0.4"
+actix-web = {version = "4.2", features = ["rustls"]}
+actix-cors = "0.6"
+rustls = "0.20"
+rustls-pemfile = "0.3"
+futures = "0.3"
+openssl-probe = "0.1"
+tokio = "1.4"
+sha256 = "1"
+actix-rt = "2.5"
+serde = {version = "1.0", features=["derive"]}
+serde_json = "1.0"
+lazy_static = "1"
+json = "0.12"
+hex = "0.4"
+chrono = "0.4"
+rust_decimal= "1.29"
+mime = "0"
+
+[features]
+development = []
