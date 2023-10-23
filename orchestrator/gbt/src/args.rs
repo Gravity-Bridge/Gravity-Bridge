@@ -33,6 +33,7 @@ pub struct Opts {
 pub enum SubCommand {
     Orchestrator(OrchestratorOpts),
     Relayer(RelayerOpts),
+    JsonrpcServer(JsonrpcServerOpts),
     Client(ClientOpts),
     Gov(GovOpts),
     Keys(KeyOpts),
@@ -94,6 +95,33 @@ pub struct RelayerOpts {
     /// (Optional) The Cosmos gRPC server that will be used to
     #[clap(short, long, default_value = "http://localhost:9090")]
     pub cosmos_grpc: String,
+}
+
+/// The Gravity Bridge Jsonrpc Server is an HTTP Server that roughly mimics the results of an Ethereum-based blockchain
+/// so that MetaMask will allow signatures over Gravity Bridge transactions (using EIP-712 signatures)
+/// The information returned by this server may be completely inaccurate, and results in the MetaMask user interface
+/// should be ignored
+#[derive(Parser)]
+pub struct JsonrpcServerOpts {
+    /// The domain name under which the server will operate; default "localhost"
+    #[clap(long, parse(try_from_str))]
+    pub domain: Option<String>,
+
+    /// The port number from which the server will serve; default "8545"
+    #[clap(long, parse(try_from_str))]
+    pub port: Option<String>,
+
+    /// Whether or not to enable HTTPS via TLS, uses cert_chain_path and cert_key_path or their default values; default false
+    #[clap(long, parse(try_from_str))]
+    pub use_ssl: Option<bool>,
+
+    /// A path to the SSL certificate, only used if use_ssl is true; default /etc/letsencrypt/live/<domain name>/fullchain.pem
+    #[clap(long, parse(try_from_str))]
+    pub cert_chain_path: Option<String>,
+
+    /// A path to the SSL key file, only used if use_ssl is true; default /etc/letsencrypt/live/<domain name>/privkey.pem
+    #[clap(long, parse(try_from_str))]
+    pub cert_key_path: Option<String>,
 }
 
 /// The Gravity Bridge client contains helpful command line tools for interacting with the Gravity bridge

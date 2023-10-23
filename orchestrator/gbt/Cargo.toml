@@ -19,6 +19,7 @@ gravity_proto = {workspace = true}
 relayer = {path = "../relayer/"}
 orchestrator = {path = "../orchestrator/"}
 metrics_exporter = {path = "../metrics_exporter/"}
+jsonrpc_server = {path = "../jsonrpc_server/"}
 
 deep_space = {workspace = true, features=["ethermint"]}
 serde_derive = "1.0"
