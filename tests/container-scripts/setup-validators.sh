@@ -59,7 +59,7 @@ jq '.app_state.bank.balances += [{"address": "gravity1vp0qhw3jqm7gxk6yu0eqkcwf5u
 
 # Set the auction module params
 jq '.app_state.auction.params.non_auctionable_tokens = ["ugraviton"]' /auction-genesis.json > /auction2-genesis.json
-jq '.app_state.auction.params.auction_length = 30' /auction2-genesis.json > /gravity-genesis.json
+jq '.app_state.auction.params.auction_length = 40' /auction2-genesis.json > /gravity-genesis.json
 
 # Set the Send to Eth chain fee fraction that goes to the auction pool
 jq '.app_state.gravity.params.chain_fee_auction_pool_fraction = "0.75"' /gravity-genesis.json > /edited-genesis.json
