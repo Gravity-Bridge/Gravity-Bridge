@@ -60,6 +60,9 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 	if currentAuction == nil {
 		return nil, sdkerrors.Wrapf(types.ErrAuctionNotFound, "no active auction with id %d", msg.AuctionId)
 	}
+	if currentAuction.Amount.Denom == bidToken {
+		panic("Bid for auction of the native token")
+	}
 	oldBidder := ""
 	highestBid := currentAuction.HighestBid
 	if highestBid != nil {
