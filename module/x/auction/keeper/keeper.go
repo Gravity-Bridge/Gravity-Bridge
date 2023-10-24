@@ -146,6 +146,10 @@ func (k Keeper) AwardAuction(ctx sdk.Context, bidder sdk.AccAddress, amount sdk.
 // IsDenomAuctionable Checks `denom“ against the NonAuctionableTokens list
 // Returns true if not in the list and false otherwise
 func (k Keeper) IsDenomAuctionable(ctx sdk.Context, denom string) bool {
+	if denom == k.MintKeeper.GetParams(ctx).MintDenom {
+		return false
+	}
+
 	nonAuctionableTokens := k.GetParams(ctx).NonAuctionableTokens
 	for _, nonAuctionable := range nonAuctionableTokens {
 		if denom == nonAuctionable {
