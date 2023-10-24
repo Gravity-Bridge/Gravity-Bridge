@@ -19,7 +19,10 @@ import (
 func AllInvariants(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		res, stop := ModuleBalanceInvariant(k)(ctx)
-		return res, stop
+		if stop {
+			return res, stop
+		}
+		return ValidAuctionsInvariant(k)(ctx)
 
 		/*
 			Example additional invariants:
@@ -72,4 +75,25 @@ func ExpectedAuctionModuleBalances(ctx sdk.Context, k Keeper) sdk.Coins {
 	})
 
 	return awardAmounts.Add(sdk.NewCoin(bidToken, highestBids))
+}
+
+// ValidAuctionsInvariant is a closure (enclosing the keeper) which performs state checks at runtime
+// returning an error message and true in case of failure, or an empty string and false in case of success.
+// In particular this invariant checks that the auction module's auctions do not contain the native staking token
+func ValidAuctionsInvariant(k Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (message string, invalidState bool) {
+		nativeToken := k.MintKeeper.GetParams(ctx).MintDenom
+		invalid := false
+		k.IterateAuctions(ctx, func(key []byte, auc types.Auction) (stop bool) {
+			if auc.Amount.Denom == nativeToken {
+				invalid = true
+				return true
+			}
+			return false
+		})
+		if invalid {
+			return "discovered auction for the native token", true
+		}
+		return "", false
+	}
 }
