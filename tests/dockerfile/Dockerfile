@@ -9,8 +9,8 @@ RUN cd /geth && tar -xvf * && mv /geth/**/geth /usr/bin/geth
 # Download the althea gaia fork as a IBC test chain
 ADD https://github.com/althea-net/ibc-test-chain/releases/download/v9.1.2/gaiad-v9.1.2-linux-amd64 /usr/bin/gaiad
 # Setup Hermes for IBC connections between chains
-ADD https://github.com/informalsystems/ibc-rs/releases/download/v1.5.1/hermes-v1.5.1-x86_64-unknown-linux-gnu.tar.gz /tmp/
-RUN cd /tmp/ && tar -xvf hermes-v1.5.1-x86_64-unknown-linux-gnu.tar.gz && mv hermes /usr/bin/
+ADD https://github.com/informalsystems/ibc-rs/releases/download/v1.7.0/hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz /tmp/
+RUN cd /tmp/ && tar -xvf hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz && mv hermes /usr/bin/
 RUN mkdir /ibc-relayer-logs && touch /ibc-relayer-logs/hermes-logs && touch /ibc-relayer-logs/channel-creation
 # the actual source code for this repo, this **only** includes checked in files!
 # this is a bit of a pain but it does speed things up a lot
