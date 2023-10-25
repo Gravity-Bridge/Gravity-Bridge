@@ -20,9 +20,12 @@ use clarity::PrivateKey as EthPrivateKey;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey, DEFAULT_COSMOS_HD_PATH};
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::query_client::QueryClient as IbcChannelQueryClient;
-use ibc::core::ics24_host::identifier::ChainId;
+use hdpath::StandardHDPath;
 use ibc_relayer::config::AddressType;
-use ibc_relayer::keyring::{HDPath, KeyRing, Store};
+use ibc_relayer::keyring::Secp256k1KeyPair;
+use ibc_relayer::keyring::SigningKeyPair;
+use ibc_relayer::keyring::{KeyRing, Store};
+use ibc_relayer_types::core::ics24_host::identifier::ChainId;
 use std::os::unix::io::{FromRawFd, IntoRawFd};
 use std::process::{Command, Stdio};
 use std::{fs::File, path::Path};
@@ -282,26 +285,35 @@ pub fn setup_relayer_keys(shared_phrase: &str) -> Result<(), Box<dyn std::error:
         Store::Test,
         "gravity",
         &ChainId::from_string(&get_gravity_chain_id()),
-    )?;
+        &None,
+    )
+    .expect("Unable to create gravity keyring");
 
-    let key = gkeyring.key_from_mnemonic(
+    let pair = Secp256k1KeyPair::from_mnemonic(
         shared_phrase,
-        &HDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
+        &StandardHDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
         &AddressType::Cosmos,
-    )?;
-    gkeyring.add_key("gravitykey", key)?;
+        "gravity",
+    )
+    .expect("Unable to generate key pair from mnemonic");
+    gkeyring.add_key("gravitykey", pair)?;
 
     let mut ckeyring = KeyRing::new(
         Store::Test,
         "cosmos",
         &ChainId::from_string(&get_ibc_chain_id()),
-    )?;
-    let key = ckeyring.key_from_mnemonic(
+        &None,
+    )
+    .expect("Unable to create ibc-chain keyring");
+    let pair = Secp256k1KeyPair::from_mnemonic(
         shared_phrase,
-        &HDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
+        &StandardHDPath::from_str(DEFAULT_COSMOS_HD_PATH).unwrap(),
         &AddressType::Cosmos,
-    )?;
-    ckeyring.add_key("ibckey", key)?;
+        "cosmos",
+    )
+    .expect("Unable to generate key pair from mnemonic");
+
+    ckeyring.add_key("ibckey", pair)?;
 
     Ok(())
 }

@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Justin Kilpatrick <justin@althea.net>"]
 edition = "2018"
 
-# only becuase I like - more in names
+# only because I like - more in names
 [[bin]]
 name = "test-runner"
 path = "src/main.rs"
@@ -38,6 +38,7 @@ rand = "0.8"
 tonic = {workspace = true}
 futures = "0.3"
 serde_json = "1.0"
-ibc = "0.19.0"
-ibc-relayer = "0.19.0"
+ibc-relayer = "0.26.0"
+ibc-relayer-types = "0.26.0"
+hdpath = "0.6.3"
 reqwest = "0.11"

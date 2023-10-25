@@ -80,7 +80,7 @@ grpc_addr = 'http://localhost:9090'
 # Specify the WebSocket address and port where the chain WebSocket server
 # listens on. Required
 # websocket_addr = 'ws://testnet.gravitychain.io:26657/websocket'
-websocket_addr = 'ws://localhost:26657/websocket'
+event_source = {mode = 'push', url = 'ws://localhost:26657/websocket', batch_delay = '500ms' }
 # Specify the maximum amount of time (duration) that the RPC requests should
 # take before timing out. Default: 10s (10 seconds)
 # Note: Hermes uses this parameter _only_ in `start` mode; for all other CLIs,
@@ -175,7 +175,7 @@ memo_prefix = 'Testing with Hermes'
 id = 'ibc-test-1'
 rpc_addr = 'http://localhost:27657'
 grpc_addr = 'http://localhost:9190'
-websocket_addr = 'ws://localhost:27657/websocket'
+event_source = {mode = 'push', url = 'ws://localhost:27657/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 account_prefix = 'cosmos'
 key_name = 'ibckey'
