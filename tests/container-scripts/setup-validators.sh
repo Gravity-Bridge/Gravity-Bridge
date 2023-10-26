@@ -50,19 +50,26 @@ jq '.app_state.bank.balances += [{"address": "gravity1hanqss6jsq66tfyjz56wz44z0e
 # of the sha256 hash of 'distribution' to create the address of the module
 jq '.app_state.distribution.fee_pool.community_pool = [{"denom": "footoken", "amount": "1000000000000000000000000"},{"denom": "ugraviton", "amount": "1000000000000000000000000"}]' /community-pool-genesis.json > /community-pool2-genesis.json
 jq '.app_state.auth.accounts += [{"@type": "/cosmos.auth.v1beta1.ModuleAccount", "base_account": { "account_number": "0", "address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh","pub_key": null,"sequence": "0"},"name": "distribution","permissions": ["basic"]}]' /community-pool2-genesis.json > /community-pool3-genesis.json
-jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"denom": "footoken", "amount": "1000000000000000000000000"},{"amount": "1000000000000000000000000", "denom": "ugraviton"}]}]' /community-pool3-genesis.json > /auction-pool-genesis.json
+jq '.app_state.bank.balances += [{"address": "gravity1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8r0kyvh", "coins": [{"denom": "footoken", "amount": "1000000000000000000000000"},{"amount": "1000000000000000000000000", "denom": "ugraviton"}]}]' /community-pool3-genesis.json > /edited-genesis.json
 
-# Add some funds to the auction pool to test the auction module, the address is the first 20 bytes of the sha256 hash of "auction_pool"
-# account_number is 14 to preserve the EIP712 test account's (gravity1hanqss6jsq66tfyjz56wz44z0ejtyv0724h32c) number as 13
-jq '.app_state.auth.accounts += [{"@type": "/cosmos.auth.v1beta1.ModuleAccount", "base_account": { "account_number": "14", "address": "gravity1vp0qhw3jqm7gxk6yu0eqkcwf5u986eahmjjnql","pub_key": null,"sequence": "0"},"name": "auction_pool","permissions": []}]' /auction-pool-genesis.json > /auction-pool2-genesis.json
-jq '.app_state.bank.balances += [{"address": "gravity1vp0qhw3jqm7gxk6yu0eqkcwf5u986eahmjjnql", "coins": [{"denom": "footoken", "amount": "1000000000000000000000000"},{"denom": "footoken2", "amount": "1000000000000000000000000"},{"amount": "1000000000000000000000000", "denom": "ugraviton"}]}]' /auction-pool2-genesis.json > /auction-genesis.json
+# TODO: Remove after Apollo upgrade, needed to make upgrade test work while still on Antares
+set +u
+if [[ -z ${OLD_BINARY_LOCATION} ]]; then
+  mv /edited-genesis.json /auction-pool-genesis.json
+  # Add some funds to the auction pool to test the auction module, the address is the first 20 bytes of the sha256 hash of "auction_pool"
+  # account_number is 14 to preserve the EIP712 test account's (gravity1hanqss6jsq66tfyjz56wz44z0ejtyv0724h32c) number as 13
+  jq '.app_state.auth.accounts += [{"@type": "/cosmos.auth.v1beta1.ModuleAccount", "base_account": { "account_number": "14", "address": "gravity1vp0qhw3jqm7gxk6yu0eqkcwf5u986eahmjjnql","pub_key": null,"sequence": "0"},"name": "auction_pool","permissions": []}]' /auction-pool-genesis.json > /auction-pool2-genesis.json
+  jq '.app_state.bank.balances += [{"address": "gravity1vp0qhw3jqm7gxk6yu0eqkcwf5u986eahmjjnql", "coins": [{"denom": "footoken", "amount": "1000000000000000000000000"},{"denom": "footoken2", "amount": "1000000000000000000000000"},{"amount": "1000000000000000000000000", "denom": "ugraviton"}]}]' /auction-pool2-genesis.json > /auction-genesis.json
 
-# Set the auction module params
-jq '.app_state.auction.params.non_auctionable_tokens = ["ugraviton"]' /auction-genesis.json > /auction2-genesis.json
-jq '.app_state.auction.params.auction_length = 40' /auction2-genesis.json > /gravity-genesis.json
 
-# Set the Send to Eth chain fee fraction that goes to the auction pool
-jq '.app_state.gravity.params.chain_fee_auction_pool_fraction = "0.75"' /gravity-genesis.json > /edited-genesis.json
+  # Set the auction module params
+  jq '.app_state.auction.params.non_auctionable_tokens = ["ugraviton"]' /auction-genesis.json > /auction2-genesis.json
+  jq '.app_state.auction.params.auction_length = 40' /auction2-genesis.json > /gravity-genesis.json
+
+  # Set the Send to Eth chain fee fraction that goes to the auction pool
+  jq '.app_state.gravity.params.chain_fee_auction_pool_fraction = "0.75"' /gravity-genesis.json > /edited-genesis.json
+fi
+set -u
 
 # Change the stake token to be ugraviton instead
 sed -i 's/\<stake\>/ugraviton/g' /edited-genesis.json

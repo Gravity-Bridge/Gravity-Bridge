@@ -374,5 +374,6 @@ pub async fn submit_auction_params_proposal(
         description: proposal.description,
         changes: params_to_change,
     };
+    info!("Submitting auction params proposal:\n{:?}", proposal);
     submit_parameter_change_proposal(proposal, deposit, fee, contact, key, wait_timeout).await
 }
