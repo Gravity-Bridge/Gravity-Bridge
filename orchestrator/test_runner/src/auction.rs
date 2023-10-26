@@ -3,9 +3,8 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
-use crate::{get_deposit, get_fee, STAKING_TOKEN, TOTAL_TIMEOUT};
+use crate::{get_deposit, get_fee, MINER_PRIVATE_KEY, STAKING_TOKEN, TOTAL_TIMEOUT};
 use crate::{
-    happy_path::test_erc20_deposit_panic,
     happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption, one_eth, utils::*,
     ADDRESS_PREFIX, OPERATION_TIMEOUT,
 };
@@ -15,6 +14,7 @@ use cosmos_gravity::send::{MSG_BID_TYPE_URL, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::client::types::LatestBlock;
 use deep_space::error::CosmosGrpcError;
 use deep_space::{Address as CosmosAddress, Coin, Contact, Msg, PrivateKey};
+use ethereum_gravity::send_to_cosmos::send_to_cosmos;
 use gravity_proto::auction::query_client::QueryClient as AuctionQueryClient;
 use gravity_proto::auction::{
     Auction, MsgBid, Params, QueryAuctionByIdRequest, QueryAuctionPeriodRequest,
@@ -25,6 +25,7 @@ use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::{MsgSendToEth, QueryDenomToErc20Request};
 use gravity_utils::num_conversion::one_atom;
 use lazy_static::lazy_static;
+use num::CheckedSub;
 use num256::Uint256;
 use rand::Rng;
 use tokio::time::sleep;
@@ -190,10 +191,10 @@ pub async fn auction_test_static(
     let no_relay_market_config = create_no_batch_requests_config();
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
-    let length = 30u64;
+    let length = 45u64;
     let auction_params = AuctionParamsProposalJson {
-        title: "Set auction length to 30".to_string(),
-        description: "Set auction length to 30".to_string(),
+        title: format!("Set auction length to {length}"),
+        description: format!("Set auction length to {length}"),
         auction_length: Some(length),
         ..Default::default()
     };
@@ -211,6 +212,10 @@ pub async fn auction_test_static(
     let mut auction_qc = AuctionQueryClient::connect(contact.get_url())
         .await
         .expect("Unable to connect to auction query client");
+
+    // Wait for auctions to be created
+    wait_for_next_period(auction_qc.clone()).await;
+
     let period = auction_qc
         .auction_period(QueryAuctionPeriodRequest {})
         .await
@@ -332,7 +337,7 @@ pub async fn auction_test_static(
         execute_and_validate_bid(contact, bid_params).await;
     }
 
-    info!("Successful auciton static test!");
+    info!("Successful auction static test!");
 }
 
 // Similar to auction_test_static but randomly generates bids based on criteria, and executes over multiple auction periods
@@ -351,10 +356,10 @@ pub async fn auction_test_random(
         .await
         .expect("Unable to connect to auction query client");
 
-    let length = 30u64;
+    let length = 45u64;
     let auction_params = AuctionParamsProposalJson {
-        title: "Set auction length to 30".to_string(),
-        description: "Set auction length to 30".to_string(),
+        title: format!("Set auction length to {length}"),
+        description: format!("Set auction length to {length}"),
         auction_length: Some(length),
         ..Default::default()
     };
@@ -484,7 +489,7 @@ pub async fn auction_test_random(
     wait_for_next_period(auction_qc.clone()).await;
     assert_user_won_auctions(contact, *(bids.clone().last().unwrap().1), &auctions[0..2]).await;
 
-    info!("Successful auciton random test!");
+    info!("Successful auction random test!");
 }
 
 // Creates a footoken representation, sends 100 of the given erc20 to each of the validators, and sets the send to eth fee at a 100% rate
@@ -542,20 +547,25 @@ pub async fn setup(
     // Send the validators generated address 100 units of each erc20 from ethereum to cosmos
     for v in &keys {
         let receiver = v.validator_key.to_address(&ADDRESS_PREFIX).unwrap();
-        test_erc20_deposit_panic(
-            web30,
-            contact,
-            &mut (grpc_client.clone()),
-            receiver,
-            gravity_address,
+        info!("Sending to {receiver:?}");
+        let tx_id = send_to_cosmos(
             erc20_address,
-            one_eth() * 1_000_000u64.into(),
+            gravity_address,
+            one_eth() * 1_000u64.into(),
+            receiver,
+            *MINER_PRIVATE_KEY,
             None,
-            None,
+            web30,
+            vec![],
         )
-        .await;
+        .await
+        .expect("Failed to send tokens to Cosmos");
+        info!("Send to Cosmos txid: {:#066x}", tx_id);
+        web30
+            .wait_for_transaction(tx_id, OPERATION_TIMEOUT, None)
+            .await
+            .expect("Send to cosmos not included in chain");
     }
-    let denom = format!("gravity{}", erc20_address);
 
     seed_pool_multi(contact, &keys, erc20_address).await;
 
@@ -581,24 +591,22 @@ pub async fn setup(
             )
             .await;
         res.expect("Failed to send staking coins to auction user");
-        let amount = one_eth() * 1000u64.into();
-        let res = contact
-            .send_coins(
-                Coin {
-                    amount,
-                    denom: denom.clone(),
-                },
-                Some(get_fee(None)),
-                dest,
-                Some(OPERATION_TIMEOUT),
-                v.validator_key,
-            )
-            .await;
-        res.expect("Failed to send ERC20 coins to auction user");
     }
 
     if let Some(auction_params_prop) = auction_params {
-        submit_and_pass_auction_params_proposal(contact, &keys, auction_params_prop).await;
+        let mut auction_qc = AuctionQueryClient::connect(contact.get_url())
+            .await
+            .expect("Unable to connect to auction query client");
+        let curr_params = auction_qc
+            .params(QueryParamsRequest {})
+            .await
+            .expect("Unable to query for auction params")
+            .into_inner()
+            .params
+            .expect("No params returned in query");
+        if !params_match_proposal(&auction_params_prop, &curr_params) {
+            submit_and_pass_auction_params_proposal(contact, &keys, auction_params_prop).await;
+        }
     }
 
     users
@@ -712,24 +720,41 @@ pub async fn submit_and_pass_auction_params_proposal(
 }
 
 pub fn assert_changed_auction_params(proposal: AuctionParamsProposalJson, post_params: Params) {
+    assert!(params_match_proposal(&proposal, &post_params));
+}
+
+pub fn params_match_proposal(proposal: &AuctionParamsProposalJson, params: &Params) -> bool {
     if let Some(auction_length) = proposal.auction_length {
-        assert_eq!(auction_length, post_params.auction_length);
+        if auction_length != params.auction_length {
+            return false;
+        }
     }
     if let Some(min_bid_fee) = proposal.min_bid_fee {
-        assert_eq!(min_bid_fee, post_params.min_bid_fee);
+        if min_bid_fee != params.min_bid_fee {
+            return false;
+        }
     }
-    if let Some(non_auctionable_tokens) = proposal.non_auctionable_tokens {
-        assert_eq!(non_auctionable_tokens, post_params.non_auctionable_tokens);
+    if let Some(non_auctionable_tokens) = &proposal.non_auctionable_tokens {
+        if non_auctionable_tokens != &params.non_auctionable_tokens {
+            return false;
+        }
     }
 
     if let Some(burn_winning_bids) = proposal.burn_winning_bids {
-        assert_eq!(burn_winning_bids, post_params.burn_winning_bids);
+        if burn_winning_bids != params.burn_winning_bids {
+            return false;
+        }
     }
 
     if let Some(enabled) = proposal.enabled {
-        assert_eq!(enabled, post_params.enabled);
+        if enabled != params.enabled {
+            return false;
+        }
     }
+
+    true
 }
+
 // Generates a random bid which should be successful
 pub fn create_successful_bid(
     user: BridgeUserKey,
@@ -885,10 +910,11 @@ fn validate_balance_changes(
     let post_change = post_map.get(&expected_change.denom).unwrap_or(&zero);
 
     let actual: Uint256 = if expecting_decrease {
-        pre_change.amount - post_change.amount
+        pre_change.amount.checked_sub(&post_change.amount)
     } else {
-        post_change.amount - pre_change.amount
-    };
+        post_change.amount.checked_sub(&pre_change.amount)
+    }
+    .unwrap();
     let actual_coin = Coin {
         denom: expected_change.denom.clone(),
         amount: actual,
