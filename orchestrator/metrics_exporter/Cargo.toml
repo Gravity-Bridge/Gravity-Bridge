@@ -13,5 +13,5 @@ path = "src/metrics_exporter.rs"
 [dependencies]
 gravity_utils = {path = "../gravity_utils"}
 
-prometheus_exporter = {git="https://github.com/jkilpatr/prometheus_exporter", rev="c6a720a907db92a4d620d3fd54ac5bb656a1fad6"}
+prometheus_exporter = {git="https://github.com/jkilpatr/prometheus_exporter", rev="a58589794c9e592592c2d2f109b55d57edb980ee"}
 lazy_static = "1.4"
