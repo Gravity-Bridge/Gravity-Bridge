@@ -33,6 +33,7 @@ func GetQueryCmd() *cobra.Command {
 		GetCmdAuctionById(),
 		GetCmdAuctionByDenom(),
 		GetCmdAllAuctionsByBidder(),
+		GetCmdAuctionPool(),
 	}...)
 
 	return auctionQueryCmd
