@@ -521,7 +521,6 @@ pub async fn main() {
             return;
         } else if test_type == "UPGRADE_ONLY" {
             info!("Running a gravity upgrade with no assertions");
-            start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
             let contact = Contact::new(
                 COSMOS_NODE_GRPC.as_str(),
                 TOTAL_TIMEOUT,
