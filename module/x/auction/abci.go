@@ -52,7 +52,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 			if auction.HighestBid != nil {
 				acc := sdk.MustAccAddressFromBech32(auction.HighestBid.BidderAddress)
 				balances := k.BankKeeper.GetAllBalances(ctx, acc)
-				fmt.Printf("%v balances %v\n", acc.String(), balances)
 				affectedAccs[auction.HighestBid.BidderAddress] = balances
 			}
 			return false // Continue iterating through all auctions
