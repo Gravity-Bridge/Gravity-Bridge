@@ -55,6 +55,9 @@ func GetCmdParams() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if res == nil {
+				return fmt.Errorf("could not get the auction module params")
+			}
 
 			return clientCtx.PrintProto(&res.Params)
 		},
@@ -109,6 +112,9 @@ func GetCmdAuctions() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if res == nil || len(res.Auctions) == 0 {
+				return fmt.Errorf("could not find any auctions, query the auction-period to learn when new auctions will be created")
+			}
 
 			return clientCtx.PrintProto(res)
 		},
@@ -145,6 +151,9 @@ func GetCmdAuctionByDenom() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if res == nil || res.Auction == nil {
+				return fmt.Errorf("could not find an auction for the given denom")
+			}
 
 			return clientCtx.PrintProto(res)
 		},
@@ -179,6 +188,9 @@ func GetCmdAuctionById() *cobra.Command {
 			})
 			if err != nil {
 				return err
+			}
+			if res == nil || res.Auction == nil {
+				return fmt.Errorf("could not find an auction with id %v", id)
 			}
 
 			return clientCtx.PrintProto(res)
@@ -216,6 +228,9 @@ func GetCmdAllAuctionsByBidder() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if res == nil || len(res.Auctions) == 0 {
+				return fmt.Errorf("could not find any auctions with the given bidder")
+			}
 
 			return clientCtx.PrintProto(res)
 		},
@@ -242,6 +257,9 @@ func GetCmdAuctionPool() *cobra.Command {
 			res, err := queryClient.AuctionPool(cmd.Context(), &types.QueryAuctionPoolRequest{})
 			if err != nil {
 				return err
+			}
+			if res == nil {
+				return fmt.Errorf("could not fetch the auction pool, try again or specify a different node")
 			}
 
 			return clientCtx.PrintProto(res)
