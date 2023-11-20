@@ -21,7 +21,7 @@ func CmdMsgBid() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			auctionId, err := strconv.Atoi(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("invalid auction ID provided: %v", err)
 			}
 
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -61,7 +61,7 @@ func CmdMsgBid() *cobra.Command {
 			} else {
 				intFee, err := strconv.Atoi(args[2])
 				if err != nil {
-					return err
+					return fmt.Errorf("invalid fee provided: %v", err)
 				}
 				bidFee = uint64(intFee)
 			}
@@ -85,7 +85,10 @@ func CmdMsgBid() *cobra.Command {
 				queryClient := types.NewQueryClient(queryCtx)
 				res, err := queryClient.AuctionById(cmd.Context(), &types.QueryAuctionByIdRequest{AuctionId: uint64(auctionId)})
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to fetch auction with id %v: %v", auctionId, err)
+				}
+				if res == nil || res.Auction == nil {
+					return fmt.Errorf("could not find any auction with id %v", auctionId)
 				}
 				if res.Auction.HighestBid != nil && res.Auction.HighestBid.BidAmount >= uint64(argAmount) {
 					return fmt.Errorf("bid amount (%d) is lower than current highest bid %v", argAmount, res.Auction.HighestBid)
