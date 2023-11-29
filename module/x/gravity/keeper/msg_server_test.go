@@ -3,15 +3,22 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"strings"
 	"testing"
 	"unicode"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	eip712 "github.com/evmos/ethermint/ethereum/eip712"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 type testInitStruct struct {
@@ -126,4 +133,28 @@ func TestConfirmHandlerCommonWithMixedCaseAddress(t *testing.T) {
 
 	ret_err := confirmHandlerCommonWithAddress(t, string(mixedCase), initVar)
 	assert.Nil(t, ret_err)
+}
+
+// This test helps in generating Gravity Msg EIP712 types. It doesn't really test much but it is
+// the simplest way to understand the expected Types (and therefore the expected hash) of an EIP712 signed message.
+func TestGenerateMsgEIP712Types(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	cdc := input.Marshaler
+
+	sender := sdk.MustAccAddressFromBech32("gravity1hanqss6jsq66tfyjz56wz44z0ejtyv0724h32c")
+	dest, err := types.NewEthAddress("0xBf660843528035a5A4921534E156a27e64B231fE")
+	require.NoError(t, err)
+	send := sdk.NewCoin("ugraviton", sdk.NewInt(1))
+	bridgeFee := sdk.NewCoin("ugraviton", sdk.NewInt(1))
+	chainFee := sdk.NewCoin("ugraviton", sdk.NewInt(1))
+	msg := types.NewMsgSendToEth(sender, *dest, send, bridgeFee, chainFee)
+	require.NotNil(t, msg)
+	fee := legacytx.NewStdFee(2000000, sdk.NewCoins(sdk.NewCoin("ugraviton", sdk.ZeroInt()))) //nolint: staticcheck
+	data := legacytx.StdSignBytes(ctx.ChainID(), 13, 0, 0, fee, []sdk.Msg{msg}, "")
+
+	typedData, err := eip712.WrapTxToTypedData(cdc, 999999, msg, data, nil)
+	require.NoError(t, err)
+
+	fmt.Println("Got typed data:", typedData)
+	// panic("Panic for logs")
 }
