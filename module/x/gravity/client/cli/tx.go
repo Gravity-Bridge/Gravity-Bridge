@@ -87,14 +87,28 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 			if err != nil {
 				return sdkerrors.Wrap(err, "proposal json file is not valid json")
 			}
-			if proposal.IbcDenom == "" ||
-				proposal.Title == "" ||
-				proposal.Description == "" ||
-				proposal.Metadata.Base == "" ||
-				proposal.Metadata.Name == "" ||
-				proposal.Metadata.Display == "" ||
-				proposal.Metadata.Symbol == "" {
-				return fmt.Errorf("proposal json file is not valid, please check example json in docs")
+
+			// check various fields for obvious omissions
+			if proposal.IbcDenom == "" {
+				return sdkerrors.Wrap(types.ErrInvalid, "The IbcDenom field must be set in the proposal.json file")
+			}
+			if proposal.Title == "" {
+				return sdkerrors.Wrap(types.ErrInvalid, "Title field must be set in the proposal.json file")
+			}
+			if proposal.Description == "" {
+				return sdkerrors.Wrap(types.ErrInvalid, "Description field must be set in the proposal.json file")
+			}
+			if proposal.Metadata.Base == "" {
+				return sdkerrors.Wrap(types.ErrInvalid, "Metadata.Base field must be set in the proposal.json file")
+			}
+			if proposal.Metadata.Name == "" {
+				return sdkerrors.Wrap(types.ErrInvalid, "Metadata.Name field must be set in the proposal.json file")
+			}
+			if proposal.Metadata.Display == "" {
+				return sdkerrors.Wrap(types.ErrInvalid, "Metadata.Display field must be set in the proposal.json file")
+			}
+			if proposal.Metadata.Symbol == "" {
+				return sdkerrors.Wrap(types.ErrInvalid, "Metadata.Symbol field must be set in the proposal.json file")
 			}
 
 			// checks if the provided token denom is a proper IBC token, not a native token.
