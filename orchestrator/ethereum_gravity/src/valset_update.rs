@@ -37,7 +37,8 @@ pub async fn send_eth_valset_update(
         return Ok(());
     }
 
-    let payload = encode_valset_update_payload(new_valset, old_valset, confirms, gravity_id)?;
+    let payload =
+        encode_valset_update_payload(new_valset, old_valset, confirms, gravity_id, false)?;
 
     let tx = web3
         .send_prepared_transaction(
@@ -112,6 +113,7 @@ pub async fn estimate_valset_cost(
                     old_valset.clone(),
                     confirms,
                     gravity_id,
+                    false,
                 )?
                 .into(),
             ),
@@ -126,11 +128,13 @@ pub async fn estimate_valset_cost(
 
 /// Encodes the payload bytes for the validator set update call, useful for
 /// estimating the cost of submitting a validator set
+/// if optimize is passed the signatures will be zeroed in a way that minimizes submission cost
 pub fn encode_valset_update_payload(
     new_valset: Valset,
     old_valset: Valset,
     confirms: &[ValsetConfirmResponse],
     gravity_id: String,
+    optimize: bool,
 ) -> Result<Vec<u8>, GravityError> {
     let new_valset_token = encode_valset_struct(&new_valset);
     let old_valset_token = encode_valset_struct(&old_valset);
@@ -140,7 +144,7 @@ pub fn encode_valset_update_payload(
     let hash = encode_valset_confirm_hashed(gravity_id, new_valset);
     // we need to use the old valset here because our signatures need to match the current
     // members of the validator set in the contract.
-    let sig_data = old_valset.order_sigs(&hash, confirms)?;
+    let sig_data = old_valset.order_sigs(&hash, confirms, optimize)?;
     let sig_arrays = to_arrays(sig_data);
 
     // Solidity function signature

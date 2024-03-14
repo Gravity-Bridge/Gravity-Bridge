@@ -77,9 +77,14 @@ mod tests {
             })
         }
 
-        let encoded_update_bytes =
-            encode_valset_update_payload(valset1, valset0, &confirms, gravity_id.to_string())
-                .unwrap();
+        let encoded_update_bytes = encode_valset_update_payload(
+            valset1,
+            valset0,
+            &confirms,
+            gravity_id.to_string(),
+            false,
+        )
+        .unwrap();
 
         assert_eq!(
             bytes_to_hex_str(&encoded_update_bytes),

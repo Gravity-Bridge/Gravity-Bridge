@@ -189,7 +189,7 @@ async fn find_latest_valid_valset(
                 // order valset sigs prepares signatures for submission, notice we compare
                 // them to the 'current' set in the bridge, this confirms for us that the validator set
                 // we have here can be submitted to the bridge in it's current state
-                let res = current_valset.order_sigs(&hash, &confirms);
+                let res = current_valset.order_sigs(&hash, &confirms, false);
                 if res.is_ok() {
                     if !valset.enough_power() {
                         warn!("Validator set {} can not be executed, power is too low to pass following measures. How was this generated?", valset.nonce);

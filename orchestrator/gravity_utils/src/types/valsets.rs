@@ -45,7 +45,15 @@ pub fn get_hashmap<T: Confirm + Clone>(input: &[T]) -> HashMap<EthAddress, T> {
 /// messages
 #[derive(Debug, Clone)]
 struct SignatureStatus {
+    /// A set of all signatures in the order of the validator set currently in gravity.sol
+    /// note this order should be in decreasing power in order to mimize gas costs since we
+    /// break when we have enough voting power
     ordered_signatures: Vec<GravitySignature>,
+    /// This set of signatures only has exactly as much power as is required to execute
+    /// the reason this is 'optimized' is becuase we break early from the signature when we
+    /// sum enough voting power AND Ethereum charges 4 gas per byte of calldata that is zeros
+    /// but 16 gas for byte of calldata that is non-zero. So we want to drop signatures we don't need
+    optimized_signatures: Vec<GravitySignature>,
     power_of_good_sigs: u64,
     power_of_nonvoters: u64,
     number_of_nonvoters: usize,
@@ -131,30 +139,48 @@ impl Valset {
             ));
         }
 
-        let mut out = Vec::new();
+        let mut ordered_signatures = Vec::new();
+        let mut optimized_signatures = Vec::new();
         let signatures_hashmap: HashMap<EthAddress, T> = get_hashmap(signatures);
         let mut power_of_good_sigs = 0;
         let mut power_of_nonvoters = 0;
         let mut number_of_nonvoters = 0;
+
         for member in self.members.iter() {
             if let Some(sig) = signatures_hashmap.get(&member.eth_address) {
                 assert_eq!(sig.get_eth_address(), member.eth_address);
                 assert!(sig.get_signature().is_valid());
                 let recover_key = sig.get_signature().recover(signed_message).unwrap();
                 if recover_key == sig.get_eth_address() {
-                    out.push(GravitySignature {
+                    let sig = GravitySignature {
                         power: member.power,
                         eth_address: sig.get_eth_address(),
                         v: sig.get_signature().get_v(),
                         r: sig.get_signature().get_r(),
                         s: sig.get_signature().get_s(),
-                    });
+                    };
+                    ordered_signatures.push(sig.clone());
+
+                    // if we have enough voting power to pass we don't need to include any more signatures
+                    // this provides a gas cost optimization as Ethereum provides a discount for zeroed calldata
+                    if power_of_good_sigs <= GRAVITY_POWER_TO_PASS {
+                        optimized_signatures.push(sig);
+                    } else {
+                        optimized_signatures.push(GravitySignature {
+                            power: member.power,
+                            eth_address: member.eth_address,
+                            v: 0u8.into(),
+                            r: 0u8.into(),
+                            s: 0u8.into(),
+                        });
+                    }
+
                     power_of_good_sigs += member.power;
                 } else {
-                    // the go code verifies signatures, if we ever see this it means
-                    // that something has gone horribly wrong with our parsing or ordering
-                    // in the orchestrator
-                    // this has been observed to occur spuriously, not currently root caused
+                    // The message handler in the Gravity chain will only accept valid signatures
+                    // so an invalid signature should never be found here unless there is a bug in the
+                    // module itself, a previous bug was found and fixed where we would serve the wrong
+                    // signature for a given request.
                     let err = format!(
                         "Found invalid signature from {} {:?}",
                         sig.get_eth_address(),
@@ -164,13 +190,15 @@ impl Valset {
                     return Err(GravityError::InvalidBridgeStateError(err));
                 }
             } else {
-                out.push(GravitySignature {
+                let sig = GravitySignature {
                     power: member.power,
                     eth_address: member.eth_address,
                     v: 0u8.into(),
                     r: 0u8.into(),
                     s: 0u8.into(),
-                });
+                };
+                ordered_signatures.push(sig.clone());
+                optimized_signatures.push(sig);
                 power_of_nonvoters += member.power;
                 number_of_nonvoters += 1;
             }
@@ -178,7 +206,8 @@ impl Valset {
 
         let num_validators = self.members.len();
         Ok(SignatureStatus {
-            ordered_signatures: out,
+            ordered_signatures,
+            optimized_signatures,
             power_of_good_sigs,
             power_of_nonvoters,
             num_validators,
@@ -190,6 +219,7 @@ impl Valset {
         &self,
         signed_message: &[u8],
         signatures: &[T],
+        optimize: bool,
     ) -> Result<Vec<GravitySignature>, GravityError> {
         let status = self.get_signature_status(signed_message, signatures)?;
         // now that we have collected the signatures we can determine if the measure has the votes to pass
@@ -212,7 +242,11 @@ impl Valset {
             );
             Err(GravityError::InsufficientVotingPowerToPass(message))
         } else {
-            Ok(status.ordered_signatures)
+            if optimize {
+                Ok(status.optimized_signatures)
+            } else {
+                Ok(status.ordered_signatures)
+            }
         }
     }
 
