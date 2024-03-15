@@ -13,7 +13,6 @@ use gravity_utils::types::TransactionBatch;
 use gravity_utils::types::Valset;
 use num256::Uint256;
 use prost_types::Any;
-use std::convert::TryFrom;
 use std::ops::Mul;
 use tokio::time::sleep;
 use tonic::metadata::AsciiMetadataValue;
@@ -75,7 +74,7 @@ pub fn historical_grpc_query<T>(req: impl IntoRequest<T>, past_height: u64) -> R
     let mut request = req.into_request();
     request.metadata_mut().insert(
         "x-cosmos-block-height",
-        AsciiMetadataValue::try_from(past_height).expect("Invalid height provided"),
+        AsciiMetadataValue::from(past_height),
     );
     request
 }

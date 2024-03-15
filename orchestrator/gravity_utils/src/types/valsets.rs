@@ -241,12 +241,10 @@ impl Valset {
                 gravity_power_to_percent(status.power_of_nonvoters),
             );
             Err(GravityError::InsufficientVotingPowerToPass(message))
+        } else if optimize {
+            Ok(status.optimized_signatures)
         } else {
-            if optimize {
-                Ok(status.optimized_signatures)
-            } else {
-                Ok(status.ordered_signatures)
-            }
+            Ok(status.ordered_signatures)
         }
     }
 
