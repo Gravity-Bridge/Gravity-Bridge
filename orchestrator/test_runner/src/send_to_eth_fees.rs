@@ -42,11 +42,11 @@ pub async fn send_to_eth_fees_test(
         &gravity_client,
         keys.clone(),
         gravity_address,
-        *erc20_addresses.get(0).unwrap(),
+        *erc20_addresses.first().unwrap(),
     )
     .await;
     let cosmos_denom = ibc_metadata.base;
-    let erc20_denom: String = format!("gravity{}", erc20_addresses.get(0).unwrap().clone());
+    let erc20_denom: String = format!("gravity{}", erc20_addresses.first().unwrap().clone());
     let (_staker_key, _staker_addr) = (staker_key.cosmos_key, staker_key.cosmos_address);
 
     let val0_cosmos_key = keys[0].validator_key;
@@ -531,7 +531,7 @@ pub async fn send_to_eth_multi_msg_txs(
 async fn send_multi_msg_txs(
     contact: &Contact,
     msgs: &mut Vec<Msg>,
-    tx_sizes: &Vec<usize>,
+    tx_sizes: &[usize],
     tx_idx: &mut usize,
     sender: CosmosPrivateKey,
     sender_addr: String,
@@ -766,7 +766,7 @@ fn build_param_change_msgs(
     msg_buf: &mut Vec<Msg>,
     msg_args_queue: &mut Vec<(MessageArgs, Vec<Msg>)>,
     args_tmpl8: &MessageArgs,
-    tx_sizes: &Vec<usize>,
+    tx_sizes: &[usize],
     tx_idx: &mut usize,
     sender_addr: String,
     receiver: EthAddress,

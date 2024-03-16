@@ -141,8 +141,8 @@ pub async fn auction_disabled_test(
         .params
         .unwrap()
         .min_bid_fee;
-    let user = auction_users.get(0).unwrap();
-    let bid = create_successful_bid(*user, 0, min_bid_fee, new_auctions.get(0).unwrap().id);
+    let user = auction_users.first().unwrap();
+    let bid = create_successful_bid(*user, 0, min_bid_fee, new_auctions.first().unwrap().id);
     execute_and_validate_bid(contact, (false, user, bid)).await;
 
     // Re-enable the module and check that the auction period and auctions update
@@ -172,8 +172,8 @@ pub async fn auction_disabled_test(
     assert_ne!(new_period, period);
     assert_ne!(new_auctions, auctions);
 
-    let user = auction_users.get(0).unwrap();
-    let bid = create_successful_bid(*user, 0, min_bid_fee, auctions.get(0).unwrap().id);
+    let user = auction_users.first().unwrap();
+    let bid = create_successful_bid(*user, 0, min_bid_fee, auctions.first().unwrap().id);
     execute_and_validate_bid(contact, (true, user, bid)).await;
     info!("Successfully tested auction module disable function");
 }
@@ -248,10 +248,10 @@ pub async fn auction_test_static(
         // Successful Bid
         (
             true,
-            auction_users.get(0).unwrap(),
+            auction_users.first().unwrap(),
             MsgBid {
-                auction_id: auctions.get(0).unwrap().id,
-                bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
+                auction_id: auctions.first().unwrap().id,
+                bidder: auction_users.first().unwrap().cosmos_address.to_string(),
                 amount: 100_000,
                 bid_fee: min_bid_fee,
             },
@@ -261,7 +261,7 @@ pub async fn auction_test_static(
             true,
             auction_users.get(1).unwrap(),
             MsgBid {
-                auction_id: auctions.get(0).unwrap().id,
+                auction_id: auctions.first().unwrap().id,
                 bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
                 amount: 150_000,
                 bid_fee: min_bid_fee + 1,
@@ -282,7 +282,7 @@ pub async fn auction_test_static(
             false,
             auction_users.get(1).unwrap(),
             MsgBid {
-                auction_id: auctions.get(0).unwrap().id,
+                auction_id: auctions.first().unwrap().id,
                 bidder: auction_users.get(1).unwrap().cosmos_address.to_string(),
                 amount: 170_000,
                 bid_fee: min_bid_fee,
@@ -301,10 +301,10 @@ pub async fn auction_test_static(
         // Successful bid
         (
             true,
-            auction_users.get(0).unwrap(),
+            auction_users.first().unwrap(),
             MsgBid {
                 auction_id: auctions.get(1).unwrap().id,
-                bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
+                bidder: auction_users.first().unwrap().cosmos_address.to_string(),
                 amount: 75_000,
                 bid_fee: min_bid_fee,
             },
@@ -312,10 +312,10 @@ pub async fn auction_test_static(
         // Fee too low
         (
             false,
-            auction_users.get(0).unwrap(),
+            auction_users.first().unwrap(),
             MsgBid {
-                auction_id: auctions.get(0).unwrap().id,
-                bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
+                auction_id: auctions.first().unwrap().id,
+                bidder: auction_users.first().unwrap().cosmos_address.to_string(),
                 amount: 170_000,
                 bid_fee: 5,
             },
@@ -323,10 +323,10 @@ pub async fn auction_test_static(
         // Successful bid
         (
             true,
-            auction_users.get(0).unwrap(),
+            auction_users.first().unwrap(),
             MsgBid {
-                auction_id: auctions.get(0).unwrap().id,
-                bidder: auction_users.get(0).unwrap().cosmos_address.to_string(),
+                auction_id: auctions.first().unwrap().id,
+                bidder: auction_users.first().unwrap().cosmos_address.to_string(),
                 amount: 170_000,
                 bid_fee: min_bid_fee,
             },
@@ -407,7 +407,7 @@ pub async fn auction_test_random(
     // Create a randomly generated set of bids
     let mut bids = Vec::new();
     // Auctions
-    let id0 = auctions.get(0).unwrap().id;
+    let id0 = auctions.first().unwrap().id;
     let id1 = auctions.get(1).unwrap().id;
     let id2 = auctions.get(2).unwrap().id;
     // Highest bids
@@ -462,7 +462,7 @@ pub async fn auction_test_random(
     // Create the next round of bids
     let mut bids = Vec::new();
     // Auctions
-    let id0 = auctions.get(0).unwrap().id;
+    let id0 = auctions.first().unwrap().id;
     let id1 = auctions.get(1).unwrap().id;
     // Highest bids
     let mut h0: u64 = 0;
@@ -1004,10 +1004,7 @@ async fn get_auction(grpc_url: String, auction_id: u64) -> Result<Auction, Cosmo
         .into_inner()
         .auction;
 
-    auction.map_or(
-        Err(CosmosGrpcError::BadResponse(
-            "No such auction returned".to_string(),
-        )),
-        Ok,
-    )
+    auction.ok_or(CosmosGrpcError::BadResponse(
+        "No such auction returned".to_string(),
+    ))
 }

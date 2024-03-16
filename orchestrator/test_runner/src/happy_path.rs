@@ -135,7 +135,7 @@ pub async fn iterate_attestations<F: FnMut(T), T: Message + Default>(
     grpc_client: &mut GravityQueryClient<Channel>,
     f: &mut F,
 ) {
-    let attestations = get_attestations(grpc_client, None)
+    let attestations = get_attestations(grpc_client, Some(1000))
         .await
         .expect("Something happened while getting attestations after delegating to validator");
     for (i, att) in attestations.into_iter().enumerate() {

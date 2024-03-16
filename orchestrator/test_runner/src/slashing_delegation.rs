@@ -77,7 +77,7 @@ pub async fn slashing_delegation_test(
     // below logic does not work for a single validator
     assert!(keys.len() > 1);
     let slashed_validator = keys.iter().last().unwrap().clone();
-    let redelegation_target = keys.get(0).unwrap().clone();
+    let redelegation_target = keys.first().unwrap().clone();
 
     // delegate to the validator that is about to be slashed from a new address
 

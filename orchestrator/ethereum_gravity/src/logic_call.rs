@@ -151,7 +151,7 @@ fn encode_logic_call_payload(
 ) -> Result<Vec<u8>, GravityError> {
     let current_valset_token = encode_valset_struct(&current_valset);
     let hash = encode_logic_call_confirm_hashed(gravity_id, call.clone());
-    let sig_data = current_valset.order_sigs(&hash, confirms)?;
+    let sig_data = current_valset.order_sigs(&hash, confirms, true)?;
     let sig_arrays = to_arrays(sig_data);
 
     let mut transfer_amounts = Vec::new();

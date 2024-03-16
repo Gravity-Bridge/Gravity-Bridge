@@ -114,7 +114,7 @@ pub async fn spot_relay(args: SpotRelayOpts, address_prefix: String) {
         // this checks that the signatures for the batch are actually possible to submit to the chain
         let hash = encode_tx_batch_confirm_hashed(gravity_id.clone(), batch.clone());
 
-        if let Err(e) = current_valset.order_sigs(&hash, &sigs) {
+        if let Err(e) = current_valset.order_sigs(&hash, &sigs, false) {
             error!("Current validator set is not valid to relay this batch, a validator set update must be submitted!");
             error!("{:?}", e);
             return;

@@ -282,7 +282,7 @@ pub async fn get_nonces(
 
 async fn print_sends_to_cosmos(grpc_client: &GravityQueryClient<Channel>, print_others: bool) {
     let grpc_client = &mut grpc_client.clone();
-    let attestations = get_attestations(grpc_client, None).await.unwrap();
+    let attestations = get_attestations(grpc_client, Some(1000)).await.unwrap();
     for (i, attestation) in attestations.into_iter().enumerate() {
         let claim = attestation.clone().claim.unwrap();
         if print_others && claim.type_url != "/gravity.v1.MsgSendToCosmosClaim" {

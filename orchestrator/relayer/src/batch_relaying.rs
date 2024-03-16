@@ -87,7 +87,7 @@ async fn get_batches_and_signatures(
         if let Ok(sigs) = sigs {
             // this checks that the signatures for the batch are actually possible to submit to the chain
             let hash = encode_tx_batch_confirm_hashed(gravity_id.clone(), batch.clone());
-            if current_valset.order_sigs(&hash, &sigs).is_ok() {
+            if current_valset.order_sigs(&hash, &sigs, false).is_ok() {
                 // we've found a valid batch, add it to the list for it's token type
                 possible_batches
                     .entry(batch.token_contract)

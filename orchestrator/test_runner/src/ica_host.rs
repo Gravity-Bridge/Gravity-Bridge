@@ -312,7 +312,7 @@ pub async fn enable_ica_host(
     if host_params.host_enabled
         && host_params
             .allow_messages
-            .get(0)
+            .first()
             .map(|m| m == "*")
             .unwrap_or(false)
     {

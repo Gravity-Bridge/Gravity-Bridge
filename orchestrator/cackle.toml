@@ -94,6 +94,7 @@ allow_proc_macro = true
 
 [pkg.time-macros]
 allow_proc_macro = true
+allow_unsafe = true
 
 [pkg.async-stream-impl]
 allow_proc_macro = true
@@ -158,6 +159,7 @@ allow_unsafe = true
 
 [pkg.proc-macro2]
 build.allow_apis = [
+    "fs",
     "process",
 ]
 allow_unsafe = true
@@ -394,10 +396,6 @@ from.build.allow_apis = [
 allow_unsafe = true
 
 [pkg.rustix]
-build.allow_apis = [
-    "fs",
-    "process",
-]
 allow_unsafe = true
 
 [pkg.block-buffer]
@@ -735,4 +733,16 @@ allow_apis = [
 allow_apis = [
     "net",
 ]
+
+[pkg.syn_derive]
+allow_proc_macro = true
+
+[pkg.powerfmt]
+allow_unsafe = true
+
+[pkg.deranged]
+allow_unsafe = true
+
+[pkg.time]
+allow_unsafe = true
 

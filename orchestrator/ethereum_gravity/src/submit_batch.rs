@@ -132,7 +132,7 @@ pub async fn estimate_tx_batch_cost(
 }
 
 /// Encodes the batch payload for both estimate_tx_batch_cost and send_eth_transaction_batch
-fn encode_batch_payload(
+pub fn encode_batch_payload(
     current_valset: Valset,
     batch: &TransactionBatch,
     confirms: &[BatchConfirmResponse],
@@ -141,7 +141,7 @@ fn encode_batch_payload(
     let current_valset_token = encode_valset_struct(&current_valset);
     let new_batch_nonce = batch.nonce;
     let hash = encode_tx_batch_confirm_hashed(gravity_id, batch.clone());
-    let sig_data = current_valset.order_sigs(&hash, confirms)?;
+    let sig_data = current_valset.order_sigs(&hash, confirms, true)?;
     let sig_arrays = to_arrays(sig_data);
     let (amounts, destinations, fees) = batch.get_checkpoint_values();
 

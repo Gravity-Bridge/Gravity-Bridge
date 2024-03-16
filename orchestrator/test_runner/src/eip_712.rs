@@ -92,7 +92,7 @@ pub async fn eip_712_test(
             Some(get_fee(None)),
             user.cosmos_address,
             Some(OPERATION_TIMEOUT),
-            keys.get(0).unwrap().validator_key,
+            keys.first().unwrap().validator_key,
         )
         .await
         .expect("Could not send tokens to new user");
