@@ -132,7 +132,7 @@ pub async fn estimate_tx_batch_cost(
 }
 
 /// Encodes the batch payload for both estimate_tx_batch_cost and send_eth_transaction_batch
-fn encode_batch_payload(
+pub fn encode_batch_payload(
     current_valset: Valset,
     batch: &TransactionBatch,
     confirms: &[BatchConfirmResponse],
