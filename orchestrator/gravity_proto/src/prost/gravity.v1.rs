@@ -279,6 +279,8 @@ pub struct EventOutgoingBatch {
     pub batch_id: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
     pub nonce: ::prost::alloc::string::String,
+    #[prost(uint64, repeated, packed = "false", tag = "5")]
+    pub batched_tx_ids: ::prost::alloc::vec::Vec<u64>,
 }
 /// BridgeValidator represents a validator's ETH address and its power
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -410,22 +412,42 @@ pub struct AddEvmChainProposal {
     pub evm_chain_net_version: u64,
     #[prost(string, tag = "6")]
     pub gravity_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub bridge_ethereum_address: ::prost::alloc::string::String,
 }
-/// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign CosmosReceiver which will be added to the
-/// PendingIbcAutoForward queue in attestation_handler and sent over IBC on some submission of a MsgExecuteIbcAutoForwards
+/// RemoveEvmChainProposal
+/// this types allows users to remove an EVM chain through gov proposal
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RemoveEvmChainProposal {
+    #[prost(string, tag = "1")]
+    pub title: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub evm_chain_prefix: ::prost::alloc::string::String,
+}
+/// PendingIbcAutoForward represents a SendToCosmos transaction with a foreign
+/// CosmosReceiver which will be added to the PendingIbcAutoForward queue in
+/// attestation_handler and sent over IBC on some submission of a
+/// MsgExecuteIbcAutoForwards
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PendingIbcAutoForward {
-    /// the destination address. sdk.AccAddress does not preserve foreign prefixes
+    /// the destination address. sdk.AccAddress does
     #[prost(string, tag = "1")]
     pub foreign_receiver: ::prost::alloc::string::String,
-    /// the token sent from ethereum to the ibc-enabled chain over `IbcChannel`
+    /// not preserve foreign prefixes
+    ///
+    /// the token sent from ethereum to the
     #[prost(message, optional, tag = "2")]
     pub token: ::core::option::Option<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
+    /// ibc-enabled chain over `IbcChannel`
+    ///
     /// the IBC channel to send `Amount` over via ibc-transfer module
     #[prost(string, tag = "3")]
     pub ibc_channel: ::prost::alloc::string::String,
-    /// the EventNonce from the MsgSendToCosmosClaim, used for ordering the queue
+    /// the EventNonce from the MsgSendToCosmosClaim, used
     #[prost(uint64, tag = "4")]
     pub event_nonce: u64,
 }

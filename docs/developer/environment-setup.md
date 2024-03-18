@@ -80,7 +80,7 @@ npm run test
 
 Change directory into the `Gravity-Bridge/module` folder and run
 
-```
+```bash
 # Installing the protobuf tooling
 sudo make proto-tools
 
@@ -92,7 +92,13 @@ go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.16.
 go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.16.0
 ```
 
+For MacOS, we need to install buf as well
+
+```bash
+brew install bufbuild/buf/buf
 ```
+
+```bash
 # generate new protobuf files from the definitions, this makes sure the previous instructions worked
 # you will need to run this any time you change a proto file
 make proto-gen
