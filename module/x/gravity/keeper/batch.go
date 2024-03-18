@@ -78,7 +78,7 @@ func (k Keeper) BuildOutgoingTxBatch(
 	k.SetPastEthSignatureCheckpoint(ctx, evmChainPrefix, checkpoint)
 
 	// emit batch tx ids as well for scanning
-	var batchedTxIds []uint64
+	batchedTxIds := []uint64{}
 	for _, tx := range selectedTxs {
 		batchedTxIds = append(batchedTxIds, tx.Id)
 	}
