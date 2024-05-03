@@ -420,12 +420,17 @@ func CmdRequestBatch() *cobra.Command {
 			}
 			cosmosAddr := cliCtx.GetFromAddress()
 
-			var denom = ""
-			if strings.HasPrefix(args[0], "0x") {
-				denom = fmt.Sprintf("gravity%s", args[0])
-			} else {
+			var denom string
+			if strings.HasPrefix(args[0], "ibc") {
 				denom = args[0]
+			} else if strings.HasPrefix(args[0], "0x") {
+				denom = fmt.Sprintf("gravity%s", args[0])
+			} else if strings.HasPrefix(args[0], "gravity") {
+				denom = args[0]
+			} else {
+				return fmt.Errorf("Invalid token address, must be an IBC denom, Ethereum address, or gravity0x address")
 			}
+
 			msg := types.MsgRequestBatch{
 				Sender: cosmosAddr.String(),
 				Denom:  denom,
