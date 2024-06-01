@@ -29,6 +29,8 @@ func GetApolloUpgradeHandler(
 
 		ctx.Logger().Info("Setting the auction module Params")
 		auctionParams := auctiontypes.DefaultParams()
+		// TODO: Revert the commit containing this change after upgrade tests pass
+		auctionParams.AuctionLength = 40
 		auctionKeeper.SetParams(ctx, auctionParams)
 
 		ctx.Logger().Info("Creating the initial auction period (with no active auctions)")
