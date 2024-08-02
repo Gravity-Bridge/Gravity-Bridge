@@ -420,10 +420,15 @@ func CmdRequestBatch() *cobra.Command {
 			}
 			cosmosAddr := cliCtx.GetFromAddress()
 
-			// TODO: better denom searching
+			var denom = ""
+			if strings.HasPrefix(args[0], "0x") {
+				denom = fmt.Sprintf("gravity%s", args[0])
+			} else {
+				denom = args[0]
+			}
 			msg := types.MsgRequestBatch{
 				Sender: cosmosAddr.String(),
-				Denom:  fmt.Sprintf("gravity%s", args[0]),
+				Denom:  denom,
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
