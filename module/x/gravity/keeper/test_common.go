@@ -12,8 +12,10 @@ import (
 	ccrypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/store"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -32,8 +34,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/evidence"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -59,10 +64,10 @@ import (
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	dbm "github.com/tendermint/tm-db"
 
-	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
-	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v6/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
+	ibchost "github.com/cosmos/ibc-go/v6/modules/core/24-host"
+	ibckeeper "github.com/cosmos/ibc-go/v6/modules/core/keeper"
 
 	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
 	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
@@ -88,7 +93,7 @@ var (
 		mint.AppModuleBasic{},
 		distribution.AppModuleBasic{},
 		gov.NewAppModuleBasic(
-			paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
+			[]govclient.ProposalHandler{paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.LegacyProposalHandler, upgradeclient.LegacyCancelProposalHandler},
 		),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
@@ -221,6 +226,7 @@ var (
 		MaxEntries:        10,
 		HistoricalEntries: 10000,
 		BondDenom:         "stake",
+		MinCommissionRate: sdk.NewDecWithPrec(5, 2), // 5%
 	}
 
 	// TestingGravityParams is a set of gravity params for testing
@@ -265,7 +271,7 @@ type TestInput struct {
 	Marshaler         codec.Codec
 	LegacyAmino       *codec.LegacyAmino
 	EncodingConfig    gravityparams.EncodingConfig
-	GravityStoreKey   *sdk.KVStoreKey
+	GravityStoreKey   *storetypes.KVStoreKey
 }
 
 // SetupFiveValChain does all the initialization for a 5 Validator chain using the keys here
@@ -277,7 +283,8 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 	input.StakingKeeper.SetParams(input.Context, TestingStakeParams)
 
 	// Initialize each of the validators
-	sh := staking.NewHandler(input.StakingKeeper)
+	sMsgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
+	// sh := staking.NewHandler(input.StakingKeeper)
 	for i := range []int{0, 1, 2, 3, 4} {
 
 		// Initialize the account for the key
@@ -295,7 +302,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 
 		// Create a validator for that account using some of the tokens in the account
 		// and the staking handler
-		_, err := sh(
+		_, err := sMsgServer.CreateValidator(
 			input.Context,
 			NewTestMsgCreateValidator(ValAddrs[i], ConsPubKeys[i], StakingAmount),
 		)
@@ -332,7 +339,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 	input.StakingKeeper.SetParams(input.Context, TestingStakeParams)
 
 	// Initialize each of the validators
-	sh := staking.NewHandler(input.StakingKeeper)
+	sMsgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
 	for i, weight := range weights {
 		consPrivKey := ed25519.GenPrivKey()
 		consPubKey := consPrivKey.PubKey()
@@ -357,7 +364,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 
 		// Create a validator for that account using some of the tokens in the account
 		// and the staking handler
-		_, err := sh(
+		_, err := sMsgServer.CreateValidator(
 			input.Context,
 			NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(weight)),
 		)
@@ -421,22 +428,22 @@ func CreateTestEnv(t *testing.T) TestInput {
 	// Initialize memory database and mount stores on it
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(gravityKey, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyAcc, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyStaking, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyBank, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyDistro, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
-	ms.MountStoreWithDB(keyGov, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keySlashing, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyCapability, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyUpgrade, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyIbc, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyIbcTransfer, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyBech32Ibc, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyMint, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyAuction, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(gravityKey, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyAcc, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyParams, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyStaking, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyBank, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyDistro, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(tkeyParams, storetypes.StoreTypeTransient, db)
+	ms.MountStoreWithDB(keyGov, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keySlashing, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyCapability, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyUpgrade, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyIbc, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyIbcTransfer, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyBech32Ibc, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyMint, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyAuction, storetypes.StoreTypeIAVL, db)
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
@@ -503,6 +510,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 		getSubspace(paramsKeeper, authtypes.ModuleName),
 		authtypes.ProtoBaseAccount, // prototype
 		maccPerms,
+		"gravity",
 	)
 	accountParams := authtypes.DefaultParams()
 	accountKeeper.SetParams(ctx, accountParams)
@@ -526,7 +534,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	stakingKeeper := stakingkeeper.NewKeeper(marshaler, keyStaking, accountKeeper, bankKeeper, getSubspace(paramsKeeper, stakingtypes.ModuleName))
 	stakingKeeper.SetParams(ctx, TestingStakeParams)
 
-	distKeeper := distrkeeper.NewKeeper(marshaler, keyDistro, getSubspace(paramsKeeper, distrtypes.ModuleName), accountKeeper, bankKeeper, stakingKeeper, authtypes.FeeCollectorName, nil)
+	distKeeper := distrkeeper.NewKeeper(marshaler, keyDistro, getSubspace(paramsKeeper, distrtypes.ModuleName), accountKeeper, bankKeeper, stakingKeeper, authtypes.FeeCollectorName)
 	distKeeper.SetParams(ctx, distrtypes.DefaultParams())
 
 	// set genesis items required for distribution
@@ -558,29 +566,20 @@ func CreateTestEnv(t *testing.T) TestInput {
 	moduleAcct := accountKeeper.GetAccount(ctx, stakeAddr)
 	require.NotNil(t, moduleAcct)
 
-	router := baseapp.NewRouter()
-	router.AddRoute(bank.AppModule{
-		AppModuleBasic: bank.AppModuleBasic{},
-	}.Route())
-	router.AddRoute(staking.AppModule{
-		AppModuleBasic: staking.AppModuleBasic{},
-	}.Route())
-	router.AddRoute(distribution.AppModule{
-		AppModuleBasic: distribution.AppModuleBasic{},
-	}.Route())
-
-	govRouter := govtypes.NewRouter().
+	govRouter := govv1beta1.NewRouter().
 		AddRoute(paramsproposal.RouterKey, params.NewParamChangeProposalHandler(paramsKeeper)).
-		AddRoute(govtypes.RouterKey, govtypes.ProposalHandler)
+		AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler)
+
+	govConfig := govtypes.DefaultConfig()
 
 	govKeeper := govkeeper.NewKeeper(
-		marshaler, keyGov, getSubspace(paramsKeeper, govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable()), accountKeeper, bankKeeper, stakingKeeper, govRouter,
+		marshaler, keyGov, getSubspace(paramsKeeper, govtypes.ModuleName).WithKeyTable(govv1.ParamKeyTable()), accountKeeper, bankKeeper, stakingKeeper, govRouter, baseapp.NewMsgServiceRouter(), govConfig,
 	)
 
-	govKeeper.SetProposalID(ctx, govtypes.DefaultStartingProposalID)
-	govKeeper.SetDepositParams(ctx, govtypes.DefaultDepositParams())
-	govKeeper.SetVotingParams(ctx, govtypes.DefaultVotingParams())
-	govKeeper.SetTallyParams(ctx, govtypes.DefaultTallyParams())
+	govKeeper.SetProposalID(ctx, govv1beta1.DefaultStartingProposalID)
+	govKeeper.SetDepositParams(ctx, govv1.DefaultDepositParams())
+	govKeeper.SetVotingParams(ctx, govv1.DefaultVotingParams())
+	govKeeper.SetTallyParams(ctx, govv1.DefaultTallyParams())
 
 	slashingKeeper := slashingkeeper.NewKeeper(
 		marshaler,
@@ -596,6 +595,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 		marshaler,
 		"",
 		&bApp,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -735,9 +735,8 @@ func MakeTestEncodingConfig() gravityparams.EncodingConfig {
 	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	// nolint: exhaustruct
-	encodingConfig.InterfaceRegistry.RegisterInterface(
-		"ethermint.v1.ExtensionOptionsWeb3Tx",
-		(*etherminttypes.ExtensionOptionsWeb3TxI)(nil),
+	encodingConfig.InterfaceRegistry.RegisterImplementations(
+		(*tx.TxExtensionOptionI)(nil),
 		&etherminttypes.ExtensionOptionsWeb3Tx{},
 	)
 
@@ -759,7 +758,8 @@ func MintVouchersFromAir(t *testing.T, ctx sdk.Context, k Keeper, dest sdk.AccAd
 }
 
 func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, amt sdk.Int) *stakingtypes.MsgCreateValidator {
-	commission := stakingtypes.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec())
+	fivePercent := sdk.NewDecWithPrec(5, 2)
+	commission := stakingtypes.NewCommissionRates(fivePercent, fivePercent, fivePercent)
 	out, err := stakingtypes.NewMsgCreateValidator(
 		address, pubKey, sdk.NewCoin("stake", amt),
 		stakingtypes.Description{

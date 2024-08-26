@@ -231,7 +231,7 @@ pub async fn main() {
     // keys for the primary test chain
     let keys = get_keys();
     // keys for the IBC chain connected to the main test chain
-    let (ibc_keys, _ibc_phrases) = parse_ibc_validator_keys();
+    let ibc_keys = parse_ibc_validator_keys();
     // if we detect this env var we are only deploying contracts, do that then exit.
     if should_deploy_contracts() {
         info!("test-runner in contract deploying mode, deploying contracts, then exiting");

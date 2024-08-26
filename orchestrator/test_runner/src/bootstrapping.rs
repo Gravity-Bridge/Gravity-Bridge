@@ -55,11 +55,10 @@ pub fn parse_ethereum_keys() -> Vec<EthPrivateKey> {
 }
 
 /// Parses the output of the cosmoscli keys add command to import the private key
-fn parse_phrases(filename: &str) -> (Vec<CosmosPrivateKey>, Vec<String>) {
+fn parse_phrases(filename: &str) -> Vec<CosmosPrivateKey> {
     let file = File::open(filename).expect("Failed to find phrases");
     let reader = BufReader::new(file);
     let mut ret_keys = Vec::new();
-    let mut ret_phrases = Vec::new();
 
     for line in reader.lines() {
         let phrase = line.expect("Error reading phrase file!");
@@ -71,9 +70,8 @@ fn parse_phrases(filename: &str) -> (Vec<CosmosPrivateKey>, Vec<String>) {
         }
         let key = CosmosPrivateKey::from_phrase(&phrase, "").expect("Bad phrase!");
         ret_keys.push(key);
-        ret_phrases.push(phrase);
     }
-    (ret_keys, ret_phrases)
+    ret_keys
 }
 
 /// Validator private keys are generated via the gravity key add
@@ -83,7 +81,7 @@ fn parse_phrases(filename: &str) -> (Vec<CosmosPrivateKey>, Vec<String>) {
 /// the phrases are in increasing order, so validator 1 is the first key
 /// and so on. While validators may later fail to start it is guaranteed
 /// that we have one key for each validator in this file.
-pub fn parse_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
+pub fn parse_validator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/validator-phrases";
     info!("Reading mnemonics from {}", filename);
     parse_phrases(filename)
@@ -91,7 +89,7 @@ pub fn parse_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
 
 /// The same as parse_validator_keys() except for a second chain accessed
 /// over IBC for testing purposes
-pub fn parse_ibc_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
+pub fn parse_ibc_validator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/ibc-validator-phrases";
     info!("Reading mnemonics from {}", filename);
     parse_phrases(filename)
@@ -103,7 +101,7 @@ pub fn parse_ibc_validator_keys() -> (Vec<CosmosPrivateKey>, Vec<String>) {
 pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/orchestrator-phrases";
     info!("Reading orchestrator phrases from {}", filename);
-    let (orch_keys, _) = parse_phrases(filename);
+    let orch_keys = parse_phrases(filename);
     orch_keys
 }
 
@@ -113,25 +111,19 @@ pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
 pub fn parse_vesting_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/vesting-phrases";
     info!("Reading vesting phrases from {}", filename);
-    let (vest_keys, _) = parse_phrases(filename);
+    let vest_keys = parse_phrases(filename);
     vest_keys
 }
 
 pub fn get_keys() -> Vec<ValidatorKeys> {
-    let (cosmos_keys, cosmos_phrases) = parse_validator_keys();
+    let cosmos_keys = parse_validator_keys();
     let orch_keys = parse_orchestrator_keys();
     let eth_keys = parse_ethereum_keys();
     let mut ret = Vec::new();
-    for (((c_key, c_phrase), o_key), e_key) in cosmos_keys
-        .into_iter()
-        .zip(cosmos_phrases)
-        .zip(orch_keys)
-        .zip(eth_keys)
-    {
+    for ((c_key, o_key), e_key) in cosmos_keys.into_iter().zip(orch_keys).zip(eth_keys) {
         ret.push(ValidatorKeys {
             eth_key: e_key,
             validator_key: c_key,
-            validator_phrase: c_phrase,
             orch_key: o_key,
         })
     }
@@ -261,7 +253,6 @@ pub struct BootstrapContractAddresses {
     pub gravity_erc721_contract: EthAddress,
     pub erc20_addresses: Vec<EthAddress>,
     pub erc721_addresses: Vec<EthAddress>,
-    pub uniswap_liquidity_address: Option<EthAddress>,
 }
 
 /// Parses the ERC20 and Gravity contract addresses from the file created
@@ -275,7 +266,6 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
     let mut maybe_gravity_erc721_address = None;
     let mut erc20_addresses = Vec::new();
     let mut erc721_addresses = Vec::new();
-    let mut uniswap_liquidity = None;
     for line in output.lines() {
         if line.contains("Gravity deployed at Address -") {
             let address_string = line.split('-').last().unwrap();
@@ -291,9 +281,6 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
             let address_string = line.split('-').last().unwrap();
             erc721_addresses.push(address_string.trim().parse().unwrap());
             info!("found erc721 address it is {}", address_string);
-        } else if line.contains("Uniswap Liquidity test deployed at Address - ") {
-            let address_string = line.split('-').last().unwrap();
-            uniswap_liquidity = Some(address_string.trim().parse().unwrap());
         }
     }
     let gravity_address: EthAddress = maybe_gravity_address.unwrap();
@@ -303,7 +290,6 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
         gravity_erc721_contract: gravity_erc721_address,
         erc20_addresses,
         erc721_addresses,
-        uniswap_liquidity_address: uniswap_liquidity,
     }
 }
 

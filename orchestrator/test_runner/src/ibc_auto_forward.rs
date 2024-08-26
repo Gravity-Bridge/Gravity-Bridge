@@ -221,6 +221,7 @@ pub async fn test_ibc_transfer(
             Some("Test Relaying".to_string()),
             &[fee_coin],
             Some(OPERATION_TIMEOUT),
+            None,
             sender,
         )
         .await;
@@ -534,6 +535,7 @@ pub async fn test_ibc_auto_forward_happy_path(
                     amount: 0u8.into(),
                 }],
                 Some(OPERATION_TIMEOUT),
+                None,
                 forwarder,
             )
             .await?;

@@ -301,7 +301,7 @@ pub async fn send_bad_deep_space_tx(
         .await
         .expect("Could not get fee info");
     let args = contact
-        .get_message_args(user.cosmos_address, fee)
+        .get_message_args(user.cosmos_address, fee, None)
         .await
         .expect("Could not get message args");
     let memo = "Bad message, bad!".to_string();

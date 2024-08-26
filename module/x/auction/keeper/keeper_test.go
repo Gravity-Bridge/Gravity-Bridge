@@ -68,7 +68,7 @@ func (suite *KeeperTestSuite) TestSendRemoveAuctionPool() {
 	)
 	preRemovePool := ak.GetAuctionPoolBalances(ctx)
 	expectedPostRemovalPool := ak.GetAuctionPoolBalances(ctx)
-	expectedPostRemovalPool = expectedPostRemovalPool.Sub(removeFromPool)
+	expectedPostRemovalPool = expectedPostRemovalPool.Sub(removeFromPool...)
 
 	// Remove from auction pool
 	for _, coin := range removeFromPool {
@@ -78,7 +78,7 @@ func (suite *KeeperTestSuite) TestSendRemoveAuctionPool() {
 
 	postRemovePool := ak.GetAuctionPoolBalances(ctx)
 	require.Equal(t, expectedPostRemovalPool, postRemovePool)
-	difference := preRemovePool.Sub(postRemovePool)
+	difference := preRemovePool.Sub(postRemovePool...)
 	require.Equal(t, removeFromPool, difference)
 
 	aucAcc := ak.AccountKeeper.GetModuleAddress(types.ModuleName)
@@ -117,10 +117,10 @@ func (suite *KeeperTestSuite) TestSendRemoveAuctionPool() {
 	require.NoError(t, err)
 	postAddToPool := ak.GetAuctionPoolBalances(ctx)
 	require.Equal(t, expectedPostAddPool, postAddToPool)
-	difference = postAddToPool.Sub(preAddToPool)
+	difference = postAddToPool.Sub(preAddToPool...)
 	require.Equal(t, addToPool, difference)
 
 	auctionPostAdd := ak.BankKeeper.GetAllBalances(ctx, aucAcc)
-	expectedAucBalances := postMint.Sub(addToPool)
+	expectedAucBalances := postMint.Sub(addToPool...)
 	require.Equal(t, auctionPostAdd, expectedAucBalances)
 }

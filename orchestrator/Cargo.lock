@@ -964,9 +964,9 @@ checksum = "06ea2b9bc92be3c2baa9334a323ebca2d6f074ff852cd1d7b11064035cd3868f"
 
 [[package]]
 name = "cosmos-sdk-proto-althea"
-version = "0.16.0"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46ab2605efe920646aac126cebdab37648f7fd344c17f90ce71aab58ac62783d"
+checksum = "16739edc6b69ff021b8a1832abb51f7f2da540631c138792944875be774f5dd2"
 dependencies = [
  "prost",
  "prost-types",
@@ -1140,9 +1140,9 @@ checksum = "7e962a19be5cfc3f3bf6dd8f61eb50107f356ad6270fbb3ed41476571db78be5"
 
 [[package]]
 name = "deep_space"
-version = "2.23.3"
+version = "2.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d328025c921c4041231fe541711c0396ef4a39d8c86d51220b2595ca9b29f34"
+checksum = "bc33a8ef115c9f8c3495dd0229373cc69fbda623cc6555848fce65f42ab0cfe7"
 dependencies = [
  "base64 0.21.7",
  "bech32",
@@ -1706,9 +1706,9 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "gravity_proto"
-version = "0.4.3"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f55505edecf612bb2269e9e70e294f8f102b7421c2f61da4c3476f02342300d"
+checksum = "906ee94145d34a7e67442188680e9160f74235aeffa74ad55e06947e5f2c1433"
 dependencies = [
  "cosmos-sdk-proto-althea",
  "prost",
@@ -2056,7 +2056,7 @@ dependencies = [
  "humantime-serde",
  "ibc-proto",
  "ibc-relayer-types",
- "itertools 0.10.5",
+ "itertools",
  "moka",
  "num-bigint",
  "num-rational",
@@ -2101,7 +2101,7 @@ dependencies = [
  "flex-error",
  "ibc-proto",
  "ics23",
- "itertools 0.10.5",
+ "itertools",
  "num-rational",
  "primitive-types",
  "prost",
@@ -2220,15 +2220,6 @@ name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
 dependencies = [
  "either",
 ]
@@ -2942,7 +2933,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "efb6c9a1dd1def8e2124d17e83a20af56f1570d6c2d2bd9e266ccb768df3840e"
 dependencies = [
  "anyhow",
- "itertools 0.11.0",
+ "itertools",
  "proc-macro2",
  "quote",
  "syn 2.0.52",

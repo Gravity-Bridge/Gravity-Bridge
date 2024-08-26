@@ -22,7 +22,7 @@ import (
 type GravitySigVerificationDecorator struct {
 	cdc          codec.Codec
 	sdkSVD       sdkante.SigVerificationDecorator
-	ethermintSVD ethermintante.Eip712SigVerificationDecorator
+	ethermintSVD ethermintante.LegacyEip712SigVerificationDecorator
 }
 
 // See GravitySigVerificationDecorator for more info
@@ -30,7 +30,7 @@ func NewGravitySigVerificationDecorator(
 	cdc codec.Codec, ak *authkeeper.AccountKeeper, signModeHandler authsigning.SignModeHandler, evmChainID string,
 ) GravitySigVerificationDecorator {
 	sdkSVD := sdkante.NewSigVerificationDecorator(ak, signModeHandler)
-	ethermintSVD := ethermintante.NewEip712SigVerificationDecorator(ak, signModeHandler, evmChainID)
+	ethermintSVD := ethermintante.NewLegacyEip712SigVerificationDecorator(ak, signModeHandler, evmChainID)
 	return GravitySigVerificationDecorator{cdc, sdkSVD, ethermintSVD}
 }
 

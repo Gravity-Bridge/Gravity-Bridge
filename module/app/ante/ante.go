@@ -9,8 +9,8 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
-	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
-	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
+	ibcante "github.com/cosmos/ibc-go/v6/modules/core/ante"
+	ibckeeper "github.com/cosmos/ibc-go/v6/modules/core/keeper"
 
 	ethermintante "github.com/evmos/ethermint/app/ante"
 
@@ -47,19 +47,18 @@ func NewAnteHandler(
 		sdkante.NewSetUpContextDecorator(),
 		// Allows exactly 1 type of extension options, and only one of that type to be provided
 		NewGravityRejectExtensionsDecorator(cdc),
-		sdkante.NewMempoolFeeDecorator(),
 		sdkante.NewValidateBasicDecorator(),
 		sdkante.NewTxTimeoutHeightDecorator(),
 		sdkante.NewValidateMemoDecorator(accountKeeper),
 		sdkante.NewConsumeGasForTxSizeDecorator(accountKeeper),
-		sdkante.NewDeductFeeDecorator(accountKeeper, bankKeeper, feegrantKeeper),
+		sdkante.NewDeductFeeDecorator(accountKeeper, bankKeeper, feegrantKeeper, nil),
 		sdkante.NewSetPubKeyDecorator(accountKeeper),
 		sdkante.NewValidateSigCountDecorator(accountKeeper),
 		sdkante.NewSigGasConsumeDecorator(accountKeeper, options.SigGasConsumer),
 		// Delegates to EIP-712 verification OR to regular SDK verification depending on the extension option
 		NewGravitySigVerificationDecorator(cdc, accountKeeper, options.SignModeHandler, evmChainID),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),
-		ibcante.NewAnteDecorator(ibcKeeper),
+		ibcante.NewRedundantRelayDecorator(ibcKeeper),
 		// Enforces the minimum commission for Gravity Prop #1
 		NewMinCommissionDecorator(cdc),
 	)

@@ -66,20 +66,19 @@ func GetTxExtensionOptions(tx sdk.Tx) (hasExtensions bool, extensions []*sdkcode
 // Indicates if the given extension is a ExtensionOptionsWeb3Tx option, and returns the
 // unpacked option as well.
 // Otherwise returns (false, nil)
-func IsWeb3TxOption(cdc codec.Codec, extension *sdkcodec.Any) (eip712Signed bool, web3Extension *ethermint.ExtensionOptionsWeb3TxI) {
-	var web3Option ethermint.ExtensionOptionsWeb3TxI
+func IsWeb3TxOption(cdc codec.Codec, extension *sdkcodec.Any) (eip712Signed bool, web3Extension *ethermint.ExtensionOptionsWeb3Tx) {
 	if extension == nil { // invalid input
 		return false, nil
 	}
 	if extension.GetTypeUrl() != WEB3_EXTENSION_TYPE_URL {
 		return false, nil
 	}
-
-	if err := cdc.UnpackAny(extension, &web3Option); err != nil {
+	extOpt, ok := extension.GetCachedValue().(*ethermint.ExtensionOptionsWeb3Tx)
+	if !ok {
 		return false, nil
 	}
 
-	return true, &web3Option
+	return true, extOpt
 }
 
 // Determines if the input tx is EIP-712 signed by looking at the extension options, signatures are verified in GravitySigVerificationDecorator

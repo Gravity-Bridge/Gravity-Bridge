@@ -36,6 +36,8 @@ pub async fn ibc_metadata_proposal_test(
         display: "nada".to_string(),
         name: "invalid".to_string(),
         symbol: "INV".to_string(),
+        uri: String::new(),
+        uri_hash: String::new(),
     };
 
     // valid metadata to test, but would overwrite existing metadata
@@ -57,6 +59,8 @@ pub async fn ibc_metadata_proposal_test(
         display: "mfootoken".to_string(),
         name: "Footoken".to_string(),
         symbol: "FOO".to_string(),
+        uri: String::new(),
+        uri_hash: String::new(),
     };
 
     // valid metadata to test, but would overwrite existing metadata
@@ -78,6 +82,8 @@ pub async fn ibc_metadata_proposal_test(
         display: "mnometadatatoken".to_string(),
         name: "Metadata token".to_string(),
         symbol: "META".to_string(),
+        uri: String::new(),
+        uri_hash: String::new(),
     };
 
     // check that a totally invalid version does not work

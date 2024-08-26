@@ -31,7 +31,7 @@ pub async fn submit_ibc_metadata(opts: IbcMetadataProposalOpts, prefix: String) 
                     )
                     .await;
                     match res {
-                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash),
+                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
                         Err(e) => {
                             error!("Failed to submit proposal with {:?}", e);
                             exit(1);
@@ -79,7 +79,7 @@ pub async fn submit_airdrop(opts: AirdropProposalOpts, prefix: String) {
                     )
                     .await;
                     match res {
-                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash),
+                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
                         Err(e) => {
                             error!("Failed to submit proposal with {:?}", e);
                             exit(1);
@@ -124,7 +124,7 @@ pub async fn submit_emergency_bridge_halt(opts: EmergencyBridgeHaltProposalOpts,
                     )
                     .await;
                     match res {
-                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash),
+                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
                         Err(e) => {
                             error!("Failed to submit proposal with {:?}", e);
                             exit(1);
@@ -170,7 +170,7 @@ pub async fn submit_oracle_unhalt(opts: OracleUnhaltProposalOpts, prefix: String
                     )
                     .await;
                     match res {
-                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash),
+                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
                         Err(e) => {
                             error!("Failed to submit proposal with {:?}", e);
                             exit(1);

@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
 
 // this file contains code related to custom governance proposals
@@ -22,27 +22,21 @@ func RegisterProposalTypes() {
 	// run during operation of one off tx commands, so we need to run this 'twice'
 	prefix := "gravity/"
 	metadata := "gravity/IBCMetadata"
-	if !govtypes.IsValidProposalType(strings.TrimPrefix(metadata, prefix)) {
-		govtypes.RegisterProposalType(types.ProposalTypeIBCMetadata)
-		// nolint: exhaustruct
-		govtypes.RegisterProposalTypeCodec(&types.IBCMetadataProposal{}, metadata)
+	if !govv1beta1.IsValidProposalType(strings.TrimPrefix(metadata, prefix)) {
+		govv1beta1.RegisterProposalType(types.ProposalTypeIBCMetadata)
 	}
 	unhalt := "gravity/UnhaltBridge"
-	if !govtypes.IsValidProposalType(strings.TrimPrefix(unhalt, prefix)) {
-		govtypes.RegisterProposalType(types.ProposalTypeUnhaltBridge)
-		// nolint: exhaustruct
-		govtypes.RegisterProposalTypeCodec(&types.UnhaltBridgeProposal{}, unhalt)
+	if !govv1beta1.IsValidProposalType(strings.TrimPrefix(unhalt, prefix)) {
+		govv1beta1.RegisterProposalType(types.ProposalTypeUnhaltBridge)
 	}
 	airdrop := "gravity/Airdrop"
-	if !govtypes.IsValidProposalType(strings.TrimPrefix(airdrop, prefix)) {
-		govtypes.RegisterProposalType(types.ProposalTypeAirdrop)
-		// nolint: exhaustruct
-		govtypes.RegisterProposalTypeCodec(&types.AirdropProposal{}, airdrop)
+	if !govv1beta1.IsValidProposalType(strings.TrimPrefix(airdrop, prefix)) {
+		govv1beta1.RegisterProposalType(types.ProposalTypeAirdrop)
 	}
 }
 
-func NewGravityProposalHandler(k Keeper) govtypes.Handler {
-	return func(ctx sdk.Context, content govtypes.Content) error {
+func NewGravityProposalHandler(k Keeper) govv1beta1.Handler {
+	return func(ctx sdk.Context, content govv1beta1.Content) error {
 		switch c := content.(type) {
 		case *types.UnhaltBridgeProposal:
 			return k.HandleUnhaltBridgeProposal(ctx, c)
