@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/cosmos/cosmos-sdk/std"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 
 	ethermintcryptocodec "github.com/evmos/ethermint/crypto/codec"
 	ethermintcodec "github.com/evmos/ethermint/encoding/codec"
@@ -21,10 +22,9 @@ func MakeEncodingConfig() gravityparams.EncodingConfig {
 
 	// The EIP-712 signature extension option must be registered separately, as we do not want ethermint.v1.EthAccount to be registered
 	// (Gravity only supports SDK x/auth accounts since it is not an Ethermint chain)
-	// nolint: exhaustruct
-	encodingConfig.InterfaceRegistry.RegisterInterface(
-		"ethermint.v1.ExtensionOptionsWeb3Tx",
-		(*etherminttypes.ExtensionOptionsWeb3TxI)(nil),
+	encodingConfig.InterfaceRegistry.RegisterImplementations(
+		(*tx.TxExtensionOptionI)(nil),
+		// nolint: exhaustruct
 		&etherminttypes.ExtensionOptionsWeb3Tx{},
 	)
 

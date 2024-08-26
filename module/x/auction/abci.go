@@ -131,7 +131,7 @@ func assertSupplyIntegrity(ctx sdk.Context, k keeper.Keeper, startSupplies sdk.C
 		// During an auction period changeover, only the native token supply should have changed while BurnWinningBids = true
 		// Expecting a decrease if any sort of change, Sub panics on negative values
 		burnWinningBids := k.GetParams(ctx).BurnWinningBids
-		difference := startSupplies.Sub(endSupplies)
+		difference := startSupplies.Sub(endSupplies...)
 		if !difference.IsZero() {
 			if difference.Len() != 1 {
 				panic(fmt.Sprintf("auction close changed the supply of more than just the native token: %v", difference))

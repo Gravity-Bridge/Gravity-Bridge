@@ -4,10 +4,10 @@ use std::time::{Duration, Instant};
 
 use cosmos_gravity::send::MSG_SEND_TO_ETH_TYPE_URL;
 use cosmos_gravity::utils::get_reasonable_send_to_eth_fee;
+use deep_space::client::send::TransactionResponse;
 use deep_space::error::CosmosGrpcError;
 use deep_space::utils::encode_any;
 use deep_space::{Address, Coin, Contact, CosmosPrivateKey, Msg, PrivateKey};
-use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::interchain_accounts::controller::v1::QueryInterchainAccountRequest;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::interchain_accounts::controller::v1::QueryParamsRequest as ControllerQueryParamsRequest;
@@ -201,7 +201,7 @@ pub async fn register_interchain_account(
     owner: String,
     connection_id: String,
     fee: Coin,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let register = MsgRegisterAccount {
         owner,
         connection_id,
@@ -214,6 +214,7 @@ pub async fn register_interchain_account(
             None,
             &[fee],
             Some(OPERATION_TIMEOUT),
+            None,
             owner_key,
         )
         .await
@@ -278,7 +279,7 @@ pub async fn get_or_register_ica(
             fee.clone(),
         )
         .await?;
-        info!("Registered Interchain Account: {}", register_res.raw_log);
+        info!("Registered Interchain Account: {}", register_res.raw_log());
 
         ica_addr = get_interchain_account_address(
             ctrl_qc.clone(),
@@ -494,7 +495,7 @@ pub async fn send_to_eth_via_ica(
     amount: Coin,                 // The funds to send
     bridge_fee: Coin,             // The amount to pay a relayer for bridging the funds
     chain_fee: Option<Coin>, // If Gravity's MinChainFeeBasisPoints param is set, the amount needed to fulfil that fee req
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     if amount.denom != bridge_fee.denom {
         return Err(CosmosGrpcError::BadInput(format!(
             "{} {} is an invalid denom set for SendToEth you must pay ethereum fees in the same token your sending",
@@ -567,6 +568,7 @@ pub async fn send_to_eth_via_ica(
             None,
             &[ctrl_fee],
             Some(OPERATION_TIMEOUT),
+            None,
             owner_key,
         )
         .await

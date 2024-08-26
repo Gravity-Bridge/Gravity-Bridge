@@ -100,7 +100,7 @@ async fn submit_and_pass_airdrop_proposal(
         "Submit and pass airdrop proposal: for {} to {} recipients for {} gas",
         total_array(&amounts),
         recipients.len(),
-        res.gas_used
+        res.gas_used()
     );
 
     vote_yes_on_proposals(contact, keys, None).await;

@@ -11,6 +11,7 @@ use crate::{
 use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::{submit_auction_params_proposal, AuctionParamsProposalJson};
 use cosmos_gravity::send::{MSG_BID_TYPE_URL, MSG_SEND_TO_ETH_TYPE_URL};
+use deep_space::client::send::TransactionResponse;
 use deep_space::client::types::LatestBlock;
 use deep_space::error::CosmosGrpcError;
 use deep_space::{Address as CosmosAddress, Coin, Contact, Msg, PrivateKey};
@@ -20,7 +21,6 @@ use gravity_proto::auction::{
     Auction, MsgBid, Params, QueryAuctionByIdRequest, QueryAuctionPeriodRequest,
     QueryAuctionsRequest, QueryParamsRequest,
 };
-use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::{MsgSendToEth, QueryDenomToErc20Request};
 use gravity_utils::num_conversion::one_atom;
@@ -655,11 +655,12 @@ async fn seed_pool(contact: &Contact, keys: &[ValidatorKeys], denom: String) {
                     None,
                     &[get_fee(Some(STAKING_TOKEN.to_string()))],
                     Some(Duration::from_secs(30)),
+                    None,
                     v.validator_key,
                 )
                 .await
                 .expect("Failed to fund auction pool");
-            info!("Sent to ethereum, tx id: {}", send_tx.txhash);
+            info!("Sent to ethereum, tx id: {}", send_tx.txhash());
         }
     }
 }
@@ -668,7 +669,7 @@ async fn set_non_auctionable_tokens(
     contact: &Contact,
     keys: &[ValidatorKeys],
     non_auctionable_tokens: Vec<String>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let params = AuctionParamsProposalJson {
         title: "Set non_auctionable_tokens".to_string(),
         description: "Set non_auctionable_tokens".to_string(),
@@ -707,7 +708,7 @@ pub async fn submit_and_pass_auction_params_proposal(
     .await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-    info!("Gov proposal executed with: {:?}", res.map(|r| r.raw_log));
+    info!("Gov proposal executed with: {:?}", res.map(|r| r.raw_log()));
 
     let post_params = auction_qc
         .params(QueryParamsRequest {})
@@ -842,6 +843,7 @@ pub async fn execute_and_validate_bid(
             None,
             &[tx_fee.clone()],
             Some(OPERATION_TIMEOUT),
+            None,
             user.cosmos_key,
         )
         .await;
@@ -863,7 +865,7 @@ pub async fn execute_and_validate_bid(
             "Expecting user balance change: {} ({:?} -> {:?})",
             expected_user_change, pre_user_balances, post_user_balances
         );
-        info!("Log: {}", res.raw_log);
+        info!("Log: {}", res.raw_log());
         validate_balance_changes(
             pre_user_balances,
             post_user_balances,

@@ -320,8 +320,6 @@ pub struct ValidatorKeys {
     pub orch_key: CosmosPrivateKey,
     /// The validator key used by this validator to actually sign and produce blocks
     pub validator_key: CosmosPrivateKey,
-    // The mnemonic phrase used to generate validator_key
-    pub validator_phrase: String,
 }
 
 /// This function pays the piper for the strange concurrency model that we use for the tests
@@ -426,6 +424,7 @@ pub async fn submit_false_claims(
                 Some("All your bridge are belong to us".to_string()),
                 fee.amount.as_slice(),
                 timeout,
+                None,
                 k.clone(),
             )
             .await
@@ -600,7 +599,7 @@ pub async fn vote_yes_with_retry(
     let res = res.unwrap();
     info!(
         "Voting yes on governance proposal costing {} gas",
-        res.gas_used
+        res.gas_used()
     );
 }
 

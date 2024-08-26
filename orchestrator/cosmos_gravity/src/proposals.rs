@@ -1,5 +1,6 @@
 //! This file handles submitting and querying governance proposals custom to Gravity bridge
 
+use deep_space::client::send::TransactionResponse;
 use deep_space::error::AddressError;
 use deep_space::error::CosmosGrpcError;
 use deep_space::utils::encode_any;
@@ -9,7 +10,6 @@ use deep_space::Contact;
 use deep_space::PrivateKey;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::DenomUnit;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
-use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
@@ -82,7 +82,7 @@ pub async fn submit_airdrop_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let mut byte_recipients = Vec::new();
     for r in proposal.recipients {
         byte_recipients.extend_from_slice(r.get_bytes())
@@ -130,7 +130,7 @@ pub async fn submit_unhalt_bridge_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     // encode as a generic proposal
     let any = encode_any(proposal, UNHALT_BRIDGE_PROPOSAL_TYPE_URL.to_string());
     contact
@@ -154,7 +154,7 @@ pub async fn submit_pause_bridge_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let mut params_to_change = Vec::new();
     let halt = ParamChange {
         subspace: "gravity".to_string(),
@@ -178,7 +178,7 @@ pub async fn submit_parameter_change_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     // encode as a generic proposal
     let any = encode_any(proposal, PARAMETER_CHANGE_PROPOSAL_TYPE_URL.to_string());
     contact
@@ -194,7 +194,7 @@ pub async fn submit_upgrade_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     // encode as a generic proposal
     let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
     contact
@@ -239,6 +239,8 @@ impl From<MetadataJson> for Metadata {
             display: v.display,
             name: v.name,
             symbol: v.symbol,
+            uri: String::new(),
+            uri_hash: String::new(),
         }
     }
 }
@@ -265,7 +267,7 @@ pub async fn submit_ibc_metadata_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     // encode as a generic proposal
     let any = encode_any(proposal, IBC_METADATA_PROPOSAL_TYPE_URL.to_string());
     contact
@@ -289,7 +291,7 @@ pub async fn submit_send_to_eth_fees_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let mut params_to_change = Vec::new();
     let set_fees = ParamChange {
         subspace: "gravity".to_string(),
@@ -326,7 +328,7 @@ pub async fn submit_auction_params_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let mut params_to_change = Vec::new();
     if let Some(val) = proposal.auction_length {
         let param = ParamChange {

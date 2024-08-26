@@ -131,7 +131,7 @@ pub async fn cosmos_to_eth(
     )
     .await;
     match res {
-        Ok(tx_id) => info!("Send to Eth txid {}", tx_id.txhash),
+        Ok(tx_id) => info!("Send to Eth txid {}", tx_id.txhash()),
         Err(e) => info!("Failed to send tokens! {:?}", e),
     }
     info!("Your funds are now waiting to be sent to Ethereum in a transaction batch!");

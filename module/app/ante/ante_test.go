@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ethereum/go-ethereum/crypto"
 
 	client "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -18,17 +18,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	eip712signer "github.com/ethereum/go-ethereum/signer/core/apitypes"
 	ethante "github.com/evmos/ethermint/app/ante"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	testtx "github.com/evmos/ethermint/tests"
 	etherminttypes "github.com/evmos/ethermint/types"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -188,7 +189,7 @@ func BuildWeb3ExtensionTx(t *testing.T, ctx sdk.Context, txConfig client.TxConfi
 
 	fees := sdk.NewCoins()
 	gasAmount := uint64(2000000)
-	chainId, err := strconv.ParseUint(config.GravityEvmChainID, 10, 64)
+	chainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
 	require.NoError(t, err)
 	tx.SetFeeAmount(fees)
 	tx.SetGasLimit(gasAmount)
@@ -234,7 +235,7 @@ func SignEip712(
 
 	fee := legacytx.NewStdFee(gas, fees) //nolint: staticcheck
 
-	data := legacytx.StdSignBytes(ctx.ChainID(), accNumber, nonce, 0, fee, msgs, "")
+	data := legacytx.StdSignBytes(ctx.ChainID(), accNumber, nonce, 0, fee, msgs, "", nil)
 
 	typedData, err := CreateTypedData(chainId, msgs[0], data, from)
 	if err != nil {
@@ -255,7 +256,7 @@ func SignEip712(
 		return nil, nil, err
 	}
 
-	sigHash, err := eip712.ComputeTypedDataHash(typedData)
+	sigHash, _, err := eip712signer.TypedDataAndHash(typedData)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -299,13 +300,13 @@ func SignEip712(
 }
 
 // This is a helper function used to convert a Tx (as signData) to TypedData derived from the msg type (needed for EIP712 signing)
-func CreateTypedData(chainID uint64, msg sdk.Msg, signData []byte, from sdk.AccAddress) (apitypes.TypedData, error) {
+func CreateTypedData(chainID uint64, msg sdk.Msg, signData []byte, from sdk.AccAddress) (eip712signer.TypedData, error) {
 	registry := codectypes.NewInterfaceRegistry()
 	etherminttypes.RegisterInterfaces(registry)
 	cryptocodec.RegisterInterfaces(registry)
 	ethermintCodec := codec.NewProtoCodec(registry)
 
-	return eip712.WrapTxToTypedData(
+	return eip712.LegacyWrapTxToTypedData(
 		ethermintCodec,
 		chainID,
 		msg,

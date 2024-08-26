@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authlegacy "github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	authlegacy "github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
 // nolint: exhaustruct

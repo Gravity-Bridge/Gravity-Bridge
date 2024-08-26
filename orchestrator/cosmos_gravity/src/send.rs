@@ -1,6 +1,7 @@
 use clarity::Address as EthAddress;
 use clarity::{PrivateKey as EthPrivateKey, Signature};
 use deep_space::address::Address as CosmosAddress;
+use deep_space::client::send::TransactionResponse;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::PrivateKey;
 use deep_space::Contact;
@@ -9,7 +10,6 @@ use deep_space::{coin::Coin, utils::bytes_to_hex_str};
 use ethereum_gravity::message_signatures::{
     encode_logic_call_confirm, encode_tx_batch_confirm, encode_valset_confirm,
 };
-use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 
 use gravity_proto::gravity::{
     MsgCancelSendToEth, MsgConfirmBatch, MsgConfirmLogicCall, MsgExecuteIbcAutoForwards,
@@ -51,7 +51,7 @@ pub async fn set_gravity_delegate_addresses(
     delegate_cosmos_address: CosmosAddress,
     private_key: impl PrivateKey,
     fee: Coin,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     trace!("Updating Gravity Delegate addresses");
     let our_valoper_address = private_key
         .to_address(&contact.get_prefix())
@@ -76,6 +76,7 @@ pub async fn set_gravity_delegate_addresses(
             Some(MEMO.to_string()),
             &[fee],
             Some(TIMEOUT),
+            None,
             private_key,
         )
         .await
@@ -91,7 +92,7 @@ pub async fn send_valset_confirms(
     valsets: Vec<Valset>,
     private_key: impl PrivateKey,
     gravity_id: String,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
     let our_eth_address = eth_private_key.to_address();
 
@@ -121,6 +122,7 @@ pub async fn send_valset_confirms(
             Some(MEMO.to_string()),
             &[fee],
             Some(TIMEOUT),
+            None,
             private_key,
         )
         .await;
@@ -136,7 +138,7 @@ pub async fn send_batch_confirm(
     transaction_batches: Vec<TransactionBatch>,
     private_key: impl PrivateKey,
     gravity_id: String,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
     let our_eth_address = eth_private_key.to_address();
 
@@ -167,6 +169,7 @@ pub async fn send_batch_confirm(
             Some(MEMO.to_string()),
             &[fee],
             Some(TIMEOUT),
+            None,
             private_key,
         )
         .await
@@ -180,7 +183,7 @@ pub async fn send_logic_call_confirm(
     logic_calls: Vec<LogicCall>,
     private_key: impl PrivateKey,
     gravity_id: String,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
     let our_eth_address = eth_private_key.to_address();
 
@@ -211,6 +214,7 @@ pub async fn send_logic_call_confirm(
             Some(MEMO.to_string()),
             &[fee],
             Some(TIMEOUT),
+            None,
             private_key,
         )
         .await
@@ -227,7 +231,7 @@ pub async fn send_ethereum_claims(
     logic_calls: Vec<LogicCallExecutedEvent>,
     valsets: Vec<ValsetUpdatedEvent>,
     fee: Coin,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let our_cosmos_address = our_cosmos_key.to_address(&contact.get_prefix()).unwrap();
 
     // This sorts oracle messages by event nonce before submitting them. It's not a pretty implementation because
@@ -279,7 +283,7 @@ pub async fn send_ethereum_claims(
     }
 
     contact
-        .send_message(&msgs, None, &[fee], Some(TIMEOUT), our_cosmos_key)
+        .send_message(&msgs, None, &[fee], Some(TIMEOUT), None, our_cosmos_key)
         .await
 }
 
@@ -312,7 +316,7 @@ pub async fn send_to_eth(
     chain_fee: Option<Coin>,
     fee: Coin,
     contact: &Contact,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
     if amount.denom != bridge_fee.denom {
         return Err(CosmosGrpcError::BadInput(format!(
@@ -375,6 +379,7 @@ pub async fn send_to_eth(
             Some(MEMO.to_string()),
             &[fee],
             Some(TIMEOUT),
+            None,
             private_key,
         )
         .await
@@ -385,7 +390,7 @@ pub async fn send_request_batch(
     denom: String,
     fee: Option<Coin>,
     contact: &Contact,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
 
     let msg_request_batch = MsgRequestBatch {
@@ -404,6 +409,7 @@ pub async fn send_request_batch(
             Some(MEMO.to_string()),
             &fee,
             Some(TIMEOUT),
+            None,
             private_key,
         )
         .await
@@ -417,7 +423,7 @@ pub async fn submit_bad_signature_evidence(
     contact: &Contact,
     signed_object: BadSignatureEvidence,
     signature: Signature,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
 
     let any = signed_object.to_any();
@@ -438,6 +444,7 @@ pub async fn submit_bad_signature_evidence(
             Some(MEMO.to_string()),
             &[fee],
             Some(TIMEOUT),
+            None,
             private_key,
         )
         .await
@@ -450,7 +457,7 @@ pub async fn cancel_send_to_eth(
     fee: Coin,
     contact: &Contact,
     transaction_id: u64,
-) -> Result<TxResponse, CosmosGrpcError> {
+) -> Result<TransactionResponse, CosmosGrpcError> {
     let our_address = private_key.to_address(&contact.get_prefix()).unwrap();
 
     let msg_cancel_send_to_eth = MsgCancelSendToEth {
@@ -465,6 +472,7 @@ pub async fn cancel_send_to_eth(
             Some(MEMO.to_string()),
             &[fee],
             Some(TIMEOUT),
+            None,
             private_key,
         )
         .await
@@ -488,7 +496,7 @@ pub async fn execute_pending_ibc_auto_forwards(
     );
     let timeout = Duration::from_secs(60);
     let res = contact
-        .send_message(&[msg], None, &[fee], Some(timeout), cosmos_key)
+        .send_message(&[msg], None, &[fee], Some(timeout), None, cosmos_key)
         .await;
 
     if res.is_err() {

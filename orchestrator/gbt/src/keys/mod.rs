@@ -117,7 +117,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
             args.amount.amount,
             args.amount.denom,
             cosmos_destination.to_string(),
-            res.unwrap().txhash
+            res.unwrap().txhash()
         );
     } else if args.send_to_eth && !args.send_on_cosmos {
         let mut amount = args.amount; // May need to reduce the amount bridged for the chain_fee

@@ -408,6 +408,7 @@ async fn send_single_msg_txs(
                 None,
                 &[tx_fee.clone()],
                 Some(OPERATION_TIMEOUT),
+                None,
                 sender,
             )
             .await;
@@ -578,6 +579,7 @@ async fn send_multi_msg_txs(
                     None,
                     &[tx_fee.clone()],
                     Some(OPERATION_TIMEOUT),
+                    None,
                     sender,
                 )
                 .await;
@@ -591,6 +593,7 @@ async fn send_multi_msg_txs(
                 None,
                 &[tx_fee.clone()],
                 Some(OPERATION_TIMEOUT),
+                None,
                 sender,
             )
             .await;
@@ -655,7 +658,7 @@ pub async fn send_to_eth_while_changing_params(
 
     // A template for our MessageArgs, we need to change the sequence each time we call contact.send_message()
     let args_tmpl8 = contact
-        .get_message_args(sender_address, args_fee.clone())
+        .get_message_args(sender_address, args_fee.clone(), None)
         .await
         .unwrap();
 

@@ -14,6 +14,7 @@ use cosmos_gravity::{
     send::{send_batch_confirm, send_logic_call_confirm, send_valset_confirms},
     utils::get_last_event_nonce_with_retry,
 };
+use deep_space::client::send::TransactionResponse;
 use deep_space::error::CosmosGrpcError;
 use deep_space::Contact;
 use deep_space::{client::ChainStatus, utils::FeeInfo};
@@ -22,7 +23,6 @@ use deep_space::{
     private_key::{CosmosPrivateKey, PrivateKey},
 };
 use futures::future::{join, join3};
-use gravity_proto::cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
@@ -473,7 +473,7 @@ pub async fn eth_signer_main_loop(
 /// Checks for fee errors on our confirm submission transactions, a failure here
 /// can be fatal and cause slashing so we want to warn the user and exit. There is
 /// no point in running if we can't perform our most important function
-fn check_for_fee_error(res: Result<TxResponse, CosmosGrpcError>, fee: &Coin) {
+fn check_for_fee_error(res: Result<TransactionResponse, CosmosGrpcError>, fee: &Coin) {
     if let Err(CosmosGrpcError::InsufficientFees { fee_info }) = res {
         match fee_info {
             FeeInfo::InsufficientFees { min_fees } => {

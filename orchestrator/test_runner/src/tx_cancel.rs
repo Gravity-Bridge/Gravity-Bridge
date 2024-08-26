@@ -68,7 +68,7 @@ pub async fn send_to_eth_and_cancel(
     .await
     .unwrap();
     info!("{:?}", res);
-    for thing in res.logs {
+    for thing in res.logs() {
         for event in thing.events {
             info!("attribute for {:?}", event.attributes);
         }

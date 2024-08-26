@@ -354,7 +354,7 @@ func (suite *KeeperTestSuite) TestHelpers() {
 	auction.EndBlocker(ctx, *auctionKeeper)
 	require.False(t, checkModuleBalanceStrict(suite, expectedCoins))
 	require.False(t, checkModuleBalanceStrict(suite, sdk.NewCoins()))
-	expectedCoins = auctionBalances.Sub(sdk.NewCoins(auctionWithBid.Amount))
+	expectedCoins = auctionBalances.Sub(auctionWithBid.Amount)
 	require.True(t, checkModuleBalanceStrict(suite, expectedCoins))
 	require.True(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins()))
 }
