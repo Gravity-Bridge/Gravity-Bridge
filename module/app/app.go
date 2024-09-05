@@ -841,11 +841,13 @@ func NewGravityApp(
 
 func (app *Gravity) setAnteHandler(encodingConfig gravityparams.EncodingConfig) {
 	options := sdkante.HandlerOptions{
-		AccountKeeper:   app.AccountKeeper,
-		BankKeeper:      app.BankKeeper,
-		FeegrantKeeper:  nil, // Note: If feegrant keeper is added, change the bridge_fees.go antehandler to use it as well
-		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
-		SigGasConsumer:  ethante.DefaultSigVerificationGasConsumer,
+		AccountKeeper:          app.AccountKeeper,
+		BankKeeper:             app.BankKeeper,
+		FeegrantKeeper:         nil,
+		SignModeHandler:        encodingConfig.TxConfig.SignModeHandler(),
+		SigGasConsumer:         ethante.DefaultSigVerificationGasConsumer,
+		ExtensionOptionChecker: nil,
+		TxFeeChecker:           nil,
 	}
 
 	// Note: If feegrant keeper is added, add it to the NewAnteHandler call instead of nil

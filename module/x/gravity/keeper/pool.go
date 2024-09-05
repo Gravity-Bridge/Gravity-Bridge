@@ -5,8 +5,9 @@ import (
 	"sort"
 	"strconv"
 
+	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -27,7 +28,7 @@ func (k Keeper) AddToOutgoingPool(
 ) (uint64, error) {
 	if ctx.IsZero() || sdk.VerifyAddressFormat(sender) != nil || counterpartReceiver.ValidateBasic() != nil ||
 		!amount.IsValid() || !fee.IsValid() || fee.Denom != amount.Denom {
-		return 0, sdkerrors.Wrap(types.ErrInvalid, "arguments")
+		return 0, errorsmod.Wrap(types.ErrInvalid, "arguments")
 	}
 	totalAmount := amount.Add(fee)
 	totalInVouchers := sdk.Coins{totalAmount}
@@ -50,12 +51,12 @@ func (k Keeper) AddToOutgoingPool(
 
 	erc20Fee, err := types.NewInternalERC20Token(fee.Amount, tokenContract.GetAddress().Hex())
 	if err != nil {
-		return 0, sdkerrors.Wrapf(err, "invalid Erc20Fee from amount %d and contract %v",
+		return 0, errorsmod.Wrapf(err, "invalid Erc20Fee from amount %d and contract %v",
 			fee.Amount, tokenContract)
 	}
 	erc20Token, err := types.NewInternalERC20Token(amount.Amount, tokenContract.GetAddress().Hex())
 	if err != nil {
-		return 0, sdkerrors.Wrapf(err, "invalid ERC20Token from amount %d and contract %v",
+		return 0, errorsmod.Wrapf(err, "invalid ERC20Token from amount %d and contract %v",
 			amount.Amount, tokenContract)
 	}
 	// construct outgoing tx, as part of this process we represent
@@ -69,7 +70,7 @@ func (k Keeper) AddToOutgoingPool(
 		Erc20Fee:    erc20Fee.ToExternal(),
 	}.ToInternal()
 	if err != nil { // This should never happen since all the components are validated
-		panic(sdkerrors.Wrap(err, "unable to create InternalOutgoingTransferTx"))
+		panic(errorsmod.Wrap(err, "unable to create InternalOutgoingTransferTx"))
 	}
 
 	// add a second index with the fee
@@ -97,35 +98,35 @@ func (k Keeper) AddToOutgoingPool(
 // - issues the tokens back to the sender
 func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, sender sdk.AccAddress) error {
 	if ctx.IsZero() || txId < 1 || sdk.VerifyAddressFormat(sender) != nil {
-		return sdkerrors.Wrap(types.ErrInvalid, "arguments")
+		return errorsmod.Wrap(types.ErrInvalid, "arguments")
 	}
 	// check that we actually have a tx with that id and what it's details are
 	tx, err := k.GetUnbatchedTxById(ctx, txId)
 	if err != nil {
-		return sdkerrors.Wrapf(err, "unknown transaction with id %d from sender %s", txId, sender.String())
+		return errorsmod.Wrapf(err, "unknown transaction with id %d from sender %s", txId, sender.String())
 	}
 
 	// Check that this user actually sent the transaction, this prevents someone from refunding someone
 	// elses transaction to themselves.
 	if !tx.Sender.Equals(sender) {
-		return sdkerrors.Wrapf(types.ErrInvalid, "Sender %s did not send Id %d", sender, txId)
+		return errorsmod.Wrapf(types.ErrInvalid, "Sender %s did not send Id %d", sender, txId)
 	}
 
 	// An inconsistent entry should never enter the store, but this is the ideal place to exploit
 	// it such a bug if it did ever occur, so we should double check to be really sure
 	if tx.Erc20Fee.Contract != tx.Erc20Token.Contract {
-		return sdkerrors.Wrapf(types.ErrInvalid, "Inconsistent tokens to cancel!: %s %s", tx.Erc20Fee.Contract.GetAddress().Hex(), tx.Erc20Token.Contract.GetAddress().Hex())
+		return errorsmod.Wrapf(types.ErrInvalid, "Inconsistent tokens to cancel!: %s %s", tx.Erc20Fee.Contract.GetAddress().Hex(), tx.Erc20Token.Contract.GetAddress().Hex())
 	}
 
 	// delete this tx from the pool
 	err = k.removeUnbatchedTX(ctx, *tx.Erc20Fee, txId)
 	if err != nil {
-		return sdkerrors.Wrapf(types.ErrInvalid, "txId %d not in unbatched index! Must be in a batch!", txId)
+		return errorsmod.Wrapf(types.ErrInvalid, "txId %d not in unbatched index! Must be in a batch!", txId)
 	}
 	// Make sure the tx was removed
 	oldTx, oldTxErr := k.GetUnbatchedTxByFeeAndId(ctx, *tx.Erc20Fee, tx.Id)
 	if oldTx != nil || oldTxErr == nil {
-		return sdkerrors.Wrapf(types.ErrInvalid, "tx with id %d was not fully removed from the pool, a duplicate must exist", txId)
+		return errorsmod.Wrapf(types.ErrInvalid, "tx with id %d was not fully removed from the pool, a duplicate must exist", txId)
 	}
 
 	// Calculate refund
@@ -136,7 +137,7 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 
 	// Perform refund
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, totalToRefundCoins); err != nil {
-		return sdkerrors.Wrap(err, "transfer vouchers")
+		return errorsmod.Wrap(err, "transfer vouchers")
 	}
 
 	return ctx.EventManager().EmitTypedEvent(
@@ -155,7 +156,7 @@ func (k Keeper) addUnbatchedTX(ctx sdk.Context, val *types.InternalOutgoingTrans
 	store := ctx.KVStore(k.storeKey)
 	idxKey := types.GetOutgoingTxPoolKey(*val.Erc20Fee, val.Id)
 	if store.Has(idxKey) {
-		return sdkerrors.Wrap(types.ErrDuplicate, "transaction already in pool")
+		return errorsmod.Wrap(types.ErrDuplicate, "transaction already in pool")
 	}
 
 	extVal := val.ToExternal()
@@ -175,7 +176,7 @@ func (k Keeper) removeUnbatchedTX(ctx sdk.Context, fee types.InternalERC20Token,
 	store := ctx.KVStore(k.storeKey)
 	idxKey := types.GetOutgoingTxPoolKey(fee, txID)
 	if !store.Has(idxKey) {
-		return sdkerrors.Wrap(types.ErrUnknown, "pool transaction")
+		return errorsmod.Wrap(types.ErrUnknown, "pool transaction")
 	}
 	store.Delete(idxKey)
 	return nil
@@ -190,16 +191,16 @@ func (k Keeper) GetUnbatchedTxByFeeAndId(ctx sdk.Context, fee types.InternalERC2
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetOutgoingTxPoolKey(fee, txID))
 	if bz == nil {
-		return nil, sdkerrors.Wrap(types.ErrUnknown, "pool transaction")
+		return nil, errorsmod.Wrap(types.ErrUnknown, "pool transaction")
 	}
 	var r types.OutgoingTransferTx
 	err := k.cdc.Unmarshal(bz, &r)
 	if err != nil {
-		panic(sdkerrors.Wrapf(err, "invalid unbatched tx in store: %v", r))
+		panic(errorsmod.Wrapf(err, "invalid unbatched tx in store: %v", r))
 	}
 	intR, err := r.ToInternal()
 	if err != nil {
-		panic(sdkerrors.Wrapf(err, "invalid unbatched tx in store: %v", r))
+		panic(errorsmod.Wrapf(err, "invalid unbatched tx in store: %v", r))
 	}
 	return intR, nil
 }
@@ -218,7 +219,7 @@ func (k Keeper) GetUnbatchedTxById(ctx sdk.Context, txID uint64) (*types.Interna
 
 	if r == nil {
 		// We have no return tx, it was either batched or never existed
-		return nil, sdkerrors.Wrap(types.ErrUnknown, "pool transaction")
+		return nil, errorsmod.Wrap(types.ErrUnknown, "pool transaction")
 	}
 	return r, nil
 }
@@ -268,7 +269,7 @@ func (k Keeper) filterAndIterateUnbatchedTransactions(ctx sdk.Context, prefixKey
 		k.cdc.MustUnmarshal(iter.Value(), &transact)
 		intTx, err := transact.ToInternal()
 		if err != nil {
-			panic(sdkerrors.Wrapf(err, "invalid unbatched transaction in store: %v", transact))
+			panic(errorsmod.Wrapf(err, "invalid unbatched transaction in store: %v", transact))
 		}
 		// cb returns true to stop early
 		if cb(iter.Key(), intTx) {

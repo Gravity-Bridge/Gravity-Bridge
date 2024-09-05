@@ -14,7 +14,7 @@ import (
 
 // Creates auctions in the store and tests the auction storage and query functions
 func (suite *KeeperTestSuite) TestAuctionStorage() {
-	accounts := suite.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdk.NewInt(1))))
+	accounts := suite.AppTestHelper.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdk.NewInt(1))))
 	t := suite.T()
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
@@ -122,7 +122,7 @@ func (suite *KeeperTestSuite) TestAuctionStorage() {
 
 // Tests the auction functions when there are no auctions
 func (suite *KeeperTestSuite) TestEmptyAuctionFunctions() {
-	accounts := suite.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdk.NewInt(1))))
+	accounts := suite.AppTestHelper.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdk.NewInt(1))))
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
 	initialPeriod := ak.GetAuctionPeriod(ctx)

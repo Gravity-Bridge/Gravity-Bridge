@@ -7,8 +7,10 @@ import (
 	"sort"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+	mathmod "cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -31,7 +33,7 @@ func (b BridgeValidators) ToInternal() (*InternalBridgeValidators, error) {
 	for i := range b {
 		ibv, err := NewInternalBridgeValidator(b[i])
 		if err != nil {
-			return nil, sdkerrors.Wrapf(err, "member %d", i)
+			return nil, errorsmod.Wrapf(err, "member %d", i)
 		}
 		ret[i] = ibv
 	}
@@ -63,7 +65,7 @@ type InternalBridgeValidator struct {
 func NewInternalBridgeValidator(bridgeValidator BridgeValidator) (*InternalBridgeValidator, error) {
 	ethAddr, err := NewEthAddress(bridgeValidator.EthereumAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid bridge validator eth address")
+		return nil, errorsmod.Wrap(err, "invalid bridge validator eth address")
 	}
 
 	i := &InternalBridgeValidator{
@@ -71,14 +73,14 @@ func NewInternalBridgeValidator(bridgeValidator BridgeValidator) (*InternalBridg
 		EthereumAddress: *ethAddr,
 	}
 	if err := i.ValidateBasic(); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid bridge validator")
+		return nil, errorsmod.Wrap(err, "invalid bridge validator")
 	}
 	return i, nil
 }
 
 func (i InternalBridgeValidator) ValidateBasic() error {
 	if err := i.EthereumAddress.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "ethereum address")
+		return errorsmod.Wrap(err, "ethereum address")
 	}
 	return nil
 }
@@ -188,11 +190,11 @@ func (b InternalBridgeValidators) ValidateBasic() error {
 	}
 	for i := range b {
 		if err := b[i].ValidateBasic(); err != nil {
-			return sdkerrors.Wrapf(err, "member %d", i)
+			return errorsmod.Wrapf(err, "member %d", i)
 		}
 	}
 	if b.HasDuplicates() {
-		return sdkerrors.Wrap(ErrDuplicate, "addresses")
+		return errorsmod.Wrap(ErrDuplicate, "addresses")
 	}
 	return nil
 }
@@ -202,9 +204,9 @@ func (b InternalBridgeValidators) ValidateBasic() error {
 //////////////////////////////////////
 
 // NewValset returns a new valset
-func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmount sdk.Int, rewardToken EthAddress) (*Valset, error) {
+func NewValset(nonce, height uint64, members InternalBridgeValidators, rewardAmount mathmod.Int, rewardToken EthAddress) (*Valset, error) {
 	if err := members.ValidateBasic(); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid members")
+		return nil, errorsmod.Wrap(err, "invalid members")
 	}
 	members.Sort()
 	var mem []BridgeValidator
@@ -284,7 +286,7 @@ func (v *Valset) WithoutEmptyMembers() *Valset {
 		Nonce:        v.Nonce,
 		Members:      make([]BridgeValidator, 0, len(v.Members)),
 		Height:       0,
-		RewardAmount: sdk.Int{},
+		RewardAmount: mathmod.Int{},
 		RewardToken:  "",
 	}
 	for i := range v.Members {
@@ -298,25 +300,25 @@ func (v *Valset) WithoutEmptyMembers() *Valset {
 // Equal compares all of the valset members, additionally returning an error explaining the problem
 func (v Valset) Equal(o Valset) (bool, error) {
 	if v.Height != o.Height {
-		return false, sdkerrors.Wrap(ErrInvalid, "valset heights mismatch")
+		return false, errorsmod.Wrap(ErrInvalid, "valset heights mismatch")
 	}
 
 	if v.Nonce != o.Nonce {
-		return false, sdkerrors.Wrap(ErrInvalid, "valset nonces mismatch")
+		return false, errorsmod.Wrap(ErrInvalid, "valset nonces mismatch")
 	}
 
 	if !v.RewardAmount.Equal(o.RewardAmount) {
-		return false, sdkerrors.Wrap(ErrInvalid, "valset reward amounts mismatch")
+		return false, errorsmod.Wrap(ErrInvalid, "valset reward amounts mismatch")
 	}
 
 	if v.RewardToken != o.RewardToken {
-		return false, sdkerrors.Wrap(ErrInvalid, "valset reward tokens mismatch")
+		return false, errorsmod.Wrap(ErrInvalid, "valset reward tokens mismatch")
 	}
 
 	var bvs BridgeValidators = v.Members
 	var ovs BridgeValidators = o.Members
 	if !bvs.Equal(ovs) {
-		return false, sdkerrors.Wrap(ErrInvalid, "valset members mismatch")
+		return false, errorsmod.Wrap(ErrInvalid, "valset members mismatch")
 	}
 
 	return true, nil
@@ -324,7 +326,7 @@ func (v Valset) Equal(o Valset) (bool, error) {
 
 func (v Valset) ValidateBasic() error {
 	if len(v.Members) == 0 {
-		return sdkerrors.Wrap(ErrInvalidValset, "valset must have members")
+		return errorsmod.Wrap(ErrInvalidValset, "valset must have members")
 	}
 	for _, mem := range v.Members {
 		_, err := mem.ToInternal() // ToInternal validates the InternalBridgeValidator for us
@@ -333,14 +335,14 @@ func (v Valset) ValidateBasic() error {
 		}
 	}
 	if v.RewardAmount.IsNegative() {
-		return sdkerrors.Wrap(ErrInvalidValset, "valset reward must not be negative")
+		return errorsmod.Wrap(ErrInvalidValset, "valset reward must not be negative")
 	}
 	cleanToken := strings.TrimSpace(v.RewardToken)
 	if v.RewardAmount.IsPositive() && cleanToken == "" {
-		return sdkerrors.Wrap(ErrInvalidValset, "no valset reward denom for nonzero reward")
+		return errorsmod.Wrap(ErrInvalidValset, "no valset reward denom for nonzero reward")
 	}
 	if cleanToken != v.RewardToken {
-		return sdkerrors.Wrap(ErrInvalidValset, "reward token should be properly formatted")
+		return errorsmod.Wrap(ErrInvalidValset, "reward token should be properly formatted")
 	}
 	return nil
 }
@@ -370,7 +372,7 @@ func (v Valsets) ValidateBasic() error {
 }
 
 // GetFees returns the total fees contained within a given batch
-func (b OutgoingTxBatch) GetFees() sdk.Int {
+func (b OutgoingTxBatch) GetFees() mathmod.Int {
 	sum := sdk.ZeroInt()
 	for _, t := range b.Transactions {
 		sum = sum.Add(t.Erc20Fee.Amount)

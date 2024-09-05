@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"time"
 
 	"cosmossdk.io/math"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -64,7 +65,7 @@ func InitGravityTestApp(initChain bool) *Gravity {
 			panic(err)
 		}
 
-		app.InitChain(
+		app.BaseApp.InitChain(
 			// nolint: exhaustruct
 			abci.RequestInitChain{
 				Validators:      []abci.ValidatorUpdate{},
@@ -198,19 +199,31 @@ func addValidators(genState *GenesisState, cdc codec.Codec) {
 	bondedVal1 := stakingtypes.Validator{
 		OperatorAddress: sdk.ValAddress(AccAddresses[0]).String(),
 		ConsensusPubkey: pk0,
+		Jailed:          false,
 		Status:          stakingtypes.Bonded,
 		Tokens:          valTokens,
 		DelegatorShares: valShares,
 		Description:     stakingtypes.NewDescription("hoop", "", "", "", ""),
+		UnbondingHeight: 0,
+		UnbondingTime:   time.Time{},
+		// nolint: exhaustruct
+		Commission:        stakingtypes.Commission{},
+		MinSelfDelegation: math.Int{},
 	}
 	delegations = append(delegations, stakingtypes.Delegation{ValidatorAddress: sdk.ValAddress(AccAddresses[0]).String(), DelegatorAddress: AccAddresses[0].String(), Shares: valShares})
 	bondedVal2 := stakingtypes.Validator{
 		OperatorAddress: sdk.ValAddress(AccAddresses[1]).String(),
 		ConsensusPubkey: pk1,
+		Jailed:          false,
 		Status:          stakingtypes.Bonded,
 		Tokens:          valTokens,
 		DelegatorShares: valShares,
 		Description:     stakingtypes.NewDescription("bloop", "", "", "", ""),
+		UnbondingHeight: 0,
+		UnbondingTime:   time.Time{},
+		// nolint: exhaustruct
+		Commission:        stakingtypes.Commission{},
+		MinSelfDelegation: math.Int{},
 	}
 	delegations = append(delegations, stakingtypes.Delegation{ValidatorAddress: sdk.ValAddress(AccAddresses[1]).String(), DelegatorAddress: AccAddresses[1].String(), Shares: valShares})
 

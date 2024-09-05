@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -99,7 +100,7 @@ func TestMsgSendToCosmosClaimHash(t *testing.T) {
 		EventNonce:     0,
 		EthBlockHeight: 0,
 		TokenContract:  "",
-		Amount:         sdk.Int{},
+		Amount:         math.Int{},
 		EthereumSender: "",
 		CosmosReceiver: "",
 		Orchestrator:   "",

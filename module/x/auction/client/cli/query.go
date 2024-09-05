@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strconv"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
@@ -140,7 +140,7 @@ func GetCmdAuctionByDenom() *cobra.Command {
 			denom := args[0]
 			err = sdk.ValidateDenom(denom)
 			if err != nil {
-				return sdkerrors.Wrap(err, "Invalid query denom")
+				return errorsmod.Wrap(err, "Invalid query denom")
 			}
 
 			queryClient := types.NewQueryClient(clientCtx)
@@ -178,7 +178,7 @@ func GetCmdAuctionById() *cobra.Command {
 
 			id, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
-				return sdkerrors.Wrap(err, "Invalid query id")
+				return errorsmod.Wrap(err, "Invalid query id")
 			}
 
 			queryClient := types.NewQueryClient(clientCtx)
@@ -217,7 +217,7 @@ func GetCmdAllAuctionsByBidder() *cobra.Command {
 			address := args[0]
 			accAddress, err := sdk.AccAddressFromBech32(address)
 			if err != nil {
-				return sdkerrors.Wrap(err, "Invalid query address")
+				return errorsmod.Wrap(err, "Invalid query address")
 			}
 
 			queryClient := types.NewQueryClient(clientCtx)

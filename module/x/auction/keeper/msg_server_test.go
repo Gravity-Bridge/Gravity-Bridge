@@ -1,13 +1,16 @@
 package keeper_test
 
 import (
+	"cosmossdk.io/math"
+	"github.com/stretchr/testify/require"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 )
 
-var one_eth sdk.Int
+var one_eth math.Int
 
 func init() {
 	tenTo18, ok := sdk.NewIntFromString("1000000000000000000") // 10^18
@@ -43,23 +46,23 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 		expectedPass bool
 	}{
 		"Happy": {
-			msg:          *types.NewMsgBid(1, suite.TestAccs[0].String(), uint64(1_000000), minFee),
+			msg:          *types.NewMsgBid(1, suite.AppTestHelper.TestAccs[0].String(), uint64(1_000000), minFee),
 			expectedPass: true,
 		},
 		"HappyBigFee": {
-			msg:          *types.NewMsgBid(1, suite.TestAccs[1].String(), uint64(1_000000), one_eth.Mul(sdk.NewInt(5)).Uint64()),
+			msg:          *types.NewMsgBid(1, suite.AppTestHelper.TestAccs[1].String(), uint64(1_000000), one_eth.Mul(sdk.NewInt(5)).Uint64()),
 			expectedPass: true,
 		},
 		"HappyBigAmount": {
-			msg:          *types.NewMsgBid(2, suite.TestAccs[1].String(), one_eth.Mul(sdk.NewInt(3)).Uint64(), minFee),
+			msg:          *types.NewMsgBid(2, suite.AppTestHelper.TestAccs[1].String(), one_eth.Mul(sdk.NewInt(3)).Uint64(), minFee),
 			expectedPass: true,
 		},
 		"SadId": {
-			msg:          *types.NewMsgBid(0, suite.TestAccs[0].String(), uint64(1_000000), minFee),
+			msg:          *types.NewMsgBid(0, suite.AppTestHelper.TestAccs[0].String(), uint64(1_000000), minFee),
 			expectedPass: false,
 		},
 		"SadAmount": {
-			msg:          *types.NewMsgBid(1, suite.TestAccs[0].String(), uint64(0), minFee),
+			msg:          *types.NewMsgBid(1, suite.AppTestHelper.TestAccs[0].String(), uint64(0), minFee),
 			expectedPass: false,
 		},
 		"SadAddress": {
@@ -67,11 +70,11 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 			expectedPass: false,
 		},
 		"SadFee": {
-			msg:          *types.NewMsgBid(1, suite.TestAccs[0].String(), uint64(1_000000), minFee-1),
+			msg:          *types.NewMsgBid(1, suite.AppTestHelper.TestAccs[0].String(), uint64(1_000000), minFee-1),
 			expectedPass: false,
 		},
 		"SadZeroFee": {
-			msg:          *types.NewMsgBid(1, suite.TestAccs[0].String(), uint64(1_000000), minFee-1),
+			msg:          *types.NewMsgBid(1, suite.AppTestHelper.TestAccs[0].String(), uint64(1_000000), minFee-1),
 			expectedPass: false,
 		},
 	}

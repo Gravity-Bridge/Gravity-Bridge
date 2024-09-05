@@ -78,9 +78,9 @@ func endAuctionPeriod(ctx sdk.Context, k keeper.Keeper) {
 			errMsg := fmt.Sprintf("unable to close auction: %v", closeError)
 			ctx.Logger().Error(errMsg)
 			panic(errMsg)
-		} else {
-			return false // Continue iterating through all of them
 		}
+
+		return false // Continue iterating through all of them
 	})
 
 	// Clear the old auctions in preparation for new period

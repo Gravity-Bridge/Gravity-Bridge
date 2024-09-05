@@ -6,6 +6,8 @@ import (
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -132,7 +134,7 @@ func NewKeeper(
 // make use of the tokens which would otherwise be lost
 func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distrtypes.ModuleName, coins); err != nil {
-		return sdkerrors.Wrap(err, "transfer to community pool failed")
+		return errorsmod.Wrap(err, "transfer to community pool failed")
 	}
 	feePool := k.DistKeeper.GetFeePool(ctx)
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
@@ -150,7 +152,7 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 func (k Keeper) GetParamsIfSet(ctx sdk.Context) (params types.Params, err error) {
 	for _, pair := range params.ParamSetPairs() {
 		if !k.paramSpace.Has(ctx, pair.Key) {
-			return types.Params{}, sdkerrors.Wrapf(sdkerrors.ErrNotFound, "the param key %s has not been set", string(pair.Key))
+			return types.Params{}, errorsmod.Wrapf(sdkerrors.ErrNotFound, "the param key %s has not been set", string(pair.Key))
 		}
 		k.paramSpace.Get(ctx, pair.Key, pair.Value)
 	}
@@ -175,7 +177,7 @@ func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) *types.EthAddress {
 	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeEthereumAddress, &a)
 	addr, err := types.NewEthAddress(a)
 	if err != nil {
-		panic(sdkerrors.Wrapf(err, "found invalid bridge contract address in store: %v", a))
+		panic(errorsmod.Wrapf(err, "found invalid bridge contract address in store: %v", a))
 	}
 	return addr
 }
@@ -259,11 +261,11 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 		value := iter.Value()
 		ethAddress, err := types.NewEthAddressFromBytes(value)
 		if err != nil {
-			panic(sdkerrors.Wrapf(err, "found invalid ethAddress %v under key %v", string(value), key))
+			panic(errorsmod.Wrapf(err, "found invalid ethAddress %v under key %v", string(value), key))
 		}
 		valAddress := sdk.ValAddress(key)
 		if err := sdk.VerifyAddressFormat(valAddress); err != nil {
-			panic(sdkerrors.Wrapf(err, "invalid valAddress in key %v", valAddress))
+			panic(errorsmod.Wrapf(err, "invalid valAddress in key %v", valAddress))
 		}
 		ethAddresses[valAddress.String()] = ethAddress.GetAddress()
 	}
@@ -280,11 +282,11 @@ func (k Keeper) GetDelegateKeys(ctx sdk.Context) []types.MsgSetOrchestratorAddre
 		value := iter.Value()
 		orchAddress := sdk.AccAddress(key)
 		if err := sdk.VerifyAddressFormat(orchAddress); err != nil {
-			panic(sdkerrors.Wrapf(err, "invalid orchAddress in key %v", orchAddresses))
+			panic(errorsmod.Wrapf(err, "invalid orchAddress in key %v", orchAddresses))
 		}
 		valAddress := sdk.ValAddress(value)
 		if err := sdk.VerifyAddressFormat(valAddress); err != nil {
-			panic(sdkerrors.Wrapf(err, "invalid val address stored for orchestrator %s", valAddress.String()))
+			panic(errorsmod.Wrapf(err, "invalid val address stored for orchestrator %s", valAddress.String()))
 		}
 
 		orchAddresses[valAddress.String()] = orchAddress.String()

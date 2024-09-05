@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -49,7 +52,7 @@ func (ea *EthAddress) SetAddress(address string) error {
 
 func NewEthAddressFromBytes(address []byte) (*EthAddress, error) {
 	if err := ValidateEthAddress(hex.EncodeToString(address)); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid input address")
+		return nil, errorsmod.Wrap(err, "invalid input address")
 	}
 
 	addr := EthAddress{gethcommon.BytesToAddress(address)}
@@ -59,7 +62,7 @@ func NewEthAddressFromBytes(address []byte) (*EthAddress, error) {
 // Creates a new EthAddress from a string, performing validation and returning any validation errors
 func NewEthAddress(address string) (*EthAddress, error) {
 	if err := ValidateEthAddress(address); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid input address")
+		return nil, errorsmod.Wrap(err, "invalid input address")
 	}
 
 	addr := EthAddress{gethcommon.HexToAddress(address)}
@@ -114,8 +117,8 @@ func NewERC20Token(amount uint64, contract string) ERC20Token {
 	return ERC20Token{Amount: sdk.NewIntFromUint64(amount), Contract: contract}
 }
 
-// NewSDKIntERC20Token returns a new instance of an ERC20, accepting a sdk.Int
-func NewSDKIntERC20Token(amount sdk.Int, contract string) ERC20Token {
+// NewSDKIntERC20Token returns a new instance of an ERC20, accepting a math.Int
+func NewSDKIntERC20Token(amount math.Int, contract string) ERC20Token {
 	return ERC20Token{Amount: amount, Contract: contract}
 }
 
@@ -126,15 +129,15 @@ func (e ERC20Token) ToInternal() (*InternalERC20Token, error) {
 
 // InternalERC20Token contains validated fields, used for all internal computation
 type InternalERC20Token struct {
-	Amount   sdk.Int
+	Amount   math.Int
 	Contract EthAddress
 }
 
 // NewInternalERC20Token creates an InternalERC20Token, performing validation and returning any errors
-func NewInternalERC20Token(amount sdk.Int, contract string) (*InternalERC20Token, error) {
+func NewInternalERC20Token(amount math.Int, contract string) (*InternalERC20Token, error) {
 	ethAddress, err := NewEthAddress(contract)
 	if err != nil { // ethAddress could be nil, must return here
-		return nil, sdkerrors.Wrap(err, "invalid contract")
+		return nil, errorsmod.Wrap(err, "invalid contract")
 	}
 	ret := &InternalERC20Token{
 		Amount:   amount,
@@ -150,11 +153,11 @@ func NewInternalERC20Token(amount sdk.Int, contract string) (*InternalERC20Token
 // ValidateBasic performs validation on all fields of an InternalERC20Token
 func (i *InternalERC20Token) ValidateBasic() error {
 	if i.Amount.IsNegative() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "coins must not be negative")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, "coins must not be negative")
 	}
 	err := i.Contract.ValidateBasic()
 	if err != nil {
-		return sdkerrors.Wrap(err, "invalid contract")
+		return errorsmod.Wrap(err, "invalid contract")
 	}
 	return nil
 }
@@ -180,7 +183,7 @@ func GravityDenom(tokenContract EthAddress) string {
 // ValidateBasic performs stateless validation
 func (e *ERC20Token) ValidateBasic() error {
 	if err := ValidateEthAddress(e.Contract); err != nil {
-		return sdkerrors.Wrap(err, "ethereum address")
+		return errorsmod.Wrap(err, "ethereum address")
 	}
 	// TODO: Validate all the things
 	return nil
@@ -190,7 +193,7 @@ func (e *ERC20Token) ValidateBasic() error {
 // TODO: make this return errors instead
 func (i *InternalERC20Token) Add(o *InternalERC20Token) (*InternalERC20Token, error) {
 	if i.Contract.GetAddress() != o.Contract.GetAddress() {
-		return nil, sdkerrors.Wrap(ErrMismatched, "cannot add two different tokens")
+		return nil, errorsmod.Wrap(ErrMismatched, "cannot add two different tokens")
 	}
 	sum := i.Amount.Add(o.Amount) // validation happens in NewInternalERC20Token()
 	return NewInternalERC20Token(sum, i.Contract.GetAddress().Hex())
@@ -221,21 +224,21 @@ func has0xPrefix(str string) bool {
 func (m ERC20ToDenom) ValidateBasic() error {
 	trimDenom := strings.TrimSpace(m.Denom)
 	if trimDenom == "" || trimDenom != m.Denom {
-		return sdkerrors.Wrap(ErrInvalid, "invalid erc20todenom: denom must be properly formatted")
+		return errorsmod.Wrap(ErrInvalid, "invalid erc20todenom: denom must be properly formatted")
 	}
 	trimErc20 := strings.TrimSpace(m.Erc20)
 	if trimErc20 == "" || trimErc20 != m.Erc20 {
-		return sdkerrors.Wrap(ErrInvalid, "invalid erc20todenom: erc20 must be properly formatted")
+		return errorsmod.Wrap(ErrInvalid, "invalid erc20todenom: erc20 must be properly formatted")
 	}
 	addr, err := NewEthAddress(m.Erc20)
 	if err != nil {
-		return sdkerrors.Wrapf(ErrInvalid, "invalid erc20todenom: erc20 must be a valid ethereum address: %v", err)
+		return errorsmod.Wrapf(ErrInvalid, "invalid erc20todenom: erc20 must be a valid ethereum address: %v", err)
 	}
 	if err = addr.ValidateBasic(); err != nil {
-		return sdkerrors.Wrapf(ErrInvalid, "invalid erc20todenom: erc20 address failed validate basic: %v", err)
+		return errorsmod.Wrapf(ErrInvalid, "invalid erc20todenom: erc20 address failed validate basic: %v", err)
 	}
 	if err = sdk.ValidateDenom(m.Denom); err != nil {
-		return sdkerrors.Wrapf(ErrInvalid, "invalid erc20todenom: denom is invalid: %v", err)
+		return errorsmod.Wrapf(ErrInvalid, "invalid erc20todenom: denom is invalid: %v", err)
 	}
 
 	return nil

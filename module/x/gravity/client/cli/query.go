@@ -3,11 +3,11 @@ package cli
 import (
 	"strconv"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/spf13/cobra"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -255,7 +255,7 @@ func GetCmdPendingIbcAutoForwards() *cobra.Command {
 				var err error
 				limit, err = strconv.ParseUint(args[0], 10, 0)
 				if err != nil {
-					return sdkerrors.Wrapf(err, "Unable to parse limit from %v", args[0])
+					return errorsmod.Wrapf(err, "Unable to parse limit from %v", args[0])
 				}
 			}
 

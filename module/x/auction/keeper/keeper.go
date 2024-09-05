@@ -1,10 +1,11 @@
 package keeper
 
 import (
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
@@ -83,7 +84,7 @@ func (k Keeper) SendToAuctionPool(ctx sdk.Context, coins sdk.Coins) error {
 	}
 
 	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, types.AuctionPoolAccountName, coins); err != nil {
-		return sdkerrors.Wrap(err, "Failure to transfer tokens from auction module to auction pool")
+		return errorsmod.Wrap(err, "Failure to transfer tokens from auction module to auction pool")
 	}
 	return nil
 }
@@ -94,7 +95,7 @@ func (k Keeper) RemoveFromAuctionPool(ctx sdk.Context, coin sdk.Coin) error {
 	// TODO: No longer check for native denom?
 	native := config.NativeTokenDenom
 	if coin.Denom == native {
-		return sdkerrors.Wrapf(types.ErrInvalidAuction, "not allowed to collect community pool native token balance")
+		return errorsmod.Wrapf(types.ErrInvalidAuction, "not allowed to collect community pool native token balance")
 	}
 	enabled := k.GetParams(ctx).Enabled
 	if !enabled {
@@ -102,7 +103,7 @@ func (k Keeper) RemoveFromAuctionPool(ctx sdk.Context, coin sdk.Coin) error {
 	}
 
 	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.AuctionPoolAccountName, types.ModuleName, sdk.NewCoins(coin)); err != nil {
-		return sdkerrors.Wrap(err, "Failure to transfer tokens from auction pool to auction module")
+		return errorsmod.Wrap(err, "Failure to transfer tokens from auction pool to auction module")
 	}
 
 	return nil
@@ -117,7 +118,7 @@ func (k Keeper) ReturnPreviousBidAmount(ctx sdk.Context, recipient sdk.AccAddres
 	}
 
 	err := k.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, recipient, sdk.NewCoins(amount))
-	return sdkerrors.Wrap(err, types.ErrFundReturnFailure.Error())
+	return errorsmod.Wrap(err, types.ErrFundReturnFailure.Error())
 }
 
 // LockBidAmount sends the `amount` from the `sender` to the module account
@@ -129,7 +130,7 @@ func (k Keeper) LockBidAmount(ctx sdk.Context, sender sdk.AccAddress, amount sdk
 	}
 
 	err := k.BankKeeper.SendCoinsFromAccountToModule(ctx, sender, types.ModuleName, sdk.NewCoins(amount))
-	return sdkerrors.Wrap(err, types.ErrBidCollectionFailure.Error())
+	return errorsmod.Wrap(err, types.ErrBidCollectionFailure.Error())
 }
 
 // AwardAuction pays out the locked balance of `amount` to `bidder`
@@ -141,7 +142,7 @@ func (k Keeper) AwardAuction(ctx sdk.Context, bidder sdk.AccAddress, amount sdk.
 	}
 
 	err := k.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, bidder, sdk.NewCoins(amount))
-	return sdkerrors.Wrap(err, types.ErrAwardFailure.Error())
+	return errorsmod.Wrap(err, types.ErrAwardFailure.Error())
 }
 
 // IsDenomAuctionable Checks `denom“ against the NonAuctionableTokens list
@@ -177,7 +178,7 @@ func (k Keeper) SendFromAuctionPoolToCommunityPool(ctx sdk.Context, coin sdk.Coi
 func (k Keeper) sendFromModuleAccountToCommunityPool(ctx sdk.Context, coin sdk.Coin, moduleName string) error {
 	coins := sdk.NewCoins(coin)
 	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, moduleName, distrtypes.ModuleName, coins); err != nil {
-		return sdkerrors.Wrap(err, "Failure to transfer tokens from auction pool to community pool")
+		return errorsmod.Wrap(err, "Failure to transfer tokens from auction pool to community pool")
 	}
 	feePool := k.DistKeeper.GetFeePool(ctx)
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)

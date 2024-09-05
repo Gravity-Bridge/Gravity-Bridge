@@ -1,8 +1,9 @@
 package keeper
 
 import (
+	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
@@ -15,10 +16,10 @@ func (k Keeper) UpdateAuctionPeriod(ctx sdk.Context, auctionPeriod types.Auction
 
 	lastPeriod := k.GetAuctionPeriod(ctx)
 	if lastPeriod != nil && lastPeriod.EndBlockHeight > uint64(ctx.BlockHeight()) {
-		return sdkerrors.Wrap(types.ErrInvalidAuctionPeriod, "cannot update auction period during the current auction period")
+		return errorsmod.Wrap(types.ErrInvalidAuctionPeriod, "cannot update auction period during the current auction period")
 	}
 	if lastPeriod != nil && (lastPeriod.EndBlockHeight > auctionPeriod.StartBlockHeight || lastPeriod.EndBlockHeight >= auctionPeriod.EndBlockHeight) {
-		return sdkerrors.Wrapf(types.ErrInvalidAuctionPeriod, "new auction period (%v) conflicts with the last one (%v)", auctionPeriod, lastPeriod)
+		return errorsmod.Wrapf(types.ErrInvalidAuctionPeriod, "new auction period (%v) conflicts with the last one (%v)", auctionPeriod, lastPeriod)
 	}
 
 	k.updateAuctionPeriodUnsafe(ctx, auctionPeriod)
@@ -68,7 +69,7 @@ func (k Keeper) CreateNewAuctionPeriod(ctx sdk.Context) (types.AuctionPeriod, er
 	auctionPeriod := k.initializeAuctionPeriodFromParams(startBlock, params)
 	err := k.UpdateAuctionPeriod(ctx, auctionPeriod)
 	if err != nil {
-		return types.AuctionPeriod{}, sdkerrors.Wrapf(err, "unable to create new auction period with start height %d and end height %d", auctionPeriod.StartBlockHeight, auctionPeriod.EndBlockHeight)
+		return types.AuctionPeriod{}, errorsmod.Wrapf(err, "unable to create new auction period with start height %d and end height %d", auctionPeriod.StartBlockHeight, auctionPeriod.EndBlockHeight)
 	}
 
 	return auctionPeriod, nil
@@ -97,13 +98,13 @@ func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
 	})
 	// Auctions should have been deleted after they were closed
 	if foundAuctions {
-		return sdkerrors.Wrapf(types.ErrInvalidAuction, "attempted to create auctions without removing old auctions from store")
+		return errorsmod.Wrapf(types.ErrInvalidAuction, "attempted to create auctions without removing old auctions from store")
 	}
 	period := k.GetAuctionPeriod(ctx)
 	nextBlock := uint64(ctx.BlockHeight() + 1)
 	// The only valid call is when a new period begins the next block, and ends in the future
 	if period.StartBlockHeight != nextBlock || period.EndBlockHeight <= nextBlock {
-		return sdkerrors.Wrapf(types.ErrInvalidAuction, "attempted to create auctions in the middle of an active period")
+		return errorsmod.Wrapf(types.ErrInvalidAuction, "attempted to create auctions in the middle of an active period")
 	}
 
 	auctionBlacklist := params.NonAuctionableTokens
@@ -115,7 +116,7 @@ func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
 		if blacklistMap[poolCoin.Denom] { // Coin in blacklist
 			// If a token is NonAuctionable send it to the community pool instead
 			if err := k.SendFromAuctionPoolToCommunityPool(ctx, poolCoin); err != nil {
-				return sdkerrors.Wrapf(err, "unable to transfer non auctionable balance to community pool")
+				return errorsmod.Wrapf(err, "unable to transfer non auctionable balance to community pool")
 			}
 			// Do not create an auction as the balance is no longer under the auction module's control
 			continue
@@ -125,10 +126,10 @@ func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
 		auction := types.NewAuction(id, poolCoin)
 
 		if err := k.RemoveFromAuctionPool(ctx, poolCoin); err != nil {
-			return sdkerrors.Wrapf(err, "unable to take auction amount out of pool")
+			return errorsmod.Wrapf(err, "unable to take auction amount out of pool")
 		}
 		if err := k.StoreAuction(ctx, auction); err != nil {
-			return sdkerrors.Wrapf(err, "unable to store auction")
+			return errorsmod.Wrapf(err, "unable to store auction")
 		}
 
 		ctx.EventManager().EmitEvent(types.NewEventAuction(id, poolCoin.Denom, poolCoin.Amount))

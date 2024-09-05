@@ -3,9 +3,10 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -78,12 +79,12 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 func (p Params) ValidateBasic() error {
 	// AuctionLength (nonzero)
 	if err := isPositive(p.AuctionLength); err != nil {
-		return sdkerrors.Wrap(ErrInvalidParams, "auction length must be positive")
+		return errorsmod.Wrap(ErrInvalidParams, "auction length must be positive")
 	}
 
 	// MinBidFee (uint type check)
 	if err := isNonNegative(p.MinBidFee); err != nil {
-		return sdkerrors.Wrap(ErrInvalidParams, "bid fee basis points must be non-negative")
+		return errorsmod.Wrap(ErrInvalidParams, "bid fee basis points must be non-negative")
 	}
 
 	// NonAuctionableTokens (valid denoms + contains native token)
@@ -93,12 +94,12 @@ func (p Params) ValidateBasic() error {
 
 	// BurnWinningBids (boolean type check)
 	if err := isBoolean(p.BurnWinningBids); err != nil {
-		return sdkerrors.Wrap(ErrInvalidParams, "burn winning bids must be a boolean")
+		return errorsmod.Wrap(ErrInvalidParams, "burn winning bids must be a boolean")
 	}
 
 	// Enabled (boolean type check)
 	if err := isBoolean(p.Enabled); err != nil {
-		return sdkerrors.Wrap(ErrInvalidParams, "enabled must be a boolean")
+		return errorsmod.Wrap(ErrInvalidParams, "enabled must be a boolean")
 	}
 
 	return nil
@@ -136,14 +137,14 @@ func validNonAuctionableDenoms(i interface{}) error {
 	found := false // Check for native token presence
 	for j, s := range ival {
 		if err := isValidDenom(s); err != nil {
-			return sdkerrors.Wrapf(ErrInvalidParams, "string %d is invalid: %s %v", j, s, err)
+			return errorsmod.Wrapf(ErrInvalidParams, "string %d is invalid: %s %v", j, s, err)
 		}
 		if s == config.NativeTokenDenom {
 			found = true
 		}
 	}
 	if !found {
-		return sdkerrors.Wrapf(ErrInvalidParams, "non auctionable tokens must contain the native token")
+		return errorsmod.Wrapf(ErrInvalidParams, "non auctionable tokens must contain the native token")
 	}
 	return nil
 }

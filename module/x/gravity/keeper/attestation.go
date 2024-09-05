@@ -5,10 +5,12 @@ import (
 	"sort"
 	"strconv"
 
+	errorsmod "cosmossdk.io/errors"
+	math "cosmossdk.io/math"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -26,7 +28,7 @@ func (k Keeper) Attest(
 	}
 	valAddr := val.GetOperator()
 	if err := sdk.VerifyAddressFormat(valAddr); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid orchestrator validator address")
+		return nil, errorsmod.Wrap(err, "invalid orchestrator validator address")
 	}
 	// Check that the nonce of this event is exactly one higher than the last nonce stored by this validator.
 	// We check the event nonce in processAttestation as well,
@@ -42,7 +44,7 @@ func (k Keeper) Attest(
 	// Tries to get an attestation with the same eventNonce and claim as the claim that was submitted.
 	hash, err := claim.ClaimHash()
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "unable to compute claim hash")
+		return nil, errorsmod.Wrap(err, "unable to compute claim hash")
 	}
 	att := k.GetAttestation(ctx, claim.GetEventNonce(), hash)
 
@@ -157,7 +159,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 func (k Keeper) emitObservedEvent(ctx sdk.Context, att *types.Attestation, claim types.EthereumClaim) {
 	hash, err := claim.ClaimHash()
 	if err != nil {
-		panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
+		panic(errorsmod.Wrap(err, "unable to compute claim hash"))
 	}
 
 	err = ctx.EventManager().EmitTypedEvent(
@@ -202,7 +204,7 @@ func (k Keeper) DeleteAttestation(ctx sdk.Context, att types.Attestation) {
 	}
 	hash, err := claim.ClaimHash()
 	if err != nil {
-		panic(sdkerrors.Wrap(err, "unable to compute claim hash"))
+		panic(errorsmod.Wrap(err, "unable to compute claim hash"))
 	}
 	store := ctx.KVStore(k.storeKey)
 
@@ -385,7 +387,7 @@ func (k Keeper) GetLastObservedValset(ctx sdk.Context) *types.Valset {
 		Nonce:        0,
 		Members:      []types.BridgeValidator{},
 		Height:       0,
-		RewardAmount: sdk.Int{},
+		RewardAmount: math.Int{},
 		RewardToken:  "",
 	}
 	k.cdc.MustUnmarshal(bytes, &valset)
@@ -414,7 +416,7 @@ func (k Keeper) setLastObservedEventNonce(ctx sdk.Context, nonce uint64) {
 // GetLastEventNonceByValidator returns the latest event nonce for a given validator
 func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress) uint64 {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
 	bytes := store.Get(types.GetLastEventNonceByValidatorKey(validator))
@@ -437,7 +439,7 @@ func (k Keeper) GetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValA
 // SetLastEventNonceByValidator sets the latest event nonce for a give validator
 func (k Keeper) SetLastEventNonceByValidator(ctx sdk.Context, validator sdk.ValAddress, nonce uint64) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetLastEventNonceByValidatorKey(validator), types.UInt64Bytes(nonce))

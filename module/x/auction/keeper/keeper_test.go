@@ -21,8 +21,8 @@ type KeeperTestSuite struct {
 
 // Test helpers
 func (suite *KeeperTestSuite) SetupTest() {
-	suite.Setup()
-	suite.queryClient = types.NewQueryClient(suite.QueryHelper)
+	suite.AppTestHelper.Setup()
+	suite.queryClient = types.NewQueryClient(suite.AppTestHelper.QueryHelper)
 }
 
 func TestKeeperTestSuite(t *testing.T) {

@@ -1,6 +1,8 @@
 package ante
 
 import (
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkcodec "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -42,7 +44,7 @@ func (red GravityRejectExtensionsDecorator) AnteHandle(
 	if er == nil {
 		return next(ctx, tx, simulate)
 	} else {
-		return ctx, sdkerrors.Wrap(er, "invalid transaction extension options")
+		return ctx, errorsmod.Wrap(er, "invalid transaction extension options")
 	}
 }
 
