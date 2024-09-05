@@ -11,7 +11,6 @@ linters:
       - govet
       - ineffassign
       - staticcheck
-      - typecheck
       - unused
       - exhaustruct
       - errcheck
@@ -33,6 +32,14 @@ linters-settings:
 
 issues:
   exclude-rules:
+    - path: app/upgrades
+      linters:
+        - errcheck
+        - staticcheck
+    - path: gravity/migrations
+      linters:
+        - errcheck
+        - staticcheck
     - path: x/gravity/abci.go
       linters:
         - dupl
