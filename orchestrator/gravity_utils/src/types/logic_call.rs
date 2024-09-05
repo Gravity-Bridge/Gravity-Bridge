@@ -11,7 +11,6 @@ pub struct LogicCall {
     pub transfers: Vec<Erc20Token>,
     /// individual token payments made on Ethereum to the relayer
     pub fees: Vec<Erc20Token>,
-    ///
     pub logic_contract_address: EthAddress,
     pub payload: Vec<u8>,
     pub timeout: u64,

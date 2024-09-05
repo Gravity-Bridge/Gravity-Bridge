@@ -101,8 +101,8 @@ pub fn parse_ibc_validator_keys() -> Vec<CosmosPrivateKey> {
 pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/orchestrator-phrases";
     info!("Reading orchestrator phrases from {}", filename);
-    let orch_keys = parse_phrases(filename);
-    orch_keys
+    
+    parse_phrases(filename)
 }
 
 /// Vesting private keys are generated via the gravity key add
@@ -111,8 +111,8 @@ pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
 pub fn parse_vesting_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/vesting-phrases";
     info!("Reading vesting phrases from {}", filename);
-    let vest_keys = parse_phrases(filename);
-    vest_keys
+    
+    parse_phrases(filename)
 }
 
 pub fn get_keys() -> Vec<ValidatorKeys> {
