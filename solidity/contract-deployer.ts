@@ -13,7 +13,7 @@ import { exit } from "process";
 const args = commandLineArgs([
   // the ethernum node used to deploy the contract
   { name: "eth-node", type: String },
-  // the cosmos node that will be used to grab the validator set via RPC (TODO),
+  // the cosmos node that will be used to grab the validator set via RPC,
   { name: "cosmos-node", type: String },
   // the Ethereum private key that will contain the gas required to pay for the contact deployment
   { name: "eth-privkey", type: String },
@@ -21,6 +21,10 @@ const args = commandLineArgs([
   { name: "contract", type: String },
   // the gravityERC721 contract .json file
   { name: "contractERC721", type: String },
+  // erc20 a/b/c contracts only deployed if test mode is true
+  { name: "contractERC20A", type: String },
+  { name: "contractERC20B", type: String },
+  { name: "contractERC20C", type: String },
   // test mode, if enabled this script deploys three ERC20 contracts for testing
   { name: "test-mode", type: String },
 ]);
@@ -121,41 +125,11 @@ async function deploy() {
     console.log("Test mode, deploying ERC20 contracts");
 
     // this handles several possible locations for the ERC20 artifacts
-    var erc20_a_path: string
-    var erc20_b_path: string
-    var erc20_c_path: string
-    var erc721_a_path: string
-    const main_location_a = "/gravity/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json"
-    const main_location_b = "/gravity/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json"
-    const main_location_c = "/gravity/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json"
-    const main_location_721_a = "/gravity/solidity/artifacts/contracts/TestERC721A.sol/TestERC721A.json"
-    
-    const alt_location_1_a = "/solidity/TestERC20A.json"
-    const alt_location_1_b = "/solidity/TestERC20B.json"
-    const alt_location_1_c = "/solidity/TestERC20C.json"
-    const alt_location_1_721a = "/solidity/TestERC721A.json"
+    var erc20_a_path: string = args["contractERC20A"]
+    var erc20_b_path: string = args["contractERC20B"]
+    var erc20_c_path: string = args["contractERC20C"]
 
-    const alt_location_2_a = "TestERC20A.json"
-    const alt_location_2_b = "TestERC20B.json"
-    const alt_location_2_c = "TestERC20C.json"
-    const alt_location_2_721a = "TestERC721A.json"
-
-    if (fs.existsSync(main_location_a)) {
-      erc20_a_path = main_location_a
-      erc20_b_path = main_location_b
-      erc20_c_path = main_location_c
-      erc721_a_path = main_location_721_a
-    } else if (fs.existsSync(alt_location_1_a)) {
-      erc20_a_path = alt_location_1_a
-      erc20_b_path = alt_location_1_b
-      erc20_c_path = alt_location_1_c
-      erc721_a_path = alt_location_1_721a
-    } else if (fs.existsSync(alt_location_2_a)) {
-      erc20_a_path = alt_location_2_a
-      erc20_b_path = alt_location_2_b
-      erc20_c_path = alt_location_2_c
-      erc721_a_path = alt_location_2_721a
-    } else {
+    if (!(fs.existsSync(erc20_a_path) && fs.existsSync(erc20_b_path) && fs.existsSync(erc20_c_path))) {
       console.log("Test mode was enabled but the ERC20 contracts can't be found!")
       exit(1)
     }
@@ -181,13 +155,6 @@ async function deploy() {
     await testERC202.deployed();
     const erc20TestAddress2 = testERC202.address;
     console.log("ERC20 deployed at Address - ", erc20TestAddress2);
-    
-    const { abi: abi3, bytecode: bytecode3 } = getContractArtifacts(erc721_a_path);
-    const erc721Factory1 = new ethers.ContractFactory(abi3, bytecode3, wallet);
-    const testERC721 = (await erc721Factory1.deploy(overrides)) as TestERC721A;
-    await testERC721.deployed();
-    const erc721TestAddress = testERC721.address;
-    console.log("ERC721 deployed at Address - ", erc721TestAddress);
   }
   const gravityIdString = await getGravityId();
   const gravityId = ethers.utils.formatBytes32String(gravityIdString);
@@ -237,7 +204,7 @@ async function deploy() {
   await gravity.deployed();
   console.log("Gravity deployed at Address - ", gravity.address);
   await submitGravityAddress(gravity.address);
-  
+
   console.log("Starting Gravity ERC721 contract deploy");
   const { abi: abiERC721, bytecode: bytecodeERC721 } = getContractArtifacts(args["contractERC721"]);
   const factoryERC721 = new ethers.ContractFactory(abiERC721, bytecodeERC721, wallet);

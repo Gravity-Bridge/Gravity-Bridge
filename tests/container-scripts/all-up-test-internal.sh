@@ -7,7 +7,7 @@ set -eux
 
 bash /gravity/tests/container-scripts/setup-validators.sh $NODES
 bash /gravity/tests/container-scripts/setup-ibc-validators.sh $NODES
-bash /gravity/tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE $ALCHEMY_ID &
+bash /gravity/tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE "/gravity/" $ALCHEMY_ID &
 
 # deploy the ethereum contracts
 pushd /gravity/orchestrator/test_runner

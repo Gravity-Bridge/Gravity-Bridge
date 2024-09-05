@@ -138,6 +138,8 @@ pub fn get_keys() -> Vec<ValidatorKeys> {
     ret
 }
 
+const CONTRACTS_PATH: &str = "/tmp/contracts";
+
 /// This function deploys the required contracts onto the Ethereum testnet
 /// this runs only when the DEPLOY_CONTRACTS env var is set right after
 /// the Ethereum test chain starts in the testing environment. We write
@@ -152,19 +154,42 @@ pub async fn deploy_contracts(contact: &Contact) {
     // deployments more straightforward.
 
     // both files are just in the PWD
-    const A: [&str; 3] = ["contract-deployer", "Gravity.json", "GravityERC721.json"];
+    const A: [&str; 6] = [
+        "contract-deployer",
+        "Gravity.json",
+        "GravityERC721.json",
+        "TestERC20A.json",
+        "TestERC20B.json",
+        "TestERC20C.json",
+    ];
     // files are placed in a root /solidity/ folder
-    const B: [&str; 3] = [
+    const B: [&str; 6] = [
         "/solidity/contract-deployer",
         "/solidity/Gravity.json",
         "/solidity/GravityERC721.json",
+        "/solidity/TestERC20A.json",
+        "/solidity/TestERC20B.json",
+        "/solidity/TestERC20C.json",
     ];
     // the default unmoved locations for the Gravity repo
-    const C: [&str; 4] = [
+    const C: [&str; 7] = [
         "/gravity/solidity/contract-deployer.ts",
         "/gravity/solidity/artifacts/contracts/Gravity.sol/Gravity.json",
         "/gravity/solidity/artifacts/contracts/GravityERC721.sol/GravityERC721.json",
+        "/gravity/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json",
+        "/gravity/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json",
+        "/gravity/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
         "/gravity/solidity/",
+    ];
+    // github actions locations
+    const D: [&str; 7] = [
+        "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/contract-deployer.ts",
+        "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/Gravity.sol/Gravity.json",
+        "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/GravityERC721.sol/GravityERC721.json",
+        "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json",
+        "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json",
+        "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
+        "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/",
     ];
     let output = if all_paths_exist(&A) || all_paths_exist(&B) {
         let paths = return_existing(A, B);
@@ -175,6 +200,9 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", paths[1]),
                 &format!("--contractERC721={}", paths[2]),
+                &format!("--contractERC20A={}", paths[3]),
+                &format!("--contractERC20B={}", paths[4]),
+                &format!("--contractERC20C={}", paths[5]),
                 "--test-mode=true",
             ])
             .output()
@@ -189,9 +217,30 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", C[1]),
                 &format!("--contractERC721={}", C[2]),
+                &format!("--contractERC20A={}", C[3]),
+                &format!("--contractERC20B={}", C[4]),
+                &format!("--contractERC20C={}", C[5]),
                 "--test-mode=true",
             ])
-            .current_dir(C[3])
+            .current_dir(C[6])
+            .output()
+            .expect("Failed to deploy contracts!")
+    } else if all_paths_exist(&D) {
+        Command::new("npx")
+            .args([
+                "ts-node",
+                D[0],
+                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--eth-node={}", ETH_NODE.as_str()),
+                &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
+                &format!("--contract={}", D[1]),
+                &format!("--contractERC721={}", D[2]),
+                &format!("--contractERC20A={}", D[3]),
+                &format!("--contractERC20B={}", D[4]),
+                &format!("--contractERC20C={}", D[5]),
+                "--test-mode=true",
+            ])
+            .current_dir(D[6])
             .output()
             .expect("Failed to deploy contracts!")
     } else {
@@ -203,7 +252,7 @@ pub async fn deploy_contracts(contact: &Contact) {
     if !ExitStatus::success(&output.status) {
         panic!("Contract deploy failed!")
     }
-    let mut file = File::create("/contracts").unwrap();
+    let mut file = File::create(CONTRACTS_PATH).unwrap();
     file.write_all(&output.stdout).unwrap();
 }
 
@@ -219,7 +268,7 @@ pub struct BootstrapContractAddresses {
 /// in deploy_contracts()
 pub fn parse_contract_addresses() -> BootstrapContractAddresses {
     let mut file =
-        File::open("/contracts").expect("Failed to find contracts! did they not deploy?");
+        File::open(CONTRACTS_PATH).expect("Failed to find contracts! did they not deploy?");
     let mut output = String::new();
     file.read_to_string(&mut output).unwrap();
     let mut maybe_gravity_address = None;
@@ -267,7 +316,7 @@ fn all_paths_exist(input: &[&str]) -> bool {
     true
 }
 
-fn return_existing<'a>(a: [&'a str; 3], b: [&'a str; 3]) -> [&'a str; 3] {
+fn return_existing<'a>(a: [&'a str; 6], b: [&'a str; 6]) -> [&'a str; 6] {
     if all_paths_exist(&a) {
         a
     } else if all_paths_exist(&b) {

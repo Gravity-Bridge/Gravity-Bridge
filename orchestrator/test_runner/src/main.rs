@@ -46,6 +46,7 @@ use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use orch_only::orch_only_test;
 use relay_market::relay_market_test;
+use std::process::exit;
 use std::{env, time::Duration};
 use tokio::time::sleep;
 use transaction_stress_test::transaction_stress_test;
@@ -235,7 +236,7 @@ pub async fn main() {
     if should_deploy_contracts() {
         info!("test-runner in contract deploying mode, deploying contracts, then exiting");
         deploy_contracts(&gravity_contact).await;
-        return;
+        exit(0);
     }
 
     let contracts = parse_contract_addresses();
