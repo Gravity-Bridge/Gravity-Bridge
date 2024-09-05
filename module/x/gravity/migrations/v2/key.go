@@ -3,8 +3,9 @@ package v2
 import (
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -154,7 +155,7 @@ var (
 // [0x0][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
 func GetOrchestratorAddressKey(orc sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(orc); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid orchestrator address"))
+		panic(errorsmod.Wrap(err, "invalid orchestrator address"))
 	}
 	return AppendBytes(KeyOrchestratorAddress, orc.Bytes())
 }
@@ -164,7 +165,7 @@ func GetOrchestratorAddressKey(orc sdk.AccAddress) []byte {
 // [0x0][gravityvaloper1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
 func GetEthAddressByValidatorKey(validator sdk.ValAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	return AppendBytes(EthAddressByValidatorKey, validator.Bytes())
 }
@@ -196,7 +197,7 @@ func GetValsetConfirmNoncePrefix(nonce uint64) []byte {
 // MARK finish-batches: this is where the key is created in the old (presumed working) code
 func GetValsetConfirmKey(nonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	return AppendBytes(GetValsetConfirmNoncePrefix(nonce), validator.Bytes())
 }
@@ -256,7 +257,7 @@ func GetBatchConfirmNonceContractPrefix(tokenContract types.EthAddress, batchNon
 // TODO this should be a sdk.ValAddress
 func GetBatchConfirmKey(tokenContract types.EthAddress, batchNonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	return AppendBytes(GetBatchConfirmNonceContractPrefix(tokenContract, batchNonce), validator.Bytes())
 }
@@ -267,7 +268,7 @@ func GetBatchConfirmKey(tokenContract types.EthAddress, batchNonce uint64, valid
 // [0x0][gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm]
 func GetLastEventNonceByValidatorKey(validator sdk.ValAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	return AppendBytes(LastEventNonceByValidatorKey, validator.Bytes())
 }
@@ -290,7 +291,7 @@ func GetLogicConfirmNonceInvalidationIdPrefix(invalidationId []byte, invalidatio
 
 func GetLogicConfirmKey(invalidationId []byte, invalidationNonce uint64, validator sdk.AccAddress) []byte {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	return AppendBytes(GetLogicConfirmNonceInvalidationIdPrefix(invalidationId, invalidationNonce), validator.Bytes())
 }

@@ -3,9 +3,10 @@ package app
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // There are two places where the bech32 "gravity" account prefix can be set: the default sdkConfig and also NativeHrp
@@ -19,7 +20,7 @@ func (app *Gravity) assertBech32PrefixMatches(ctx sdk.Context) {
 	}
 	nativePrefix, err := app.Bech32IbcKeeper.GetNativeHrp(ctx)
 	if err != nil {
-		panic(sdkerrors.Wrap(err, "Error obtaining bech32ibc NativeHrp"))
+		panic(errorsmod.Wrap(err, "Error obtaining bech32ibc NativeHrp"))
 	}
 	configPrefix := config.GetBech32AccountAddrPrefix()
 	if nativePrefix != configPrefix {

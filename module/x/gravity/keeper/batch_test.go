@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	math "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -625,7 +626,7 @@ func TestManyBatches(t *testing.T) {
 	// =================================
 
 	// shuffle batches to simulate out of order execution on Ethereum
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 	rand.Shuffle(len(batches), func(i, j int) { batches[i], batches[j] = batches[j], batches[i] })
 
 	// Execute the batches, if there are any problems OutgoingTxBatchExecuted will panic
@@ -905,7 +906,7 @@ func TestGetFees(t *testing.T) {
 
 	type batchFeesTuple struct {
 		batch        types.OutgoingTxBatch
-		expectedFees sdk.Int
+		expectedFees math.Int
 	}
 
 	batches := []batchFeesTuple{

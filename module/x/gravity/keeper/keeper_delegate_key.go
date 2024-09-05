@@ -3,7 +3,8 @@ package keeper
 import (
 	"time"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
+	math "cosmossdk.io/math"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,10 +20,10 @@ import (
 // SetOrchestratorValidator sets the Orchestrator key for a given validator
 func (k Keeper) SetOrchestratorValidator(ctx sdk.Context, val sdk.ValAddress, orch sdk.AccAddress) {
 	if err := sdk.VerifyAddressFormat(val); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid val address"))
+		panic(errorsmod.Wrap(err, "invalid val address"))
 	}
 	if err := sdk.VerifyAddressFormat(orch); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid orch address"))
+		panic(errorsmod.Wrap(err, "invalid orch address"))
 	}
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetOrchestratorAddressKey(orch), val.Bytes())
@@ -48,7 +49,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 			},
 			Jailed:          false,
 			Status:          0,
-			Tokens:          sdk.Int{},
+			Tokens:          math.Int{},
 			DelegatorShares: sdk.Dec{},
 			Description: stakingtypes.Description{
 				Moniker:         "",
@@ -67,7 +68,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 				},
 				UpdateTime: time.Time{},
 			},
-			MinSelfDelegation: sdk.Int{},
+			MinSelfDelegation: math.Int{},
 		}, false
 	}
 	validator, found = k.StakingKeeper.GetValidator(ctx, valAddr)
@@ -83,7 +84,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 			},
 			Jailed:          false,
 			Status:          0,
-			Tokens:          sdk.Int{},
+			Tokens:          math.Int{},
 			DelegatorShares: sdk.Dec{},
 			Description: stakingtypes.Description{
 				Moniker:         "",
@@ -102,7 +103,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 				},
 				UpdateTime: time.Time{},
 			},
-			MinSelfDelegation: sdk.Int{},
+			MinSelfDelegation: math.Int{},
 		}, false
 	}
 
@@ -133,7 +134,7 @@ func (k Keeper) GetOrchestratorValidatorAddr(ctx sdk.Context, orch sdk.AccAddres
 // SetEthAddress sets the ethereum address for a given validator
 func (k Keeper) SetEthAddressForValidator(ctx sdk.Context, validator sdk.ValAddress, ethAddr types.EthAddress) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetEthAddressByValidatorKey(validator), ethAddr.GetAddress().Bytes())
@@ -143,7 +144,7 @@ func (k Keeper) SetEthAddressForValidator(ctx sdk.Context, validator sdk.ValAddr
 // GetEthAddressByValidator returns the eth address for a given gravity validator
 func (k Keeper) GetEthAddressByValidator(ctx sdk.Context, validator sdk.ValAddress) (ethAddress *types.EthAddress, found bool) {
 	if err := sdk.VerifyAddressFormat(validator); err != nil {
-		panic(sdkerrors.Wrap(err, "invalid validator address"))
+		panic(errorsmod.Wrap(err, "invalid validator address"))
 	}
 	store := ctx.KVStore(k.storeKey)
 	ethAddr := store.Get(types.GetEthAddressByValidatorKey(validator))
@@ -174,7 +175,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 			},
 			Jailed:          false,
 			Status:          0,
-			Tokens:          sdk.Int{},
+			Tokens:          math.Int{},
 			DelegatorShares: sdk.Dec{},
 			Description: stakingtypes.Description{
 				Moniker:         "",
@@ -193,7 +194,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 				},
 				UpdateTime: time.Time{},
 			},
-			MinSelfDelegation: sdk.Int{},
+			MinSelfDelegation: math.Int{},
 		}, false
 	}
 	validator, found = k.StakingKeeper.GetValidator(ctx, valAddr)
@@ -209,7 +210,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 			},
 			Jailed:          false,
 			Status:          0,
-			Tokens:          sdk.Int{},
+			Tokens:          math.Int{},
 			DelegatorShares: sdk.Dec{},
 			Description: stakingtypes.Description{
 				Moniker:         "",
@@ -228,7 +229,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 				},
 				UpdateTime: time.Time{},
 			},
-			MinSelfDelegation: sdk.Int{},
+			MinSelfDelegation: math.Int{},
 		}, false
 	}
 

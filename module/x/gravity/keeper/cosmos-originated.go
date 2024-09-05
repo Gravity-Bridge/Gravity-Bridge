@@ -3,9 +3,11 @@ package keeper
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+	math "cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -75,7 +77,7 @@ func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, *types.
 		tc2, exists := k.GetCosmosOriginatedERC20(ctx, denom)
 		if !exists {
 			return false, nil,
-				sdkerrors.Wrap(types.ErrInvalid, fmt.Sprintf("denom not a gravity voucher coin: %s, and also not in cosmos-originated ERC20 index", err))
+				errorsmod.Wrap(types.ErrInvalid, fmt.Sprintf("denom not a gravity voucher coin: %s, and also not in cosmos-originated ERC20 index", err))
 		}
 		// This is a cosmos-originated asset
 		return true, tc2, nil
@@ -87,7 +89,7 @@ func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, *types.
 
 // RewardToERC20Lookup is a specialized function wrapping DenomToERC20Lookup designed to validate
 // the validator set reward any time we generate a validator set
-func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (*types.EthAddress, sdk.Int) {
+func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (*types.EthAddress, math.Int) {
 	if !coin.IsValid() || coin.IsZero() {
 		panic("Bad validator set relaying reward!")
 	} else {

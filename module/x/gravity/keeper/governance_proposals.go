@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -46,7 +48,7 @@ func NewGravityProposalHandler(k Keeper) govv1beta1.Handler {
 			return k.HandleIBCMetadataProposal(ctx, c)
 
 		default:
-			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
+			return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
 		}
 	}
 }
@@ -104,7 +106,7 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, k Keeper, nonceCutoff uint64) 
 	for vote := range affectedValidatorsSet {
 		val, err := sdk.ValAddressFromBech32(vote)
 		if err != nil {
-			panic(sdkerrors.Wrap(err, "invalid validator address affected by bridge reset"))
+			panic(errorsmod.Wrap(err, "invalid validator address affected by bridge reset"))
 		}
 		valLastNonce := k.GetLastEventNonceByValidator(ctx, val)
 		if valLastNonce > nonceCutoff {
@@ -122,7 +124,7 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	validateDenom := sdk.ValidateDenom(p.Denom)
 	if validateDenom != nil {
 		ctx.Logger().Info("Airdrop failed to execute invalid denom!")
-		return sdkerrors.Wrap(types.ErrInvalid, "Invalid airdrop denom")
+		return errorsmod.Wrap(types.ErrInvalid, "Invalid airdrop denom")
 	}
 
 	feePool := k.DistKeeper.GetFeePool(ctx)
@@ -140,7 +142,7 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	totalRequiredDec := totalRequiredDecCoin.Amount
 	if totalRequiredDec.GT(feePoolAmount) {
 		ctx.Logger().Info("Airdrop failed to execute insufficient tokens in the community pool!")
-		return sdkerrors.Wrap(types.ErrInvalid, "Insufficient tokens in community pool")
+		return errorsmod.Wrap(types.ErrInvalid, "Insufficient tokens in community pool")
 	}
 
 	// we're packing addresses as 20 bytes rather than valid bech32 in order to maximize participants
@@ -148,7 +150,7 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	numRecipients := len(p.Recipients) / 20
 	if len(p.Recipients)%20 != 0 || numRecipients != len(p.Amounts) {
 		ctx.Logger().Info("Airdrop failed to execute invalid recipients")
-		return sdkerrors.Wrap(types.ErrInvalid, "Invalid recipients")
+		return errorsmod.Wrap(types.ErrInvalid, "Invalid recipients")
 	}
 
 	parsedRecipients := make([]sdk.AccAddress, len(p.Recipients)/20)
@@ -162,7 +164,7 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	// check again, just in case the above modulo math is somehow wrong or spoofed
 	if len(parsedRecipients) != len(p.Amounts) {
 		ctx.Logger().Info("Airdrop failed to execute invalid recipients")
-		return sdkerrors.Wrap(types.ErrInvalid, "Invalid recipients")
+		return errorsmod.Wrap(types.ErrInvalid, "Invalid recipients")
 	}
 
 	// the total amount actually sent in dec coins
@@ -185,21 +187,21 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 
 	if !totalRequiredDecCoin.Amount.Equal(totalSent) {
 		ctx.Logger().Info("Airdrop failed to execute Invalid amount sent", "sent", totalRequiredDecCoin.Amount, "expected", totalSent)
-		return sdkerrors.Wrap(types.ErrInvalid, "Invalid amount sent")
+		return errorsmod.Wrap(types.ErrInvalid, "Invalid amount sent")
 	}
 
 	newCoins, InvalidModuleBalance := feePool.CommunityPool.SafeSub(sdk.NewDecCoins(totalRequiredDecCoin))
 	// this shouldn't ever happen because we check that we have enough before starting
 	// but lets be conservative.
 	if InvalidModuleBalance {
-		return sdkerrors.Wrap(types.ErrInvalid, "internal error!")
+		return errorsmod.Wrap(types.ErrInvalid, "internal error!")
 	}
 	feePool.CommunityPool = newCoins
 	k.DistKeeper.SetFeePool(ctx, feePool)
 
 	endingSupply := k.bankKeeper.GetSupply(ctx, p.Denom)
 	if !startingSupply.Equal(endingSupply) {
-		return sdkerrors.Wrap(types.ErrInvalid, "total chain supply has changed!")
+		return errorsmod.Wrap(types.ErrInvalid, "total chain supply has changed!")
 	}
 
 	return nil
@@ -214,21 +216,21 @@ func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataP
 	// checks if the provided token denom is a proper IBC token, not a native token.
 	if !strings.HasPrefix(p.IbcDenom, "ibc/") && !strings.HasPrefix(p.IbcDenom, "IBC/") {
 		ctx.Logger().Info("invalid denom for metadata proposal", "denom", p.IbcDenom)
-		return sdkerrors.Wrap(types.ErrInvalid, "Target denom is not an IBC token")
+		return errorsmod.Wrap(types.ErrInvalid, "Target denom is not an IBC token")
 	}
 
 	// check that our base unit is the IBC token name on this chain. This makes setting/loading denom
 	// metadata work out, as SetDenomMetadata uses the base denom as an index
 	if p.Metadata.Base != p.IbcDenom {
 		ctx.Logger().Info("invalid metadata for metadata proposal must be the same as IBCDenom", "base", p.Metadata.Base)
-		return sdkerrors.Wrap(types.ErrInvalid, "Metadata base must be the same as the IBC denom!")
+		return errorsmod.Wrap(types.ErrInvalid, "Metadata base must be the same as the IBC denom!")
 	}
 
 	// outsource validating this to the bank validation function
 	metadataErr := p.Metadata.Validate()
 	if metadataErr != nil {
 		ctx.Logger().Info("invalid metadata for metadata proposal", "validation error", metadataErr)
-		return sdkerrors.Wrap(metadataErr, "Invalid metadata")
+		return errorsmod.Wrap(metadataErr, "Invalid metadata")
 
 	}
 
@@ -238,7 +240,7 @@ func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataP
 	_, erc20RepresentationExists := k.GetCosmosOriginatedERC20(ctx, p.IbcDenom)
 	if metadataExists && erc20RepresentationExists {
 		ctx.Logger().Info("invalid trying to set metadata when ERC20 has already been deployed")
-		return sdkerrors.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
+		return errorsmod.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
 
 	}
 

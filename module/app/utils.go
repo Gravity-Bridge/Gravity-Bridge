@@ -40,6 +40,8 @@ func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string,
 			Commit:             false,
 			OnOperation:        false,
 			AllInvariants:      false,
+			DBBackend:          "",
+			BlockMaxGas:        0,
 		}, nil, "", nil, true, nil
 	}
 
@@ -58,7 +60,7 @@ func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string,
 		return simtypes.Config{}, nil, "", nil, false, err
 	}
 
-	db, err := sdk.NewLevelDB(dbName, dir)
+	db, err := dbm.NewDB(dbName, dbm.GoLevelDBBackend, dir)
 	if err != nil {
 		return simtypes.Config{}, nil, "", nil, false, err
 	}

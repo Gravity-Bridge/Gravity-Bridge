@@ -1,6 +1,8 @@
 package v2
 
 import (
+	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -62,14 +64,14 @@ func GetV2UpgradeHandler(
 		ctx.Logger().Info("Mercury Upgrade: Setting up bech32ibc module's native prefix")
 		err := setupBech32ibcKeeper(bech32IbcKeeper, ctx)
 		if err != nil {
-			panic(sdkerrors.Wrap(err, "Mercury Upgrade: Unable to upgrade, bech32ibc module not initialized"))
+			panic(errorsmod.Wrap(err, "Mercury Upgrade: Unable to upgrade, bech32ibc module not initialized"))
 		}
 
 		// distribution module: Fix the issues caused by an airdrop giving distribution module some tokens
 		ctx.Logger().Info("Mercury Upgrade: Fixing community pool balance")
 		err = fixDistributionPoolBalance(accountKeeper, bankKeeper, distrKeeper, mintKeeper, ctx)
 		if err != nil {
-			panic(sdkerrors.Wrap(err, "Mercury Upgrade: Unable to upgrade, distribution module balance could not be corrected"))
+			panic(errorsmod.Wrap(err, "Mercury Upgrade: Unable to upgrade, distribution module balance could not be corrected"))
 		}
 
 		ctx.Logger().Info("Mercury Upgrade: Enforcing validator minimum commission")
@@ -134,7 +136,7 @@ func fixDistributionPoolBalance(
 	// This is what the community pool's balance should be, as ideally distr bal = (pool bal + validator outstanding rewards)
 	distrBalLessRewards, invalidBal := sdk.NewDecCoinsFromCoins(distrBalCoins...).SafeSub(ugravitonRewards)
 	if invalidBal {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins,
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
 			"distribution module ugraviton balance (%+v) is lower than the validator outstanding rewards (%+v)!",
 			distrBal, ugravitonRewards,
 		)
@@ -147,7 +149,7 @@ func fixDistributionPoolBalance(
 	discrepancy, invalidBal := distrBalLessRewards.SafeSub(commPoolUgraviton)
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance():", "discrepancy", discrepancy.String(), "invalidBal", invalidBal)
 	if invalidBal {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins,
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
 			"distribution module ugraviton balance less outstanding rewards (%+v) is lower than community pool ugraviton (%+v)!",
 			distrBalLessRewards, commPoolUgraviton,
 		)
@@ -161,7 +163,7 @@ func fixDistributionPoolBalance(
 	expectedDiscrepancy := distrBals.Sub(sumRewards).Sub(commPool)
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance():", "expectedDiscrepancy", expectedDiscrepancy.String())
 	if !discrepancy.Sub(expectedDiscrepancy).AmountOf(ugraviton).IsZero() {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins,
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
 			"unexpected discrepancy (%+v) vs expected ugraviton discrepancy (%+v)",
 			expectedDiscrepancy.AmountOf(ugraviton).String(), discrepancy.String(),
 		)
@@ -187,7 +189,7 @@ func fixDistributionPoolBalance(
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance(): Running distribution module invariants!")
 	issueMsg, issue := distrkeeper.AllInvariants(*distrKeeper)(ctx)
 	if issue {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, issueMsg)
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, issueMsg)
 	}
 
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance(): Success! Distribution invariant has been fixed")

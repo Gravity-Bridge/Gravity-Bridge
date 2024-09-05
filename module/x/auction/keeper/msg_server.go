@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -73,7 +75,7 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 	// Check the newBidderAcc's address is valid
 	newBidderAcc, err = sdk.AccAddressFromBech32(msg.Bidder)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid bidder")
+		return nil, errorsmod.Wrap(err, "invalid bidder")
 	}
 	newBidderStartGrav = m.BankKeeper.GetBalance(ctx, newBidderAcc, config.NativeTokenDenom)
 
@@ -85,13 +87,13 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 	// Check the supplied fee meets the minimum
 	feeInt := sdk.NewIntFromUint64(msg.BidFee)
 	if feeInt.LT(minBidFee) {
-		return nil, sdkerrors.Wrapf(types.ErrInvalidBid, "bid fee (%v) must be at least %v", feeInt, minBidFee)
+		return nil, errorsmod.Wrapf(types.ErrInvalidBid, "bid fee (%v) must be at least %v", feeInt, minBidFee)
 	}
 
 	// Check the bidder is the new highest bidder
 	currentAuction := m.Keeper.GetAuctionById(ctx, msg.AuctionId)
 	if currentAuction == nil {
-		return nil, sdkerrors.Wrapf(types.ErrAuctionNotFound, "no active auction with id %d", msg.AuctionId)
+		return nil, errorsmod.Wrapf(types.ErrAuctionNotFound, "no active auction with id %d", msg.AuctionId)
 	}
 	if currentAuction.Amount.Denom == bidToken {
 		panic("Bid for auction of the native token")
@@ -101,13 +103,13 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 	highestBid := currentAuction.HighestBid
 	if highestBid != nil {
 		if bidAmount.LT(sdk.NewIntFromUint64(highestBid.BidAmount)) {
-			return nil, sdkerrors.Wrapf(types.ErrBidTooLow, "bid must surpass current highest %v", highestBid)
+			return nil, errorsmod.Wrapf(types.ErrBidTooLow, "bid must surpass current highest %v", highestBid)
 		}
 		oldBidder = highestBid.BidderAddress
 
 		// Disallow re-bidding
 		if msg.Bidder == oldBidder {
-			return nil, sdkerrors.Wrapf(types.ErrInvalidBid, "bidding again as the current highest bidder is not allowed")
+			return nil, errorsmod.Wrapf(types.ErrInvalidBid, "bidding again as the current highest bidder is not allowed")
 		}
 		oldBidderAcc = sdk.MustAccAddressFromBech32(oldBidder)
 		oldBidderStartGrav = m.BankKeeper.GetBalance(ctx, oldBidderAcc, config.NativeTokenDenom)
@@ -118,7 +120,7 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 	bidderBalance := m.BankKeeper.GetBalance(ctx, newBidderAcc, bidToken) // Nonexistant accounts are treated as having 0 balance
 	if bidderBalance.Amount.LT(totalValue) {
 		return nil,
-			sdkerrors.Wrapf(
+			errorsmod.Wrapf(
 				sdkerrors.ErrInsufficientFunds,
 				"insufficient balance, bid=[%v] fee=[%v] balance=[%v]",
 				bidAmount, feeInt, bidderBalance,
@@ -149,7 +151,7 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 
 	// Transfer the bid amount to the module
 	if err := m.Keeper.LockBidAmount(ctx, newBidderAcc, transferToModule); err != nil {
-		return nil, sdkerrors.Wrap(err, "unable to lock bid amount")
+		return nil, errorsmod.Wrap(err, "unable to lock bid amount")
 	}
 
 	// Store the msg sender as the current highest bidder
@@ -158,7 +160,7 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 		BidderAddress: msg.Bidder,
 	}
 	if err := m.Keeper.UpdateHighestBidder(ctx, currentAuction.Id, updatedBid); err != nil {
-		return nil, sdkerrors.Wrap(err, "unable to update highest bidder")
+		return nil, errorsmod.Wrap(err, "unable to update highest bidder")
 	}
 
 	newBid = sdk.NewCoin(config.NativeTokenDenom, sdk.NewIntFromUint64(updatedBid.BidAmount))

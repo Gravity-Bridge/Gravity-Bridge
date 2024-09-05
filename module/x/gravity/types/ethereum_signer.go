@@ -5,7 +5,8 @@ import (
 	fmt "fmt"
 	"math/big"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -16,7 +17,7 @@ const (
 // NewEthereumSignature creates a new signature over a given byte array
 func NewEthereumSignature(hash []byte, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 	if privateKey == nil {
-		return nil, sdkerrors.Wrap(ErrEmpty, "private key")
+		return nil, errorsmod.Wrap(ErrEmpty, "private key")
 	}
 	protectedHash := crypto.Keccak256Hash(append([]uint8(signaturePrefix), hash...))
 	return crypto.Sign(protectedHash.Bytes(), privateKey)
@@ -39,12 +40,12 @@ func decodeSignature(sig []byte) (r, s *big.Int, v byte) {
 
 func EthAddressFromSignature(hash []byte, signature []byte) (*EthAddress, error) {
 	if len(signature) < 65 {
-		return nil, sdkerrors.Wrap(ErrInvalid, "signature too short")
+		return nil, errorsmod.Wrap(ErrInvalid, "signature too short")
 	}
 
 	r, s, v := decodeSignature(signature)
 	if !crypto.ValidateSignatureValues(v, r, s, true) {
-		return nil, sdkerrors.Wrap(ErrInvalid, "Signature values failed validation")
+		return nil, errorsmod.Wrap(ErrInvalid, "Signature values failed validation")
 	}
 
 	// To verify signature
@@ -69,12 +70,12 @@ func EthAddressFromSignature(hash []byte, signature []byte) (*EthAddress, error)
 
 	pubkey, err := crypto.SigToPub(protectedHash.Bytes(), signature)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "signature to public key")
+		return nil, errorsmod.Wrap(err, "signature to public key")
 	}
 
 	addr, err := NewEthAddress(crypto.PubkeyToAddress(*pubkey).Hex())
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid address from public key")
+		return nil, errorsmod.Wrap(err, "invalid address from public key")
 	}
 
 	return addr, nil
@@ -86,11 +87,11 @@ func ValidateEthereumSignature(hash []byte, signature []byte, ethAddress EthAddr
 	addr, err := EthAddressFromSignature(hash, signature)
 
 	if err != nil {
-		return sdkerrors.Wrap(err, "unable to get address from signature")
+		return errorsmod.Wrap(err, "unable to get address from signature")
 	}
 
 	if addr.GetAddress() != ethAddress.GetAddress() {
-		return sdkerrors.Wrap(ErrInvalid, "signature not matching")
+		return errorsmod.Wrap(ErrInvalid, "signature not matching")
 	}
 
 	return nil

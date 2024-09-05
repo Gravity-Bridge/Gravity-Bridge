@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -14,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
@@ -68,7 +68,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 
 			initialDeposit, err := sdk.ParseCoinsNormalized(args[1])
 			if err != nil {
-				return sdkerrors.Wrap(err, "bad initial deposit amount")
+				return errorsmod.Wrap(err, "bad initial deposit amount")
 			}
 
 			if len(initialDeposit) != 1 {
@@ -79,71 +79,71 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 
 			contents, err := os.ReadFile(proposalFile)
 			if err != nil {
-				return sdkerrors.Wrap(err, "failed to read proposal json file")
+				return errorsmod.Wrap(err, "failed to read proposal json file")
 			}
 
 			proposal := &types.IBCMetadataProposal{}
 			err = json.Unmarshal(contents, proposal)
 			if err != nil {
-				return sdkerrors.Wrap(err, "proposal json file is not valid json")
+				return errorsmod.Wrap(err, "proposal json file is not valid json")
 			}
 
 			// check various fields for obvious omissions
 			if proposal.IbcDenom == "" {
-				return sdkerrors.Wrap(types.ErrInvalid, "The IbcDenom field must be set in the proposal.json file")
+				return errorsmod.Wrap(types.ErrInvalid, "The IbcDenom field must be set in the proposal.json file")
 			}
 			if proposal.Title == "" {
-				return sdkerrors.Wrap(types.ErrInvalid, "Title field must be set in the proposal.json file")
+				return errorsmod.Wrap(types.ErrInvalid, "Title field must be set in the proposal.json file")
 			}
 			if proposal.Description == "" {
-				return sdkerrors.Wrap(types.ErrInvalid, "Description field must be set in the proposal.json file")
+				return errorsmod.Wrap(types.ErrInvalid, "Description field must be set in the proposal.json file")
 			}
 			if proposal.Metadata.Base == "" {
-				return sdkerrors.Wrap(types.ErrInvalid, "Metadata.Base field must be set in the proposal.json file")
+				return errorsmod.Wrap(types.ErrInvalid, "Metadata.Base field must be set in the proposal.json file")
 			}
 			if proposal.Metadata.Name == "" {
-				return sdkerrors.Wrap(types.ErrInvalid, "Metadata.Name field must be set in the proposal.json file")
+				return errorsmod.Wrap(types.ErrInvalid, "Metadata.Name field must be set in the proposal.json file")
 			}
 			if proposal.Metadata.Display == "" {
-				return sdkerrors.Wrap(types.ErrInvalid, "Metadata.Display field must be set in the proposal.json file")
+				return errorsmod.Wrap(types.ErrInvalid, "Metadata.Display field must be set in the proposal.json file")
 			}
 			if proposal.Metadata.Symbol == "" {
-				return sdkerrors.Wrap(types.ErrInvalid, "Metadata.Symbol field must be set in the proposal.json file")
+				return errorsmod.Wrap(types.ErrInvalid, "Metadata.Symbol field must be set in the proposal.json file")
 			}
 
 			// checks if the provided token denom is a proper IBC token, not a native token.
 			if !strings.HasPrefix(proposal.IbcDenom, "ibc/") && !strings.HasPrefix(proposal.IbcDenom, "IBC/") {
-				return sdkerrors.Wrap(types.ErrInvalid, "Target denom is not an IBC token")
+				return errorsmod.Wrap(types.ErrInvalid, "Target denom is not an IBC token")
 			}
 
 			// check that our base unit is the IBC token name on this chain. This makes setting/loading denom
 			// metadata work out, as SetDenomMetadata uses the base denom as an index
 			if proposal.Metadata.Base != proposal.IbcDenom {
-				return sdkerrors.Wrap(types.ErrInvalid, "Metadata base must be the same as the IBC denom!")
+				return errorsmod.Wrap(types.ErrInvalid, "Metadata base must be the same as the IBC denom!")
 			}
 
 			metadataErr := proposal.Metadata.Validate()
 			if metadataErr != nil {
-				return sdkerrors.Wrap(metadataErr, "invalid metadata or proposal details!")
+				return errorsmod.Wrap(metadataErr, "invalid metadata or proposal details!")
 			}
 
 			queryClientBank := banktypes.NewQueryClient(cliCtx)
 			_, err = queryClientBank.DenomMetadata(cmd.Context(), &banktypes.QueryDenomMetadataRequest{Denom: proposal.IbcDenom})
 			if err == nil {
-				return sdkerrors.Wrap(metadataErr, "Attempting to set the metadata for a token that already has metadata!")
+				return errorsmod.Wrap(metadataErr, "Attempting to set the metadata for a token that already has metadata!")
 			}
 
 			supply, err := queryClientBank.SupplyOf(cmd.Context(), &banktypes.QuerySupplyOfRequest{Denom: proposal.IbcDenom})
 			if err != nil {
-				return sdkerrors.Wrap(types.ErrInternal, "Failed to get supply data?")
+				return errorsmod.Wrap(types.ErrInternal, "Failed to get supply data?")
 			}
 			if supply.GetAmount().Amount.Equal(sdk.ZeroInt()) {
-				return sdkerrors.Wrap(types.ErrInvalid, "This ibc hash does not seem to exist on Gravity, are you sure you have the right one?")
+				return errorsmod.Wrap(types.ErrInvalid, "This ibc hash does not seem to exist on Gravity, are you sure you have the right one?")
 			}
 
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+				return errorsmod.Wrap(err, "invalid metadata or proposal details!")
 			}
 
 			// Make the message
@@ -153,7 +153,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				Content:        proposalAny,
 			}
 			if err := msg.ValidateBasic(); err != nil {
-				return sdkerrors.Wrap(err, "Your proposal.json is not valid, please correct it")
+				return errorsmod.Wrap(err, "Your proposal.json is not valid, please correct it")
 			}
 			// Send it
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
@@ -191,7 +191,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 
 			initialDeposit, err := sdk.ParseCoinsNormalized(args[1])
 			if err != nil {
-				return sdkerrors.Wrap(err, "bad initial deposit amount")
+				return errorsmod.Wrap(err, "bad initial deposit amount")
 			}
 
 			if len(initialDeposit) != 1 {
@@ -202,13 +202,13 @@ func CmdGovAirdropProposal() *cobra.Command {
 
 			contents, err := os.ReadFile(proposalFile)
 			if err != nil {
-				return sdkerrors.Wrap(err, "failed to read proposal json file")
+				return errorsmod.Wrap(err, "failed to read proposal json file")
 			}
 
 			proposal := &AirdropProposalPlain{}
 			err = json.Unmarshal(contents, proposal)
 			if err != nil {
-				return sdkerrors.Wrap(err, "proposal json file is not valid json")
+				return errorsmod.Wrap(err, "proposal json file is not valid json")
 			}
 
 			// convert the plaintext proposal to the actual type
@@ -216,7 +216,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 			for i, v := range proposal.Recipients {
 				parsed, err := sdk.AccAddressFromBech32(v)
 				if err != nil {
-					return sdkerrors.Wrap(err, "Address not valid!")
+					return errorsmod.Wrap(err, "Address not valid!")
 				}
 				parsedRecipients[i] = parsed
 			}
@@ -235,7 +235,7 @@ func CmdGovAirdropProposal() *cobra.Command {
 
 			proposalAny, err := codectypes.NewAnyWithValue(finalProposal)
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+				return errorsmod.Wrap(err, "invalid metadata or proposal details!")
 			}
 
 			// Make the message
@@ -272,7 +272,7 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 
 			initialDeposit, err := sdk.ParseCoinsNormalized(args[1])
 			if err != nil {
-				return sdkerrors.Wrap(err, "bad initial deposit amount")
+				return errorsmod.Wrap(err, "bad initial deposit amount")
 			}
 
 			if len(initialDeposit) != 1 {
@@ -283,18 +283,18 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 
 			contents, err := os.ReadFile(proposalFile)
 			if err != nil {
-				return sdkerrors.Wrap(err, "failed to read proposal json file")
+				return errorsmod.Wrap(err, "failed to read proposal json file")
 			}
 
 			proposal := &types.UnhaltBridgeProposal{}
 			err = json.Unmarshal(contents, proposal)
 			if err != nil {
-				return sdkerrors.Wrap(err, "proposal json file is not valid json")
+				return errorsmod.Wrap(err, "proposal json file is not valid json")
 			}
 
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+				return errorsmod.Wrap(err, "invalid metadata or proposal details!")
 			}
 
 			// Make the message
@@ -330,20 +330,20 @@ func CmdSendToEth() *cobra.Command {
 
 			amount, err := sdk.ParseCoinsNormalized(args[1])
 			if err != nil {
-				return sdkerrors.Wrap(err, "amount")
+				return errorsmod.Wrap(err, "amount")
 			}
 			bridgeFee, err := sdk.ParseCoinsNormalized(args[2])
 			if err != nil {
-				return sdkerrors.Wrap(err, "bridge fee")
+				return errorsmod.Wrap(err, "bridge fee")
 			}
 			chainFee, err := sdk.ParseCoinsNormalized(args[3])
 			if err != nil {
-				return sdkerrors.Wrap(err, "chain fee")
+				return errorsmod.Wrap(err, "chain fee")
 			}
 
 			ethAddr, err := types.NewEthAddress(args[0])
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid eth address")
+				return errorsmod.Wrap(err, "invalid eth address")
 			}
 
 			if len(amount) != 1 || len(bridgeFee) != 1 || len(chainFee) != 1 {
@@ -386,7 +386,7 @@ func CmdCancelSendToEth() *cobra.Command {
 
 			txId, err := strconv.ParseUint(args[0], 0, 64)
 			if err != nil {
-				return sdkerrors.Wrap(err, "failed to parse transaction id")
+				return errorsmod.Wrap(err, "failed to parse transaction id")
 			}
 
 			// Make the message
@@ -497,7 +497,7 @@ func CmdExecutePendingIbcAutoForwards() *cobra.Command {
 			}
 			forwardsToClear, err := strconv.ParseUint(args[0], 10, 0)
 			if err != nil {
-				return sdkerrors.Wrap(err, "Unable to parse forwards-to-execute as an non-negative integer")
+				return errorsmod.Wrap(err, "Unable to parse forwards-to-execute as an non-negative integer")
 			}
 			msg := types.MsgExecuteIbcAutoForwards{
 				ForwardsToClear: forwardsToClear,

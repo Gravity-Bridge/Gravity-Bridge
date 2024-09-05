@@ -43,11 +43,13 @@ func MakeAnteHandler(t *testing.T, input keeper.TestInput) sdk.AnteHandler {
 	encodingConfig := input.EncodingConfig
 
 	options := sdkante.HandlerOptions{
-		AccountKeeper:   ak,
-		BankKeeper:      bk,
-		FeegrantKeeper:  nil,
-		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
-		SigGasConsumer:  ethante.DefaultSigVerificationGasConsumer,
+		AccountKeeper:          ak,
+		BankKeeper:             bk,
+		FeegrantKeeper:         nil,
+		SignModeHandler:        encodingConfig.TxConfig.SignModeHandler(),
+		SigGasConsumer:         ethante.DefaultSigVerificationGasConsumer,
+		ExtensionOptionChecker: nil,
+		TxFeeChecker:           nil,
 	}
 	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainID)
 	require.NoError(t, err)
@@ -130,6 +132,7 @@ func SignRegular(t *testing.T, txBuilder client.TxBuilder, signMode signing.Sign
 		signMode = txConfig.SignModeHandler().DefaultMode()
 	}
 	pubKey := keeper.AccPubKeys[0]
+	// nolint: exhaustruct
 	signerData := authsigning.SignerData{
 		ChainID:       chainID,
 		AccountNumber: accNum,

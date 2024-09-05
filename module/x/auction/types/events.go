@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -54,7 +55,7 @@ func NewEventPeriodStart(startHeight uint64, endHeight uint64) sdk.Event {
 }
 
 // NewEventAuction creates an event to mark the creation of an auction
-func NewEventAuction(id uint64, auctionDenom string, auctionAmount sdk.Int) sdk.Event {
+func NewEventAuction(id uint64, auctionDenom string, auctionAmount math.Int) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeAuction,
 		sdk.NewAttribute(AttributeKeyAuctionId, fmt.Sprint(id)),
@@ -64,7 +65,7 @@ func NewEventAuction(id uint64, auctionDenom string, auctionAmount sdk.Int) sdk.
 }
 
 // NewEventNewHighestBidder creates an event to mark the designation of a highest bidder
-func NewEventNewHighestBidder(auctionId uint64, bidAmount sdk.Int, oldBidder string) sdk.Event {
+func NewEventNewHighestBidder(auctionId uint64, bidAmount math.Int, oldBidder string) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeNewHighestBidder,
 		sdk.NewAttribute(AttributeKeyHBAuctionId, fmt.Sprint(auctionId)),
@@ -74,7 +75,7 @@ func NewEventNewHighestBidder(auctionId uint64, bidAmount sdk.Int, oldBidder str
 }
 
 // NewEventAuctionAward creates an event to mark the award of an auction to its highest bidder
-func NewEventAuctionAward(auctionId uint64, bidAmount sdk.Int, bidder sdk.AccAddress, awardDenom string, awardAmount sdk.Int) sdk.Event {
+func NewEventAuctionAward(auctionId uint64, bidAmount math.Int, bidder sdk.AccAddress, awardDenom string, awardAmount math.Int) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeAuctionAward,
 		sdk.NewAttribute(AttributeKeyAwardAuctionId, fmt.Sprint(auctionId)),
@@ -86,7 +87,7 @@ func NewEventAuctionAward(auctionId uint64, bidAmount sdk.Int, bidder sdk.AccAdd
 }
 
 // NewEventAuctionFailure creates an event to mark an auction which has not received a minimum bid
-func NewEventAuctionFailure(auctionId uint64, auctionDenom string, auctionAmount sdk.Int) sdk.Event {
+func NewEventAuctionFailure(auctionId uint64, auctionDenom string, auctionAmount math.Int) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeAuctionFailure,
 		sdk.NewAttribute(AttributeKeyAuctionId, fmt.Sprint(auctionId)),

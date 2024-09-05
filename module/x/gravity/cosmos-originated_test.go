@@ -3,6 +3,7 @@ package gravity
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -59,15 +60,13 @@ func initializeTestingVars(t *testing.T) *testingVars {
 func addDenomToERC20Relation(tv *testingVars) {
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, banktypes.Metadata{
 		Description: "The native staking token of the Cosmos Gravity Bridge",
+		DenomUnits:  []*banktypes.DenomUnit{{Denom: "ugraviton", Exponent: uint32(0), Aliases: []string{"micrograviton"}}, {Denom: "mgraviton", Exponent: uint32(3), Aliases: []string{"milligraviton"}}, {Denom: "graviton", Exponent: uint32(6), Aliases: []string{}}},
+		Base:        "ugraviton",
+		Display:     "graviton",
 		Name:        "Graviton",
 		Symbol:      "GRAV",
-		DenomUnits: []*banktypes.DenomUnit{
-			{Denom: "ugraviton", Exponent: uint32(0), Aliases: []string{"micrograviton"}},
-			{Denom: "mgraviton", Exponent: uint32(3), Aliases: []string{"milligraviton"}},
-			{Denom: "graviton", Exponent: uint32(6), Aliases: []string{}},
-		},
-		Base:    "ugraviton",
-		Display: "graviton",
+		URI:         "",
+		URIHash:     "",
 	})
 
 	var (
@@ -116,9 +115,9 @@ func lockCoinsInModule(tv *testingVars) {
 	var (
 		userCosmosAddr, err           = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
 		denom                         = "ugraviton"
-		startingCoinAmount  sdk.Int   = sdk.NewIntFromUint64(150)
-		sendAmount          sdk.Int   = sdk.NewIntFromUint64(50)
-		feeAmount           sdk.Int   = sdk.NewIntFromUint64(5)
+		startingCoinAmount  math.Int  = sdk.NewIntFromUint64(150)
+		sendAmount          math.Int  = sdk.NewIntFromUint64(50)
+		feeAmount           math.Int  = sdk.NewIntFromUint64(5)
 		startingCoins       sdk.Coins = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
 		sendingCoin         sdk.Coin  = sdk.NewCoin(denom, sendAmount)
 		feeCoin             sdk.Coin  = sdk.NewCoin(denom, feeAmount)
@@ -214,20 +213,13 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
 	metadata := banktypes.Metadata{
 		Description: "Atom",
-		Name:        "Atom",
+		DenomUnits:  []*banktypes.DenomUnit{{Denom: ibcDenom, Exponent: 0}, {Denom: "Atom", Exponent: 6}},
 		Base:        ibcDenom,
 		Display:     "Atom",
+		Name:        "Atom",
 		Symbol:      "ATOM",
-		DenomUnits: []*banktypes.DenomUnit{
-			{
-				Denom:    ibcDenom,
-				Exponent: 0,
-			},
-			{
-				Denom:    "Atom",
-				Exponent: 6,
-			},
-		},
+		URI:         "",
+		URIHash:     "",
 	}
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, metadata)
 

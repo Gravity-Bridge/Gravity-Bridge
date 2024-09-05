@@ -1,9 +1,12 @@
 package types
 
 import (
+	betterrand "crypto/rand"
 	"encoding/hex"
 	"math/big"
 	"math/rand"
+
+	math "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -20,7 +23,9 @@ func NonzeroUint64() (ret uint64) {
 func NonemptySdkAccAddress() (ret sdk.AccAddress) {
 	for ret.Empty() {
 		addr := make([]byte, 20)
-		rand.Read(addr)
+		if _, err := betterrand.Read(addr); err != nil {
+			panic(err)
+		}
 		ret = sdk.AccAddress(addr)
 	}
 	return
@@ -30,19 +35,23 @@ func NonemptySdkAccAddress() (ret sdk.AccAddress) {
 func NonemptyEthAddress() (ret string) {
 	for ret == "" {
 		addr := make([]byte, 20)
-		rand.Read(addr)
+		if _, err := betterrand.Read(addr); err != nil {
+			panic(err)
+		}
 		ret = hex.EncodeToString(addr)
 	}
 	ret = "0x" + ret
 	return
 }
 
-// Creates a random nonzero sdk.Int test value
-func NonzeroSdkInt() (ret sdk.Int) {
+// Creates a random nonzero math.Int test value
+func NonzeroSdkInt() (ret math.Int) {
 	amount := big.NewInt(0)
 	for amount.Cmp(big.NewInt(0)) == 0 {
 		amountBz := make([]byte, 32)
-		rand.Read(amountBz)
+		if _, err := betterrand.Read(amountBz); err != nil {
+			panic(err)
+		}
 		amount = big.NewInt(0).SetBytes(amountBz)
 	}
 	ret = sdk.NewIntFromBigInt(amount)

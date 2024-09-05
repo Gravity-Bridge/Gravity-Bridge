@@ -6,8 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+	math "cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -65,7 +67,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		invalidAddress = true
 		hash, er := claim.ClaimHash()
 		if er != nil {
-			return sdkerrors.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", addressErr, claim, er)
+			return errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", addressErr, claim, er)
 		}
 
 		a.keeper.logger(ctx).Error("Invalid SendToCosmos receiver",
@@ -84,7 +86,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	if errTokenAddress != nil {
 		hash, er := claim.ClaimHash()
 		if er != nil {
-			return sdkerrors.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", errTokenAddress, claim, er)
+			return errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", errTokenAddress, claim, er)
 		}
 		a.keeper.logger(ctx).Error("Invalid token contract",
 			"cause", errTokenAddress.Error(),
@@ -92,13 +94,13 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
-		return sdkerrors.Wrap(errTokenAddress, "invalid token contract on claim")
+		return errorsmod.Wrap(errTokenAddress, "invalid token contract on claim")
 	}
 	// likewise nil sender would have to be caused by a bogus event
 	if errEthereumSender != nil {
 		hash, er := claim.ClaimHash()
 		if er != nil {
-			return sdkerrors.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", errEthereumSender, claim, er)
+			return errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", errEthereumSender, claim, er)
 		}
 		a.keeper.logger(ctx).Error("Invalid ethereum sender",
 			"cause", errEthereumSender.Error(),
@@ -106,7 +108,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
-		return sdkerrors.Wrap(errTokenAddress, "invalid ethereum sender on claim")
+		return errorsmod.Wrap(errTokenAddress, "invalid ethereum sender on claim")
 	}
 
 	// Block blacklisted asset transfers
@@ -114,7 +116,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	if a.keeper.IsOnBlacklist(ctx, *ethereumSender) {
 		hash, er := claim.ClaimHash()
 		if er != nil {
-			return sdkerrors.Wrapf(er, "Unable to log blacklisted error, could not compute ClaimHash for claim %v: %v", claim, er)
+			return errorsmod.Wrapf(er, "Unable to log blacklisted error, could not compute ClaimHash for claim %v: %v", claim, er)
 		}
 		a.keeper.logger(ctx).Error("Invalid SendToCosmos: receiver is blacklisted",
 			"address", receiverAddress,
@@ -163,7 +165,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		if err := a.keeper.SendToCommunityPool(ctx, coins); err != nil {
 			hash, er := claim.ClaimHash()
 			if er != nil {
-				return sdkerrors.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
+				return errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
 			}
 			a.keeper.logger(ctx).Error("Failed community pool send",
 				"cause", err.Error(),
@@ -171,7 +173,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 				"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
 				"nonce", fmt.Sprint(claim.GetEventNonce()),
 			)
-			return sdkerrors.Wrap(err, "failed to send to Community pool")
+			return errorsmod.Wrap(err, "failed to send to Community pool")
 		}
 
 		if err := ctx.EventManager().EmitTypedEvent(
@@ -206,7 +208,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.MsgBatchSendToEthClaim) error {
 	contract, err := types.NewEthAddress(claim.TokenContract)
 	if err != nil {
-		return sdkerrors.Wrap(err, "invalid token contract on batch")
+		return errorsmod.Wrap(err, "invalid token contract on batch")
 	}
 	a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim)
 
@@ -224,12 +226,12 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.MsgERC20DeployedClaim) error {
 	tokenAddress, err := types.NewEthAddress(claim.TokenContract)
 	if err != nil {
-		return sdkerrors.Wrap(err, "invalid token contract on claim")
+		return errorsmod.Wrap(err, "invalid token contract on claim")
 	}
 	// Disallow re-registration when a token already has a canonical representation
 	existingERC20, exists := a.keeper.GetCosmosOriginatedERC20(ctx, claim.CosmosDenom)
 	if exists {
-		return sdkerrors.Wrap(
+		return errorsmod.Wrap(
 			types.ErrInvalid,
 			fmt.Sprintf("ERC20 %s already exists for denom %s", existingERC20.GetAddress().Hex(), claim.CosmosDenom))
 	}
@@ -237,18 +239,18 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	// Check if denom metadata has been accepted by governance
 	metadata, ok := a.keeper.bankKeeper.GetDenomMetaData(ctx, claim.CosmosDenom)
 	if !ok || metadata.Base == "" {
-		return sdkerrors.Wrap(types.ErrUnknown, fmt.Sprintf("denom not found %s", claim.CosmosDenom))
+		return errorsmod.Wrap(types.ErrUnknown, fmt.Sprintf("denom not found %s", claim.CosmosDenom))
 	}
 
 	// Check if attributes of ERC20 match Cosmos denom
 	if claim.Name != metadata.Name {
-		return sdkerrors.Wrap(
+		return errorsmod.Wrap(
 			types.ErrInvalid,
 			fmt.Sprintf("ERC20 name %s does not match denom name %s", claim.Name, metadata.Description))
 	}
 
 	if claim.Symbol != metadata.Symbol {
-		return sdkerrors.Wrap(
+		return errorsmod.Wrap(
 			types.ErrInvalid,
 			fmt.Sprintf("ERC20 symbol %s does not match denom symbol %s", claim.Symbol, metadata.Display))
 	}
@@ -275,7 +277,7 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	}
 
 	if decimals != uint32(claim.Decimals) {
-		return sdkerrors.Wrap(
+		return errorsmod.Wrap(
 			types.ErrInvalid,
 			fmt.Sprintf("ERC20 decimals %d does not match denom decimals %d", claim.Decimals, decimals))
 	}
@@ -297,7 +299,7 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.MsgValsetUpdatedClaim) error {
 	rewardAddress, err := types.NewEthAddress(claim.RewardToken)
 	if err != nil {
-		return sdkerrors.Wrap(err, "invalid reward token on claim")
+		return errorsmod.Wrap(err, "invalid reward token on claim")
 	}
 
 	claimSet := types.Valset{
@@ -313,7 +315,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 		trustedValset := a.keeper.GetValset(ctx, claim.ValsetNonce)
 		if trustedValset == nil {
 			ctx.Logger().Error("Received attestation for a valset which does not exist in store", "nonce", claim.ValsetNonce, "claim", claim)
-			return sdkerrors.Wrapf(types.ErrInvalidValset, "attested valset (%v) does not exist in store", claim.ValsetNonce)
+			return errorsmod.Wrapf(types.ErrInvalidValset, "attested valset (%v) does not exist in store", claim.ValsetNonce)
 		}
 		observedValset := claimSet
 		observedValset.Height = trustedValset.Height // overwrite the height, since it's not part of the claim
@@ -359,7 +361,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 				); err != nil {
 					return err
 				}
-				return sdkerrors.Wrapf(err, "unable to mint cosmos originated coins %v", coins)
+				return errorsmod.Wrapf(err, "unable to mint cosmos originated coins %v", coins)
 			}
 		} else {
 			// If it is not cosmos originated, burn the coins (aka Vouchers)
@@ -395,7 +397,7 @@ func (a AttestationHandler) assertNothingSent(ctx sdk.Context, moduleAddr sdk.Ac
 
 // assertSentAmount performs a runtime assertion that the actual sent amount of `denom` equals the MsgSendToCosmos
 // claim's amount to send
-func (a AttestationHandler) assertSentAmount(ctx sdk.Context, moduleAddr sdk.AccAddress, preSendBalance sdk.Coin, denom string, amount sdk.Int) {
+func (a AttestationHandler) assertSentAmount(ctx sdk.Context, moduleAddr sdk.AccAddress, preSendBalance sdk.Coin, denom string, amount math.Int) {
 	postSendBalance := a.keeper.bankKeeper.GetBalance(ctx, moduleAddr, denom)
 	if !preSendBalance.Sub(postSendBalance).Amount.Equal(amount) {
 		panic(fmt.Sprintf(
@@ -419,7 +421,7 @@ func (a AttestationHandler) mintEthereumOriginatedVouchers(
 			"claim type", claim.GetType(),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
-		return sdkerrors.Wrap(types.ErrIntOverflowAttestation, "invalid supply after SendToCosmos attestation")
+		return errorsmod.Wrap(types.ErrIntOverflowAttestation, "invalid supply after SendToCosmos attestation")
 	}
 
 	coins := sdk.NewCoins(coin)
@@ -429,7 +431,7 @@ func (a AttestationHandler) mintEthereumOriginatedVouchers(
 		// error needs to be detected and resolved
 		hash, er := claim.ClaimHash()
 		if er != nil {
-			return sdkerrors.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
+			return errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
 		}
 
 		a.keeper.logger(ctx).Error("Failed minting",
@@ -438,7 +440,7 @@ func (a AttestationHandler) mintEthereumOriginatedVouchers(
 			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
 			"nonce", fmt.Sprint(claim.GetEventNonce()),
 		)
-		return sdkerrors.Wrapf(err, "mint vouchers coins: %s", coins)
+		return errorsmod.Wrapf(err, "mint vouchers coins: %s", coins)
 	}
 
 	postMintBalance := a.keeper.bankKeeper.GetBalance(ctx, moduleAddr, coin.Denom)
@@ -465,7 +467,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 	if err != nil {
 		hash, er := claim.ClaimHash()
 		if er != nil {
-			return false, sdkerrors.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
+			return false, errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
 		}
 
 		a.keeper.logger(ctx).Error("Invalid bech32 CosmosReceiver",
@@ -491,7 +493,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 		if err != nil {
 			hash, er := claim.ClaimHash()
 			if er != nil {
-				return false, sdkerrors.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
+				return false, errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
 			}
 
 			a.keeper.logger(ctx).Error("Unregistered foreign prefix",
@@ -502,7 +504,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 			)
 
 			// Fall back to sending tokens to native account
-			return false, sdkerrors.Wrap(
+			return false, errorsmod.Wrap(
 				a.sendCoinToLocalAddress(ctx, claim, receiver, coin),
 				"Unregistered foreign prefix, send via x/bank",
 			)
@@ -519,7 +521,7 @@ func (a AttestationHandler) sendCoinToCosmosAccount(
 				"ethereum-contract", claim.TokenContract, "sender", claim.EthereumSender, "event-nonce", claim.EventNonce,
 			)
 			// Fall back to sending tokens to native account
-			return false, sdkerrors.Wrap(
+			return false, errorsmod.Wrap(
 				a.sendCoinToLocalAddress(ctx, claim, receiver, coin),
 				"IBC Transfer failure, send via x/bank",
 			)
@@ -538,7 +540,7 @@ func (a AttestationHandler) sendCoinToLocalAddress(
 		// someone attempted to send tokens to a blacklisted user from Ethereum, log and send to Community pool
 		hash, er := claim.ClaimHash()
 		if er != nil {
-			return sdkerrors.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
+			return errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
 		}
 		a.keeper.logger(ctx).Error("Blacklisted deposit",
 			"cause", err.Error(),

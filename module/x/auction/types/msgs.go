@@ -1,8 +1,9 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authlegacy "github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
@@ -40,10 +41,10 @@ func (msg *MsgBid) Type() string { return TypeMsgBid }
 // ValidateBasic performs stateless checks
 func (msg *MsgBid) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Bidder); err != nil {
-		return sdkerrors.Wrapf(ErrInvalidBid, "invalid bidder: %v", err)
+		return errorsmod.Wrapf(ErrInvalidBid, "invalid bidder: %v", err)
 	}
 	if msg.Amount == 0 {
-		return sdkerrors.Wrap(ErrInvalidBid, "bid amount must be positive")
+		return errorsmod.Wrap(ErrInvalidBid, "bid amount must be positive")
 	}
 	return nil
 }

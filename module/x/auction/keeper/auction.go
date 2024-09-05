@@ -3,9 +3,10 @@ package keeper
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // IterateAuctions executes the given callback `cb` over every discovered Auction in the store
@@ -70,11 +71,11 @@ func (k Keeper) UpdateAuction(ctx sdk.Context, auction types.Auction) error {
 	// Check that the previous auction exists
 	previousAuction := k.GetAuctionById(ctx, auction.Id)
 	if previousAuction == nil {
-		return sdkerrors.Wrap(types.ErrAuctionNotFound, "could not find auction to update")
+		return errorsmod.Wrap(types.ErrAuctionNotFound, "could not find auction to update")
 	}
 	// And that the denom/amount has not changed
 	if !previousAuction.Amount.Equal(auction.Amount) {
-		return sdkerrors.Wrap(types.ErrInvalidAuction, "cannot update auction amount or denom")
+		return errorsmod.Wrap(types.ErrInvalidAuction, "cannot update auction amount or denom")
 	}
 
 	auctionKey := []byte(types.GetAuctionKey(auction.Id))
@@ -117,11 +118,11 @@ func (k Keeper) StoreAuction(ctx sdk.Context, auction types.Auction) error {
 	}
 	expectedId := k.GetNextAuctionId(ctx)
 	if auction.Id != expectedId {
-		return sdkerrors.Wrapf(types.ErrInvalidAuction, "expected next auction to have id %v, received %v", expectedId, auction.Id)
+		return errorsmod.Wrapf(types.ErrInvalidAuction, "expected next auction to have id %v, received %v", expectedId, auction.Id)
 	}
 
 	if !k.IsDenomAuctionable(ctx, auction.Amount.Denom) {
-		return sdkerrors.Wrapf(types.ErrInvalidAuction, "denom %v is on the NonAuctionableTokens list", auction.Amount.Denom)
+		return errorsmod.Wrapf(types.ErrInvalidAuction, "denom %v is on the NonAuctionableTokens list", auction.Amount.Denom)
 	}
 
 	store := ctx.KVStore(k.storeKey)
@@ -235,7 +236,7 @@ func (k Keeper) unsafeSetAuctionNonce(ctx sdk.Context, nonce types.AuctionId) {
 func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error {
 	enabled := k.GetParams(ctx).Enabled
 	if !enabled {
-		return sdkerrors.Wrap(types.ErrDisabledModule, "unable to close an auction when the module is not enabled")
+		return errorsmod.Wrap(types.ErrDisabledModule, "unable to close an auction when the module is not enabled")
 	}
 	// Ensure this auction is currently stored
 	auction := k.GetAuctionById(ctx, auction_id)
@@ -257,17 +258,17 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error
 	if burnWinningBids {
 		// Burn the winning bid
 		if err := k.BankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(highestBidCoin)); err != nil {
-			return sdkerrors.Wrapf(err, "unable to burn highest bid (%v)", highestBidCoin)
+			return errorsmod.Wrapf(err, "unable to burn highest bid (%v)", highestBidCoin)
 		}
 	} else {
 		// Send bid to community pool
 		if err := k.SendFromAuctionAccountToCommunityPool(ctx, highestBidCoin); err != nil {
-			return sdkerrors.Wrapf(err, "unable to send highest bid (%v) to community pool", highestBidCoin)
+			return errorsmod.Wrapf(err, "unable to send highest bid (%v) to community pool", highestBidCoin)
 		}
 	}
 
 	if err := k.AwardAuction(ctx, highestBidder, auction.Amount); err != nil {
-		return sdkerrors.Wrapf(err, "unable to award auction to highest bidder (%s)", auction.HighestBid.BidderAddress)
+		return errorsmod.Wrapf(err, "unable to award auction to highest bidder (%s)", auction.HighestBid.BidderAddress)
 	}
 
 	ctx.EventManager().EmitEvent(types.NewEventAuctionAward(auction.Id, highestBidInt, highestBidder, auction.Amount.Denom, auction.Amount.Amount))
@@ -282,7 +283,7 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error
 func (k Keeper) CloseAuctionNoWinner(ctx sdk.Context, auction_id uint64) error {
 	enabled := k.GetParams(ctx).Enabled
 	if !enabled {
-		return sdkerrors.Wrap(types.ErrDisabledModule, "unable to close an auction when the module is not enabled")
+		return errorsmod.Wrap(types.ErrDisabledModule, "unable to close an auction when the module is not enabled")
 	}
 	// Ensure this auction is currently stored
 	auction := k.GetAuctionById(ctx, auction_id)
@@ -295,7 +296,7 @@ func (k Keeper) CloseAuctionNoWinner(ctx sdk.Context, auction_id uint64) error {
 
 	// Send amount back to auction pool for future auctions
 	if err := k.SendToAuctionPool(ctx, sdk.NewCoins(auction.Amount)); err != nil {
-		return sdkerrors.Wrapf(err, "unable to send auction amount (%v) to auction pool", auction.Amount)
+		return errorsmod.Wrapf(err, "unable to send auction amount (%v) to auction pool", auction.Amount)
 	}
 
 	ctx.EventManager().EmitEvent(types.NewEventAuctionFailure(auction.Id, auction.Amount.Denom, auction.Amount.Amount))

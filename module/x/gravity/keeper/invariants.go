@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	math "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 
@@ -44,7 +45,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		modAcc := k.accountKeeper.GetModuleAddress(types.ModuleName)
 		actualBals := k.bankKeeper.GetAllBalances(ctx, modAcc)
-		expectedBals := make(map[string]*sdk.Int, len(actualBals)) // Collect balances by contract
+		expectedBals := make(map[string]*math.Int, len(actualBals)) // Collect balances by contract
 		for _, v := range actualBals {
 			newInt := sdk.NewInt(0)
 			expectedBals[v.Denom] = &newInt
@@ -81,7 +82,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 /////// MODULE BALANCE HELPERS
 
 // sumUnconfirmedBatchModuleBalances calculate the value the module should have stored due to unconfirmed batches
-func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*math.Int) map[string]*math.Int {
 	k.IterateOutgoingTxBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
 		batchTotal := sdk.NewInt(0)
 		// Collect the send amount + fee amount for each tx
@@ -107,7 +108,7 @@ func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals m
 }
 
 // sumUnbatchedTxModuleBalances calculates the value the module should have stored due to unbatched txs
-func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*math.Int) map[string]*math.Int {
 	// It is also given the balance of all unbatched txs in the pool
 	k.IterateUnbatchedTransactions(ctx, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		contract := tx.Erc20Token.Contract
@@ -128,7 +129,7 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[st
 	return expectedBals
 }
 
-func sumPendingIbcAutoForwards(ctx sdk.Context, k Keeper, expectedBals map[string]*sdk.Int) map[string]*sdk.Int {
+func sumPendingIbcAutoForwards(ctx sdk.Context, k Keeper, expectedBals map[string]*math.Int) map[string]*math.Int {
 	for _, forward := range k.PendingIbcAutoForwards(ctx, uint64(0)) {
 		if _, ok := expectedBals[forward.Token.Denom]; !ok {
 			zero := sdk.ZeroInt()

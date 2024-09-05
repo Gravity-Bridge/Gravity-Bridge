@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -34,25 +36,25 @@ func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, forward types.Pen
 
 	latestEventNonce := k.GetLastObservedEventNonce(ctx)
 	if forward.EventNonce > latestEventNonce {
-		return sdkerrors.Wrap(types.ErrInvalid, "EventNonce must be <= latest observed event nonce")
+		return errorsmod.Wrap(types.ErrInvalid, "EventNonce must be <= latest observed event nonce")
 	}
 	prefix, _, err := bech32.DecodeAndConvert(forward.ForeignReceiver)
 	if err != nil { // Covered by ValidateBasic, but check anyway to avoid linter issues
-		return sdkerrors.Wrapf(err, "ForeignReceiver %s is not a valid bech32 address", forward.ForeignReceiver)
+		return errorsmod.Wrapf(err, "ForeignReceiver %s is not a valid bech32 address", forward.ForeignReceiver)
 	}
 	hrpRecord, err := k.bech32IbcKeeper.GetHrpIbcRecord(ctx, prefix)
 	if err != nil {
-		return sdkerrors.Wrapf(bech32ibctypes.ErrInvalidHRP, "ForeignReciever %s has an invalid or unregistered prefix", forward.ForeignReceiver)
+		return errorsmod.Wrapf(bech32ibctypes.ErrInvalidHRP, "ForeignReciever %s has an invalid or unregistered prefix", forward.ForeignReceiver)
 	}
 	if forward.IbcChannel != hrpRecord.SourceChannel {
-		return sdkerrors.Wrapf(types.ErrMismatched, "IbcChannel %s does not match the registered prefix's IBC channel %v",
+		return errorsmod.Wrapf(types.ErrMismatched, "IbcChannel %s does not match the registered prefix's IBC channel %v",
 			forward.IbcChannel, hrpRecord.String(),
 		)
 	}
 	modAcc := k.accountKeeper.GetModuleAccount(ctx, types.ModuleName).GetAddress()
 	modBal := k.bankKeeper.GetBalance(ctx, modAcc, forward.Token.Denom)
 	if modBal.IsLT(*forward.Token) {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			sdkerrors.ErrInsufficientFunds, "Gravity Module account does not have enough funds (%s) for a forward of %s",
 			modBal.String(), forward.Token.String(),
 		)
@@ -123,7 +125,7 @@ func (k Keeper) addPendingIbcAutoForward(ctx sdk.Context, forward types.PendingI
 	key := types.GetPendingIbcAutoForwardKey(forward.EventNonce)
 
 	if store.Has(key) {
-		return sdkerrors.Wrapf(types.ErrDuplicate,
+		return errorsmod.Wrapf(types.ErrDuplicate,
 			"Pending IBC Auto-Forward Queue already has an entry with nonce %v", forward.EventNonce,
 		)
 	}
@@ -150,7 +152,7 @@ func (k Keeper) deletePendingIbcAutoForward(ctx sdk.Context, eventNonce uint64) 
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetPendingIbcAutoForwardKey(eventNonce)
 	if !store.Has(key) {
-		return sdkerrors.Wrapf(types.ErrInvalid, "No PendingIbcAutoForward with nonce %v in the store", eventNonce)
+		return errorsmod.Wrapf(types.ErrInvalid, "No PendingIbcAutoForward with nonce %v in the store", eventNonce)
 	}
 	store.Delete(key)
 	return nil
@@ -163,7 +165,7 @@ func (k Keeper) ProcessPendingIbcAutoForwards(ctx sdk.Context, forwardsToClear u
 	for i := uint64(0); i < forwardsToClear; i++ {
 		stop, err := k.ProcessNextPendingIbcAutoForward(ctx)
 		if err != nil {
-			return sdkerrors.Wrapf(err, "unable to process Pending IBC Auto-Forward number %v", i)
+			return errorsmod.Wrapf(err, "unable to process Pending IBC Auto-Forward number %v", i)
 		}
 		if stop {
 			break
