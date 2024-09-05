@@ -287,7 +287,6 @@ pub struct RegisterOrchestratorAddressOpts {
 /// Add an Ethereum private key for use with either the Relayer or the Orchestrator
 #[derive(Parser)]
 pub struct SetEthereumKeyOpts {
-    ///
     #[clap(short, long, parse(try_from_str))]
     pub key: EthPrivateKey,
 }

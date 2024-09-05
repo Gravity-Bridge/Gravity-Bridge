@@ -83,7 +83,7 @@ fn test_downcast_nonce() {
         assert_eq!(i, downcast_uint256(i.into()).unwrap());
         i += 1
     }
-    let mut i: u64 = std::u32::MAX.into();
+    let mut i: u64 = u32::MAX.into();
     i -= 100;
     let end = i + 100_000;
     while i < end {
@@ -99,7 +99,7 @@ fn test_downcast_to_u128() {
         assert_eq!(i, downcast_to_u128(i.into()).unwrap());
         i += 1
     }
-    let mut i: u128 = std::u64::MAX.into();
+    let mut i: u128 = u64::MAX.into();
     i -= 100;
     let end = i + 100_000;
     while i < end {
