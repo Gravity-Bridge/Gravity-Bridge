@@ -249,17 +249,20 @@ pub async fn send_to_cosmos_invalid(
     // rapidly changing gas prices can cause this to fail, a quick retry loop here
     // retries in a way that assists our transaction stress test
     let mut approved = web3
-        .check_erc20_approved(erc20, *MINER_ADDRESS, gravity_contract)
-        .await;
+        .get_erc20_allowance(erc20, *MINER_ADDRESS, gravity_contract)
+        .await
+        .unwrap()
+        >= web3.get_erc20_balance(erc20, *MINER_ADDRESS).await.unwrap();
     let start = Instant::now();
     // keep trying while there's still time
-    while approved.is_err() && Instant::now() - start < TOTAL_TIMEOUT {
+    while !approved && Instant::now() - start < TOTAL_TIMEOUT {
         approved = web3
-            .check_erc20_approved(erc20, *MINER_ADDRESS, gravity_contract)
-            .await;
+            .get_erc20_allowance(erc20, *MINER_ADDRESS, gravity_contract)
+            .await
+            .unwrap()
+            >= web3.get_erc20_balance(erc20, *MINER_ADDRESS).await.unwrap();
     }
 
-    let approved = approved.unwrap();
     if !approved {
         let nonce = web3
             .eth_get_transaction_count(*MINER_ADDRESS)
@@ -268,7 +271,14 @@ pub async fn send_to_cosmos_invalid(
         let options = vec![SendTxOption::Nonce(nonce)];
         approve_nonce = Some(nonce);
         let txid = web3
-            .approve_erc20_transfers(erc20, *MINER_PRIVATE_KEY, gravity_contract, None, options)
+            .erc20_approve(
+                erc20,
+                web3.get_erc20_balance(erc20, *MINER_ADDRESS).await.unwrap(),
+                *MINER_PRIVATE_KEY,
+                gravity_contract,
+                None,
+                options,
+            )
             .await
             .unwrap();
         trace!(

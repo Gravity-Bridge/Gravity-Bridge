@@ -14,7 +14,7 @@ num256 = {workspace = true}
 
 env_logger = "0.9"
 log = "0.4"
-actix-web = {version = "4.2", features = ["rustls"]}
+actix-web = {version = "4.9", features = ["rustls"]}
 actix-cors = "0.6"
 rustls = "0.20"
 rustls-pemfile = "0.3"

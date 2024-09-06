@@ -36,25 +36,33 @@ pub async fn send_to_cosmos(
     // rapidly changing gas prices can cause this to fail, a quick retry loop here
     // retries in a way that assists our transaction stress test
     let mut approved = web3
-        .check_erc20_approved(erc20, sender_address, gravity_contract)
-        .await;
+        .get_erc20_allowance(erc20, sender_address, gravity_contract)
+        .await?
+        >= web3.get_erc20_balance(erc20, sender_address).await?;
     if let Some(w) = wait_timeout {
         let start = Instant::now();
         // keep trying while there's still time
-        while approved.is_err() && Instant::now() - start < w {
+        while !approved && Instant::now() - start < w {
             approved = web3
-                .check_erc20_approved(erc20, sender_address, gravity_contract)
-                .await;
+                .get_erc20_allowance(erc20, sender_address, gravity_contract)
+                .await?
+                >= web3.get_erc20_balance(erc20, sender_address).await?;
         }
     }
-    let approved = approved.unwrap();
     if !approved {
         let mut options = options.clone();
         let nonce = web3.eth_get_transaction_count(sender_address).await?;
         options.push(SendTxOption::Nonce(nonce));
         approve_nonce = Some(nonce);
         let txid = web3
-            .approve_erc20_transfers(erc20, sender_secret, gravity_contract, None, options)
+            .erc20_approve(
+                erc20,
+                web3.get_erc20_balance(erc20, sender_address).await?,
+                sender_secret,
+                gravity_contract,
+                None,
+                options,
+            )
             .await?;
         trace!(
             "We are not approved for ERC20 transfers, approving txid: {:#066x}",
