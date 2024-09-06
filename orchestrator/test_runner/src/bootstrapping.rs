@@ -101,7 +101,7 @@ pub fn parse_ibc_validator_keys() -> Vec<CosmosPrivateKey> {
 pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/orchestrator-phrases";
     info!("Reading orchestrator phrases from {}", filename);
-    
+
     parse_phrases(filename)
 }
 
@@ -111,7 +111,7 @@ pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
 pub fn parse_vesting_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/vesting-phrases";
     info!("Reading vesting phrases from {}", filename);
-    
+
     parse_phrases(filename)
 }
 
