@@ -25,8 +25,8 @@ var ModuleAccount sdk.AccAddress
 func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 	InitPoolAndAuctionTokens(suite)
 
-	ctx := suite.AppTestHelper.Ctx
-	auctionKeeper := suite.AppTestHelper.App.AuctionKeeper
+	ctx := suite.Ctx
+	auctionKeeper := suite.App.AuctionKeeper
 	auctionParams := auctionKeeper.GetParams(ctx)
 	auctionParams.BurnWinningBids = false
 	auctionKeeper.SetParams(ctx, auctionParams)
@@ -38,7 +38,7 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 	// Create an auction period
 	block := uint64(ctx.BlockHeight())
 	period := auctionKeeper.GetAuctionPeriod(ctx)
-	require.Equal(suite.AppTestHelper.T(), &types.AuctionPeriod{
+	require.Equal(suite.T(), &types.AuctionPeriod{
 		StartBlockHeight: block,
 		EndBlockHeight:   block + auctionParams.AuctionLength,
 	}, period)
@@ -50,7 +50,7 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 		auctionCoins = append(auctionCoins, auction.Amount)
 	}
 
-	require.Equal(suite.AppTestHelper.T(), TestBalances, auctionCoins)
+	require.Equal(suite.T(), TestBalances, auctionCoins)
 
 	// Bid on some of the auctions
 	Bid(suite, TestAccounts[0], 1000, 3000, 0, false) // Fail to bid 1000 - insufficient fee
@@ -82,11 +82,11 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 
 	// Observe no new auctions
 	auctions = auctionKeeper.GetAllAuctions(ctx)
-	require.Empty(suite.AppTestHelper.T(), auctions)
+	require.Empty(suite.T(), auctions)
 
 	// Create one auction this time
 	auctionCoins = sdk.NewCoins(TestBalances[0])
-	suite.AppTestHelper.FundAuctionPool(ctx, auctionCoins)
+	suite.FundAuctionPool(ctx, auctionCoins)
 
 	// Run endblocker with no active auctions, observe one auction created
 	period = auctionKeeper.GetAuctionPeriod(ctx)
@@ -95,20 +95,20 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 	AssertModuleBalanceStrict(suite, auctionCoins)
 
 	auctions = auctionKeeper.GetAllAuctions(ctx)
-	require.Equal(suite.AppTestHelper.T(), len(auctions), 1)
+	require.Equal(suite.T(), len(auctions), 1)
 
 	// Let this auction fail
-	require.Nil(suite.AppTestHelper.T(), auctions[0].HighestBid)
+	require.Nil(suite.T(), auctions[0].HighestBid)
 	period = auctionKeeper.GetAuctionPeriod(ctx)
 	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))
 	auction.EndBlocker(ctx, *auctionKeeper)
 
 	// ensure the same auction has been created but with a new ID
 	newAuctions := auctionKeeper.GetAllAuctions(ctx)
-	require.Equal(suite.AppTestHelper.T(), len(newAuctions), 1)
-	require.True(suite.AppTestHelper.T(), newAuctions[0].Id != auctions[0].Id)
-	require.Equal(suite.AppTestHelper.T(), newAuctions[0].Amount, auctions[0].Amount)
-	require.Nil(suite.AppTestHelper.T(), newAuctions[0].HighestBid)
+	require.Equal(suite.T(), len(newAuctions), 1)
+	require.True(suite.T(), newAuctions[0].Id != auctions[0].Id)
+	require.Equal(suite.T(), newAuctions[0].Amount, auctions[0].Amount)
+	require.Nil(suite.T(), newAuctions[0].HighestBid)
 }
 
 // Increments the ctx block height and runs EndBlocker
@@ -120,8 +120,8 @@ func AdvanceBlock(ctx *sdk.Context, k *keeper.Keeper) {
 func (suite *KeeperTestSuite) TestWinningBidBurning() {
 	InitPoolAndAuctionTokens(suite)
 
-	ctx := suite.AppTestHelper.Ctx
-	auctionKeeper := suite.AppTestHelper.App.AuctionKeeper
+	ctx := suite.Ctx
+	auctionKeeper := suite.App.AuctionKeeper
 	auctionParams := auctionKeeper.GetParams(ctx)
 
 	ctx = ctx.WithBlockHeight(int64(auctionParams.AuctionLength) + ctx.BlockHeight())
@@ -137,7 +137,7 @@ func (suite *KeeperTestSuite) TestWinningBidBurning() {
 
 	block := uint64(ctx.BlockHeight())
 	period := auctionKeeper.GetAuctionPeriod(ctx)
-	require.Equal(suite.AppTestHelper.T(), &types.AuctionPeriod{
+	require.Equal(suite.T(), &types.AuctionPeriod{
 		StartBlockHeight: block,
 		EndBlockHeight:   block + params.AuctionLength,
 	}, period)
@@ -149,7 +149,7 @@ func (suite *KeeperTestSuite) TestWinningBidBurning() {
 		auctionCoins = append(auctionCoins, auction.Amount)
 	}
 
-	require.Equal(suite.AppTestHelper.T(), TestBalances, auctionCoins)
+	require.Equal(suite.T(), TestBalances, auctionCoins)
 
 	// Bid on some of the auctions
 	Bid(suite, TestAccounts[0], 1000, 3500, 0, true) // Bid 1000 on first
@@ -165,14 +165,14 @@ func (suite *KeeperTestSuite) TestWinningBidBurning() {
 	VerifyAuctionPayout(suite, TestAccounts[1], auctions[0], 2500, false)
 	VerifyAuctionPayout(suite, TestAccounts[0], auctions[1], 1000, false)
 
-	require.Equal(suite.AppTestHelper.T(), int64(3000), preBurn.Sub(postBurn).Amount.Int64())
+	require.Equal(suite.T(), int64(3000), preBurn.Sub(postBurn).Amount.Int64())
 }
 
 // Initializes the auction pool, funds several accounts and populates some tokens to be used in future auctions
 func InitPoolAndAuctionTokens(suite *KeeperTestSuite) {
-	ctx := suite.AppTestHelper.Ctx
+	ctx := suite.Ctx
 
-	GravDenom = suite.AppTestHelper.App.MintKeeper.GetParams(ctx).MintDenom // Native Token: Use the mint denom for flexibility
+	GravDenom = suite.App.MintKeeper.GetParams(ctx).MintDenom // Native Token: Use the mint denom for flexibility
 	fmt.Printf("Grav in test env is %s\n", GravDenom)
 
 	// Create test balances for the auction pool
@@ -181,11 +181,11 @@ func InitPoolAndAuctionTokens(suite *KeeperTestSuite) {
 		sdk.NewCoin(TestDenom1, testAmount),
 		sdk.NewCoin(TestDenom2, testAmount),
 	)
-	suite.AppTestHelper.FundAuctionPool(ctx, TestBalances)
+	suite.FundAuctionPool(ctx, TestBalances)
 
 	// Fund some users with the native coin (aka GRAV)
 	testGrav := sdk.NewCoin(GravDenom, testAmount)
-	TestAccounts = suite.AppTestHelper.CreateAndFundRandomAccounts(3, sdk.NewCoins(testGrav))
+	TestAccounts = suite.CreateAndFundRandomAccounts(3, sdk.NewCoins(testGrav))
 
 	params := suite.App.AuctionKeeper.GetParams(ctx)
 	params.NonAuctionableTokens = []string{GravDenom}
@@ -199,7 +199,7 @@ func InitPoolAndAuctionTokens(suite *KeeperTestSuite) {
 // expNewHighestBid should be true when the bid will cause `account` to be the new highest bidder on that auction
 func Bid(suite *KeeperTestSuite, account sdk.AccAddress, amount int64, fee int64, whichAuction int64, expNewHighestBid bool) {
 	ctx := suite.Ctx
-	t := suite.AppTestHelper.T()
+	t := suite.T()
 	auctionKeeper := suite.App.AuctionKeeper
 	msgServer := keeper.NewMsgServerImpl(*auctionKeeper)
 	auction := auctionKeeper.GetAllAuctions(ctx)[whichAuction]
@@ -253,7 +253,7 @@ func Bid(suite *KeeperTestSuite, account sdk.AccAddress, amount int64, fee int64
 // Optionally verifies that the community pool has received the bid amounts if `verifyPoolGrav` is true
 func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, auction types.Auction, winningBid uint64, verifyPoolGrav bool) {
 	ctx := suite.Ctx
-	t := suite.AppTestHelper.T()
+	t := suite.T()
 	auctionKeeper := suite.App.AuctionKeeper
 
 	shouldBeNil := auctionKeeper.GetAuctionById(ctx, auction.Id)
@@ -276,7 +276,7 @@ func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, aucti
 
 // Asserts that the module's balances exactly match `coins`, and that no other coins are held by the module
 func AssertModuleBalanceStrict(suite *KeeperTestSuite, coins sdk.Coins) {
-	require.True(suite.AppTestHelper.T(), checkModuleBalanceStrict(suite, coins), "module balance does not match coins")
+	require.True(suite.T(), checkModuleBalanceStrict(suite, coins), "module balance does not match coins")
 }
 func checkModuleBalanceStrict(suite *KeeperTestSuite, coins sdk.Coins) bool {
 	bankKeeper := suite.App.AuctionKeeper.BankKeeper
@@ -288,7 +288,7 @@ func checkModuleBalanceStrict(suite *KeeperTestSuite, coins sdk.Coins) bool {
 // Asserts that the pool contains the exact same amount of each coin provided in `coins`
 // Makes no assertions about other coins that may exist in the pool
 func AssertPoolBalanceRelaxed(suite *KeeperTestSuite, coins sdk.Coins) {
-	require.True(suite.AppTestHelper.T(), checkPoolBalanceRelaxed(suite, coins))
+	require.True(suite.T(), checkPoolBalanceRelaxed(suite, coins))
 }
 func checkPoolBalanceRelaxed(suite *KeeperTestSuite, coins sdk.Coins) bool {
 	poolCoins := suite.App.AuctionKeeper.GetAuctionPoolBalances(suite.Ctx)
@@ -308,7 +308,7 @@ func (suite *KeeperTestSuite) TestHelpers() {
 	InitPoolAndAuctionTokens(suite)
 
 	ctx := suite.Ctx
-	t := suite.AppTestHelper.T()
+	t := suite.T()
 	bankKeeper := suite.App.BankKeeper
 	auctionKeeper := suite.App.AuctionKeeper
 
