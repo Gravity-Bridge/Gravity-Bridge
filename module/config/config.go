@@ -28,17 +28,11 @@ const (
 	// Cosmos Chain ID (e.g. "gravity-bridge-3") as the EIP712 Tx's Chain ID. Since both the Cosmos
 	// and EVM Chain IDs are required the chance of replay attacks on other chains is very low,
 	// but ensuring this is a unique value is good practice.
-	GravityEvmChainID = "999999"
+	GravityEvmChainID = uint64(999999)
 
 	// The native token, useful in situations where we do not have access to the sdk Context
 	NativeTokenDenom = "ugraviton"
 )
-
-// TODO: Determine the final list of foreign Chain IDs
-
-// When accepting EIP-712 signed transactions, users may submit single-Msg bridging transactions
-// (i.e. a MsgSendToEth or MsgCancelSendToEth) which was signed with a foreign Chain ID whitelisted here.
-var BridgeForeignChainIDs = []string{"1234", "5678"}
 
 func init() {
 	config := sdk.GetConfig()

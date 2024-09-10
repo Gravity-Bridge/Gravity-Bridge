@@ -2,7 +2,6 @@ package ante
 
 import (
 	"errors"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -51,7 +50,7 @@ func MakeAnteHandler(t *testing.T, input keeper.TestInput) sdk.AnteHandler {
 		ExtensionOptionChecker: nil,
 		TxFeeChecker:           nil,
 	}
-	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainID, gravityconfig.BridgeForeignChainIDs)
+	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainID)
 	require.NoError(t, err)
 	require.NotNil(t, ah)
 	return *ah
@@ -88,12 +87,7 @@ func TestSendAnteHandlerHappy(t *testing.T) {
 func TestBridgeAnteHandlerHappy(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	ah := MakeAnteHandler(t, input)
-	gravityEvmChainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
-	require.NoError(t, err)
-	foreignChain0, err := strconv.ParseUint(gravityconfig.BridgeForeignChainIDs[0], 10, 64)
-	require.NoError(t, err)
-	foreignChain1, err := strconv.ParseUint(gravityconfig.BridgeForeignChainIDs[1], 10, 64)
-	require.NoError(t, err)
+	bridgeForeignChainIds := input.GravityKeeper.GetParams(ctx).Eip712BridgeForeignChainIds
 
 	// Create an eth_secp256k1 account and fund it
 	ethPrivkey, err := ethsecp256k1.GenerateKey()
@@ -112,23 +106,23 @@ func TestBridgeAnteHandlerHappy(t *testing.T) {
 	require.NoError(t, err)
 
 	// EIP712 signed transactions (local chain ID)
-	oneExtensionTxBuilder, _ := BuildBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityEvmChainId, false)
+	oneExtensionTxBuilder, _ := BuildBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityconfig.GravityEvmChainID, false)
 	var oneExtensionTx sdk.Tx = oneExtensionTxBuilder.GetTx()
 	_, err = ah(ctx, oneExtensionTx, false)
 	require.NoError(t, err)
 
-	oneExtensionCancelTxBuilder, _ := BuildBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityEvmChainId, true)
+	oneExtensionCancelTxBuilder, _ := BuildBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityconfig.GravityEvmChainID, true)
 	var oneExtensionCancelTx sdk.Tx = oneExtensionCancelTxBuilder.GetTx()
 	_, err = ah(ctx, oneExtensionCancelTx, false)
 	require.NoError(t, err)
 
 	// EIP712 signed transactions (foreign chain IDs)
-	foreignSendTxBuilder, _ := BuildBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, foreignChain0, false)
+	foreignSendTxBuilder, _ := BuildBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, bridgeForeignChainIds[0], false)
 	var foreignSendTx sdk.Tx = foreignSendTxBuilder.GetTx()
 	_, err = ah(ctx, foreignSendTx, false)
 	require.NoError(t, err)
 
-	foreignCancelTxBuilder, _ := BuildBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, foreignChain1, true)
+	foreignCancelTxBuilder, _ := BuildBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, bridgeForeignChainIds[1], true)
 	var foreignCancelTx sdk.Tx = foreignCancelTxBuilder.GetTx()
 	_, err = ah(ctx, foreignCancelTx, false)
 	require.NoError(t, err)
@@ -138,8 +132,6 @@ func TestSendAnteHandlerStrangeCases(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	badIdCtx := ctx.WithChainID("gruvity-brij-2")
 	ah := MakeAnteHandler(t, input)
-	// gravityEvmChainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
-	// require.NoError(t, err)
 
 	// Create an eth_secp256k1 account and fund it
 	ethPrivkey, err := ethsecp256k1.GenerateKey()
@@ -195,12 +187,7 @@ func TestTwoWeb3Extensions(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	badIdCtx := ctx.WithChainID("gruvity-brij-2")
 	ah := MakeAnteHandler(t, input)
-	gravityEvmChainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
-	require.NoError(t, err)
-	foreignChain0, err := strconv.ParseUint(gravityconfig.BridgeForeignChainIDs[0], 10, 64)
-	require.NoError(t, err)
-	foreignChain1, err := strconv.ParseUint(gravityconfig.BridgeForeignChainIDs[1], 10, 64)
-	require.NoError(t, err)
+	bridgeForeignChainIds := input.GravityKeeper.GetParams(ctx).Eip712BridgeForeignChainIds
 
 	// Create an eth_secp256k1 account and fund it
 	ethPrivkey, err := ethsecp256k1.GenerateKey()
@@ -225,22 +212,22 @@ func TestTwoWeb3Extensions(t *testing.T) {
 	require.Contains(t, err.Error(), "invalid transaction extension options")
 
 	// Create invalid bridge transactions with the local chain ID and signature added twice
-	var twoExtensionBridgeTx sdk.Tx = BuildInvalidBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityEvmChainId, false)
+	var twoExtensionBridgeTx sdk.Tx = BuildInvalidBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityconfig.GravityEvmChainID, false)
 	_, err = ah(ctx, twoExtensionBridgeTx, false)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "invalid transaction extension options")
 
-	var twoExtensionCancelBridgeTx sdk.Tx = BuildInvalidBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityEvmChainId, true)
+	var twoExtensionCancelBridgeTx sdk.Tx = BuildInvalidBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityconfig.GravityEvmChainID, true)
 	_, err = ah(ctx, twoExtensionCancelBridgeTx, false)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "invalid transaction extension options")
 
-	var twoExtensionForeignBridgeTx sdk.Tx = BuildInvalidBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, foreignChain0, false)
+	var twoExtensionForeignBridgeTx sdk.Tx = BuildInvalidBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, bridgeForeignChainIds[0], false)
 	_, err = ah(ctx, twoExtensionForeignBridgeTx, false)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "invalid transaction extension options")
 
-	var twoExtensionForeignCancelBridgeTx sdk.Tx = BuildInvalidBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, foreignChain1, true)
+	var twoExtensionForeignCancelBridgeTx sdk.Tx = BuildInvalidBridgeWeb3ExtensionTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, bridgeForeignChainIds[1], true)
 	_, err = ah(ctx, twoExtensionForeignCancelBridgeTx, false)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "invalid transaction extension options")
@@ -273,12 +260,7 @@ func TestBothSignMethods(t *testing.T) {
 func TestMultiMsgTxs(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	ah := MakeAnteHandler(t, input)
-	gravityEvmChainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
-	require.NoError(t, err)
-	foreignChain0, err := strconv.ParseUint(gravityconfig.BridgeForeignChainIDs[0], 10, 64)
-	require.NoError(t, err)
-	foreignChain1, err := strconv.ParseUint(gravityconfig.BridgeForeignChainIDs[1], 10, 64)
-	require.NoError(t, err)
+	bridgeForeignChainIds := input.GravityKeeper.GetParams(ctx).Eip712BridgeForeignChainIds
 
 	// Create an eth_secp256k1 account and fund it
 	ethPrivkey, err := ethsecp256k1.GenerateKey()
@@ -305,23 +287,23 @@ func TestMultiMsgTxs(t *testing.T) {
 	require.NoError(t, err)
 
 	// EIP712 Tx with two bridge msgs, local chain ID
-	eipBridgeMultiBuilder, _ := BuildBridgeWeb3ExtensionMultiMsgTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityEvmChainId, false)
+	eipBridgeMultiBuilder, _ := BuildBridgeWeb3ExtensionMultiMsgTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityconfig.GravityEvmChainID, false)
 	eipBridgeMultiTx := eipBridgeMultiBuilder.GetTx()
 	_, err = ah(ctx, eipBridgeMultiTx, false)
 	require.NoError(t, err)
-	eipBridgeMultiBuilder, _ = BuildBridgeWeb3ExtensionMultiMsgTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityEvmChainId, true)
+	eipBridgeMultiBuilder, _ = BuildBridgeWeb3ExtensionMultiMsgTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, gravityconfig.GravityEvmChainID, true)
 	eipBridgeMultiTx = eipBridgeMultiBuilder.GetTx()
 	_, err = ah(ctx, eipBridgeMultiTx, false)
 	require.NoError(t, err)
 
 	// Invalid EIP712 foreign chain id tx with two bridge msgs
-	eipForeignBridgeMultiBuilder, _ := BuildBridgeWeb3ExtensionMultiMsgTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, foreignChain0, false)
+	eipForeignBridgeMultiBuilder, _ := BuildBridgeWeb3ExtensionMultiMsgTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, bridgeForeignChainIds[0], false)
 	eipForeignBridgeMultiTx := eipForeignBridgeMultiBuilder.GetTx()
 	_, err = ah(ctx, eipForeignBridgeMultiTx, false)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "eip-712 domain chainID")
 
-	eipForeignBridgeMultiBuilder, _ = BuildBridgeWeb3ExtensionMultiMsgTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, foreignChain1, true)
+	eipForeignBridgeMultiBuilder, _ = BuildBridgeWeb3ExtensionMultiMsgTx(t, ctx, input.EncodingConfig.TxConfig, input.AccountKeeper, ethPrivkey, bridgeForeignChainIds[1], true)
 	eipForeignBridgeMultiTx = eipForeignBridgeMultiBuilder.GetTx()
 	_, err = ah(ctx, eipForeignBridgeMultiTx, false)
 	require.Error(t, err)
@@ -507,13 +489,11 @@ func BuildWeb3ExtensionTx(t *testing.T, ctx sdk.Context, txConfig sdkclient.TxCo
 
 	fees := sdk.NewCoins()
 	gasAmount := uint64(2000000)
-	chainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
-	require.NoError(t, err)
 	tx.SetFeeAmount(fees)
 	tx.SetGasLimit(gasAmount)
 	tx.SetTimeoutHeight(uint64(ctx.BlockHeight() + 100))
 
-	txBuilder, option, err := SignEip712(t, ak, ctx, priv, chainId, gasAmount, fees, []sdk.Msg{msg}, txConfig)
+	txBuilder, option, err := SignEip712(t, ak, ctx, priv, gravityconfig.GravityEvmChainID, gasAmount, fees, []sdk.Msg{msg}, txConfig)
 	require.NoError(t, err)
 
 	return txBuilder, option
@@ -534,13 +514,11 @@ func BuildWeb3ExtensionMultiMsgTx(t *testing.T, ctx sdk.Context, txConfig sdkcli
 
 	fees := sdk.NewCoins()
 	gasAmount := uint64(2000000)
-	chainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
-	require.NoError(t, err)
 	tx.SetFeeAmount(fees)
 	tx.SetGasLimit(gasAmount)
 	tx.SetTimeoutHeight(uint64(ctx.BlockHeight() + 100))
 
-	txBuilder, option, err := SignEip712(t, ak, ctx, priv, chainId, gasAmount, fees, msgs, txConfig)
+	txBuilder, option, err := SignEip712(t, ak, ctx, priv, gravityconfig.GravityEvmChainID, gasAmount, fees, msgs, txConfig)
 	require.NoError(t, err)
 
 	return txBuilder, option

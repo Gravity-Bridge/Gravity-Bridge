@@ -108,6 +108,13 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 //
 // Specifies what fraction of the SendToEth `chain_fee` amount should go to the auction pool.
 // e.g. "0.5" gives a 50% auction pool / staker split while "0.9" would cause 90% of the fee to go to the pool
+//
+// eip712_bridge_foreign_chain_ids
+//
+// A whitelist of foreign EVM chain IDs to accept for EIP712-signed bridging transactions, which must be a Tx
+// with a single MsgSendToEth or MsgCancelSendToEth and no other Msgs. The likelihood of replay attacks introduced
+// by this change is very low, as EIP712 signatures are over the Gravity Cosmos chain ID and an EVM chain ID.
+// By restricting these Txs to only a single bridging
 message Params {
   option (gogoproto.stringer) = false;
 
@@ -150,6 +157,7 @@ message Params {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable)   = false
   ];
+	repeated uint64 eip712_bridge_foreign_chain_ids = 22;
 }
 
 // GenesisState struct, containing all persistant data required by the Gravity module

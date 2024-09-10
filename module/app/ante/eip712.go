@@ -27,6 +27,7 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
+	gravitykeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
@@ -52,10 +53,10 @@ func init() {
 // CONTRACT: Pubkeys are set in context for all signers before this decorator runs
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type LegacyEip712SigVerificationDecorator struct {
-	ak                    evmtypes.AccountKeeper
-	signModeHandler       authsigning.SignModeHandler
-	evmChainId            string
-	bridgeForeignChainIDs []string
+	ak              evmtypes.AccountKeeper
+	gravityKeeper   gravitykeeper.Keeper
+	signModeHandler authsigning.SignModeHandler
+	evmChainId      uint64
 }
 
 // GRAVITY CHANGES: The bridgeForeignChainIDs parameter is used to accept bridging transactions from foreign chain IDs.
@@ -65,15 +66,15 @@ type LegacyEip712SigVerificationDecorator struct {
 // to be parseable by a regex but evmChainId removes that restriction by allowing an override.
 func NewLegacyEip712SigVerificationDecorator(
 	ak evmtypes.AccountKeeper,
+	gk gravitykeeper.Keeper,
 	signModeHandler authsigning.SignModeHandler,
-	evmChainId string,
-	bridgeForeignChainIDs []string,
+	evmChainId uint64,
 ) LegacyEip712SigVerificationDecorator {
 	return LegacyEip712SigVerificationDecorator{
-		ak:                    ak,
-		signModeHandler:       signModeHandler,
-		evmChainId:            evmChainId,
-		bridgeForeignChainIDs: bridgeForeignChainIDs,
+		ak:              ak,
+		gravityKeeper:   gk,
+		signModeHandler: signModeHandler,
+		evmChainId:      evmChainId,
 	}
 }
 
@@ -163,14 +164,14 @@ func (svd LegacyEip712SigVerificationDecorator) AnteHandle(ctx sdk.Context,
 
 	// There are two ChainIDs to verify, the Cosmos string and the EVM number. First try the EVM override value,
 	// then try to parse if no override provided
-	var evmChainID string = svd.evmChainId
-	if evmChainID == "" {
+	var evmChainID uint64 = svd.evmChainId
+	if evmChainID == 0 {
 		cId, err := ethermint.ParseChainID(chainID)
 
 		if err != nil {
 			return ctx, errorsmod.Wrapf(err, "failed to parse chainID: %s", chainID)
 		}
-		evmChainID = cId.String()
+		evmChainID = cId.Uint64()
 	}
 
 	signerData := authsigning.SignerData{
@@ -183,8 +184,12 @@ func (svd LegacyEip712SigVerificationDecorator) AnteHandle(ctx sdk.Context,
 		return next(ctx, tx, simulate)
 	}
 
-	if err := VerifySignature(pubKey, signerData, sig.Data, svd.signModeHandler, authSignTx, evmChainID, svd.bridgeForeignChainIDs); err != nil {
-		errMsg := fmt.Errorf("signature verification failed; please verify account number (%d) and chain-id (%s) and evm-chain-id (%s): %w", accNum, chainID, evmChainID, err)
+	params, err := svd.gravityKeeper.GetParamsIfSet(ctx)
+	if err != nil {
+		return ctx, errorsmod.Wrapf(err, "failed to get Gravity params")
+	}
+	if err := VerifySignature(pubKey, signerData, sig.Data, svd.signModeHandler, authSignTx, evmChainID, params.Eip712BridgeForeignChainIds); err != nil {
+		errMsg := fmt.Errorf("signature verification failed; please verify account number (%d) and chain-id (%s) and evm-chain-id (%d): %w", accNum, chainID, evmChainID, err)
 		return ctx, errorsmod.Wrap(errortypes.ErrUnauthorized, errMsg.Error())
 	}
 
@@ -201,8 +206,8 @@ func VerifySignature(
 	sigData signing.SignatureData,
 	_ authsigning.SignModeHandler,
 	tx authsigning.Tx,
-	evmChainID string,
-	bridgeForeignChainIDs []string,
+	evmChainID uint64,
+	bridgeForeignChainIDs []uint64,
 ) error {
 	switch data := sigData.(type) {
 	case *signing.SingleSignatureData:
@@ -249,7 +254,7 @@ func VerifySignature(
 			return errorsmod.Wrap(errortypes.ErrUnknownExtensionOptions, "unknown extension option")
 		}
 
-		typedDataChainID := fmt.Sprint(extOpt.TypedDataChainID)
+		typedDataChainID := extOpt.TypedDataChainID
 		acceptableChainId := false
 		foreignChainIdTransaction := false
 
@@ -265,9 +270,9 @@ func VerifySignature(
 
 		if !acceptableChainId {
 			if foreignChainIdTransaction {
-				return errorsmod.Wrapf(errortypes.ErrInvalidChainID, "eip-712 foreign chainID: (%s) unacceptable", typedDataChainID)
+				return errorsmod.Wrapf(errortypes.ErrInvalidChainID, "eip-712 foreign chainID: (%d) unacceptable", typedDataChainID)
 			} else {
-				return errorsmod.Wrapf(errortypes.ErrInvalidChainID, "eip-712 domain chainID: (%s) != (%s)", typedDataChainID, evmChainID)
+				return errorsmod.Wrapf(errortypes.ErrInvalidChainID, "eip-712 domain chainID: (%d) != (%d)", typedDataChainID, evmChainID)
 			}
 		}
 

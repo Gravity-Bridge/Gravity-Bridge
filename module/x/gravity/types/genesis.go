@@ -11,6 +11,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+
+	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 )
 
 // DefaultParamspace defines the default auth module parameter subspace
@@ -96,6 +98,13 @@ var (
 	// the ChainFee will go to stakers
 	ParamStoreChainFeeAuctionPoolFraction = []byte("ChainFeeAuctionPoolFraction")
 
+	// ParamStoreEip712BridgeForeignChainIds is a whitelist of foreign EVM chain ids to accept for EIP712-signed transactions
+	// which contain a single bridging Msg (MsgSendToEth or MsgCancelSendToEth). The likelihood of replays is extremely
+	// low as the EIP712 method signs over both the foreign EVM chain id and the Gravity Cosmos chain id, and the acceptable
+	// transactions are restricted to contain a single Gravity bridging Msg. For a replay to occur, another Cosmos chain would
+	// have to be running the Gravity module with the same Cosmos chain ID, which would enable many more replay attacks anyway.
+	ParamStoreEip712BridgeForeignChainIds = []byte("Eip712BridgeForeignChainIds")
+
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
 		GravityId:                    "",
@@ -121,6 +130,7 @@ var (
 		EthereumBlacklist:           []string{},
 		MinChainFeeBasisPoints:      0,
 		ChainFeeAuctionPoolFraction: sdk.Dec{},
+		Eip712BridgeForeignChainIds: []uint64{},
 	}
 )
 
@@ -176,6 +186,8 @@ func DefaultParams() *Params {
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       2,
 		ChainFeeAuctionPoolFraction:  sdk.NewDecWithPrec(50, 2), // 50%, the prec parameter moves the decimal to the left that many places
+		// TODO: Determine the final list of foreign Chain IDs
+		Eip712BridgeForeignChainIds: []uint64{1234, 5678},
 	}
 }
 
@@ -241,6 +253,9 @@ func (p Params) ValidateBasic() error {
 	if err := validateChainFeeAuctionPoolFraction(p.ChainFeeAuctionPoolFraction); err != nil {
 		return errorsmod.Wrap(err, "chain fee auction pool fraction parameter")
 	}
+	if err := validateEip712BridgeForeignChainIds(p.Eip712BridgeForeignChainIds); err != nil {
+		return errorsmod.Wrap(err, "eip712 bridge foreign chain ids parameter")
+	}
 	return nil
 }
 
@@ -267,6 +282,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,
 		ChainFeeAuctionPoolFraction:  sdk.Dec{},
+		Eip712BridgeForeignChainIds:  []uint64{},
 	})
 }
 
@@ -293,6 +309,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
 		paramtypes.NewParamSetPair(ParamStoreMinChainFeeBasisPoints, &p.MinChainFeeBasisPoints, validateMinChainFeeBasisPoints),
 		paramtypes.NewParamSetPair(ParamStoreChainFeeAuctionPoolFraction, &p.ChainFeeAuctionPoolFraction, validateChainFeeAuctionPoolFraction),
+		paramtypes.NewParamSetPair(ParamStoreEip712BridgeForeignChainIds, &p.Eip712BridgeForeignChainIds, validateEip712BridgeForeignChainIds),
 	}
 }
 
@@ -493,6 +510,23 @@ func validateChainFeeAuctionPoolFraction(i interface{}) error {
 	}
 	if v.GT(sdk.OneDec()) {
 		return fmt.Errorf("chain fee auction pool fraction too large: %s", v)
+	}
+
+	return nil
+}
+
+func validateEip712BridgeForeignChainIds(i interface{}) error {
+	v, ok := i.([]uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	for _, chainID := range v {
+		if chainID == 0 {
+			return fmt.Errorf("EIP712 bridge foreign chain id must be positive")
+		}
+		if chainID == gravityconfig.GravityEvmChainID {
+			return fmt.Errorf("EIP712 bridge foreign chain id must not be the same as the Gravity evm chain id")
+		}
 	}
 
 	return nil

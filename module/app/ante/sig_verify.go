@@ -3,6 +3,7 @@ package ante
 import (
 	errorsmod "cosmossdk.io/errors"
 
+	gravitykeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -27,12 +28,12 @@ type GravitySigVerificationDecorator struct {
 
 // See GravitySigVerificationDecorator for more info
 func NewGravitySigVerificationDecorator(
-	cdc codec.Codec, ak *authkeeper.AccountKeeper, signModeHandler authsigning.SignModeHandler,
-	evmChainID string, bridgeForeignChainIds []string,
+	cdc codec.Codec, ak *authkeeper.AccountKeeper, gk gravitykeeper.Keeper,
+	signModeHandler authsigning.SignModeHandler, evmChainID uint64,
 ) GravitySigVerificationDecorator {
 	sdkSVD := sdkante.NewSigVerificationDecorator(ak, signModeHandler)
 	// nolint: staticcheck
-	ethermintSVD := NewLegacyEip712SigVerificationDecorator(ak, signModeHandler, evmChainID, bridgeForeignChainIds)
+	ethermintSVD := NewLegacyEip712SigVerificationDecorator(ak, gk, signModeHandler, evmChainID)
 	return GravitySigVerificationDecorator{cdc, sdkSVD, ethermintSVD}
 }
 

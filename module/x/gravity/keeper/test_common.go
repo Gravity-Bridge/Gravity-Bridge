@@ -252,6 +252,7 @@ var (
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,
 		ChainFeeAuctionPoolFraction:  sdk.NewDecWithPrec(50, 2), // 50%
+		Eip712BridgeForeignChainIds:  types.DefaultParams().Eip712BridgeForeignChainIds,
 	}
 )
 
