@@ -34,6 +34,12 @@ const (
 	NativeTokenDenom = "ugraviton"
 )
 
+// TODO: Determine the final list of foreign Chain IDs
+
+// When accepting EIP-712 signed transactions, users may submit single-Msg bridging transactions
+// (i.e. a MsgSendToEth or MsgCancelSendToEth) which was signed with a foreign Chain ID whitelisted here.
+var BridgeForeignChainIDs = []string{"1234", "5678"}
+
 func init() {
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(bech32PrefixAccAddr, bech32PrefixAccPub)

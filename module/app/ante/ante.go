@@ -36,6 +36,7 @@ func NewAnteHandler(
 	ibcKeeper *ibckeeper.Keeper,
 	cdc codec.Codec,
 	evmChainID string,
+	bridgeForeignChainIDs []string,
 ) (*sdk.AnteHandler, error) {
 	if evmChainID == "" {
 		return nil, fmt.Errorf("evmChainID not specified, EIP-712 signing will fail")
@@ -56,7 +57,7 @@ func NewAnteHandler(
 		sdkante.NewValidateSigCountDecorator(accountKeeper),
 		sdkante.NewSigGasConsumeDecorator(accountKeeper, options.SigGasConsumer),
 		// Delegates to EIP-712 verification OR to regular SDK verification depending on the extension option
-		NewGravitySigVerificationDecorator(cdc, accountKeeper, options.SignModeHandler, evmChainID),
+		NewGravitySigVerificationDecorator(cdc, accountKeeper, options.SignModeHandler, evmChainID, bridgeForeignChainIDs),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),
 		ibcante.NewRedundantRelayDecorator(ibcKeeper),
 		// Enforces the minimum commission for Gravity Prop #1

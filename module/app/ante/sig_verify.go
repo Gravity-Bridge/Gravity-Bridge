@@ -8,8 +8,6 @@ import (
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-
-	ethermintante "github.com/evmos/ethermint/app/ante"
 )
 
 // Gravity supports both ordinary SDK signing (legacy amino and sign direct), but also has EIP712 support.
@@ -24,16 +22,17 @@ type GravitySigVerificationDecorator struct {
 	cdc    codec.Codec
 	sdkSVD sdkante.SigVerificationDecorator
 	// nolint: staticcheck
-	ethermintSVD ethermintante.LegacyEip712SigVerificationDecorator
+	ethermintSVD LegacyEip712SigVerificationDecorator
 }
 
 // See GravitySigVerificationDecorator for more info
 func NewGravitySigVerificationDecorator(
-	cdc codec.Codec, ak *authkeeper.AccountKeeper, signModeHandler authsigning.SignModeHandler, evmChainID string,
+	cdc codec.Codec, ak *authkeeper.AccountKeeper, signModeHandler authsigning.SignModeHandler,
+	evmChainID string, bridgeForeignChainIds []string,
 ) GravitySigVerificationDecorator {
 	sdkSVD := sdkante.NewSigVerificationDecorator(ak, signModeHandler)
 	// nolint: staticcheck
-	ethermintSVD := ethermintante.NewLegacyEip712SigVerificationDecorator(ak, signModeHandler, evmChainID)
+	ethermintSVD := NewLegacyEip712SigVerificationDecorator(ak, signModeHandler, evmChainID, bridgeForeignChainIds)
 	return GravitySigVerificationDecorator{cdc, sdkSVD, ethermintSVD}
 }
 

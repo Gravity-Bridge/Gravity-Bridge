@@ -851,7 +851,7 @@ func (app *Gravity) setAnteHandler(encodingConfig gravityparams.EncodingConfig) 
 	}
 
 	// Note: If feegrant keeper is added, add it to the NewAnteHandler call instead of nil
-	ah, err := ante.NewAnteHandler(options, app.GravityKeeper, app.AccountKeeper, app.BankKeeper, nil, app.IbcKeeper, app.AppCodec, gravityconfig.GravityEvmChainID)
+	ah, err := ante.NewAnteHandler(options, app.GravityKeeper, app.AccountKeeper, app.BankKeeper, nil, app.IbcKeeper, app.AppCodec, gravityconfig.GravityEvmChainID, gravityconfig.BridgeForeignChainIDs)
 	if err != nil {
 		panic("invalid antehandler created")
 	}
