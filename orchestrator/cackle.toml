@@ -31,9 +31,6 @@ include = [
 
 [pkg.async-trait]
 allow_proc_macro = true
-build.allow_apis = [
-    "process",
-]
 allow_unsafe = true
 
 [pkg.futures-macro]
@@ -230,11 +227,11 @@ allow_unsafe = true
 
 [pkg.httparse]
 allow_unsafe = true
-
-[pkg.crc32fast]
-build.allow_apis = [
+allow_apis = [
     "process",
 ]
+
+[pkg.crc32fast]
 allow_unsafe = true
 
 [pkg.futures-channel]
@@ -333,9 +330,6 @@ allow_unsafe = true
 allow_unsafe = true
 
 [pkg.num-bigint]
-build.allow_apis = [
-    "fs",
-]
 allow_unsafe = true
 
 [pkg.unicode-bidi]
@@ -660,6 +654,7 @@ allow_proc_macro = true
 allow_proc_macro = true
 
 [pkg.zerocopy-derive]
+allow_unsafe = true
 allow_proc_macro = true
 
 [pkg.curve25519-dalek-derive]
@@ -746,3 +741,8 @@ allow_unsafe = true
 [pkg.time]
 allow_unsafe = true
 
+[pkg.shlex]
+allow_unsafe = true
+
+[pkg.byteorder]
+allow_unsafe = true
