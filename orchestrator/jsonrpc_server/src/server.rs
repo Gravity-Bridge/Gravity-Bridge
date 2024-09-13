@@ -1,6 +1,6 @@
 const DEFAULT_DOMAIN: &str = "localhost";
 const DEFAULT_PORT: u16 = 8545;
-const EVM_CHAIN_ID: u64 = 999999;
+const EVM_CHAIN_ID: u64 = 7700;
 
 use crate::tls::{load_certs, load_private_key};
 use actix_cors::Cors;
@@ -28,7 +28,7 @@ lazy_static!(
 pub struct RequestBody {
     method: String,
     id: Value,
-    params: Value,
+    params: Option<Value>,
     jsonrpc: String,
 }
 
@@ -121,7 +121,8 @@ async fn eth_blockNumber(req_body: RequestBody) -> HttpResponse {
 /// Returns a spoofed block response for the "eth_blockNumber" Ethereum JSONRPC method
 #[allow(non_snake_case)]
 async fn eth_getBlockByNumber(req_body: RequestBody) -> HttpResponse {
-    let block_number = req_body.params.as_array().unwrap().first().unwrap();
+    let params = req_body.params.unwrap_or_default();
+    let block_number = params.as_array().unwrap().first().unwrap();
     let body = format!(
         r#"{{"baseFeePerGas":"0x60667e448","difficulty":"0x0","extraData":"0x6265617665726275696c642e6f7267","gasLimit":"0x1c9c380","gasUsed":"0x1419a2b","hash":"0x7ef1be67e10135f0ef82d9ba0172eceaccfa7e646e7[0/1129]9fbd1f8e46281","logsBloom":"0xd1b3199265a9028c81885c50b298192180d048e1000770103f83e9a6f6bb3113d05736ecd00c6760095183204614416db6a52038ff27b34b96aa06b8923bbdf88bd4de0f05e48928f800f9ef42ca10b801b3004b3dec5c0945907a70883d005099246d44120eac988765a26022c16d50c0c1e630090ebee8d655ee90016f0144a508b5ed0ac2877a15fe702cd7b2ce47450688e9ed2b42bcdcf52bf0d1b106a93bf139e077626e410b8840971c665c310456c26a5025ab2d41cfaf1753595f7ef4d0109611c95ceb6b40188945abd49c2369e0fb5f6ed4346a5d09e7875962543dd1a91880854670299d0e27fb64bb3c2520d1041bd82d4e83c9ad12681d2c1f","miner":"0x95222290dd7278aa3ddd389cc1e1d165cc4bafe5","mixHash":"0x123c22aa38b9258149878e7e01eb589221d16916fe54ab338136378adea40069","nonce":"0x0000000000000000","number":"{block_number}","parentHash":"0x17e54d73dd8a4acd401298644d19cad29b2eb16a1eb29b285bbf607d19daa260","receiptsRoot":"0xc5f93242aae63dacfc9185693268d13dd3932cc1101f9c3295d596a705ab05fa","sha3Uncles":"0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347","size":"0x57df0","stateRoot":"0xd656b01c88b05b6ee5312ecac8b7b09bbe9e9df18f98b27e479cd77300f009d7","timestamp":"0x64d65a7b","totalDifficulty":"0xc70d815d562d3cfa955","transactions":["0x87e44c8bb3c3baecf245c01d8eba493e26238c357702e6ea9b084edfd3cd32cf"],"transactionsRoot":"0x01b20a1f122b64e63a77e9bede89596ba929209dcaa719064ccdfd708973bb60","uncles":[],"withdrawals":[{{"index":"0xd168a3","validatorIndex":"0x5480c","address":"0xb9d7934878b5fb9610b3fe8a5e441e8fad7e293f","amount":"0xe7a6d9"}}],"withdrawalsRoot":"0x56c41a678621930d4bae47118f22dcd8bb465a3f14e29c0de28481d4c6b451da"}}"#
     );
