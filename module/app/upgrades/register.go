@@ -14,6 +14,7 @@ import (
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/apollo"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/neutrino"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
@@ -79,5 +80,11 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		apollo.AntaresToApolloPlanName,
 		apollo.GetApolloUpgradeHandler(mm, configurator, crisisKeeper, auctionKeeper),
+	)
+
+	// Neutrino upgrade handler
+	upgradeKeeper.SetUpgradeHandler(
+		neutrino.ApolloToNeutrinoPlanName,
+		neutrino.GetNeutrinoUpgradeHandler(mm, configurator, crisisKeeper, auctionKeeper),
 	)
 }
