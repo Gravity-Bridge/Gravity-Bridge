@@ -421,6 +421,7 @@ func CmdRequestBatch() *cobra.Command {
 			cosmosAddr := cliCtx.GetFromAddress()
 
 			var denom string
+			// nolint: gocritic
 			if strings.HasPrefix(args[0], "ibc") {
 				denom = args[0]
 			} else if strings.HasPrefix(args[0], "0x") {
