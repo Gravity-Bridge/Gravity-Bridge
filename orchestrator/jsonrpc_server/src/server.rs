@@ -1,6 +1,6 @@
 const DEFAULT_DOMAIN: &str = "localhost";
 const DEFAULT_PORT: u16 = 8545;
-const EVM_CHAIN_ID: u64 = 7700;
+const EVM_CHAIN_ID: u64 = 999999;
 
 use crate::tls::{load_certs, load_private_key};
 use actix_cors::Cors;
