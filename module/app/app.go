@@ -72,6 +72,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	"github.com/cosmos/cosmos-sdk/x/group"
+	groupkeeper "github.com/cosmos/cosmos-sdk/x/group/keeper"
+	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -124,6 +127,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/apollo"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/neutrino"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
@@ -176,6 +180,7 @@ var (
 		auction.AppModuleBasic{},
 		bech32ibc.AppModuleBasic{},
 		ica.AppModuleBasic{},
+		groupmodule.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -254,6 +259,7 @@ type Gravity struct {
 	AuctionKeeper     *auckeeper.Keeper
 	Bech32IbcKeeper   *bech32ibckeeper.Keeper
 	IcaHostKeeper     *icahostkeeper.Keeper
+	GroupKeeper       *groupkeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
@@ -335,6 +341,9 @@ func (app Gravity) ValidateMembers() {
 	if app.IcaHostKeeper == nil {
 		panic("Nil icaHostKeeper!")
 	}
+	if app.GroupKeeper == nil {
+		panic("Nil groupKeeper!")
+	}
 
 	// scoped keepers
 	if app.ScopedIBCKeeper == nil {
@@ -383,7 +392,7 @@ func NewGravityApp(
 		ibchost.StoreKey, upgradetypes.StoreKey, evidencetypes.StoreKey,
 		ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		gravitytypes.StoreKey, auctiontypes.StoreKey, bech32ibctypes.StoreKey,
-		icahosttypes.StoreKey,
+		icahosttypes.StoreKey, group.StoreKey,
 	)
 	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -624,6 +633,10 @@ func NewGravityApp(
 	)
 	app.EvidenceKeeper = &evidenceKeeper
 
+	groupConfig := group.DefaultConfig()
+	groupKeeper := groupkeeper.NewKeeper(keys[group.StoreKey], appCodec, app.MsgServiceRouter(), app.AccountKeeper, groupConfig)
+	app.GroupKeeper = &groupKeeper
+
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	app.registerStoreLoaders()
@@ -714,6 +727,7 @@ func NewGravityApp(
 			bech32IbcKeeper,
 		),
 		icaAppModule,
+		groupmodule.NewAppModule(appCodec, groupKeeper, accountKeeper, bankKeeper, interfaceRegistry),
 	)
 	app.mm = &mm
 
@@ -740,6 +754,7 @@ func NewGravityApp(
 		govtypes.ModuleName,
 		paramstypes.ModuleName,
 		icatypes.ModuleName,
+		group.ModuleName,
 	)
 	mm.SetOrderEndBlockers(
 		crisistypes.ModuleName,
@@ -763,6 +778,7 @@ func NewGravityApp(
 		genutiltypes.ModuleName,
 		authz.ModuleName,
 		paramstypes.ModuleName,
+		group.ModuleName,
 	)
 	mm.SetOrderInitGenesis(
 		capabilitytypes.ModuleName,
@@ -786,6 +802,7 @@ func NewGravityApp(
 		vestingtypes.ModuleName,
 		paramstypes.ModuleName,
 		icatypes.ModuleName,
+		group.ModuleName,
 	)
 
 	mm.RegisterInvariants(&crisisKeeper)
@@ -1085,6 +1102,17 @@ func (app *Gravity) registerStoreLoaders() {
 		// Register the Auction module as a new module that needs a new store allocated
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added:   []string{auctiontypes.StoreKey},
+			Renamed: nil,
+			Deleted: nil,
+		}
+
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
+	// Neutrino Group module store loader setup
+	if upgradeInfo.Name == neutrino.ApolloToNeutrinoPlanName {
+		// Register the Group module as a new module that needs a new store allocated
+		storeUpgrades := storetypes.StoreUpgrades{
+			Added:   []string{group.StoreKey},
 			Renamed: nil,
 			Deleted: nil,
 		}
