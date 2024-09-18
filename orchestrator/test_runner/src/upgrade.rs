@@ -1,4 +1,3 @@
-use crate::auction::auction_test_random;
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
 use crate::{happy_path_test, happy_path_test_v2, utils::*};
 use clarity::Address as EthAddress;
@@ -254,27 +253,16 @@ pub async fn run_all_recoverable_tests(
 // These tests should fail in upgrade_part_1() but pass in upgrade_part_2()
 #[allow(clippy::too_many_arguments)]
 pub async fn run_upgrade_specific_tests(
-    web30: &Web3,
-    gravity_contact: &Contact,
+    _web30: &Web3,
+    _gravity_contact: &Contact,
     _ibc_contact: &Contact,
-    grpc_client: GravityQueryClient<Channel>,
-    keys: Vec<ValidatorKeys>,
+    _grpc_client: GravityQueryClient<Channel>,
+    _keys: Vec<ValidatorKeys>,
     _ibc_keys: Vec<CosmosPrivateKey>,
-    gravity_address: EthAddress,
-    erc20_addresses: Vec<EthAddress>,
-    post_upgrade: bool,
+    _gravity_address: EthAddress,
+    _erc20_addresses: Vec<EthAddress>,
+    _post_upgrade: bool,
 ) {
-    if post_upgrade {
-        auction_test_random(
-            web30,
-            gravity_contact,
-            grpc_client,
-            keys,
-            gravity_address,
-            erc20_addresses,
-        )
-        .await;
-    }
 }
 
 /// Checks that the expected attestations are returned from the grpc endpoint
