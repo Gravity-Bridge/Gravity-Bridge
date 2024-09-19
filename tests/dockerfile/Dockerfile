@@ -1,7 +1,10 @@
 FROM fedora:38
+# Copy the specific go binary version from the golang image
 ENV GOPATH=/go
 ENV PATH=$PATH:/go/bin
-RUN dnf install -y git make gcc gcc-c++ which iproute iputils procps-ng vim-minimal tmux net-tools htop tar jq npm openssl-devel perl rust cargo golang wget
+RUN dnf install -y git make gcc gcc-c++ which iproute iputils procps-ng vim-minimal tmux net-tools htop tar jq npm openssl-devel perl rust cargo go wget
+COPY --from=golang:1.22 /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
 # only required for deployment script
 RUN npm install -g ts-node && npm install -g typescript
 ADD https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.10.10-bb74230f.tar.gz /geth/
