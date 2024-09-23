@@ -2,7 +2,7 @@ module github.com/Gravity-Bridge/Gravity-Bridge/module
 
 go 1.22.0
 
-toolchain go1.23.0
+toolchain go1.22.7
 
 require (
 	github.com/althea-net/bech32-ibc v0.7.0
