@@ -201,13 +201,15 @@ tools-clean:
 
 build-reproducible: go.sum
 	$(DOCKER) rm latest-build || true
+	$(DOCKER) rm release-builder || true
+	$(DOCKER) build --ulimit nofile=65536:65536 -t release-builder ./rbuilder
 	$(DOCKER) run --volume=$(CURDIR)/.././:/sources:ro \
         --env TARGET_PLATFORMS='linux/amd64' \
         --env APP=gravity \
         --env VERSION=$(VERSION) \
         --env COMMIT=$(COMMIT) \
         --env LEDGER_ENABLED=$(LEDGER_ENABLED) \
-        --name latest-build altheanet/cosmos-rbuilder:latest
+        --name latest-build release-builder
 	$(DOCKER) cp -a latest-build:/home/builder/artifacts/ $(CURDIR)/
 
 clean:
