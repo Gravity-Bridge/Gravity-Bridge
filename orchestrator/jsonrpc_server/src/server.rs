@@ -76,7 +76,7 @@ pub fn get_and_incr_block_number() -> u64 {
 #[post("/")]
 async fn request_dispatcher(req_body: web::Json<RequestBody>) -> HttpResponse {
     debug!("Got request: {req_body:?}");
-    return match req_body.method.as_str() {
+    match req_body.method.as_str() {
         "net_version" => net_version(req_body.into_inner()).await,
         "eth_chainId" => eth_chainId(req_body.into_inner()).await,
         "eth_blockNumber" => eth_blockNumber(req_body.into_inner()).await,
@@ -85,7 +85,7 @@ async fn request_dispatcher(req_body: web::Json<RequestBody>) -> HttpResponse {
         "eth_feeHistory" => eth_feeHistory(req_body.into_inner()).await,
         "eth_gasPrice" => eth_gasPrice(req_body.into_inner()).await,
         _ => default_response(),
-    };
+    }
 }
 
 /// Returns a hardcoded response for the "net_version" Ethereum JSONRPC method

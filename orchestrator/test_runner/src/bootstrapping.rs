@@ -383,30 +383,40 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
             .stdout(Stdio::from_raw_fd(out_file))
             .stderr(Stdio::from_raw_fd(out_file));
         info!("Create channel command: {:?}", create_channel);
-        create_channel.spawn().expect("Could not create channel");
+        create_channel
+            .spawn()
+            .expect("Could not create channel")
+            .wait()
+            .unwrap();
     }
 }
 
 // Start an IBC relayer locally and run until it terminates
 // full_scan Force a full scan of the chains for clients, connections and channels
 // Writes the output to /ibc-relayer-logs/hermes-logs
-pub fn run_ibc_relayer(hermes_base: &mut Command, full_scan: bool) {
-    let mut start = hermes_base.arg("start");
-    if full_scan {
-        start = start.arg("--full-scan");
-    }
-    let out_file = File::options()
-        .write(true)
-        .open("/ibc-relayer-logs/hermes-logs")
-        .unwrap()
-        .into_raw_fd();
+pub fn run_ibc_relayer(full_scan: bool) {
     unsafe {
         // unsafe needed for stdout + stderr redirect to file
-        start
-            .stdout(Stdio::from_raw_fd(out_file))
-            .stderr(Stdio::from_raw_fd(out_file))
-            .spawn()
-            .expect("Could not run hermes");
+        thread::spawn(move || {
+            let mut hermes_base = Command::new("hermes");
+            let hermes_base = hermes_base.arg("--config").arg(HERMES_CONFIG);
+            let mut start = hermes_base.arg("start");
+            if full_scan {
+                start = start.arg("--full-scan");
+            }
+            let out_file = File::options()
+                .write(true)
+                .open("/ibc-relayer-logs/hermes-logs")
+                .unwrap()
+                .into_raw_fd();
+            start
+                .stdout(Stdio::from_raw_fd(out_file))
+                .stderr(Stdio::from_raw_fd(out_file))
+                .spawn()
+                .expect("Could not run hermes")
+                .wait()
+                .unwrap();
+        });
     }
 }
 
@@ -466,9 +476,7 @@ pub async fn start_ibc_relayer(
         create_ibc_channel(hermes_base);
     }
     thread::spawn(|| {
-        let mut hermes_base = Command::new("hermes");
-        let hermes_base = hermes_base.arg("--config").arg(HERMES_CONFIG);
-        run_ibc_relayer(hermes_base, true); // likely will not return from here, just keep running
+        run_ibc_relayer(true); // likely will not return from here, just keep running
     });
     info!("Running ibc relayer in the background, directing output to /ibc-relayer-logs");
 }

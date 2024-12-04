@@ -58,11 +58,8 @@ pub fn metrics_warnings_counter(s: i32, e: &str) {
 }
 
 pub fn metrics_latest(u: u64, e: &str) {
-    match i64::try_from(u).is_ok() {
-        true => {
-            LATEST_INFO.with_label_values(&[e]).set(u as i64);
-        }
-        false => {}
+    if i64::try_from(u).is_ok() {
+        LATEST_INFO.with_label_values(&[e]).set(u as i64);
     }
 }
 
