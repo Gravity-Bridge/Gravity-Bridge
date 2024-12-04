@@ -2,10 +2,11 @@ const DEFAULT_DOMAIN: &str = "localhost";
 const DEFAULT_PORT: u16 = 8545;
 const EVM_CHAIN_ID: u64 = 999999;
 
-use crate::tls::{load_certs, load_private_key};
 use actix_cors::Cors;
 use actix_web::{post, web, App, HttpResponse, HttpServer};
 use log::{debug, info};
+use rustls::pki_types::pem::PemObject;
+use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use rustls::ServerConfig;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -196,16 +197,17 @@ pub async fn run(
     });
 
     let server = if use_ssl {
-        let cert_chain = load_certs(&cert_chain_path);
-        let keys = load_private_key(&cert_key_path);
+        let cert_chain = CertificateDer::pem_file_iter(cert_chain_path)
+            .unwrap()
+            .map(|cert| cert.unwrap())
+            .collect();
+        let keys = PrivateKeyDer::from_pem_file(cert_key_path).unwrap();
         let config = ServerConfig::builder()
-            .with_safe_defaults()
             .with_no_client_auth()
             .with_single_cert(cert_chain, keys)
             .unwrap();
-
         info!("Binding to SSL");
-        server.bind_rustls(format!("{}:{}", domain, port), config)?
+        server.bind_rustls_0_23(format!("{}:{}", domain, port), config)?
     } else {
         server.bind(format!("{}:{}", domain, port))?
     };
