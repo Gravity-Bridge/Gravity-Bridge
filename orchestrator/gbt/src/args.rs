@@ -241,6 +241,9 @@ pub struct SpotRelayOpts {
     /// (Optional) Cosmos mnemonic phrase used for requesting batches if they are not already pending
     #[clap(short, long, parse(try_from_str))]
     pub cosmos_phrase: Option<CosmosPrivateKey>,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees, if blank no fee will be paid
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Option<Coin>,
 }
 
 /// Requests all possible batches for all token types. Useful to deal with relayers that will
@@ -257,6 +260,9 @@ pub struct RequestAllBatchesOpts {
     /// (Optional) Cosmos mnemonic phrase used for requesting batches if they are not already pending
     #[clap(short, long, parse(try_from_str))]
     pub cosmos_phrase: Option<CosmosPrivateKey>,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees, if blank no fee will be paid
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Option<Coin>,
 }
 
 /// Manage keys

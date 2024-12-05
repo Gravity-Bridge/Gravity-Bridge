@@ -32,7 +32,14 @@ pub async fn request_all_batches(args: RequestAllBatchesOpts, address_prefix: St
             })
             .await
             .unwrap();
-        match send_request_batch(cosmos_key, denom.into_inner().denom, None, &contact).await {
+        match send_request_batch(
+            cosmos_key,
+            denom.into_inner().denom,
+            args.fees.clone(),
+            &contact,
+        )
+        .await
+        {
             Ok(_) => {
                 info!(
                     "Successfully requested a batch for token type {}",
