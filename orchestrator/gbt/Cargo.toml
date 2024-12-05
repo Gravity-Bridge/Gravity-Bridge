@@ -1,6 +1,6 @@
 [package]
 name = "gbt"
-version = "1.12.1"
+version = "1.12.2"
 authors = ["Justin Kilpatrick <justin@althea.net>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -41,3 +41,4 @@ toml = "0.5"
 prost = {workspace = true}
 futures = "0.3"
 tonic = {workspace = true}
+rustls = "0.23"

@@ -162,7 +162,7 @@ pub async fn spot_relay(args: SpotRelayOpts, address_prefix: String) {
         let res = send_request_batch(
             cosmos_key,
             gravity_denom,
-            None,
+            args.fees,
             &contact,
         )
         .await;

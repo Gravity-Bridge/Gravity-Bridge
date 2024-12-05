@@ -40,7 +40,7 @@ pub enum SubCommand {
     Init(InitOpts),
 }
 
-const DEFAULT_GRPC_ADDRESS: &str = "http://gravitychain.io:9090";
+const DEFAULT_GRPC_ADDRESS: &str = "https://gravitychain.io:9090";
 const DEFAULT_ETH_RPC_ADDRESS: &str = "https://eth.althea.net";
 
 /// The Gravity Bridge orchestrator is required for all validators of the Cosmos chain running
@@ -137,6 +137,7 @@ pub enum ClientSubcommand {
     EthToCosmos(EthToCosmosOpts),
     DeployErc20Representation(DeployErc20RepresentationOpts),
     SpotRelay(SpotRelayOpts),
+    RequestAllBatches(RequestAllBatchesOpts),
 }
 
 /// Send Cosmos tokens to Ethereum
@@ -240,6 +241,28 @@ pub struct SpotRelayOpts {
     /// (Optional) Cosmos mnemonic phrase used for requesting batches if they are not already pending
     #[clap(short, long, parse(try_from_str))]
     pub cosmos_phrase: Option<CosmosPrivateKey>,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees, if blank no fee will be paid
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Option<Coin>,
+}
+
+/// Requests all possible batches for all token types. Useful to deal with relayers that will
+/// only relay a batch if it is profitable and already requested.
+#[derive(Parser)]
+pub struct RequestAllBatchesOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = DEFAULT_GRPC_ADDRESS)]
+    pub cosmos_grpc: String,
+    /// (Optional) The address fo the Gravity contract on Ethereum, this should be auto filled
+    /// from chain parameters
+    #[clap(short, long, parse(try_from_str))]
+    pub gravity_contract_address: Option<EthAddress>,
+    /// (Optional) Cosmos mnemonic phrase used for requesting batches if they are not already pending
+    #[clap(short, long, parse(try_from_str))]
+    pub cosmos_phrase: Option<CosmosPrivateKey>,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees, if blank no fee will be paid
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Option<Coin>,
 }
 
 /// Manage keys

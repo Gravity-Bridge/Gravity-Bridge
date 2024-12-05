@@ -1839,7 +1839,7 @@ dependencies = [
 
 [[package]]
 name = "gbt"
-version = "1.12.1"
+version = "1.12.2"
 dependencies = [
  "actix-rt",
  "clap",
@@ -1861,6 +1861,7 @@ dependencies = [
  "prost 0.13.3",
  "rand",
  "relayer",
+ "rustls 0.23.19",
  "serde",
  "serde_derive",
  "serde_json",
