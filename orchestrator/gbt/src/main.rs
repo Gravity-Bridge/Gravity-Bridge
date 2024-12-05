@@ -12,6 +12,7 @@ use clap::Parser;
 use client::cosmos_to_eth::cosmos_to_eth_cmd;
 use client::deploy_erc20_representation::deploy_erc20_representation;
 use client::eth_to_cosmos::eth_to_cosmos;
+use client::request_all_batches::request_all_batches;
 use client::spot_relay::spot_relay;
 use config::{get_home_dir, load_config};
 use env_logger::Env;
@@ -22,6 +23,8 @@ use gov::queries::query_airdrops;
 use keys::register_orchestrator_address::register_orchestrator_address;
 use keys::set_eth_key;
 use keys::set_orchestrator_key;
+use rustls::crypto::aws_lc_rs;
+use rustls::crypto::CryptoProvider;
 
 mod args;
 mod client;
@@ -44,6 +47,7 @@ async fn main() {
     // On Linux static builds we need to probe ssl certs path to be able to
     // do TLS stuff.
     openssl_probe::init_ssl_cert_env_vars();
+    CryptoProvider::install_default(aws_lc_rs::default_provider()).unwrap();
     // parse the arguments
 
     // handle global config here
@@ -65,6 +69,9 @@ async fn main() {
             }
             ClientSubcommand::SpotRelay(spot_relay_opts) => {
                 spot_relay(spot_relay_opts, address_prefix).await
+            }
+            ClientSubcommand::RequestAllBatches(request_all_batches_opts) => {
+                request_all_batches(request_all_batches_opts, address_prefix).await
             }
         },
         SubCommand::Keys(key_opts) => match key_opts.subcmd {

@@ -41,3 +41,4 @@ toml = "0.5"
 prost = {workspace = true}
 futures = "0.3"
 tonic = {workspace = true}
+rustls = "0.23"
