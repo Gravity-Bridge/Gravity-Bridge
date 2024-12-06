@@ -66,7 +66,7 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 	Bid(suite, TestAccounts[1], 2000, 999999, 0, true) // Bid 2000 on first
 	Bid(suite, TestAccounts[0], 1500, 10, 0, false)    // Insufficient fee, insufficient amount
 	Bid(suite, TestAccounts[0], 1500, 3500, 0, false)  // Outbid the initial bid but not the current highest
-	Bid(suite, TestAccounts[0], 2500, 5500, 0, true)   // Outbid the the current highest
+	Bid(suite, TestAccounts[0], 2500, 5500, 0, true)   // Outbid the current highest
 	AdvanceBlock(&ctx, auctionKeeper)
 	Bid(suite, TestAccounts[0], 2300, 9999000, 0, false)  // Rebid but for too low
 	Bid(suite, TestAccounts[0], 2500, 70000700, 0, false) // Rebid but at current highest
