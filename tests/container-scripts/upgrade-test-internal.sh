@@ -34,6 +34,8 @@ pushd /gravity/orchestrator/test_runner
 DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full NO_GAS_OPT=1 RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
 popd
 
+touch /gravity/test-ready-to-run
+
 # Run the pre-upgrade tests
 pushd /gravity/
 tests/container-scripts/integration-tests.sh $NODES UPGRADE_PART_1
