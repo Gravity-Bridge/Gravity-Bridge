@@ -42,6 +42,8 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetLastObservedEthBlock(),
 		CmdGetLastObservedEthNonce(),
 		GetCmdQueryParams(),
+		CmdDenomToERC20(),
+		CmdERC20ToDenom(),
 	}...)
 
 	return gravityQueryCmd
@@ -461,6 +463,66 @@ func GetCmdQueryParams() *cobra.Command {
 		},
 	}
 
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdDenomToERC20 fetches the ERC20 contract address for a given Cosmos denom
+func CmdDenomToERC20() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "denom-to-erc20 [denom]",
+		Short: "Query the ERC20 contract address for a given Cosmos denom",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			req := &types.QueryDenomToERC20Request{
+				Denom: args[0],
+			}
+
+			res, err := queryClient.DenomToERC20(cmd.Context(), req)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdERC20ToDenom fetches the Cosmos denom for a given ERC20 contract address
+func CmdERC20ToDenom() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "erc20-to-denom [erc20]",
+		Short: "Query the cosmos denom for a given ERC20 contract address",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			req := &types.QueryERC20ToDenomRequest{
+				Erc20: args[0],
+			}
+
+			res, err := queryClient.ERC20ToDenom(cmd.Context(), req)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
