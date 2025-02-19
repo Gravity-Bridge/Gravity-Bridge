@@ -3,6 +3,12 @@ NODES=$1
 TEST_TYPE=$2
 set -eu
 
+echo "Waiting for /gravity/test-ready-to-run to exist before starting the test"
+while [ ! -f /gravity/test-ready-to-run ];
+do
+    sleep 1
+done
+
 FILE=/tmp/contracts
 if test -f "$FILE"; then
 echo "Contracts already deployed, running tests"

@@ -7,6 +7,10 @@ OLD_VERSION=$2
 
 chmod -R 777 /root/
 
+set +e
+rm /gravity/test-ready-to-run
+set -e
+
 echo "Downloading old gravity version at https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64"
 wget https://github.com/Gravity-Bridge/Gravity-Bridge/releases/download/${OLD_VERSION}/gravity-linux-amd64
 mv gravity-linux-amd64 oldgravity
@@ -36,6 +40,8 @@ tests/container-scripts/run-testnet.sh $NODES
 pushd /gravity/orchestrator/test_runner
 DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full NO_GAS_OPT=1 RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
 popd
+
+touch /gravity/test-ready-to-run
 
 # This allows the tester to run the first part of the test
 # immediately if the nodes are killed by a different process
