@@ -22,7 +22,7 @@ sudo wget https://github.com/althea-net/ibc-test-chain/releases/download/v9.1.2/
 
 # Setup Hermes for IBC connections between chains
 pushd /tmp/
-wget https://github.com/informalsystems/ibc-rs/releases/download/v1.7.0/hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz
+wget https://github.com/informalsystems/hermes/releases/download/v1.7.0/hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz
 tar -xvf hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz
 sudo mv hermes /usr/bin/
 popd
