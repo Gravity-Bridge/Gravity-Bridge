@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	typesv2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2"
 )
 
 const (
@@ -37,13 +38,14 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetPendingValsetRequest(),
 		CmdGetPendingOutgoingTXBatchRequest(),
 		CmdGetPendingSendToEth(),
-		GetCmdPendingIbcAutoForwards(),
+		CmdGetPendingIbcAutoForwards(),
 		CmdGetAttestations(),
 		CmdGetLastObservedEthBlock(),
 		CmdGetLastObservedEthNonce(),
-		GetCmdQueryParams(),
+		CmdGetQueryParams(),
 		CmdDenomToERC20(),
 		CmdERC20ToDenom(),
+		CmdGetPendingSendToEthV2(),
 	}...)
 
 	return gravityQueryCmd
@@ -238,8 +240,8 @@ func CmdGetPendingSendToEth() *cobra.Command {
 	return cmd
 }
 
-// GetCmdPendingIbcAutoForwards fetches the next IBC auto forwards to be executed, up to an optional limit
-func GetCmdPendingIbcAutoForwards() *cobra.Command {
+// CmdGetPendingIbcAutoForwards fetches the next IBC auto forwards to be executed, up to an optional limit
+func CmdGetPendingIbcAutoForwards() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "pending-ibc-auto-forwards [optional limit]",
@@ -440,8 +442,8 @@ func CmdGetLastObservedEthNonce() *cobra.Command {
 	return cmd
 }
 
-// GetCmdQueryParams fetches the current Gravity module params
-func GetCmdQueryParams() *cobra.Command {
+// CmdGetQueryParams fetches the current Gravity module params
+func CmdGetQueryParams() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "params",
@@ -521,6 +523,49 @@ func CmdERC20ToDenom() *cobra.Command {
 			}
 
 			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdGetPendingSendToEthV2 fetches all pending Sends to Ethereum (optionally made by the given address) in an updated way
+// There are actually 2 GRPC queries this will hit depending on if the address is provided: GetPendingSendToEthV2 and GetPendingSendToEthV2BySender
+func CmdGetPendingSendToEthV2() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "pending-send-to-eth-v2 [optional address]",
+		Short: "Query transactions waiting to go to Ethereum",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := typesv2.NewQueryClient(clientCtx)
+
+			if len(args) == 0 {
+				req := &typesv2.QueryPendingSendToEthV2{}
+
+				res, err := queryClient.GetPendingSendToEthV2(cmd.Context(), req)
+				if err != nil {
+					return err
+				}
+
+				return clientCtx.PrintProto(res)
+
+			} else {
+				req := &typesv2.QueryPendingSendToEthV2BySender{
+					Sender: args[0],
+				}
+
+				res, err := queryClient.GetPendingSendToEthV2BySender(cmd.Context(), req)
+				if err != nil {
+					return err
+				}
+
+				return clientCtx.PrintProto(res)
+			}
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
