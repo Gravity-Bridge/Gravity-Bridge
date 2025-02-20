@@ -4,7 +4,7 @@ PACKAGES=$(shell go list ./... | grep -v '/simulation')
 VERSION := $(shell git describe --abbrev=6 --dirty --always --tags)
 COMMIT := $(shell git log -1 --format='%H')
 DOCKER := $(shell which docker)
-DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
+DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf:0.41.0
 BUILDDIR ?= $(CURDIR)/build
 LEDGER_ENABLED ?= true
 
@@ -88,10 +88,10 @@ proto-gen:
 	./contrib/local/protocgen.sh
 
 proto-lint:
-	@$(DOCKER_BUF) lint --error-format=json
+	@$(DOCKER_BUF) lint --error-format=json --config=./buf.yaml
 
 proto-check-breaking:
-	@$(DOCKER_BUF) breaking --against "https://github.com/Gravity-Bridge/Gravity-Bridge.git#branch=main,subdir=module"
+	@$(DOCKER_BUF) breaking --against "https://github.com/Gravity-Bridge/Gravity-Bridge.git#branch=main,subdir=module" --config=./buf.yaml
 
 TM_URL           = https://raw.githubusercontent.com/tendermint/tendermint/v0.34.0-rc3/proto/tendermint
 GOGO_PROTO_URL   = https://raw.githubusercontent.com/regen-network/protobuf/cosmos
