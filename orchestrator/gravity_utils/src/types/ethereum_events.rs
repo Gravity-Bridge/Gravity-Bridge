@@ -510,7 +510,7 @@ impl SendToCosmosEvent {
         // whitespace can not be a valid part of a bech32 address, so we can safely trim it
         let dest = dest.unwrap().trim().to_string();
 
-        if dest.as_bytes().len() > ONE_MEGABYTE {
+        if dest.len() > ONE_MEGABYTE {
             warn!("Event nonce {} sends tokens to a destination that exceeds the length limit, these funds will be allocated to the community pool", event_nonce);
             Ok(SendToCosmosEventData {
                 destination: String::new(),
