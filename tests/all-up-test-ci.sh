@@ -3,7 +3,7 @@
 TEST_TYPE=$2
 set -eux
 NODES=4
-FILE_PATH="/home/runner/work/Gravity-Bridge/Gravity-Bridge/"
+FILE_PATH="$GITHUB_WORKSPACE"
 
 sudo apt-get update
 sudo apt-get install -y git make gcc g++ iproute2 iputils-ping procps vim tmux net-tools htop tar jq npm libssl-dev perl rustc cargo wget
