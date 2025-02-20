@@ -46,6 +46,9 @@ build.allow_apis = [
     "fs",
     "process",
 ]
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
 
 [pkg.prost-derive]
 allow_proc_macro = true
@@ -105,6 +108,9 @@ allow_proc_macro = true
 build.allow_apis = [
     "process",
 ]
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
 
 [pkg.num-derive]
 allow_proc_macro = true
@@ -159,11 +165,17 @@ build.allow_apis = [
     "fs",
     "process",
 ]
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
 allow_unsafe = true
 
 [pkg.libc]
 build.allow_apis = [
     "process",
+]
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
 ]
 allow_unsafe = true
 
@@ -173,6 +185,9 @@ allow_unsafe = true
 [pkg.serde]
 build.allow_apis = [
     "process",
+]
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
 ]
 allow_unsafe = true
 
@@ -242,6 +257,9 @@ build.allow_apis = [
     "fs",
     "process",
 ]
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
 allow_unsafe = true
 
 [pkg.spin]
@@ -261,6 +279,9 @@ allow_unsafe = true
 
 [pkg.num-traits]
 allow_unsafe = true
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
 
 [pkg.either]
 allow_unsafe = true
@@ -285,6 +306,9 @@ allow_unsafe = true
 
 [pkg.serde_json]
 allow_unsafe = true
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
 
 [pkg.ryu]
 allow_unsafe = true
@@ -374,6 +398,9 @@ allow_unsafe = true
 build.allow_apis = [
     "fs",
     "process",
+]
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
 ]
 
 [pkg.cc]
@@ -476,6 +503,7 @@ build.allow_build_instructions = [
     "cargo:conf=OPENSSL_NO_IDEA,OPENSSL_NO_CAMELLIA,OPENSSL_NO_COMP,OPENSSL_NO_SSL3_METHOD,OPENSSL_NO_SEED",
     "cargo:include=*",
     "cargo:root=*",
+    "cargo:rustc-check-cfg=*",
     "cargo:rustc-link-lib=static=crypto",
     "cargo:rustc-link-lib=static=ssl",
     "cargo:rustc-link-search=native=*",
@@ -552,6 +580,9 @@ allow_apis = [
 
 [pkg.openssl]
 allow_unsafe = true
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
 
 [pkg.actix-http]
 allow_unsafe = true
@@ -564,6 +595,9 @@ allow_unsafe = true
 
 [pkg.tokio-openssl]
 allow_unsafe = true
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
 
 [pkg.tonic]
 allow_unsafe = true
@@ -872,3 +906,8 @@ build.allow_build_instructions = [
     "cargo:*",
 ]
 allow_unsafe = true
+
+[pkg.rustls]
+build.allow_build_instructions = [
+    "cargo:rustc-check-cfg=*",
+]
