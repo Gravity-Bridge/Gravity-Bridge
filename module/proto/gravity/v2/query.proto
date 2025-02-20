@@ -16,6 +16,9 @@ service Query {
   rpc GetPendingSendToEthV2BySender(QueryPendingSendToEthV2BySender) returns (QueryPendingSendToEthV2Response) {
     option (google.api.http).get = "/gravity/v2/query_pending_send_to_eth_v2_by_sender/{sender}";
   }
+  rpc GetOutgoingTxBatchesByAddr(QueryOutgoingTxBatchesByAddrRequest) returns (QueryOutgoingTxBatchesByAddrResponse) {
+    option (google.api.http).get = "/gravity/v1beta/batch/outgoingtx_by_addr/{address}";
+  }
 }
 
 message QueryPendingSendToEthV2 {
@@ -29,3 +32,10 @@ message QueryPendingSendToEthV2BySender {
   string sender = 1;
 }
 // Result is QueryPendingSendToEthV2Response
+
+message QueryOutgoingTxBatchesByAddrRequest {
+  string address = 1;
+}
+message QueryOutgoingTxBatchesByAddrResponse {
+  repeated gravity.v1.OutgoingTxBatch batches = 1 [(gogoproto.nullable) = false];
+}

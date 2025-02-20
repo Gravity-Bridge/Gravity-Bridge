@@ -61,6 +61,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetQueryParams(),
 		// V2 queries:
 		CmdGetPendingSendToEthV2(),
+		CmdGetOutgoingTxBatchesByAddr(),
 	}...)
 
 	return gravityQueryCmd
@@ -983,6 +984,36 @@ func CmdGetPendingSendToEthV2() *cobra.Command {
 
 				return clientCtx.PrintProto(res)
 			}
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdGetOutgoingTxBatchesByAddr fetches all
+func CmdGetOutgoingTxBatchesByAddr() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "outgoing-tx-batches-by-addr [address]",
+		Short: "Query outgoing TX batches by their token contract address",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := typesv2.NewQueryClient(clientCtx)
+
+			req := &typesv2.QueryOutgoingTxBatchesByAddrRequest{
+				Address: args[0],
+			}
+
+			res, err := queryClient.GetOutgoingTxBatchesByAddr(cmd.Context(), req)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
