@@ -18,6 +18,8 @@ import (
 
 // nolint: exhaustruct
 var _ types.QueryServer = Keeper{}
+
+// nolint: exhaustruct
 var _ typesv2.QueryServer = Keeper{}
 
 const MERCURY_UPGRADE_HEIGHT uint64 = 1282013
