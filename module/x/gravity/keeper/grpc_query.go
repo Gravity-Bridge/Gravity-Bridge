@@ -606,6 +606,8 @@ func (k Keeper) GetPendingIbcAutoForwards(
 	return &types.QueryPendingIbcAutoForwardsResponse{PendingIbcAutoForwards: pendingForwards}, nil
 }
 
+////////////////////////////////////////////////////////////// V2 QUERIES ////////////////////////////////////////////////////////
+
 func (k Keeper) GetPendingSendToEthV2(
 	c context.Context, _ *typesv2.QueryPendingSendToEthV2,
 ) (*typesv2.QueryPendingSendToEthV2Response, error) {
