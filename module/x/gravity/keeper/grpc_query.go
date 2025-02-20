@@ -664,3 +664,18 @@ func (k Keeper) GetPendingSendToEthV2BySender(
 
 	return &res, nil
 }
+
+func (k Keeper) GetOutgoingTxBatchesByAddr(
+	c context.Context, req *typesv2.QueryOutgoingTxBatchesByAddrRequest,
+) (*typesv2.QueryOutgoingTxBatchesByAddrResponse, error) {
+	var batches []types.OutgoingTxBatch
+	k.IterateOutgoingTxBatches(sdk.UnwrapSDKContext(c), func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+		if batch.TokenContract.GetAddress().String() == req.Address {
+			batches = append(batches, batch.ToExternal())
+			return len(batches) == MaxResults
+		} else {
+			return false
+		}
+	})
+	return &typesv2.QueryOutgoingTxBatchesByAddrResponse{Batches: batches}, nil
+}
