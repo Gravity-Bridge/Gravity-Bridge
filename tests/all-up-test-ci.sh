@@ -55,6 +55,8 @@ pushd orchestrator/test_runner
 DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
 popd
 
-echo "Running ibc relayer in the background, directing output to /ibc-relayer-logs"
+# Create a setup complete flag file used by the integration tests
+sudo mkdir /gravity
+sudo touch /gravity/test-ready-to-run
 
 bash tests/container-scripts/integration-tests.sh $NODES $TEST_TYPE
