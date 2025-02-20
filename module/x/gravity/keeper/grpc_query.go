@@ -636,12 +636,12 @@ func (k Keeper) GetPendingSendToEthV2(
 
 func (k Keeper) GetPendingSendToEthV2BySender(
 	c context.Context, req *typesv2.QueryPendingSendToEthV2BySender,
-) (*typesv2.QueryPendingSendToEthV2Response, error) {
+) (*typesv2.QueryPendingSendToEthV2BySenderResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	batches := k.GetOutgoingTxBatches(ctx)
 	unbatchedTxs := k.GetUnbatchedTransactions(ctx)
 	senderAddress := req.GetSender()
-	res := typesv2.QueryPendingSendToEthV2Response{
+	res := typesv2.QueryPendingSendToEthV2BySenderResponse{
 		TransfersInBatches: []typesv2.OutgoingTransferAndBatch{},
 		UnbatchedTransfers: []types.OutgoingTransferTx{},
 	}
