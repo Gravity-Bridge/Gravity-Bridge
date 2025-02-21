@@ -16,6 +16,11 @@ do
     rm -rf "/validator$i"
 done
 
+# Remove the setup complete flag file
+set +e
+rm -fr /gravity/test-ready-to-run
+set -e
+
 
 pushd /gravity/module/
 export PATH=$PATH:/usr/local/go/bin
@@ -38,6 +43,9 @@ set -e
 pushd /gravity/orchestrator/test_runner
 DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full TEST_TYPE=$TEST_TYPE NO_GAS_OPT=1 RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
 popd
+
+# Create a setup complete flag file used by the integration tests
+touch /gravity/test-ready-to-run
 
 # This keeps the script open to prevent Docker from stopping the container
 # immediately if the nodes are killed by a different process
