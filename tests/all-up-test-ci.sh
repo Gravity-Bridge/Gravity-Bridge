@@ -48,7 +48,7 @@ popd
 
 sudo bash tests/container-scripts/setup-validators.sh $NODES
 sudo bash tests/container-scripts/setup-ibc-validators.sh $NODES
-sudo bash tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE
+sudo GITHUB_WORKSPACE=$GITHUB_WORKSPACE bash tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE
 
 # deploy the ethereum contracts
 pushd orchestrator/test_runner

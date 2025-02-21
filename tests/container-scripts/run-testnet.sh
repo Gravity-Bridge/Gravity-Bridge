@@ -103,17 +103,17 @@ set +u
 # may be different. These two tests have different fork block heights they rely on
 if [[ $TEST_TYPE == *"ARBITRARY_LOGIC"* ]] && [[ ! -z ${ALCHEMY_ID} ]]; then
     export ALCHEMY_ID=$ALCHEMY_ID
-    pushd $FOLDER_PATH/solidity
+    pushd ${FOLDER_PATH}solidity
     npm run solidity_test_fork &
     popd
 elif [[ $TEST_TYPE == *"RELAY_MARKET"* ]] && [[ ! -z ${ALCHEMY_ID} ]]; then
     export ALCHEMY_ID=$ALCHEMY_ID
-    pushd $FOLDER_PATH/solidity
+    pushd ${FOLDER_PATH}solidity
     npm run evm_fork &
     popd
 # This starts a hardhat test environment with no pre-seeded state, faster to run, not accurate
 elif [[ ! -z "$HARDHAT" ]]; then
-    pushd $FOLDER_PATH/solidity
+    pushd ${FOLDER_PATH}solidity
     npm run evm &
     popd
 # This starts the Geth backed testnet with no pre-seeded in state.
@@ -124,7 +124,7 @@ elif [[ ! -z "$HARDHAT" ]]; then
 # hardhat doesn't work for some tests that depend on transactions waiting for blocks, so Geth is the default
 else
     if [[ -z "$(ps -e | grep geth)" ]]; then # Only run-eth if it's not running, which it would be with upgrade tests
-      bash $FOLDER_PATH/tests/container-scripts/run-eth.sh &
+      bash ${FOLDER_PATH}tests/container-scripts/run-eth.sh &
     fi
 fi
 sleep 10

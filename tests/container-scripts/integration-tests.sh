@@ -23,6 +23,7 @@ set -e
 
 DOCKER_PATH="/gravity/"
 
++u
 if [[ -d "$GITHUB_WORKSPACE" ]]; then
     FOLDER_PATH="$GITHUB_WORKSPACE"
 elif [[ -d "$DOCKER_PATH" ]]; then
@@ -31,6 +32,7 @@ else
     echo "Error: Neither $GITHUB_WORKSPACE nor $DOCKER_PATH exists."
     exit 1
 fi
+-u
 
 
 pushd $FOLDER_PATH/orchestrator/test_runner
