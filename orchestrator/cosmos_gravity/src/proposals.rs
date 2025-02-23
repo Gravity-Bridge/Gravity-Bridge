@@ -13,11 +13,11 @@ use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
-use gravity_proto::gravity::AirdropProposal as AirdropProposalMsg;
-use gravity_proto::gravity::IbcMetadataProposal;
-use gravity_proto::gravity::UnhaltBridgeProposal;
-use serde::Deserialize;
-use serde::Serialize;
+use gravity_proto::gravity::v1::AirdropProposal as AirdropProposalMsg;
+use gravity_proto::gravity::v1::IbcMetadataProposal;
+use gravity_proto::gravity::v1::UnhaltBridgeProposal;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 use std::convert::TryFrom;
 use std::time::Duration;
 
