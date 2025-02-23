@@ -1,5 +1,5 @@
 use clarity::{Address, Uint256};
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::types::{EthereumEvent, ValsetUpdatedEvent};
 use gravity_utils::{error::GravityError, types::Valset};

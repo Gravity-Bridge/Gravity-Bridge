@@ -15,7 +15,7 @@ use cosmos_gravity::send::MSG_SEND_TO_ETH_TYPE_URL;
 use cosmos_gravity::utils::get_min_send_to_eth_fee;
 use deep_space::{Coin, Contact, CosmosPrivateKey, Fee, MessageArgs, Msg, PrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
-use gravity_proto::gravity::{query_client::QueryClient as GravityQueryClient, MsgSendToEth};
+use gravity_proto::gravity::v1::{query_client::QueryClient as GravityQueryClient, MsgSendToEth};
 use gravity_utils::num_conversion::one_atom;
 use num::ToPrimitive;
 use num256::Uint256;

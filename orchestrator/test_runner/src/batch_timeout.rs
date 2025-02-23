@@ -16,7 +16,7 @@ use cosmos_gravity::{
 use deep_space::Contact;
 use gravity_proto::{
     cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange,
-    gravity::query_client::QueryClient as GravityQueryClient,
+    gravity::v1::query_client::QueryClient as GravityQueryClient,
 };
 use std::time::{Duration, Instant};
 use tokio::time::sleep as delay_for;

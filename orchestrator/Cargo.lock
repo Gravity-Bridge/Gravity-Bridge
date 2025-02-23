@@ -690,7 +690,7 @@ dependencies = [
  "bitflags 2.6.0",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "lazy_static",
  "lazycell",
  "log",
@@ -1910,9 +1910,9 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "gravity_proto"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03fdae7fdf0b6a133f123324297d906cab6e9c5dd2550ee4486f4fbfa5c80d08"
+checksum = "babe1a1bdf4bd59ad9490ed5c58a10bc64f80949cd9f0002c3417cb05051a152"
 dependencies = [
  "cosmos-sdk-proto-althea",
  "prost 0.13.3",
@@ -2802,7 +2802,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
 dependencies = [
  "cfg-if 1.0.0",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]

@@ -1,7 +1,7 @@
 use crate::args::AirdropQueryOpts;
 use cosmos_gravity::send::TIMEOUT;
 use deep_space::Address;
-use gravity_proto::gravity::AirdropProposal;
+use gravity_proto::gravity::v1::AirdropProposal;
 use gravity_utils::connection_prep::create_rpc_connections;
 use prost::{bytes::BytesMut, Message};
 use std::process::exit;

@@ -8,8 +8,8 @@ use clarity::Address;
 use cosmos_gravity::proposals::submit_ibc_metadata_proposal;
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::{DenomUnit, Metadata};
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::IbcMetadataProposal;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::IbcMetadataProposal;
 use tonic::transport::Channel;
 use web30::client::Web3;
 

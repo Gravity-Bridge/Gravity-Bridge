@@ -8,8 +8,8 @@ use cosmos_gravity::query::{
 use cosmos_gravity::send::send_request_batch;
 use ethereum_gravity::message_signatures::encode_tx_batch_confirm_hashed;
 use ethereum_gravity::submit_batch::send_eth_transaction_batch;
-use gravity_proto::gravity::query_client::QueryClient;
-use gravity_proto::gravity::{QueryDenomToErc20Request, QueryErc20ToDenomRequest};
+use gravity_proto::gravity::v1::query_client::QueryClient;
+use gravity_proto::gravity::v1::{QueryDenomToErc20Request, QueryErc20ToDenomRequest};
 use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
 use gravity_utils::types::TransactionBatch;
 use relayer::find_latest_valset::find_latest_valset;

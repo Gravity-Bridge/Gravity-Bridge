@@ -22,9 +22,9 @@ use deep_space::{Contact, PrivateKey};
 use ethereum_gravity::deploy_erc20::deploy_erc20;
 use ethereum_gravity::utils::get_valset_nonce;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
-use gravity_proto::gravity::MsgBatchSendToEthClaim;
-use gravity_proto::gravity::QueryAttestationsRequest;
-use gravity_proto::gravity::{
+use gravity_proto::gravity::v1::MsgBatchSendToEthClaim;
+use gravity_proto::gravity::v1::QueryAttestationsRequest;
+use gravity_proto::gravity::v1::{
     query_client::QueryClient as GravityQueryClient, QueryDenomToErc20Request,
 };
 use gravity_utils::types::MSG_BATCH_SEND_TO_ETH_TYPE_URL;

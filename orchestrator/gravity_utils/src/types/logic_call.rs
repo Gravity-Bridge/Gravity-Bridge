@@ -37,10 +37,10 @@ impl Confirm for LogicCallConfirmResponse {
     }
 }
 
-impl TryFrom<gravity_proto::gravity::MsgConfirmLogicCall> for LogicCallConfirmResponse {
+impl TryFrom<gravity_proto::gravity::v1::MsgConfirmLogicCall> for LogicCallConfirmResponse {
     type Error = GravityError;
     fn try_from(
-        input: gravity_proto::gravity::MsgConfirmLogicCall,
+        input: gravity_proto::gravity::v1::MsgConfirmLogicCall,
     ) -> Result<LogicCallConfirmResponse, GravityError> {
         Ok(LogicCallConfirmResponse {
             invalidation_id: hex_str_to_bytes(&input.invalidation_id).unwrap(),
@@ -52,10 +52,10 @@ impl TryFrom<gravity_proto::gravity::MsgConfirmLogicCall> for LogicCallConfirmRe
     }
 }
 
-impl TryFrom<gravity_proto::gravity::OutgoingLogicCall> for LogicCall {
+impl TryFrom<gravity_proto::gravity::v1::OutgoingLogicCall> for LogicCall {
     type Error = GravityError;
     fn try_from(
-        input: gravity_proto::gravity::OutgoingLogicCall,
+        input: gravity_proto::gravity::v1::OutgoingLogicCall,
     ) -> Result<LogicCall, GravityError> {
         let mut transfers: Vec<Erc20Token> = Vec::new();
         let mut fees: Vec<Erc20Token> = Vec::new();
@@ -84,9 +84,9 @@ impl TryFrom<gravity_proto::gravity::OutgoingLogicCall> for LogicCall {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::OutgoingLogicCall> for &LogicCall {
-    fn into(self) -> gravity_proto::gravity::OutgoingLogicCall {
-        gravity_proto::gravity::OutgoingLogicCall {
+impl Into<gravity_proto::gravity::v1::OutgoingLogicCall> for &LogicCall {
+    fn into(self) -> gravity_proto::gravity::v1::OutgoingLogicCall {
+        gravity_proto::gravity::v1::OutgoingLogicCall {
             transfers: self.transfers.iter().map(|t| t.into()).collect(),
             fees: self.fees.iter().map(|t| t.into()).collect(),
             logic_contract_address: self.logic_contract_address.to_string(),
@@ -102,8 +102,8 @@ impl Into<gravity_proto::gravity::OutgoingLogicCall> for &LogicCall {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::OutgoingLogicCall> for LogicCall {
-    fn into(self) -> gravity_proto::gravity::OutgoingLogicCall {
+impl Into<gravity_proto::gravity::v1::OutgoingLogicCall> for LogicCall {
+    fn into(self) -> gravity_proto::gravity::v1::OutgoingLogicCall {
         let r = &self;
         r.into()
     }

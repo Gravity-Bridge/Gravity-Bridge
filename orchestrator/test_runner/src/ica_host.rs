@@ -12,7 +12,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::interchain_accounts::controller::v1::QueryInterchainAccountRequest;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::interchain_accounts::controller::v1::QueryParamsRequest as ControllerQueryParamsRequest;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::interchain_accounts::host::v1::QueryParamsRequest as HostQueryParamsRequest;
-use gravity_proto::gravity::{MsgSendToEth, QueryDenomToErc20Request};
+use gravity_proto::gravity::v1::{MsgSendToEth, QueryDenomToErc20Request};
 use gravity_proto::gravity_test::gaia::icaauth::v1::{MsgRegisterAccount, MsgSubmitTx};
 use gravity_utils::num_conversion::one_atom;
 use num256::Uint256;
@@ -24,7 +24,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangePro
 use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::query_client::QueryClient as IbcChannelQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::interchain_accounts::controller::v1::query_client::QueryClient as ICAControllerQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::interchain_accounts::host::v1::query_client::QueryClient as ICAHostQueryClient;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use clarity::Address as EthAddress;
 
 use crate::airdrop_proposal::wait_for_proposals_to_execute;

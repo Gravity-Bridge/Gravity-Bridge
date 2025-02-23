@@ -9,7 +9,7 @@ use ethereum_gravity::message_signatures::encode_valset_confirm_hashed;
 use ethereum_gravity::{
     utils::get_valset_nonce, utils::GasCost, valset_update::send_eth_valset_update,
 };
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::error::GravityError;
 use gravity_utils::num_conversion::{print_eth, print_gwei};
 use gravity_utils::prices::get_weth_price_with_retries;

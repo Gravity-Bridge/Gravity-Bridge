@@ -23,7 +23,7 @@ use deep_space::{
     private_key::{CosmosPrivateKey, PrivateKey},
 };
 use futures::future::{join, join3};
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use metrics_exporter::{metrics_errors_counter, metrics_latest, metrics_warnings_counter};
 use num_traits::ToPrimitive;

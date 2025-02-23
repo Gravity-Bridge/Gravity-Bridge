@@ -323,14 +323,14 @@ impl Valset {
     }
 }
 
-impl From<gravity_proto::gravity::Valset> for Valset {
-    fn from(input: gravity_proto::gravity::Valset) -> Self {
+impl From<gravity_proto::gravity::v1::Valset> for Valset {
+    fn from(input: gravity_proto::gravity::v1::Valset) -> Self {
         (&input).into()
     }
 }
 
-impl From<&gravity_proto::gravity::Valset> for Valset {
-    fn from(input: &gravity_proto::gravity::Valset) -> Self {
+impl From<&gravity_proto::gravity::v1::Valset> for Valset {
+    fn from(input: &gravity_proto::gravity::v1::Valset) -> Self {
         let parsed_reward_token = input.reward_token.parse().unwrap();
         let reward_token = if parsed_reward_token == zero_address() {
             None
@@ -394,8 +394,8 @@ impl fmt::Display for ValsetMember {
     }
 }
 
-impl From<gravity_proto::gravity::BridgeValidator> for ValsetMember {
-    fn from(input: gravity_proto::gravity::BridgeValidator) -> Self {
+impl From<gravity_proto::gravity::v1::BridgeValidator> for ValsetMember {
+    fn from(input: gravity_proto::gravity::v1::BridgeValidator) -> Self {
         let eth_address = match input.ethereum_address.parse() {
             Ok(e) => e,
             Err(_) => panic!("Validator set with empty address!"),
@@ -407,8 +407,8 @@ impl From<gravity_proto::gravity::BridgeValidator> for ValsetMember {
     }
 }
 
-impl From<&gravity_proto::gravity::BridgeValidator> for ValsetMember {
-    fn from(input: &gravity_proto::gravity::BridgeValidator) -> Self {
+impl From<&gravity_proto::gravity::v1::BridgeValidator> for ValsetMember {
+    fn from(input: &gravity_proto::gravity::v1::BridgeValidator) -> Self {
         let eth_address = match input.ethereum_address.parse() {
             Ok(e) => e,
             Err(_) => panic!("Validator set with empty address!"),
@@ -420,26 +420,28 @@ impl From<&gravity_proto::gravity::BridgeValidator> for ValsetMember {
     }
 }
 
-impl From<&ValsetMember> for gravity_proto::gravity::BridgeValidator {
-    fn from(input: &ValsetMember) -> gravity_proto::gravity::BridgeValidator {
+impl From<&ValsetMember> for gravity_proto::gravity::v1::BridgeValidator {
+    fn from(input: &ValsetMember) -> gravity_proto::gravity::v1::BridgeValidator {
         let ethereum_address = input.eth_address.to_string();
-        gravity_proto::gravity::BridgeValidator {
+        gravity_proto::gravity::v1::BridgeValidator {
             power: input.power,
             ethereum_address,
         }
     }
 }
 
-impl TryFrom<gravity_proto::gravity::MsgValsetConfirm> for ValsetConfirmResponse {
+impl TryFrom<gravity_proto::gravity::v1::MsgValsetConfirm> for ValsetConfirmResponse {
     type Error = GravityError;
-    fn try_from(input: gravity_proto::gravity::MsgValsetConfirm) -> Result<Self, GravityError> {
+    fn try_from(input: gravity_proto::gravity::v1::MsgValsetConfirm) -> Result<Self, GravityError> {
         ValsetConfirmResponse::try_from(&input)
     }
 }
 
-impl TryFrom<&gravity_proto::gravity::MsgValsetConfirm> for ValsetConfirmResponse {
+impl TryFrom<&gravity_proto::gravity::v1::MsgValsetConfirm> for ValsetConfirmResponse {
     type Error = GravityError;
-    fn try_from(input: &gravity_proto::gravity::MsgValsetConfirm) -> Result<Self, GravityError> {
+    fn try_from(
+        input: &gravity_proto::gravity::v1::MsgValsetConfirm,
+    ) -> Result<Self, GravityError> {
         Ok(ValsetConfirmResponse {
             orchestrator: input.orchestrator.parse()?,
             eth_address: input.eth_address.parse()?,
@@ -450,9 +452,9 @@ impl TryFrom<&gravity_proto::gravity::MsgValsetConfirm> for ValsetConfirmRespons
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::Valset> for &Valset {
-    fn into(self) -> gravity_proto::gravity::Valset {
-        gravity_proto::gravity::Valset {
+impl Into<gravity_proto::gravity::v1::Valset> for &Valset {
+    fn into(self) -> gravity_proto::gravity::v1::Valset {
+        gravity_proto::gravity::v1::Valset {
             nonce: self.nonce,
             // note our use of a dummy value here, this value is not used for signatures
             // so it has no effect on evidence based slashing
@@ -465,16 +467,16 @@ impl Into<gravity_proto::gravity::Valset> for &Valset {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::Valset> for Valset {
-    fn into(self) -> gravity_proto::gravity::Valset {
+impl Into<gravity_proto::gravity::v1::Valset> for Valset {
+    fn into(self) -> gravity_proto::gravity::v1::Valset {
         let r = &self;
         r.into()
     }
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::BridgeValidator> for ValsetMember {
-    fn into(self) -> gravity_proto::gravity::BridgeValidator {
+impl Into<gravity_proto::gravity::v1::BridgeValidator> for ValsetMember {
+    fn into(self) -> gravity_proto::gravity::v1::BridgeValidator {
         let r = &self;
         r.into()
     }

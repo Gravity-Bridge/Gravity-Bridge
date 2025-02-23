@@ -12,7 +12,7 @@ use clarity::address::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use deep_space::{Coin, Contact, CosmosPrivateKey};
 use futures::future::join3;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::num_conversion::print_gwei;
 use gravity_utils::types::{BatchRelayingMode, RelayerConfig, ValsetRelayingMode};
 use std::time::{Duration, Instant};

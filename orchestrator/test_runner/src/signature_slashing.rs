@@ -14,7 +14,7 @@ use cosmos_gravity::query::get_gravity_params;
 use deep_space::client::types::ChainStatus;
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tonic::transport::Channel;

@@ -21,8 +21,8 @@ use gravity_proto::auction::{
     Auction, MsgBid, Params, QueryAuctionByIdRequest, QueryAuctionPeriodRequest,
     QueryAuctionsRequest, QueryParamsRequest,
 };
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::{MsgSendToEth, QueryDenomToErc20Request};
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::{MsgSendToEth, QueryDenomToErc20Request};
 use gravity_utils::num_conversion::one_atom;
 use lazy_static::lazy_static;
 use num::CheckedSub;

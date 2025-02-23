@@ -25,9 +25,9 @@ pub struct Erc20Token {
     pub token_contract_address: EthAddress,
 }
 
-impl TryFrom<gravity_proto::gravity::Erc20Token> for Erc20Token {
+impl TryFrom<gravity_proto::gravity::v1::Erc20Token> for Erc20Token {
     type Error = GravityError;
-    fn try_from(input: gravity_proto::gravity::Erc20Token) -> Result<Erc20Token, GravityError> {
+    fn try_from(input: gravity_proto::gravity::v1::Erc20Token) -> Result<Erc20Token, GravityError> {
         Ok(Erc20Token {
             amount: input.amount.parse()?,
             token_contract_address: input.contract.parse()?,
@@ -35,9 +35,9 @@ impl TryFrom<gravity_proto::gravity::Erc20Token> for Erc20Token {
     }
 }
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::Erc20Token> for &Erc20Token {
-    fn into(self) -> gravity_proto::gravity::Erc20Token {
-        gravity_proto::gravity::Erc20Token {
+impl Into<gravity_proto::gravity::v1::Erc20Token> for &Erc20Token {
+    fn into(self) -> gravity_proto::gravity::v1::Erc20Token {
+        gravity_proto::gravity::v1::Erc20Token {
             amount: self.amount.to_string(),
             contract: self.token_contract_address.to_string(),
         }
@@ -45,9 +45,9 @@ impl Into<gravity_proto::gravity::Erc20Token> for &Erc20Token {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::Erc20Token> for Erc20Token {
-    fn into(self) -> gravity_proto::gravity::Erc20Token {
-        gravity_proto::gravity::Erc20Token {
+impl Into<gravity_proto::gravity::v1::Erc20Token> for Erc20Token {
+    fn into(self) -> gravity_proto::gravity::v1::Erc20Token {
+        gravity_proto::gravity::v1::Erc20Token {
             amount: self.amount.to_string(),
             contract: self.token_contract_address.to_string(),
         }

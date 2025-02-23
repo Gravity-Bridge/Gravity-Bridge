@@ -15,7 +15,7 @@ use deep_space::coin::Coin;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::{Address, Contact};
 use ethereum_gravity::utils::get_tx_batch_nonce;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::GravityBridgeToolsConfig;
 use rand::Rng;
 use std::time::{Duration, Instant};

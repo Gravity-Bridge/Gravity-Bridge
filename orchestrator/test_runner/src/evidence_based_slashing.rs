@@ -15,7 +15,7 @@ use deep_space::{Coin, Contact};
 use ethereum_gravity::message_signatures::encode_valset_confirm_hashed;
 use ethereum_gravity::{message_signatures::encode_valset_confirm, utils::get_gravity_id};
 use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::{Valset, ValsetMember};
 use tonic::transport::Channel;
 use web30::client::Web3;

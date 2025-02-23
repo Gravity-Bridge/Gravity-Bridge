@@ -31,8 +31,8 @@ use gravity_proto::cosmos_sdk_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelsRequest,
 };
 use gravity_proto::cosmos_sdk_proto::ibc::lightclients::tendermint::v1::ClientState;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::{
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::{
     MsgExecuteIbcAutoForwards, PendingIbcAutoForward, QueryPendingIbcAutoForwards,
 };
 use gravity_utils::error::GravityError;

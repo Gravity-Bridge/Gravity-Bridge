@@ -4,7 +4,7 @@ use clarity::{PrivateKey as EthPrivateKey, Uint256};
 use cosmos_gravity::query::{get_latest_logic_calls, get_logic_call_signatures};
 use ethereum_gravity::message_signatures::encode_logic_call_confirm_hashed;
 use ethereum_gravity::{logic_call::send_eth_logic_call, utils::get_logic_call_nonce};
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::num_conversion::{print_eth, print_gwei};
 use gravity_utils::prices::get_weth_price_with_retries;
 use gravity_utils::types::{LogicCall, RelayerConfig};

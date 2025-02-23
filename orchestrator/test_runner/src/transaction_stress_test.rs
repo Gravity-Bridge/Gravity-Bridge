@@ -9,7 +9,7 @@ use deep_space::coin::Coin;
 use deep_space::Contact;
 use ethereum_gravity::{send_to_cosmos::send_to_cosmos, utils::get_tx_batch_nonce};
 use futures::future::join_all;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 use std::{
     collections::{HashMap, HashSet},

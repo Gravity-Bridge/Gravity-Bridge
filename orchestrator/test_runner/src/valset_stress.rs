@@ -4,7 +4,7 @@ use crate::utils::start_orchestrators;
 use crate::utils::ValidatorKeys;
 use clarity::Address as EthAddress;
 use deep_space::Contact;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use tonic::transport::Channel;
 use web30::client::Web3;
 

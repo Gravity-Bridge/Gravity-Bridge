@@ -7,7 +7,7 @@ use cosmos_gravity::send::cancel_send_to_eth;
 use cosmos_gravity::send::send_to_eth;
 use deep_space::coin::Coin;
 use deep_space::Contact;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use tonic::transport::Channel;
 use web30::client::Web3;
 

@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 gravity_utils = {path = "../gravity_utils"}
 ethereum_gravity = {path = "../ethereum_gravity"}
-gravity_proto = {workspace = true}
+gravity_proto.workspace = true
 
 deep_space = {workspace = true}
 clarity = {workspace = true}

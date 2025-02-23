@@ -154,10 +154,10 @@ impl Confirm for BatchConfirmResponse {
     }
 }
 
-impl TryFrom<gravity_proto::gravity::OutgoingTxBatch> for TransactionBatch {
+impl TryFrom<gravity_proto::gravity::v1::OutgoingTxBatch> for TransactionBatch {
     type Error = GravityError;
     fn try_from(
-        input: gravity_proto::gravity::OutgoingTxBatch,
+        input: gravity_proto::gravity::v1::OutgoingTxBatch,
     ) -> Result<TransactionBatch, GravityError> {
         let mut transactions = Vec::new();
         let mut running_total_fee: Option<Erc20Token> = None;
@@ -189,10 +189,10 @@ impl TryFrom<gravity_proto::gravity::OutgoingTxBatch> for TransactionBatch {
     }
 }
 
-impl TryFrom<gravity_proto::gravity::MsgConfirmBatch> for BatchConfirmResponse {
+impl TryFrom<gravity_proto::gravity::v1::MsgConfirmBatch> for BatchConfirmResponse {
     type Error = GravityError;
     fn try_from(
-        input: gravity_proto::gravity::MsgConfirmBatch,
+        input: gravity_proto::gravity::v1::MsgConfirmBatch,
     ) -> Result<BatchConfirmResponse, GravityError> {
         Ok(BatchConfirmResponse {
             nonce: input.nonce,
@@ -204,10 +204,10 @@ impl TryFrom<gravity_proto::gravity::MsgConfirmBatch> for BatchConfirmResponse {
     }
 }
 
-impl TryFrom<gravity_proto::gravity::OutgoingTransferTx> for BatchTransaction {
+impl TryFrom<gravity_proto::gravity::v1::OutgoingTransferTx> for BatchTransaction {
     type Error = GravityError;
     fn try_from(
-        input: gravity_proto::gravity::OutgoingTransferTx,
+        input: gravity_proto::gravity::v1::OutgoingTransferTx,
     ) -> Result<BatchTransaction, GravityError> {
         if input.erc20_fee.is_none()
             || input.erc20_token.is_none()
@@ -229,9 +229,9 @@ impl TryFrom<gravity_proto::gravity::OutgoingTransferTx> for BatchTransaction {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::OutgoingTransferTx> for &BatchTransaction {
-    fn into(self) -> gravity_proto::gravity::OutgoingTransferTx {
-        gravity_proto::gravity::OutgoingTransferTx {
+impl Into<gravity_proto::gravity::v1::OutgoingTransferTx> for &BatchTransaction {
+    fn into(self) -> gravity_proto::gravity::v1::OutgoingTransferTx {
+        gravity_proto::gravity::v1::OutgoingTransferTx {
             id: self.id,
             sender: self.sender.to_string(),
             dest_address: self.destination.to_string(),
@@ -242,17 +242,17 @@ impl Into<gravity_proto::gravity::OutgoingTransferTx> for &BatchTransaction {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::OutgoingTransferTx> for BatchTransaction {
-    fn into(self) -> gravity_proto::gravity::OutgoingTransferTx {
+impl Into<gravity_proto::gravity::v1::OutgoingTransferTx> for BatchTransaction {
+    fn into(self) -> gravity_proto::gravity::v1::OutgoingTransferTx {
         let r = &self;
         r.into()
     }
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::OutgoingTxBatch> for &TransactionBatch {
-    fn into(self) -> gravity_proto::gravity::OutgoingTxBatch {
-        gravity_proto::gravity::OutgoingTxBatch {
+impl Into<gravity_proto::gravity::v1::OutgoingTxBatch> for &TransactionBatch {
+    fn into(self) -> gravity_proto::gravity::v1::OutgoingTxBatch {
+        gravity_proto::gravity::v1::OutgoingTxBatch {
             batch_nonce: self.nonce,
             batch_timeout: self.batch_timeout,
             transactions: self.transactions.iter().map(|v| v.into()).collect(),
@@ -263,8 +263,8 @@ impl Into<gravity_proto::gravity::OutgoingTxBatch> for &TransactionBatch {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<gravity_proto::gravity::OutgoingTxBatch> for TransactionBatch {
-    fn into(self) -> gravity_proto::gravity::OutgoingTxBatch {
+impl Into<gravity_proto::gravity::v1::OutgoingTxBatch> for TransactionBatch {
+    fn into(self) -> gravity_proto::gravity::v1::OutgoingTxBatch {
         let r = &self;
         r.into()
     }

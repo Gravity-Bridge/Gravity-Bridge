@@ -12,7 +12,7 @@ use cosmos_gravity::query::get_erc20_to_denom;
 use cosmos_gravity::query::get_pending_batch_fees;
 use cosmos_gravity::send::send_request_batch;
 use deep_space::{Coin, Contact, PrivateKey};
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::num_conversion::print_eth;
 use gravity_utils::prices::get_weth_price_with_retries;
 use gravity_utils::types::BatchRequestMode;

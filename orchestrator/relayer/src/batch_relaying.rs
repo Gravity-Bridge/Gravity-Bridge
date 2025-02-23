@@ -7,7 +7,7 @@ use cosmos_gravity::query::get_transaction_batch_signatures;
 use ethereum_gravity::message_signatures::encode_tx_batch_confirm_hashed;
 use ethereum_gravity::submit_batch::send_eth_transaction_batch;
 use ethereum_gravity::utils::get_tx_batch_nonce;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::num_conversion::print_eth;
 use gravity_utils::num_conversion::print_gwei;
 use gravity_utils::prices::get_weth_price_with_retries;

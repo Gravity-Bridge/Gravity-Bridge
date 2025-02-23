@@ -5,8 +5,8 @@ use deep_space::client::ChainStatus;
 use deep_space::utils::decode_any;
 use deep_space::{Contact, CosmosPrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
-use gravity_proto::gravity::query_client::{QueryClient as GravityQueryClient, QueryClient};
-use gravity_proto::gravity::{
+use gravity_proto::gravity::v1::query_client::{QueryClient as GravityQueryClient, QueryClient};
+use gravity_proto::gravity::v1::{
     ClaimType, EthereumClaim, MsgBatchSendToEthClaim, MsgErc20DeployedClaim,
     MsgLogicCallExecutedClaim, MsgSendToCosmosClaim, MsgValsetUpdatedClaim,
     QueryAttestationsRequest,

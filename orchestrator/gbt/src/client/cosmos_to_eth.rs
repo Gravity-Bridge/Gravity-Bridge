@@ -4,8 +4,8 @@ use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_denom_to_erc20;
 use cosmos_gravity::send::send_to_eth;
 use deep_space::{Address as CosmosAddress, Coin, Contact, PrivateKey};
-use gravity_proto::gravity::query_client::QueryClient;
-use gravity_proto::gravity::QueryDenomToErc20Request;
+use gravity_proto::gravity::v1::query_client::QueryClient;
+use gravity_proto::gravity::v1::QueryDenomToErc20Request;
 use gravity_utils::{
     connection_prep::{check_for_fee, create_rpc_connections},
     num_conversion::{print_atom, print_eth},

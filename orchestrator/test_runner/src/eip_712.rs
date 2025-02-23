@@ -10,7 +10,7 @@ use gravity_proto::{
         bank::v1beta1::MsgSend,
         tx::v1beta1::{BroadcastMode, TxRaw},
     },
-    gravity::query_client::QueryClient as GravityQueryClient,
+    gravity::v1::query_client::QueryClient as GravityQueryClient,
 };
 use gravity_utils::num_conversion::one_atom;
 use num256::Uint256;

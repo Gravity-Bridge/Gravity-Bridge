@@ -30,8 +30,8 @@ use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
     DelegationResponse, QueryValidatorsRequest,
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::{Plan, SoftwareUpgradeProposal};
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::MsgSendToCosmosClaim;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::MsgSendToCosmosClaim;
 use gravity_utils::types::BatchRelayingMode;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;

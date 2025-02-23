@@ -16,7 +16,7 @@ use deep_space::utils::encode_any;
 use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
-use gravity_proto::gravity::AirdropProposal as AirdropProposalMsg;
+use gravity_proto::gravity::v1::AirdropProposal as AirdropProposalMsg;
 use rand::prelude::ThreadRng;
 use rand::Rng;
 use std::time::{Duration, Instant};

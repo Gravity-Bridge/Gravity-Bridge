@@ -14,7 +14,7 @@ use clarity::constants::zero_address;
 use clarity::Address as EthAddress;
 use deep_space::utils::bytes_to_hex_str;
 use deep_space::{Address as CosmosAddress, Address, Msg};
-use gravity_proto::gravity::{
+use gravity_proto::gravity::v1::{
     MsgBatchSendToEthClaim, MsgErc20DeployedClaim, MsgLogicCallExecutedClaim, MsgSendToCosmosClaim,
     MsgValsetUpdatedClaim,
 };

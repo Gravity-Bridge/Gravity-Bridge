@@ -2,7 +2,7 @@ use crate::{args::DeployErc20RepresentationOpts, utils::TIMEOUT};
 
 use cosmos_gravity::query::get_gravity_params;
 use ethereum_gravity::deploy_erc20::deploy_erc20;
-use gravity_proto::gravity::{QueryAttestationsRequest, QueryDenomToErc20Request};
+use gravity_proto::gravity::v1::{QueryAttestationsRequest, QueryDenomToErc20Request};
 use gravity_utils::connection_prep::{check_for_eth, create_rpc_connections};
 
 use std::{
@@ -156,8 +156,8 @@ pub async fn deploy_erc20_representation(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-    use gravity_proto::gravity::MsgErc20DeployedClaim;
+    use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+    use gravity_proto::gravity::v1::MsgErc20DeployedClaim;
     use prost::bytes::BytesMut;
     use prost::Message;
 

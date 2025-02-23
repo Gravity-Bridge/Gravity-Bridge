@@ -13,7 +13,7 @@ use cosmos_gravity::query::get_gravity_params;
 use deep_space::coin::Coin;
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use tonic::transport::Channel;
 use web30::client::Web3;
 

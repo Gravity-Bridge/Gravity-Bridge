@@ -20,7 +20,7 @@ use clarity::Address as EthAddress;
 use clarity::Address;
 use deep_space::Contact;
 use ethereum_gravity::send_to_cosmos::SEND_TO_COSMOS_GAS_LIMIT;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use rand::distributions::Alphanumeric;
 use rand::thread_rng;
 use rand::Rng;

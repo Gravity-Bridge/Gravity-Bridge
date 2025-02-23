@@ -11,7 +11,7 @@ use crate::utils::{
 use crate::{get_fee, STAKING_TOKEN, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use deep_space::{Coin, Contact};
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use tonic::transport::Channel;
 use web30::client::Web3;
 

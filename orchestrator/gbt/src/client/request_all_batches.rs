@@ -2,7 +2,7 @@ use crate::args::RequestAllBatchesOpts;
 use crate::utils::TIMEOUT;
 use cosmos_gravity::query::get_pending_batch_fees;
 use cosmos_gravity::send::send_request_batch;
-use gravity_proto::gravity::QueryErc20ToDenomRequest;
+use gravity_proto::gravity::v1::QueryErc20ToDenomRequest;
 use gravity_utils::connection_prep::create_rpc_connections;
 use std::process::exit;
 

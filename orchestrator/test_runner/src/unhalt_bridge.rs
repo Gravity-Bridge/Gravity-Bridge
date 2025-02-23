@@ -9,9 +9,9 @@ use cosmos_gravity::query::{get_attestations, get_last_event_nonce_for_validator
 use deep_space::address::Address as CosmosAddress;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
 use deep_space::{Contact, Fee};
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::MsgSendToCosmosClaim;
-use gravity_proto::gravity::UnhaltBridgeProposal;
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::MsgSendToCosmosClaim;
+use gravity_proto::gravity::v1::UnhaltBridgeProposal;
 use gravity_utils::num_conversion::downcast_uint256;
 use prost::Message;
 use std::str::FromStr;
