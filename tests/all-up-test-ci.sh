@@ -3,7 +3,7 @@
 TEST_TYPE=$2
 set -eux
 NODES=4
-FILE_PATH="/home/runner/work/Gravity-Bridge/Gravity-Bridge/"
+FILE_PATH="$GITHUB_WORKSPACE"
 
 sudo apt-get update
 sudo apt-get install -y git make gcc g++ iproute2 iputils-ping procps vim tmux net-tools htop tar jq npm libssl-dev perl rustc cargo wget
@@ -22,7 +22,7 @@ sudo wget https://github.com/althea-net/ibc-test-chain/releases/download/v9.1.2/
 
 # Setup Hermes for IBC connections between chains
 pushd /tmp/
-wget https://github.com/informalsystems/ibc-rs/releases/download/v1.7.0/hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz
+wget https://github.com/informalsystems/hermes/releases/download/v1.7.0/hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz
 tar -xvf hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz
 sudo mv hermes /usr/bin/
 popd
@@ -48,13 +48,15 @@ popd
 
 sudo bash tests/container-scripts/setup-validators.sh $NODES
 sudo bash tests/container-scripts/setup-ibc-validators.sh $NODES
-sudo bash tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE
+sudo GITHUB_WORKSPACE=$GITHUB_WORKSPACE bash tests/container-scripts/run-testnet.sh $NODES $TEST_TYPE
 
 # deploy the ethereum contracts
 pushd orchestrator/test_runner
 DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
 popd
 
-echo "Running ibc relayer in the background, directing output to /ibc-relayer-logs"
+# Create a setup complete flag file used by the integration tests
+sudo mkdir /gravity
+sudo touch /gravity/test-ready-to-run
 
 bash tests/container-scripts/integration-tests.sh $NODES $TEST_TYPE

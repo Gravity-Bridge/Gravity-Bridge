@@ -11,7 +11,7 @@ use ethereum_gravity::message_signatures::{
     encode_logic_call_confirm, encode_tx_batch_confirm, encode_valset_confirm,
 };
 
-use gravity_proto::gravity::{
+use gravity_proto::gravity::v1::{
     MsgCancelSendToEth, MsgConfirmBatch, MsgConfirmLogicCall, MsgExecuteIbcAutoForwards,
     MsgRequestBatch, MsgSendToEth, MsgSetOrchestratorAddress, MsgSubmitBadSignatureEvidence,
     MsgValsetConfirm,

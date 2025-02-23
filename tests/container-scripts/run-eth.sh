@@ -1,15 +1,14 @@
 #!/bin/bash
 # Starts the Ethereum testnet chain in the background
 
-GITHUB_ACTIONS_PATH="/home/runner/work/Gravity-Bridge/Gravity-Bridge/"
 DOCKER_PATH="/gravity/"
 
-if [[ -d "$GITHUB_ACTIONS_PATH" ]]; then
-    FOLDER_PATH="$GITHUB_ACTIONS_PATH"
+if [[ -d "$GITHUB_WORKSPACE" ]]; then
+    FOLDER_PATH="$GITHUB_WORKSPACE"
 elif [[ -d "$DOCKER_PATH" ]]; then
     FOLDER_PATH="$DOCKER_PATH"
 else
-    echo "Error: Neither $GITHUB_ACTIONS_PATH nor $DOCKER_PATH exists."
+    echo "Error: Neither $GITHUB_WORKSPACE nor $DOCKER_PATH exists."
     exit 1
 fi
 

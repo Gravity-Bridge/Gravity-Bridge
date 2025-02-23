@@ -7,31 +7,39 @@ use deep_space::Contact;
 use gravity_proto::auction::query_client::QueryClient as AuctionQueryClient;
 use gravity_proto::auction::Params as AuctionParams;
 use gravity_proto::auction::QueryParamsRequest as QueryAuctionParamsRequest;
-use gravity_proto::gravity::query_client::QueryClient as GravityQueryClient;
-use gravity_proto::gravity::Params;
-use gravity_proto::gravity::QueryAttestationsRequest;
-use gravity_proto::gravity::QueryBatchConfirmsRequest;
-use gravity_proto::gravity::QueryBatchFeeRequest;
-use gravity_proto::gravity::QueryBatchFeeResponse;
-use gravity_proto::gravity::QueryCurrentValsetRequest;
-use gravity_proto::gravity::QueryDenomToErc20Request;
-use gravity_proto::gravity::QueryDenomToErc20Response;
-use gravity_proto::gravity::QueryErc20ToDenomRequest;
-use gravity_proto::gravity::QueryErc20ToDenomResponse;
-use gravity_proto::gravity::QueryLastEventNonceByAddrRequest;
-use gravity_proto::gravity::QueryLastPendingBatchRequestByAddrRequest;
-use gravity_proto::gravity::QueryLastPendingLogicCallByAddrRequest;
-use gravity_proto::gravity::QueryLastPendingValsetRequestByAddrRequest;
-use gravity_proto::gravity::QueryLastValsetRequestsRequest;
-use gravity_proto::gravity::QueryLogicConfirmsRequest;
-use gravity_proto::gravity::QueryOutgoingLogicCallsRequest;
-use gravity_proto::gravity::QueryOutgoingTxBatchesRequest;
-use gravity_proto::gravity::QueryParamsRequest;
-use gravity_proto::gravity::QueryPendingSendToEth;
-use gravity_proto::gravity::QueryPendingSendToEthResponse;
-use gravity_proto::gravity::QueryValsetConfirmsByNonceRequest;
-use gravity_proto::gravity::QueryValsetRequestRequest;
-use gravity_proto::gravity::{Attestation, PendingIbcAutoForward, QueryPendingIbcAutoForwards};
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+
+use gravity_proto::gravity::v1::Params;
+use gravity_proto::gravity::v1::QueryAttestationsRequest;
+use gravity_proto::gravity::v1::QueryBatchConfirmsRequest;
+use gravity_proto::gravity::v1::QueryBatchFeeRequest;
+use gravity_proto::gravity::v1::QueryBatchFeeResponse;
+use gravity_proto::gravity::v1::QueryCurrentValsetRequest;
+use gravity_proto::gravity::v1::QueryDenomToErc20Request;
+use gravity_proto::gravity::v1::QueryDenomToErc20Response;
+use gravity_proto::gravity::v1::QueryErc20ToDenomRequest;
+use gravity_proto::gravity::v1::QueryErc20ToDenomResponse;
+use gravity_proto::gravity::v1::QueryLastEventNonceByAddrRequest;
+use gravity_proto::gravity::v1::QueryLastPendingBatchRequestByAddrRequest;
+use gravity_proto::gravity::v1::QueryLastPendingLogicCallByAddrRequest;
+use gravity_proto::gravity::v1::QueryLastPendingValsetRequestByAddrRequest;
+use gravity_proto::gravity::v1::QueryLastValsetRequestsRequest;
+use gravity_proto::gravity::v1::QueryLogicConfirmsRequest;
+use gravity_proto::gravity::v1::QueryOutgoingLogicCallsRequest;
+use gravity_proto::gravity::v1::QueryOutgoingTxBatchesRequest;
+use gravity_proto::gravity::v1::QueryParamsRequest;
+use gravity_proto::gravity::v1::QueryPendingSendToEth;
+use gravity_proto::gravity::v1::QueryPendingSendToEthResponse;
+use gravity_proto::gravity::v1::QueryValsetConfirmsByNonceRequest;
+use gravity_proto::gravity::v1::QueryValsetRequestRequest;
+use gravity_proto::gravity::v1::{Attestation, PendingIbcAutoForward, QueryPendingIbcAutoForwards};
+use gravity_proto::gravity::v2::query_client::QueryClient as GravityQueryClientV2;
+use gravity_proto::gravity::v2::QueryOutgoingTxBatchesByAddrRequest;
+use gravity_proto::gravity::v2::QueryOutgoingTxBatchesByAddrResponse;
+use gravity_proto::gravity::v2::QueryPendingSendToEthV2;
+use gravity_proto::gravity::v2::QueryPendingSendToEthV2BySender;
+use gravity_proto::gravity::v2::QueryPendingSendToEthV2BySenderResponse;
+use gravity_proto::gravity::v2::QueryPendingSendToEthV2Response;
 use gravity_utils::error::GravityError;
 use gravity_utils::types::*;
 use tonic::transport::Channel;
@@ -275,6 +283,42 @@ pub async fn get_pending_send_to_eth(
     let request = client
         .get_pending_send_to_eth(QueryPendingSendToEth {
             sender_address: sender_address.to_string(),
+        })
+        .await?;
+    Ok(request.into_inner())
+}
+
+/// v2 Get a list of all transactions going to the EVM blockchain that are pending.
+pub async fn get_pending_send_to_eth_v2(
+    client: &mut GravityQueryClientV2<Channel>,
+) -> Result<QueryPendingSendToEthV2Response, GravityError> {
+    let request = client
+        .get_pending_send_to_eth_v2(QueryPendingSendToEthV2 {})
+        .await?;
+    Ok(request.into_inner())
+}
+
+/// v2 Get a list of transactions going to the EVM blockchain that are pending for a given user.
+pub async fn get_pending_send_to_eth_v2_by_sender(
+    client: &mut GravityQueryClientV2<Channel>,
+    sender_address: Address,
+) -> Result<QueryPendingSendToEthV2BySenderResponse, GravityError> {
+    let request = client
+        .get_pending_send_to_eth_v2_by_sender(QueryPendingSendToEthV2BySender {
+            sender: sender_address.to_string(),
+        })
+        .await?;
+    Ok(request.into_inner())
+}
+
+// v2 Get a list of batches of transactions for a specific contract address going to the EVM blockchain that are pending.
+pub async fn get_pending_send_to_eth_batches_by_contract(
+    client: &mut GravityQueryClientV2<Channel>,
+    address: EthAddress,
+) -> Result<QueryOutgoingTxBatchesByAddrResponse, GravityError> {
+    let request = client
+        .get_outgoing_tx_batches_by_addr(QueryOutgoingTxBatchesByAddrRequest {
+            address: address.to_string(),
         })
         .await?;
     Ok(request.into_inner())

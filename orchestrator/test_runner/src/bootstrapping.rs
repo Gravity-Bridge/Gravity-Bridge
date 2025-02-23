@@ -183,6 +183,15 @@ pub async fn deploy_contracts(contact: &Contact) {
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/",
     ];
+    const E: [&str; 7] = [
+        "/home/runner/work/gravity-private/gravity-private/solidity/contract-deployer.ts",
+        "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/Gravity.sol/Gravity.json",
+        "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/GravityERC721.sol/GravityERC721.json",
+        "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json",
+        "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json",
+        "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
+        "/home/runner/work/gravity-private/gravity-private/solidity/",
+    ];
     let output = if all_paths_exist(&A) || all_paths_exist(&B) {
         let paths = return_existing(A, B);
         Command::new(paths[0])
@@ -233,6 +242,24 @@ pub async fn deploy_contracts(contact: &Contact) {
                 "--test-mode=true",
             ])
             .current_dir(D[6])
+            .output()
+            .expect("Failed to deploy contracts!")
+    } else if all_paths_exist(&E) {
+        Command::new("npx")
+            .args([
+                "ts-node",
+                E[0],
+                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--eth-node={}", ETH_NODE.as_str()),
+                &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
+                &format!("--contract={}", E[1]),
+                &format!("--contractERC721={}", E[2]),
+                &format!("--contractERC20A={}", E[3]),
+                &format!("--contractERC20B={}", E[4]),
+                &format!("--contractERC20C={}", E[5]),
+                "--test-mode=true",
+            ])
+            .current_dir(E[6])
             .output()
             .expect("Failed to deploy contracts!")
     } else {

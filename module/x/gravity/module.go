@@ -22,6 +22,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/client/cli"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	typesv2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2"
 )
 
 // type check to ensure the interface is properly implemented
@@ -139,6 +140,7 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+	typesv2.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
 	m := keeper.NewMigrator(am.keeper)
 	if err := cfg.RegisterMigration(types.ModuleName, 3, m.Migrate3to4); err != nil {
