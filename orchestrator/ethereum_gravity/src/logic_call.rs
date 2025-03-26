@@ -112,8 +112,7 @@ pub async fn estimate_logic_call_cost(
     let our_nonce = web3.eth_get_transaction_count(our_eth_address).await?;
     let chain_id = web3
         .eth_chainid()
-        .await?
-        .expect("Eth node does not return chain id?");
+        .await?;
     let gas_limit = min((u64::MAX - 1).into(), our_balance);
     let gas_price = web3.eth_gas_price().await?;
     // increase the value by 20% without using floating point multiplication

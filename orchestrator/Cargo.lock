@@ -1049,9 +1049,9 @@ dependencies = [
 
 [[package]]
 name = "clarity"
-version = "1.5.1"
+version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8100ba88ab2204050607e86b2265ecb9079f72ac9d0f1ba075f978d74110daa"
+checksum = "781f74ed409e0d4250b4fa9cea34fcd2ac093699d9aad621291fe3cfef6e6ce7"
 dependencies = [
  "num-traits",
  "num256",
@@ -5323,9 +5323,9 @@ dependencies = [
 
 [[package]]
 name = "web30"
-version = "1.6.0"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a756bea35ebe4e3758b89c3d25797f0c4a4af0e0232bcb6cedf6053b013f3557"
+checksum = "55e9278f96a2196d9b3bcb136cd0e9a12df71b64b641bc70078f0a115ffcad33"
 dependencies = [
  "awc",
  "clarity",
