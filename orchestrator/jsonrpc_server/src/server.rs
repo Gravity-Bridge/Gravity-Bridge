@@ -175,7 +175,9 @@ pub async fn run(
     cert_chain_path: Option<String>,
     cert_key_path: Option<String>,
 ) -> std::io::Result<()> {
-    openssl_probe::init_ssl_cert_env_vars();
+    unsafe {
+        openssl_probe::init_openssl_env_vars();
+    }
 
     let domain = domain.unwrap_or(DEFAULT_DOMAIN.to_string());
     let port = port.unwrap_or(DEFAULT_PORT.to_string());

@@ -13,7 +13,7 @@ pub async fn jsonrpc_server(args: JsonrpcServerOpts) {
     .await;
 
     match res {
-        Err(e) => error!("JSONRPC server halted with {}", e.to_string()),
+        Err(e) => error!("JSONRPC server halted with {}", e),
         Ok(_) => info!("JSONRPC server terminated without error"),
     }
 }

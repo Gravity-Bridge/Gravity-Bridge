@@ -744,7 +744,7 @@ impl Erc20DeployedEvent {
         // this trick computes the next 32 byte (256 bit) word index, then multiplies by
         // 32 to get the bytes offset, this is required since we have dynamic length types but
         // the next entry always starts on a round 32 byte word.
-        let index_start = ((index_end + 31) / 32) * 32;
+        let index_start = index_end.div_ceil(32) * 32;
         let index_end = index_start + 32;
 
         if data.len() < index_end {
@@ -798,7 +798,7 @@ impl Erc20DeployedEvent {
             });
         }
 
-        let index_start = ((index_end + 31) / 32) * 32;
+        let index_start = index_end.div_ceil(32) * 32;
         let index_end = index_start + 32;
 
         if data.len() < index_end {

@@ -29,7 +29,7 @@ pub async fn vesting_test(contact: &Contact, vesting_keys: Vec<CosmosPrivateKey>
     };
     info!(
         "Expecting to see a final vested amount {} of stake",
-        expected_amount.to_string()
+        expected_amount
     );
 
     // Check that starting vested balance is 0

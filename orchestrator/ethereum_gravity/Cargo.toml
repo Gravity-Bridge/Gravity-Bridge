@@ -18,4 +18,3 @@ sha3 = "0.10"
 
 [dev-dependencies]
 rand = "0.8"
-actix = "0.13"

@@ -1,5 +1,7 @@
 //! This crate contains various components and utilities for interacting with the Gravity Ethereum contract.
 
+#![allow(clippy::result_large_err)]
+
 #[macro_use]
 extern crate log;
 

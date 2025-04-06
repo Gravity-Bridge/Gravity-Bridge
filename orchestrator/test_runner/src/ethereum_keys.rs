@@ -180,7 +180,7 @@ pub async fn example_ethermint_key_usage(
     match success {
         true => info!(
             "Successfully used bank module with ethermint account {}, sent {} {}",
-            user_cosmos_address.to_string(),
+            user_cosmos_address,
             send_amount,
             denom,
         ),

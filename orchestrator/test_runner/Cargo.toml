@@ -22,7 +22,6 @@ prost-types = {workspace = true}
 deep_space = {workspace = true, features = ["ethermint"]}
 serde_derive = "1.0"
 clarity = {workspace = true}
-docopt = "1"
 serde = "1.0"
 actix = "0.13"
 actix-rt = "2.2"

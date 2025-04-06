@@ -105,9 +105,6 @@ allow_proc_macro = true
 
 [pkg.paste]
 allow_proc_macro = true
-build.allow_apis = [
-    "process",
-]
 build.allow_build_instructions = [
     "cargo:rustc-check-cfg=*",
 ]
@@ -262,9 +259,6 @@ build.allow_build_instructions = [
 ]
 allow_unsafe = true
 
-[pkg.spin]
-allow_unsafe = true
-
 [pkg.http]
 allow_unsafe = true
 
@@ -343,6 +337,9 @@ allow_apis = [
 
 [pkg.getrandom]
 allow_unsafe = true
+build.allow_apis = [
+    "process",
+]
 
 [pkg.http-body]
 allow_unsafe = true
@@ -609,6 +606,7 @@ allow_apis = [
 allow_apis = [
     "fs",
 ]
+allow_unsafe = true
 
 [pkg.rustls-native-certs]
 allow_apis = [
@@ -639,6 +637,8 @@ allow_apis = [
 test.allow_apis = [
     "net",
 ]
+test.allow_unsafe = true
+allow_unsafe = true
 
 [pkg.clap]
 allow_apis = [
@@ -699,6 +699,10 @@ allow_unsafe = true
 
 [pkg.zerocopy]
 allow_unsafe = true
+build.allow_apis = [
+    "fs",
+    "process",
+]
 
 [pkg.itertools]
 allow_unsafe = true
@@ -746,6 +750,7 @@ allow_apis = [
     "fs",
     "net",
 ]
+allow_unsafe = true
 
 [pkg.tower]
 allow_apis = [
@@ -911,3 +916,21 @@ allow_unsafe = true
 build.allow_build_instructions = [
     "cargo:rustc-check-cfg=*",
 ]
+
+[pkg.windows-interface]
+allow_proc_macro = true
+
+[pkg.windows-implement]
+allow_proc_macro = true
+
+[pkg.derive_more-impl]
+allow_proc_macro = true
+
+[pkg.jiff-static]
+allow_proc_macro = true
+
+[pkg.foldhash]
+allow_unsafe = true
+
+[pkg.jiff]
+allow_unsafe = true
