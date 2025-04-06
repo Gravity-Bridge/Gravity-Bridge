@@ -48,7 +48,7 @@ pub fn parse_ethereum_keys() -> Vec<EthPrivateKey> {
         if key.is_empty() || key.contains("public") || key.contains("address") {
             continue;
         }
-        let key = key.split(':').last().unwrap().trim();
+        let key = key.split(':').next_back().unwrap().trim();
         ret.push(key.parse().unwrap());
     }
     ret
@@ -295,17 +295,17 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
     let mut erc721_addresses = Vec::new();
     for line in output.lines() {
         if line.contains("Gravity deployed at Address -") {
-            let address_string = line.split('-').last().unwrap();
+            let address_string = line.split('-').next_back().unwrap();
             maybe_gravity_address = Some(address_string.trim().parse().unwrap());
         } else if line.contains("GravityERC721 deployed at Address -") {
-            let address_string = line.split('-').last().unwrap();
+            let address_string = line.split('-').next_back().unwrap();
             maybe_gravity_erc721_address = Some(address_string.trim().parse().unwrap());
         } else if line.contains("ERC20 deployed at Address -") {
-            let address_string = line.split('-').last().unwrap();
+            let address_string = line.split('-').next_back().unwrap();
             erc20_addresses.push(address_string.trim().parse().unwrap());
             info!("found erc20 address it is {}", address_string);
         } else if line.contains("ERC721 deployed at Address -") {
-            let address_string = line.split('-').last().unwrap();
+            let address_string = line.split('-').next_back().unwrap();
             erc721_addresses.push(address_string.trim().parse().unwrap());
             info!("found erc721 address it is {}", address_string);
         }

@@ -791,7 +791,7 @@ pub async fn test_ibc_auto_forward_native_hijack(
             (None, None) => {
                 info!(
                     "Never found a native hijack ibc balance for user {}, still need to check local balance",
-                    ibc_dest.to_string(),
+                    ibc_dest,
                 );
             }
             (None, Some(post)) => {
@@ -805,7 +805,7 @@ pub async fn test_ibc_auto_forward_native_hijack(
                 } else {
                     warn!(
                         "Discovered potentially unrelated native hijack ibc balance: ibc transferred amount {} to {}",
-                        amt.to_string(),
+                        amt,
                         ibc_dest
                     );
                 }
@@ -880,7 +880,7 @@ pub async fn test_ibc_auto_forward_native_hijack(
                     Ordering::Equal => {
                         info!(
                             "Successful SendToCosmos native hijack prevention: Discovered local user {}: balance {} ",
-                            ibc_dest.to_string(),
+                            ibc_dest,
                             post.amount,
                         );
                     }
@@ -888,7 +888,7 @@ pub async fn test_ibc_auto_forward_native_hijack(
                         warn!( // Somehow the balance is less than we would expect
                             "Discovered unexpected native hijack local balance of amount {} != expected {} with user {}",
                             post.amount,
-                            (pre.amount + amt).to_string(),
+                            (pre.amount + amt),
                             gravity_prefixed_dest
                         );
                     }

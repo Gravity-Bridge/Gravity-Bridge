@@ -105,7 +105,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
         if res.is_err() {
             error!(
                 "Received an error response when sending {} of {} to {}, are you sure that your account has enough funds? Error: {}",
-                args.amount.amount.to_string(),
+                args.amount.amount,
                 args.amount.denom,
                 cosmos_destination,
                 res.err().unwrap(),
@@ -116,7 +116,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
             "Sent {} of {} to {}, Gravity Tx ID: {}",
             args.amount.amount,
             args.amount.denom,
-            cosmos_destination.to_string(),
+            cosmos_destination,
             res.unwrap().txhash()
         );
     } else if args.send_to_eth && !args.send_on_cosmos {

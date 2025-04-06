@@ -17,14 +17,12 @@ gravity_proto = {workspace = true}
 deep_space = {workspace = true}
 serde_derive = "1.0"
 clarity = {workspace = true}
-docopt = "1"
 serde = "1.0"
 actix-rt = "2"
 lazy_static = "1"
 web30 = {workspace = true}
 num256 = {workspace = true}
 log = "0.4"
-env_logger = "0.10"
 tokio = "1.4"
 tonic = {workspace = true}
 openssl-probe = "0.1"
