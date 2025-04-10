@@ -1,17 +1,17 @@
 package keeper
 
 import (
+	"bytes"
 	"fmt"
+	"slices"
+	"sort"
 	"testing"
 
-	"bytes"
 	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
-	"sort"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
