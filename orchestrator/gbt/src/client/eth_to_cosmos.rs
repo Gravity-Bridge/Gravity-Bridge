@@ -29,14 +29,14 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     check_for_eth(ethereum_public_key, &web3).await;
 
     let res = web3
-        .get_erc20_decimals(erc20_address, ethereum_public_key)
+        .get_erc20_decimals(erc20_address, ethereum_public_key, vec![])
         .await
         .expect("Failed to query ERC20 contract");
     let decimals: u8 = res.to_string().parse().unwrap();
     let amount = fraction_to_exponent(amount, decimals);
 
     let erc20_balance = web3
-        .get_erc20_balance(erc20_address, ethereum_public_key)
+        .get_erc20_balance(erc20_address, ethereum_public_key, vec![])
         .await
         .expect("Failed to get balance, check ERC20 contract address");
 
