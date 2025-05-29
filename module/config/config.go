@@ -18,20 +18,23 @@ const (
 	// bech32PrefixConsPub defines the bech32 prefix of a consensus node public key
 	bech32PrefixConsPub = "gravityvalconspub"
 
+	// The native token, useful in situations where we do not have access to the sdk Context
+	NativeTokenDenom = "ugraviton"
+)
+
+var (
 	// When accepting EIP-712 signed transactions, Gravity needs some sort of EVM ChainID.
 	// Ethermint chains are forced to have a Cosmos Chain ID pattern like "gravity_1234-1",
 	// where 1234 is the EVM Chain ID. It would be best to avoid changing Gravity's Chain ID so
-	// this value is used in place of the restrictive Chain ID format.
+	// these values are used in place of the restrictive Chain ID format.
 	//
-	// Note that this value is only usable with the github.com/althea-net fork of ethermint.
-	// EIP-712 transactions are expected to use this Chain ID as the EIP712 Domain's Chain ID, and the
+	// Note that these values are only usable with the github.com/althea-net fork of ethermint.
+	// EIP-712 transactions are expected to use these Chain IDs as the EIP712 Domain's Chain ID, and the
 	// Cosmos Chain ID (e.g. "gravity-bridge-3") as the EIP712 Tx's Chain ID. Since both the Cosmos
-	// and EVM Chain IDs are required the chance of replay attacks on other chains is very low,
-	// but ensuring this is a unique value is good practice.
-	GravityEvmChainID = "999999"
-
-	// The native token, useful in situations where we do not have access to the sdk Context
-	NativeTokenDenom = "ugraviton"
+	// and EVM Chain IDs are required the chance of replay attacks on other chains is very low
+	//
+	// These are in order, the original Gravity EVM chain id, the new Gravity EVM chain id, the Canto chain id, and the Althea-L1 chain id
+	GravityEvmChainIDs = []string{"999999", "180086", "7700", "258432"}
 )
 
 func init() {

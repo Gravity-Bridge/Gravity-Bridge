@@ -51,7 +51,7 @@ func MakeAnteHandler(t *testing.T, input keeper.TestInput) sdk.AnteHandler {
 		ExtensionOptionChecker: nil,
 		TxFeeChecker:           nil,
 	}
-	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainID)
+	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainIDs)
 	require.NoError(t, err)
 	require.NotNil(t, ah)
 	return *ah
@@ -192,7 +192,7 @@ func BuildWeb3ExtensionTx(t *testing.T, ctx sdk.Context, txConfig client.TxConfi
 
 	fees := sdk.NewCoins()
 	gasAmount := uint64(2000000)
-	chainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
+	chainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainIDs[1], 10, 64)
 	require.NoError(t, err)
 	tx.SetFeeAmount(fees)
 	tx.SetGasLimit(gasAmount)

@@ -248,6 +248,8 @@ github.com/althea-net/cosmos-sdk v0.46.17 h1:SG2dTF7CT1M2RB6cDJZijACuRj9m9p8DWcM
 github.com/althea-net/cosmos-sdk v0.46.17/go.mod h1:/iMlaT3rCQ9RS5M/40MfrM6lRwiwhAgx87nzMmYXxI8=
 github.com/althea-net/ethermint v0.22.3 h1:A/CknevDL1wcEahgRqigSE0dNty6+VhXF+tkqLUCDdk=
 github.com/althea-net/ethermint v0.22.3/go.mod h1:Pu0VyapSeMO2o7LlvHVn2ir+P9RuUxhIiIv6VYaFivw=
+github.com/althea-net/ethermint v0.22.4 h1:9L9NKDjGzWBf2322s0szq1OB3z3FiIvoPjvLv7oMjGQ=
+github.com/althea-net/ethermint v0.22.4/go.mod h1:Pu0VyapSeMO2o7LlvHVn2ir+P9RuUxhIiIv6VYaFivw=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883/go.mod h1:rCTlJbsFo29Kk6CurOXKm700vrz8f0KW0JNfpkRJY/8=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/apache/arrow/go/arrow v0.0.0-20191024131854-af6fa24be0db/go.mod h1:VTxUBvSJ3s3eHAg65PNgrsn5BtqCRPdmyXh6rAfdxN0=
