@@ -9,10 +9,9 @@ require (
 	github.com/cosmos/cosmos-sdk v0.46.17
 	github.com/cosmos/ibc-go/v6 v6.3.1
 	github.com/ethereum/go-ethereum v1.10.26
-	github.com/evmos/ethermint v0.22.3
+	github.com/evmos/ethermint v0.22.4
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
-
 )
 
 replace (
@@ -24,7 +23,7 @@ replace (
 	github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.10.26
 
 	// Althea-net fork adds nice features to the evm
-	github.com/evmos/ethermint => github.com/althea-net/ethermint v0.22.3
+	github.com/evmos/ethermint => github.com/althea-net/ethermint v0.22.4
 
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
