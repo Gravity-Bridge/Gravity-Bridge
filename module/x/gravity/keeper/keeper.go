@@ -51,6 +51,7 @@ type Keeper struct {
 	ibcTransferKeeper *ibctransferkeeper.Keeper
 	bech32IbcKeeper   *bech32ibckeeper.Keeper
 	auctionKeeper     *auctionkeeper.Keeper
+	proposalAuthority string
 
 	AttestationHandler interface {
 		Handle(sdk.Context, types.Attestation, types.EthereumClaim) error
@@ -80,6 +81,9 @@ func (k Keeper) ValidateMembers() {
 	if k.bech32IbcKeeper == nil {
 		panic("Nil bech32IbcKeeper!")
 	}
+	if k.proposalAuthority == "" {
+		panic("Empty proposalAuthority!")
+	}
 }
 
 // NewKeeper returns a new instance of the gravity keeper
@@ -95,6 +99,7 @@ func NewKeeper(
 	ibcTransferKeeper *ibctransferkeeper.Keeper,
 	bech32IbcKeeper *bech32ibckeeper.Keeper,
 	auctionKeeper *auctionkeeper.Keeper,
+	proposalAuthority string,
 ) Keeper {
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
@@ -114,6 +119,7 @@ func NewKeeper(
 		ibcTransferKeeper:  ibcTransferKeeper,
 		bech32IbcKeeper:    bech32IbcKeeper,
 		auctionKeeper:      auctionKeeper,
+		proposalAuthority:  proposalAuthority,
 		AttestationHandler: nil,
 	}
 	attestationHandler := AttestationHandler{keeper: &k}
@@ -140,6 +146,10 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
 	k.DistKeeper.SetFeePool(ctx, feePool)
 	return nil
+}
+
+func (k Keeper) GetAuthority() string {
+	return k.proposalAuthority
 }
 
 /////////////////////////////

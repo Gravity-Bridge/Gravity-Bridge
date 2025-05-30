@@ -12,10 +12,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	auctiontypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	typesv2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2"
 )
 
 // BasisPointDivisor used in determining if a SendToEth fee meets the governance-controlled minimum
@@ -24,6 +26,8 @@ const BasisPointDivisor uint64 = 10000
 type msgServer struct {
 	Keeper
 }
+
+var _ typesv2.MsgServer = msgServer{}
 
 // NewMsgServerImpl returns an implementation of the gov MsgServer interface
 // for the provided Keeper.
@@ -601,4 +605,51 @@ func (k msgServer) SubmitBadSignatureEvidence(c context.Context, msg *types.MsgS
 			BadEthSignatureSubject: fmt.Sprint(msg.Subject),
 		},
 	)
+}
+
+// AirdropProposal executes an airdrop proposal using the x/gov v1 proposal interface
+func (k msgServer) AirdropProposal(c context.Context, msg *typesv2.MsgAirdropProposal) (*typesv2.MsgAirdropProposalResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	if k.GetAuthority() != msg.Authority {
+		return nil, errorsmod.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+	}
+
+	err := k.HandleAirdropProposal(ctx, msg.Proposal)
+	if err != nil {
+		return nil, err
+	}
+
+	return &typesv2.MsgAirdropProposalResponse{}, nil
+}
+
+// IBCMetadataProposal executes an ibc metadata proposal using the x/gov v1 proposal interface
+func (k msgServer) IBCMetadataProposal(c context.Context, msg *typesv2.MsgIBCMetadataProposal) (*typesv2.MsgIBCMetadataProposalResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	if k.GetAuthority() != msg.Authority {
+		return nil, errorsmod.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+	}
+
+	err := k.HandleIBCMetadataProposal(ctx, msg.Proposal)
+	if err != nil {
+		return nil, err
+	}
+
+	return &typesv2.MsgIBCMetadataProposalResponse{}, nil
+
+}
+
+// UnhaltBridgeProposal executes an unhalt bridge proposal using the x/gov v1 proposal interface
+func (k msgServer) UnhaltBridgeProposal(c context.Context, msg *typesv2.MsgUnhaltBridgeProposal) (*typesv2.MsgUnhaltBridgeProposalResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	if k.GetAuthority() != msg.Authority {
+		return nil, errorsmod.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+	}
+
+	err := k.HandleUnhaltBridgeProposal(ctx, msg.Proposal)
+	if err != nil {
+		return nil, err
+	}
+
+	return &typesv2.MsgUnhaltBridgeProposalResponse{}, nil
+
 }

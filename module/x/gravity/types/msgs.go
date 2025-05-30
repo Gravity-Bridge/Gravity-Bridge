@@ -47,6 +47,8 @@ var (
 	_ authlegacy.LegacyMsg = &MsgBatchSendToEthClaim{}
 	_ authlegacy.LegacyMsg = &MsgValsetUpdatedClaim{}
 	_ authlegacy.LegacyMsg = &MsgSubmitBadSignatureEvidence{}
+
+	// Note: the proposal Msgs do not implement LegacyAmino, they will be used by the gov module
 )
 
 // These are the type values for signed LegacyAmino messages. The newer Protobuf messages use the path url instead.

@@ -1,0 +1,66 @@
+syntax = "proto3";
+package gravity.v2;
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "gravity/v1/types.proto";
+import "google/protobuf/any.proto";
+import "cosmos_proto/cosmos.proto";
+option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2";
+
+// Msg defines the state transitions possible within gravity
+service Msg {
+  rpc IBCMetadataProposal(MsgIBCMetadataProposal) returns (MsgIBCMetadataProposalResponse) {}
+  rpc AirdropProposal(MsgAirdropProposal) returns (MsgAirdropProposalResponse) {}
+  rpc UnhaltBridgeProposal(MsgUnhaltBridgeProposal) returns (MsgUnhaltBridgeProposalResponse) {}
+}
+
+// MsgIBCMetadataProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and the previous type used for proposals
+// AUTHORITY
+// A string containing the address of the sender, only valid if it is the gov module address
+// PROPOSAL
+// This is the previous proposal type, which contains everything needed for the proposal's execution
+message MsgIBCMetadataProposal {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1;
+
+  gravity.v1.IBCMetadataProposal proposal = 2;
+}
+
+message MsgIBCMetadataProposalResponse {}
+
+// MsgAirdropProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and the previous type used for proposals
+// AUTHORITY
+// A string containing the address of the sender, only valid if it is the gov module address
+// PROPOSAL
+// This is the previous proposal type, which contains everything needed for the proposal's execution
+message MsgAirdropProposal {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1;
+
+  gravity.v1.AirdropProposal proposal = 2;
+}
+
+message MsgAirdropProposalResponse {}
+
+// MsgUnhaltBridgeProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and the previous type used for proposals
+// AUTHORITY
+// A string containing the address of the sender, only valid if it is the gov module address
+// PROPOSAL
+// This is the previous proposal type, which contains everything needed for the proposal's execution
+message MsgUnhaltBridgeProposal {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1;
+
+  gravity.v1.UnhaltBridgeProposal proposal = 2;
+}
+
+message MsgUnhaltBridgeProposalResponse {}
+
