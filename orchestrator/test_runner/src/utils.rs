@@ -568,7 +568,7 @@ pub async fn vote_yes_with_retry(
     const MAX_VOTES: u64 = 5;
     let mut counter = 0;
     let mut res = contact
-        .vote_on_gov_proposal(
+        .legacy_vote_on_gov_proposal(
             proposal_id,
             VoteOption::Yes,
             get_fee(None),
@@ -579,7 +579,7 @@ pub async fn vote_yes_with_retry(
     while let Err(e) = res {
         contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
         res = contact
-            .vote_on_gov_proposal(
+            .legacy_vote_on_gov_proposal(
                 proposal_id,
                 VoteOption::Yes,
                 get_fee(None),

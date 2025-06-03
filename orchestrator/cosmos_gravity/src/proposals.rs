@@ -13,18 +13,21 @@ use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
-use gravity_proto::gravity::v1::AirdropProposal as AirdropProposalMsg;
+use gravity_proto::gravity::v1::AirdropProposal;
 use gravity_proto::gravity::v1::IbcMetadataProposal;
 use gravity_proto::gravity::v1::UnhaltBridgeProposal;
+use gravity_proto::gravity::v2::MsgAirdropProposal;
+use gravity_proto::gravity::v2::MsgIbcMetadataProposal;
+use gravity_proto::gravity::v2::MsgUnhaltBridgeProposal;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use std::convert::TryFrom;
 use std::time::Duration;
 
 // gravity proposals
-pub const AIRDROP_PROPOSAL_TYPE_URL: &str = "/gravity.v1.AirdropProposal";
-pub const UNHALT_BRIDGE_PROPOSAL_TYPE_URL: &str = "/gravity.v1.UnhaltBridgeProposal";
-pub const IBC_METADATA_PROPOSAL_TYPE_URL: &str = "/gravity.v1.IBCMetadataProposal";
+pub const MSG_AIRDROP_PROPOSAL_TYPE_URL: &str = "/gravity.v2.MsgAirdropProposal";
+pub const MSG_UNHALT_BRIDGE_PROPOSAL_TYPE_URL: &str = "/gravity.v2.MsgUnhaltBridgeProposal";
+pub const MSG_IBC_METADATA_PROPOSAL_TYPE_URL: &str = "/gravity.v2.MsgIBCMetadataProposal";
 
 // cosmos-sdk proposals
 pub const PARAMETER_CHANGE_PROPOSAL_TYPE_URL: &str =
@@ -88,7 +91,7 @@ pub async fn submit_airdrop_proposal(
         byte_recipients.extend_from_slice(r.get_bytes())
     }
 
-    let proposal_content = AirdropProposalMsg {
+    let proposal_content = AirdropProposal {
         title: proposal.title,
         description: proposal.description,
         denom: proposal.denom,
@@ -96,11 +99,16 @@ pub async fn submit_airdrop_proposal(
         recipients: byte_recipients,
     };
 
-    // encode as a generic proposal
-    let any = encode_any(proposal_content, AIRDROP_PROPOSAL_TYPE_URL.to_string());
+    let msg_proposal = MsgAirdropProposal {
+        authority: gov_module_address()
+            .expect("Unable to get gov module address")
+            .to_string(),
+        proposal: Some(proposal_content),
+    };
 
+    let any = encode_any(msg_proposal, MSG_AIRDROP_PROPOSAL_TYPE_URL.to_string());
     contact
-        .create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
         .await
 }
 
@@ -131,10 +139,19 @@ pub async fn submit_unhalt_bridge_proposal(
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TransactionResponse, CosmosGrpcError> {
-    // encode as a generic proposal
-    let any = encode_any(proposal, UNHALT_BRIDGE_PROPOSAL_TYPE_URL.to_string());
+    let msg_proposal = MsgUnhaltBridgeProposal {
+        authority: gov_module_address()
+            .expect("Unable to get gov module address")
+            .to_string(),
+        proposal: Some(proposal),
+    };
+
+    let any = encode_any(
+        msg_proposal,
+        MSG_UNHALT_BRIDGE_PROPOSAL_TYPE_URL.to_string(),
+    );
     contact
-        .create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
         .await
 }
 
@@ -182,7 +199,7 @@ pub async fn submit_parameter_change_proposal(
     // encode as a generic proposal
     let any = encode_any(proposal, PARAMETER_CHANGE_PROPOSAL_TYPE_URL.to_string());
     contact
-        .create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
         .await
 }
 
@@ -198,7 +215,7 @@ pub async fn submit_upgrade_proposal(
     // encode as a generic proposal
     let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
     contact
-        .create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
         .await
 }
 
@@ -268,10 +285,16 @@ pub async fn submit_ibc_metadata_proposal(
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TransactionResponse, CosmosGrpcError> {
-    // encode as a generic proposal
-    let any = encode_any(proposal, IBC_METADATA_PROPOSAL_TYPE_URL.to_string());
+    let msg_proposal = MsgIbcMetadataProposal {
+        authority: gov_module_address()
+            .expect("Unable to get gov module address")
+            .to_string(),
+        proposal: Some(proposal),
+    };
+
+    let any = encode_any(msg_proposal, MSG_IBC_METADATA_PROPOSAL_TYPE_URL.to_string());
     contact
-        .create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
         .await
 }
 
@@ -378,4 +401,8 @@ pub async fn submit_auction_params_proposal(
     };
     info!("Submitting auction params proposal:\n{:?}", proposal);
     submit_parameter_change_proposal(proposal, deposit, fee, contact, key, wait_timeout).await
+}
+
+fn gov_module_address() -> Result<Address, AddressError> {
+    deep_space::address::get_module_account_address("gov", Some("gravity"))
 }

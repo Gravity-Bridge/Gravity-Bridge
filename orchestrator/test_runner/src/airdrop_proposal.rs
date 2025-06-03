@@ -9,7 +9,7 @@ use crate::STAKING_TOKEN;
 use crate::{get_deposit, get_fee, TOTAL_TIMEOUT};
 use clarity::Uint256;
 use cosmos_gravity::proposals::{
-    submit_airdrop_proposal, AirdropProposalJson, AIRDROP_PROPOSAL_TYPE_URL,
+    submit_airdrop_proposal, AirdropProposalJson, MSG_AIRDROP_PROPOSAL_TYPE_URL,
 };
 use deep_space::error::CosmosGrpcError;
 use deep_space::utils::encode_any;
@@ -17,6 +17,7 @@ use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::gravity::v1::AirdropProposal as AirdropProposalMsg;
+use gravity_proto::gravity::v2::MsgAirdropProposal;
 use rand::prelude::ThreadRng;
 use rand::Rng;
 use std::time::{Duration, Instant};
@@ -212,13 +213,19 @@ async fn submit_and_fail_airdrop_proposal(
         total_array(&amounts),
         amounts.len()
     );
+    let msg_proposal = MsgAirdropProposal {
+        authority: deep_space::address::get_module_account_address("gov", Some(&ADDRESS_PREFIX))
+            .expect("Unable to get gov module address")
+            .to_string(),
+        proposal: Some(proposal_content),
+    };
 
-    // encode as a generic proposal
-    let any = encode_any(proposal_content, AIRDROP_PROPOSAL_TYPE_URL.to_string());
+    let any = encode_any(msg_proposal, MSG_AIRDROP_PROPOSAL_TYPE_URL.to_string());
 
     let res = contact
         .create_gov_proposal(
-            any,
+            vec![any],
+            String::new(),
             get_deposit(None),
             get_fee(None),
             keys[0].validator_key,

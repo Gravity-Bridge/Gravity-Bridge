@@ -610,7 +610,7 @@ dependencies = [
  "bitflags 2.9.0",
  "cexpr",
  "clang-sys",
- "itertools 0.12.1",
+ "itertools",
  "lazy_static",
  "lazycell",
  "log",
@@ -1044,9 +1044,9 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cosmos-sdk-proto-althea"
-version = "0.18.0"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fcff930b3949e2bc81a2529af55d05bb8cf624ee34c36e6eaf6262cb9983a5d"
+checksum = "0788d17ca964dd5fae39ea793e2b08237dea62851f1e56e0cd004dbb43b9638d"
 dependencies = [
  "prost 0.13.5",
  "prost-types 0.13.5",
@@ -1216,9 +1216,9 @@ checksum = "575f75dfd25738df5b91b8e43e14d44bda14637a58fae779fd2b064f8bf3e010"
 
 [[package]]
 name = "deep_space"
-version = "2.27.5"
+version = "2.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c83fba8d3cd89e3c7bdbfb0d47250b43cf0d787c06f9e29e2a3e44ccac748dd"
+checksum = "4671203d1057408bc0767ce446dfa19b88a4eb8299f94706aa97b7988e3ee012"
 dependencies = [
  "base64 0.22.1",
  "bech32",
@@ -1823,9 +1823,9 @@ checksum = "a8d1add55171497b4705a648c6b583acafb01d58050a51727785f0b2c8e0a2b2"
 
 [[package]]
 name = "gravity_proto"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "babe1a1bdf4bd59ad9490ed5c58a10bc64f80949cd9f0002c3417cb05051a152"
+checksum = "a3bb03234736c26d107628b4ee36642094f4fbcea9399a9fe1e853dba83a22e5"
 dependencies = [
  "cosmos-sdk-proto-althea",
  "prost 0.13.5",
@@ -2263,7 +2263,7 @@ dependencies = [
  "humantime-serde",
  "ibc-proto",
  "ibc-relayer-types",
- "itertools 0.10.5",
+ "itertools",
  "moka",
  "num-bigint",
  "num-rational",
@@ -2308,7 +2308,7 @@ dependencies = [
  "flex-error",
  "ibc-proto",
  "ics23",
- "itertools 0.10.5",
+ "itertools",
  "num-rational",
  "primitive-types",
  "prost 0.12.6",
@@ -2556,24 +2556,6 @@ name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
 dependencies = [
  "either",
 ]
@@ -3363,7 +3345,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81bddcdb20abf9501610992b6759a4c888aef7d1a7247ef75e2404275ac24af1"
 dependencies = [
  "anyhow",
- "itertools 0.12.1",
+ "itertools",
  "proc-macro2",
  "quote",
  "syn 2.0.100",
@@ -3376,7 +3358,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools",
  "proc-macro2",
  "quote",
  "syn 2.0.100",

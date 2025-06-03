@@ -453,7 +453,7 @@ pub async fn setup_gravity_auto_forwards(
     );
 
     let _proposal_res = contact
-        .create_gov_proposal(
+        .create_legacy_gov_proposal(
             proposal_any,
             DSCoin {
                 denom: (*STAKING_TOKEN).clone(),
