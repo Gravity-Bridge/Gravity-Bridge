@@ -27,6 +27,7 @@ type msgServer struct {
 	Keeper
 }
 
+// nolint: exhaustruct
 var _ typesv2.MsgServer = msgServer{}
 
 // NewMsgServerImpl returns an implementation of the gov MsgServer interface

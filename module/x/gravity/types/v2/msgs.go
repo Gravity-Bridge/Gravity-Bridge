@@ -5,8 +5,11 @@ import (
 )
 
 var (
+	// nolint: exhaustruct
 	_ sdk.Msg = &MsgAirdropProposal{}
+	// nolint: exhaustruct
 	_ sdk.Msg = &MsgIBCMetadataProposal{}
+	// nolint: exhaustruct
 	_ sdk.Msg = &MsgUnhaltBridgeProposal{}
 )
 
