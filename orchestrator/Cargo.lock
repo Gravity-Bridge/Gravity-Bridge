@@ -13,7 +13,7 @@ dependencies = [
  "actix_derive",
  "bitflags 2.9.0",
  "bytes",
- "crossbeam-channel 0.5.14",
+ "crossbeam-channel 0.5.15",
  "futures-core",
  "futures-sink",
  "futures-task",
@@ -1107,9 +1107,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.14"
+version = "0.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06ba6d68e24814cb8de6bb986db8222d3a027d15872cabc0d18817bc3c0e4471"
+checksum = "82b8f8f868b36967f9606790d1903570de9ceaf870a7bf9fbbd3016d636a2cb2"
 dependencies = [
  "crossbeam-utils 0.8.21",
 ]
@@ -2247,7 +2247,7 @@ dependencies = [
  "bs58",
  "byte-unit",
  "bytes",
- "crossbeam-channel 0.5.14",
+ "crossbeam-channel 0.5.15",
  "digest 0.10.7",
  "dirs-next",
  "ed25519",
@@ -2808,7 +2808,7 @@ version = "0.12.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9321642ca94a4282428e6ea4af8cc2ca4eac48ac7a6a4ea8f33f76d0ce70926"
 dependencies = [
- "crossbeam-channel 0.5.14",
+ "crossbeam-channel 0.5.15",
  "crossbeam-epoch",
  "crossbeam-utils 0.8.21",
  "loom",
