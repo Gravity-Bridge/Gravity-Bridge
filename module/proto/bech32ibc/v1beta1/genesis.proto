@@ -1,0 +1,16 @@
+syntax = "proto3";
+package bech32ibc.bech32ibc.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "bech32ibc/v1beta1/types.proto";
+
+option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types";
+
+message GenesisState {
+  string nativeHRP = 1 [ (gogoproto.moretags) = "yaml:\"native_hrp\"" ];
+
+  repeated HrpIbcRecord hrpIBCRecords = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"hrp_ibc_records\""
+  ];
+}

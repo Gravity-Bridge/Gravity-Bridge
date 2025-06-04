@@ -70,8 +70,8 @@ import (
 	ibchost "github.com/cosmos/ibc-go/v6/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v6/modules/core/keeper"
 
-	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
-	bech32ibctypes "github.com/althea-net/bech32-ibc/x/bech32ibc/types"
+	bech32ibckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper"
+	bech32ibctypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types"
 
 	ethermintcryptocodec "github.com/evmos/ethermint/crypto/codec"
 	ethermintcodec "github.com/evmos/ethermint/encoding/codec"

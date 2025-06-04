@@ -1,7 +1,7 @@
 package upgrades
 
 import (
-	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
+	bech32ibckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"

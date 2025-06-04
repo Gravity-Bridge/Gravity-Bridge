@@ -23,7 +23,7 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v6/modules/apps/transfer/keeper"
 	"github.com/tendermint/tendermint/libs/log"
 
-	bech32ibckeeper "github.com/althea-net/bech32-ibc/x/bech32ibc/keeper"
+	bech32ibckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper"
 
 	auctionkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
