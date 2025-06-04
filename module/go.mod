@@ -5,14 +5,12 @@ go 1.22.0
 toolchain go1.22.7
 
 require (
-	github.com/althea-net/bech32-ibc v0.7.0
 	github.com/cosmos/cosmos-sdk v0.46.17
 	github.com/cosmos/ibc-go/v6 v6.3.1
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/evmos/ethermint v0.22.3
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
-
 )
 
 replace (
