@@ -263,6 +263,7 @@ func TestIBCMetadataProposal(t *testing.T) {
 
 }
 
+// nolint: exhaustruct
 func TestMsgIBCMetadataProposal(t *testing.T) {
 	numFalseAuthorities := 10000
 
