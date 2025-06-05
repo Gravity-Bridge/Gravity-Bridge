@@ -17,7 +17,6 @@ linters:
 
 linters-settings:
   govet:
-    check-shadowing: false
     field-alignment: true
   errcheck:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
