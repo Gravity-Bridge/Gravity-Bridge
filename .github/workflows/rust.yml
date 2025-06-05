@@ -57,7 +57,7 @@ jobs:
       - name: Run Cargo Audit
         run: cargo install cargo-audit && cd orchestrator && cargo audit
   acl:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     steps:
       - uses: actions/checkout@v2
