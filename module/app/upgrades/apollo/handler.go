@@ -21,7 +21,7 @@ func GetApolloUpgradeHandler(
 		panic("Nil argument to GetApolloUpgradeHandler")
 	}
 	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
-		vmap[auctiontypes.ModuleName] = ModuleManager.Modules[auctiontypes.ModuleName].ConsensusVersion()
+		vmap[auctiontypes.ModuleName] = ModuleManager.Modules[auctiontypes.ModuleName].(module.HasConsensusVersion).ConsensusVersion()
 		ctx.Logger().Info("Module Consensus Version Map", "vmap", vmap)
 
 		ctx.Logger().Info("Apollo Upgrade: Running any configured module migrations")

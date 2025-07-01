@@ -6,6 +6,13 @@ toolchain go1.24.4
 
 replace (
 	cosmossdk.io/core => cosmossdk.io/core v0.11.0
+
+	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.23.4
+
+	github.com/btcsuite/btcd/btcec/v2 => github.com/btcsuite/btcd/btcec/v2 v2.3.2
+
+	github.com/btcsuite/btcd/btcutil => github.com/btcsuite/btcd/btcutil v1.1.3
+
 	github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.50.8
 
 	github.com/cosmos/ibc-go/v8 => github.com/cosmos/ibc-go/v8 v8.3.2

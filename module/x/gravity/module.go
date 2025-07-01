@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -111,6 +110,12 @@ func NewAppModule(k keeper.Keeper, bankKeeper bankkeeper.Keeper) AppModule {
 	}
 }
 
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
+
 // Name implements app module
 func (AppModule) Name() string {
 	return types.ModuleName
@@ -120,21 +125,6 @@ func (AppModule) Name() string {
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 	ir.RegisterRoute(types.ModuleName, "module-balance", keeper.ModuleBalanceInvariant(am.keeper))
 	ir.RegisterRoute(types.ModuleName, "store-validity", keeper.StoreValidityInvariant(am.keeper))
-}
-
-// Route implements app module
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
-}
-
-// QuerierRoute implements app module
-func (am AppModule) QuerierRoute() string {
-	return types.QuerierRoute
-}
-
-// LegacyQuerierHandler returns the distribution module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper)
 }
 
 // RegisterServices registers module services.
@@ -169,10 +159,10 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // BeginBlock implements app module
-func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(ctx sdk.Context, _ sdk.BeginBlock) {}
 
 // EndBlock implements app module
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (am AppModule) EndBlock(ctx sdk.Context, _ sdk.EndBlock) []abci.ValidatorUpdate {
 	EndBlocker(ctx, am.keeper)
 	return []abci.ValidatorUpdate{}
 }
@@ -192,18 +182,6 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 func (am AppModule) ProposalContents(simState module.SimulationState) []simtypes.WeightedProposalContent {
 	// TODO: implement gravity simulation stuffs
 	return nil
-}
-
-// RandomizedParams creates randomized distribution param changes for the simulator.
-func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
-	// TODO: implement gravity simulation stuffs
-	return nil
-}
-
-// RegisterStoreDecoder registers a decoder for distribution module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
-	// TODO: implement gravity simulation stuffs
-	// sdr[types.StoreKey] = simulation.NewDecodeStore(am.cdc)
 }
 
 // WeightedOperations returns the all the gov module operations with their respective weights.

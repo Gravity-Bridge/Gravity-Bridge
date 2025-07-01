@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"cosmossdk.io/simapp"
-	simcmd "cosmossdk.io/simapp/simd/cmd"
+	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	genutiltest "github.com/cosmos/cosmos-sdk/x/genutil/client/testutil"
 )
 
@@ -53,25 +53,24 @@ func TestAddGenesisAccountCmd(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			home := t.TempDir()
 			logger := log.NewNopLogger()
-			cfg, err := genutiltest.CreateDefaultTendermintConfig(home)
+			cfg, err := genutiltest.CreateDefaultCometConfig(home)
 			require.NoError(t, err)
 
-			appCodec := simapp.MakeTestEncodingConfig()
-			err = genutiltest.ExecInitCmd(testMbm, home, appCodec.Codec)
+			encodingConfig := testutil.MakeTestEncodingConfig()
+			err = genutiltest.ExecInitCmd(testMbm, home, encodingConfig.Codec)
 			require.NoError(t, err)
 
 			serverCtx := server.NewContext(viper.New(), cfg, logger)
-			clientCtx := client.Context{}.WithCodec(appCodec.Codec).WithHomeDir(home)
+			clientCtx := client.Context{}.WithCodec(encodingConfig.Codec).WithHomeDir(home)
 
 			ctx := context.Background()
 			ctx = context.WithValue(ctx, client.ClientContextKey, &clientCtx)
 			ctx = context.WithValue(ctx, server.ServerContextKey, serverCtx)
 
-			cmd := simcmd.AddGenesisAccountCmd(home)
+			cmd := genutilcli.AddGenesisAccountCmd(home, encodingConfig.TxConfig.SigningContext().AddressCodec())
 			cmd.SetArgs([]string{
 				tc.addr,
 				tc.denom,

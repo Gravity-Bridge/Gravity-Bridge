@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
+	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/log"
-	dbm "github.com/tendermint/tm-db"
 
 	"cosmossdk.io/simapp"
 	"github.com/cosmos/cosmos-sdk/codec"

@@ -22,8 +22,8 @@ func GetPolarisUpgradeHandler(
 		// We previously upgraded via genesis, thus we don't want to run upgrades for all the modules
 		fromVM := make(map[string]uint64)
 		ctx.Logger().Info("Polaris upgrade: Creating version map")
-		for moduleName, module := range ModuleManager.Modules {
-			fromVM[moduleName] = module.ConsensusVersion()
+		for moduleName, mod := range ModuleManager.Modules {
+			fromVM[moduleName] = mod.(module.HasConsensusVersion).ConsensusVersion()
 		}
 
 		/* On the ibc-go v2 -> v3 migration guide, they mention the following is needed to enable Interchain Accounts.

@@ -23,7 +23,7 @@ func GetAntaresUpgradeHandler(
 	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
 		ctx.Logger().Info("Antares upgrade: Starting upgrade")
 
-		vmap[icatypes.ModuleName] = ModuleManager.Modules[icatypes.ModuleName].ConsensusVersion()
+		vmap[icatypes.ModuleName] = ModuleManager.Modules[icatypes.ModuleName].(module.HasConsensusVersion).ConsensusVersion()
 		icaHostParams := icahosttypes.Params{
 			HostEnabled:   false,
 			AllowMessages: []string{},

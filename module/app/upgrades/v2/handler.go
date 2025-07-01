@@ -2,6 +2,7 @@ package v2
 
 import (
 	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -53,8 +54,8 @@ func GetV2UpgradeHandler(
 		// We previously upgraded via genesis, thus we don't want to run upgrades for all the modules
 		fromVM := make(map[string]uint64)
 		ctx.Logger().Info("Mercury upgrade: Creating version map")
-		for moduleName, module := range ModuleManager.Modules {
-			fromVM[moduleName] = module.ConsensusVersion()
+		for moduleName, mod := range ModuleManager.Modules {
+			fromVM[moduleName] = mod.(module.HasConsensusVersion).ConsensusVersion()
 		}
 
 		ctx.Logger().Info("Mercury upgrade: Overwriting Gravity module version", "old", fromVM[gravitytypes.StoreKey], "new", 1)
@@ -75,7 +76,10 @@ func GetV2UpgradeHandler(
 		}
 
 		ctx.Logger().Info("Mercury Upgrade: Enforcing validator minimum commission")
-		bumpMinValidatorCommissions(stakingKeeper, ctx)
+		err = bumpMinValidatorCommissions(stakingKeeper, ctx)
+		if err != nil {
+			panic(errorsmod.Wrap(err, "Mercury Upgrade: Unable to upgrade, minimum validator commissions could not be corrected"))
+		}
 
 		ctx.Logger().Info("Mercury Upgrade: Running all configured module migrations (Should only see Gravity run)")
 		return ModuleManager.RunMigrations(ctx, *configurator, fromVM)
@@ -98,13 +102,21 @@ func fixDistributionPoolBalance(
 ) error {
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance(): Enter function, getting module account")
 	distrAcc := accountKeeper.GetModuleAccount(ctx, distrtypes.ModuleName).GetAddress()
-	ugraviton := mintKeeper.GetParams(ctx).MintDenom
+	mintParams, err := mintKeeper.Params.Get(ctx)
+	if err != nil {
+		return err
+	}
+	ugraviton := mintParams.MintDenom
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance():", "distrAcc", distrAcc.String(), "chain-denom", ugraviton)
 
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance(): Obtaining distribution module and community pool balances")
 	distrBal := bankKeeper.GetBalance(ctx, distrAcc, ugraviton) // distr Int balance
 	distrBalCoins := sdk.NewCoins(distrBal)                     // distr Int balance as Coins
-	commPool := distrKeeper.GetFeePoolCommunityCoins(ctx)       // pool Dec balances
+	feePool, err := distrKeeper.FeePool.Get(ctx)
+	if err != nil {
+		return err
+	}
+	commPool := feePool.CommunityPool // pool Dec balances
 
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance():", "distrBal", distrBal.String(), "commPool", commPool.String())
 
@@ -180,10 +192,13 @@ func fixDistributionPoolBalance(
 	fixedPool := commPoolNoGrav.Add(distrBalLessRewards...)
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance():", "fixedPool", fixedPool.String())
 
-	feePool := distrtypes.FeePool{CommunityPool: fixedPool}
+	feePool = distrtypes.FeePool{CommunityPool: fixedPool}
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance():", "feePool", feePool.String())
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance(): Setting feePool on distribution keeper")
-	distrKeeper.SetFeePool(ctx, feePool)
+	err = distrKeeper.FeePool.Set(ctx, feePool)
+	if err != nil {
+		return err
+	}
 
 	// Check the invariants after our modifications
 	ctx.Logger().Info("Mercury Upgrade: fixDistributionPoolBalance(): Running distribution module invariants!")
@@ -199,16 +214,19 @@ func fixDistributionPoolBalance(
 // Enforce minimum 5% validator commission on all noncompliant validators
 // The MinCommissionDecorator enforces new validators must be created with a minimum commission rate of 5%,
 // but existing validators are unaffected, here we automatically bump them all to 5% if they are lower
-func bumpMinValidatorCommissions(stakingKeeper *stakingkeeper.Keeper, ctx sdk.Context) {
+func bumpMinValidatorCommissions(stakingKeeper *stakingkeeper.Keeper, ctx sdk.Context) error {
 	ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): Enter function")
 	// This logic was originally included in the Juno project at github.com/CosmosContracts/juno/blob/main/app/app.go
 	// This version was added to Juno by github user the-frey https://github.com/the-frey
 	ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): Getting all the validators")
-	validators := stakingKeeper.GetAllValidators(ctx)
+	validators, err := stakingKeeper.GetAllValidators(ctx)
+	if err != nil {
+		return err
+	}
 	// hard code this because we don't want
 	// a) a fork or
 	// b) immediate reaction with additional gov props
-	minCommissionRate := sdk.NewDecWithPrec(5, 2)
+	minCommissionRate := sdkmath.LegacyNewDecWithPrec(5, 2)
 	ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions():", "minCommissionRate", minCommissionRate.String())
 	ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): Iterating validators")
 	for _, v := range validators {
@@ -227,13 +245,15 @@ func bumpMinValidatorCommissions(stakingKeeper *stakingkeeper.Keeper, ctx sdk.Co
 
 			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): calling the hook")
 			// call the before-modification hook since we're about to update the commission
-			stakingKeeper.BeforeValidatorModified(ctx, v.GetOperator())
+			operator := sdk.ValAddress(sdk.MustAccAddressFromBech32(v.GetOperator()))
+			stakingKeeper.Hooks().BeforeValidatorModified(ctx, operator)
 
 			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): setting the validator")
 			stakingKeeper.SetValidator(ctx, v)
 
-			v, _ = stakingKeeper.GetValidator(ctx, v.GetOperator()) // Refresh since we set them in the keeper
+			v, _ = stakingKeeper.GetValidator(ctx, operator) // Refresh since we set them in the keeper
 			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): validator's set rate", "validator", v.GetMoniker(), "Commission", v.Commission.String())
 		}
 	}
+	return nil
 }
