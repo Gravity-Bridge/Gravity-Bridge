@@ -6,10 +6,10 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 
+	"github.com/cometbft/cometbft/crypto/tmhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authlegacy "github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
-	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
 // nolint: exhaustruct

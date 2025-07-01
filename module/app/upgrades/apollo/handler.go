@@ -3,29 +3,29 @@ package apollo
 import (
 	"fmt"
 
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	auctionkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 	auctiontypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
 func GetApolloUpgradeHandler(
-	mm *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper, auctionKeeper *auctionkeeper.Keeper,
+	ModuleManager *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper, auctionKeeper *auctionkeeper.Keeper,
 ) func(
 	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
-	if mm == nil {
+	if ModuleManager == nil {
 		panic("Nil argument to GetApolloUpgradeHandler")
 	}
 	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
-		vmap[auctiontypes.ModuleName] = mm.Modules[auctiontypes.ModuleName].ConsensusVersion()
+		vmap[auctiontypes.ModuleName] = ModuleManager.Modules[auctiontypes.ModuleName].ConsensusVersion()
 		ctx.Logger().Info("Module Consensus Version Map", "vmap", vmap)
 
 		ctx.Logger().Info("Apollo Upgrade: Running any configured module migrations")
-		out, outErr := mm.RunMigrations(ctx, *configurator, vmap)
+		out, outErr := ModuleManager.RunMigrations(ctx, *configurator, vmap)
 
 		ctx.Logger().Info("Setting the auction module Params")
 		auctionParams := auctiontypes.DefaultParams()

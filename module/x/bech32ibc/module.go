@@ -8,7 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/client/cli"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/client/rest"

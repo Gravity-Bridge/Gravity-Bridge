@@ -3,6 +3,7 @@ package v2
 import (
 	errorsmod "cosmossdk.io/errors"
 
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -12,7 +13,6 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	bech32ibckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper"
 
@@ -38,13 +38,13 @@ func GetMercury2Dot0UpgradeHandler() func(
 }
 
 func GetV2UpgradeHandler(
-	mm *module.Manager, configurator *module.Configurator, accountKeeper *authkeeper.AccountKeeper,
+	ModuleManager *module.Manager, configurator *module.Configurator, accountKeeper *authkeeper.AccountKeeper,
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper,
 ) func(
 	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
-	if mm == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
+	if ModuleManager == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
 		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil {
 		panic("Nil argument to GetV2UpgradeHandler")
 	}
@@ -53,7 +53,7 @@ func GetV2UpgradeHandler(
 		// We previously upgraded via genesis, thus we don't want to run upgrades for all the modules
 		fromVM := make(map[string]uint64)
 		ctx.Logger().Info("Mercury upgrade: Creating version map")
-		for moduleName, module := range mm.Modules {
+		for moduleName, module := range ModuleManager.Modules {
 			fromVM[moduleName] = module.ConsensusVersion()
 		}
 
@@ -78,7 +78,7 @@ func GetV2UpgradeHandler(
 		bumpMinValidatorCommissions(stakingKeeper, ctx)
 
 		ctx.Logger().Info("Mercury Upgrade: Running all configured module migrations (Should only see Gravity run)")
-		return mm.RunMigrations(ctx, *configurator, fromVM)
+		return ModuleManager.RunMigrations(ctx, *configurator, fromVM)
 	}
 }
 

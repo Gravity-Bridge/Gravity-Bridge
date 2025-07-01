@@ -1,20 +1,20 @@
 package polaris
 
 import (
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v6/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 )
 
 func GetPolarisUpgradeHandler(
-	mm *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper,
+	ModuleManager *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper,
 ) func(
 	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
-	if mm == nil || transferKeeper == nil {
+	if ModuleManager == nil || transferKeeper == nil {
 		panic("Nil argument to GetPolarisUpgradeHandler")
 	}
 	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
@@ -22,7 +22,7 @@ func GetPolarisUpgradeHandler(
 		// We previously upgraded via genesis, thus we don't want to run upgrades for all the modules
 		fromVM := make(map[string]uint64)
 		ctx.Logger().Info("Polaris upgrade: Creating version map")
-		for moduleName, module := range mm.Modules {
+		for moduleName, module := range ModuleManager.Modules {
 			fromVM[moduleName] = module.ConsensusVersion()
 		}
 
@@ -52,7 +52,7 @@ func GetPolarisUpgradeHandler(
 
 		        ...
 
-		        return app.mm.RunMigrations(ctx, app.configurator, fromVM)
+		        return app.ModuleManager.RunMigrations(ctx, app.configurator, fromVM)
 		    })
 		*/
 
@@ -80,7 +80,7 @@ func GetPolarisUpgradeHandler(
 		}
 
 		ctx.Logger().Info("Polaris Upgrade: Running any configured module migrations")
-		out, outErr := mm.RunMigrations(ctx, *configurator, fromVM)
+		out, outErr := ModuleManager.RunMigrations(ctx, *configurator, fromVM)
 
 		ctx.Logger().Info("Asserting invariants after upgrade")
 		crisisKeeper.AssertInvariants(ctx)
