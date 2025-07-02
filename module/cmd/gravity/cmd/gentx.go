@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/codec/address"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 
 	cfg "github.com/cometbft/cometbft/config"
@@ -167,20 +168,20 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			}
 
 			// validate validator account in genesis
-			address, err := key.GetAddress()
+			addr, err := key.GetAddress()
 			if err != nil {
 				return errors.Wrap(err, "error getting address")
 			}
-			if err = genutil.ValidateAccountInGenesis(genesisState, genBalIterator, address, coins, cdc); err != nil {
+			if err = genutil.ValidateAccountInGenesis(genesisState, genBalIterator, addr, coins, cdc); err != nil {
 				return errors.Wrap(err, "failed to validate validator account in genesis")
 			}
 
-			txFactory := tx.NewFactoryCLI(clientCtx, cmd.Flags())
+			txFactory, err := tx.NewFactoryCLI(clientCtx, cmd.Flags())
 			if err != nil {
 				return errors.Wrap(err, "error creating tx builder")
 			}
 
-			clientCtx = clientCtx.WithInput(inBuf).WithFromAddress(address)
+			clientCtx = clientCtx.WithInput(inBuf).WithFromAddress(addr)
 
 			// The following line comes from a discrepancy between the `gentx`
 			// and `create-validator` commands:
@@ -196,13 +197,13 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			createValCfg.Amount = amount
 
 			// create a 'create-validator' message
-			txBldr, msg, err := cli.BuildCreateValidatorMsg(clientCtx, createValCfg, txFactory, true)
+			txBldr, msg, err := cli.BuildCreateValidatorMsg(clientCtx, createValCfg, txFactory, true, address.Bech32Codec{Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix()})
 			if err != nil {
 				return errors.Wrap(err, "failed to build create-validator message")
 			}
 
 			delegateKeySetMsg := &gravitytypes.MsgSetOrchestratorAddress{
-				Validator:    sdk.ValAddress(address).String(),
+				Validator:    sdk.ValAddress(addr).String(),
 				Orchestrator: orchAddress.String(),
 				EthAddress:   ethAddress,
 			}
@@ -425,23 +426,27 @@ func GenAppStateFromConfig(cdc codec.Codec, txEncodingConfig client.TxEncodingCo
 	}
 
 	// create the app state
-	appGenesisState, err := types.GenesisStateFromGenDoc(genDoc)
+	appGenesis, err := types.AppGenesisFromFile(config.GenesisFile())
+	if err != nil {
+		return appState, errors.Wrap(err, "failed to read genesis file")
+	}
+	genesisState, err := types.GenesisStateFromAppGenesis(appGenesis)
+	if err != nil {
+		return appState, errors.Wrap(err, "failed to convert app genesis to genesis state")
+	}
+
+	genesisState, err = genutil.SetGenTxsInAppGenesisState(cdc, txEncodingConfig.TxJSONEncoder(), genesisState, appGenTxs)
 	if err != nil {
 		return appState, err
 	}
 
-	appGenesisState, err = genutil.SetGenTxsInAppGenesisState(cdc, txEncodingConfig.TxJSONEncoder(), appGenesisState, appGenTxs)
-	if err != nil {
-		return appState, err
-	}
-
-	appState, err = json.MarshalIndent(appGenesisState, "", "  ")
+	appState, err = json.MarshalIndent(genesisState, "", "  ")
 	if err != nil {
 		return appState, err
 	}
 
 	genDoc.AppState = appState
-	err = genutil.ExportGenesisFile(&genDoc, config.GenesisFile())
+	err = genutil.ExportGenesisFile(appGenesis, config.GenesisFile())
 
 	return appState, err
 }
@@ -469,7 +474,7 @@ func CollectTxs(cdc codec.Codec, txJSONDecoder sdk.TxDecoder, moniker, genTxsDir
 	genBalIterator.IterateGenesisBalances(
 		cdc, appState,
 		func(balance bankexported.GenesisBalance) (stop bool) {
-			balancesMap[balance.GetAddress().String()] = balance
+			balancesMap[balance.GetAddress()] = balance
 			return false
 		},
 	)
@@ -546,7 +551,7 @@ func CollectTxs(cdc codec.Codec, txJSONDecoder sdk.TxDecoder, moniker, genTxsDir
 		if delBal.GetCoins().AmountOf(msg.Value.Denom).LT(msg.Value.Amount) {
 			return appGenTxs, persistentPeers, fmt.Errorf(
 				"insufficient fund for delegation %v: %v < %v",
-				delBal.GetAddress().String(), delBal.GetCoins().AmountOf(msg.Value.Denom), msg.Value.Amount,
+				delBal.GetAddress(), delBal.GetCoins().AmountOf(msg.Value.Denom), msg.Value.Amount,
 			)
 		}
 

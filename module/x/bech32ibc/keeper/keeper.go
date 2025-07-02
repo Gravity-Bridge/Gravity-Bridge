@@ -3,8 +3,7 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/cometbft/cometbft/libs/log"
-
+	"cosmossdk.io/log"
 	sdkstore "cosmossdk.io/store/types"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types"
 	"github.com/cosmos/cosmos-sdk/codec"

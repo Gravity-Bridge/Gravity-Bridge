@@ -217,7 +217,10 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 
 	unslashedValsets := k.GetUnSlashedValsets(ctx, params.SignedValsetsWindow)
 
-	currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	currentBondedSet, err := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	if err != nil {
+		panic(fmt.Errorf("Failed to get bonded validators: %w", err))
+	}
 	unbondingValidators := getUnbondingValidators(ctx, k)
 
 	for _, vs := range unslashedValsets {
@@ -230,24 +233,27 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			if err != nil {
 				panic("Failed to get validator consensus addr")
 			}
-			valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
+			valSigningInfo, err := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
+			if err != nil {
+				panic(fmt.Errorf("Failed to get validator signing info: %w", err))
+			}
 
 			// Slash validator ONLY if they joined before valset was created
 			startedBeforeValsetCreated := valSigningInfo.StartHeight < int64(vs.Height)
 
-			if exist && startedBeforeValsetCreated {
+			if startedBeforeValsetCreated {
 				// Check if validator has confirmed valset or not
-				_, found := confirms[val.GetOperator().String()]
+				_, found := confirms[val.GetOperator()]
 				// slash validators for not confirming valsets
 				if !found {
 					// refresh validator before slashing/jailing
-					val = updateValidator(ctx, k, val.GetOperator())
+					val = updateValidator(ctx, k, sdk.ValAddress(sdk.MustAccAddressFromBech32(val.GetOperator())))
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
 						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
 								Type:    types.AttributeKeyValsetSignatureSlashing,
-								Address: consAddr.String(),
+								Address: sdk.ConsAddress(consAddr).String(),
 							},
 						); err != nil {
 							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
@@ -267,34 +273,37 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			if err != nil {
 				panic(err)
 			}
-			validator, found := k.StakingKeeper.GetValidator(ctx, sdk.ValAddress(addr))
-			if !found {
+			validator, err := k.StakingKeeper.GetValidator(ctx, sdk.ValAddress(addr))
+			if err != nil {
 				panic("Unable to find validator!")
 			}
 			valConsAddr, err := validator.GetConsAddr()
 			if err != nil {
 				panic(err)
 			}
-			valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, valConsAddr)
+			valSigningInfo, err := k.SlashingKeeper.GetValidatorSigningInfo(ctx, valConsAddr)
+			if err != nil {
+				panic(err)
+			}
 
 			// Only slash validators who joined after valset is created and they are unbonding and UNBOND_SLASHING_WINDOW hasn't passed
 			startedBeforeValsetCreated := valSigningInfo.StartHeight < int64(vs.Height)
 			unbondingPeriodEndsAfterSlashingPeriod := vs.Height < uint64(validator.UnbondingHeight)+params.UnbondSlashingValsetsWindow
 
-			if exist && startedBeforeValsetCreated && validator.IsUnbonding() && unbondingPeriodEndsAfterSlashingPeriod {
+			if startedBeforeValsetCreated && validator.IsUnbonding() && unbondingPeriodEndsAfterSlashingPeriod {
 				// Check if validator has confirmed valset or not
-				_, found := confirms[validator.GetOperator().String()]
+				_, found := confirms[validator.GetOperator()]
 
 				// slash validators for not confirming valsets
 				if !found {
 					// refresh validator before slashing/jailing
-					validator = updateValidator(ctx, k, validator.GetOperator())
+					validator = updateValidator(ctx, k, sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator())))
 					if !validator.IsJailed() {
 						k.StakingKeeper.Slash(ctx, valConsAddr, ctx.BlockHeight(), validator.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
 						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
 								Type:    types.AttributeKeyValsetSignatureSlashing,
-								Address: valConsAddr.String(),
+								Address: sdk.ConsAddress(valConsAddr).String(),
 							},
 						); err != nil {
 							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
@@ -314,8 +323,8 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 // pull in individual validators as needed to check that we are not jailing them twice, or slashing
 // them improperly
 func updateValidator(ctx sdk.Context, k keeper.Keeper, val sdk.ValAddress) stakingtypes.Validator {
-	valObj, found := k.StakingKeeper.GetValidator(ctx, val)
-	if !found {
+	valObj, err := k.StakingKeeper.GetValidator(ctx, val)
+	if err != nil {
 		// this should be impossible, we haven't even progressed a single block since we got the list
 		panic("Validator exited set during endblocker?")
 	}
@@ -325,9 +334,16 @@ func updateValidator(ctx sdk.Context, k keeper.Keeper, val sdk.ValAddress) staki
 // getUnbondingValidators gets all currently unbonding validators in groups based on
 // the block at which they will finish validating.
 func getUnbondingValidators(ctx sdk.Context, k keeper.Keeper) (addresses []string) {
-	blockTime := ctx.BlockTime().Add(k.StakingKeeper.GetParams(ctx).UnbondingTime)
+	stakingParams, err := k.StakingKeeper.GetParams(ctx)
+	if err != nil {
+		panic(fmt.Errorf("Failed to get staking params: %w", err))
+	}
+	blockTime := ctx.BlockTime().Add(stakingParams.UnbondingTime)
 	blockHeight := ctx.BlockHeight()
-	unbondingValIterator := k.StakingKeeper.ValidatorQueueIterator(ctx, blockTime, blockHeight)
+	unbondingValIterator, err := k.StakingKeeper.ValidatorQueueIterator(ctx, blockTime, blockHeight)
+	if err != nil {
+		panic(fmt.Errorf("Failed to get unbonding validator iterator: %w", err))
+	}
 	defer unbondingValIterator.Close()
 
 	// All unbonding validators
@@ -377,7 +393,10 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 		return
 	}
 
-	currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	currentBondedSet, err := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	if err != nil {
+		panic(fmt.Errorf("Failed to get bonded validators: %w", err))
+	}
 	unslashedBatches := k.GetUnSlashedBatches(ctx, maxHeight)
 	for _, batch := range unslashedBatches {
 		// SLASH BONDED VALIDTORS who didn't attest batch requests
@@ -387,23 +406,26 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			if err != nil {
 				panic(err)
 			}
-			valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
+			valSigningInfo, err := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
+			if err != nil {
+				panic(fmt.Errorf("Failed to get validator signing info: %w", err))
+			}
 
 			// Don't slash validators who joined after batch is created
 			startedBeforeBatchCreated := valSigningInfo.StartHeight < int64(batch.CosmosBlockCreated)
-			if exist && startedBeforeBatchCreated {
+			if startedBeforeBatchCreated {
 				// check if validator confirmed the batch
-				_, found := confirms[val.GetOperator().String()]
+				_, found := confirms[val.GetOperator()]
 				// slashing for not confirming the batch
 				if !found {
 					// refresh validator before slashing/jailing
-					val = updateValidator(ctx, k, val.GetOperator())
+					val = updateValidator(ctx, k, sdk.ValAddress(sdk.MustAccAddressFromBech32(val.GetOperator())))
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBatch)
 						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
 								Type:    types.AttributeKeyBatchSignatureSlashing,
-								Address: consAddr.String(),
+								Address: sdk.ConsAddress(consAddr).String(),
 							},
 						); err != nil {
 							panic(fmt.Errorf("Unable to emit slashing event: %v", err))
@@ -457,7 +479,10 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 		return
 	}
 
-	currentBondedSet := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	currentBondedSet, err := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	if err != nil {
+		panic(fmt.Errorf("Failed to get bonded validators: %w", err))
+	}
 	unslashedLogicCalls := k.GetUnSlashedLogicCalls(ctx, maxHeight)
 	for _, call := range unslashedLogicCalls {
 
@@ -469,20 +494,23 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			if err != nil {
 				panic(err)
 			}
-			valSigningInfo, exist := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
+			valSigningInfo, err := k.SlashingKeeper.GetValidatorSigningInfo(ctx, consAddr)
+			if err != nil {
+				panic(fmt.Errorf("Failed to get validator signing info: %w", err))
+			}
 			startedBeforeCallCreated := valSigningInfo.StartHeight < int64(call.CosmosBlockCreated)
-			if exist && startedBeforeCallCreated {
+			if startedBeforeCallCreated {
 				// check that the validator confirmed the logic call
-				_, found := confirms[val.GetOperator().String()]
+				_, found := confirms[val.GetOperator()]
 				if !found {
 					// refresh validator before slashing/jailing
-					val = updateValidator(ctx, k, val.GetOperator())
+					val = updateValidator(ctx, k, sdk.ValAddress(sdk.MustAccAddressFromBech32(val.GetOperator())))
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionLogicCall)
 						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
 								Type:    types.AttributeKeyLogicCallSignatureSlashing,
-								Address: consAddr.String(),
+								Address: sdk.ConsAddress(consAddr).String(),
 							},
 						); err != nil {
 							panic(fmt.Errorf("Unable to emit slashing event: %v", err))

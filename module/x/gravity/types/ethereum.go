@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	errorsmod "cosmossdk.io/errors"
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -114,11 +114,11 @@ func EthAddrLessThan(e EthAddress, o EthAddress) bool {
 
 // NewERC20Token returns a new instance of an ERC20
 func NewERC20Token(amount uint64, contract string) ERC20Token {
-	return ERC20Token{Amount: sdk.NewIntFromUint64(amount), Contract: contract}
+	return ERC20Token{Amount: sdkmath.NewIntFromUint64(amount), Contract: contract}
 }
 
-// NewSDKIntERC20Token returns a new instance of an ERC20, accepting a math.Int
-func NewSDKIntERC20Token(amount math.Int, contract string) ERC20Token {
+// NewSDKIntERC20Token returns a new instance of an ERC20, accepting a sdkmath.Int
+func NewSDKIntERC20Token(amount sdkmath.Int, contract string) ERC20Token {
 	return ERC20Token{Amount: amount, Contract: contract}
 }
 
@@ -129,12 +129,12 @@ func (e ERC20Token) ToInternal() (*InternalERC20Token, error) {
 
 // InternalERC20Token contains validated fields, used for all internal computation
 type InternalERC20Token struct {
-	Amount   math.Int
+	Amount   sdkmath.Int
 	Contract EthAddress
 }
 
 // NewInternalERC20Token creates an InternalERC20Token, performing validation and returning any errors
-func NewInternalERC20Token(amount math.Int, contract string) (*InternalERC20Token, error) {
+func NewInternalERC20Token(amount sdkmath.Int, contract string) (*InternalERC20Token, error) {
 	ethAddress, err := NewEthAddress(contract)
 	if err != nil { // ethAddress could be nil, must return here
 		return nil, errorsmod.Wrap(err, "invalid contract")

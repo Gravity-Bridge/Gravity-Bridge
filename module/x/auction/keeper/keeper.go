@@ -148,7 +148,11 @@ func (k Keeper) AwardAuction(ctx sdk.Context, bidder sdk.AccAddress, amount sdk.
 // IsDenomAuctionable Checks `denom“ against the NonAuctionableTokens list
 // Returns true if not in the list and false otherwise
 func (k Keeper) IsDenomAuctionable(ctx sdk.Context, denom string) bool {
-	if denom == k.MintKeeper.GetParams(ctx).MintDenom {
+	mintParams, err := k.MintKeeper.Params.Get(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get mint params"))
+	}
+	if denom == mintParams.MintDenom {
 		return false
 	}
 
@@ -180,9 +184,15 @@ func (k Keeper) sendFromModuleAccountToCommunityPool(ctx sdk.Context, coin sdk.C
 	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, moduleName, distrtypes.ModuleName, coins); err != nil {
 		return errorsmod.Wrap(err, "Failure to transfer tokens from auction pool to community pool")
 	}
-	feePool := k.DistKeeper.GetFeePool(ctx)
+	feePool, err := k.DistKeeper.FeePool.Get(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "Failed to get fee pool")
+	}
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
-	k.DistKeeper.SetFeePool(ctx, feePool)
+	err = k.DistKeeper.FeePool.Set(ctx, feePool)
+	if err != nil {
+		return errorsmod.Wrap(err, "Failed to set fee pool")
+	}
 
 	return nil
 }

@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"time"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	dbm "github.com/cometbft/cometbft-db"
+	sdkmath "cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/log"
-
-	"cosmossdk.io/simapp"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	ccrypto "github.com/cosmos/cosmos-sdk/crypto/types"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -53,8 +53,7 @@ func InitGravityTestApp(initChain bool) *Gravity {
 		map[int64]bool{},
 		DefaultNodeHome,
 		5,
-		MakeEncodingConfig(),
-		simapp.EmptyAppOptions{},
+		simtestutil.EmptyAppOptions{},
 	)
 	if initChain {
 		genesisState := NewDefaultGenesisState()
@@ -67,9 +66,9 @@ func InitGravityTestApp(initChain bool) *Gravity {
 
 		app.BaseApp.InitChain(
 			// nolint: exhaustruct
-			abci.RequestInitChain{
+			&abci.RequestInitChain{
 				Validators:      []abci.ValidatorUpdate{},
-				ConsensusParams: simapp.DefaultConsensusParams,
+				ConsensusParams: simtestutil.DefaultConsensusParams,
 				AppStateBytes:   stateBytes,
 			},
 		)
@@ -195,7 +194,7 @@ func addValidators(genState *GenesisState, cdc codec.Codec) {
 	}
 
 	// initialize the validators
-	valShares := sdk.NewDecFromInt(valTokens)
+	valShares := sdkmath.LegacyNewDecFromInt(valTokens)
 	bondedVal1 := stakingtypes.Validator{
 		OperatorAddress: sdk.ValAddress(AccAddresses[0]).String(),
 		ConsensusPubkey: pk0,

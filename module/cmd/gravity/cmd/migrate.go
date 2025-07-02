@@ -62,7 +62,7 @@ $ %s ibc-migrate /path/to/genesis.json --chain-id=gravity-bridge-2 --genesis-tim
 				return errors.Wrap(err, "failed to JSON unmarshal initial genesis state")
 			}
 
-			newGenState, err := v100.MigrateGenesis(initialState, clientCtx, *genDoc, gravityMaxExpectedBlockDelay)
+			newGenState, err := v100.MigrateGenesis(initialState, clientCtx.Codec)
 			if err != nil {
 				return errors.Wrap(err, "failed to migrate ibc genesis state from v1 to v2")
 			}

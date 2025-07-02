@@ -3,13 +3,13 @@ package v3
 import (
 	"testing"
 
+	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/evidence"
 	"cosmossdk.io/x/upgrade"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/testutil"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
@@ -33,8 +33,8 @@ import (
 
 func TestMigrateAttestation(t *testing.T) {
 	// create old prefixes KV store
-	gravityKey := sdk.NewKVStoreKey("gravity")
-	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
+	gravityKey := storetypes.NewKVStoreKey("gravity")
+	ctx := testutil.DefaultContext(gravityKey, storetypes.NewTransientStoreKey("transient-test"))
 	store := ctx.KVStore(gravityKey)
 	marshaler := MakeTestMarshaler()
 

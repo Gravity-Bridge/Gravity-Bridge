@@ -1017,7 +1017,7 @@ func (app *Gravity) setPostHandler() {
 // full simapp
 func MakeCodecs() (codec.Codec, *codec.LegacyAmino) {
 	config := MakeEncodingConfig()
-	return config.Marshaler, config.Amino
+	return config.Codec, config.Amino
 }
 
 // Name returns the name of the App

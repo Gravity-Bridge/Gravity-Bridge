@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
-	math "cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -56,7 +56,8 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 	}
 
 	// ensure that the validator exists
-	if k.Keeper.StakingKeeper.Validator(ctx, val) == nil {
+	validator, err := k.Keeper.StakingKeeper.Validator(ctx, val)
+	if err != nil || validator == nil {
 		return nil, errorsmod.Wrap(stakingtypes.ErrNoValidatorFound, val.String())
 	}
 
@@ -174,13 +175,13 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 		// The params have been set, get the min send to eth fee
 		minFeeBasisPoints = int64(params.MinChainFeeBasisPoints)
 	}
-	minFee := sdk.NewDecFromInt(sendAmount.Amount).
+	minFee := sdkmath.LegacyNewDecFromInt(sendAmount.Amount).
 		QuoInt64(int64(BasisPointDivisor)).
 		MulInt64(minFeeBasisPoints).
 		TruncateInt()
 
 	// Require that the minimum has been met
-	if minFee.GT(sdk.ZeroInt()) { // Ignore fees too low to collect
+	if minFee.GT(sdkmath.ZeroInt()) { // Ignore fees too low to collect
 		minFeeCoin := sdk.NewCoin(sendAmount.GetDenom(), minFee)
 		if chainFee.IsLT(minFeeCoin) {
 			err := errorsmod.Wrapf(
@@ -201,10 +202,10 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 	if !(chainFee == sdk.Coin{}) && chainFee.Amount.IsPositive() {
 		senderAcc := k.accountKeeper.GetAccount(ctx, sender)
 
-		var stakerFee math.Int
+		var stakerFee sdkmath.Int
 		if chainFeeAuctionable {
 			// Determine the pool's share by first multiplying the total with the [0,1] fraction param, ignoring any dust
-			poolFee := params.ChainFeeAuctionPoolFraction.Mul(sdk.NewDecFromInt(chainFee.Amount)).TruncateInt()
+			poolFee := params.ChainFeeAuctionPoolFraction.Mul(sdkmath.LegacyNewDecFromInt(chainFee.Amount)).TruncateInt()
 			// Then the stakers will receive the remainder
 			stakerFee = chainFee.Amount.Sub(poolFee)
 
@@ -355,8 +356,8 @@ func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator
 	}
 
 	// return an error if the validator isn't in the active set
-	val := k.StakingKeeper.Validator(ctx, validator.GetOperator())
-	if val == nil || !val.IsBonded() {
+	val, err := k.StakingKeeper.Validator(ctx, sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator())))
+	if err != nil || val == nil || !val.IsBonded() {
 		return errorsmod.Wrap(sdkerrors.ErrorInvalidSigner, "validator not in active set")
 	}
 
@@ -408,11 +409,11 @@ func (k msgServer) confirmHandlerCommon(ctx sdk.Context, ethAddress string, orch
 		return errorsmod.Wrap(types.ErrInvalid, "validator is unbonded")
 	}
 
-	if err := sdk.VerifyAddressFormat(validator.GetOperator()); err != nil {
+	if err := sdk.VerifyAddressFormat(sdk.MustAccAddressFromBech32(validator.GetOperator())); err != nil {
 		return errorsmod.Wrapf(err, "discovered invalid validator address for orchestrator %v", orchestrator)
 	}
 
-	ethAddressFromStore, found := k.GetEthAddressByValidator(ctx, validator.GetOperator())
+	ethAddressFromStore, found := k.GetEthAddressByValidator(ctx, sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator())))
 	if !found {
 		return errorsmod.Wrap(types.ErrEmpty, "no eth address set for validator")
 	}

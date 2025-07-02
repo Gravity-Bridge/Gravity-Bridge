@@ -9,8 +9,8 @@ import (
 	math "math"
 	math_bits "math/bits"
 
+	sdkmath "cosmossdk.io/math"
 	types "github.com/cosmos/cosmos-sdk/codec/types"
-	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
 )
@@ -160,8 +160,8 @@ func (m *Attestation) GetClaim() *types.Any {
 // originated token, if so it will be the ERC20 address of the representation
 // (note: developers should look up the token symbol using the address on ETH to display for UI)
 type ERC20Token struct {
-	Contract string                                 `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
-	Amount   github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,2,opt,name=amount,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"amount"`
+	Contract string      `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	Amount   sdkmath.Int `protobuf:"bytes,2,opt,name=amount,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"amount"`
 }
 
 func (m *ERC20Token) Reset()         { *m = ERC20Token{} }

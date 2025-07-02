@@ -8,6 +8,7 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	math "cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
@@ -334,7 +335,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 	// is valid then some reward was issued by this validator set
 	// and we need to either add to the total tokens for a Cosmos native
 	// token, or burn non cosmos native tokens
-	if claim.RewardAmount.GT(sdk.ZeroInt()) && claim.RewardToken != types.ZeroAddressString {
+	if claim.RewardAmount.GT(sdkmath.ZeroInt()) && claim.RewardToken != types.ZeroAddressString {
 		// Check if coin is Cosmos-originated asset and get denom
 		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *rewardAddress)
 		if isCosmosOriginated {

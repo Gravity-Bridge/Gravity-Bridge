@@ -3,10 +3,10 @@ package keeper
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/store/prefix"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
 )
 
@@ -54,12 +54,12 @@ func (k Keeper) ValidateHrpIbcRecord(ctx sdk.Context, record types.HrpIbcRecord)
 	}
 
 	if record.Hrp == nativeHrp {
-		return sdkerrors.Wrap(types.ErrInvalidHRP, "cannot set a record for the chain's native prefix")
+		return errorsmod.Wrap(types.ErrInvalidHRP, "cannot set a record for the chain's native prefix")
 	}
 
 	_, found := k.channelKeeper.GetChannel(ctx, k.tk.GetPort(ctx), record.SourceChannel)
 	if !found {
-		return sdkerrors.Wrap(types.ErrInvalidIBCData, fmt.Sprintf("channel not found: %s", record.SourceChannel))
+		return errorsmod.Wrap(types.ErrInvalidIBCData, fmt.Sprintf("channel not found: %s", record.SourceChannel))
 	}
 
 	return nil
@@ -80,7 +80,7 @@ func (k Keeper) GetHrpIbcRecord(ctx sdk.Context, hrp string) (types.HrpIbcRecord
 	store := ctx.KVStore(k.storeKey)
 	prefixStore := prefix.NewStore(store, types.HrpIBCRecordStorePrefix)
 	if !prefixStore.Has([]byte(hrp)) {
-		return types.HrpIbcRecord{}, sdkerrors.Wrap(types.ErrRecordNotFound, fmt.Sprintf("hrp record not found for %s", hrp))
+		return types.HrpIbcRecord{}, errorsmod.Wrap(types.ErrRecordNotFound, fmt.Sprintf("hrp record not found for %s", hrp))
 	}
 	bz := prefixStore.Get([]byte(hrp))
 

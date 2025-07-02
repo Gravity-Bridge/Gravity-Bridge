@@ -6,7 +6,7 @@ import (
 	"time"
 
 	errorsmod "cosmossdk.io/errors"
-
+	storetypes "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cometbft/cometbft/proto/tendermint/version"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
@@ -54,13 +54,16 @@ func (app *Gravity) ExportAppStateAndValidators(
 		app.prepForZeroHeightGenesis(ctx, jailWhiteList)
 	}
 
-	genState := app.ModuleManager.ExportGenesis(ctx, app.AppCodec, modulesToExport)
+	genState, err := app.ModuleManager.ExportGenesisForModules(ctx, app.AppCodec, modulesToExport)
+	if err != nil {
+		return servertypes.ExportedApp{}, err
+	}
 	appState, err := json.MarshalIndent(genState, "", "  ")
 	if err != nil {
 		return servertypes.ExportedApp{}, err
 	}
 
-	validators, err := staking.WriteValidators(ctx, *app.StakingKeeper)
+	validators, err := staking.WriteValidators(ctx, app.StakingKeeper)
 	return servertypes.ExportedApp{
 		AppState:        appState,
 		Validators:      validators,
@@ -105,10 +108,11 @@ func (app *Gravity) prepForZeroHeightGenesis(ctx sdk.Context, jailWhiteList []st
 			_, _ = app.DistrKeeper.WithdrawValidatorCommission(ctx, valBz)
 			return false
 		})
+		if err != nil {
+			panic(err)
+		}
+		return false
 	})
-	if err != nil {
-		panic(err)
-	}
 
 	// withdraw all delegator rewards
 	dels, err := app.StakingKeeper.GetAllDelegations(ctx)
@@ -160,7 +164,7 @@ func (app *Gravity) prepForZeroHeightGenesis(ctx sdk.Context, jailWhiteList []st
 			panic(err)
 		}
 
-		err := app.DistrKeeper.Hooks().AfterValidatorCreated(ctx, valBz)
+		err = app.DistrKeeper.Hooks().AfterValidatorCreated(ctx, valBz)
 		if err != nil {
 			panic(err)
 		}
@@ -220,8 +224,8 @@ func (app *Gravity) prepForZeroHeightGenesis(ctx sdk.Context, jailWhiteList []st
 
 	// Iterate through validators by power descending, reset bond heights, and
 	// update bond intra-tx counters.
-	store := ctx.KVStore(app.GetKey(stakingtypes.StoreKey))
-	iter := sdk.KVStoreReversePrefixIterator(store, stakingtypes.ValidatorsKey)
+	store := ctx.KVStore(app.keys[stakingtypes.StoreKey])
+	iter := storetypes.KVStoreReversePrefixIterator(store, stakingtypes.ValidatorsKey)
 	counter := int16(0)
 
 	for ; iter.Valid(); iter.Next() {
@@ -251,7 +255,7 @@ func (app *Gravity) prepForZeroHeightGenesis(ctx sdk.Context, jailWhiteList []st
 		panic(err)
 	}
 
-	_, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
+	_, err = app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"fmt"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -172,11 +173,16 @@ func (suite *KeeperTestSuite) TestWinningBidBurning() {
 func InitPoolAndAuctionTokens(suite *KeeperTestSuite) {
 	ctx := suite.Ctx
 
-	GravDenom = suite.App.MintKeeper.GetParams(ctx).MintDenom // Native Token: Use the mint denom for flexibility
+	mintParams, err := suite.App.MintKeeper.Params.Get(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get mint params: %v", err))
+	}
+
+	GravDenom = mintParams.MintDenom // Native Token: Use the mint denom for flexibility
 	fmt.Printf("Grav in test env is %s\n", GravDenom)
 
 	// Create test balances for the auction pool
-	testAmount := sdk.NewInt(helpers.OneAtom() * 1000)
+	testAmount := sdkmath.NewInt(helpers.OneAtom() * 1000)
 	TestBalances = sdk.NewCoins(
 		sdk.NewCoin(TestDenom1, testAmount),
 		sdk.NewCoin(TestDenom2, testAmount),
@@ -267,9 +273,11 @@ func VerifyAuctionPayout(suite *KeeperTestSuite, expWinner sdk.AccAddress, aucti
 	require.True(t, poolCoin.IsZero(), "Positive auction pool balance of reward token after auction success")
 
 	if verifyPoolGrav {
-		communityPool, _ := auctionKeeper.DistKeeper.GetFeePoolCommunityCoins(ctx).TruncateDecimal()
+		fp, err := auctionKeeper.DistKeeper.FeePool.Get(ctx)
+		require.NoError(t, err, "Failed to get fee pool")
+		communityPool, _ := fp.GetCommunityPool().TruncateDecimal()
 		poolGrav := communityPool.AmountOf(GravDenom)
-		expGrav := sdk.NewIntFromUint64(winningBid)
+		expGrav := sdkmath.NewIntFromUint64(winningBid)
 		require.True(t, poolGrav.GTE(expGrav), "community pool does not have the bidders tokens")
 	}
 }
@@ -282,7 +290,7 @@ func checkModuleBalanceStrict(suite *KeeperTestSuite, coins sdk.Coins) bool {
 	bankKeeper := suite.App.AuctionKeeper.BankKeeper
 	balances := bankKeeper.GetAllBalances(suite.Ctx, ModuleAccount)
 
-	return coins.IsEqual(balances)
+	return coins.Equal(balances)
 }
 
 // Asserts that the pool contains the exact same amount of each coin provided in `coins`
@@ -324,8 +332,8 @@ func (suite *KeeperTestSuite) TestHelpers() {
 	actualCoins := bankKeeper.GetAllBalances(ctx, auctionKeeper.GetAuctionPoolAccount(ctx))
 	require.True(t, checkPoolBalanceRelaxed(suite, actualCoins))
 	require.True(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins()))
-	require.False(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins(sdk.NewCoin("fakecoin", sdk.OneInt()))))
-	require.False(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins(actualCoins[0], sdk.NewCoin("fakecoin", sdk.OneInt()))))
+	require.False(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins(sdk.NewCoin("fakecoin", sdkmath.OneInt()))))
+	require.False(t, checkPoolBalanceRelaxed(suite, sdk.NewCoins(actualCoins[0], sdk.NewCoin("fakecoin", sdkmath.OneInt()))))
 
 	// Produce some auctions
 	period := auctionKeeper.GetAuctionPeriod(ctx)
@@ -346,7 +354,7 @@ func (suite *KeeperTestSuite) TestHelpers() {
 	// Make a bid and ensure balance updates
 	Bid(suite, TestAccounts[0], 10_000000, 50000, 0, true) // Bid 10 stake on first
 	auctionWithBid := auctionKeeper.GetAllAuctions(ctx)[0]
-	expectedCoins := auctionBalances.Add(sdk.NewCoin(GravDenom, sdk.NewInt(10_000000)))
+	expectedCoins := auctionBalances.Add(sdk.NewCoin(GravDenom, sdkmath.NewInt(10_000000)))
 	require.True(t, checkModuleBalanceStrict(suite, expectedCoins))
 
 	// After the auction ends, check balance changes

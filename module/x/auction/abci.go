@@ -7,6 +7,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -124,7 +125,7 @@ func getBankSupplies(ctx sdk.Context, k keeper.Keeper) sdk.Coins {
 func assertSupplyIntegrity(ctx sdk.Context, k keeper.Keeper, startSupplies sdk.Coins, endSupplies sdk.Coins, periodEnded bool) {
 	// Outside of the auction period changeover, no token supply should have changed
 	if !periodEnded {
-		if !startSupplies.IsEqual(endSupplies) {
+		if !startSupplies.Equal(endSupplies) {
 			panic(fmt.Sprintf("unexpected supply change during auction module EndBlocker (no auctions closed) %v -> %v", startSupplies, endSupplies))
 		}
 	} else {
@@ -164,12 +165,12 @@ func assertBalanceChanges(
 			panic(fmt.Sprintf("No auctions closed but there were user accounts affected by the auction module: %v", affectedAccs))
 		}
 		// The module balances should not have changed as a result of the EndBlocker
-		if !startModuleBalances.IsEqual(endModuleBalances) {
+		if !startModuleBalances.Equal(endModuleBalances) {
 			panic(fmt.Sprintf("No auctions closed but the module balance changed during EndBlocker: %v -> %v", startModuleBalances, endModuleBalances))
 
 		}
 		// The pool balances should not have changed as a result of the EndBlocker
-		if !startPoolBalances.IsEqual(endPoolBalances) {
+		if !startPoolBalances.Equal(endPoolBalances) {
 			panic(fmt.Sprintf("No auctions closed but the pool balance changed during EndBlocker: %v -> %v", startPoolBalances, endPoolBalances))
 		}
 		return
@@ -177,7 +178,7 @@ func assertBalanceChanges(
 
 	// Otherwise, there were auctions that closed and new ones that opened
 
-	bidAmounts := sdk.ZeroInt()
+	bidAmounts := sdkmath.ZeroInt()
 	for _, auction := range auctions {
 		startModAmount := startModuleBalances.AmountOf(auction.Amount.Denom)
 		if !startModAmount.Equal(auction.Amount.Amount) {
@@ -209,7 +210,7 @@ func assertBalanceChanges(
 			}
 
 			// Tally the bids for later checking
-			bidAmounts = bidAmounts.Add(sdk.NewIntFromUint64(auction.HighestBid.BidAmount))
+			bidAmounts = bidAmounts.Add(sdkmath.NewIntFromUint64(auction.HighestBid.BidAmount))
 		} else {
 			// Auction Not Paid Out: Amount sent from Module to Pool, then full Pool balance sent back to Module for new auction
 			expectedModAmount := startModAmount.Add(startPoolAmount)
@@ -227,7 +228,7 @@ func assertBalanceChanges(
 	// Assert that the bid amounts were removed from the module account
 	startModGrav := startModuleBalances.AmountOf(config.NativeTokenDenom)
 	endModGrav := endModuleBalances.AmountOf(config.NativeTokenDenom)
-	if !endModGrav.Equal(sdk.ZeroInt()) {
+	if !endModGrav.Equal(sdkmath.ZeroInt()) {
 		panic(fmt.Sprintf("Auction EndBlocker: Expected module to lose its balance of Grav after auctions close, instead it has %v", endModGrav))
 	}
 	if !startModGrav.Equal(bidAmounts) {

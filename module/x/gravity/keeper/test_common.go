@@ -5,27 +5,30 @@ import (
 	"testing"
 	"time"
 
-	math "cosmossdk.io/math"
+	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
 	"cosmossdk.io/store"
+	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/evidence"
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	dbm "github.com/cometbft/cometbft-db"
-	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmversion "github.com/cometbft/cometbft/proto/tendermint/version"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	ccrypto "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
@@ -41,7 +44,6 @@ import (
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
@@ -65,7 +67,7 @@ import (
 
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibchost "github.com/cosmos/ibc-go/v8/modules/core/24-host"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	bech32ibckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper"
@@ -225,7 +227,7 @@ var (
 		MaxEntries:        10,
 		HistoricalEntries: 10000,
 		BondDenom:         "stake",
-		MinCommissionRate: sdk.NewDecWithPrec(5, 2), // 5%
+		MinCommissionRate: sdkmath.LegacyNewDecWithPrec(5, 2), // 5%
 	}
 
 	// TestingGravityParams is a set of gravity params for testing
@@ -240,16 +242,16 @@ var (
 		TargetBatchTimeout:           60001,
 		AverageBlockTime:             5000,
 		AverageEthereumBlockTime:     15000,
-		SlashFractionValset:          sdk.NewDecWithPrec(1, 2),
-		SlashFractionBatch:           sdk.NewDecWithPrec(1, 2),
-		SlashFractionLogicCall:       sdk.Dec{},
+		SlashFractionValset:          sdkmath.LegacyNewDecWithPrec(1, 2),
+		SlashFractionBatch:           sdkmath.LegacyNewDecWithPrec(1, 2),
+		SlashFractionLogicCall:       sdkmath.LegacyDec{},
 		UnbondSlashingValsetsWindow:  15,
-		SlashFractionBadEthSignature: sdk.NewDecWithPrec(1, 2),
-		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdk.ZeroInt()},
+		SlashFractionBadEthSignature: sdkmath.LegacyNewDecWithPrec(1, 2),
+		ValsetReward:                 sdk.Coin{Denom: "", Amount: sdkmath.ZeroInt()},
 		BridgeActive:                 true,
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,
-		ChainFeeAuctionPoolFraction:  sdk.NewDecWithPrec(50, 2), // 50%
+		ChainFeeAuctionPoolFraction:  sdkmath.LegacyNewDecWithPrec(50, 2), // 50%
 	}
 )
 
@@ -282,7 +284,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 	input.StakingKeeper.SetParams(input.Context, TestingStakeParams)
 
 	// Initialize each of the validators
-	sMsgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
+	sMsgServer := stakingkeeper.NewMsgServerImpl(&input.StakingKeeper)
 	// sh := staking.NewHandler(input.StakingKeeper)
 	for i := range []int{0, 1, 2, 3, 4} {
 
@@ -311,7 +313,7 @@ func SetupFiveValChain(t *testing.T) (TestInput, sdk.Context) {
 	}
 
 	// Run the staking endblocker to ensure valset is correct in state
-	staking.EndBlocker(input.Context, input.StakingKeeper)
+	input.StakingKeeper.EndBlocker(input.Context)
 
 	// Register eth addresses and orchestrator address for each validator
 	for i, addr := range ValAddrs {
@@ -338,7 +340,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 	input.StakingKeeper.SetParams(input.Context, TestingStakeParams)
 
 	// Initialize each of the validators
-	sMsgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
+	sMsgServer := stakingkeeper.NewMsgServerImpl(&input.StakingKeeper)
 	for i, weight := range weights {
 		consPrivKey := ed25519.GenPrivKey()
 		consPubKey := consPrivKey.PubKey()
@@ -365,12 +367,12 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 		// and the staking handler
 		_, err := sMsgServer.CreateValidator(
 			input.Context,
-			NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(weight)),
+			NewTestMsgCreateValidator(valAddr, consPubKey, sdkmath.NewIntFromUint64(weight)),
 		)
 		require.NoError(t, err)
 
 		// Run the staking endblocker to ensure valset is correct in state
-		staking.EndBlocker(input.Context, input.StakingKeeper)
+		input.StakingKeeper.EndBlocker(input.Context)
 
 		if setDelegateAddresses {
 			// set the delegate addresses for this key
@@ -385,7 +387,7 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 			input.Context = input.Context.WithBlockHeight(input.Context.BlockHeight() + 100)
 
 			// Run the staking endblocker to ensure valset is correct in state
-			staking.EndBlocker(input.Context, input.StakingKeeper)
+			input.StakingKeeper.EndBlocker(input.Context)
 
 			// set a request every time.
 			input.GravityKeeper.SetValsetRequest(input.Context)
@@ -395,7 +397,8 @@ func SetupTestChain(t *testing.T, weights []uint64, setDelegateAddresses bool) (
 
 	// some inputs can cause the validator creation ot not work, this checks that
 	// everything was successful
-	validators := input.StakingKeeper.GetBondedValidatorsByPower(input.Context)
+	validators, err := input.StakingKeeper.GetBondedValidatorsByPower(input.Context)
+	require.NoError(t, err)
 	require.Equal(t, len(weights), len(validators))
 
 	// Return the test input
@@ -407,26 +410,27 @@ func CreateTestEnv(t *testing.T) TestInput {
 	t.Helper()
 
 	// Initialize store keys
-	gravityKey := sdk.NewKVStoreKey(types.StoreKey)
-	keyAcc := sdk.NewKVStoreKey(authtypes.StoreKey)
-	keyStaking := sdk.NewKVStoreKey(stakingtypes.StoreKey)
-	keyBank := sdk.NewKVStoreKey(banktypes.StoreKey)
-	keyDistro := sdk.NewKVStoreKey(distrtypes.StoreKey)
-	keyParams := sdk.NewKVStoreKey(paramstypes.StoreKey)
-	tkeyParams := sdk.NewTransientStoreKey(paramstypes.TStoreKey)
-	keyGov := sdk.NewKVStoreKey(govtypes.StoreKey)
-	keySlashing := sdk.NewKVStoreKey(slashingtypes.StoreKey)
-	keyCapability := sdk.NewKVStoreKey(capabilitytypes.StoreKey)
-	keyUpgrade := sdk.NewKVStoreKey(upgradetypes.StoreKey)
-	keyIbc := sdk.NewKVStoreKey(ibchost.StoreKey)
-	keyIbcTransfer := sdk.NewKVStoreKey(ibctransfertypes.StoreKey)
-	keyBech32Ibc := sdk.NewKVStoreKey(bech32ibctypes.StoreKey)
-	keyMint := sdk.NewKVStoreKey(minttypes.StoreKey)
-	keyAuction := sdk.NewKVStoreKey(auctiontypes.StoreKey)
+	gravityKey := storetypes.NewKVStoreKey(types.StoreKey)
+	keyAcc := storetypes.NewKVStoreKey(authtypes.StoreKey)
+	keyStaking := storetypes.NewKVStoreKey(stakingtypes.StoreKey)
+	keyBank := storetypes.NewKVStoreKey(banktypes.StoreKey)
+	keyDistro := storetypes.NewKVStoreKey(distrtypes.StoreKey)
+	keyParams := storetypes.NewKVStoreKey(paramstypes.StoreKey)
+	tkeyParams := storetypes.NewTransientStoreKey(paramstypes.TStoreKey)
+	keyGov := storetypes.NewKVStoreKey(govtypes.StoreKey)
+	keySlashing := storetypes.NewKVStoreKey(slashingtypes.StoreKey)
+	keyCapability := storetypes.NewKVStoreKey(capabilitytypes.StoreKey)
+	keyUpgrade := storetypes.NewKVStoreKey(upgradetypes.StoreKey)
+	keyIbc := storetypes.NewKVStoreKey(ibcexported.StoreKey)
+	keyIbcTransfer := storetypes.NewKVStoreKey(ibctransfertypes.StoreKey)
+	keyBech32Ibc := storetypes.NewKVStoreKey(bech32ibctypes.StoreKey)
+	keyMint := storetypes.NewKVStoreKey(minttypes.StoreKey)
+	keyAuction := storetypes.NewKVStoreKey(auctiontypes.StoreKey)
 
 	// Initialize memory database and mount stores on it
 	db := dbm.NewMemDB()
-	ms := store.NewCommitMultiStore(db)
+	logger := log.NewNopLogger()
+	ms := store.NewCommitMultiStore(db, logger, metrics.NewNoOpMetrics())
 	ms.MountStoreWithDB(gravityKey, storetypes.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyAcc, storetypes.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, storetypes.StoreTypeIAVL, db)
@@ -471,12 +475,12 @@ func CreateTestEnv(t *testing.T) TestInput {
 		LastResultsHash:    []byte{},
 		EvidenceHash:       []byte{},
 		ProposerAddress:    []byte{},
-	}, false, log.TestingLogger())
+	}, false, logger)
 
 	encodingConfig := MakeTestEncodingConfig()
-	marshaler := encodingConfig.Marshaler
+	appCodec := encodingConfig.Marshaler
 
-	paramsKeeper := paramskeeper.NewKeeper(marshaler, encodingConfig.Amino, keyParams, tkeyParams)
+	paramsKeeper := paramskeeper.NewKeeper(appCodec, encodingConfig.Amino, keyParams, tkeyParams)
 	paramsKeeper.Subspace(authtypes.ModuleName)
 	paramsKeeper.Subspace(banktypes.ModuleName)
 	paramsKeeper.Subspace(stakingtypes.ModuleName)
@@ -484,7 +488,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	paramsKeeper.Subspace(govtypes.ModuleName)
 	paramsKeeper.Subspace(types.DefaultParamspace)
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
-	paramsKeeper.Subspace(ibchost.ModuleName)
+	paramsKeeper.Subspace(ibcexported.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(bech32ibctypes.ModuleName)
 	paramsKeeper.Subspace(minttypes.ModuleName)
@@ -503,41 +507,60 @@ func CreateTestEnv(t *testing.T) TestInput {
 		auctiontypes.AuctionPoolAccountName: nil,
 	}
 
+	govAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	accountKeeper := authkeeper.NewAccountKeeper(
-		marshaler,
-		keyAcc, // target store
-		getSubspace(paramsKeeper, authtypes.ModuleName),
-		authtypes.ProtoBaseAccount, // prototype
+		appCodec,
+		runtime.NewKVStoreService(keyAcc), // target store
+		authtypes.ProtoBaseAccount,        // prototype
 		maccPerms,
+		authcodec.NewBech32Codec("gravity"),
 		"gravity",
+		govAuthority,
 	)
 	accountParams := authtypes.DefaultParams()
-	accountKeeper.SetParams(ctx, accountParams)
+	accountKeeper.Params.Set(ctx, accountParams)
 
 	blockedAddr := make(map[string]bool, len(maccPerms))
 	for acc := range maccPerms {
 		blockedAddr[authtypes.NewModuleAddress(acc).String()] = true
 	}
 	bankKeeper := bankkeeper.NewBaseKeeper(
-		marshaler,
-		keyBank,
+		appCodec,
+		runtime.NewKVStoreService(keyBank),
 		accountKeeper,
-		getSubspace(paramsKeeper, banktypes.ModuleName),
 		blockedAddr,
+		govAuthority,
+		logger,
 	)
 	bankKeeper.SetParams(ctx, banktypes.Params{
 		SendEnabled:        []*banktypes.SendEnabled{},
 		DefaultSendEnabled: true,
 	})
 
-	stakingKeeper := stakingkeeper.NewKeeper(marshaler, keyStaking, accountKeeper, bankKeeper, getSubspace(paramsKeeper, stakingtypes.ModuleName))
+	stakingKeeper := stakingkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keyStaking),
+		accountKeeper,
+		bankKeeper,
+		govAuthority,
+		authcodec.NewBech32Codec("gravityvaladdr"),
+		authcodec.NewBech32Codec("gravityconsaddr"),
+	)
 	stakingKeeper.SetParams(ctx, TestingStakeParams)
 
-	distKeeper := distrkeeper.NewKeeper(marshaler, keyDistro, getSubspace(paramsKeeper, distrtypes.ModuleName), accountKeeper, bankKeeper, stakingKeeper, authtypes.FeeCollectorName)
-	distKeeper.SetParams(ctx, distrtypes.DefaultParams())
+	distKeeper := distrkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keyDistro),
+		accountKeeper,
+		bankKeeper,
+		stakingKeeper,
+		authtypes.FeeCollectorName,
+		govAuthority,
+	)
+	distKeeper.Params.Set(ctx, distrtypes.DefaultParams())
 
 	// set genesis items required for distribution
-	distKeeper.SetFeePool(ctx, distrtypes.InitialFeePool())
+	distKeeper.FeePool.Set(ctx, distrtypes.InitialFeePool())
 
 	// set up initial accounts
 	for name, perms := range maccPerms {
@@ -551,10 +574,11 @@ func CreateTestEnv(t *testing.T) TestInput {
 
 			// distribution module balance must be outstanding rewards + community pool in order to pass
 			// invariants checks, therefore we must add any amount we add to the module balance to the fee pool
-			feePool := distKeeper.GetFeePool(ctx)
+			feePool, err := distKeeper.FeePool.Get(ctx)
+			require.NoError(t, err)
 			newCoins := feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(amt...)...)
 			feePool.CommunityPool = newCoins
-			distKeeper.SetFeePool(ctx, feePool)
+			distKeeper.FeePool.Set(ctx, feePool)
 
 			require.NoError(t, err)
 		}
@@ -572,57 +596,63 @@ func CreateTestEnv(t *testing.T) TestInput {
 	govConfig := govtypes.DefaultConfig()
 
 	govKeeper := govkeeper.NewKeeper(
-		marshaler, keyGov, getSubspace(paramsKeeper, govtypes.ModuleName).WithKeyTable(govv1.ParamKeyTable()), accountKeeper, bankKeeper, stakingKeeper, govRouter, baseapp.NewMsgServiceRouter(), govConfig,
+		appCodec,
+		runtime.NewKVStoreService(keyGov),
+		accountKeeper,
+		bankKeeper,
+		stakingKeeper,
+		distKeeper,
+		baseapp.NewMsgServiceRouter(),
+		govConfig,
+		govAuthority,
 	)
-
-	govKeeper.SetProposalID(ctx, govv1beta1.DefaultStartingProposalID)
-	govKeeper.SetDepositParams(ctx, govv1.DefaultDepositParams())
-	govKeeper.SetVotingParams(ctx, govv1.DefaultVotingParams())
-	govKeeper.SetTallyParams(ctx, govv1.DefaultTallyParams())
+	govKeeper.SetLegacyRouter(govRouter)
 
 	slashingKeeper := slashingkeeper.NewKeeper(
-		marshaler,
-		keySlashing,
-		&stakingKeeper,
-		getSubspace(paramsKeeper, slashingtypes.ModuleName).WithKeyTable(slashingtypes.ParamKeyTable()),
+		appCodec,
+		codec.NewLegacyAmino(),
+		runtime.NewKVStoreService(keySlashing),
+		stakingKeeper,
+		govAuthority,
 	)
 
-	bApp := *baseapp.NewBaseApp("test", log.TestingLogger(), db, encodingConfig.TxConfig.TxDecoder())
+	bApp := *baseapp.NewBaseApp("test", logger, db, encodingConfig.TxConfig.TxDecoder())
 	upgradeKeeper := upgradekeeper.NewKeeper(
 		make(map[int64]bool),
-		keyUpgrade,
-		marshaler,
+		runtime.NewKVStoreService(keyUpgrade),
+		appCodec,
 		"",
 		&bApp,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+	memKeys := storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 	capabilityKeeper := *capabilitykeeper.NewKeeper(
-		marshaler,
+		appCodec,
 		keyCapability,
 		memKeys[capabilitytypes.MemStoreKey],
 	)
 
-	scopedIbcKeeper := capabilityKeeper.ScopeToModule(ibchost.ModuleName)
+	scopedIbcKeeper := capabilityKeeper.ScopeToModule(ibcexported.ModuleName)
 	ibcKeeper := *ibckeeper.NewKeeper(
-		marshaler,
+		appCodec,
 		keyIbc,
-		getSubspace(paramsKeeper, ibchost.ModuleName),
+		getSubspace(paramsKeeper, ibcexported.ModuleName),
 		stakingKeeper,
 		upgradeKeeper,
 		scopedIbcKeeper,
+		govAuthority,
 	)
 
 	scopedTransferKeeper := capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
 	ibcTransferKeeper := ibctransferkeeper.NewKeeper(
-		marshaler, keyIbcTransfer, getSubspace(paramsKeeper, ibctransfertypes.ModuleName),
-		ibcKeeper.ChannelKeeper, ibcKeeper.ChannelKeeper, &ibcKeeper.PortKeeper,
-		accountKeeper, bankKeeper, scopedTransferKeeper,
+		appCodec, keyIbcTransfer, getSubspace(paramsKeeper, ibctransfertypes.ModuleName),
+		ibcKeeper.ChannelKeeper, ibcKeeper.ChannelKeeper, ibcKeeper.PortKeeper,
+		accountKeeper, bankKeeper, scopedTransferKeeper, govAuthority,
 	)
 
 	bech32IbcKeeper := *bech32ibckeeper.NewKeeper(
-		ibcKeeper.ChannelKeeper, marshaler, keyBech32Ibc,
+		ibcKeeper.ChannelKeeper, appCodec, keyBech32Ibc,
 		ibcTransferKeeper,
 	)
 	// Set the native prefix to the "gravity" value we like in module/config/config.go
@@ -631,16 +661,16 @@ func CreateTestEnv(t *testing.T) TestInput {
 		panic("Test Env Creation failure, could not set native hrp")
 	}
 
-	mintKeeper := mintkeeper.NewKeeper(marshaler, keyMint, getSubspace(paramsKeeper, minttypes.ModuleName), stakingKeeper, accountKeeper, bankKeeper, authtypes.FeeCollectorName)
-	mintKeeper.SetParams(ctx, minttypes.DefaultParams())
+	mintKeeper := mintkeeper.NewKeeper(appCodec, runtime.NewKVStoreService(keyMint), stakingKeeper, accountKeeper, bankKeeper, authtypes.FeeCollectorName, govAuthority)
+	mintKeeper.Params.Set(ctx, minttypes.DefaultParams())
 
-	auctionKeeper := auctionkeeper.NewKeeper(keyAuction, getSubspace(paramsKeeper, auctiontypes.ModuleName), marshaler, &bankKeeper, &accountKeeper, &distKeeper, &mintKeeper)
+	auctionKeeper := auctionkeeper.NewKeeper(keyAuction, getSubspace(paramsKeeper, auctiontypes.ModuleName), appCodec, &bankKeeper, &accountKeeper, &distKeeper, &mintKeeper)
 	auctionKeeper.SetParams(ctx, auctiontypes.DefaultParams())
 
-	k := NewKeeper(gravityKey, getSubspace(paramsKeeper, types.DefaultParamspace), marshaler, &bankKeeper,
-		&stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper, &ibcTransferKeeper, &bech32IbcKeeper, &auctionKeeper, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+	k := NewKeeper(gravityKey, getSubspace(paramsKeeper, types.DefaultParamspace), appCodec, &bankKeeper,
+		stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper, &ibcTransferKeeper, &bech32IbcKeeper, &auctionKeeper, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
-	stakingKeeper = *stakingKeeper.SetHooks(
+	stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(
 			distKeeper.Hooks(),
 			slashingKeeper.Hooks(),
@@ -662,17 +692,17 @@ func CreateTestEnv(t *testing.T) TestInput {
 	testInput := TestInput{
 		GravityKeeper:     k,
 		AccountKeeper:     accountKeeper,
-		StakingKeeper:     stakingKeeper,
+		StakingKeeper:     *stakingKeeper,
 		SlashingKeeper:    slashingKeeper,
 		DistKeeper:        distKeeper,
 		BankKeeper:        bankKeeper,
-		GovKeeper:         govKeeper,
+		GovKeeper:         *govKeeper,
 		IbcKeeper:         ibcKeeper,
 		IbcTransferKeeper: ibcTransferKeeper,
 		MintKeeper:        mintKeeper,
 		AuctionKeeper:     auctionKeeper,
 		Context:           ctx,
-		Marshaler:         marshaler,
+		Marshaler:         appCodec,
 		LegacyAmino:       encodingConfig.Amino,
 		EncodingConfig:    encodingConfig,
 		GravityStoreKey:   gravityKey,
@@ -689,8 +719,8 @@ func CreateTestEnv(t *testing.T) TestInput {
 func (t TestInput) AssertInvariants() {
 	distrInvariantFunc := distrkeeper.AllInvariants(t.DistKeeper)
 	bankInvariantFunc := bankkeeper.AllInvariants(t.BankKeeper)
-	govInvariantFunc := govkeeper.AllInvariants(t.GovKeeper, t.BankKeeper)
-	stakeInvariantFunc := stakingkeeper.AllInvariants(t.StakingKeeper)
+	govInvariantFunc := govkeeper.ModuleAccountInvariant(&t.GovKeeper, t.BankKeeper)
+	stakeInvariantFunc := stakingkeeper.AllInvariants(&t.StakingKeeper)
 	gravInvariantFunc := AllInvariants(t.GravityKeeper)
 
 	invariantStr, invariantViolated := distrInvariantFunc(t.Context)
@@ -756,18 +786,18 @@ func MintVouchersFromAir(t *testing.T, ctx sdk.Context, k Keeper, dest sdk.AccAd
 	return coin
 }
 
-func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, amt math.Int) *stakingtypes.MsgCreateValidator {
-	fivePercent := sdk.NewDecWithPrec(5, 2)
+func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, amt sdkmath.Int) *stakingtypes.MsgCreateValidator {
+	fivePercent := sdkmath.LegacyNewDecWithPrec(5, 2)
 	commission := stakingtypes.NewCommissionRates(fivePercent, fivePercent, fivePercent)
 	out, err := stakingtypes.NewMsgCreateValidator(
-		address, pubKey, sdk.NewCoin("stake", amt),
+		address.String(), pubKey, sdk.NewCoin("stake", amt),
 		stakingtypes.Description{
 			Moniker:         "",
 			Identity:        "",
 			Website:         "",
 			SecurityContact: "",
 			Details:         "",
-		}, commission, sdk.OneInt(),
+		}, commission, sdkmath.OneInt(),
 	)
 	if err != nil {
 		panic(err)
@@ -775,7 +805,7 @@ func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, am
 	return out
 }
 
-func NewTestMsgUnDelegateValidator(address sdk.ValAddress, amt math.Int) *stakingtypes.MsgUndelegate {
-	msg := stakingtypes.NewMsgUndelegate(sdk.AccAddress(address), address, sdk.NewCoin("stake", amt))
+func NewTestMsgUnDelegateValidator(address sdk.ValAddress, amt sdkmath.Int) *stakingtypes.MsgUndelegate {
+	msg := stakingtypes.NewMsgUndelegate(sdk.AccAddress(address).String(), address.String(), sdk.NewCoin("stake", amt))
 	return msg
 }

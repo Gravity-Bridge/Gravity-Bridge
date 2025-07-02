@@ -256,8 +256,8 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedVa
 // you should call this function, evaluate if you want to save this new valset, and discard
 // it or save
 func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
-	validators := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
-	if len(validators) == 0 {
+	validators, err := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	if err != nil || len(validators) == 0 {
 		// nolint: exhaustruct
 		return types.Valset{}, types.ErrNoValidators
 	}
@@ -265,16 +265,20 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	// so that we have an array with extra capacity but the correct length depending
 	// on how many validators have keys set.
 	bridgeValidators := make([]*types.InternalBridgeValidator, 0, len(validators))
-	totalPower := sdk.NewInt(0)
+	totalPower := math.NewInt(0)
 	// TODO someone with in depth info on Cosmos staking should determine
 	// if this is doing what I think it's doing
 	for _, validator := range validators {
-		val := validator.GetOperator()
+		val := sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator()))
 		if err := sdk.VerifyAddressFormat(val); err != nil {
 			return types.Valset{}, errorsmod.Wrap(err, types.ErrInvalidValAddress.Error())
 		}
 
-		p := sdk.NewInt(k.StakingKeeper.GetLastValidatorPower(ctx, val))
+		power, err := k.StakingKeeper.GetLastValidatorPower(ctx, val)
+		if err != nil {
+			return types.Valset{}, errorsmod.Wrapf(err, "failed to get last validator power for %s", val)
+		}
+		p := math.NewInt(power)
 
 		if ethAddr, found := k.GetEthAddressByValidator(ctx, val); found {
 			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: ethAddr.GetAddress().Hex()}
@@ -301,7 +305,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 		// params, a coin with a blank denom and/or zero amount is interpreted in this way.
 		za := types.ZeroAddress()
 		rewardToken = &za
-		rewardAmount = sdk.NewIntFromUint64(0)
+		rewardAmount = math.NewIntFromUint64(0)
 
 	} else {
 		rewardToken, rewardAmount = k.RewardToERC20Lookup(ctx, reward)

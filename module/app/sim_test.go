@@ -7,16 +7,16 @@ import (
 	"os"
 	"testing"
 
-	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/log"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/stretchr/testify/require"
 
-	"cosmossdk.io/simapp"
+	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 	evidencetypes "cosmossdk.io/x/evidence/types"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -26,15 +26,16 @@ import (
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
+	simcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibchost "github.com/cosmos/ibc-go/v8/modules/core/24-host"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 )
 
 func init() {
-	simapp.GetSimulatorFlags()
+	simcli.GetSimulatorFlags()
 }
 
 type StoreKeysPrefixes struct {
@@ -50,7 +51,14 @@ func fauxMerkleModeOpt(bapp *baseapp.BaseApp) {
 }
 
 func TestFullAppSimulation(t *testing.T) {
-	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
+	config := simcli.NewConfigFromFlags()
+	config.ChainID = "testnet-1"
+
+	if simcli.FlagGenesisFileValue == "" {
+		sdk.DefaultPowerReduction = sdkmath.NewIntFromUint64(1000000)
+	}
+
+	db, dir, logger, skip, err := simtestutil.SetupSimulation(config, "leveldb-app-sim", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	if skip {
 		t.Skip("skipping application simulation")
 	}
@@ -61,7 +69,7 @@ func TestFullAppSimulation(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewGravityApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, MakeEncodingConfig(), EmptyAppOptions{}, fauxMerkleModeOpt)
+	app := NewGravityApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, EmptyAppOptions{}, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// run randomized simulation
@@ -100,7 +108,7 @@ func TestAppImportExport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewGravityApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, MakeEncodingConfig(), EmptyAppOptions{}, fauxMerkleModeOpt)
+	app := NewGravityApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, EmptyAppOptions{}, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// Run randomized simulation
@@ -127,29 +135,35 @@ func TestAppImportExport(t *testing.T) {
 
 	fmt.Printf("exporting genesis...\n")
 
-	appState, err := app.ExportAppStateAndValidators(false, []string{})
+	appState, err := app.ExportAppStateAndValidators(false, []string{}, nil)
 	require.NoError(t, err)
 
 	fmt.Printf("importing genesis...\n")
 
-	unused1, newDB, newDir, unused2, unused3, err := simapp.SetupSimulation("leveldb-app-sim-2", "Simulation-2")
-	fmt.Printf("%v %v %v", unused1, unused2, unused3)
+	config.ChainID = "testnet-1"
+
+	if simcli.FlagGenesisFileValue == "" {
+		sdk.DefaultPowerReduction = sdkmath.NewIntFromUint64(1000000)
+	}
+
+	db, dir, logger, skip, err = simtestutil.SetupSimulation(config, "leveldb-app-sim", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
+
 	require.NoError(t, err, "simulation setup failed")
 
 	defer func() {
-		newDB.Close()
-		require.NoError(t, os.RemoveAll(newDir))
+		db.Close()
+		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	newApp := NewGravityApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, MakeEncodingConfig(), EmptyAppOptions{}, fauxMerkleModeOpt)
+	newApp := NewGravityApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, EmptyAppOptions{}, fauxMerkleModeOpt)
 	require.Equal(t, appName, newApp.Name())
 
 	var genesisState GenesisState
 	err = json.Unmarshal(appState.AppState, &genesisState)
 	require.NoError(t, err)
 
-	ctxA := app.NewContext(true, tmproto.Header{Height: app.LastBlockHeight()})
-	ctxB := newApp.NewContext(true, tmproto.Header{Height: app.LastBlockHeight()})
+	ctxA := app.NewContext(true)
+	ctxB := newApp.NewContext(true)
 	newApp.ModuleManager.InitGenesis(ctxB, app.AppCodec, genesisState)
 
 	fmt.Printf("comparing stores...\n")
@@ -169,7 +183,7 @@ func TestAppImportExport(t *testing.T) {
 		{app.keys[govtypes.StoreKey], newApp.keys[govtypes.StoreKey], [][]byte{}},
 		{app.keys[evidencetypes.StoreKey], newApp.keys[evidencetypes.StoreKey], [][]byte{}},
 		{app.keys[capabilitytypes.StoreKey], newApp.keys[capabilitytypes.StoreKey], [][]byte{}},
-		{app.keys[ibchost.StoreKey], newApp.keys[ibchost.StoreKey], [][]byte{}},
+		{app.keys[ibcexported.StoreKey], newApp.keys[ibcexported.StoreKey], [][]byte{}},
 		{app.keys[ibctransfertypes.StoreKey], newApp.keys[ibctransfertypes.StoreKey], [][]byte{}},
 		// TODO: Add gravity module once simulation code is write
 	}
@@ -178,7 +192,7 @@ func TestAppImportExport(t *testing.T) {
 		storeA := ctxA.KVStore(skp.A)
 		storeB := ctxB.KVStore(skp.B)
 
-		failedKVAs, failedKVBs := sdk.DiffKVStores(storeA, storeB, skp.Prefixes)
+		failedKVAs, failedKVBs := simtestutil.DiffKVStores(storeA, storeB, skp.Prefixes)
 		require.Equal(t, len(failedKVAs), len(failedKVBs), "unequal sets of key-values to compare")
 
 		fmt.Printf("compared %d key/value pairs between %s and %s\n", len(failedKVAs), skp.A, skp.B)
@@ -188,7 +202,14 @@ func TestAppImportExport(t *testing.T) {
 
 // nolint: exhaustruct
 func TestAppSimulationAfterImport(t *testing.T) {
-	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
+	config := simcli.NewConfigFromFlags()
+	config.ChainID = "testnet-1"
+
+	if simcli.FlagGenesisFileValue == "" {
+		sdk.DefaultPowerReduction = sdkmath.NewIntFromUint64(1000000)
+	}
+
+	db, dir, logger, skip, err := simtestutil.SetupSimulation(config, "leveldb-app-sim", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
 	if skip {
 		t.Skip("skipping application simulation after import")
 	}
@@ -199,7 +220,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewGravityApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, MakeEncodingConfig(), EmptyAppOptions{}, fauxMerkleModeOpt)
+	app := NewGravityApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, EmptyAppOptions{}, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// Run randomized simulation
@@ -231,7 +252,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 
 	fmt.Printf("exporting genesis...\n")
 
-	appState, err := app.ExportAppStateAndValidators(true, []string{})
+	appState, err := app.ExportAppStateAndValidators(true, []string{}, nil)
 	require.NoError(t, err)
 
 	fmt.Printf("importing genesis...\n")
@@ -245,10 +266,10 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(newDir))
 	}()
 
-	newApp := NewGravityApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, MakeEncodingConfig(), EmptyAppOptions{}, fauxMerkleModeOpt)
+	newApp := NewGravityApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, EmptyAppOptions{}, fauxMerkleModeOpt)
 	require.Equal(t, appName, newApp.Name())
 
-	newApp.InitChain(abci.RequestInitChain{
+	newApp.InitChain(&abci.RequestInitChain{
 		AppStateBytes: appState.AppState,
 	})
 
@@ -276,7 +297,7 @@ func TestAppStateDeterminism(t *testing.T) {
 	config.ExportParamsPath = ""
 	config.OnOperation = false
 	config.AllInvariants = false
-	config.ChainID = simapp.SimAppChainID
+	config.ChainID = "testnet-1"
 
 	numSeeds := 3
 	numTimesToRunPerSeed := 5
@@ -288,13 +309,13 @@ func TestAppStateDeterminism(t *testing.T) {
 		for j := 0; j < numTimesToRunPerSeed; j++ {
 			var logger log.Logger
 			if FlagVerboseValue {
-				logger = log.TestingLogger()
+				logger = log.NewTestLogger(t)
 			} else {
 				logger = log.NewNopLogger()
 			}
 
 			db := dbm.NewMemDB()
-			app := NewGravityApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, MakeEncodingConfig(), EmptyAppOptions{}, fauxMerkleModeOpt)
+			app := NewGravityApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, FlagPeriodValue, EmptyAppOptions{}, fauxMerkleModeOpt)
 
 			fmt.Printf(
 				"running non-determinism simulation; seed %d: %d/%d, attempt: %d/%d\n",

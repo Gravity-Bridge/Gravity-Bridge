@@ -3,6 +3,7 @@ package keeper
 import (
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	typesv2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -33,7 +34,7 @@ func TestAirdropProposal(t *testing.T) {
 		byteEncodedRecipients = append(byteEncodedRecipients, v.Bytes()...)
 	}
 
-	extremelyLargeAmount := sdk.NewInt(1000000000000).Mul(sdk.NewInt(1000000000000))
+	extremelyLargeAmount := sdkmath.NewInt(1000000000000).Mul(sdkmath.NewInt(1000000000000))
 	require.False(t, extremelyLargeAmount.IsUint64())
 
 	goodAirdrop := types.AirdropProposal{
@@ -56,17 +57,20 @@ func TestAirdropProposal(t *testing.T) {
 	gk := input.GravityKeeper
 
 	feePoolBalance := sdk.NewInt64Coin("grav", 10000)
-	feePool := gk.DistKeeper.GetFeePool(ctx)
+	feePool, err := gk.DistKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
 	newCoins := feePool.CommunityPool.Add(sdk.NewDecCoins(sdk.NewDecCoinFromCoin(feePoolBalance))...)
 	feePool.CommunityPool = newCoins
-	gk.DistKeeper.SetFeePool(ctx, feePool)
+	gk.DistKeeper.FeePool.Set(ctx, feePool)
 	// test that we are actually setting the fee pool
-	assert.Equal(t, input.DistKeeper.GetFeePool(ctx), feePool)
+	fp, err := input.DistKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, fp, feePool)
 	// mint the actual coins
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(feePoolBalance)))
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, disttypes.ModuleName, sdk.NewCoins(feePoolBalance)))
 
-	err := gk.HandleAirdropProposal(ctx, &airdropTooBig)
+	err = gk.HandleAirdropProposal(ctx, &airdropTooBig)
 	require.Error(t, err)
 	input.AssertInvariants()
 
@@ -84,25 +88,28 @@ func TestAirdropProposal(t *testing.T) {
 
 	err = gk.HandleAirdropProposal(ctx, &goodAirdrop)
 	require.NoError(t, err)
-	feePool = gk.DistKeeper.GetFeePool(ctx)
+	feePool, err = gk.DistKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, feePool.CommunityPool.AmountOf("grav"), sdk.NewInt64DecCoin("grav", 7000).Amount)
 	input.AssertInvariants()
 
 	// now we test with extremely large amounts, specifically to get to rounding errors
 	feePoolBalance = sdk.NewCoin("grav", extremelyLargeAmount)
-	feePool = gk.DistKeeper.GetFeePool(ctx)
+	feePool, err = gk.DistKeeper.FeePool.Get(ctx)
 	newCoins = feePool.CommunityPool.Add(sdk.NewDecCoins(sdk.NewDecCoinFromCoin(feePoolBalance))...)
 	feePool.CommunityPool = newCoins
-	gk.DistKeeper.SetFeePool(ctx, feePool)
+	gk.DistKeeper.FeePool.Set(ctx, feePool)
 	// test that we are actually setting the fee pool
-	assert.Equal(t, input.DistKeeper.GetFeePool(ctx), feePool)
+	fp, err = input.DistKeeper.FeePool.Get(ctx)
+	assert.Equal(t, fp, feePool)
 	// mint the actual coins
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(feePoolBalance)))
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, disttypes.ModuleName, sdk.NewCoins(feePoolBalance)))
 
 	err = gk.HandleAirdropProposal(ctx, &airdropLarge)
 	require.NoError(t, err)
-	feePool = gk.DistKeeper.GetFeePool(ctx)
+	feePool, err = gk.DistKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
 	input.AssertInvariants()
 }
 

@@ -4,14 +4,14 @@ import (
 	fmt "fmt"
 	"strings"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 )
 
 // This code was copied from bech32 library
 // https://github.com/enigmampc/btcutil/blob/master/bech32/bech32.go#L26
 func ValidateHrp(hrp string) error {
 	if hrp == "" {
-		return sdkerrors.Wrap(ErrInvalidHRP, "empty HRP")
+		return errorsmod.Wrap(ErrInvalidHRP, "empty HRP")
 	}
 
 	// Only	ASCII characters between 33 and 126 are allowed.

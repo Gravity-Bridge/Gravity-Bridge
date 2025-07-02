@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -112,7 +113,7 @@ func TestAttestationIterator(t *testing.T) {
 	claim1 := &types.MsgSendToCosmosClaim{
 		EventNonce:     1,
 		TokenContract:  TokenContractAddrs[0],
-		Amount:         sdk.NewInt(100),
+		Amount:         sdkmath.NewInt(100),
 		EthereumSender: EthAddrs[0].String(),
 		CosmosReceiver: AccAddrs[0].String(),
 		Orchestrator:   AccAddrs[0].String(),
@@ -128,7 +129,7 @@ func TestAttestationIterator(t *testing.T) {
 	claim2 := &types.MsgSendToCosmosClaim{
 		EventNonce:     2,
 		TokenContract:  TokenContractAddrs[0],
-		Amount:         sdk.NewInt(100),
+		Amount:         sdkmath.NewInt(100),
 		EthereumSender: EthAddrs[0].String(),
 		CosmosReceiver: AccAddrs[0].String(),
 		Orchestrator:   AccAddrs[0].String(),

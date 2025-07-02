@@ -101,6 +101,12 @@ func (am AppModule) ConsensusVersion() uint64 {
 	return 1
 }
 
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
+
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k keeper.Keeper, bankKeeper bankkeeper.Keeper, accountkeeper authKeeper.AccountKeeper) AppModule {
 	return AppModule{
@@ -118,23 +124,6 @@ func (AppModule) Name() string {
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 	ir.RegisterRoute(types.ModuleName, "module-balance", keeper.ModuleBalanceInvariant(am.keeper))
 	ir.RegisterRoute(types.ModuleName, "valid-auctions", keeper.ValidAuctionsInvariant(am.keeper))
-}
-
-// Route implements app module
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
-}
-
-// QuerierRoute implements app module
-func (am AppModule) QuerierRoute() string {
-	return types.QuerierRoute
-}
-
-// LegacyQuerierHandler returns the module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return func(_ sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
-		return nil, fmt.Errorf("legacy querier not implemented, use gRPC queries instead")
-	}
 }
 
 // RegisterServices registers module services.
@@ -157,13 +146,12 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // BeginBlock handles the start of every block
-func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
+func (am AppModule) BeginBlock(ctx sdk.Context, _ sdk.BeginBlock) {
 	// Auction module does not use BeginBlock
 }
 
 // EndBlock handles the end of every block
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	// End auctions, transfer balances, start new auctions
+func (am AppModule) EndBlock(ctx sdk.Context, _ sdk.EndBlock) []abci.ValidatorUpdate { // End auctions, transfer balances, start new auctions
 	EndBlocker(ctx, am.keeper)
 	return []abci.ValidatorUpdate{}
 }

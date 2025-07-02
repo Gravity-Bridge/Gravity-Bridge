@@ -82,15 +82,14 @@ func NewCmdSubmitUpdateHrpIbcRecordProposal() *cobra.Command {
 				return err
 			}
 			durationOffset, err := time.ParseDuration(durationOffsetText)
+			if err != nil {
+				return err
+			}
 
 			content := types.NewUpdateHrpIBCRecordProposal(title, description, hrp, channelId, heightOffset, durationOffset)
 
 			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
 			if err != nil {
-				return err
-			}
-
-			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}
 
