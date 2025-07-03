@@ -5,10 +5,9 @@ package types
 
 import (
 	fmt "fmt"
-	math "math"
-
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

@@ -86,7 +86,7 @@ f_install_buf() {
 f_install_protoc_gen_gocosmos() {
     f_print_installing_with_padding protoc-gen-gocosmos
     
-    go install github.com/cosmos/gogoproto/protoc-gen-gocosmos@latest
+    /usr/local/go/bin/go install github.com/cosmos/gogoproto/protoc-gen-gocosmos@latest
     f_print_done
 }
 
@@ -108,7 +108,7 @@ f_install_protoc_gen_swagger() {
     fi
     
     pushd "${TEMPDIR}" >/dev/null
-    go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@latest
+    /usr/local/go/bin/go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@latest
     npm install -g swagger-combine
     popd >/dev/null
     f_print_done

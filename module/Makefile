@@ -99,6 +99,11 @@ proto-all: proto-format proto-lint proto-gen
 proto-gen:
 	@echo "Generating Protobuf files"
 	$(protoImage) sh ./scripts/protocgen.sh
+
+proto-pulsar-gen:
+	@echo "Generating Pulsar Protobuf files"
+	$(protoImage) sh ./scripts/protocgen-pulsar.sh
+
 proto-lint:
 	@echo "Linting Protobuf files"
 	@$(protoImage) buf lint --error-format=json
@@ -116,7 +121,7 @@ proto-format:
 	@echo "Formatting Protobuf files"
 	@$(protoImage) find ./ -name "*.proto" -exec clang-format -i {} \;
 
-.PHONY: proto-all proto-gen proto-format proto-lint proto-check-breaking
+.PHONY: proto-all proto-gen proto-format proto-lint proto-check-breaking proto-pulsar-gen
 
 # below are all for the reproducible builder
 

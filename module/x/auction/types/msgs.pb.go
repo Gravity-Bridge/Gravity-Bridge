@@ -6,16 +6,15 @@ package types
 import (
 	context "context"
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
 	grpc1 "github.com/cosmos/gogoproto/grpc"
 	proto "github.com/cosmos/gogoproto/proto"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -29,10 +28,11 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MsgBid is a message type for placing a bid on an auction with given `auction_id`
-// `bidder` is the signer of the Msg
-// `amount` is the native token amount locked by the auction module if the bid is accepted as the highest bid
-// `bid_fee` is the native token amount sent to the auction pool, and should be at least equal to the min bid fee param
+// MsgBid is a message type for placing a bid on an auction with given
+// `auction_id` `bidder` is the signer of the Msg `amount` is the native token
+// amount locked by the auction module if the bid is accepted as the highest bid
+// `bid_fee` is the native token amount sent to the auction pool, and should be
+// at least equal to the min bid fee param
 //
 // Additionally, all bids must meet or exceed `min_bid_amount`
 type MsgBid struct {

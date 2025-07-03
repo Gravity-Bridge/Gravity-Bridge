@@ -130,33 +130,23 @@ message Params {
   uint64 target_batch_timeout = 9;
   uint64 average_block_time = 10;
   uint64 average_ethereum_block_time = 11;
-  bytes slash_fraction_valset = 12 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
-    (gogoproto.nullable) = false
-  ];
-  bytes slash_fraction_batch = 13 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
-    (gogoproto.nullable) = false
-  ];
-  bytes slash_fraction_logic_call = 14 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
-    (gogoproto.nullable) = false
-  ];
+  bytes slash_fraction_valset = 12
+      [ (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false ];
+  bytes slash_fraction_batch = 13
+      [ (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false ];
+  bytes slash_fraction_logic_call = 14
+      [ (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false ];
   uint64 unbond_slashing_valsets_window = 15;
-  bytes slash_fraction_bad_eth_signature = 16 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
-    (gogoproto.nullable) = false
-  ];
+  bytes slash_fraction_bad_eth_signature = 16
+      [ (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false ];
   cosmos.base.v1beta1.Coin valset_reward = 17 [ (gogoproto.nullable) = false ];
   bool bridge_active = 18;
   // addresses on this blacklist are forbidden from depositing or withdrawing
   // from Ethereum to the bridge
   repeated string ethereum_blacklist = 19;
   uint64 min_chain_fee_basis_points = 20;
-  string chain_fee_auction_pool_fraction = 21 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
-    (gogoproto.nullable) = false
-  ];
+  string chain_fee_auction_pool_fraction = 21
+      [ (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false ];
 }
 
 // GenesisState struct, containing all persistant data required by the Gravity

@@ -5,11 +5,10 @@ package types
 
 import (
 	fmt "fmt"
+	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
-
-	proto "github.com/cosmos/gogoproto/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -27,16 +26,20 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type Params struct {
 	// AuctionLength is the number of blocks that the AuctionPeriod will be active
 	AuctionLength uint64 `protobuf:"varint,1,opt,name=auction_length,json=auctionLength,proto3" json:"auction_length,omitempty"`
-	// MinBidFee defines the required minimum fee that must be paid by bidders for their bid to be considered by the module.
-	// This fee is paid out to the auction pool. This fee is separate from the standard Cosmos Tx spam protection fee.
-	// This fee will not be charged unless a bid is successful.
+	// MinBidFee defines the required minimum fee that must be paid by bidders for
+	// their bid to be considered by the module. This fee is paid out to the
+	// auction pool. This fee is separate from the standard Cosmos Tx spam
+	// protection fee. This fee will not be charged unless a bid is successful.
 	MinBidFee uint64 `protobuf:"varint,2,opt,name=min_bid_fee,json=minBidFee,proto3" json:"min_bid_fee,omitempty"`
-	// NonAuctionableTokens is a list of token denomss which should never be auctioned from the auction pool
+	// NonAuctionableTokens is a list of token denomss which should never be
+	// auctioned from the auction pool
 	NonAuctionableTokens []string `protobuf:"bytes,3,rep,name=non_auctionable_tokens,json=nonAuctionableTokens,proto3" json:"non_auctionable_tokens,omitempty"`
-	// BurnWinningBids controls if we burn the tokens of the winning bidder instead of sending them to the auction pool
+	// BurnWinningBids controls if we burn the tokens of the winning bidder
+	// instead of sending them to the auction pool
 	BurnWinningBids bool `protobuf:"varint,4,opt,name=burn_winning_bids,json=burnWinningBids,proto3" json:"burn_winning_bids,omitempty"`
-	// Enabled controls whether auctions progress as usual, or are preserved in an inactive halted state.
-	// When Enabled is false, bids will also fail to be processed.
+	// Enabled controls whether auctions progress as usual, or are preserved in an
+	// inactive halted state. When Enabled is false, bids will also fail to be
+	// processed.
 	Enabled bool `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
 }
 

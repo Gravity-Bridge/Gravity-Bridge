@@ -6,10 +6,6 @@ package types
 import (
 	context "context"
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
@@ -18,6 +14,9 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -707,7 +706,8 @@ const _ = grpc.SupportPackageIsVersion4
 type QueryClient interface {
 	// Params returns the current module parameters (decided by governance)
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// AuctionPeriod returns the current active auction period, or a future one if no period is active
+	// AuctionPeriod returns the current active auction period, or a future one if
+	// no period is active
 	AuctionPeriod(ctx context.Context, in *QueryAuctionPeriodRequest, opts ...grpc.CallOption) (*QueryAuctionPeriodResponse, error)
 	// Auctions returns all current active auctions
 	Auctions(ctx context.Context, in *QueryAuctionsRequest, opts ...grpc.CallOption) (*QueryAuctionsResponse, error)
@@ -715,10 +715,12 @@ type QueryClient interface {
 	AuctionById(ctx context.Context, in *QueryAuctionByIdRequest, opts ...grpc.CallOption) (*QueryAuctionByIdResponse, error)
 	// AuctionByDenom returns an open auction given by its `denom`
 	AuctionByDenom(ctx context.Context, in *QueryAuctionByDenomRequest, opts ...grpc.CallOption) (*QueryAuctionByDenomResponse, error)
-	// AllAuctionsByBidder returns all open auctions with the given highest bidder address
+	// AllAuctionsByBidder returns all open auctions with the given highest bidder
+	// address
 	AllAuctionsByBidder(ctx context.Context, in *QueryAllAuctionsByBidderRequest, opts ...grpc.CallOption) (*QueryAllAuctionsByBidderResponse, error)
-	// AuctionPool returns the auction pool account address and the tokens which will be up for auction next,
-	// (but does not return any amounts from auctions with no bidder)
+	// AuctionPool returns the auction pool account address and the tokens which
+	// will be up for auction next, (but does not return any amounts from auctions
+	// with no bidder)
 	AuctionPool(ctx context.Context, in *QueryAuctionPoolRequest, opts ...grpc.CallOption) (*QueryAuctionPoolResponse, error)
 }
 
@@ -797,7 +799,8 @@ func (c *queryClient) AuctionPool(ctx context.Context, in *QueryAuctionPoolReque
 type QueryServer interface {
 	// Params returns the current module parameters (decided by governance)
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// AuctionPeriod returns the current active auction period, or a future one if no period is active
+	// AuctionPeriod returns the current active auction period, or a future one if
+	// no period is active
 	AuctionPeriod(context.Context, *QueryAuctionPeriodRequest) (*QueryAuctionPeriodResponse, error)
 	// Auctions returns all current active auctions
 	Auctions(context.Context, *QueryAuctionsRequest) (*QueryAuctionsResponse, error)
@@ -805,10 +808,12 @@ type QueryServer interface {
 	AuctionById(context.Context, *QueryAuctionByIdRequest) (*QueryAuctionByIdResponse, error)
 	// AuctionByDenom returns an open auction given by its `denom`
 	AuctionByDenom(context.Context, *QueryAuctionByDenomRequest) (*QueryAuctionByDenomResponse, error)
-	// AllAuctionsByBidder returns all open auctions with the given highest bidder address
+	// AllAuctionsByBidder returns all open auctions with the given highest bidder
+	// address
 	AllAuctionsByBidder(context.Context, *QueryAllAuctionsByBidderRequest) (*QueryAllAuctionsByBidderResponse, error)
-	// AuctionPool returns the auction pool account address and the tokens which will be up for auction next,
-	// (but does not return any amounts from auctions with no bidder)
+	// AuctionPool returns the auction pool account address and the tokens which
+	// will be up for auction next, (but does not return any amounts from auctions
+	// with no bidder)
 	AuctionPool(context.Context, *QueryAuctionPoolRequest) (*QueryAuctionPoolResponse, error)
 }
 
