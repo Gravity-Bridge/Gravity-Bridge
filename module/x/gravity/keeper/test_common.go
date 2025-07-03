@@ -543,7 +543,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 		accountKeeper,
 		bankKeeper,
 		govAuthority,
-		authcodec.NewBech32Codec("gravityvaladdr"),
+		authcodec.NewBech32Codec("gravityvaloper"),
 		authcodec.NewBech32Codec("gravityconsaddr"),
 	)
 	stakingKeeper.SetParams(ctx, TestingStakeParams)
@@ -582,11 +582,12 @@ func CreateTestEnv(t *testing.T) TestInput {
 
 			require.NoError(t, err)
 		}
-		accountKeeper.SetModuleAccount(ctx, mod)
+		// if !accountKeeper.HasAccount(ctx, mod.GetAddress()) {
+		// accountKeeper.SetModuleAccount(ctx, mod)
+		// }
 	}
 
-	stakeAddr := authtypes.NewModuleAddress(stakingtypes.BondedPoolName)
-	moduleAcct := accountKeeper.GetAccount(ctx, stakeAddr)
+	moduleAcct := accountKeeper.GetModuleAccount(ctx, stakingtypes.BondedPoolName)
 	require.NotNil(t, moduleAcct)
 
 	govRouter := govv1beta1.NewRouter().
@@ -792,11 +793,11 @@ func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, am
 	out, err := stakingtypes.NewMsgCreateValidator(
 		address.String(), pubKey, sdk.NewCoin("stake", amt),
 		stakingtypes.Description{
-			Moniker:         "",
-			Identity:        "",
-			Website:         "",
-			SecurityContact: "",
-			Details:         "",
+			Moniker:         "moniker",
+			Identity:        "identity",
+			Website:         "website",
+			SecurityContact: "security_contact",
+			Details:         "details",
 		}, commission, sdkmath.OneInt(),
 	)
 	if err != nil {
