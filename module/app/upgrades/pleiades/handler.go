@@ -1,6 +1,8 @@
 package pleiades
 
 import (
+	"context"
+
 	sdkmath "cosmossdk.io/math"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,12 +14,13 @@ import (
 func GetPleiadesUpgradeHandler(
 	ModuleManager *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper,
 ) func(
-	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
+	c context.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
 	if ModuleManager == nil {
 		panic("Nil argument to GetPleiadesUpgradeHandler")
 	}
-	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+	return func(c context.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+		ctx := sdk.UnwrapSDKContext(c)
 		ctx.Logger().Info("Pleiades upgrade: Enter handler")
 
 		ctx.Logger().Info("Pleiades Upgrade: Running any configured module migrations")
@@ -33,12 +36,13 @@ func GetPleiadesUpgradeHandler(
 func GetPleiades2UpgradeHandler(
 	ModuleManager *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper, stakingKeeper *stakingkeeper.Keeper,
 ) func(
-	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
+	c context.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
 	if ModuleManager == nil {
 		panic("Nil argument to GetPleiadesUpgradeHandler")
 	}
-	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+	return func(c context.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+		ctx := sdk.UnwrapSDKContext(c)
 		ctx.Logger().Info("Pleiades Upgrade part 2: Enter handler")
 
 		ctx.Logger().Info("Pleiades Upgrade part 2: Running any configured module migrations")

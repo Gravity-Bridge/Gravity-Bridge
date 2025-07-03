@@ -1,6 +1,8 @@
 package antares
 
 import (
+	"context"
+
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -15,12 +17,13 @@ import (
 func GetAntaresUpgradeHandler(
 	ModuleManager *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper,
 ) func(
-	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
+	c context.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
 	if ModuleManager == nil {
 		panic("Nil argument to GetAntaresUpgradeHandler")
 	}
-	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+	return func(c context.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+		ctx := sdk.UnwrapSDKContext(c)
 		ctx.Logger().Info("Antares upgrade: Starting upgrade")
 
 		vmap[icatypes.ModuleName] = ModuleManager.Modules[icatypes.ModuleName].(module.HasConsensusVersion).ConsensusVersion()

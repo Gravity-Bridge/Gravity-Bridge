@@ -3,11 +3,11 @@ package ante
 import (
 	errorsmod "cosmossdk.io/errors"
 
+	"cosmossdk.io/x/tx/signing"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
 	ethermintante "github.com/evmos/ethermint/app/ante"
 )
@@ -29,11 +29,11 @@ type GravitySigVerificationDecorator struct {
 
 // See GravitySigVerificationDecorator for more info
 func NewGravitySigVerificationDecorator(
-	cdc codec.Codec, ak *authkeeper.AccountKeeper, signModeHandler authsigning.SignModeHandler, evmChainID string,
+	cdc codec.Codec, ak *authkeeper.AccountKeeper, signModeHandler signing.HandlerMap, evmChainIDs []string,
 ) GravitySigVerificationDecorator {
-	sdkSVD := sdkante.NewSigVerificationDecorator(ak, signModeHandler)
+	sdkSVD := sdkante.NewSigVerificationDecorator(ak, &signModeHandler)
 	// nolint: staticcheck
-	ethermintSVD := ethermintante.NewLegacyEip712SigVerificationDecorator(ak, signModeHandler, evmChainID)
+	ethermintSVD := ethermintante.NewLegacyEip712SigVerificationDecorator(ak, &signModeHandler, evmChainIDs)
 	return GravitySigVerificationDecorator{cdc, sdkSVD, ethermintSVD}
 }
 

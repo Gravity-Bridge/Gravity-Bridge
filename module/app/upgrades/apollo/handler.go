@@ -1,6 +1,7 @@
 package apollo
 
 import (
+	"context"
 	"fmt"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
@@ -15,12 +16,13 @@ import (
 func GetApolloUpgradeHandler(
 	ModuleManager *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper, auctionKeeper *auctionkeeper.Keeper,
 ) func(
-	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
+	c context.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
 	if ModuleManager == nil {
 		panic("Nil argument to GetApolloUpgradeHandler")
 	}
-	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+	return func(c context.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+		ctx := sdk.UnwrapSDKContext(c)
 		vmap[auctiontypes.ModuleName] = ModuleManager.Modules[auctiontypes.ModuleName].(module.HasConsensusVersion).ConsensusVersion()
 		ctx.Logger().Info("Module Consensus Version Map", "vmap", vmap)
 

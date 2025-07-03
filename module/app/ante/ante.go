@@ -35,10 +35,15 @@ func NewAnteHandler(
 	feegrantKeeper *feegrantkeeper.Keeper,
 	ibcKeeper *ibckeeper.Keeper,
 	cdc codec.Codec,
-	evmChainID string,
+	evmChainIDs []string,
 ) (*sdk.AnteHandler, error) {
-	if evmChainID == "" {
-		return nil, fmt.Errorf("evmChainID not specified, EIP-712 signing will fail")
+	if len(evmChainIDs) == 0 {
+		return nil, fmt.Errorf("evmChainIDs not specified, EIP-712 signing will fail")
+	}
+	for _, chainID := range evmChainIDs {
+		if chainID == "" {
+			return nil, fmt.Errorf("evmChainIDs contains an empty string, EIP-712 signing will fail")
+		}
 	}
 
 	fullHandler := sdk.ChainAnteDecorators(
@@ -56,7 +61,7 @@ func NewAnteHandler(
 		sdkante.NewValidateSigCountDecorator(accountKeeper),
 		sdkante.NewSigGasConsumeDecorator(accountKeeper, options.SigGasConsumer),
 		// Delegates to EIP-712 verification OR to regular SDK verification depending on the extension option
-		NewGravitySigVerificationDecorator(cdc, accountKeeper, options.SignModeHandler, evmChainID),
+		NewGravitySigVerificationDecorator(cdc, accountKeeper, *options.SignModeHandler, evmChainIDs),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),
 		ibcante.NewRedundantRelayDecorator(ibcKeeper),
 		// Enforces the minimum commission for Gravity Prop #1

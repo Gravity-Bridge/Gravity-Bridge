@@ -1,6 +1,8 @@
 package polaris
 
 import (
+	"context"
+
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -12,12 +14,13 @@ import (
 func GetPolarisUpgradeHandler(
 	ModuleManager *module.Manager, configurator *module.Configurator, crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper,
 ) func(
-	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
+	c context.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
 	if ModuleManager == nil || transferKeeper == nil {
 		panic("Nil argument to GetPolarisUpgradeHandler")
 	}
-	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+	return func(c context.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+		ctx := sdk.UnwrapSDKContext(c)
 		ctx.Logger().Info("Polaris upgrade: Enter handler")
 		// We previously upgraded via genesis, thus we don't want to run upgrades for all the modules
 		fromVM := make(map[string]uint64)

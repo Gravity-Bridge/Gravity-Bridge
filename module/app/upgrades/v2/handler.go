@@ -1,6 +1,8 @@
 package v2
 
 import (
+	"context"
+
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 
@@ -25,9 +27,10 @@ import (
 // Note: mercury2.0 is not a consensus breaking change, as it only enables new functionality which is so far unused,
 // thus it is unnecessary to change the consensus version or create a new upgrades module
 func GetMercury2Dot0UpgradeHandler() func(
-	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
+	c context.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
-	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+	return func(c context.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+		ctx := sdk.UnwrapSDKContext(c)
 		ctx.Logger().Info("Performing Fix for Mercury IBC Auto-Forwarding")
 		// This upgrade introduces a new hash(PendingIbcAutoForward) key into the gravity store as IBC Auto-Forwards
 		// are queued. This key will only be populated or used upon the creation of the first IBC Auto-Forward.
@@ -43,13 +46,14 @@ func GetV2UpgradeHandler(
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper,
 ) func(
-	ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap,
+	c context.Context, plan upgradetypes.Plan, vmap module.VersionMap,
 ) (module.VersionMap, error) {
 	if ModuleManager == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
 		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil {
 		panic("Nil argument to GetV2UpgradeHandler")
 	}
-	return func(ctx sdk.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+	return func(c context.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
+		ctx := sdk.UnwrapSDKContext(c)
 		ctx.Logger().Info("Mercury upgrade: Enter handler")
 		// We previously upgraded via genesis, thus we don't want to run upgrades for all the modules
 		fromVM := make(map[string]uint64)

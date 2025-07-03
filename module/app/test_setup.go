@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"cosmossdk.io/log"
-	"cosmossdk.io/math"
 	sdkmath "cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -207,7 +206,7 @@ func addValidators(genState *GenesisState, cdc codec.Codec) {
 		UnbondingTime:   time.Time{},
 		// nolint: exhaustruct
 		Commission:        stakingtypes.Commission{},
-		MinSelfDelegation: math.Int{},
+		MinSelfDelegation: sdkmath.Int{},
 	}
 	delegations = append(delegations, stakingtypes.Delegation{ValidatorAddress: sdk.ValAddress(AccAddresses[0]).String(), DelegatorAddress: AccAddresses[0].String(), Shares: valShares})
 	bondedVal2 := stakingtypes.Validator{
@@ -222,12 +221,12 @@ func addValidators(genState *GenesisState, cdc codec.Codec) {
 		UnbondingTime:   time.Time{},
 		// nolint: exhaustruct
 		Commission:        stakingtypes.Commission{},
-		MinSelfDelegation: math.Int{},
+		MinSelfDelegation: sdkmath.Int{},
 	}
 	delegations = append(delegations, stakingtypes.Delegation{ValidatorAddress: sdk.ValAddress(AccAddresses[1]).String(), DelegatorAddress: AccAddresses[1].String(), Shares: valShares})
 
 	bondedPool := authtypes.NewModuleAddress(stakingtypes.BondedPoolName)
-	bondedTokens := valTokens.Mul(math.NewInt(2))
+	bondedTokens := valTokens.Mul(sdkmath.NewInt(2))
 	bankGenState.Balances = append(
 		bankGenState.Balances,
 		banktypes.Balance{Address: bondedPool.String(), Coins: sdk.NewCoins(sdk.NewCoin(config.NativeTokenDenom, bondedTokens))},
