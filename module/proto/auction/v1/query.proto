@@ -17,8 +17,10 @@ service Query {
     option (google.api.http).get = "/auction/v1beta/params";
   }
 
-  // AuctionPeriod returns the current active auction period, or a future one if no period is active
-  rpc AuctionPeriod(QueryAuctionPeriodRequest) returns (QueryAuctionPeriodResponse) {
+  // AuctionPeriod returns the current active auction period, or a future one if
+  // no period is active
+  rpc AuctionPeriod(QueryAuctionPeriodRequest)
+      returns (QueryAuctionPeriodResponse) {
     option (google.api.http).get = "/auction/v1beta/period";
   }
 
@@ -33,17 +35,22 @@ service Query {
   }
 
   // AuctionByDenom returns an open auction given by its `denom`
-  rpc AuctionByDenom(QueryAuctionByDenomRequest) returns (QueryAuctionByDenomResponse) {
-    option (google.api.http).get = "/auction/v1beta/auction-denom/{auction_denom}";
+  rpc AuctionByDenom(QueryAuctionByDenomRequest)
+      returns (QueryAuctionByDenomResponse) {
+    option (google.api.http).get =
+        "/auction/v1beta/auction-denom/{auction_denom}";
   }
 
-  // AllAuctionsByBidder returns all open auctions with the given highest bidder address
-  rpc AllAuctionsByBidder(QueryAllAuctionsByBidderRequest) returns (QueryAllAuctionsByBidderResponse) {
+  // AllAuctionsByBidder returns all open auctions with the given highest bidder
+  // address
+  rpc AllAuctionsByBidder(QueryAllAuctionsByBidderRequest)
+      returns (QueryAllAuctionsByBidderResponse) {
     option (google.api.http).get = "/auction/v1beta/auctions-bidder/{address}";
   }
 
-  // AuctionPool returns the auction pool account address and the tokens which will be up for auction next,
-  // (but does not return any amounts from auctions with no bidder)
+  // AuctionPool returns the auction pool account address and the tokens which
+  // will be up for auction next, (but does not return any amounts from auctions
+  // with no bidder)
   rpc AuctionPool(QueryAuctionPoolRequest) returns (QueryAuctionPoolResponse) {
     option (google.api.http).get = "/auction/v1beta/auction-pool";
   }
@@ -54,35 +61,21 @@ message QueryParamsResponse {
   Params params = 1 [ (gogoproto.nullable) = false ];
 }
 
-message QueryAuctionPeriodRequest {
-}
-message QueryAuctionPeriodResponse {
-  AuctionPeriod auction_period = 1;
-}
+message QueryAuctionPeriodRequest {}
+message QueryAuctionPeriodResponse { AuctionPeriod auction_period = 1; }
 
-message QueryAuctionsRequest {
-}
+message QueryAuctionsRequest {}
 message QueryAuctionsResponse {
   repeated Auction auctions = 1 [ (gogoproto.nullable) = false ];
 }
 
-message QueryAuctionByIdRequest {
-  uint64 auction_id = 1;
-}
-message QueryAuctionByIdResponse {
-  Auction auction = 1;
-}
+message QueryAuctionByIdRequest { uint64 auction_id = 1; }
+message QueryAuctionByIdResponse { Auction auction = 1; }
 
-message QueryAuctionByDenomRequest {
-  string auction_denom = 1;
-}
-message QueryAuctionByDenomResponse {
-  Auction auction = 1;
-}
+message QueryAuctionByDenomRequest { string auction_denom = 1; }
+message QueryAuctionByDenomResponse { Auction auction = 1; }
 
-message QueryAllAuctionsByBidderRequest {
-  string address = 1;
-}
+message QueryAllAuctionsByBidderRequest { string address = 1; }
 message QueryAllAuctionsByBidderResponse {
   repeated Auction auctions = 1 [ (gogoproto.nullable) = false ];
 }
@@ -90,5 +83,6 @@ message QueryAllAuctionsByBidderResponse {
 message QueryAuctionPoolRequest {}
 message QueryAuctionPoolResponse {
   string account = 1;
-  repeated cosmos.base.v1beta1.Coin balances = 2 [(gogoproto.nullable)   = false];
+  repeated cosmos.base.v1beta1.Coin balances = 2
+      [ (gogoproto.nullable) = false ];
 }
