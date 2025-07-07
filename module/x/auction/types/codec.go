@@ -23,7 +23,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgBid{},
 	)
 
-	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
+	msgservice.RegisterMsgServiceDesc(registry, &Msg_serviceDesc)
 }
 
 // RegisterCodec registers concrete types on the Amino codec
