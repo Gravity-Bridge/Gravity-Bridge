@@ -284,10 +284,14 @@ func (k Keeper) LastEventNonceByAddr(
 	if !found {
 		return nil, errorsmod.Wrap(types.ErrUnknown, "address")
 	}
-	if err := sdk.VerifyAddressFormat(sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator()))); err != nil {
+	operator, err := sdk.ValAddressFromBech32(validator.GetOperator())
+	if err != nil {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "operator address")
+	}
+	if err := sdk.VerifyAddressFormat(operator); err != nil {
 		return nil, errorsmod.Wrap(err, "invalid validator address")
 	}
-	lastEventNonce := k.GetLastEventNonceByValidator(ctx, sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator())))
+	lastEventNonce := k.GetLastEventNonceByValidator(ctx, operator)
 	ret.EventNonce = lastEventNonce
 	return &ret, nil
 }

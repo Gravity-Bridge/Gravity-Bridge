@@ -35,17 +35,19 @@ import (
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/address"
-	"github.com/cosmos/cosmos-sdk/codec/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -126,6 +128,9 @@ import (
 
 	// Tharsis Ethermint
 	ethante "github.com/evmos/ethermint/app/ante"
+	ethermintcryptocodec "github.com/evmos/ethermint/crypto/codec"
+	ethermintcodec "github.com/evmos/ethermint/encoding/codec"
+	etherminttypes "github.com/evmos/ethermint/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/ante"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades"
@@ -134,13 +139,12 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/neutrino"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction"
 	auckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 	auctiontypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
+	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 const appName = "app"
@@ -226,7 +230,8 @@ type Gravity struct {
 	legacyAmino       *codec.LegacyAmino
 	AppCodec          codec.Codec
 	TxConfig          client.TxConfig
-	InterfaceRegistry types.InterfaceRegistry
+	InterfaceRegistry codectypes.InterfaceRegistry
+	EncodingConfig    simappparams.EncodingConfig
 
 	invCheckPeriod uint
 
@@ -402,7 +407,7 @@ func NewGravityApp(
 			Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix(),
 		},
 	}
-	interfaceRegistry, _ := types.NewInterfaceRegistryWithOptions(types.InterfaceRegistryOptions{
+	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
 		ProtoFiles:     proto.HybridResolver,
 		SigningOptions: signingOptions,
 	})
@@ -412,9 +417,12 @@ func NewGravityApp(
 	encodingConfig := simappparams.EncodingConfig{
 		InterfaceRegistry: interfaceRegistry,
 		Codec:             appCodec,
-		TxConfig:          authtx.NewTxConfig(appCodec, authtx.DefaultSignModes),
+		TxConfig:          txConfig,
 		Amino:             legacyAmino,
 	}
+	ethermintcodec.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ethermintcryptocodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	// create and set dummy vote extension handler
 	voteExtOp := func(bApp *baseapp.BaseApp) {
@@ -551,8 +559,8 @@ func NewGravityApp(
 		accountKeeper,
 		bankKeeper,
 		govAuthority,
-		authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
-		authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
+		authcodec.NewBech32Codec(gravityconfig.Bech32PrefixValAddr),
+		authcodec.NewBech32Codec(gravityconfig.Bech32PrefixConsAddr),
 	)
 	app.StakingKeeper = &stakingKeeper
 
@@ -618,6 +626,7 @@ func NewGravityApp(
 		govAuthority,
 	)
 	app.IcaHostKeeper = &icaHostKeeper
+	icaHostKeeper.WithQueryRouter(bApp.GRPCQueryRouter())
 
 	mintKeeper := mintkeeper.NewKeeper(
 		appCodec,
@@ -844,9 +853,15 @@ func NewGravityApp(
 		},
 	)
 
+	moduleBasicManager.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	moduleBasicManager.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	app.ModuleBasicManager = &moduleBasicManager
-	app.ModuleBasicManager.RegisterLegacyAminoCodec(legacyAmino)
-	app.ModuleBasicManager.RegisterInterfaces(interfaceRegistry)
+	// nolint: exhaustruct
+	encodingConfig.InterfaceRegistry.RegisterImplementations(
+		(*tx.TxExtensionOptionI)(nil),
+		&etherminttypes.ExtensionOptionsWeb3Tx{},
+	)
+	app.EncodingConfig = encodingConfig
 
 	// NOTE: upgrade module is required to be prioritized
 	app.ModuleManager.SetOrderPreBlockers(

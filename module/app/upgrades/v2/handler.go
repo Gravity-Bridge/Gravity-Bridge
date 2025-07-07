@@ -249,7 +249,11 @@ func bumpMinValidatorCommissions(stakingKeeper *stakingkeeper.Keeper, ctx sdk.Co
 
 			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): calling the hook")
 			// call the before-modification hook since we're about to update the commission
-			operator := sdk.ValAddress(sdk.MustAccAddressFromBech32(v.GetOperator()))
+			operator, err := sdk.ValAddressFromBech32(v.GetOperator())
+			if err != nil {
+				ctx.Logger().Error("Mercury Upgrade: bumpMinValidatorCommissions(): Error getting validator operator address", "error", err.Error())
+				return err
+			}
 			stakingKeeper.Hooks().BeforeValidatorModified(ctx, operator)
 
 			ctx.Logger().Info("Mercury Upgrade: bumpMinValidatorCommissions(): setting the validator")

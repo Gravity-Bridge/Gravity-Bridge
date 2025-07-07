@@ -247,7 +247,11 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				// slash validators for not confirming valsets
 				if !found {
 					// refresh validator before slashing/jailing
-					val = updateValidator(ctx, k, sdk.ValAddress(sdk.MustAccAddressFromBech32(val.GetOperator())))
+					operator, err := sdk.ValAddressFromBech32(val.GetOperator())
+					if err != nil {
+						panic(fmt.Errorf("Failed to parse validator operator address: %w", err))
+					}
+					val = updateValidator(ctx, k, operator)
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
 						if err := ctx.EventManager().EmitTypedEvent(
@@ -297,7 +301,11 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				// slash validators for not confirming valsets
 				if !found {
 					// refresh validator before slashing/jailing
-					validator = updateValidator(ctx, k, sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator())))
+					operator, err := sdk.ValAddressFromBech32(validator.GetOperator())
+					if err != nil {
+						panic(fmt.Errorf("Failed to parse validator operator address: %w", err))
+					}
+					validator = updateValidator(ctx, k, operator)
 					if !validator.IsJailed() {
 						k.StakingKeeper.Slash(ctx, valConsAddr, ctx.BlockHeight(), validator.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
 						if err := ctx.EventManager().EmitTypedEvent(
@@ -419,7 +427,11 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				// slashing for not confirming the batch
 				if !found {
 					// refresh validator before slashing/jailing
-					val = updateValidator(ctx, k, sdk.ValAddress(sdk.MustAccAddressFromBech32(val.GetOperator())))
+					operator, err := sdk.ValAddressFromBech32(val.GetOperator())
+					if err != nil {
+						panic(fmt.Errorf("Failed to parse validator operator address: %w", err))
+					}
+					val = updateValidator(ctx, k, operator)
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBatch)
 						if err := ctx.EventManager().EmitTypedEvent(
@@ -504,7 +516,11 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 				_, found := confirms[val.GetOperator()]
 				if !found {
 					// refresh validator before slashing/jailing
-					val = updateValidator(ctx, k, sdk.ValAddress(sdk.MustAccAddressFromBech32(val.GetOperator())))
+					operator, err := sdk.ValAddressFromBech32(val.GetOperator())
+					if err != nil {
+						panic(fmt.Errorf("Failed to parse validator operator address: %w", err))
+					}
+					val = updateValidator(ctx, k, operator)
 					if !val.IsJailed() {
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionLogicCall)
 						if err := ctx.EventManager().EmitTypedEvent(

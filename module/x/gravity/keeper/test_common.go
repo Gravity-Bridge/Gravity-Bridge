@@ -30,6 +30,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -479,6 +480,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 
 	encodingConfig := MakeTestEncodingConfig()
 	appCodec := encodingConfig.Marshaler
+	legacytx.RegressionTestingAminoCodec = encodingConfig.Amino
 
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, encodingConfig.Amino, keyParams, tkeyParams)
 	paramsKeeper.Subspace(authtypes.ModuleName)

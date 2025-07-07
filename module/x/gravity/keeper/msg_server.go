@@ -356,7 +356,11 @@ func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator
 	}
 
 	// return an error if the validator isn't in the active set
-	val, err := k.StakingKeeper.Validator(ctx, sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator())))
+	operator, err := sdk.ValAddressFromBech32(validator.GetOperator())
+	if err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "operator address")
+	}
+	val, err := k.StakingKeeper.Validator(ctx, operator)
 	if err != nil || val == nil || !val.IsBonded() {
 		return errorsmod.Wrap(sdkerrors.ErrorInvalidSigner, "validator not in active set")
 	}
@@ -409,11 +413,15 @@ func (k msgServer) confirmHandlerCommon(ctx sdk.Context, ethAddress string, orch
 		return errorsmod.Wrap(types.ErrInvalid, "validator is unbonded")
 	}
 
-	if err := sdk.VerifyAddressFormat(sdk.MustAccAddressFromBech32(validator.GetOperator())); err != nil {
+	operator, err := sdk.ValAddressFromBech32(validator.GetOperator())
+	if err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "operator address")
+	}
+	if err := sdk.VerifyAddressFormat(operator); err != nil {
 		return errorsmod.Wrapf(err, "discovered invalid validator address for orchestrator %v", orchestrator)
 	}
 
-	ethAddressFromStore, found := k.GetEthAddressByValidator(ctx, sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator())))
+	ethAddressFromStore, found := k.GetEthAddressByValidator(ctx, operator)
 	if !found {
 		return errorsmod.Wrap(types.ErrEmpty, "no eth address set for validator")
 	}

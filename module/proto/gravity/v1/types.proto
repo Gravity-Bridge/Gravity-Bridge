@@ -18,8 +18,10 @@ message Valset {
   uint64 nonce = 1;
   repeated BridgeValidator members = 2 [ (gogoproto.nullable) = false ];
   uint64 height = 3;
-  string reward_amount = 4
-      [ (gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false ];
+  string reward_amount = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
   // the reward token in it's Ethereum hex address representation
   string reward_token = 5;
 }

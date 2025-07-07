@@ -17,7 +17,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -101,9 +101,9 @@ func replaceStakeWithGrav(genState *GenesisState, cdc codec.Codec) {
 	if govGenesis == nil {
 		panic("Nil gov genesis")
 	}
-	var govGenState govv1beta1.GenesisState
+	var govGenState govv1.GenesisState
 	cdc.MustUnmarshalJSON(govGenesis, &govGenState)
-	govGenState.DepositParams.MinDeposit[0].Denom = config.NativeTokenDenom
+	govGenState.Params.MinDeposit[0].Denom = config.NativeTokenDenom
 	(*genState)[govtypes.ModuleName] = cdc.MustMarshalJSON(&govGenState)
 
 	mintGenesis := (*genState)[minttypes.ModuleName]

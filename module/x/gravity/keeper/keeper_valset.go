@@ -269,7 +269,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	// TODO someone with in depth info on Cosmos staking should determine
 	// if this is doing what I think it's doing
 	for _, validator := range validators {
-		val := sdk.ValAddress(sdk.MustAccAddressFromBech32(validator.GetOperator()))
+		val, err := sdk.ValAddressFromBech32(validator.GetOperator())
 		if err := sdk.VerifyAddressFormat(val); err != nil {
 			return types.Valset{}, errorsmod.Wrap(err, types.ErrInvalidValAddress.Error())
 		}

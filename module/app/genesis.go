@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"cosmossdk.io/log"
+	simappparams "cosmossdk.io/simapp/params"
 	dbm "github.com/cosmos/cosmos-db"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 )
@@ -19,7 +20,17 @@ type GenesisState map[string]json.RawMessage
 
 // NewDefaultGenesisState generates the default state for the application.
 func NewDefaultGenesisState() GenesisState {
-	tempApp := NewGravityApp(
+	tempApp := tempGravity()
+	return tempApp.DefaultGenesis()
+}
+
+func NewEncodingConfig() simappparams.EncodingConfig {
+	tempApp := tempGravity()
+	return tempApp.EncodingConfig
+}
+
+func tempGravity() *Gravity {
+	return NewGravityApp(
 		log.NewNopLogger(),
 		dbm.NewMemDB(),
 		nil,
@@ -29,5 +40,4 @@ func NewDefaultGenesisState() GenesisState {
 		0,
 		simtestutil.NewAppOptionsWithFlagHome(DefaultNodeHome),
 	)
-	return tempApp.DefaultGenesis()
 }

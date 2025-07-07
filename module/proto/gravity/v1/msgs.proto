@@ -1,6 +1,7 @@
 syntax = "proto3";
 package gravity.v1;
 import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "gravity/v1/types.proto";
@@ -10,6 +11,8 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 
 // Msg defines the state transitions possible within gravity
 service Msg {
+  option (cosmos.msg.v1.service) = true;
+
   rpc ValsetConfirm(MsgValsetConfirm) returns (MsgValsetConfirmResponse) {
     option (google.api.http).post = "/gravity/v1/valset_confirm";
   }
@@ -195,8 +198,10 @@ message MsgSendToCosmosClaim {
   uint64 event_nonce = 1;
   uint64 eth_block_height = 2;
   string token_contract = 3;
-  string amount = 4
-      [ (gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false ];
+  string amount = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
   string ethereum_sender = 5;
   string cosmos_receiver = 6;
   string orchestrator = 7;
@@ -264,8 +269,10 @@ message MsgValsetUpdatedClaim {
   uint64 valset_nonce = 2;
   uint64 eth_block_height = 3;
   repeated BridgeValidator members = 4 [ (gogoproto.nullable) = false ];
-  string reward_amount = 5
-      [ (gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false ];
+  string reward_amount = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
   string reward_token = 6;
   string orchestrator = 7;
 }

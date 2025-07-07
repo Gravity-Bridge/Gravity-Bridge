@@ -14,6 +14,7 @@ import (
 	"cosmossdk.io/x/tx/signing"
 	client "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -25,6 +26,7 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/gogoproto/proto"
 
 	eip712signer "github.com/ethereum/go-ethereum/signer/core/apitypes"
 	ethante "github.com/evmos/ethermint/app/ante"
@@ -316,10 +318,21 @@ func SignEip712(
 
 // This is a helper function used to convert a Tx (as signData) to TypedData derived from the msg type (needed for EIP712 signing)
 func CreateTypedData(chainID uint64, msg sdk.Msg, signData []byte, from sdk.AccAddress) (eip712signer.TypedData, error) {
-	registry := codectypes.NewInterfaceRegistry()
-	etherminttypes.RegisterInterfaces(registry)
-	cryptocodec.RegisterInterfaces(registry)
-	ethermintCodec := codec.NewProtoCodec(registry)
+	signingOptions := signing.Options{
+		AddressCodec: address.Bech32Codec{
+			Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
+		},
+		ValidatorAddressCodec: address.Bech32Codec{
+			Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix(),
+		},
+	}
+	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
+		ProtoFiles:     proto.HybridResolver,
+		SigningOptions: signingOptions,
+	})
+	etherminttypes.RegisterInterfaces(interfaceRegistry)
+	cryptocodec.RegisterInterfaces(interfaceRegistry)
+	ethermintCodec := codec.NewProtoCodec(interfaceRegistry)
 
 	return eip712.LegacyWrapTxToTypedData(
 		ethermintCodec,

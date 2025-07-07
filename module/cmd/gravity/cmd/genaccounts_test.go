@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	genutiltest "github.com/cosmos/cosmos-sdk/x/genutil/client/testutil"
@@ -59,7 +59,7 @@ func TestAddGenesisAccountCmd(t *testing.T) {
 			cfg, err := genutiltest.CreateDefaultCometConfig(home)
 			require.NoError(t, err)
 
-			encodingConfig := testutil.MakeTestEncodingConfig()
+			encodingConfig := app.NewEncodingConfig()
 			err = genutiltest.ExecInitCmd(testMbm, home, encodingConfig.Codec)
 			require.NoError(t, err)
 

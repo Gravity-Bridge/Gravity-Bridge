@@ -27,7 +27,10 @@ func (k Keeper) Attest(
 	if !found {
 		panic("Could not find ValAddr for delegate key, should be checked by now")
 	}
-	valAddr := sdk.ValAddress(sdk.MustAccAddressFromBech32(val.GetOperator()))
+	valAddr, err := sdk.ValAddressFromBech32(val.GetOperator())
+	if err != nil {
+		panic(fmt.Errorf("Failed to parse validator operator address: %w", err))
+	}
 	if err := sdk.VerifyAddressFormat(valAddr); err != nil {
 		return nil, errorsmod.Wrap(err, "invalid orchestrator validator address")
 	}

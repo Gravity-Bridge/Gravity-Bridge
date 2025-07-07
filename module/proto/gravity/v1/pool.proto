@@ -10,8 +10,10 @@ message IDSet { repeated uint64 ids = 1; }
 
 message BatchFees {
   string token = 1;
-  string total_fees = 2
-      [ (gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false ];
+  string total_fees = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
   uint64 tx_count = 3;
 }
 

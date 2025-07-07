@@ -5,18 +5,18 @@ import (
 )
 
 const (
-	// bech32PrefixAccAddr defines the bech32 prefix of an account's address
-	bech32PrefixAccAddr = "gravity"
-	// bech32PrefixAccPub defines the bech32 prefix of an account's public key
-	bech32PrefixAccPub = "gravitypub"
-	// bech32PrefixValAddr defines the bech32 prefix of a validator's operator address
-	bech32PrefixValAddr = "gravityvaloper"
-	// bech32PrefixValPub defines the bech32 prefix of a validator's operator public key
-	bech32PrefixValPub = "gravityvaloperpub"
-	// bech32PrefixConsAddr defines the bech32 prefix of a consensus node address
-	bech32PrefixConsAddr = "gravityvalcons"
-	// bech32PrefixConsPub defines the bech32 prefix of a consensus node public key
-	bech32PrefixConsPub = "gravityvalconspub"
+	// Bech32PrefixAccAddr defines the bech32 prefix of an account's address
+	Bech32PrefixAccAddr = "gravity"
+	// Bech32PrefixAccPub defines the bech32 prefix of an account's public key
+	Bech32PrefixAccPub = "gravitypub"
+	// Bech32PrefixValAddr defines the bech32 prefix of a validator's operator address
+	Bech32PrefixValAddr = "gravityvaloper"
+	// Bech32PrefixValPub defines the bech32 prefix of a validator's operator public key
+	Bech32PrefixValPub = "gravityvaloperpub"
+	// Bech32PrefixConsAddr defines the bech32 prefix of a consensus node address
+	Bech32PrefixConsAddr = "gravityvalcons"
+	// Bech32PrefixConsPub defines the bech32 prefix of a consensus node public key
+	Bech32PrefixConsPub = "gravityvalconspub"
 
 	// The native token, useful in situations where we do not have access to the sdk Context
 	NativeTokenDenom = "ugraviton"
@@ -38,8 +38,8 @@ var (
 
 func init() {
 	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(bech32PrefixAccAddr, bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(bech32PrefixValAddr, bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(bech32PrefixConsAddr, bech32PrefixConsPub)
+	config.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
+	config.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)
+	config.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
 	config.Seal()
 }
