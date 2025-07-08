@@ -12,13 +12,16 @@ import (
 
 	"cosmossdk.io/log"
 	simappparams "cosmossdk.io/simapp/params"
+	confixcmd "cosmossdk.io/tools/confix/cmd"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/client/pruning"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
+	"github.com/cosmos/cosmos-sdk/client/snapshot"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -152,7 +155,11 @@ func Execute(rootCmd *cobra.Command) error {
 	return executor.ExecuteContext(ctx)
 }
 
-func initRootCmd(rootCmd *cobra.Command, encodingConfig simappparams.EncodingConfig, initClientCtx client.Context) {
+func initRootCmd(
+	rootCmd *cobra.Command,
+	encodingConfig simappparams.EncodingConfig,
+	initClientCtx client.Context,
+) {
 
 	var tempApp = app.TemporaryApp()
 	// TODO: Autocli here
@@ -160,13 +167,24 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig simappparams.EncodingCon
 		genutilcli.InitCmd(*tempApp.ModuleBasicManager, app.DefaultNodeHome),
 		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.MigrateGenesisCmd(genutilcli.MigrationMap),
-		GenTxCmd(*tempApp.ModuleBasicManager, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
+		genutilcli.GenTxCmd(
+			*tempApp.ModuleBasicManager,
+			encodingConfig.TxConfig,
+			banktypes.GenesisBalancesIterator{},
+			app.DefaultNodeHome,
+			encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec(),
+		),
+		// TODO: What are the differences between upstream and our gentxcmd impl?
+		// GenTxCmd(*tempApp.ModuleBasicManager, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.ValidateGenesisCmd(*tempApp.ModuleBasicManager),
 		AddGenesisAccountCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		testnetCmd(*tempApp.ModuleBasicManager, banktypes.GenesisBalancesIterator{}),
 		debug.Cmd(),
 		MigrateGravityGenesisCmd(),
+		confixcmd.ConfigCommand(),
+		pruning.Cmd(newApp, app.DefaultNodeHome),
+		snapshot.Cmd(newApp),
 	)
 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, createSimappAndExport, addModuleInitFlags)
