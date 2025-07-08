@@ -36,7 +36,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Long:      "Get the auction for a specific token denom.",
 				},
 				{
-					RpcMethod: "AllAuctionById",
+					RpcMethod: "AuctionById",
 					Use:       "auctions-by-id [id]",
 					Short:     "Get auction by id",
 					Long:      "Get the auction with a particular id.",
