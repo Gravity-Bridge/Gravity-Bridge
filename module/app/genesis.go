@@ -20,16 +20,16 @@ type GenesisState map[string]json.RawMessage
 
 // NewDefaultGenesisState generates the default state for the application.
 func NewDefaultGenesisState() GenesisState {
-	tempApp := tempGravity()
+	tempApp := TemporaryApp()
 	return tempApp.DefaultGenesis()
 }
 
 func NewEncodingConfig() simappparams.EncodingConfig {
-	tempApp := tempGravity()
+	tempApp := TemporaryApp()
 	return tempApp.EncodingConfig
 }
 
-func tempGravity() *Gravity {
+func TemporaryApp() *Gravity {
 	return NewGravityApp(
 		log.NewNopLogger(),
 		dbm.NewMemDB(),
