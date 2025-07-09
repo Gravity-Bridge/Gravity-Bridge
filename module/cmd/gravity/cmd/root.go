@@ -169,15 +169,15 @@ func initRootCmd(
 		genutilcli.InitCmd(*tempApp.ModuleBasicManager, app.DefaultNodeHome),
 		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.MigrateGenesisCmd(genutilcli.MigrationMap),
-		genutilcli.GenTxCmd(
-			*tempApp.ModuleBasicManager,
-			encodingConfig.TxConfig,
-			banktypes.GenesisBalancesIterator{},
-			app.DefaultNodeHome,
-			encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec(),
-		),
+		// genutilcli.GenTxCmd(
+		// 	*tempApp.ModuleBasicManager,
+		// 	encodingConfig.TxConfig,
+		// 	banktypes.GenesisBalancesIterator{},
+		// 	app.DefaultNodeHome,
+		// 	encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec(),
+		// ),
 		// TODO: What are the differences between upstream and our gentxcmd impl?
-		// GenTxCmd(*tempApp.ModuleBasicManager, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
+		GenTxCmd(*tempApp.ModuleBasicManager, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.ValidateGenesisCmd(*tempApp.ModuleBasicManager),
 		AddGenesisAccountCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
