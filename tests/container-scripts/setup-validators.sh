@@ -93,8 +93,8 @@ $BIN keys add $ARGS validator$i 2>> /validator-phrases
 $BIN keys add $ARGS orchestrator$i 2>> /orchestrator-phrases
 $BIN eth_keys add >> /validator-eth-keys
 
-VALIDATOR_KEY=$($BIN keys show validator$i -a $ARGS)
-ORCHESTRATOR_KEY=$($BIN keys show orchestrator$i -a $ARGS)
+VALIDATOR_KEY=$($BIN keys show validator$i --address $ARGS)
+ORCHESTRATOR_KEY=$($BIN keys show orchestrator$i --address $ARGS)
 # move the genesis in
 mkdir -p /validator$i/config/
 mv /genesis.json /validator$i/config/genesis.json
@@ -103,7 +103,7 @@ $BIN add-genesis-account $ARGS $ORCHESTRATOR_KEY $ALLOCATION
 
 # Add a vesting account
 $BIN keys add $ARGS vesting$i 2>> /vesting-phrases
-VESTING_KEY=$($BIN keys show vesting$i -a $ARGS)
+VESTING_KEY=$($BIN keys show vesting$i --address $ARGS)
 $BIN add-genesis-account $ARGS $VESTING_KEY --vesting-amount $VESTING_AMOUNT --vesting-start-time $START_VESTING --vesting-end-time $END_VESTING $VESTING_AMOUNT
 
 # move the genesis back out
@@ -116,7 +116,7 @@ do
 cp /genesis.json /validator$i/config/genesis.json
 GAIA_HOME="--home /validator$i"
 ARGS="$GAIA_HOME --keyring-backend test"
-ORCHESTRATOR_KEY=$($BIN keys show orchestrator$i -a $ARGS)
+ORCHESTRATOR_KEY=$($BIN keys show orchestrator$i --address $ARGS)
 ETHEREUM_KEY=$(grep address /validator-eth-keys | sed -n "$i"p | sed 's/.*://')
 # the /8 containing 7.7.7.7 is assigned to the DOD and never routable on the public internet
 # we're using it in private to prevent gaia from blacklisting it as unroutable
