@@ -27,6 +27,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -160,9 +161,10 @@ func initRootCmd(
 	encodingConfig simappparams.EncodingConfig,
 	initClientCtx client.Context,
 ) {
+	cfg := sdk.GetConfig()
+	cfg.Seal()
 
 	var tempApp = app.TemporaryApp()
-	// TODO: Autocli here
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(*tempApp.ModuleBasicManager, app.DefaultNodeHome),
 		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
@@ -199,6 +201,7 @@ func initRootCmd(
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
+		server.StatusCommand(),
 		queryCommand(),
 		txCommand(),
 		keys.Commands(),
