@@ -90,11 +90,11 @@ ARGS="$GAIA_HOME --keyring-backend test"
 
 # Generate a validator key, orchestrator key, and eth key for each validator
 $BIN keys add $ARGS validator$i 2>> /validator-phrases
+VALIDATOR_KEY=$($BIN keys show validator$i --address $ARGS)
 $BIN keys add $ARGS orchestrator$i 2>> /orchestrator-phrases
+ORCHESTRATOR_KEY=$($BIN keys show orchestrator$i --address $ARGS)
 $BIN eth_keys add >> /validator-eth-keys
 
-VALIDATOR_KEY=$($BIN keys show validator$i --address $ARGS)
-ORCHESTRATOR_KEY=$($BIN keys show orchestrator$i --address $ARGS)
 # move the genesis in
 mkdir -p /validator$i/config/
 mv /genesis.json /validator$i/config/genesis.json
