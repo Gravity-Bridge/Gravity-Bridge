@@ -52,7 +52,7 @@ var InvCheckPeriodPrimes = []uint{17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61
 // NewRootCmd creates a new root command for simd. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, simappparams.EncodingConfig) {
-	encodingConfig := app.MakeEncodingConfig()
+	encodingConfig := app.NewEncodingConfig()
 	// nolint: exhaustruct
 	initClientCtx := client.Context{}.
 		WithCodec(encodingConfig.Codec).
