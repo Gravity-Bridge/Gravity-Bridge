@@ -9,20 +9,21 @@
             "type": "go",
             "request": "launch",
             "mode": "exec",
-            "program": "/go/bin/gravityd",
+            "program": "../../../bin/gravity",
             "showLog": true,
             "args": [
-                "--home",
-                "/validator1",
-                "--address",
-                "tcp://7.7.7.1:26655",
-                "--rpc.laddr",
-                "tcp://7.7.7.1:26657",
-                "--p2p.laddr",
-                "tcp://7.7.7.1:26656",
-                "--log_level",
-                "info",
-                "start"
+    "gentx",
+	"--keyring-backend",
+	"test",
+	"--moniker",
+	"validator1",
+	"--chain-id=gravity-test-1",
+	"--ip",
+	"7.7.7.1",
+	"validator1",
+	"500000000ugraviton",
+	"0xBb5FBCAD8d7c4415f2952Ec62F9eFD30eb557883",
+	"gravity12ev9hv4m025ku09h75gzprqtpnpuz0c5ctyj6a"
             ]
         }
     ]

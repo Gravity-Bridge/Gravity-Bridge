@@ -6,10 +6,6 @@ package types
 import (
 	context "context"
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -17,6 +13,9 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -3052,7 +3051,7 @@ func (*UnimplementedQueryServer) GetPendingIbcAutoForwards(ctx context.Context, 
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
-	s.RegisterService(&Query_serviceDesc, srv)
+	s.RegisterService(&_Query_serviceDesc, srv)
 }
 
 func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -3523,7 +3522,7 @@ func _Query_GetPendingIbcAutoForwards_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-var Query_serviceDesc = grpc.ServiceDesc{
+var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gravity.v1.Query",
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{

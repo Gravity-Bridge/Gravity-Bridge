@@ -80,6 +80,7 @@ service Msg {
 // This is a hex encoded 0x Ethereum public key that will be used by this
 // validator on Ethereum
 message MsgSetOrchestratorAddress {
+  option (cosmos.msg.v1.signer) = "validator";
   string validator = 1;
   string orchestrator = 2;
   string eth_address = 3;
@@ -103,6 +104,7 @@ message MsgSetOrchestratorAddressResponse {}
 // chain store and submit them to Ethereum to update the validator set
 // -------------
 message MsgValsetConfirm {
+  option (cosmos.msg.v1.signer) = "orchestrator";
   uint64 nonce = 1;
   string orchestrator = 2;
   string eth_address = 3;
@@ -128,6 +130,7 @@ message MsgValsetConfirmResponse {}
 // certain percentage of the AMOUNT, as determined by governance.
 // This Msg will be rejected if CHAIN_FEE is insufficient.
 message MsgSendToEth {
+  option (cosmos.msg.v1.signer) = "sender";
   string sender = 1;
   string eth_dest = 2;
   cosmos.base.v1beta1.Coin amount = 3 [ (gogoproto.nullable) = false ];
@@ -147,6 +150,7 @@ message MsgSendToEthResponse {}
 // can finally submit the batch
 // -------------
 message MsgRequestBatch {
+  option (cosmos.msg.v1.signer) = "sender";
   string sender = 1;
   string denom = 2;
 }
@@ -162,6 +166,7 @@ message MsgRequestBatchResponse {}
 // as well as an Ethereum signature over this batch by the validator
 // -------------
 message MsgConfirmBatch {
+  option (cosmos.msg.v1.signer) = "orchestrator";
   uint64 nonce = 1;
   string token_contract = 2;
   string eth_signer = 3;
@@ -180,6 +185,7 @@ message MsgConfirmBatchResponse {}
 // as well as an Ethereum signature over this batch by the validator
 // -------------
 message MsgConfirmLogicCall {
+  option (cosmos.msg.v1.signer) = "orchestrator";
   string invalidation_id = 1;
   uint64 invalidation_nonce = 2;
   string eth_signer = 3;
@@ -195,6 +201,7 @@ message MsgConfirmLogicCallResponse {}
 // issued to the Cosmos address in question
 // -------------
 message MsgSendToCosmosClaim {
+  option (cosmos.msg.v1.signer) = "orchestrator";
   uint64 event_nonce = 1;
   uint64 eth_block_height = 2;
   string token_contract = 3;
@@ -215,6 +222,7 @@ message MsgSendToCosmosClaimResponse {}
 // SendToCosmos.EventNonce The funds in the queue will be sent to a local
 // gravity-prefixed address if IBC transfer is not possible
 message MsgExecuteIbcAutoForwards {
+  option (cosmos.msg.v1.signer) = "executor";
   uint64 forwards_to_clear =
       1; // How many queued forwards to clear, be careful about gas limits
   string executor = 2; // This message's sender
@@ -225,6 +233,7 @@ message MsgExecuteIbcAutoForwardsResponse {}
 // BatchSendToEthClaim claims that a batch of send to eth
 // operations on the bridge contract was executed.
 message MsgBatchSendToEthClaim {
+  option (cosmos.msg.v1.signer) = "orchestrator";
   uint64 event_nonce = 1;
   uint64 eth_block_height = 2;
   uint64 batch_nonce = 3;
@@ -238,6 +247,7 @@ message MsgBatchSendToEthClaimResponse {}
 // to learn about an ERC20 that someone deployed
 // to represent a Cosmos asset
 message MsgERC20DeployedClaim {
+  option (cosmos.msg.v1.signer) = "orchestrator";
   uint64 event_nonce = 1;
   uint64 eth_block_height = 2;
   string cosmos_denom = 3;
@@ -253,6 +263,7 @@ message MsgERC20DeployedClaimResponse {}
 // This informs the Cosmos module that a logic
 // call has been executed
 message MsgLogicCallExecutedClaim {
+  option (cosmos.msg.v1.signer) = "orchestrator";
   uint64 event_nonce = 1;
   uint64 eth_block_height = 2;
   bytes invalidation_id = 3;
@@ -265,6 +276,7 @@ message MsgLogicCallExecutedClaimResponse {}
 // This informs the Cosmos module that a validator
 // set has been updated.
 message MsgValsetUpdatedClaim {
+  option (cosmos.msg.v1.signer) = "orchestrator";
   uint64 event_nonce = 1;
   uint64 valset_nonce = 2;
   uint64 eth_block_height = 3;
@@ -283,6 +295,7 @@ message MsgValsetUpdatedClaimResponse {}
 // to cancel a given MsgSendToEth and recieve a refund
 // of the tokens
 message MsgCancelSendToEth {
+  option (cosmos.msg.v1.signer) = "sender";
   uint64 transaction_id = 1;
   string sender = 2;
 }
@@ -294,6 +307,7 @@ message MsgCancelSendToEthResponse {}
 // existed on the Cosmos chain.
 // Subject contains the batch, valset, or logic call.
 message MsgSubmitBadSignatureEvidence {
+  option (cosmos.msg.v1.signer) = "sender";
   google.protobuf.Any subject = 1
       [ (cosmos_proto.accepts_interface) = "EthereumSigned" ];
   string signature = 2;

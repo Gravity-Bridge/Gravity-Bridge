@@ -16,7 +16,6 @@ import (
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 
 	cfg "github.com/cometbft/cometbft/config"
-	tmos "github.com/cometbft/cometbft/libs/os"
 	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -35,6 +34,7 @@ import (
 	bankexported "github.com/cosmos/cosmos-sdk/x/bank/exported"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/client/cli"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -72,7 +72,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
-			clientCtx, err := client.GetClientQueryContext(cmd)
+			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
@@ -114,7 +114,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 				}
 			}
 
-			genDoc, err := tmtypes.GenesisDocFromFile(config.GenesisFile())
+			genDoc, err := genutiltypes.AppGenesisFromFile(config.GenesisFile())
 			if err != nil {
 				return errors.Wrapf(err, "failed to read genesis doc file %s", config.GenesisFile())
 			}
@@ -219,6 +219,12 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			w := bytes.NewBuffer([]byte{})
 			clientCtx = clientCtx.WithOutput(w)
 
+			if m, ok := msg.(sdk.HasValidateBasic); ok {
+				if err := m.ValidateBasic(); err != nil {
+					return err
+				}
+			}
+
 			if err = txBldr.PrintUnsignedTx(clientCtx, msgs...); err != nil {
 				return errors.Wrap(err, "failed to print unsigned std tx")
 			}
@@ -270,7 +276,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 
 func makeOutputFilepath(rootDir, nodeID string) (string, error) {
 	writePath := filepath.Join(rootDir, "config", "gentx")
-	if err := tmos.EnsureDir(writePath, 0700); err != nil {
+	if err := os.MkdirAll(writePath, 0o700); err != nil {
 		return "", err
 	}
 
@@ -292,7 +298,7 @@ func readUnsignedGenTxFile(clientCtx client.Context, r io.Reader) (sdk.Tx, error
 }
 
 func writeSignedGenTx(clientCtx client.Context, outputDocument string, tx sdk.Tx) error {
-	outputFile, err := os.OpenFile(outputDocument, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+	outputFile, err := os.OpenFile(outputDocument, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}

@@ -22,6 +22,7 @@ service Msg {
 //
 // Additionally, all bids must meet or exceed `min_bid_amount`
 message MsgBid {
+  option (cosmos.msg.v1.signer) = "bidder";
   uint64 auction_id = 1; // ID of the auction to bid on
   string bidder = 2;     // Address of the bidder
   uint64 amount = 3;     // Amount of the bid

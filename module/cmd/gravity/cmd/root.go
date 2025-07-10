@@ -1,16 +1,22 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/log"
+	"cosmossdk.io/math/unsafe"
 	simappparams "cosmossdk.io/simapp/params"
 	confixcmd "cosmossdk.io/tools/confix/cmd"
 	dbm "github.com/cosmos/cosmos-db"
@@ -18,6 +24,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/pruning"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -28,12 +35,18 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	"github.com/cosmos/go-bip39"
 
+	cfg "github.com/cometbft/cometbft/config"
 	tmcfg "github.com/cometbft/cometbft/config"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 
@@ -166,7 +179,7 @@ func initRootCmd(
 
 	var tempApp = app.TemporaryApp()
 	rootCmd.AddCommand(
-		genutilcli.InitCmd(*tempApp.ModuleBasicManager, app.DefaultNodeHome),
+		InitCmd(*tempApp.ModuleBasicManager, app.DefaultNodeHome),
 		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.MigrateGenesisCmd(genutilcli.MigrationMap),
 		// genutilcli.GenTxCmd(
@@ -316,4 +329,138 @@ func createSimappAndExport(
 	}
 
 	return gravity.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+}
+
+const (
+	// FlagOverwrite defines a flag to overwrite an existing genesis JSON file.
+	FlagOverwrite = "overwrite"
+
+	// FlagSeed defines a flag to initialize the private validator key from a specific seed.
+	FlagRecover = "recover"
+
+	// FlagDefaultBondDenom defines the default denom to use in the genesis file.
+	FlagDefaultBondDenom = "default-denom"
+)
+
+// InitCmd returns a command that initializes all files needed for Tendermint
+// and the respective application.
+func InitCmd(mbm module.BasicManager, defaultNodeHome string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "init [moniker]",
+		Short: "Initialize private validator, p2p, genesis, and application configuration files",
+		Long:  `Initialize validators's and node's configuration files.`,
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			cdc := clientCtx.Codec
+
+			serverCtx := server.GetServerContextFromCmd(cmd)
+			config := serverCtx.Config
+			config.SetRoot(clientCtx.HomeDir)
+
+			chainID, _ := cmd.Flags().GetString(flags.FlagChainID)
+			switch {
+			case chainID != "":
+			case clientCtx.ChainID != "":
+				chainID = clientCtx.ChainID
+			default:
+				chainID = fmt.Sprintf("test-chain-%v", unsafe.Str(6))
+			}
+
+			// Get bip39 mnemonic
+			var mnemonic string
+			recover, _ := cmd.Flags().GetBool(FlagRecover)
+			if recover {
+				inBuf := bufio.NewReader(cmd.InOrStdin())
+				value, err := input.GetString("Enter your bip39 mnemonic", inBuf)
+				if err != nil {
+					return err
+				}
+
+				mnemonic = value
+				if !bip39.IsMnemonicValid(mnemonic) {
+					return errors.New("invalid mnemonic")
+				}
+			}
+
+			// Get initial height
+			initHeight, _ := cmd.Flags().GetInt64(flags.FlagInitHeight)
+			if initHeight < 1 {
+				initHeight = 1
+			}
+
+			nodeID, _, err := genutil.InitializeNodeValidatorFilesFromMnemonic(config, mnemonic)
+			if err != nil {
+				return err
+			}
+
+			config.Moniker = args[0]
+
+			genFile := config.GenesisFile()
+			overwrite, _ := cmd.Flags().GetBool(FlagOverwrite)
+			defaultDenom, _ := cmd.Flags().GetString(FlagDefaultBondDenom)
+
+			// use os.Stat to check if the file exists
+			_, err = os.Stat(genFile)
+			if !overwrite && !os.IsNotExist(err) {
+				return fmt.Errorf("genesis.json file already exists: %v", genFile)
+			}
+
+			// Overwrites the SDK default denom for side-effects
+			if defaultDenom != "" {
+				sdk.DefaultBondDenom = defaultDenom
+			}
+			appGenState := mbm.DefaultGenesis(cdc)
+
+			appState, err := json.MarshalIndent(appGenState, "", " ")
+			if err != nil {
+				return errorsmod.Wrap(err, "Failed to marshal default genesis state")
+			}
+
+			appGenesis := &genutiltypes.AppGenesis{}
+			if _, err := os.Stat(genFile); err != nil {
+				if !os.IsNotExist(err) {
+					return err
+				}
+			} else {
+				appGenesis, err = genutiltypes.AppGenesisFromFile(genFile)
+				if err != nil {
+					return errorsmod.Wrap(err, "Failed to read genesis doc from file")
+				}
+			}
+
+			appGenesis.AppName = version.AppName
+			appGenesis.AppVersion = version.Version
+			appGenesis.ChainID = chainID
+			appGenesis.AppState = appState
+			appGenesis.InitialHeight = initHeight
+			appGenesis.Consensus = &genutiltypes.ConsensusGenesis{
+				Validators: nil,
+			}
+
+			bytes, err := json.MarshalIndent(appGenesis, "", "  ")
+			if err != nil {
+				return errorsmod.Wrap(err, "Failed to marshal genesis doc")
+			}
+			println("Genesis doc:", string(bytes))
+
+			if err = genutil.ExportGenesisFile(appGenesis, genFile); err != nil {
+				return errorsmod.Wrap(err, "Failed to export genesis file")
+			}
+
+			toPrint := newPrintInfo(config.Moniker, chainID, nodeID, "", appState)
+
+			cfg.WriteConfigFile(filepath.Join(config.RootDir, "config", "config.toml"), config)
+			return displayInfo(toPrint)
+		},
+	}
+
+	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "node's home directory")
+	cmd.Flags().BoolP(FlagOverwrite, "o", false, "overwrite the genesis.json file")
+	cmd.Flags().Bool(FlagRecover, false, "provide seed phrase to recover existing key instead of creating")
+	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
+	cmd.Flags().String(FlagDefaultBondDenom, "", "genesis file default denomination, if left blank default value is 'stake'")
+	cmd.Flags().Int64(flags.FlagInitHeight, 1, "specify the initial block height at genesis")
+
+	return cmd
 }
