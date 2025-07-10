@@ -110,7 +110,7 @@ $BIN add-genesis-account $ARGS $VESTING_KEY --vesting-amount $VESTING_AMOUNT --v
 mv /validator$i/config/genesis.json /genesis.json
 done
 
-
+cp /validator1/config/genesis.json /gravity/failing-genesis.json
 for i in $(seq 1 $NODES);
 do
 cp /genesis.json /validator$i/config/genesis.json
