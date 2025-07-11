@@ -48,12 +48,13 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 
 	// check the following, all should be validated in validate basic
 	// check the following, all should be validated in validate basic
-	val, e1 := sdk.ValAddressFromBech32(msg.Validator)
+	valAcc, e1 := sdk.AccAddressFromBech32(msg.Validator)
 	orch, e2 := sdk.AccAddressFromBech32(msg.Orchestrator)
 	ethAddr, e3 := types.NewEthAddress(msg.EthAddress)
 	if e1 != nil || e2 != nil || e3 != nil {
 		return nil, errorsmod.Wrap(err, "Key not valid")
 	}
+	val := sdk.ValAddress(valAcc)
 
 	// ensure that the validator exists
 	validator, err := k.Keeper.StakingKeeper.Validator(ctx, val)

@@ -16,7 +16,6 @@ import (
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 
 	cfg "github.com/cometbft/cometbft/config"
-	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -26,6 +25,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cosmosruntime "github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -203,7 +203,7 @@ $ %s gentx my-key-name 1000000stake 0x033030FEeBd93E3178487c35A9c8cA80874353C9 c
 			}
 
 			delegateKeySetMsg := &gravitytypes.MsgSetOrchestratorAddress{
-				Validator:    sdk.ValAddress(addr).String(),
+				Validator:    addr.String(),
 				Orchestrator: orchAddress.String(),
 				EthAddress:   ethAddress,
 			}
@@ -317,7 +317,7 @@ func writeSignedGenTx(clientCtx client.Context, outputDocument string, tx sdk.Tx
 const flagGenTxDir = "gentx-dir"
 
 // CollectGenTxsCmd - return the cobra command to collect genesis transactions
-func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeHome string) *cobra.Command {
+func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeHome string, validator types.MessageValidator, valAddrCodec cosmosruntime.ValidatorAddressCodec) *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "collect-gentxs",
@@ -344,7 +344,7 @@ func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeH
 				return errors.Wrap(err, "failed to initialize node validator files")
 			}
 
-			genDoc, err := tmtypes.GenesisDocFromFile(config.GenesisFile())
+			appGenesis, err := genutiltypes.AppGenesisFromFile(config.GenesisFile())
 			if err != nil {
 				return errors.Wrap(err, "failed to read genesis doc from file")
 			}
@@ -358,12 +358,12 @@ func CollectGenTxsCmd(genBalIterator types.GenesisBalancesIterator, defaultNodeH
 				genTxsDir = filepath.Join(config.RootDir, "config", "gentx")
 			}
 
-			toPrint := newPrintInfo(config.Moniker, genDoc.ChainID, nodeID, genTxsDir, json.RawMessage(""))
-			initCfg := types.NewInitConfig(genDoc.ChainID, genTxsDir, nodeID, valPubKey)
+			toPrint := newPrintInfo(config.Moniker, appGenesis.ChainID, nodeID, genTxsDir, json.RawMessage(""))
+			initCfg := types.NewInitConfig(appGenesis.ChainID, genTxsDir, nodeID, valPubKey)
 
 			appMessage, err := GenAppStateFromConfig(cdc,
 				clientCtx.TxConfig,
-				config, initCfg, *genDoc, genBalIterator)
+				config, initCfg, *appGenesis, genBalIterator, validator, valAddrCodec)
 			if err != nil {
 				return errors.Wrap(err, "failed to get genesis app state from config")
 			}
@@ -411,12 +411,13 @@ func newPrintInfo(moniker, chainID, nodeID, genTxsDir string, appMessage json.Ra
 
 // GenAppStateFromConfig gets the genesis app state from the config
 func GenAppStateFromConfig(cdc codec.Codec, txEncodingConfig client.TxEncodingConfig,
-	config *cfg.Config, initCfg types.InitConfig, genDoc tmtypes.GenesisDoc, genBalIterator types.GenesisBalancesIterator,
+	config *cfg.Config, initCfg types.InitConfig, genesis genutiltypes.AppGenesis, genBalIterator types.GenesisBalancesIterator,
+	validator types.MessageValidator, valAddrCodec cosmosruntime.ValidatorAddressCodec,
 ) (appState json.RawMessage, err error) {
-
 	// process genesis transactions, else create default genesis.json
 	appGenTxs, persistentPeers, err := CollectTxs(
-		cdc, txEncodingConfig.TxJSONDecoder(), config.Moniker, initCfg.GenTxsDir, genDoc, genBalIterator,
+		cdc, txEncodingConfig.TxJSONDecoder(), config.Moniker, initCfg.GenTxsDir, &genesis, genBalIterator,
+		validator, valAddrCodec,
 	)
 	if err != nil {
 		return appState, err
@@ -431,27 +432,23 @@ func GenAppStateFromConfig(cdc codec.Codec, txEncodingConfig client.TxEncodingCo
 	}
 
 	// create the app state
-	appGenesis, err := types.AppGenesisFromFile(config.GenesisFile())
+	appGenesis, err := types.GenesisStateFromAppGenesis(&genesis)
 	if err != nil {
-		return appState, errors.Wrap(err, "failed to read genesis file")
-	}
-	genesisState, err := types.GenesisStateFromAppGenesis(appGenesis)
-	if err != nil {
-		return appState, errors.Wrap(err, "failed to convert app genesis to genesis state")
+		return appState, errors.Wrap(err, "failed to create genesis state from app genesis")
 	}
 
-	genesisState, err = genutil.SetGenTxsInAppGenesisState(cdc, txEncodingConfig.TxJSONEncoder(), genesisState, appGenTxs)
+	appGenesisState, err := genutil.SetGenTxsInAppGenesisState(cdc, txEncodingConfig.TxJSONEncoder(), appGenesis, appGenTxs)
 	if err != nil {
 		return appState, err
 	}
 
-	appState, err = json.MarshalIndent(genesisState, "", "  ")
+	appState, err = json.MarshalIndent(appGenesisState, "", "  ")
 	if err != nil {
 		return appState, err
 	}
 
-	genDoc.AppState = appState
-	err = genutil.ExportGenesisFile(appGenesis, config.GenesisFile())
+	genesis.AppState = appState
+	err = genutil.ExportGenesisFile(&genesis, config.GenesisFile())
 
 	return appState, err
 }
@@ -459,12 +456,13 @@ func GenAppStateFromConfig(cdc codec.Codec, txEncodingConfig client.TxEncodingCo
 // CollectTxs processes and validates application's genesis Txs and returns
 // the list of appGenTxs, and persistent peers required to generate genesis.json.
 func CollectTxs(cdc codec.Codec, txJSONDecoder sdk.TxDecoder, moniker, genTxsDir string,
-	genDoc tmtypes.GenesisDoc, genBalIterator types.GenesisBalancesIterator,
+	genesis *types.AppGenesis, genBalIterator types.GenesisBalancesIterator,
+	validator types.MessageValidator, valAddrCodec cosmosruntime.ValidatorAddressCodec,
 ) (appGenTxs []sdk.Tx, persistentPeers string, err error) {
 	// prepare a map of all balances in genesis state to then validate
 	// against the validators addresses
 	var appState map[string]json.RawMessage
-	if err := json.Unmarshal(genDoc.AppState, &appState); err != nil {
+	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
 		return appGenTxs, persistentPeers, err
 	}
 
@@ -501,8 +499,8 @@ func CollectTxs(cdc codec.Codec, txJSONDecoder sdk.TxDecoder, moniker, genTxsDir
 			return appGenTxs, persistentPeers, err
 		}
 
-		var genTx sdk.Tx
-		if genTx, err = txJSONDecoder(jsonRawTx); err != nil {
+		genTx, err := types.ValidateAndGetGenTx(jsonRawTx, txJSONDecoder, validator)
+		if err != nil {
 			return appGenTxs, persistentPeers, err
 		}
 
@@ -527,21 +525,22 @@ func CollectTxs(cdc codec.Codec, txJSONDecoder sdk.TxDecoder, moniker, genTxsDir
 		// TODO abstract out staking message validation back to staking
 		msg := msgs[0].(*stakingtypes.MsgCreateValidator)
 
-		// validate delegator and validator addresses and funds against the accounts in the state
-		delAddr := msg.DelegatorAddress
-		valAddr, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
+		// validate validator addresses and funds against the accounts in the state
+		valAddr, err := valAddrCodec.StringToBytes(msg.ValidatorAddress)
 		if err != nil {
 			return appGenTxs, persistentPeers, err
 		}
 
-		delBal, delOk := balancesMap[delAddr]
+		valAccAddr := sdk.AccAddress(valAddr).String()
+
+		delBal, delOk := balancesMap[valAccAddr]
 		if !delOk {
 			_, file, no, ok := runtime.Caller(1)
 			if ok {
 				fmt.Printf("CollectTxs-1, called from %s#%d\n", file, no)
 			}
 
-			return appGenTxs, persistentPeers, fmt.Errorf("account %s balance not in genesis state: %+v", delAddr, balancesMap)
+			return appGenTxs, persistentPeers, fmt.Errorf("account %s balance not in genesis state: %+v", valAccAddr, balancesMap)
 		}
 
 		_, valOk := balancesMap[sdk.AccAddress(valAddr).String()]
@@ -559,8 +558,6 @@ func CollectTxs(cdc codec.Codec, txJSONDecoder sdk.TxDecoder, moniker, genTxsDir
 				delBal.GetAddress(), delBal.GetCoins().AmountOf(msg.Value.Denom), msg.Value.Amount,
 			)
 		}
-
-		// TODO: validate msgdelegatekeys
 
 		// exclude itself from persistent peers
 		if msg.Description.Moniker != moniker {

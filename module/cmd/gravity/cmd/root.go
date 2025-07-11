@@ -29,7 +29,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/pruning"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/client/snapshot"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
@@ -44,15 +43,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/go-bip39"
 
 	cfg "github.com/cometbft/cometbft/config"
-	tmcfg "github.com/cometbft/cometbft/config"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 
 	ethermint "github.com/evmos/ethermint/crypto/hd"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
+	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 // InvCheckPeriodPrimes A collection of all primes in (15, 200), for use with the crisis module's Invariant Check Period
@@ -116,8 +116,8 @@ func NewRootCmd() (*cobra.Command, simappparams.EncodingConfig) {
 
 // initTendermintConfig helps to override default Tendermint Config values.
 // return tmcfg.DefaultConfig if no custom configuration is required for the application.
-func initTendermintConfig() *tmcfg.Config {
-	cfg := tmcfg.DefaultConfig()
+func initTendermintConfig() *cfg.Config {
+	cfg := cfg.DefaultConfig()
 
 	// these values put a higher strain on node memory
 	// cfg.P2P.MaxNumInboundPeers = 100
@@ -180,7 +180,7 @@ func initRootCmd(
 	var tempApp = app.TemporaryApp()
 	rootCmd.AddCommand(
 		InitCmd(*tempApp.ModuleBasicManager, app.DefaultNodeHome),
-		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
+		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome, GravityMessageValidator, encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec()),
 		genutilcli.MigrateGenesisCmd(genutilcli.MigrationMap),
 		// genutilcli.GenTxCmd(
 		// 	*tempApp.ModuleBasicManager,
@@ -315,8 +315,6 @@ func createSimappAndExport(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailAllowedAddrs []string,
 	appOpts servertypes.AppOptions, modulesToExport []string) (servertypes.ExportedApp, error) {
 
-	encCfg := app.MakeEncodingConfig() // Ideally, we would reuse the one created by NewRootCmd.
-	encCfg.Codec = codec.NewProtoCodec(encCfg.InterfaceRegistry)
 	var gravity *app.Gravity
 	if height != -1 {
 		gravity = app.NewGravityApp(logger, db, traceStore, false, map[int64]bool{}, "", uint(1), appOpts)
@@ -463,4 +461,23 @@ func InitCmd(mbm module.BasicManager, defaultNodeHome string) *cobra.Command {
 	cmd.Flags().Int64(flags.FlagInitHeight, 1, "specify the initial block height at genesis")
 
 	return cmd
+}
+
+func GravityMessageValidator(msgs []sdk.Msg) error {
+	if _, ok := msgs[0].(*stakingtypes.MsgCreateValidator); !ok {
+		return fmt.Errorf("unexpected GenTx message type; expected: MsgCreateValidator, got: %T", msgs[0])
+	}
+	if _, ok := msgs[1].(*gravitytypes.MsgSetOrchestratorAddress); !ok {
+		return fmt.Errorf("unexpected GenTx message type; expected: MsgSetOrchestratorAddress, got: %T", msgs[1])
+	}
+
+	for _, msg := range msgs {
+		if m, ok := msg.(sdk.HasValidateBasic); ok {
+			if err := m.ValidateBasic(); err != nil {
+				return fmt.Errorf("invalid GenTx '%s': %w", msgs[0], err)
+			}
+		}
+	}
+
+	return nil
 }

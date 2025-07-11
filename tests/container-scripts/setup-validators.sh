@@ -110,7 +110,6 @@ $BIN add-genesis-account $ARGS $VESTING_KEY --vesting-amount $VESTING_AMOUNT --v
 mv /validator$i/config/genesis.json /genesis.json
 done
 
-cp /validator1/config/genesis.json /gravity/failing-genesis.json
 for i in $(seq 1 $NODES);
 do
 cp /genesis.json /validator$i/config/genesis.json
@@ -121,6 +120,7 @@ ETHEREUM_KEY=$(grep address /validator-eth-keys | sed -n "$i"p | sed 's/.*://')
 # the /8 containing 7.7.7.7 is assigned to the DOD and never routable on the public internet
 # we're using it in private to prevent gaia from blacklisting it as unroutable
 # and allow local pex
+cp /validator$i/config/genesis.json /gravity/failing-genesis.json
 $BIN gentx $ARGS $GAIA_HOME --moniker validator$i --chain-id=$CHAIN_ID --ip 7.7.7.$i validator$i 500000000ugraviton $ETHEREUM_KEY $ORCHESTRATOR_KEY
 # obviously we don't need to copy validator1's gentx to itself
 if [ $i -gt 1 ]; then

@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cast"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	tmjson "github.com/cometbft/cometbft/libs/json"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	dbm "github.com/cosmos/cosmos-db"
 
@@ -404,10 +403,10 @@ func NewGravityApp(
 	legacyAmino := codec.NewLegacyAmino()
 	signingOptions := signing.Options{
 		AddressCodec: address.Bech32Codec{
-			Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
+			Bech32Prefix: gravityconfig.Bech32PrefixAccAddr,
 		},
 		ValidatorAddressCodec: address.Bech32Codec{
-			Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix(),
+			Bech32Prefix: gravityconfig.Bech32PrefixValAddr,
 		},
 	}
 	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
@@ -1043,7 +1042,7 @@ func (app *Gravity) setPostHandler() {
 // simapp. It is useful for tests and clients who do not want to construct the
 // full simapp
 func MakeCodecs() (codec.Codec, *codec.LegacyAmino) {
-	config := MakeEncodingConfig()
+	config := NewEncodingConfig()
 	return config.Codec, config.Amino
 }
 
@@ -1089,7 +1088,7 @@ func (app *Gravity) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
 // InitChainer application update at chain initialization
 func (app *Gravity) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	var genesisState simapp.GenesisState
-	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
+	if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
 
@@ -1137,7 +1136,7 @@ func (app *Gravity) SimulationManager() *module.SimulationManager {
 
 // GetTxConfig implements the TestingApp interface.
 func (app *Gravity) GetTxConfig() client.TxConfig {
-	cfg := MakeEncodingConfig()
+	cfg := NewEncodingConfig()
 	return cfg.TxConfig
 }
 
@@ -1290,9 +1289,9 @@ func (app *Gravity) AutoCliOpts() autocli.AppOptions {
 	return autocli.AppOptions{
 		Modules:               modules,
 		ModuleOptions:         runtimeservices.ExtractAutoCLIOptions(app.ModuleManager.Modules),
-		AddressCodec:          authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
-		ValidatorAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
-		ConsensusAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
+		AddressCodec:          authcodec.NewBech32Codec(gravityconfig.Bech32PrefixAccAddr),
+		ValidatorAddressCodec: authcodec.NewBech32Codec(gravityconfig.Bech32PrefixValAddr),
+		ConsensusAddressCodec: authcodec.NewBech32Codec(gravityconfig.Bech32PrefixConsAddr),
 	}
 }
 
