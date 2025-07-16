@@ -29,14 +29,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/pruning"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/client/snapshot"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtxconfig "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
@@ -88,6 +90,7 @@ func NewRootCmd() (*cobra.Command, simappparams.EncodingConfig) {
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
+			initClientCtx = initClientCtx.WithCmdContext(cmd.Context())
 			initClientCtx, err := client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
 			if err != nil {
 				return err
@@ -96,6 +99,26 @@ func NewRootCmd() (*cobra.Command, simappparams.EncodingConfig) {
 			initClientCtx, err = config.ReadFromClientConfig(initClientCtx)
 			if err != nil {
 				return err
+			}
+
+			// This needs to go after ReadFromClientConfig, as that function
+			// sets the RPC client needed for SIGN_MODE_TEXTUAL. This sign mode
+			// is only available if the client is online.
+			if !initClientCtx.Offline {
+				enabledSignModes := append(tx.DefaultSignModes, signing.SignMode_SIGN_MODE_TEXTUAL)
+				txConfigOpts := tx.ConfigOptions{
+					EnabledSignModes:           enabledSignModes,
+					TextualCoinMetadataQueryFn: authtxconfig.NewGRPCCoinMetadataQueryFn(initClientCtx),
+				}
+				txConfig, err := tx.NewTxConfigWithOptions(
+					initClientCtx.Codec,
+					txConfigOpts,
+				)
+				if err != nil {
+					return err
+				}
+
+				initClientCtx = initClientCtx.WithTxConfig(txConfig)
 			}
 
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
@@ -110,6 +133,15 @@ func NewRootCmd() (*cobra.Command, simappparams.EncodingConfig) {
 	}
 
 	initRootCmd(rootCmd, encodingConfig, initClientCtx)
+
+	// add keyring to autocli opts
+	tempApp := app.TemporaryApp()
+	autoCliOpts := tempApp.AutoCliOpts()
+	autoCliOpts.ClientCtx = initClientCtx
+
+	if err := autoCliOpts.EnhanceRootCommand(rootCmd); err != nil {
+		panic(err)
+	}
 
 	return rootCmd, encodingConfig
 }
@@ -180,41 +212,36 @@ func initRootCmd(
 	var tempApp = app.TemporaryApp()
 	rootCmd.AddCommand(
 		InitCmd(*tempApp.ModuleBasicManager, app.DefaultNodeHome),
-		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome, GravityMessageValidator, encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec()),
-		genutilcli.MigrateGenesisCmd(genutilcli.MigrationMap),
-		// genutilcli.GenTxCmd(
-		// 	*tempApp.ModuleBasicManager,
-		// 	encodingConfig.TxConfig,
-		// 	banktypes.GenesisBalancesIterator{},
-		// 	app.DefaultNodeHome,
-		// 	encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec(),
-		// ),
-		// TODO: What are the differences between upstream and our gentxcmd impl?
-		GenTxCmd(*tempApp.ModuleBasicManager, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
-		genutilcli.ValidateGenesisCmd(*tempApp.ModuleBasicManager),
-		AddGenesisAccountCmd(app.DefaultNodeHome),
-		tmcli.NewCompletionCmd(rootCmd, true),
 		testnetCmd(*tempApp.ModuleBasicManager, banktypes.GenesisBalancesIterator{}),
-		debug.Cmd(),
+		GenTxCmd(*tempApp.ModuleBasicManager, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
+		CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome, GravityMessageValidator, encodingConfig.TxConfig.SigningContext().ValidatorAddressCodec()),
+		// genutilcli.MigrateGenesisCmd(genutilcli.MigrationMap),
+		// genutilcli.ValidateGenesisCmd(*tempApp.ModuleBasicManager),
+		AddGenesisAccountCmd(app.DefaultNodeHome),
 		MigrateGravityGenesisCmd(),
+		// tmcli.NewCompletionCmd(rootCmd, true),
+		debug.Cmd(),
 		confixcmd.ConfigCommand(),
 		pruning.Cmd(newApp, app.DefaultNodeHome),
 		snapshot.Cmd(newApp),
 	)
 
-	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, createSimappAndExport, addModuleInitFlags)
-
-	autoCliOpts := tempApp.AutoCliOpts()
-	initClientCtx, _ = config.ReadDefaultValuesFromDefaultClientConfig(initClientCtx)
-	autoCliOpts.Keyring, _ = keyring.NewAutoCLIKeyring(initClientCtx.Keyring)
-	autoCliOpts.ClientCtx = initClientCtx
-	if err := autoCliOpts.EnhanceRootCommand(rootCmd); err != nil {
-		panic(err)
-	}
+	server.AddCommandsWithStartCmdOptions(
+		rootCmd,
+		app.DefaultNodeHome,
+		newApp,
+		createSimappAndExport,
+		server.StartCmdOptions{
+			AddFlags: func(startCmd *cobra.Command) {
+				crisis.AddModuleInitFlags(startCmd)
+			},
+		},
+	)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
 		server.StatusCommand(),
+		genesisCommand(encodingConfig.TxConfig, *tempApp.ModuleBasicManager),
 		queryCommand(),
 		txCommand(),
 		keys.Commands(),
@@ -222,8 +249,14 @@ func initRootCmd(
 	)
 }
 
-func addModuleInitFlags(startCmd *cobra.Command) {
-	crisis.AddModuleInitFlags(startCmd)
+// genesisCommand builds genesis-related `gravit ygenesis` command. Users may provide application specific commands as a parameter
+func genesisCommand(txConfig client.TxConfig, basicManager module.BasicManager, cmds ...*cobra.Command) *cobra.Command {
+	cmd := genutilcli.Commands(txConfig, basicManager, app.DefaultNodeHome)
+
+	for _, subCmd := range cmds {
+		cmd.AddCommand(subCmd)
+	}
+	return cmd
 }
 
 func queryCommand() *cobra.Command {
@@ -238,14 +271,14 @@ func queryCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		rpc.ValidatorCommand(),
+		rpc.WaitTxCmd(),
+		server.QueryBlockCmd(),
 		authcmd.QueryTxsByEventsCmd(),
+		server.QueryBlocksCmd(),
 		authcmd.QueryTxCmd(),
+		server.QueryBlockResultsCmd(),
+		rpc.ValidatorCommand(),
 	)
-
-	// TODO: Autocli here
-	// app.ModuleBasics.AddQueryCommands(cmd)
-	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 
 	return cmd
 }
@@ -270,13 +303,8 @@ func txCommand() *cobra.Command {
 		authcmd.GetBroadcastCommand(),
 		authcmd.GetEncodeCommand(),
 		authcmd.GetDecodeCommand(),
-		// authcmd.GetAuxToFeeCommand(),
-
-		flags.LineBreak,
+		authcmd.GetSimulateCmd(),
 	)
-
-	// TODO: Autocli here
-	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 
 	return cmd
 }
