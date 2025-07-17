@@ -13,10 +13,7 @@ replace (
 
 	github.com/btcsuite/btcd/btcutil => github.com/btcsuite/btcd/btcutil v1.1.3
 
-	github.com/cometbft/cometbft => github.com/b-harvest/cometbft v0.38.11-priority-fix2
-
-	// github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.50.8
-	github.com/cosmos/cosmos-sdk => /cosmos-sdk
+	github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.50.8
 
 	github.com/cosmos/ibc-go/v8 => github.com/cosmos/ibc-go/v8 v8.3.2
 
@@ -27,12 +24,11 @@ replace (
 
 	// Fix node query errors like "failed to load state at height 5; version does not exist (latest height: 5)"
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-
 )
 
 require (
 	cosmossdk.io/api v0.7.5
-	cosmossdk.io/client/v2 v2.0.0-beta.1.0.20240124105859-5ad1805d0e79
+	cosmossdk.io/client/v2 v2.0.0-beta.1
 	cosmossdk.io/core v0.12.0
 	cosmossdk.io/errors v1.0.1
 	cosmossdk.io/log v1.3.1
@@ -185,6 +181,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
+	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/linxGnu/grocksdb v1.9.3 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect

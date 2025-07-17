@@ -5,35 +5,33 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/cosmos/gogoproto/proto"
-
-	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 )
 
 // MakeEncodingConfig creates an EncodingConfig for an amino based test configuration.
 func MakeEncodingConfig() EncodingConfig {
-	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(
-		codectypes.InterfaceRegistryOptions{
-			ProtoFiles: proto.HybridResolver,
-			SigningOptions: signing.Options{
-				AddressCodec: address.Bech32Codec{
-					Bech32Prefix: gravityconfig.Bech32PrefixAccAddr,
-				},
-				ValidatorAddressCodec: address.Bech32Codec{
-					Bech32Prefix: gravityconfig.Bech32PrefixValAddr,
-				},
-			},
+	amino := codec.NewLegacyAmino()
+	signingOptions := signing.Options{
+		AddressCodec: address.Bech32Codec{
+			Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
 		},
-	)
-	appCodec := codec.NewProtoCodec(interfaceRegistry)
-	legacyAmino := codec.NewLegacyAmino()
-	txConfig := authtx.NewTxConfig(appCodec, authtx.DefaultSignModes)
+		ValidatorAddressCodec: address.Bech32Codec{
+			Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix(),
+		},
+	}
+	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
+		ProtoFiles:     proto.HybridResolver,
+		SigningOptions: signingOptions,
+	})
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
+	txCfg := tx.NewTxConfig(marshaler, tx.DefaultSignModes)
 
 	return EncodingConfig{
 		InterfaceRegistry: interfaceRegistry,
-		Marshaler:         appCodec,
-		TxConfig:          txConfig,
-		Amino:             legacyAmino,
+		Marshaler:         marshaler,
+		TxConfig:          txCfg,
+		Amino:             amino,
 	}
 }

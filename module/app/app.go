@@ -50,7 +50,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	"github.com/cosmos/cosmos-sdk/types/tx"
-	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -59,7 +58,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-	authtxconfig "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
@@ -84,6 +82,7 @@ import (
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/cosmos/cosmos-sdk/x/group"
 	groupkeeper "github.com/cosmos/cosmos-sdk/x/group/keeper"
@@ -401,23 +400,31 @@ func NewGravityApp(
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *Gravity {
-	// TODO: Some differences here between us and canto
-	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(
-		codectypes.InterfaceRegistryOptions{
-			ProtoFiles: proto.HybridResolver,
-			SigningOptions: signing.Options{
-				AddressCodec: address.Bech32Codec{
-					Bech32Prefix: gravityconfig.Bech32PrefixAccAddr,
-				},
-				ValidatorAddressCodec: address.Bech32Codec{
-					Bech32Prefix: gravityconfig.Bech32PrefixValAddr,
-				},
-			},
-		},
-	)
-	appCodec := codec.NewProtoCodec(interfaceRegistry)
 	legacyAmino := codec.NewLegacyAmino()
+	signingOptions := signing.Options{
+		AddressCodec: address.Bech32Codec{
+			Bech32Prefix: gravityconfig.Bech32PrefixAccAddr,
+		},
+		ValidatorAddressCodec: address.Bech32Codec{
+			Bech32Prefix: gravityconfig.Bech32PrefixValAddr,
+		},
+	}
+	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
+		ProtoFiles:     proto.HybridResolver,
+		SigningOptions: signingOptions,
+	})
+	appCodec := codec.NewProtoCodec(interfaceRegistry)
 	txConfig := authtx.NewTxConfig(appCodec, authtx.DefaultSignModes)
+
+	encodingConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Codec:             appCodec,
+		TxConfig:          txConfig,
+		Amino:             legacyAmino,
+	}
+	ethermintcodec.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ethermintcryptocodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	// create and set dummy vote extension handler
 	voteExtOp := func(bApp *baseapp.BaseApp) {
@@ -431,14 +438,9 @@ func NewGravityApp(
 		app.SetPrepareProposal(handler.PrepareProposalHandler())
 		app.SetProcessProposal(handler.ProcessProposalHandler())
 	}
-	baseAppOptions = append(
-		baseAppOptions,
-		voteExtOp,
-		baseapp.SetOptimisticExecution(),
-		mempoolSelection,
-	)
+	baseAppOptions = append(baseAppOptions, voteExtOp, baseapp.SetOptimisticExecution(), mempoolSelection)
 
-	bApp := *baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
+	bApp := *baseapp.NewBaseApp(appName, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
@@ -478,12 +480,10 @@ func NewGravityApp(
 	paramsKeeper := initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tKeys[paramstypes.TStoreKey])
 	app.ParamsKeeper = &paramsKeeper
 
-	govAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-
 	consensusParamsKeeper := consensusparamkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[consensusparamtypes.StoreKey]),
-		govAuthority,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		runtime.EventService{},
 	)
 	app.ConsensusParamsKeeper = &consensusParamsKeeper
@@ -509,16 +509,14 @@ func NewGravityApp(
 	// their scoped modules in `NewApp` with `ScopeToModule`
 	capabilityKeeper.Seal()
 
-	accBech32Codec := authcodec.NewBech32Codec(gravityconfig.Bech32PrefixAccAddr)
-	valBech32Codec := authcodec.NewBech32Codec(gravityconfig.Bech32PrefixValAddr)
-	conBech32Codec := authcodec.NewBech32Codec(gravityconfig.Bech32PrefixConsAddr)
+	govAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[authtypes.StoreKey]),
 		authtypes.ProtoBaseAccount,
 		maccPerms,
-		accBech32Codec,
+		authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
 		Bech32Prefix,
 		govAuthority,
 	)
@@ -542,25 +540,20 @@ func NewGravityApp(
 	)
 	app.BankKeeper = &bankKeeper
 
-	enabledSignModes := append(authtx.DefaultSignModes, sigtypes.SignMode_SIGN_MODE_TEXTUAL)
-	txConfigOpts := authtx.ConfigOptions{
-		EnabledSignModes:           enabledSignModes,
-		TextualCoinMetadataQueryFn: authtxconfig.NewBankKeeperCoinMetadataQueryFn(bankKeeper),
-	}
-	txConfig, err := authtx.NewTxConfigWithOptions(appCodec, txConfigOpts)
-	if err != nil {
-		panic(err)
-	}
-
-	encodingConfig := simappparams.EncodingConfig{
-		InterfaceRegistry: interfaceRegistry,
-		Codec:             appCodec,
-		TxConfig:          txConfig,
-		Amino:             legacyAmino,
-	}
-	ethermintcodec.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	ethermintcryptocodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	// optional: enable sign mode textual by overwriting the default tx config (after setting the bank keeper)
+	// enabledSignModes := append(tx.DefaultSignModes, sigtypes.SignMode_SIGN_MODE_TEXTUAL)
+	// txConfigOpts := tx.ConfigOptions{
+	//      EnabledSignModes:           enabledSignModes,
+	//      TextualCoinMetadataQueryFn: txmodule.NewBankKeeperCoinMetadataQueryFn(app.BankKeeper),
+	// }
+	// txConfig, err := tx.NewTxConfigWithOptions(
+	//      appCodec,
+	//      txConfigOpts,
+	// )
+	// if err != nil {
+	//      panic(err)
+	// }
+	// app.txConfig = txConfig
 
 	stakingKeeper := *stakingkeeper.NewKeeper(
 		appCodec,
@@ -568,8 +561,8 @@ func NewGravityApp(
 		accountKeeper,
 		bankKeeper,
 		govAuthority,
-		valBech32Codec,
-		conBech32Codec,
+		authcodec.NewBech32Codec(gravityconfig.Bech32PrefixValAddr),
+		authcodec.NewBech32Codec(gravityconfig.Bech32PrefixConsAddr),
 	)
 	app.StakingKeeper = &stakingKeeper
 
@@ -741,13 +734,7 @@ func NewGravityApp(
 	app.EvidenceKeeper = &evidenceKeeper
 
 	groupConfig := group.DefaultConfig()
-	groupKeeper := groupkeeper.NewKeeper(
-		keys[group.StoreKey],
-		appCodec,
-		app.MsgServiceRouter(),
-		app.AccountKeeper,
-		groupConfig,
-	)
+	groupKeeper := groupkeeper.NewKeeper(keys[group.StoreKey], appCodec, app.MsgServiceRouter(), app.AccountKeeper, groupConfig)
 	app.GroupKeeper = &groupKeeper
 
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
@@ -868,6 +855,8 @@ func NewGravityApp(
 		},
 	)
 
+	moduleBasicManager.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	moduleBasicManager.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	app.ModuleBasicManager = &moduleBasicManager
 	// nolint: exhaustruct
 	encodingConfig.InterfaceRegistry.RegisterImplementations(
@@ -875,9 +864,6 @@ func NewGravityApp(
 		&etherminttypes.ExtensionOptionsWeb3Tx{},
 	)
 	app.EncodingConfig = encodingConfig
-
-	moduleBasicManager.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	moduleBasicManager.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	// NOTE: upgrade module is required to be prioritized
 	app.ModuleManager.SetOrderPreBlockers(
@@ -935,8 +921,7 @@ func NewGravityApp(
 		group.ModuleName,
 		consensusparamtypes.ModuleName,
 	)
-
-	genesisModuleOrder := []string{
+	moduleManager.SetOrderInitGenesis(
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
@@ -960,18 +945,12 @@ func NewGravityApp(
 		icatypes.ModuleName,
 		group.ModuleName,
 		consensusparamtypes.ModuleName,
-	}
-	moduleManager.SetOrderInitGenesis(
-		genesisModuleOrder...,
-	)
-	moduleManager.SetOrderExportGenesis(
-		genesisModuleOrder...,
 	)
 
 	moduleManager.RegisterInvariants(&crisisKeeper)
 	configurator := module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
 	app.configurator = &configurator
-	err = moduleManager.RegisterServices(*app.configurator)
+	err := moduleManager.RegisterServices(*app.configurator)
 	if err != nil {
 		panic(err)
 	}
@@ -991,7 +970,9 @@ func NewGravityApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
+
 	app.SetEndBlocker(app.EndBlocker)
+
 	app.setAnteHandler(encodingConfig)
 	app.setPostHandler()
 
@@ -1211,7 +1192,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(minttypes.ModuleName)
 	paramsKeeper.Subspace(distrtypes.ModuleName)
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
-	paramsKeeper.Subspace(govtypes.ModuleName)
+	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govv1.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(gravitytypes.ModuleName)
