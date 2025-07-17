@@ -14,7 +14,7 @@ use crate::OPERATION_TIMEOUT;
 use crate::RELAYER_MNEMONIC;
 use crate::TOTAL_TIMEOUT;
 use crate::{get_gravity_chain_id, get_ibc_chain_id, ETH_NODE};
-use crate::{utils::ValidatorKeys, COSMOS_NODE_ABCI};
+use crate::{utils::ValidatorKeys, COSMOS_NODE_API};
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey, DEFAULT_COSMOS_HD_PATH};
@@ -196,7 +196,7 @@ pub async fn deploy_contracts(contact: &Contact) {
         let paths = return_existing(A, B);
         Command::new(paths[0])
             .args([
-                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--cosmos-node={}", COSMOS_NODE_API.as_str()),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", paths[1]),
@@ -213,7 +213,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 C[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--cosmos-node={}", COSMOS_NODE_API.as_str()),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", C[1]),
@@ -231,7 +231,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 D[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--cosmos-node={}", COSMOS_NODE_API.as_str()),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", D[1]),
@@ -249,7 +249,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 E[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--cosmos-node={}", COSMOS_NODE_API.as_str()),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", E[1]),

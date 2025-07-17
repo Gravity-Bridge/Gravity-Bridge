@@ -104,8 +104,8 @@ lazy_static! {
         env::var("STAKING_TOKEN").unwrap_or_else(|_| "ugraviton".to_owned());
     static ref COSMOS_NODE_GRPC: String =
         env::var("COSMOS_NODE_GRPC").unwrap_or_else(|_| "http://localhost:9090".to_owned());
-    static ref COSMOS_NODE_ABCI: String =
-        env::var("COSMOS_NODE_ABCI").unwrap_or_else(|_| "http://localhost:26657".to_owned());
+    static ref COSMOS_NODE_API: String =
+        env::var("COSMOS_NODE_API").unwrap_or_else(|_| "http://localhost:1317".to_owned());
 
     // IBC CHAIN CONSTANTS
     // These constants all apply to the gaiad instance running (ibc-test-1)

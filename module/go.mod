@@ -13,7 +13,8 @@ replace (
 
 	github.com/btcsuite/btcd/btcutil => github.com/btcsuite/btcd/btcutil v1.1.3
 
-	github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.50.8
+	// github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.50.8
+	github.com/cosmos/cosmos-sdk => /cosmos-sdk
 
 	github.com/cosmos/ibc-go/v8 => github.com/cosmos/ibc-go/v8 v8.3.2
 

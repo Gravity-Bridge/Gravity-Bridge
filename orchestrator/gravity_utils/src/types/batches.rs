@@ -85,7 +85,7 @@ impl TransactionBatch {
         let fee_value_dai = get_dai_price(pubkey, token, fee_total, web30);
         let tx_value_weth = get_weth_price(pubkey, token, tx_total, web30);
         let tx_value_dai = get_dai_price(pubkey, token, tx_total, web30);
-        let token_symbol = web30.get_erc20_symbol(token, pubkey);
+        let token_symbol = web30.get_erc20_symbol(token, pubkey, vec![]);
         let current_block = web30.eth_block_number();
         if let (
             Ok(fee_value_weth),
