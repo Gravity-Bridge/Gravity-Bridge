@@ -11,6 +11,8 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 
 // Msg defines the state transitions possible within gravity
 service Msg {
+  option (cosmos.msg.v1.service) = true;
+  
   rpc IBCMetadataProposal(MsgIBCMetadataProposal) returns (MsgIBCMetadataProposalResponse) {}
   rpc AirdropProposal(MsgAirdropProposal) returns (MsgAirdropProposalResponse) {}
   rpc UnhaltBridgeProposal(MsgUnhaltBridgeProposal) returns (MsgUnhaltBridgeProposalResponse) {}
