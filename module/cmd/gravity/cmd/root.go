@@ -52,6 +52,7 @@ import (
 	ethermint "github.com/evmos/ethermint/crypto/hd"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
+	_ "github.com/Gravity-Bridge/Gravity-Bridge/module/config" // import config to register the Bech32 codec
 	gravitytypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
@@ -174,9 +175,6 @@ func initRootCmd(
 	encodingConfig simappparams.EncodingConfig,
 	initClientCtx client.Context,
 ) {
-	cfg := sdk.GetConfig()
-	cfg.Seal()
-
 	var tempApp = app.TemporaryApp()
 	rootCmd.AddCommand(
 		InitCmd(*tempApp.ModuleBasicManager, app.DefaultNodeHome),

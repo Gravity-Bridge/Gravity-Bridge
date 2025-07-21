@@ -234,8 +234,8 @@ func (k Keeper) SetGravityID(ctx sdk.Context, v string) {
 	k.paramSpace.Set(ctx, types.ParamsStoreKeyGravityID, v)
 }
 
-// logger returns a module-specific logger.
-func (k Keeper) logger(ctx sdk.Context) log.Logger {
+// Logger returns a module-specific Logger.
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 

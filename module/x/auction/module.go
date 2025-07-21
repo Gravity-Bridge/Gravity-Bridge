@@ -26,8 +26,9 @@ import (
 // type check to ensure the interface is properly implemented
 // nolint: exhaustruct
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ module.AppModule       = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic object for module implementation
@@ -145,13 +146,9 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(genState)
 }
 
-// BeginBlock handles the start of every block
-func (am AppModule) BeginBlock(ctx sdk.Context, _ sdk.BeginBlock) {
-	// Auction module does not use BeginBlock
-}
-
 // EndBlock handles the end of every block
-func (am AppModule) EndBlock(ctx sdk.Context, _ sdk.EndBlock) []abci.ValidatorUpdate { // End auctions, transfer balances, start new auctions
+func (am AppModule) EndBlock(c context.Context) ([]abci.ValidatorUpdate, error) { // End auctions, transfer balances, start new auctions
+	ctx := sdk.UnwrapSDKContext(c)
 	EndBlocker(ctx, am.keeper)
-	return []abci.ValidatorUpdate{}
+	return []abci.ValidatorUpdate{}, nil
 }

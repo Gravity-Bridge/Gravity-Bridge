@@ -29,6 +29,11 @@ import (
 var (
 	_ module.AppModule      = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
+
+	_ module.HasServices     = AppModule{}
+	_ module.HasInvariants   = AppModule{}
+	_ module.HasABCIGenesis  = AppModule{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic object for module implementation
@@ -158,13 +163,12 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(&gs)
 }
 
-// BeginBlock implements app module
-func (am AppModule) BeginBlock(ctx sdk.Context, _ sdk.BeginBlock) {}
-
-// EndBlock implements app module
-func (am AppModule) EndBlock(ctx sdk.Context, _ sdk.EndBlock) []abci.ValidatorUpdate {
+// EndBlock returns the end blocker for the staking module. It returns no validator
+// updates.
+func (am AppModule) EndBlock(c context.Context) ([]abci.ValidatorUpdate, error) {
+	ctx := sdk.UnwrapSDKContext(c)
 	EndBlocker(ctx, am.keeper)
-	return []abci.ValidatorUpdate{}
+	return []abci.ValidatorUpdate{}, nil
 }
 
 // ___________________________________________________________________________

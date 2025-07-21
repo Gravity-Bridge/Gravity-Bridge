@@ -131,7 +131,7 @@ func (k Keeper) addPendingIbcAutoForward(ctx sdk.Context, forward types.PendingI
 	}
 	store.Set(key, k.cdc.MustMarshal(&forward))
 
-	k.logger(ctx).Info("SendToCosmos Pending IBC Auto-Forward", "ibcReceiver", forward.ForeignReceiver,
+	k.Logger(ctx).Info("SendToCosmos Pending IBC Auto-Forward", "ibcReceiver", forward.ForeignReceiver,
 		"token", token, "denom", forward.Token.Denom, "amount", forward.Token.Amount.String(),
 		"ibc-port", k.ibcTransferKeeper.GetPort(ctx), "ibcChannel", forward.IbcChannel, "claimNonce", forward.EventNonce,
 		"cosmosBlockTime", ctx.BlockTime(), "cosmosBlockHeight", ctx.BlockHeight(),
@@ -281,7 +281,7 @@ func (k Keeper) logEmitIbcForwardSuccessEvent(
 	forward types.PendingIbcAutoForward,
 	msgTransfer ibctransfertypes.MsgTransfer,
 ) {
-	k.logger(ctx).Info("SendToCosmos IBC Auto-Forward", "ibcReceiver", forward.ForeignReceiver, "denom", forward.Token.Denom,
+	k.Logger(ctx).Info("SendToCosmos IBC Auto-Forward", "ibcReceiver", forward.ForeignReceiver, "denom", forward.Token.Denom,
 		"amount", forward.Token.Amount.String(), "ibc-port", msgTransfer.SourcePort, "ibcChannel", forward.IbcChannel,
 		"timeoutHeight", msgTransfer.TimeoutHeight.String(), "timeoutTimestamp", msgTransfer.TimeoutTimestamp,
 		"claimNonce", forward.EventNonce, "cosmosBlockHeight", ctx.BlockHeight(),
@@ -308,7 +308,7 @@ func (k Keeper) logEmitIbcForwardFailureEvent(ctx sdk.Context, forward types.Pen
 	if er != nil {
 		panic(err)
 	}
-	k.logger(ctx).Error("SendToCosmos IBC Auto-Forward Failure: funds sent to local address",
+	k.Logger(ctx).Error("SendToCosmos IBC Auto-Forward Failure: funds sent to local address",
 		"localReceiver", localReceiver, "denom", forward.Token.Denom, "amount", forward.Token.Amount.String(),
 		"failedIbcPort", ibctransfertypes.PortID, "failedIbcChannel", forward.IbcChannel,
 		"claimNonce", forward.EventNonce, "cosmosBlockHeight", ctx.BlockHeight(), "err", err,

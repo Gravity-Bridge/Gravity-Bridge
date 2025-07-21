@@ -129,6 +129,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 
 				att.Observed = true
 				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
+				k.Logger(ctx).Debug("Attestation observed", "attestation", att)
 
 				k.processAttestation(ctx, att, claim)
 				k.emitObservedEvent(ctx, att, claim)
@@ -153,7 +154,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 	if err := k.AttestationHandler.Handle(xCtx, *att, claim); err != nil { // execute with a transient storage
 		// If the attestation fails, something has gone wrong and we can't recover it. Log and move on
 		// The attestation will still be marked "Observed", allowing the oracle to progress properly
-		k.logger(ctx).Error("attestation failed",
+		k.Logger(ctx).Error("attestation failed",
 			"cause", err.Error(),
 			"claim type", claim.GetType(),
 			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),

@@ -53,7 +53,7 @@ do
     fi
     LISTEN_ADDRESS="--address tcp://7.7.7.$i:26655"
     P2P_ADDRESS="--p2p.laddr tcp://7.7.7.$i:26656"
-    LOG_LEVEL="--log_level info"
+    LOG_LEVEL="--log_level *:info,x/gravity:debug"
     INVARIANTS_CHECK="--inv-check-period 1"
     MIN_GAS_PRICES="--minimum-gas-prices 0stake"
     ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $LOG_LEVEL $INVARIANTS_CHECK $P2P_ADDRESS $MIN_GAS_PRICES"

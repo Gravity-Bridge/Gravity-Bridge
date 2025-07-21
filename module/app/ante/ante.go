@@ -47,6 +47,7 @@ func NewAnteHandler(
 	}
 
 	fullHandler := sdk.ChainAnteDecorators(
+		NewLoggingDecorator("Gravity AnteHandler: Starting"),
 		// Do not support EVM txs (e.g. solidity contract call txs), easy mistake to make when using MetaMask
 		ethermintante.RejectMessagesDecorator{},
 		sdkante.NewSetUpContextDecorator(),
@@ -66,7 +67,23 @@ func NewAnteHandler(
 		ibcante.NewRedundantRelayDecorator(ibcKeeper),
 		// Enforces the minimum commission for Gravity Prop #1
 		NewMinCommissionDecorator(cdc),
+		NewLoggingDecorator("Gravity AnteHandler: Finished"),
 	)
 
 	return &fullHandler, nil
+}
+
+type LoggingDecorator struct {
+	message string
+}
+
+func NewLoggingDecorator(message string) LoggingDecorator {
+	return LoggingDecorator{
+		message: message,
+	}
+}
+
+func (ld LoggingDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	fmt.Println(ld.message)
+	return next(ctx, tx, simulate)
 }

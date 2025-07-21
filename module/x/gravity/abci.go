@@ -62,6 +62,7 @@ func createValsets(ctx sdk.Context, k keeper.Keeper) {
 		significantPowerDiff = intCurrMembers.PowerDiff(*intLatestMembers) > 0.05
 	}
 
+	k.Logger(ctx).Debug("Auto valset request", "latestValset", latestValset, "lastUnbondingHeight", lastUnbondingHeight, "blockHeight", ctx.BlockHeight(), "significantPowerDiff", significantPowerDiff)
 	if (latestValset == nil) || (lastUnbondingHeight == uint64(ctx.BlockHeight())) || significantPowerDiff {
 		// if the conditions are true, put in a new validator set request to be signed and submitted to Ethereum
 		k.SetValsetRequest(ctx)
@@ -77,6 +78,7 @@ func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 	lastObserved := k.GetLastObservedValset(ctx)
 	currentBlock := uint64(ctx.BlockHeight())
 	tooEarly := currentBlock < params.SignedValsetsWindow
+	pruned := false
 	if lastObserved != nil && !tooEarly {
 		earliestToPrune := currentBlock - params.SignedValsetsWindow
 		sets := k.GetValsets(ctx)
@@ -84,8 +86,12 @@ func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 			if set.Nonce < lastObserved.Nonce && set.Height < earliestToPrune {
 				k.DeleteValset(ctx, set.Nonce)
 				k.DeleteValsetConfirms(ctx, set.Nonce)
+				pruned = true
 			}
 		}
+	}
+	if pruned {
+		k.Logger(ctx).Debug("Pruned old valsets")
 	}
 }
 
@@ -153,13 +159,18 @@ func attestationTally(ctx sdk.Context, k keeper.Keeper) {
 func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
 	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
 	batches := k.GetOutgoingTxBatches(ctx)
+	cleanedUp := false
 	for _, batch := range batches {
 		if batch.BatchTimeout < ethereumHeight {
 			err := k.CancelOutgoingTXBatch(ctx, batch.TokenContract, batch.BatchNonce)
 			if err != nil {
 				panic("Failed to cancel outgoing txbatch!")
 			}
+			cleanedUp = true
 		}
+	}
+	if cleanedUp {
+		k.Logger(ctx).Debug("Cleaned up timed out batches", "ethereumHeight", ethereumHeight)
 	}
 }
 
@@ -175,13 +186,18 @@ func cleanupTimedOutBatches(ctx sdk.Context, k keeper.Keeper) {
 func cleanupTimedOutLogicCalls(ctx sdk.Context, k keeper.Keeper) {
 	ethereumHeight := k.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
 	calls := k.GetOutgoingLogicCalls(ctx)
+	cleanedUp := false
 	for _, call := range calls {
 		if call.Timeout < ethereumHeight {
 			err := k.CancelOutgoingLogicCall(ctx, call.InvalidationId, call.InvalidationNonce)
 			if err != nil {
 				panic("Failed to cancel outgoing logic call!")
 			}
+			cleanedUp = true
 		}
+	}
+	if cleanedUp {
+		k.Logger(ctx).Debug("Cleaned up timed out logic calls", "ethereumHeight", ethereumHeight)
 	}
 }
 
@@ -253,6 +269,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					}
 					val = updateValidator(ctx, k, operator)
 					if !val.IsJailed() {
+						k.Logger(ctx).Info("Slashing validator for not confirming valset", "validator", val.GetOperator())
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
 						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
@@ -307,6 +324,7 @@ func valsetSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					}
 					validator = updateValidator(ctx, k, operator)
 					if !validator.IsJailed() {
+						k.Logger(ctx).Info("Slashing validator for not confirming valset", "validator", validator.GetOperator())
 						k.StakingKeeper.Slash(ctx, valConsAddr, ctx.BlockHeight(), validator.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionValset)
 						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
@@ -433,6 +451,7 @@ func batchSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					}
 					val = updateValidator(ctx, k, operator)
 					if !val.IsJailed() {
+						k.Logger(ctx).Info("Slashing validator for not signing batches", "validator", val.GetOperator())
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBatch)
 						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
@@ -522,6 +541,7 @@ func logicCallSlashing(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 					}
 					val = updateValidator(ctx, k, operator)
 					if !val.IsJailed() {
+						k.Logger(ctx).Info("Slashing validator for not signing logic calls", "validator", val.GetOperator())
 						k.StakingKeeper.Slash(ctx, consAddr, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionLogicCall)
 						if err := ctx.EventManager().EmitTypedEvent(
 							&types.EventSignatureSlashing{
@@ -561,6 +581,7 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 		cutoff = lastNonce - eventsToKeep
 	}
 
+	pruned := false
 	// This iterates over all keys (event nonces) in the attestation mapping. Each value contains
 	// a slice with one or more attestations at that event nonce. There can be multiple attestations
 	// at one event nonce when validators disagree about what event happened at that nonce.
@@ -572,7 +593,11 @@ func pruneAttestations(ctx sdk.Context, k keeper.Keeper) {
 			// delete all before the cutoff
 			if nonce < cutoff {
 				k.DeleteAttestation(ctx, att)
+				pruned = true
 			}
 		}
+	}
+	if pruned {
+		k.Logger(ctx).Debug("Pruned old attestations", "cutoff", cutoff, "lastObservedEventNonce", lastNonce)
 	}
 }

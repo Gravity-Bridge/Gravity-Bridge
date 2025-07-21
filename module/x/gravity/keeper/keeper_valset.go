@@ -52,6 +52,7 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 		panic(err)
 	}
 
+	k.Logger(ctx).Debug("Valset request set", "valset", valset)
 	return valset
 }
 

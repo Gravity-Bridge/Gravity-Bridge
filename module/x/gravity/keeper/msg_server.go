@@ -38,13 +38,13 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 
 // SetOrchestratorAddress handles MsgSetOrchestratorAddress
 func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOrchestratorAddress) (*types.MsgSetOrchestratorAddressResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgSetOrchestratorAddress", "msg", msg)
 	// ensure that this passes validation, checks the key validity
 	err := msg.ValidateBasic()
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Key not valid")
 	}
-
-	ctx := sdk.UnwrapSDKContext(c)
 
 	// check the following, all should be validated in validate basic
 	// check the following, all should be validated in validate basic
@@ -96,6 +96,7 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 // ValsetConfirm handles MsgValsetConfirm
 func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm) (*types.MsgValsetConfirmResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgValsetConfirm", "msg", msg)
 	valset := k.GetValset(ctx, msg.Nonce) // A valset request was previously created
 	if valset == nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "couldn't find valset")
@@ -129,6 +130,7 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 // SendToEth handles MsgSendToEth
 func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types.MsgSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgSendToEth", "msg", msg)
 	sender, err := sdk.AccAddressFromBech32(msg.Sender)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid sender")
@@ -244,6 +246,7 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 // RequestBatch handles MsgRequestBatch
 func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (*types.MsgRequestBatchResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgRequestBatch", "msg", msg)
 
 	// Check if the denom is a gravity coin, if not, check if there is a deployed ERC20 representing it.
 	// If not, error out
@@ -267,6 +270,8 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 
 // ConfirmBatch handles MsgConfirmBatch
 func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (*types.MsgConfirmBatchResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgConfirmBatch", "msg", msg)
 	err := msg.ValidateBasic()
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid MsgConfirmBatch")
@@ -275,7 +280,6 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
-	ctx := sdk.UnwrapSDKContext(c)
 
 	// fetch the outgoing batch given the nonce
 	batch := k.GetOutgoingTXBatch(ctx, *contract, msg.Nonce)
@@ -312,6 +316,7 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 // ConfirmLogicCall handles MsgConfirmLogicCall
 func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogicCall) (*types.MsgConfirmLogicCallResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgConfirmLogicCall", "msg", msg)
 	invalidationIdBytes, err := hex.DecodeString(msg.InvalidationId)
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "invalidation id encoding")
@@ -445,6 +450,7 @@ func (k msgServer) confirmHandlerCommon(ctx sdk.Context, ethAddress string, orch
 // should not be a security risk as 'old' events can never execute but it does store spam in the chain.
 func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosmosClaim) (*types.MsgSendToCosmosClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgSendToCosmosClaim", "msg", msg)
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
@@ -469,6 +475,7 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 // in the same block. This endpoint triggers the creation of those ibc-transfer events which relayers watch for.
 func (k msgServer) ExecuteIbcAutoForwards(c context.Context, msg *types.MsgExecuteIbcAutoForwards) (*types.MsgExecuteIbcAutoForwardsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgExecuteIbcAutoForwards", "msg", msg)
 
 	if err := k.ProcessPendingIbcAutoForwards(ctx, msg.GetForwardsToClear()); err != nil {
 		return nil, err
@@ -483,6 +490,7 @@ func (k msgServer) ExecuteIbcAutoForwards(c context.Context, msg *types.MsgExecu
 // should not be a security risk as 'old' events can never execute but it does store spam in the chain.
 func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSendToEthClaim) (*types.MsgBatchSendToEthClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgBatchSendToEthClaim", "msg", msg)
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
@@ -530,6 +538,7 @@ func additionalPatchChecks(ctx sdk.Context, k msgServer, msg *types.MsgBatchSend
 // ERC20Deployed handles MsgERC20Deployed
 func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20DeployedClaim) (*types.MsgERC20DeployedClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgERC20DeployedClaim", "msg", msg)
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
@@ -550,6 +559,7 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 // LogicCallExecutedClaim handles claims for executing a logic call on Ethereum
 func (k msgServer) LogicCallExecutedClaim(c context.Context, msg *types.MsgLogicCallExecutedClaim) (*types.MsgLogicCallExecutedClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgLogicCallExecutedClaim", "msg", msg)
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
@@ -570,6 +580,7 @@ func (k msgServer) LogicCallExecutedClaim(c context.Context, msg *types.MsgLogic
 // ValsetUpdatedClaim handles claims for executing a validator set update on Ethereum
 func (k msgServer) ValsetUpdateClaim(c context.Context, msg *types.MsgValsetUpdatedClaim) (*types.MsgValsetUpdatedClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgValsetUpdatedClaim", "msg", msg)
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
@@ -589,6 +600,7 @@ func (k msgServer) ValsetUpdateClaim(c context.Context, msg *types.MsgValsetUpda
 
 func (k msgServer) CancelSendToEth(c context.Context, msg *types.MsgCancelSendToEth) (*types.MsgCancelSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgCancelSendToEth", "msg", msg)
 	sender, err := sdk.AccAddressFromBech32(msg.Sender)
 	if err != nil {
 		return nil, err
@@ -603,6 +615,7 @@ func (k msgServer) CancelSendToEth(c context.Context, msg *types.MsgCancelSendTo
 
 func (k msgServer) SubmitBadSignatureEvidence(c context.Context, msg *types.MsgSubmitBadSignatureEvidence) (*types.MsgSubmitBadSignatureEvidenceResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	k.Logger(ctx).Debug("MsgSubmitBadSignatureEvidence", "msg", msg)
 
 	err := k.CheckBadSignatureEvidence(ctx, msg)
 	if err != nil {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -55,7 +56,6 @@ import (
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -416,15 +416,16 @@ func NewGravityApp(
 	appCodec := codec.NewProtoCodec(interfaceRegistry)
 	txConfig := authtx.NewTxConfig(appCodec, authtx.DefaultSignModes)
 
+	ethermintcodec.RegisterLegacyAminoCodec(legacyAmino)
+	ethermintcryptocodec.RegisterInterfaces(interfaceRegistry)
+	std.RegisterInterfaces(interfaceRegistry)
+
 	encodingConfig := simappparams.EncodingConfig{
 		InterfaceRegistry: interfaceRegistry,
 		Codec:             appCodec,
 		TxConfig:          txConfig,
 		Amino:             legacyAmino,
 	}
-	ethermintcodec.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	ethermintcryptocodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	// create and set dummy vote extension handler
 	voteExtOp := func(bApp *baseapp.BaseApp) {
@@ -438,7 +439,7 @@ func NewGravityApp(
 		app.SetPrepareProposal(handler.PrepareProposalHandler())
 		app.SetProcessProposal(handler.ProcessProposalHandler())
 	}
-	baseAppOptions = append(baseAppOptions, voteExtOp, baseapp.SetOptimisticExecution(), mempoolSelection)
+	baseAppOptions = append(baseAppOptions, voteExtOp, mempoolSelection)
 
 	bApp := *baseapp.NewBaseApp(appName, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
@@ -516,7 +517,7 @@ func NewGravityApp(
 		runtime.NewKVStoreService(keys[authtypes.StoreKey]),
 		authtypes.ProtoBaseAccount,
 		maccPerms,
-		authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
+		authcodec.NewBech32Codec(Bech32Prefix),
 		Bech32Prefix,
 		govAuthority,
 	)
@@ -1028,12 +1029,7 @@ func (app *Gravity) setAnteHandler(encodingConfig simappparams.EncodingConfig) {
 	app.SetAnteHandler(*ah)
 }
 func (app *Gravity) setPostHandler() {
-	postHandler, err := posthandler.NewPostHandler(
-		posthandler.HandlerOptions{},
-	)
-	if err != nil {
-		panic(err)
-	}
+	postHandler := sdk.ChainPostDecorators(NewLoggingPostDecorator("Gravity PostHandler: Starting"), NewLoggingPostDecorator("Gravity PostHandler: Finished"))
 
 	app.SetPostHandler(postHandler)
 }
@@ -1209,6 +1205,22 @@ func (app *Gravity) registerUpgradeHandlers() {
 		app.ModuleManager, app.configurator, app.AccountKeeper, app.BankKeeper, app.Bech32IbcKeeper, app.DistrKeeper,
 		app.MintKeeper, app.StakingKeeper, app.UpgradeKeeper, app.CrisisKeeper, app.IbcTransferKeeper, app.AuctionKeeper,
 	)
+
+	baseAppLegacySS := app.ParamsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramstypes.ConsensusParamsKeyTable())
+
+	app.UpgradeKeeper.SetUpgradeHandler(
+		"sdk50",
+		func(c context.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			ctx := sdk.UnwrapSDKContext(c)
+			if cp := baseapp.GetConsensusParams(ctx, baseAppLegacySS); cp != nil {
+				app.ConsensusParamsKeeper.ParamsStore.Set(ctx, *cp)
+			} else {
+				ctx.Logger().Info("warning: consensus parameters are undefined; skipping migration", "upgrade", "sdk50")
+			}
+
+			return app.ModuleManager.RunMigrations(ctx, *app.configurator, fromVM)
+		},
+	)
 }
 
 // Sets up the StoreLoader for new, deleted, or renamed modules
@@ -1272,6 +1284,7 @@ func (app *Gravity) registerStoreLoaders() {
 
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
+
 }
 
 // AutoCliOpts returns the autocli options for the app.
