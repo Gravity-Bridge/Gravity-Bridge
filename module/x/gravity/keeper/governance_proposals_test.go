@@ -138,12 +138,15 @@ func TestMsgAirdropProposal(t *testing.T) {
 
 	gk := input.GravityKeeper
 	feePoolBalance := sdk.NewInt64Coin("ugraviton", 1000000000000)
-	feePool := gk.DistKeeper.GetFeePool(ctx)
+	feePool, err := gk.DistKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
 	newCoins := feePool.CommunityPool.Add(sdk.NewDecCoins(sdk.NewDecCoinFromCoin(feePoolBalance))...)
 	feePool.CommunityPool = newCoins
-	gk.DistKeeper.SetFeePool(ctx, feePool)
+	gk.DistKeeper.FeePool.Set(ctx, feePool)
 	// test that we are actually setting the fee pool
-	assert.Equal(t, input.DistKeeper.GetFeePool(ctx), feePool)
+	updatedFeePool, err := gk.DistKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, updatedFeePool, feePool)
 	// mint the actual coins
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(feePoolBalance)))
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, disttypes.ModuleName, sdk.NewCoins(feePoolBalance)))
@@ -165,7 +168,7 @@ func TestMsgAirdropProposal(t *testing.T) {
 	}
 
 	// Test the Airdrop Proposal with the correct authority
-	_, err := msgServer.AirdropProposal(sdk.WrapSDKContext(ctx), &msgProposal)
+	_, err = msgServer.AirdropProposal(ctx, &msgProposal)
 	require.NoError(t, err)
 
 	for range numFalseAuthorities {
@@ -177,7 +180,7 @@ func TestMsgAirdropProposal(t *testing.T) {
 		}
 		msgProposal.Authority = authority
 		// Test the Airdrop Proposal with an incorrect authority
-		_, err = msgServer.AirdropProposal(sdk.WrapSDKContext(ctx), &msgProposal)
+		_, err = msgServer.AirdropProposal(ctx, &msgProposal)
 		require.Error(t, err, "Expected error for authority %s", authority)
 	}
 }

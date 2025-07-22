@@ -46,5 +46,4 @@ func TestAddGenesisAccountCmd(t *testing.T) {
 	fmt.Println("Ladies and gentleslugs, now for the show")
 	err = showCmd.ExecuteContext(ctx)
 	require.NoError(t, err)
-	panic("for the errors")
 }
