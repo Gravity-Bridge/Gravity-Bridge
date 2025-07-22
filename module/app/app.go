@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -139,6 +138,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/apollo"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/neutrino"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/next"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction"
@@ -375,8 +375,11 @@ func (app Gravity) ValidateMembers() {
 	if app.ModuleManager == nil {
 		panic("Nil ModuleManager!")
 	}
+	if app.ModuleBasicManager == nil {
+		panic("Nil ModuleBasicManager!")
+	}
 	if app.sm == nil {
-		panic("Nil ModuleManager!")
+		panic("Nil SimulationManager!")
 	}
 }
 
@@ -1204,23 +1207,9 @@ func (app *Gravity) registerUpgradeHandlers() {
 	upgrades.RegisterUpgradeHandlers(
 		app.ModuleManager, app.configurator, app.AccountKeeper, app.BankKeeper, app.Bech32IbcKeeper, app.DistrKeeper,
 		app.MintKeeper, app.StakingKeeper, app.UpgradeKeeper, app.CrisisKeeper, app.IbcTransferKeeper, app.AuctionKeeper,
+		app.ParamsKeeper, app.ConsensusParamsKeeper,
 	)
 
-	baseAppLegacySS := app.ParamsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramstypes.ConsensusParamsKeyTable())
-
-	app.UpgradeKeeper.SetUpgradeHandler(
-		"sdk50",
-		func(c context.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			ctx := sdk.UnwrapSDKContext(c)
-			if cp := baseapp.GetConsensusParams(ctx, baseAppLegacySS); cp != nil {
-				app.ConsensusParamsKeeper.ParamsStore.Set(ctx, *cp)
-			} else {
-				ctx.Logger().Info("warning: consensus parameters are undefined; skipping migration", "upgrade", "sdk50")
-			}
-
-			return app.ModuleManager.RunMigrations(ctx, *app.configurator, fromVM)
-		},
-	)
 }
 
 // Sets up the StoreLoader for new, deleted, or renamed modules
@@ -1278,6 +1267,17 @@ func (app *Gravity) registerStoreLoaders() {
 		// Register the Group module as a new module that needs a new store allocated
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added:   []string{group.StoreKey},
+			Renamed: nil,
+			Deleted: nil,
+		}
+
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
+	// Next crisis and consensus module store loader setup
+	if upgradeInfo.Name == next.NeutrinoToNextPlanName {
+		// Register the Group module as a new module that needs a new store allocated
+		storeUpgrades := storetypes.StoreUpgrades{
+			Added:   []string{crisistypes.ModuleName, consensusparamtypes.ModuleName},
 			Renamed: nil,
 			Deleted: nil,
 		}
