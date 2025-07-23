@@ -41,9 +41,11 @@ do
         RPC_ADDRESS="--rpc.laddr tcp://0.0.0.0:26657"
         GRPC_ADDRESS="--grpc.address 0.0.0.0:9090"
         # TODO: Remove this after we upgrade past SDK v0.50, at which point this will break upgrade tests
+        set -u
         if [[ ! -z ${OLD_BINARY_LOCATION} ]]; then
             GRPC_ADDRESS="${GRPC_ADDRESS} --grpc-web.address 0.0.0.0:9092"
         fi
+        set +u
         sed -i 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' /validator$i/config/app.toml
         sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /validator$i/config/app.toml
         sed -i 's/enable = false/enable = true/g' /validator$i/config/app.toml #enables more than we want, but will work for now
@@ -55,9 +57,11 @@ do
         RPC_ADDRESS="--rpc.laddr tcp://7.7.7.$i:26658"
         GRPC_ADDRESS="--grpc.address 7.7.7.$i:9091"
         # TODO: Remove this after we upgrade past SDK v0.50, at which point this will break upgrade tests
+        set -u
         if [[ ! -z ${OLD_BINARY_LOCATION} ]]; then
             GRPC_ADDRESS="${GRPC_ADDRESS} --grpc-web.address 7.7.7.$i:9092"
         fi
+        set +u
     fi
     LISTEN_ADDRESS="--address tcp://7.7.7.$i:26655"
     P2P_ADDRESS="--p2p.laddr tcp://7.7.7.$i:26656"
