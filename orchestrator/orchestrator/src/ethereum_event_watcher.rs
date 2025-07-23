@@ -9,7 +9,7 @@ use deep_space::{
     private_key::{CosmosPrivateKey, PrivateKey},
 };
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::get_with_retry::get_net_version_with_retry;
+use gravity_utils::get_with_retry::get_eth_chainid_with_retry;
 use gravity_utils::get_with_retry::{get_block_number_with_retry, get_finalized_block_with_retry};
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::{
@@ -289,10 +289,10 @@ pub async fn check_for_events(
 /// https://hackmd.io/@prysmaticlabs/finality
 ///
 pub async fn get_latest_safe_block(web3: &Web3) -> Uint256 {
-    let net_version = get_net_version_with_retry(web3).await;
+    let chainid = get_eth_chainid_with_retry(web3).await;
     let block_number = get_block_number_with_retry(web3).await;
 
-    match net_version {
+    match chainid {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
         // all Ethereum proof of stake Chains
         1 | 3 | 6 | 7 => get_finalized_block_with_retry(web3).await,

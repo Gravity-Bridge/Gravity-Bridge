@@ -199,8 +199,7 @@ pub async fn submit_parameter_change_proposal(
     // encode as a generic proposal
     let any = encode_any(proposal, PARAMETER_CHANGE_PROPOSAL_TYPE_URL.to_string());
     contact
-        .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
-        // .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
+        .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
         .await
 }
 
@@ -216,8 +215,7 @@ pub async fn submit_upgrade_proposal(
     // encode as a generic proposal
     let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
     contact
-        .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
-        // .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
+        .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
         .await
 }
 
