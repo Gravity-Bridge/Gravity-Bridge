@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction"
@@ -51,7 +52,7 @@ func (suite *KeeperTestSuite) TestModuleBalanceInvariant() {
 	AssertCorrectInvariant(suite.T(), ctx, *auctionKeeper, postPeriodBalances)
 
 	// Fund the auction pool with a new coin during the current period
-	heyCoin := sdk.NewCoins(sdk.NewCoin("Hey", sdk.NewInt(1000000000000000000)))
+	heyCoin := sdk.NewCoins(sdk.NewCoin("Hey", sdkmath.NewInt(1000000000000000000)))
 	suite.FundAuctionPool(ctx, heyCoin)
 	period = auctionKeeper.GetAuctionPeriod(ctx)
 	ctx = ctx.WithBlockHeight(int64(period.EndBlockHeight))

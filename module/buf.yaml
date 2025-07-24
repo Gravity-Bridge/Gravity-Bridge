@@ -27,6 +27,7 @@ lint:
     - cosmos_proto
     - google
     - proofs.proto
+    - bech32ibc
 breaking:
   use:
     - FILE

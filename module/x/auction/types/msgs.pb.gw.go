@@ -163,7 +163,7 @@ func RegisterMsgHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 }
 
 var (
-	pattern_Msg_Bid_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1", "bid"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_Bid_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1", "bid"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdktypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -78,7 +79,7 @@ func TestGetMostRecentAttestations(t *testing.T) {
 	}
 }
 
-func createAttestations(t *testing.T, length int, k Keeper, ctx sdktypes.Context) ([]types.MsgSendToCosmosClaim, []codectypes.Any, [][]byte) {
+func createAttestations(t *testing.T, length int, k Keeper, ctx sdk.Context) ([]types.MsgSendToCosmosClaim, []codectypes.Any, [][]byte) {
 	msgs := make([]types.MsgSendToCosmosClaim, 0, length)
 	anys := make([]codectypes.Any, 0, length)
 	hashes := make([][]byte, 0, length)
@@ -87,13 +88,13 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdktypes.Context
 
 		contract := common.BytesToAddress(bytes.Repeat([]byte{0x1}, 20)).String()
 		sender := common.BytesToAddress(bytes.Repeat([]byte{0x2}, 20)).String()
-		orch := sdktypes.AccAddress(bytes.Repeat([]byte{0x3}, 20)).String()
-		receiver := sdktypes.AccAddress(bytes.Repeat([]byte{0x4}, 20)).String()
+		orch := sdk.AccAddress(bytes.Repeat([]byte{0x3}, 20)).String()
+		receiver := sdk.AccAddress(bytes.Repeat([]byte{0x4}, 20)).String()
 		msg := types.MsgSendToCosmosClaim{
 			EventNonce:     nonce,
 			EthBlockHeight: 1,
 			TokenContract:  contract,
-			Amount:         sdktypes.NewInt(10000000000 + int64(i)),
+			Amount:         sdkmath.NewInt(10000000000 + int64(i)),
 			EthereumSender: sender,
 			CosmosReceiver: receiver,
 			Orchestrator:   orch,
@@ -162,7 +163,7 @@ func TestGetSetLastObservedValset(t *testing.T) {
 				EthereumAddress: "0x0000000000000003",
 			},
 		},
-		RewardAmount: sdktypes.NewInt(1000000000),
+		RewardAmount: sdkmath.NewInt(1000000000),
 		RewardToken:  "footoken",
 	}
 
@@ -178,7 +179,7 @@ func TestGetSetLastEventNonceByValidator(t *testing.T) {
 	ctx := input.Context
 
 	valAddrString := "gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm"
-	valAccAddress, err := sdktypes.AccAddressFromBech32(valAddrString)
+	valAccAddress, err := sdk.AccAddressFromBech32(valAddrString)
 	require.NoError(t, err)
 	valAccount := k.accountKeeper.NewAccountWithAddress(ctx, valAccAddress)
 	require.NotNil(t, valAccount)
@@ -226,11 +227,11 @@ func TestInvalidHeight(t *testing.T) {
 			DestAddress: receiver.String(),
 			Erc20Token: types.ERC20Token{
 				Contract: tokenContract,
-				Amount:   sdktypes.NewInt(1),
+				Amount:   sdkmath.NewInt(1),
 			},
 			Erc20Fee: types.ERC20Token{
 				Contract: tokenContract,
-				Amount:   sdktypes.NewInt(1),
+				Amount:   sdkmath.NewInt(1),
 			},
 		}},
 		TokenContract:      tokenContract,
@@ -249,7 +250,7 @@ func TestInvalidHeight(t *testing.T) {
 		TokenContract:  tokenContract,
 		Orchestrator:   orch0.String(),
 	}
-	context := sdktypes.WrapSDKContext(ctx)
+	context := sdk.WrapSDKContext(ctx)
 	log.Info("Submitting bad eth claim from orchestrator 0", "orch", orch0.String(), "val", val0.String())
 
 	// BatchSendToEthClaim is supposed to panic and fail the message execution, set up a defer recover to catch it

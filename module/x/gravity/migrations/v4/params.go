@@ -10,10 +10,11 @@ import (
 	"strconv"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 )
 
 type Params struct {
@@ -27,11 +28,11 @@ type Params struct {
 	TargetBatchTimeout           uint64                                  `protobuf:"varint,9,opt,name=target_batch_timeout,json=targetBatchTimeout,proto3" json:"target_batch_timeout,omitempty"`
 	AverageBlockTime             uint64                                  `protobuf:"varint,10,opt,name=average_block_time,json=averageBlockTime,proto3" json:"average_block_time,omitempty"`
 	AverageEthereumBlockTime     uint64                                  `protobuf:"varint,11,opt,name=average_ethereum_block_time,json=averageEthereumBlockTime,proto3" json:"average_ethereum_block_time,omitempty"`
-	SlashFractionValset          github_com_cosmos_cosmos_sdk_types.Dec  `protobuf:"bytes,12,opt,name=slash_fraction_valset,json=slashFractionValset,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_valset"`
-	SlashFractionBatch           github_com_cosmos_cosmos_sdk_types.Dec  `protobuf:"bytes,13,opt,name=slash_fraction_batch,json=slashFractionBatch,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_batch"`
-	SlashFractionLogicCall       github_com_cosmos_cosmos_sdk_types.Dec  `protobuf:"bytes,14,opt,name=slash_fraction_logic_call,json=slashFractionLogicCall,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_logic_call"`
+	SlashFractionValset          sdkmath.LegacyDec                       `protobuf:"bytes,12,opt,name=slash_fraction_valset,json=slashFractionValset,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_valset"`
+	SlashFractionBatch           sdkmath.LegacyDec                       `protobuf:"bytes,13,opt,name=slash_fraction_batch,json=slashFractionBatch,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_batch"`
+	SlashFractionLogicCall       sdkmath.LegacyDec                       `protobuf:"bytes,14,opt,name=slash_fraction_logic_call,json=slashFractionLogicCall,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_logic_call"`
 	UnbondSlashingValsetsWindow  uint64                                  `protobuf:"varint,15,opt,name=unbond_slashing_valsets_window,json=unbondSlashingValsetsWindow,proto3" json:"unbond_slashing_valsets_window,omitempty"`
-	SlashFractionBadEthSignature github_com_cosmos_cosmos_sdk_types.Dec  `protobuf:"bytes,16,opt,name=slash_fraction_bad_eth_signature,json=slashFractionBadEthSignature,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_bad_eth_signature"`
+	SlashFractionBadEthSignature sdkmath.LegacyDec                       `protobuf:"bytes,16,opt,name=slash_fraction_bad_eth_signature,json=slashFractionBadEthSignature,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_fraction_bad_eth_signature"`
 	ValsetReward                 github_com_cosmos_cosmos_sdk_types.Coin `protobuf:"bytes,17,opt,name=valset_reward,json=valsetReward,proto3" json:"valset_reward"`
 	BridgeActive                 bool                                    `protobuf:"varint,18,opt,name=bridge_active,json=bridgeActive,proto3" json:"bridge_active,omitempty"`
 	// addresses on this blacklist are forbidden from depositing or withdrawing
@@ -273,7 +274,7 @@ func validateUnbondSlashingValsetsWindow(i interface{}) error {
 
 func validateSlashFractionValset(i interface{}) error {
 	// TODO: do we want to set some bounds on this value?
-	if _, ok := i.(github_com_cosmos_cosmos_sdk_types.Dec); !ok {
+	if _, ok := i.(sdkmath.LegacyDec); !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 	return nil
@@ -297,7 +298,7 @@ func validateSignedLogicCallsWindow(i interface{}) error {
 
 func validateSlashFractionBatch(i interface{}) error {
 	// TODO: do we want to set some bounds on this value?
-	if _, ok := i.(github_com_cosmos_cosmos_sdk_types.Dec); !ok {
+	if _, ok := i.(sdkmath.LegacyDec); !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 	return nil
@@ -305,7 +306,7 @@ func validateSlashFractionBatch(i interface{}) error {
 
 func validateSlashFractionBadEthSignature(i interface{}) error {
 	// TODO: do we want to set some bounds on this value?
-	if _, ok := i.(github_com_cosmos_cosmos_sdk_types.Dec); !ok {
+	if _, ok := i.(sdkmath.LegacyDec); !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 	return nil

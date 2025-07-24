@@ -39,10 +39,16 @@ func (s *AppTestHelper) FundCommunityPool(ctx sdk.Context, amounts sdk.Coins) {
 	decAmounts := sdk.NewDecCoinsFromCoins(amounts...)
 	distKeeper := s.App.AuctionKeeper.DistKeeper
 	s.FundModule(ctx, distrtypes.ModuleName, amounts)
-	communityPool := distKeeper.GetFeePool(ctx)
+	communityPool, err := distKeeper.FeePool.Get(ctx)
+	if err != nil {
+		panic("Failed to get community pool")
+	}
 	communityPool.CommunityPool = communityPool.CommunityPool.Add(decAmounts...)
 
-	distKeeper.SetFeePool(ctx, communityPool)
+	err = distKeeper.FeePool.Set(ctx, communityPool)
+	if err != nil {
+		panic("Failed to set community pool")
+	}
 }
 
 // Mints tokens and places them in the auction module pool

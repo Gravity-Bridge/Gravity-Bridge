@@ -16,6 +16,9 @@ gravity_utils = {path = "../gravity_utils"}
 gravity_proto = {workspace = true}
 orchestrator = {path = "../orchestrator/"}
 
+old_gravity_utils = {package="gravity_utils", git = "https://github.com/Gravity-Bridge/Gravity-Bridge", rev = "065c526f43739a818714dce0343056c5b75c90af"}
+
+
 bytes = "1"
 prost = {workspace = true}
 prost-types = {workspace = true}

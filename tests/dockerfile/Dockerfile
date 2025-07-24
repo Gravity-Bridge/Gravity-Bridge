@@ -1,4 +1,4 @@
-FROM fedora:39
+FROM fedora:42
 # Copy the specific go binary version from the golang image
 ENV GOPATH=/go
 ENV PATH=$PATH:/go/bin

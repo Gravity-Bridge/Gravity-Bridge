@@ -10,35 +10,40 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 
 // Query defines the gRPC querier service
 service Query {
-  rpc GetPendingSendToEthV2(QueryPendingSendToEthV2) returns (QueryPendingSendToEthV2Response) {
+  rpc GetPendingSendToEthV2(QueryPendingSendToEthV2)
+      returns (QueryPendingSendToEthV2Response) {
     option (google.api.http).get = "/gravity/v2/query_pending_send_to_eth_v2";
   }
-  rpc GetPendingSendToEthV2BySender(QueryPendingSendToEthV2BySender) returns (QueryPendingSendToEthV2BySenderResponse) {
-    option (google.api.http).get = "/gravity/v2/query_pending_send_to_eth_v2_by_sender/{sender}";
+  rpc GetPendingSendToEthV2BySender(QueryPendingSendToEthV2BySender)
+      returns (QueryPendingSendToEthV2BySenderResponse) {
+    option (google.api.http).get =
+        "/gravity/v2/query_pending_send_to_eth_v2_by_sender/{sender}";
   }
-  rpc GetOutgoingTxBatchesByAddr(QueryOutgoingTxBatchesByAddrRequest) returns (QueryOutgoingTxBatchesByAddrResponse) {
-    option (google.api.http).get = "/gravity/v1beta/batch/outgoingtx_by_addr/{address}";
+  rpc GetOutgoingTxBatchesByAddr(QueryOutgoingTxBatchesByAddrRequest)
+      returns (QueryOutgoingTxBatchesByAddrResponse) {
+    option (google.api.http).get =
+        "/gravity/v1beta/batch/outgoingtx_by_addr/{address}";
   }
 }
 
-message QueryPendingSendToEthV2 {
-}
+message QueryPendingSendToEthV2 {}
 message QueryPendingSendToEthV2Response {
-  repeated OutgoingTransferAndBatch transfers_in_batches = 1 [(gogoproto.nullable) = false];
-  repeated gravity.v1.OutgoingTransferTx unbatched_transfers  = 2 [(gogoproto.nullable) = false];
+  repeated OutgoingTransferAndBatch transfers_in_batches = 1
+      [ (gogoproto.nullable) = false ];
+  repeated gravity.v1.OutgoingTransferTx unbatched_transfers = 2
+      [ (gogoproto.nullable) = false ];
 }
 
-message QueryPendingSendToEthV2BySender {
-  string sender = 1;
-}
+message QueryPendingSendToEthV2BySender { string sender = 1; }
 message QueryPendingSendToEthV2BySenderResponse {
-  repeated OutgoingTransferAndBatch transfers_in_batches = 1 [(gogoproto.nullable) = false];
-  repeated gravity.v1.OutgoingTransferTx unbatched_transfers  = 2 [(gogoproto.nullable) = false];
+  repeated OutgoingTransferAndBatch transfers_in_batches = 1
+      [ (gogoproto.nullable) = false ];
+  repeated gravity.v1.OutgoingTransferTx unbatched_transfers = 2
+      [ (gogoproto.nullable) = false ];
 }
 
-message QueryOutgoingTxBatchesByAddrRequest {
-  string address = 1;
-}
+message QueryOutgoingTxBatchesByAddrRequest { string address = 1; }
 message QueryOutgoingTxBatchesByAddrResponse {
-  repeated gravity.v1.OutgoingTxBatch batches = 1 [(gogoproto.nullable) = false];
+  repeated gravity.v1.OutgoingTxBatch batches = 1
+      [ (gogoproto.nullable) = false ];
 }

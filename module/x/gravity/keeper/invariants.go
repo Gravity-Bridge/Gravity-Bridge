@@ -47,7 +47,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 		actualBals := k.bankKeeper.GetAllBalances(ctx, modAcc)
 		expectedBals := make(map[string]*math.Int, len(actualBals)) // Collect balances by contract
 		for _, v := range actualBals {
-			newInt := sdk.NewInt(0)
+			newInt := math.NewInt(0)
 			expectedBals[v.Denom] = &newInt
 		}
 		expectedBals = sumUnconfirmedBatchModuleBalances(ctx, k, expectedBals)
@@ -84,7 +84,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 // sumUnconfirmedBatchModuleBalances calculate the value the module should have stored due to unconfirmed batches
 func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[string]*math.Int) map[string]*math.Int {
 	k.IterateOutgoingTxBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
-		batchTotal := sdk.NewInt(0)
+		batchTotal := math.NewInt(0)
 		// Collect the send amount + fee amount for each tx
 		for _, tx := range batch.Transactions {
 			newTotal := batchTotal.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
@@ -95,7 +95,7 @@ func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals m
 		// Add the batch total to the contract counter
 		_, ok := expectedBals[denom]
 		if !ok {
-			zero := sdk.ZeroInt()
+			zero := math.ZeroInt()
 			expectedBals[denom] = &zero
 		}
 
@@ -118,7 +118,7 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[st
 		txTotal := tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount)
 		_, ok := expectedBals[denom]
 		if !ok {
-			zero := sdk.ZeroInt()
+			zero := math.ZeroInt()
 			expectedBals[denom] = &zero
 		}
 		*expectedBals[denom] = expectedBals[denom].Add(txTotal)
@@ -132,7 +132,7 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[st
 func sumPendingIbcAutoForwards(ctx sdk.Context, k Keeper, expectedBals map[string]*math.Int) map[string]*math.Int {
 	for _, forward := range k.PendingIbcAutoForwards(ctx, uint64(0)) {
 		if _, ok := expectedBals[forward.Token.Denom]; !ok {
-			zero := sdk.ZeroInt()
+			zero := math.ZeroInt()
 			expectedBals[forward.Token.Denom] = &zero
 		} else {
 			*expectedBals[forward.Token.Denom] = expectedBals[forward.Token.Denom].Add(forward.Token.Amount)

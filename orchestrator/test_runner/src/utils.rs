@@ -230,7 +230,7 @@ pub async fn get_erc20_balance_safe(
     // and cause any individual request to fail.
     let mut new_balance = Err(Web3Error::BadInput("Intentional Error".to_string()));
     while new_balance.is_err() && Instant::now() - start < TOTAL_TIMEOUT {
-        new_balance = web3.get_erc20_balance(erc20, address).await;
+        new_balance = web3.get_erc20_balance(erc20, address, vec![]).await;
         // only keep trying if our error is gas related
         if let Err(ref e) = new_balance {
             if !e.to_string().contains("maxFeePerGas") {
@@ -683,21 +683,6 @@ pub async fn get_event_nonce_safe(
         }
     }
     Ok(new_balance.unwrap())
-}
-
-/// waits for the cosmos chain to start producing blocks, used to prevent race conditions
-/// where our tests try to start running before the Cosmos chain is ready
-pub async fn wait_for_cosmos_online(contact: &Contact, timeout: Duration) {
-    let start = Instant::now();
-    while let Err(CosmosGrpcError::NodeNotSynced) | Err(CosmosGrpcError::ChainNotRunning) =
-        contact.wait_for_next_block(timeout).await
-    {
-        sleep(Duration::from_secs(1)).await;
-        if Instant::now() - start > timeout {
-            panic!("Cosmos node has not come online during timeout!")
-        }
-    }
-    contact.wait_for_next_block(timeout).await.unwrap();
 }
 
 /// This function returns the valoper address of a validator

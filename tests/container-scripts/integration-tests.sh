@@ -36,4 +36,4 @@ set -u
 
 
 pushd $FOLDER_PATH/orchestrator/test_runner
-RUST_BACKTRACE=full TEST_TYPE=$TEST_TYPE RUST_LOG=INFO PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
+RUST_BACKTRACE=full TEST_TYPE=$TEST_TYPE RUST_LOG="INFO" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner

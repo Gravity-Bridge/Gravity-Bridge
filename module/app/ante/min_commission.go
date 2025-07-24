@@ -3,6 +3,7 @@ package ante
 import (
 	errorsmod "cosmossdk.io/errors"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -28,7 +29,7 @@ func (min MinCommissionDecorator) AnteHandle(
 	msgs := tx.GetMsgs()
 
 	validMsg := func(m sdk.Msg) error {
-		minCommissionRate := sdk.NewDecWithPrec(10, 2)
+		minCommissionRate := sdkmath.LegacyNewDecWithPrec(10, 2)
 		switch msg := m.(type) {
 		case *stakingtypes.MsgCreateValidator:
 			// prevent new validators joining the set with

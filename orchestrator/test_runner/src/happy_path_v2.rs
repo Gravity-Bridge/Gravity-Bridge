@@ -353,25 +353,25 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
 
     // now that we have the contract, validate that it has the properties we want
     let got_decimals = web30
-        .get_erc20_decimals(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_decimals(erc20_contract, *MINER_ADDRESS, vec![])
         .await
         .unwrap();
     assert_eq!(Uint256::from(cosmos_decimals), got_decimals);
 
     let got_name = web30
-        .get_erc20_name(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_name(erc20_contract, *MINER_ADDRESS, vec![])
         .await
         .unwrap();
     assert_eq!(got_name, token_metadata.name);
 
     let got_symbol = web30
-        .get_erc20_symbol(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_symbol(erc20_contract, *MINER_ADDRESS, vec![])
         .await
         .unwrap();
     assert_eq!(got_symbol, token_metadata.symbol);
 
     let got_supply = web30
-        .get_erc20_supply(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_supply(erc20_contract, *MINER_ADDRESS, vec![])
         .await
         .unwrap();
     assert_eq!(got_supply, 0u8.into());

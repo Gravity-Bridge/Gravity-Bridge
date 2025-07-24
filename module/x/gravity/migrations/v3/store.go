@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -35,7 +35,7 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 
 // Iterates over every value stored under keyPrefix, computes the new key using getNewKey,
 // then stores the value in the new key before deleting the old key
-func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix []byte, getNewKey func([]byte, codec.BinaryCodec, []byte, []byte) ([]byte, error)) error {
+func migrateKeysFromValues(store storetypes.KVStore, cdc codec.BinaryCodec, keyPrefix []byte, getNewKey func([]byte, codec.BinaryCodec, []byte, []byte) ([]byte, error)) error {
 	prefixStore := prefix.NewStore(store, keyPrefix)
 	prefixStoreIter := prefixStore.Iterator(nil, nil)
 	defer prefixStoreIter.Close()

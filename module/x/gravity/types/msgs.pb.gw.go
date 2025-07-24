@@ -1190,33 +1190,33 @@ func RegisterMsgHandlerClient(ctx context.Context, mux *runtime.ServeMux, client
 }
 
 var (
-	pattern_Msg_ValsetConfirm_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "valset_confirm"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_ValsetConfirm_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "valset_confirm"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_SendToEth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "send_to_eth"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_SendToEth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "send_to_eth"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_RequestBatch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "request_batch"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_RequestBatch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "request_batch"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_ConfirmBatch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "confirm_batch"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_ConfirmBatch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "confirm_batch"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_ConfirmLogicCall_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "confim_logic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_ConfirmLogicCall_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "confim_logic"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_SendToCosmosClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "send_to_cosmos_claim"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_SendToCosmosClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "send_to_cosmos_claim"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_ExecuteIbcAutoForwards_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "execute_ibc_auto_forwards"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_ExecuteIbcAutoForwards_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "execute_ibc_auto_forwards"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_BatchSendToEthClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "batch_send_to_eth_claim"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_BatchSendToEthClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "batch_send_to_eth_claim"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_ValsetUpdateClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "valset_updated_claim"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_ValsetUpdateClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "valset_updated_claim"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_ERC20DeployedClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "erc20_deployed_claim"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_ERC20DeployedClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "erc20_deployed_claim"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_LogicCallExecutedClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "logic_call_executed_claim"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_LogicCallExecutedClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "logic_call_executed_claim"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_SetOrchestratorAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "set_orchestrator_address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_SetOrchestratorAddress_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "set_orchestrator_address"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_CancelSendToEth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "cancel_send_to_eth"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_CancelSendToEth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "cancel_send_to_eth"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Msg_SubmitBadSignatureEvidence_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "submit_bad_signature_evidence"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Msg_SubmitBadSignatureEvidence_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1", "submit_bad_signature_evidence"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

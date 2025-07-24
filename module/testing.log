@@ -1,0 +1,698 @@
+ok  	github.com/Gravity-Bridge/Gravity-Bridge/module/app	(cached)
+make: *** [Makefile:77: test] Interrupt
+ok  	github.com/Gravity-Bridge/Gravity-Bridge/module/app	(cached)
+WARNING: proto: file name bech32ibc/v1beta1/genesis.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/gov.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/query.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/types.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+--- FAIL: TestAnteHandlerHappy (0.01s)
+panic: collections: conflict: index uniqueness constrain violation: 0 [recovered]
+	panic: collections: conflict: index uniqueness constrain violation: 0
+
+goroutine 71 [running]:
+testing.tRunner.func1.2({0x55cc8f5225a0, 0xc0005aa6a0})
+	/usr/local/go/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/usr/local/go/src/testing/testing.go:1737 +0x35e
+panic({0x55cc8f5225a0?, 0xc0005aa6a0?})
+	/usr/local/go/src/runtime/panic.go:792 +0x132
+github.com/cosmos/cosmos-sdk/x/auth/keeper.AccountKeeper.SetAccount({{0x55cc8f9a9a68, 0xc0009a62d0}, {0x55cc8f99a4c0, 0xc000211c48}, {0x55cc8f9e4160, 0xc001493990}, 0xc000fb6240, {0x55cc8ec4e096, 0x7}, 0x55cc8f987fc0, ...}, ...)
+	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/x/auth/keeper/account.go:61 +0x94
+github.com/cosmos/cosmos-sdk/x/auth/keeper.AccountKeeper.SetModuleAccount(...)
+	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/x/auth/keeper/keeper.go:264
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper.CreateTestEnv(_)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/keeper/test_common.go:585 +0x1f37
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper.SetupFiveValChain(_)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/keeper/test_common.go:281 +0x8a
+github.com/Gravity-Bridge/Gravity-Bridge/module/app/ante.TestAnteHandlerHappy(0xc0014a3500)
+	/home/cbo/go/src/gravity-bridge-dev/module/app/ante/ante_test.go:65 +0x7b
+testing.tRunner(0xc0014a3500, 0x55cc8f987660)
+	/usr/local/go/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 1
+	/usr/local/go/src/testing/testing.go:1851 +0x413
+FAIL	github.com/Gravity-Bridge/Gravity-Bridge/module/app/ante	0.136s
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/params	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/apollo	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/neutrino	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/cmd/gravity	[no test files]
+WARNING: proto: file name bech32ibc/v1beta1/genesis.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/gov.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/query.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/types.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+{
+ "moniker": "appnode-test",
+ "chain_id": "test-chain-3v0K6s",
+ "node_id": "b78db6c3482779d0630cf9acb4905c6a549cbf44",
+ "gentxs_dir": "",
+ "app_message": {
+  "genutil": {
+   "gen_txs": []
+  }
+ }
+}
+Error: failed to get address from Keyring: .info: key not found [cosmos/cosmos-sdk@v0.50.8/crypto/keyring/keyring.go:538]
+Usage:
+  add-genesis-account [address_or_key_name] [coin][,[coin]] [flags]
+
+Flags:
+      --append                   append the coins to an account already in the genesis.json file
+      --grpc-addr string         the gRPC endpoint to use for this chain
+      --grpc-insecure            allow gRPC over insecure channels, if not the server must use TLS
+      --height int               Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help                     help for add-genesis-account
+      --home string              The application home directory (default "/tmp/TestAddGenesisAccountCmdinvalid_address2614129/001")
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test) (default "os")
+      --module-name string       module account name
+      --node string              <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string            Output format (text|json) (default "text")
+      --vesting-amount string    amount of coins for vesting accounts
+      --vesting-end-time int     schedule end time (unix epoch) for vesting accounts
+      --vesting-start-time int   schedule start time (unix epoch) for vesting accounts
+
+{
+ "moniker": "appnode-test",
+ "chain_id": "test-chain-CJlIWj",
+ "node_id": "75afc6235576b3ccc32d2119b52c5fc48c4297b6",
+ "gentxs_dir": "",
+ "app_message": {
+  "genutil": {
+   "gen_txs": []
+  }
+ }
+}
+Error: failed to marshal auth genesis state: unable to resolve type URL /cosmos.auth.v1beta1.BaseAccount
+Usage:
+  add-genesis-account [address_or_key_name] [coin][,[coin]] [flags]
+
+Flags:
+      --append                   append the coins to an account already in the genesis.json file
+      --grpc-addr string         the gRPC endpoint to use for this chain
+      --grpc-insecure            allow gRPC over insecure channels, if not the server must use TLS
+      --height int               Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help                     help for add-genesis-account
+      --home string              The application home directory (default "/tmp/TestAddGenesisAccountCmdvalid_address3883649153/001")
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test) (default "os")
+      --module-name string       module account name
+      --node string              <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string            Output format (text|json) (default "text")
+      --vesting-amount string    amount of coins for vesting accounts
+      --vesting-end-time int     schedule end time (unix epoch) for vesting accounts
+      --vesting-start-time int   schedule start time (unix epoch) for vesting accounts
+
+{
+ "moniker": "appnode-test",
+ "chain_id": "test-chain-QMiQpP",
+ "node_id": "9a1b5957fe6a95c965ee18a522b86110251ac747",
+ "gentxs_dir": "",
+ "app_message": {
+  "genutil": {
+   "gen_txs": []
+  }
+ }
+}
+Error: failed to marshal auth genesis state: unable to resolve type URL /cosmos.auth.v1beta1.BaseAccount
+Usage:
+  add-genesis-account [address_or_key_name] [coin][,[coin]] [flags]
+
+Flags:
+      --append                   append the coins to an account already in the genesis.json file
+      --grpc-addr string         the gRPC endpoint to use for this chain
+      --grpc-insecure            allow gRPC over insecure channels, if not the server must use TLS
+      --height int               Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help                     help for add-genesis-account
+      --home string              The application home directory (default "/tmp/TestAddGenesisAccountCmdmultiple_denoms3811613762/001")
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test) (default "os")
+      --module-name string       module account name
+      --node string              <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string            Output format (text|json) (default "text")
+      --vesting-amount string    amount of coins for vesting accounts
+      --vesting-end-time int     schedule end time (unix epoch) for vesting accounts
+      --vesting-start-time int   schedule start time (unix epoch) for vesting accounts
+
+--- FAIL: TestAddGenesisAccountCmd (0.01s)
+    --- FAIL: TestAddGenesisAccountCmd/valid_address (0.00s)
+        genaccounts_test.go:82: 
+            	Error Trace:	/home/cbo/go/src/gravity-bridge-dev/module/cmd/gravity/cmd/genaccounts_test.go:82
+            	Error:      	Received unexpected error:
+            	            	failed to marshal auth genesis state: unable to resolve type URL /cosmos.auth.v1beta1.BaseAccount
+            	Test:       	TestAddGenesisAccountCmd/valid_address
+    --- FAIL: TestAddGenesisAccountCmd/multiple_denoms (0.00s)
+        genaccounts_test.go:82: 
+            	Error Trace:	/home/cbo/go/src/gravity-bridge-dev/module/cmd/gravity/cmd/genaccounts_test.go:82
+            	Error:      	Received unexpected error:
+            	            	failed to marshal auth genesis state: unable to resolve type URL /cosmos.auth.v1beta1.BaseAccount
+            	Test:       	TestAddGenesisAccountCmd/multiple_denoms
+FAIL
+FAIL	github.com/Gravity-Bridge/Gravity-Bridge/module/cmd/gravity/cmd	0.146s
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/config	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/client/cli	[no test files]
+WARNING: proto: file name bech32ibc/v1beta1/genesis.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/gov.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/query.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/types.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+--- FAIL: TestKeeperTestSuite (0.49s)
+    --- FAIL: TestKeeperTestSuite/TestAuctionPeriodStorage (0.05s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 14 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc0016ca000, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc0016d6750?}, {0x562c7c871460, 0xc001d05630})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc001d05630})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc000c81ca0}, {0x0, 0x0}, 0x1, 0xc0016c16b0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc0016ca000)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc0016ca000, 0xc001672870)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestAuctionPeriodWhileDisabled (0.05s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 38 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc0021dd340, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc002289c70?}, {0x562c7c871460, 0xc001e36960})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc001e36960})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc000c805c0}, {0x0, 0x0}, 0x1, 0xc0022915f0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc0021dd340)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc0021dd340, 0xc001672900)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestAuctionStorage (0.05s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 78 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc0018e4000, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc0018ee8f0?}, {0x562c7c871460, 0xc000b2f360})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc000b2f360})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc00250e160}, {0x0, 0x0}, 0x1, 0xc0018ae210, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc0018e4000)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc0018e4000, 0xc001672990)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestDisabledAuctionFunctions (0.04s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 109 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc00143b6c0, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc0014fac30?}, {0x562c7c871460, 0xc001690280})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc001690280})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc000b23aa0}, {0x0, 0x0}, 0x1, 0xc0017dee70, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc00143b6c0)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc00143b6c0, 0xc001672a20)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestEmptyAuctionFunctions (0.04s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 124 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc000d8ee00, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc001680340?}, {0x562c7c871460, 0xc001e36a00})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc001e36a00})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc001b89340}, {0x0, 0x0}, 0x1, 0xc001685ad0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc000d8ee00)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc000d8ee00, 0xc001672ab0)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestEndBlockerAuction (0.03s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 85 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc002e02000, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc002e0c8f0?}, {0x562c7c871460, 0xc001d05270})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc001d05270})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc001bf0500}, {0x0, 0x0}, 0x1, 0xc0016c0de0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc002e02000)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc002e02000, 0xc001672b40)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestGenesis (0.03s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 162 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc001335500, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc002bbe0d0?}, {0x562c7c871460, 0xc00204b270})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0xc0016dea00?, {0x562c7c871460, 0xc00204b270})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc002158540}, {0x0, 0x0}, 0x1, 0xc002161d40, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc001335500)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc001335500, 0xc001672bd0)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestHelpers (0.04s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 183 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc0023c0380, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc00242e9c0?}, {0x562c7c871460, 0xc0013e7c70})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc0013e7c70})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc00241c0c0}, {0x0, 0x0}, 0x1, 0xc002412ff0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc0023c0380)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc0023c0380, 0xc001672c60)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestInvalidGenesis (0.03s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 163 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc001dedc00, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc001f6d110?}, {0x562c7c871460, 0xc00250c4b0})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc00250c4b0})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc001b16b80}, {0x0, 0x0}, 0x1, 0xc001f63dd0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc001dedc00)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc001dedc00, 0xc001672cf0)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestModuleBalanceInvariant (0.04s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 198 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc001ba8a80, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc001c97e10?}, {0x562c7c871460, 0xc00182d810})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc00182d810})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc0000d6a80}, {0x0, 0x0}, 0x1, 0xc001ca8510, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc001ba8a80)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc001ba8a80, 0xc001672d80)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestMsgBid (0.02s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 213 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc001bac380, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc001c18a90?}, {0x562c7c871460, 0xc0013e7950})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc0013e7950})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc002817460}, {0x0, 0x0}, 0x1, 0xc001bd07b0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc001bac380)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc001bac380, 0xc001672e10)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestParams (0.03s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 228 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc001a27a40, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc001b9a8f0?}, {0x562c7c871460, 0xc001b266e0})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc001b266e0})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc0014d6c60}, {0x0, 0x0}, 0x1, 0xc001b875f0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc001a27a40)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc001a27a40, 0xc001672ea0)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestSendRemoveAuctionPool (0.02s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 243 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc001ab0e00, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc001bb0c30?}, {0x562c7c871460, 0xc000b2f450})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc000b2f450})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc0020f7560}, {0x0, 0x0}, 0x1, 0xc001b937d0, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc001ab0e00)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc001ab0e00, 0xc001672f30)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+    --- FAIL: TestKeeperTestSuite/TestWinningBidBurning (0.02s)
+        msg_server.go:28: test panicked: query router must not be nil
+            goroutine 258 [running]:
+            runtime/debug.Stack()
+            	/usr/local/go/src/runtime/debug/stack.go:26 +0x5e
+            github.com/stretchr/testify/suite.failOnPanic(0xc001af81c0, {0x562c7c1c1260, 0x562c7c829420})
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:89 +0x37
+            github.com/stretchr/testify/suite.Run.func1.1()
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:188 +0x299
+            panic({0x562c7c1c1260?, 0x562c7c829420?})
+            	/usr/local/go/src/runtime/panic.go:792 +0x132
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper.NewMsgServerImpl(...)
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/host/keeper/msg_server.go:28
+            github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts.AppModule.RegisterServices({{}, 0x0?, 0xc001ba2c30?}, {0x562c7c871460, 0xc00017d3b0})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/ibc-go/v8@v8.3.2/modules/apps/27-interchain-accounts/module.go:153 +0x329
+            github.com/cosmos/cosmos-sdk/types/module.(*Manager).RegisterServices(0x562c7e5d7d80?, {0x562c7c871460, 0xc00017d3b0})
+            	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/types/module/module.go:460 +0xcd
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.NewGravityApp({0x562c7c875150, 0x562c7e784c80}, {0x562c7c88c260, 0xc0027d3160}, {0x0, 0x0}, 0x1, 0xc001b8d020, {0xc001211c20, 0x12}, ...)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/app.go:934 +0x6925
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app.InitGravityTestApp(0x1)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/test_setup.go:47 +0x1c8
+            github.com/Gravity-Bridge/Gravity-Bridge/module/app/apptesting.(*AppTestHelper).Setup(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/app/apptesting/test_helpers.go:33 +0x2f
+            github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper_test.(*KeeperTestSuite).SetupTest(0xc000e33688)
+            	/home/cbo/go/src/gravity-bridge-dev/module/x/auction/keeper/keeper_test.go:25 +0x1e
+            github.com/stretchr/testify/suite.Run.func1(0xc001af81c0)
+            	/home/cbo/go/pkg/mod/github.com/stretchr/testify@v1.9.0/suite/suite.go:192 +0x1e5
+            testing.tRunner(0xc001af81c0, 0xc001672fc0)
+            	/usr/local/go/src/testing/testing.go:1792 +0xf4
+            created by testing.(*T).Run in goroutine 13
+            	/usr/local/go/src/testing/testing.go:1851 +0x413
+FAIL
+FAIL	github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper	0.653s
+ok  	github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types	(cached)
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/client/cli	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/client/rest	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types	[no test files]
+WARNING: proto: file name bech32ibc/v1beta1/genesis.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/gov.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/query.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/types.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+--- FAIL: TestValsetCreationIfNotAvailable (0.01s)
+panic: collections: conflict: index uniqueness constrain violation: 0 [recovered]
+	panic: collections: conflict: index uniqueness constrain violation: 0
+
+goroutine 22 [running]:
+testing.tRunner.func1.2({0x5559d186d560, 0xc001377660})
+	/usr/local/go/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/usr/local/go/src/testing/testing.go:1737 +0x35e
+panic({0x5559d186d560?, 0xc001377660?})
+	/usr/local/go/src/runtime/panic.go:792 +0x132
+github.com/cosmos/cosmos-sdk/x/auth/keeper.AccountKeeper.SetAccount({{0x5559d1cbd9f0, 0xc001431af0}, {0x5559d1caef80, 0xc000e1ea38}, {0x5559d1cf51c0, 0xc000f97d40}, 0xc001589f20, {0x5559d100736b, 0x7}, 0x5559d1c9db08, ...}, ...)
+	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/x/auth/keeper/account.go:61 +0x94
+github.com/cosmos/cosmos-sdk/x/auth/keeper.AccountKeeper.SetModuleAccount(...)
+	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/x/auth/keeper/keeper.go:264
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper.CreateTestEnv(_)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/keeper/test_common.go:585 +0x1f37
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper.SetupFiveValChain(_)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/keeper/test_common.go:281 +0x8a
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity.TestValsetCreationIfNotAvailable(0xc000fb48c0)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/abci_test.go:24 +0x9b
+testing.tRunner(0xc000fb48c0, 0x5559d1c9d228)
+	/usr/local/go/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 1
+	/usr/local/go/src/testing/testing.go:1851 +0x413
+FAIL	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity	0.109s
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/client/cli	[no test files]
+WARNING: proto: file name bech32ibc/v1beta1/genesis.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/gov.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/query.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/types.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+--- FAIL: TestGetAndDeleteAttestation (0.00s)
+panic: collections: conflict: index uniqueness constrain violation: 0 [recovered]
+	panic: collections: conflict: index uniqueness constrain violation: 0
+
+goroutine 15 [running]:
+testing.tRunner.func1.2({0x55fd55e0f6c0, 0xc000883380})
+	/usr/local/go/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/usr/local/go/src/testing/testing.go:1737 +0x35e
+panic({0x55fd55e0f6c0?, 0xc000883380?})
+	/usr/local/go/src/runtime/panic.go:792 +0x132
+github.com/cosmos/cosmos-sdk/x/auth/keeper.AccountKeeper.SetAccount({{0x55fd563132b0, 0xc001085470}, {0x55fd56302a80, 0xc000613bf0}, {0x55fd56356800, 0xc000204ab0}, 0xc0012a8de0, {0x55fd55491fb9, 0x7}, 0x55fd562ee908, ...}, ...)
+	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/x/auth/keeper/account.go:61 +0x94
+github.com/cosmos/cosmos-sdk/x/auth/keeper.AccountKeeper.SetModuleAccount(...)
+	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/x/auth/keeper/keeper.go:264
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper.CreateTestEnv(_)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/keeper/test_common.go:585 +0x1f37
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper.TestGetAndDeleteAttestation(0xc00116ce00)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/keeper/attestation_test.go:19 +0x32
+testing.tRunner(0xc00116ce00, 0x55fd562ee708)
+	/usr/local/go/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 1
+	/usr/local/go/src/testing/testing.go:1851 +0x413
+FAIL	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper	0.131s
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1	[no test files]
+WARNING: proto: file name bech32ibc/v1beta1/genesis.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/gov.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/query.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+WARNING: proto: file name bech32ibc/v1beta1/types.proto does not start with expected bech32ibc/bech32ibc/v1beta1/; please make sure your folder structure matches the proto files fully-qualified names
+--- FAIL: TestMigrateCosmosOriginatedDenomToERC20 (0.01s)
+panic: collections: conflict: index uniqueness constrain violation: 0 [recovered]
+	panic: collections: conflict: index uniqueness constrain violation: 0
+
+goroutine 66 [running]:
+testing.tRunner.func1.2({0x563cc197ae80, 0xc001019500})
+	/usr/local/go/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/usr/local/go/src/testing/testing.go:1737 +0x35e
+panic({0x563cc197ae80?, 0xc001019500?})
+	/usr/local/go/src/runtime/panic.go:792 +0x132
+github.com/cosmos/cosmos-sdk/x/auth/keeper.AccountKeeper.SetAccount({{0x563cc1dc97f8, 0xc00148d2c0}, {0x563cc1dbae80, 0xc0001904d8}, {0x563cc1e00f90, 0xc000c2a9c0}, 0xc0013c4d20, {0x563cc1122b3f, 0x7}, 0x563cc1da9ac8, ...}, ...)
+	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/x/auth/keeper/account.go:61 +0x94
+github.com/cosmos/cosmos-sdk/x/auth/keeper.AccountKeeper.SetModuleAccount(...)
+	/home/cbo/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.8/x/auth/keeper/keeper.go:264
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper.CreateTestEnv(_)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/keeper/test_common.go:585 +0x1f37
+github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2_test.TestMigrateCosmosOriginatedDenomToERC20(0xc000f7e1c0)
+	/home/cbo/go/src/gravity-bridge-dev/module/x/gravity/migrations/v2/store_test.go:67 +0x45
+testing.tRunner(0xc000f7e1c0, 0x563cc1da9008)
+	/usr/local/go/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 1
+	/usr/local/go/src/testing/testing.go:1851 +0x413
+FAIL	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2	0.093s
+ok  	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v3	(cached)
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v4	[no test files]
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v5	[no test files]
+ok  	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types	(cached)
+?   	github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2	[no test files]
+FAIL
+make: *** [Makefile:77: test] Error 1

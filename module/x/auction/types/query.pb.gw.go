@@ -619,19 +619,19 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Query_Params_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "params"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_Params_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "params"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_AuctionPeriod_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "period"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AuctionPeriod_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "period"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_Auctions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "auctions"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_Auctions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "auctions"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_AuctionById_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "auction-id", "auction_id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AuctionById_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "auction-id", "auction_id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_AuctionByDenom_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "auction-denom", "auction_denom"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AuctionByDenom_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "auction-denom", "auction_denom"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_AllAuctionsByBidder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "auctions-bidder", "address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AllAuctionsByBidder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"auction", "v1beta", "auctions-bidder", "address"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_AuctionPool_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "auction-pool"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_AuctionPool_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"auction", "v1beta", "auction-pool"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

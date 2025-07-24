@@ -430,7 +430,7 @@ pub async fn send_erc20_deposit(
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
     web30
-        .get_erc20_name(erc20_address, *MINER_ADDRESS)
+        .get_erc20_name(erc20_address, *MINER_ADDRESS, vec![])
         .await
         .expect("Not a valid ERC20 contract address");
 

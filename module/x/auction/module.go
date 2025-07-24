@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -16,7 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/client/cli"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
@@ -26,8 +26,9 @@ import (
 // type check to ensure the interface is properly implemented
 // nolint: exhaustruct
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ module.AppModule       = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic object for module implementation
@@ -101,6 +102,12 @@ func (am AppModule) ConsensusVersion() uint64 {
 	return 1
 }
 
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
+
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k keeper.Keeper, bankKeeper bankkeeper.Keeper, accountkeeper authKeeper.AccountKeeper) AppModule {
 	return AppModule{
@@ -118,23 +125,6 @@ func (AppModule) Name() string {
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 	ir.RegisterRoute(types.ModuleName, "module-balance", keeper.ModuleBalanceInvariant(am.keeper))
 	ir.RegisterRoute(types.ModuleName, "valid-auctions", keeper.ValidAuctionsInvariant(am.keeper))
-}
-
-// Route implements app module
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
-}
-
-// QuerierRoute implements app module
-func (am AppModule) QuerierRoute() string {
-	return types.QuerierRoute
-}
-
-// LegacyQuerierHandler returns the module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return func(_ sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
-		return nil, fmt.Errorf("legacy querier not implemented, use gRPC queries instead")
-	}
 }
 
 // RegisterServices registers module services.
@@ -156,14 +146,9 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(genState)
 }
 
-// BeginBlock handles the start of every block
-func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
-	// Auction module does not use BeginBlock
-}
-
 // EndBlock handles the end of every block
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	// End auctions, transfer balances, start new auctions
+func (am AppModule) EndBlock(c context.Context) ([]abci.ValidatorUpdate, error) { // End auctions, transfer balances, start new auctions
+	ctx := sdk.UnwrapSDKContext(c)
 	EndBlocker(ctx, am.keeper)
-	return []abci.ValidatorUpdate{}
+	return []abci.ValidatorUpdate{}, nil
 }

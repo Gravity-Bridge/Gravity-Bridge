@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	errorsmod "cosmossdk.io/errors"
-
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -286,7 +286,7 @@ func (k Keeper) filterAndIterateUnbatchedTransactions(ctx sdk.Context, prefixKey
 // grant if created right now. This info is both presented to relayers for the purpose of determining when to request
 // batches and also used by the batch creation process to decide not to create a new batch (fees must be increasing)
 func (k Keeper) GetBatchFeeByTokenType(ctx sdk.Context, tokenContractAddr types.EthAddress, maxElements uint) *types.BatchFees {
-	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress().Hex(), TotalFees: sdk.NewInt(0), TxCount: 0}
+	batchFee := types.BatchFees{Token: tokenContractAddr.GetAddress().Hex(), TotalFees: sdkmath.NewInt(0), TxCount: 0}
 
 	// Since transactions are stored with keys [ prefix | contract | fee_amount] and since this iterator returns results
 	// in DESC order, we can safely pick the first N and have a batch with maximal fees for relaying

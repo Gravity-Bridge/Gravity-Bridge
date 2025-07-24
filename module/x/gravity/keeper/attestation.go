@@ -7,13 +7,14 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	math "cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 
+	storetypes "cosmossdk.io/store/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"cosmossdk.io/store/prefix"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
 // TODO-JT: carefully look at atomicity of this function
@@ -26,7 +27,10 @@ func (k Keeper) Attest(
 	if !found {
 		panic("Could not find ValAddr for delegate key, should be checked by now")
 	}
-	valAddr := val.GetOperator()
+	valAddr, err := sdk.ValAddressFromBech32(val.GetOperator())
+	if err != nil {
+		panic(fmt.Errorf("Failed to parse validator operator address: %w", err))
+	}
 	if err := sdk.VerifyAddressFormat(valAddr); err != nil {
 		return nil, errorsmod.Wrap(err, "invalid orchestrator validator address")
 	}
@@ -94,17 +98,23 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 	if !att.Observed {
 		// Sum the current powers of all validators who have voted and see if it passes the current threshold
 		// TODO: The different integer types and math here needs a careful review
-		totalPower := k.StakingKeeper.GetLastTotalPower(ctx)
-		requiredPower := types.AttestationVotesPowerThreshold.Mul(totalPower).Quo(sdk.NewInt(100))
-		attestationPower := sdk.NewInt(0)
+		totalPower, err := k.StakingKeeper.GetLastTotalPower(ctx)
+		if err != nil {
+			panic(err)
+		}
+		requiredPower := types.AttestationVotesPowerThreshold.Mul(totalPower).Quo(sdkmath.NewInt(100))
+		attestationPower := sdkmath.NewInt(0)
 		for _, validator := range att.Votes {
 			val, err := sdk.ValAddressFromBech32(validator)
 			if err != nil {
 				panic(err)
 			}
-			validatorPower := k.StakingKeeper.GetLastValidatorPower(ctx, val)
+			validatorPower, err := k.StakingKeeper.GetLastValidatorPower(ctx, val)
+			if err != nil {
+				panic(err)
+			}
 			// Add it to the attestation power's sum
-			attestationPower = attestationPower.Add(sdk.NewInt(validatorPower))
+			attestationPower = attestationPower.Add(sdkmath.NewInt(validatorPower))
 			// If the power of all the validators that have voted on the attestation is higher or equal to the threshold,
 			// process the attestation, set Observed to true, and break
 			if attestationPower.GT(requiredPower) {
@@ -119,6 +129,7 @@ func (k Keeper) TryAttestation(ctx sdk.Context, att *types.Attestation) {
 
 				att.Observed = true
 				k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
+				k.Logger(ctx).Debug("Attestation observed", "attestation", att)
 
 				k.processAttestation(ctx, att, claim)
 				k.emitObservedEvent(ctx, att, claim)
@@ -143,7 +154,7 @@ func (k Keeper) processAttestation(ctx sdk.Context, att *types.Attestation, clai
 	if err := k.AttestationHandler.Handle(xCtx, *att, claim); err != nil { // execute with a transient storage
 		// If the attestation fails, something has gone wrong and we can't recover it. Log and move on
 		// The attestation will still be marked "Observed", allowing the oracle to progress properly
-		k.logger(ctx).Error("attestation failed",
+		k.Logger(ctx).Error("attestation failed",
 			"cause", err.Error(),
 			"claim type", claim.GetType(),
 			"id", types.GetAttestationKey(claim.GetEventNonce(), hash),

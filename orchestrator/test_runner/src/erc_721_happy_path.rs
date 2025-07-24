@@ -130,7 +130,7 @@ pub async fn test_erc721_deposit_result(
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
     let val = web30
-        .get_erc721_symbol(erc721_address, *MINER_ADDRESS)
+        .get_erc721_symbol(erc721_address, *MINER_ADDRESS, vec![])
         .await
         .expect("Not a valid ERC721 contract address");
     info!("In erc721_happy_path_test symbol is {}", val);
@@ -168,7 +168,7 @@ pub async fn test_erc721_deposit_result(
     while Instant::now() - start < duration {
         // in this while loop wait for owner to change OR wait for event to fire
         let owner = web30
-            .get_erc721_owner_of(erc721_address, *MINER_ADDRESS, token_id)
+            .get_erc721_owner_of(erc721_address, *MINER_ADDRESS, token_id, vec![])
             .await;
 
         if owner.unwrap() == gravityerc721_address {

@@ -10,7 +10,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	mathmod "cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkmath "cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -373,7 +373,7 @@ func (v Valsets) ValidateBasic() error {
 
 // GetFees returns the total fees contained within a given batch
 func (b OutgoingTxBatch) GetFees() mathmod.Int {
-	sum := sdk.ZeroInt()
+	sum := sdkmath.ZeroInt()
 	for _, t := range b.Transactions {
 		sum = sum.Add(t.Erc20Fee.Amount)
 	}

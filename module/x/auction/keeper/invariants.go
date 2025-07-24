@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
@@ -45,7 +46,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 
 		expectedBalances := ExpectedAuctionModuleBalances(ctx, k)
 
-		if !accountBalances.IsEqual(expectedBalances) {
+		if !accountBalances.Equal(expectedBalances) {
 			return "invalid auction module balances", true
 		} else {
 			return "", false
@@ -54,8 +55,12 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 }
 
 func ExpectedAuctionModuleBalances(ctx sdk.Context, k Keeper) sdk.Coins {
-	bidToken := k.MintKeeper.GetParams(ctx).MintDenom
-	var highestBids = sdk.ZeroInt()
+	mintParams, err := k.MintKeeper.Params.Get(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get mint params: %v", err))
+	}
+	bidToken := mintParams.MintDenom
+	var highestBids = sdkmath.ZeroInt()
 	var awardAmounts sdk.Coins
 
 	k.IterateAuctions(ctx, func(_ []byte, auction types.Auction) (stop bool) {
@@ -68,7 +73,7 @@ func ExpectedAuctionModuleBalances(ctx sdk.Context, k Keeper) sdk.Coins {
 		}
 
 		if auction.HighestBid != nil {
-			highestBids = highestBids.Add(sdk.NewIntFromUint64(auction.HighestBid.BidAmount))
+			highestBids = highestBids.Add(sdkmath.NewIntFromUint64(auction.HighestBid.BidAmount))
 		}
 
 		return false
@@ -82,7 +87,11 @@ func ExpectedAuctionModuleBalances(ctx sdk.Context, k Keeper) sdk.Coins {
 // In particular this invariant checks that the auction module's auctions do not contain the native staking token
 func ValidAuctionsInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (message string, invalidState bool) {
-		nativeToken := k.MintKeeper.GetParams(ctx).MintDenom
+		mintParams, err := k.MintKeeper.Params.Get(ctx)
+		if err != nil {
+			panic(fmt.Sprintf("failed to get mint params: %v", err))
+		}
+		nativeToken := mintParams.MintDenom
 		invalid := false
 		k.IterateAuctions(ctx, func(key []byte, auc types.Auction) (stop bool) {
 			if auc.Amount.Denom == nativeToken {

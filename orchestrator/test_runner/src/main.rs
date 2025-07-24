@@ -39,6 +39,7 @@ use deep_space::{CosmosPrivateKey, PrivateKey};
 use erc_721_happy_path::erc721_happy_path_test;
 use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_utils::connection_prep::wait_for_cosmos_online;
 use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
 use happy_path_v2::happy_path_test_v2_native;
@@ -103,8 +104,8 @@ lazy_static! {
         env::var("STAKING_TOKEN").unwrap_or_else(|_| "ugraviton".to_owned());
     static ref COSMOS_NODE_GRPC: String =
         env::var("COSMOS_NODE_GRPC").unwrap_or_else(|_| "http://localhost:9090".to_owned());
-    static ref COSMOS_NODE_ABCI: String =
-        env::var("COSMOS_NODE_ABCI").unwrap_or_else(|_| "http://localhost:26657".to_owned());
+    static ref COSMOS_NODE_API: String =
+        env::var("COSMOS_NODE_API").unwrap_or_else(|_| "http://localhost:1317".to_owned());
 
     // IBC CHAIN CONSTANTS
     // These constants all apply to the gaiad instance running (ibc-test-1)
@@ -222,7 +223,14 @@ pub async fn main() {
     .unwrap();
 
     info!("Waiting for Cosmos chain to come online");
-    wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
+    let upgrade_testing = env::var("OLD_BINARY_LOCATION").map_or_else(|e| if let VarError::NotPresent = e { false } else { true }, |_| true);
+    if  upgrade_testing {
+        // If we are upgrade testing, use the old wait for cosmos online function
+        old_gravity_utils::connection_prep::wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
+    } else {
+        // Otherwise the current one will be fine
+        wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
+    }
 
     let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await

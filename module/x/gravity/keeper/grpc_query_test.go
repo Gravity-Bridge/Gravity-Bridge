@@ -4,6 +4,7 @@ import (
 	gocontext "context"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -16,7 +17,7 @@ import (
 // nolint: exhaustruct
 func TestQueryGetAttestations(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
-	encCfg := app.MakeEncodingConfig()
+	encCfg := app.NewEncodingConfig()
 	k := input.GravityKeeper
 	ctx := input.Context
 
@@ -137,7 +138,7 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 			EventNonce:     nonce,
 			EthBlockHeight: 1,
 			TokenContract:  "0x00000000000000000001",
-			Amount:         sdk.NewInt(10000000000 + int64(i)),
+			Amount:         sdkmath.NewInt(10000000000 + int64(i)),
 			EthereumSender: "0x00000000000000000002",
 			CosmosReceiver: "0x00000000000000000003",
 			Orchestrator:   "0x00000000000000000004",

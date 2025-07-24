@@ -2084,57 +2084,57 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Query_Params_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "params"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_Params_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "params"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_CurrentValset_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "valset", "current"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_CurrentValset_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "valset", "current"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ValsetRequest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "valset"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_ValsetRequest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "valset"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ValsetConfirm_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "valset", "confirm"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_ValsetConfirm_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "valset", "confirm"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ValsetConfirmsByNonce_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"gravity", "v1beta", "confirms", "nonce"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_ValsetConfirmsByNonce_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"gravity", "v1beta", "confirms", "nonce"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_LastValsetRequests_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "valset", "requests"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_LastValsetRequests_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "valset", "requests"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_LastPendingValsetRequestByAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "valset", "last"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_LastPendingValsetRequestByAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "valset", "last"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_LastPendingBatchRequestByAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "last_pending_request_by_addr"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_LastPendingBatchRequestByAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "last_pending_request_by_addr"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_LastPendingLogicCallByAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"gravity", "v1beta", "logic", "address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_LastPendingLogicCallByAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"gravity", "v1beta", "logic", "address"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_LastEventNonceByAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"gravity", "v1beta", "oracle", "eventnonce", "address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_LastEventNonceByAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"gravity", "v1beta", "oracle", "eventnonce", "address"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_BatchFees_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "batchfees"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_BatchFees_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "batchfees"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_OutgoingTxBatches_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "outgoingtx"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_OutgoingTxBatches_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "outgoingtx"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_OutgoingLogicCalls_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "outgoinglogic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_OutgoingLogicCalls_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "outgoinglogic"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_BatchRequestByNonce_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "request_by_nonce"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_BatchRequestByNonce_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "request_by_nonce"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_BatchConfirms_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "confirms"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_BatchConfirms_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "batch", "confirms"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_LogicConfirms_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "logic", "confirms"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_LogicConfirms_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "logic", "confirms"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ERC20ToDenom_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "cosmos_originated", "erc20_to_denom"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_ERC20ToDenom_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "cosmos_originated", "erc20_to_denom"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_DenomToERC20_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "cosmos_originated", "denom_to_erc20"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_DenomToERC20_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"gravity", "v1beta", "cosmos_originated", "denom_to_erc20"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_GetLastObservedEthBlock_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_last_observed_eth_block"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_GetLastObservedEthBlock_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_last_observed_eth_block"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_GetLastObservedEthNonce_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_last_observed_eth_nonce"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_GetLastObservedEthNonce_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_last_observed_eth_nonce"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_GetAttestations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_attestations"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_GetAttestations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_attestations"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_GetDelegateKeyByValidator_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_delegate_keys_by_validator"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_GetDelegateKeyByValidator_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_delegate_keys_by_validator"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_GetDelegateKeyByEth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_delegate_keys_by_eth"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_GetDelegateKeyByEth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_delegate_keys_by_eth"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_GetDelegateKeyByOrchestrator_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_delegate_keys_by_orchestrator"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_GetDelegateKeyByOrchestrator_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_delegate_keys_by_orchestrator"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_GetPendingSendToEth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_pending_send_to_eth"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_GetPendingSendToEth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_pending_send_to_eth"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_GetPendingIbcAutoForwards_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_pending_ibc_auto_forwards"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_GetPendingIbcAutoForwards_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"gravity", "v1beta", "query_pending_ibc_auto_forwards"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

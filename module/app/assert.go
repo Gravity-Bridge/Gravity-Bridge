@@ -34,7 +34,11 @@ func (app *Gravity) assertBech32PrefixMatches(ctx sdk.Context) {
 // contains GRAV (ugraviton)
 func (app *Gravity) assertNativeTokenIsNonAuctionable(ctx sdk.Context) {
 	nonAuctionableTokens := app.AuctionKeeper.GetParams(ctx).NonAuctionableTokens
-	nativeToken := app.MintKeeper.GetParams(ctx).MintDenom // GRAV
+	mintParams, err := app.MintKeeper.Params.Get(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("Error obtaining mint params: %v", err))
+	}
+	nativeToken := mintParams.MintDenom // GRAV
 
 	for _, t := range nonAuctionableTokens {
 		if t == nativeToken {
@@ -50,7 +54,11 @@ func (app *Gravity) assertNativeTokenIsNonAuctionable(ctx sdk.Context) {
 // In the config directory is a constant which should represent the native token, this check ensures that constant is correct
 func (app *Gravity) assertNativeTokenMatchesConstant(ctx sdk.Context) {
 	hardcoded := config.NativeTokenDenom
-	nativeToken := app.MintKeeper.GetParams(ctx).MintDenom
+	mintParams, err := app.MintKeeper.Params.Get(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("Error obtaining mint params: %v", err))
+	}
+	nativeToken := mintParams.MintDenom
 
 	if hardcoded != nativeToken {
 		panic(fmt.Sprintf("The hard-coded native token denom (%s) must equal the actual native token (%s)\n", hardcoded, nativeToken))

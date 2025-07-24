@@ -4,11 +4,11 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
 	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v1"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
@@ -187,7 +187,7 @@ func migrateOutgoingTxBatches(store storetypes.KVStore) error {
 // string_prefix | key_part1 | key_part2 ...
 // into format:
 // hash(string_prefix) | key_part1 | key_part2 ...
-func migrateKeys(store sdk.KVStore, cdc codec.BinaryCodec) error {
+func migrateKeys(store storetypes.KVStore, cdc codec.BinaryCodec) error {
 	fmt.Println("Mercury Upgrade: Enter migrateKeys")
 	if err := migrateKeysFromValues(store, cdc, v1.OutgoingTXBatchKey, convertBatchKey); err != nil {
 		return err
@@ -255,7 +255,7 @@ func migrateKeys(store sdk.KVStore, cdc codec.BinaryCodec) error {
 }
 
 // key conversion functions
-func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix string, getNewKey func([]byte, codec.BinaryCodec) ([]byte, error)) error {
+func migrateKeysFromValues(store storetypes.KVStore, cdc codec.BinaryCodec, keyPrefix string, getNewKey func([]byte, codec.BinaryCodec) ([]byte, error)) error {
 	oldStore := prefix.NewStore(store, []byte(keyPrefix))
 	oldStoreIter := oldStore.Iterator(nil, nil)
 	defer oldStoreIter.Close()
@@ -273,7 +273,7 @@ func migrateKeysFromValues(store sdk.KVStore, cdc codec.BinaryCodec, keyPrefix s
 	return nil
 }
 
-func migrateKey(store sdk.KVStore, oldKey string, newKey []byte) {
+func migrateKey(store storetypes.KVStore, oldKey string, newKey []byte) {
 	value := store.Get([]byte(oldKey))
 	if len(value) == 0 {
 		return
@@ -282,7 +282,7 @@ func migrateKey(store sdk.KVStore, oldKey string, newKey []byte) {
 	store.Delete([]byte(oldKey))
 }
 
-func migrateKeysFromKeys(store sdk.KVStore, oldKeyPrefix string, newKeyPrefix []byte) error {
+func migrateKeysFromKeys(store storetypes.KVStore, oldKeyPrefix string, newKeyPrefix []byte) error {
 	oldStore := prefix.NewStore(store, []byte(oldKeyPrefix))
 	oldStoreIter := oldStore.Iterator(nil, nil)
 	defer oldStoreIter.Close()
@@ -296,7 +296,7 @@ func migrateKeysFromKeys(store sdk.KVStore, oldKeyPrefix string, newKeyPrefix []
 	return nil
 }
 
-func deleteUnusedKeys(store sdk.KVStore, keyPrefix string) {
+func deleteUnusedKeys(store storetypes.KVStore, keyPrefix string) {
 	oldStore := prefix.NewStore(store, []byte(keyPrefix))
 	oldStoreIter := oldStore.Iterator(nil, nil)
 	defer oldStoreIter.Close()

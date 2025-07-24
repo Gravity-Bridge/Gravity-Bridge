@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
+	tmjson "github.com/cometbft/cometbft/libs/json"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
@@ -87,14 +86,15 @@ func AppStateRandomizedFn(
 	// generate a random amount of initial stake coins and a random initial
 	// number of bonded accounts
 	var initialStake, numInitiallyBonded int64
-	appParams.GetOrGenerate(
-		cdc, simappparams.StakePerAccount, &initialStake, r,
-		func(r *rand.Rand) { initialStake = r.Int63n(1e12) },
-	)
-	appParams.GetOrGenerate(
-		cdc, simappparams.InitiallyBondedValidators, &numInitiallyBonded, r,
-		func(r *rand.Rand) { numInitiallyBonded = int64(r.Intn(300)) },
-	)
+	// TODO: Fix this when we do simulations
+	// appParams.GetOrGenerate(
+	// 	cdc, simappparams.StakePerAccount, &initialStake, r,
+	// 	func(r *rand.Rand) { initialStake = r.Int63n(1e12) },
+	// )
+	// appParams.GetOrGenerate(
+	// 	cdc, simappparams.InitiallyBondedValidators, &numInitiallyBonded, r,
+	// 	func(r *rand.Rand) { numInitiallyBonded = int64(r.Intn(300)) },
+	// )
 
 	if numInitiallyBonded > numAccs {
 		numInitiallyBonded = numAccs
@@ -119,8 +119,6 @@ func AppStateRandomizedFn(
 		NumBonded:    numInitiallyBonded,
 		GenTimestamp: genesisTimestamp,
 		UnbondTime:   0,
-		ParamChanges: []simtypes.ParamChange{},
-		Contents:     []simtypes.WeightedProposalContent{},
 	}
 
 	simManager.GenerateGenesisStates(simState)

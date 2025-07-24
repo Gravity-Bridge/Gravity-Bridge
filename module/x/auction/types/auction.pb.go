@@ -6,8 +6,8 @@ package types
 import (
 	fmt "fmt"
 	types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -25,8 +25,8 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // AuctionPeriod represents a period of auctions.
-// An AuctionPeriod applies to as many auctionable tokens exist in the auction pool
-// Note: see params for a list of non-auctionable tokens
+// An AuctionPeriod applies to as many auctionable tokens exist in the auction
+// pool Note: see params for a list of non-auctionable tokens
 type AuctionPeriod struct {
 	StartBlockHeight uint64 `protobuf:"varint,1,opt,name=start_block_height,json=startBlockHeight,proto3" json:"start_block_height,omitempty"`
 	EndBlockHeight   uint64 `protobuf:"varint,2,opt,name=end_block_height,json=endBlockHeight,proto3" json:"end_block_height,omitempty"`
@@ -80,7 +80,8 @@ func (m *AuctionPeriod) GetEndBlockHeight() uint64 {
 }
 
 // Auction represents a single auction.
-// An Auction has a unique identifier relative to its Auction Period Id , an amount being auctioned, a status, and a highest bid.
+// An Auction has a unique identifier relative to its Auction Period Id , an
+// amount being auctioned, a status, and a highest bid.
 type Auction struct {
 	Id         uint64     `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Amount     types.Coin `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount"`
@@ -142,7 +143,8 @@ func (m *Auction) GetHighestBid() *Bid {
 }
 
 // Bid represents a bid on an Auction.
-// A Bid includes the identifier of the Auction, the amount of the bid, and the address of the bidder.
+// A Bid includes the identifier of the Auction, the amount of the bid, and the
+// address of the bidder.
 type Bid struct {
 	BidAmount     uint64 `protobuf:"varint,1,opt,name=bid_amount,json=bidAmount,proto3" json:"bid_amount,omitempty"`
 	BidderAddress string `protobuf:"bytes,2,opt,name=bidder_address,json=bidderAddress,proto3" json:"bidder_address,omitempty"`
@@ -195,7 +197,8 @@ func (m *Bid) GetBidderAddress() string {
 	return ""
 }
 
-// AuctionId enables easy storage and retrieval of the most recently used AuctionId
+// AuctionId enables easy storage and retrieval of the most recently used
+// AuctionId
 type AuctionId struct {
 	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 }

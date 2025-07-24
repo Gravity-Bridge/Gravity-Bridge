@@ -2,6 +2,11 @@ package app
 
 import (
 	"encoding/json"
+
+	"cosmossdk.io/log"
+	simappparams "cosmossdk.io/simapp/params"
+	dbm "github.com/cosmos/cosmos-db"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 )
 
 // The genesis state of the blockchain is represented here as a map of raw json
@@ -15,6 +20,24 @@ type GenesisState map[string]json.RawMessage
 
 // NewDefaultGenesisState generates the default state for the application.
 func NewDefaultGenesisState() GenesisState {
-	encCfg := MakeEncodingConfig()
-	return ModuleBasics.DefaultGenesis(encCfg.Marshaler)
+	tempApp := TemporaryApp()
+	return tempApp.DefaultGenesis()
+}
+
+func NewEncodingConfig() simappparams.EncodingConfig {
+	tempApp := TemporaryApp()
+	return tempApp.EncodingConfig
+}
+
+func TemporaryApp() *Gravity {
+	return NewGravityApp(
+		log.NewNopLogger(),
+		dbm.NewMemDB(),
+		nil,
+		true,
+		map[int64]bool{},
+		DefaultNodeHome,
+		0,
+		simtestutil.NewAppOptionsWithFlagHome(DefaultNodeHome),
+	)
 }

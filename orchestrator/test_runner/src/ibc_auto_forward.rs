@@ -389,6 +389,7 @@ pub async fn get_ibc_balance(
             .all_balances(Bank::QueryAllBalancesRequest {
                 address: account.to_string(),
                 pagination: None,
+                resolve_denom: false,
             })
             .await;
         let res = res.expect("No response from bank balance query?");
@@ -455,6 +456,9 @@ pub async fn setup_gravity_auto_forwards(
     let _proposal_res = contact
         .create_legacy_gov_proposal(
             proposal_any,
+        // .create_gov_proposal(
+            // vec![proposal_any],
+            // String::new(),
             DSCoin {
                 denom: (*STAKING_TOKEN).clone(),
                 amount: one_atom().mul(10u8.into()),
