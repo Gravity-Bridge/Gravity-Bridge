@@ -39,7 +39,6 @@ use deep_space::{CosmosPrivateKey, PrivateKey};
 use erc_721_happy_path::erc721_happy_path_test;
 use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::connection_prep::wait_for_cosmos_online;
 use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
 use happy_path_v2::happy_path_test_v2_native;
@@ -47,6 +46,7 @@ use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use orch_only::orch_only_test;
 use relay_market::relay_market_test;
+use std::env::VarError;
 use std::process::exit;
 use std::{env, time::Duration};
 use tokio::time::sleep;
@@ -226,7 +226,9 @@ pub async fn main() {
     let upgrade_testing = env::var("OLD_BINARY_LOCATION").map_or_else(|e| if let VarError::NotPresent = e { false } else { true }, |_| true);
     if  upgrade_testing {
         // If we are upgrade testing, use the old wait for cosmos online function
-        old_gravity_utils::connection_prep::wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
+        let old_contact = old_deep_space::Contact::new(COSMOS_NODE_GRPC.as_str(), OPERATION_TIMEOUT, ADDRESS_PREFIX.as_str())
+            .unwrap();
+        old_wait_for_cosmos_online(&old_contact, TOTAL_TIMEOUT).await;
     } else {
         // Otherwise the current one will be fine
         wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;

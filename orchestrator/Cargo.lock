@@ -1044,6 +1044,17 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cosmos-sdk-proto-althea"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0788d17ca964dd5fae39ea793e2b08237dea62851f1e56e0cd004dbb43b9638d"
+dependencies = [
+ "prost 0.13.5",
+ "prost-types 0.13.5",
+ "tonic 0.12.3",
+]
+
+[[package]]
+name = "cosmos-sdk-proto-althea"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f7cebd09864a30730d99f98ff8126f944d5fa51db819c05ba6caacfa758f02"
@@ -1059,10 +1070,10 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "clarity",
- "deep_space",
+ "deep_space 2.29.0",
  "ethereum_gravity",
- "gravity_proto 0.9.1",
- "gravity_utils 0.1.0",
+ "gravity_proto",
+ "gravity_utils",
  "log",
  "num256",
  "prost 0.13.5",
@@ -1216,6 +1227,35 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
 name = "deep_space"
+version = "2.28.0"
+source = "git+https://github.com/althea-net/deep_space?tag=v2.28.0#42b7cc1330ac758ae485cd2280e6937de83c6391"
+dependencies = [
+ "base64 0.22.1",
+ "bech32",
+ "bytes",
+ "cosmos-sdk-proto-althea 0.19.0",
+ "hmac",
+ "log",
+ "num-traits",
+ "num256",
+ "pbkdf2 0.12.2",
+ "prost 0.13.5",
+ "prost-types 0.13.5",
+ "rand 0.8.5",
+ "ripemd",
+ "rust_decimal",
+ "secp256k1 0.30.0",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+ "tonic 0.12.3",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "deep_space"
 version = "2.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a2b10712396a7b0286d00090f0ee51b24f30eb8c274c66aa7fb197198d48c73"
@@ -1224,7 +1264,7 @@ dependencies = [
  "bech32",
  "bytes",
  "clarity",
- "cosmos-sdk-proto-althea",
+ "cosmos-sdk-proto-althea 0.20.0",
  "hmac",
  "log",
  "num-traits",
@@ -1517,8 +1557,8 @@ name = "ethereum_gravity"
 version = "0.1.0"
 dependencies = [
  "clarity",
- "deep_space",
- "gravity_utils 0.1.0",
+ "deep_space 2.29.0",
+ "gravity_utils",
  "log",
  "num256",
  "rand 0.8.5",
@@ -1733,13 +1773,13 @@ dependencies = [
  "clap",
  "clarity",
  "cosmos_gravity",
- "deep_space",
+ "deep_space 2.29.0",
  "dirs",
  "env_logger",
  "ethereum_gravity",
  "futures",
- "gravity_proto 0.9.1",
- "gravity_utils 0.1.0",
+ "gravity_proto",
+ "gravity_utils",
  "jsonrpc_server",
  "lazy_static",
  "log",
@@ -1824,23 +1864,11 @@ checksum = "a8d1add55171497b4705a648c6b583acafb01d58050a51727785f0b2c8e0a2b2"
 
 [[package]]
 name = "gravity_proto"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3bb03234736c26d107628b4ee36642094f4fbcea9399a9fe1e853dba83a22e5"
-dependencies = [
- "cosmos-sdk-proto-althea",
- "prost 0.13.5",
- "prost-types 0.13.5",
- "tonic 0.12.3",
-]
-
-[[package]]
-name = "gravity_proto"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7a1e42459647ef50d531af36820b2e54bb5779833270f68f434fe9065699f5e"
 dependencies = [
- "cosmos-sdk-proto-althea",
+ "cosmos-sdk-proto-althea 0.20.0",
  "prost 0.13.5",
  "prost-types 0.13.5",
  "tonic 0.12.3",
@@ -1852,37 +1880,15 @@ version = "0.1.0"
 dependencies = [
  "actix",
  "clarity",
- "deep_space",
+ "deep_space 2.29.0",
  "env_logger",
  "futures",
- "gravity_proto 0.9.1",
+ "gravity_proto",
  "lazy_static",
  "log",
  "num-traits",
  "num256",
  "rand 0.8.5",
- "serde",
- "serde_derive",
- "sha3",
- "tokio",
- "tonic 0.12.3",
- "url",
- "web30",
-]
-
-[[package]]
-name = "gravity_utils"
-version = "0.1.0"
-source = "git+https://github.com/Gravity-Bridge/Gravity-Bridge?rev=065c526f43739a818714dce0343056c5b75c90af#065c526f43739a818714dce0343056c5b75c90af"
-dependencies = [
- "clarity",
- "deep_space",
- "futures",
- "gravity_proto 0.8.0",
- "lazy_static",
- "log",
- "num-traits",
- "num256",
  "serde",
  "serde_derive",
  "sha3",
@@ -2797,7 +2803,7 @@ checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
 name = "metrics_exporter"
 version = "0.1.1"
 dependencies = [
- "gravity_utils 0.1.0",
+ "gravity_utils",
  "lazy_static",
  "prometheus_exporter",
 ]
@@ -3077,11 +3083,11 @@ dependencies = [
  "actix-rt",
  "clarity",
  "cosmos_gravity",
- "deep_space",
+ "deep_space 2.29.0",
  "ethereum_gravity",
  "futures",
- "gravity_proto 0.9.1",
- "gravity_utils 0.1.0",
+ "gravity_proto",
+ "gravity_utils",
  "lazy_static",
  "log",
  "metrics_exporter",
@@ -3602,11 +3608,11 @@ dependencies = [
  "actix-rt",
  "clarity",
  "cosmos_gravity",
- "deep_space",
+ "deep_space 2.29.0",
  "ethereum_gravity",
  "futures",
- "gravity_proto 0.9.1",
- "gravity_utils 0.1.0",
+ "gravity_proto",
+ "gravity_utils",
  "lazy_static",
  "log",
  "num256",
@@ -4618,13 +4624,13 @@ dependencies = [
  "bytes",
  "clarity",
  "cosmos_gravity",
- "deep_space",
+ "deep_space 2.28.0",
+ "deep_space 2.29.0",
  "env_logger",
  "ethereum_gravity",
  "futures",
- "gravity_proto 0.9.1",
- "gravity_utils 0.1.0",
- "gravity_utils 0.1.0 (git+https://github.com/Gravity-Bridge/Gravity-Bridge?rev=065c526f43739a818714dce0343056c5b75c90af)",
+ "gravity_proto",
+ "gravity_utils",
  "hdpath",
  "ibc-relayer",
  "ibc-relayer-types",
