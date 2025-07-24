@@ -223,7 +223,14 @@ pub async fn main() {
     .unwrap();
 
     info!("Waiting for Cosmos chain to come online");
-    wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
+    let upgrade_testing = env::var("OLD_BINARY_LOCATION").map_or_else(|e| if let VarError::NotPresent = e { false } else { true }, |_| true);
+    if  upgrade_testing {
+        // If we are upgrade testing, use the old wait for cosmos online function
+        old_gravity_utils::connection_prep::wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
+    } else {
+        // Otherwise the current one will be fine
+        wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
+    }
 
     let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await

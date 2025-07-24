@@ -1061,8 +1061,8 @@ dependencies = [
  "clarity",
  "deep_space",
  "ethereum_gravity",
- "gravity_proto",
- "gravity_utils",
+ "gravity_proto 0.9.1",
+ "gravity_utils 0.1.0",
  "log",
  "num256",
  "prost 0.13.5",
@@ -1518,7 +1518,7 @@ version = "0.1.0"
 dependencies = [
  "clarity",
  "deep_space",
- "gravity_utils",
+ "gravity_utils 0.1.0",
  "log",
  "num256",
  "rand 0.8.5",
@@ -1738,8 +1738,8 @@ dependencies = [
  "env_logger",
  "ethereum_gravity",
  "futures",
- "gravity_proto",
- "gravity_utils",
+ "gravity_proto 0.9.1",
+ "gravity_utils 0.1.0",
  "jsonrpc_server",
  "lazy_static",
  "log",
@@ -1824,6 +1824,18 @@ checksum = "a8d1add55171497b4705a648c6b583acafb01d58050a51727785f0b2c8e0a2b2"
 
 [[package]]
 name = "gravity_proto"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3bb03234736c26d107628b4ee36642094f4fbcea9399a9fe1e853dba83a22e5"
+dependencies = [
+ "cosmos-sdk-proto-althea",
+ "prost 0.13.5",
+ "prost-types 0.13.5",
+ "tonic 0.12.3",
+]
+
+[[package]]
+name = "gravity_proto"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7a1e42459647ef50d531af36820b2e54bb5779833270f68f434fe9065699f5e"
@@ -1843,12 +1855,34 @@ dependencies = [
  "deep_space",
  "env_logger",
  "futures",
- "gravity_proto",
+ "gravity_proto 0.9.1",
  "lazy_static",
  "log",
  "num-traits",
  "num256",
  "rand 0.8.5",
+ "serde",
+ "serde_derive",
+ "sha3",
+ "tokio",
+ "tonic 0.12.3",
+ "url",
+ "web30",
+]
+
+[[package]]
+name = "gravity_utils"
+version = "0.1.0"
+source = "git+https://github.com/Gravity-Bridge/Gravity-Bridge?rev=065c526f43739a818714dce0343056c5b75c90af#065c526f43739a818714dce0343056c5b75c90af"
+dependencies = [
+ "clarity",
+ "deep_space",
+ "futures",
+ "gravity_proto 0.8.0",
+ "lazy_static",
+ "log",
+ "num-traits",
+ "num256",
  "serde",
  "serde_derive",
  "sha3",
@@ -2763,7 +2797,7 @@ checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
 name = "metrics_exporter"
 version = "0.1.1"
 dependencies = [
- "gravity_utils",
+ "gravity_utils 0.1.0",
  "lazy_static",
  "prometheus_exporter",
 ]
@@ -3046,8 +3080,8 @@ dependencies = [
  "deep_space",
  "ethereum_gravity",
  "futures",
- "gravity_proto",
- "gravity_utils",
+ "gravity_proto 0.9.1",
+ "gravity_utils 0.1.0",
  "lazy_static",
  "log",
  "metrics_exporter",
@@ -3238,9 +3272,9 @@ dependencies = [
 
 [[package]]
 name = "prettyplease"
-version = "0.2.35"
+version = "0.2.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "061c1221631e079b26479d25bbf2275bfe5917ae8419cd7e34f13bfc2aa7539a"
+checksum = "ff24dfcda44452b9816fff4cd4227e1bb73ff5a2f1bc1105aa92fb8565ce44d2"
 dependencies = [
  "proc-macro2",
  "syn 2.0.104",
@@ -3571,8 +3605,8 @@ dependencies = [
  "deep_space",
  "ethereum_gravity",
  "futures",
- "gravity_proto",
- "gravity_utils",
+ "gravity_proto 0.9.1",
+ "gravity_utils 0.1.0",
  "lazy_static",
  "log",
  "num256",
@@ -4588,8 +4622,9 @@ dependencies = [
  "env_logger",
  "ethereum_gravity",
  "futures",
- "gravity_proto",
- "gravity_utils",
+ "gravity_proto 0.9.1",
+ "gravity_utils 0.1.0",
+ "gravity_utils 0.1.0 (git+https://github.com/Gravity-Bridge/Gravity-Bridge?rev=065c526f43739a818714dce0343056c5b75c90af)",
  "hdpath",
  "ibc-relayer",
  "ibc-relayer-types",
