@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +31,7 @@ func TestQueryValsetConfirm(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 	input.GravityKeeper.SetValsetConfirm(sdkCtx, types.MsgValsetConfirm{
 		Nonce:        nonce,
@@ -50,7 +50,6 @@ func TestQueryValsetConfirm(t *testing.T) {
 		    EthAddress   string `protobuf:"bytes,3,opt,name=eth_address,json=ethAddress,proto3" json:"eth_address,omitempty"`
 		    Signature    string `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
 		}*/
-
 		"all good": {
 			src: types.QueryValsetConfirmRequest{Nonce: 1, Address: myValidatorCosmosAddr.String()},
 
@@ -113,7 +112,7 @@ func TestAllValsetConfirmsBynonce(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 
 	// seed confirmations
@@ -165,7 +164,7 @@ func TestLastValsetRequests(t *testing.T) {
 	val1 := types.Valset{
 		Nonce:        6,
 		Height:       1235167,
-		RewardAmount: sdk.ZeroInt(),
+		RewardAmount: sdkmath.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
 			{
@@ -194,7 +193,7 @@ func TestLastValsetRequests(t *testing.T) {
 	val2 := types.Valset{
 		Nonce:        5,
 		Height:       1235067,
-		RewardAmount: sdk.ZeroInt(),
+		RewardAmount: sdkmath.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
 			{
@@ -223,7 +222,7 @@ func TestLastValsetRequests(t *testing.T) {
 	val3 := types.Valset{
 		Nonce:        4,
 		Height:       1234967,
-		RewardAmount: sdk.ZeroInt(),
+		RewardAmount: sdkmath.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
 			{
@@ -248,7 +247,7 @@ func TestLastValsetRequests(t *testing.T) {
 	val4 := types.Valset{
 		Nonce:        3,
 		Height:       1234867,
-		RewardAmount: sdk.ZeroInt(),
+		RewardAmount: sdkmath.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
 			{
@@ -269,7 +268,7 @@ func TestLastValsetRequests(t *testing.T) {
 	val5 := types.Valset{
 		Nonce:        2,
 		Height:       1234767,
-		RewardAmount: sdk.ZeroInt(),
+		RewardAmount: sdkmath.ZeroInt(),
 		RewardToken:  "0x0000000000000000000000000000000000000000",
 		Members: []types.BridgeValidator{
 			{
@@ -297,7 +296,7 @@ func TestLastValsetRequests(t *testing.T) {
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 
 	// one more valset request
 
@@ -305,7 +304,8 @@ func TestLastValsetRequests(t *testing.T) {
 	input.Context = input.Context.WithBlockHeight(input.Context.BlockHeight() + 100)
 
 	// Run the staking endblocker to ensure valset is correct in state
-	staking.EndBlocker(input.Context, input.StakingKeeper)
+	_, err := input.StakingKeeper.EndBlocker(ctx)
+	require.NoError(t, err)
 
 	input.GravityKeeper.SetValsetRequest(input.Context)
 
@@ -331,7 +331,7 @@ func TestPendingValsetRequests(t *testing.T) {
 				{
 					Nonce:        6,
 					Height:       1235167,
-					RewardAmount: sdk.ZeroInt(),
+					RewardAmount: sdkmath.ZeroInt(),
 					RewardToken:  "0x0000000000000000000000000000000000000000",
 					Members: []types.BridgeValidator{
 						{
@@ -359,7 +359,7 @@ func TestPendingValsetRequests(t *testing.T) {
 				{
 					Nonce:        5,
 					Height:       1235067,
-					RewardAmount: sdk.ZeroInt(),
+					RewardAmount: sdkmath.ZeroInt(),
 					RewardToken:  "0x0000000000000000000000000000000000000000",
 					Members: []types.BridgeValidator{
 						{
@@ -387,7 +387,7 @@ func TestPendingValsetRequests(t *testing.T) {
 				{
 					Nonce:        4,
 					Height:       1234967,
-					RewardAmount: sdk.ZeroInt(),
+					RewardAmount: sdkmath.ZeroInt(),
 					RewardToken:  "0x0000000000000000000000000000000000000000",
 					Members: []types.BridgeValidator{
 						{
@@ -411,7 +411,7 @@ func TestPendingValsetRequests(t *testing.T) {
 				{
 					Nonce:        3,
 					Height:       1234867,
-					RewardAmount: sdk.ZeroInt(),
+					RewardAmount: sdkmath.ZeroInt(),
 					RewardToken:  "0x0000000000000000000000000000000000000000",
 					Members: []types.BridgeValidator{
 						{
@@ -431,7 +431,7 @@ func TestPendingValsetRequests(t *testing.T) {
 				{
 					Nonce:        2,
 					Height:       1234767,
-					RewardAmount: sdk.ZeroInt(),
+					RewardAmount: sdkmath.ZeroInt(),
 					RewardToken:  "0x0000000000000000000000000000000000000000",
 					Members: []types.BridgeValidator{
 						{
@@ -453,7 +453,7 @@ func TestPendingValsetRequests(t *testing.T) {
 						},
 					},
 					Height:       1234667,
-					RewardAmount: sdk.NewInt(0),
+					RewardAmount: sdkmath.NewInt(0),
 					RewardToken:  "0x0000000000000000000000000000000000000000",
 				},
 			},
@@ -465,7 +465,7 @@ func TestPendingValsetRequests(t *testing.T) {
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 
 	// one more valset request
 
@@ -473,7 +473,8 @@ func TestPendingValsetRequests(t *testing.T) {
 	input.Context = input.Context.WithBlockHeight(input.Context.BlockHeight() + 100)
 
 	// Run the staking endblocker to ensure valset is correct in state
-	staking.EndBlocker(input.Context, input.StakingKeeper)
+	_, err := input.StakingKeeper.EndBlocker(input.Context)
+	require.NoError(t, err)
 
 	input.GravityKeeper.SetValsetRequest(input.Context)
 
@@ -507,11 +508,11 @@ func TestLastPendingBatchRequest(t *testing.T) {
 							Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 							DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 							Erc20Token: types.ERC20Token{
-								Amount:   sdk.NewInt(101),
+								Amount:   sdkmath.NewInt(101),
 								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 							},
 							Erc20Fee: types.ERC20Token{
-								Amount:   sdk.NewInt(3),
+								Amount:   sdkmath.NewInt(3),
 								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 							},
 						},
@@ -520,11 +521,11 @@ func TestLastPendingBatchRequest(t *testing.T) {
 							Sender:      "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
 							DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 							Erc20Token: types.ERC20Token{
-								Amount:   sdk.NewInt(102),
+								Amount:   sdkmath.NewInt(102),
 								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 							},
 							Erc20Fee: types.ERC20Token{
-								Amount:   sdk.NewInt(2),
+								Amount:   sdkmath.NewInt(2),
 								Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 							},
 						},
@@ -541,7 +542,7 @@ func TestLastPendingBatchRequest(t *testing.T) {
 	input, _ := SetupTestChain(t, []uint64{minStake, minStake, minStake, minStake, minStake}, true)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	var valAddr sdk.AccAddress = bytes.Repeat([]byte{byte(1)}, 20)
 	createTestBatch(t, input, 2)
 	for msg, spec := range specs {
@@ -568,7 +569,7 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 	tokenContract, err := types.NewEthAddress(myTokenContractAddr)
 	require.NoError(t, err)
 	// mint some voucher first
-	token, err := types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+	token, err := types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr)
 	require.NoError(t, err)
 	allVouchers := sdk.Coins{token.GravityCoin()}
 	err = input.BankKeeper.MintCoins(input.Context, types.ModuleName, allVouchers)
@@ -581,10 +582,10 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 
 	// add some TX to the pool
 	for i, v := range []uint64{2, 3, 2, 1} {
-		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
+		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
 		amount := amountToken.GravityCoin()
-		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
+		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, mySender, *receiver, amount, fee)
@@ -611,7 +612,7 @@ func TestQueryAllBatchConfirms(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 
 	var (
@@ -652,7 +653,7 @@ func TestQueryLogicCalls(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 	var (
 		logicContract            = "0x510ab76899430424d209a6c9a5b9951fb8a6f47d"
@@ -680,7 +681,7 @@ func TestQueryLogicCalls(t *testing.T) {
 
 	token := []types.ERC20Token{{
 		Contract: tokenContract,
-		Amount:   sdk.NewIntFromUint64(5000),
+		Amount:   sdkmath.NewIntFromUint64(5000),
 	}}
 
 	call := types.OutgoingLogicCall{
@@ -741,7 +742,7 @@ func TestQueryLogicCallConfirms(t *testing.T) {
 
 	token := []types.ERC20Token{{
 		Contract: tokenContract,
-		Amount:   sdk.NewIntFromUint64(5000),
+		Amount:   sdkmath.NewIntFromUint64(5000),
 	}}
 
 	call := types.OutgoingLogicCall{
@@ -779,7 +780,7 @@ func TestQueryBatch(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 
 	var (
@@ -797,12 +798,12 @@ func TestQueryBatch(t *testing.T) {
 			Transactions: []types.OutgoingTransferTx{
 				{
 					Erc20Fee: types.ERC20Token{
-						Amount:   sdk.NewInt(3),
+						Amount:   sdkmath.NewInt(3),
 						Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 					},
 					DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 					Erc20Token: types.ERC20Token{
-						Amount:   sdk.NewInt(101),
+						Amount:   sdkmath.NewInt(101),
 						Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 					},
 					Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
@@ -810,12 +811,12 @@ func TestQueryBatch(t *testing.T) {
 				},
 				{
 					Erc20Fee: types.ERC20Token{
-						Amount:   sdk.NewInt(2),
+						Amount:   sdkmath.NewInt(2),
 						Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 					},
 					DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 					Erc20Token: types.ERC20Token{
-						Amount:   sdk.NewInt(102),
+						Amount:   sdkmath.NewInt(102),
 						Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 					},
 					Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
@@ -837,7 +838,7 @@ func TestLastBatchesRequest(t *testing.T) {
 	input := CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 
 	createTestBatch(t, input, 2)
@@ -853,12 +854,12 @@ func TestLastBatchesRequest(t *testing.T) {
 				Transactions: []types.OutgoingTransferTx{
 					{
 						Erc20Fee: types.ERC20Token{
-							Amount:   sdk.NewInt(3),
+							Amount:   sdkmath.NewInt(3),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 						Erc20Token: types.ERC20Token{
-							Amount:   sdk.NewInt(101),
+							Amount:   sdkmath.NewInt(101),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
@@ -866,12 +867,12 @@ func TestLastBatchesRequest(t *testing.T) {
 					},
 					{
 						Erc20Fee: types.ERC20Token{
-							Amount:   sdk.NewInt(2),
+							Amount:   sdkmath.NewInt(2),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 						Erc20Token: types.ERC20Token{
-							Amount:   sdk.NewInt(102),
+							Amount:   sdkmath.NewInt(102),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
@@ -879,12 +880,12 @@ func TestLastBatchesRequest(t *testing.T) {
 					},
 					{
 						Erc20Fee: types.ERC20Token{
-							Amount:   sdk.NewInt(2),
+							Amount:   sdkmath.NewInt(2),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 						Erc20Token: types.ERC20Token{
-							Amount:   sdk.NewInt(100),
+							Amount:   sdkmath.NewInt(100),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
@@ -900,12 +901,12 @@ func TestLastBatchesRequest(t *testing.T) {
 				Transactions: []types.OutgoingTransferTx{
 					{
 						Erc20Fee: types.ERC20Token{
-							Amount:   sdk.NewInt(3),
+							Amount:   sdkmath.NewInt(3),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 						Erc20Token: types.ERC20Token{
-							Amount:   sdk.NewInt(101),
+							Amount:   sdkmath.NewInt(101),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
@@ -913,12 +914,12 @@ func TestLastBatchesRequest(t *testing.T) {
 					},
 					{
 						Erc20Fee: types.ERC20Token{
-							Amount:   sdk.NewInt(2),
+							Amount:   sdkmath.NewInt(2),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						DestAddress: "0x320915BD0F1bad11cBf06e85D5199DBcAC4E9934",
 						Erc20Token: types.ERC20Token{
-							Amount:   sdk.NewInt(102),
+							Amount:   sdkmath.NewInt(102),
 							Contract: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
 						},
 						Sender: "gravity1qyqszqgpqyqszqgpqyqszqgpqyqszqgpkrnxg5",
@@ -942,7 +943,7 @@ func TestQueryCurrentValset(t *testing.T) {
 		expectedValset = types.Valset{
 			Nonce:        1,
 			Height:       1234567,
-			RewardAmount: sdk.ZeroInt(),
+			RewardAmount: sdkmath.ZeroInt(),
 			RewardToken:  "0x0000000000000000000000000000000000000000",
 			Members: []types.BridgeValidator{
 				{
@@ -994,7 +995,7 @@ func TestQueryERC20ToDenom(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
 
@@ -1019,7 +1020,7 @@ func TestQueryDenomToERC20(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
 
@@ -1035,14 +1036,14 @@ func TestQueryPendingSendToEth(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	sdkCtx := input.Context
-	ctx := sdk.WrapSDKContext(input.Context)
+	ctx := input.Context
 	k := input.GravityKeeper
 	var (
 		now                 = time.Now().UTC()
 		mySender, err1      = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
-		token, err2         = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+		token, err2         = types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
 	require.NoError(t, err1)
@@ -1063,10 +1064,10 @@ func TestQueryPendingSendToEth(t *testing.T) {
 
 	// add some TX to the pool
 	for i, v := range []uint64{2, 3, 2, 1} {
-		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
+		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
 		amount := amountToken.GravityCoin()
-		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
+		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 		_, err = input.GravityKeeper.AddToOutgoingPool(sdkCtx, mySender, *receiver, amount, fee)
@@ -1096,11 +1097,11 @@ func TestQueryPendingSendToEth(t *testing.T) {
 			DestAddress: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
 			Erc20Token: types.ERC20Token{
 				Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-				Amount:   sdk.NewInt(101),
+				Amount:   sdkmath.NewInt(101),
 			},
 			Erc20Fee: types.ERC20Token{
 				Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-				Amount:   sdk.NewInt(3),
+				Amount:   sdkmath.NewInt(3),
 			},
 		},
 		{
@@ -1109,11 +1110,11 @@ func TestQueryPendingSendToEth(t *testing.T) {
 			DestAddress: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
 			Erc20Token: types.ERC20Token{
 				Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-				Amount:   sdk.NewInt(102),
+				Amount:   sdkmath.NewInt(102),
 			},
 			Erc20Fee: types.ERC20Token{
 				Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-				Amount:   sdk.NewInt(2),
+				Amount:   sdkmath.NewInt(2),
 			},
 		},
 	},
@@ -1125,11 +1126,11 @@ func TestQueryPendingSendToEth(t *testing.T) {
 				DestAddress: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
 				Erc20Token: types.ERC20Token{
 					Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-					Amount:   sdk.NewInt(100),
+					Amount:   sdkmath.NewInt(100),
 				},
 				Erc20Fee: types.ERC20Token{
 					Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-					Amount:   sdk.NewInt(2),
+					Amount:   sdkmath.NewInt(2),
 				},
 			},
 			{
@@ -1138,11 +1139,11 @@ func TestQueryPendingSendToEth(t *testing.T) {
 				DestAddress: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
 				Erc20Token: types.ERC20Token{
 					Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-					Amount:   sdk.NewInt(103),
+					Amount:   sdkmath.NewInt(103),
 				},
 				Erc20Fee: types.ERC20Token{
 					Contract: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
-					Amount:   sdk.NewInt(1),
+					Amount:   sdkmath.NewInt(1),
 				},
 			},
 		},

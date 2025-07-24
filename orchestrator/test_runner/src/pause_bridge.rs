@@ -107,10 +107,7 @@ pub async fn pause_bridge_test(
 
     // Try to create a batch and send tokens to Ethereum
     let coin = contact
-        .get_balance(
-            user_keys.cosmos_address,
-            format!("gravity{}", erc20_address),
-        )
+        .get_balance(user_keys.cosmos_address, format!("gravity{erc20_address}"))
         .await
         .unwrap()
         .unwrap();
@@ -195,10 +192,7 @@ pub async fn pause_bridge_test(
 
     // finally we check that our batch executes and our new withdraw processes
     let res = contact
-        .get_balance(
-            user_keys.cosmos_address,
-            format!("gravity{}", erc20_address),
-        )
+        .get_balance(user_keys.cosmos_address, format!("gravity{erc20_address}"))
         .await
         .unwrap()
         .unwrap();
@@ -228,10 +222,7 @@ pub async fn pause_bridge_test(
 
     let start = Instant::now();
     while starting_batch_nonce == current_eth_batch_nonce {
-        info!(
-            "Batch is not yet submitted {}>, waiting",
-            starting_batch_nonce
-        );
+        info!("Batch is not yet submitted {starting_batch_nonce}>, waiting");
         current_eth_batch_nonce =
             get_tx_batch_nonce(gravity_address, erc20_address, *MINER_ADDRESS, web30)
                 .await

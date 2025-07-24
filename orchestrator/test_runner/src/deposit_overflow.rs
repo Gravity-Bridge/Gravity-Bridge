@@ -68,7 +68,7 @@ pub async fn deposit_overflow_test(
     let initial_nonce = get_nonces(&mut grpc_client, &keys, &contact.get_prefix()).await[0];
     let initial_block_height =
         downcast_uint256(web30.eth_get_latest_block().await.unwrap().number).unwrap();
-    info!("Initial transfer complete, nonce is {}", initial_nonce);
+    info!("Initial transfer complete, nonce is {initial_nonce}");
 
     // NOTE: the dest user's balance should be 1 * normal_amount of check_module_erc20 token
     let mut expected_cosmos_coins = vec![Coin {

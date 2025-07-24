@@ -3,11 +3,11 @@ package keeper
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/store/prefix"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 )
 
 // GetFeeToken returns the fee token record for a specific denom
@@ -54,12 +54,12 @@ func (k Keeper) ValidateHrpIbcRecord(ctx sdk.Context, record types.HrpIbcRecord)
 	}
 
 	if record.Hrp == nativeHrp {
-		return sdkerrors.Wrap(types.ErrInvalidHRP, "cannot set a record for the chain's native prefix")
+		return errorsmod.Wrap(types.ErrInvalidHRP, "cannot set a record for the chain's native prefix")
 	}
 
 	_, found := k.channelKeeper.GetChannel(ctx, k.tk.GetPort(ctx), record.SourceChannel)
 	if !found {
-		return sdkerrors.Wrap(types.ErrInvalidIBCData, fmt.Sprintf("channel not found: %s", record.SourceChannel))
+		return errorsmod.Wrap(types.ErrInvalidIBCData, fmt.Sprintf("channel not found: %s", record.SourceChannel))
 	}
 
 	return nil
@@ -80,13 +80,16 @@ func (k Keeper) GetHrpIbcRecord(ctx sdk.Context, hrp string) (types.HrpIbcRecord
 	store := ctx.KVStore(k.storeKey)
 	prefixStore := prefix.NewStore(store, types.HrpIBCRecordStorePrefix)
 	if !prefixStore.Has([]byte(hrp)) {
-		return types.HrpIbcRecord{}, sdkerrors.Wrap(types.ErrRecordNotFound, fmt.Sprintf("hrp record not found for %s", hrp))
+		// nolint: exhaustruct
+		return types.HrpIbcRecord{}, errorsmod.Wrap(types.ErrRecordNotFound, fmt.Sprintf("hrp record not found for %s", hrp))
 	}
 	bz := prefixStore.Get([]byte(hrp))
 
+	// nolint: exhaustruct
 	record := types.HrpIbcRecord{}
 	err := proto.Unmarshal(bz, &record)
 	if err != nil {
+		// nolint: exhaustruct
 		return types.HrpIbcRecord{}, err
 	}
 
@@ -114,7 +117,7 @@ func (k Keeper) setHrpIbcRecord(ctx sdk.Context, hrpIbcRecord types.HrpIbcRecord
 	return nil
 }
 
-func (k Keeper) GetHrpIbcRecords(ctx sdk.Context) (HrpIbcRecords []types.HrpIbcRecord) {
+func (k Keeper) GetHrpIbcRecords(ctx sdk.Context) (hrpIbcRecords []types.HrpIbcRecord) {
 	store := ctx.KVStore(k.storeKey)
 	prefixStore := prefix.NewStore(store, types.HrpIBCRecordStorePrefix)
 
@@ -125,6 +128,7 @@ func (k Keeper) GetHrpIbcRecords(ctx sdk.Context) (HrpIbcRecords []types.HrpIbcR
 
 	for ; iterator.Valid(); iterator.Next() {
 
+		// nolint: exhaustruct
 		record := types.HrpIbcRecord{}
 
 		err := proto.Unmarshal(iterator.Value(), &record)
@@ -139,6 +143,9 @@ func (k Keeper) GetHrpIbcRecords(ctx sdk.Context) (HrpIbcRecords []types.HrpIbcR
 
 func (k Keeper) SetHrpIbcRecords(ctx sdk.Context, hrpIbcRecords []types.HrpIbcRecord) {
 	for _, record := range hrpIbcRecords {
-		k.setHrpIbcRecord(ctx, record)
+		err := k.setHrpIbcRecord(ctx, record)
+		if err != nil {
+			panic(fmt.Sprintf("failed to set hrp ibc record: %v", err))
+		}
 	}
 }

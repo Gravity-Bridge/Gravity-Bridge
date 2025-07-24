@@ -36,23 +36,20 @@ pub async fn send_erc721_to_cosmos(
     }
 
     let mut address_approved = web3
-        .check_erc721_approved(erc721, sender_address, token_id)
+        .check_erc721_approved(erc721, sender_address, token_id, vec![])
         .await;
     if let Some(w) = wait_timeout {
         let start = Instant::now();
         // keep trying while there's still time
         while address_approved.is_err() && Instant::now() - start < w {
             address_approved = web3
-                .check_erc721_approved(erc721, sender_address, token_id)
+                .check_erc721_approved(erc721, sender_address, token_id, vec![])
                 .await;
         }
     }
     let address_approved = address_approved?;
     if address_approved.is_none() {
-        info!(
-            "Approval for ERC721 contract {} token id {} is empty...approving",
-            erc721, token_id
-        );
+        info!("Approval for ERC721 contract {erc721} token id {token_id} is empty...approving",);
         let mut options = options.clone();
         let nonce = web3.eth_get_transaction_count(sender_address).await?;
         options.push(SendTxOption::Nonce(nonce));
@@ -68,11 +65,8 @@ pub async fn send_erc721_to_cosmos(
                 options,
             )
             .await?;
-        trace!(
-            "We are not approved for ERC721 transfers, approving txid: {:#066x}",
-            txid
-        );
-        info!("successful ERC721 approve, tx id {}", txid);
+        trace!("We are not approved for ERC721 transfers, approving txid: {txid:#066x}",);
+        info!("successful ERC721 approve, tx id {txid}");
     }
 
     // if the user sets a gas limit we should honor it, if they don't we
@@ -94,10 +88,7 @@ pub async fn send_erc721_to_cosmos(
         options.push(SendTxOption::Nonce(nonce + 1u8.into()));
     }
 
-    info!(
-        "sending ERC721 token id {} to cosmos dest {}",
-        token_id, cosmos_destination
-    );
+    info!("sending ERC721 token id {token_id} to cosmos dest {cosmos_destination}",);
     let encoded_destination_address = Token::String(cosmos_destination.to_string());
 
     let tx_hash = web3

@@ -92,10 +92,7 @@ pub async fn orchestrator(
     let public_eth_key = ethereum_key.to_address();
     let public_cosmos_key = cosmos_key.to_address(&contact.get_prefix()).unwrap();
     info!("Starting Gravity Validator companion binary Relayer + Oracle + Eth Signer");
-    info!(
-        "Ethereum Address: {} Cosmos Address {}",
-        public_eth_key, public_cosmos_key
-    );
+    info!("Ethereum Address: {public_eth_key} Cosmos Address {public_cosmos_key}");
 
     // check if the cosmos node is syncing, if so wait for it
     // we can't move any steps above this because they may fail on an incorrect

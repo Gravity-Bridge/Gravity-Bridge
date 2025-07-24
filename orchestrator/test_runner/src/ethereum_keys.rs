@@ -87,7 +87,7 @@ pub async fn setup_ethermint_test(
             validator_keys[0].validator_key,
         )
         .await;
-    info!("Output is {:?}", output);
+    info!("Output is {output:?}");
     let balance = contact
         .get_balance(user_address, denom.clone())
         .await
@@ -161,17 +161,14 @@ pub async fn example_ethermint_key_usage(
             user_key,
         )
         .await;
-    debug!("user_send is {:?}", user_send);
+    debug!("user_send is {user_send:?}");
 
     let expected_balance = start_balance.amount - send_amount;
     let balance = contact
         .get_balance(user_cosmos_address, denom.clone())
         .await
         .unwrap();
-    info!(
-        "User {} start balance {} and end balance {:?}",
-        user_cosmos_address, start_balance, balance
-    );
+    info!("User {user_cosmos_address} start balance {start_balance} and end balance {balance:?}");
     let success = balance
         == Some(deep_space::Coin {
             amount: expected_balance,
@@ -179,8 +176,7 @@ pub async fn example_ethermint_key_usage(
         });
     match success {
         true => info!(
-            "Successfully used bank module with ethermint account {}, sent {} {}",
-            user_cosmos_address, send_amount, denom,
+            "Successfully used bank module with ethermint account {user_cosmos_address}, sent {send_amount} {denom}",
         ),
         false => {
             error!("Failed Ethereum Keys test!");
@@ -215,8 +211,7 @@ pub async fn example_ethermint_key_usage(
         return false;
     }
     info!(
-        "Successfully used staking module with ethermint account {}, delegated {} to {}",
-        user_cosmos_address, delegate_amount, delegate_to,
+        "Successfully used staking module with ethermint account {user_cosmos_address}, delegated {delegate_amount} to {delegate_to}",
     );
 
     // --^v^v^v^v^v^-- GRAVITY Module --^v^v^v^v^v^--
@@ -321,7 +316,7 @@ pub async fn example_ethermint_key_usage(
         pre_proposals.proposals.len() + 1,
         "Did not observe a new proposal creation"
     );
-    info!("Successfully used gov module with ethermint account {}, created a parameter change proposal", user_cosmos_address);
+    info!("Successfully used gov module with ethermint account {user_cosmos_address}, created a parameter change proposal");
 
     // --^v^v^v^v^v^-- DISTRIBUTION Module --^v^v^v^v^v^--
     // Claim staking rewards
@@ -329,7 +324,7 @@ pub async fn example_ethermint_key_usage(
         .query_delegation_rewards(user_cosmos_address, delegate_to)
         .await
         .expect("Could not get staking rewards!");
-    info!("Got delegation rewards: {:?}", rewards);
+    info!("Got delegation rewards: {rewards:?}");
     let mut stake_rewards = None;
     for reward in &rewards {
         if reward.denom == *STAKING_TOKEN {
@@ -377,7 +372,7 @@ pub async fn example_ethermint_key_usage(
             return false;
         }
     };
-    info!("Successfully used distribution module with ethermint account {}, withdrew staking rewards!", user_cosmos_address);
+    info!("Successfully used distribution module with ethermint account {user_cosmos_address}, withdrew staking rewards!");
 
     info!("Successfully tested example usage of an ethermint account!");
     true

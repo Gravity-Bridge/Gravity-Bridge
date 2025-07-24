@@ -22,7 +22,7 @@ pub async fn ibc_metadata_proposal_test(
 ) {
     let mut grpc_client = grpc_client;
     let metadata_start = contact.get_all_denoms_metadata().await.unwrap();
-    info!("Starting metadata {:?}", metadata_start);
+    info!("Starting metadata {metadata_start:?}");
     // the token we want to try and set the metadata of
     let target_denom = "ibc/nometadatatoken".to_string();
     // already has metadta set, should fail
@@ -106,7 +106,7 @@ pub async fn ibc_metadata_proposal_test(
     submit_and_pass_ibc_metadata_proposal(target_denom.clone(), test_metadata, contact, &keys)
         .await;
     let metadata_end = contact.get_all_denoms_metadata().await.unwrap();
-    info!("Ending metadata {:?}", metadata_end);
+    info!("Ending metadata {metadata_end:?}");
     let mut found = None;
     for m in metadata_end {
         if m.base == target_denom {
@@ -136,7 +136,7 @@ pub async fn submit_and_pass_ibc_metadata_proposal(
     keys: &[ValidatorKeys],
 ) {
     let proposal_content = IbcMetadataProposal {
-        title: format!("Proposal to set metadata on {}", denom),
+        title: format!("Proposal to set metadata on {denom}"),
         description: "IBC METADATA!".to_string(),
         ibc_denom: denom,
         metadata: Some(metadata),
@@ -152,7 +152,7 @@ pub async fn submit_and_pass_ibc_metadata_proposal(
     .await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-    trace!("Gov proposal executed with {:?}", res);
+    trace!("Gov proposal executed with {res:?}");
 }
 
 async fn submit_and_fail_ibc_metadata_proposal(
@@ -162,7 +162,7 @@ async fn submit_and_fail_ibc_metadata_proposal(
     keys: &[ValidatorKeys],
 ) {
     let proposal_content = IbcMetadataProposal {
-        title: format!("Proposal to set metadata on {}", denom),
+        title: format!("Proposal to set metadata on {denom}"),
         description: "IBC METADATA!".to_string(),
         ibc_denom: denom,
         metadata: Some(metadata),

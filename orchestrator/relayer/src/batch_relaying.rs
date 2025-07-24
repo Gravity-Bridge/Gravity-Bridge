@@ -45,7 +45,7 @@ pub async fn relay_batches(
     let possible_batches =
         get_batches_and_signatures(current_valset.clone(), grpc_client, gravity_id.clone()).await;
 
-    trace!("possible batches {:?}", possible_batches);
+    trace!("possible batches {possible_batches:?}");
 
     submit_batches(
         current_valset,
@@ -77,13 +77,13 @@ async fn get_batches_and_signatures(
     } else {
         return HashMap::new();
     };
-    trace!("Latest batches {:?}", latest_batches);
+    trace!("Latest batches {latest_batches:?}");
 
     let mut possible_batches = HashMap::new();
     for batch in latest_batches {
         let sigs =
             get_transaction_batch_signatures(grpc_client, batch.nonce, batch.token_contract).await;
-        trace!("Got sigs {:?}", sigs);
+        trace!("Got sigs {sigs:?}");
         if let Ok(sigs) = sigs {
             // this checks that the signatures for the batch are actually possible to submit to the chain
             let hash = encode_tx_batch_confirm_hashed(gravity_id.clone(), batch.clone());
@@ -148,9 +148,8 @@ async fn should_relay_batch(
                 Ok(price) => (price > cost_with_margin, Some(price)),
                 Err(e) => {
                     info!(
-                        "Unable to determine swap price of token {} for WETH \n
-                it may just not be on Uniswap - Will not be relaying batch {:?}",
-                        batch_reward_token, e
+                        "Unable to determine swap price of token {batch_reward_token} for WETH \n
+                it may just not be on Uniswap - Will not be relaying batch {e:?}"
                     );
                     (false, None)
                 }
@@ -175,9 +174,8 @@ async fn should_relay_batch(
                 (Ok(price), None) => (price > cost_with_margin, Some(price)),
                 (Err(e), _) => {
                     info!(
-                        "Unable to determine swap price of token {} for WETH \n
-                it may just not be on Uniswap - Will not be relaying batch {:?}",
-                        batch_reward_token, e
+                        "Unable to determine swap price of token {batch_reward_token} for WETH \n
+                it may just not be on Uniswap - Will not be relaying batch {e:?}"
                     );
                     (false, None)
                 }
@@ -247,10 +245,7 @@ async fn submit_batches(
         )
         .await;
         if latest_ethereum_batch.is_err() {
-            error!(
-                "Failed to get latest Ethereum batch with {:?}",
-                latest_ethereum_batch
-            );
+            error!("Failed to get latest Ethereum batch with {latest_ethereum_batch:?}");
             return;
         }
         let latest_ethereum_batch = latest_ethereum_batch.unwrap();
@@ -281,7 +276,7 @@ async fn submit_batches(
                 )
                 .await;
                 if cost.is_err() {
-                    error!("Batch cost estimate failed with {:?}", cost);
+                    error!("Batch cost estimate failed with {cost:?}");
                     continue;
                 }
                 let cost = cost.unwrap();
@@ -325,7 +320,7 @@ async fn submit_batches(
                     )
                     .await;
                     if res.is_err() {
-                        info!("Batch submission failed with {:?}", res);
+                        info!("Batch submission failed with {res:?}");
                     }
                 } else {
                     info!(

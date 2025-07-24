@@ -95,7 +95,7 @@ pub async fn register_orchestrator_address(
     let res = contact.wait_for_tx(res, TIMEOUT).await;
 
     if let Err(e) = res {
-        error!("Failed trying to register delegate addresses error {:?}, correct the error and try again", e);
+        error!("Failed trying to register delegate addresses error {e:?}, correct the error and try again");
         exit(1);
     }
 
@@ -115,10 +115,7 @@ pub async fn register_orchestrator_address(
     }
 
     let eth_address = ethereum_key.to_address();
-    info!(
-        "Registered Delegate Ethereum address {} and Cosmos address {}",
-        eth_address, cosmos_address
-    );
+    info!("Registered Delegate Ethereum address {eth_address} and Cosmos address {cosmos_address}");
     if !args.no_save {
         info!("Keys saved! You can now run `gbt orchestrator --fees <your fee value>`");
         let phrase = match (generated_cosmos, cosmos_phrase) {

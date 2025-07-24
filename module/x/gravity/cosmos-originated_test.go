@@ -3,7 +3,7 @@ package gravity
 import (
 	"testing"
 
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,12 +35,12 @@ func TestCosmosOriginated(t *testing.T) {
 }
 
 type testingVars struct {
-	erc20 string
-	denom string
-	input keeper.TestInput
-	ctx   sdk.Context
-	h     sdk.Handler
-	t     *testing.T
+	erc20     string
+	denom     string
+	input     keeper.TestInput
+	ctx       sdk.Context
+	msgServer types.MsgServer
+	t         *testing.T
 }
 
 func initializeTestingVars(t *testing.T) *testingVars {
@@ -52,7 +52,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 	tv.denom = "ugraviton"
 
 	tv.input, tv.ctx = keeper.SetupFiveValChain(t)
-	tv.h = NewHandler(tv.input.GravityKeeper)
+	tv.msgServer = keeper.NewMsgServerImpl(tv.input.GravityKeeper)
 
 	return &tv
 }
@@ -85,7 +85,7 @@ func addDenomToERC20Relation(tv *testingVars) {
 			Decimals:       6,
 			Orchestrator:   v.String(),
 		}
-		_, err := tv.h(tv.ctx, &ethClaim)
+		_, err := tv.msgServer.ERC20DeployedClaim(tv.ctx, &ethClaim)
 		require.NoError(tv.t, err)
 
 		// check if attestations persisted
@@ -113,15 +113,15 @@ func addDenomToERC20Relation(tv *testingVars) {
 
 func lockCoinsInModule(tv *testingVars) {
 	var (
-		userCosmosAddr, err           = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
-		denom                         = "ugraviton"
-		startingCoinAmount  math.Int  = sdk.NewIntFromUint64(150)
-		sendAmount          math.Int  = sdk.NewIntFromUint64(50)
-		feeAmount           math.Int  = sdk.NewIntFromUint64(5)
-		startingCoins       sdk.Coins = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
-		sendingCoin         sdk.Coin  = sdk.NewCoin(denom, sendAmount)
-		feeCoin             sdk.Coin  = sdk.NewCoin(denom, feeAmount)
-		ethDestination                = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
+		userCosmosAddr, err             = sdk.AccAddressFromBech32("gravity1990z7dqsvh8gthw9pa5sn4wuy2xrsd80lcx6lv")
+		denom                           = "ugraviton"
+		startingCoinAmount  sdkmath.Int = sdkmath.NewIntFromUint64(150)
+		sendAmount          sdkmath.Int = sdkmath.NewIntFromUint64(50)
+		feeAmount           sdkmath.Int = sdkmath.NewIntFromUint64(5)
+		startingCoins       sdk.Coins   = sdk.Coins{sdk.NewCoin(denom, startingCoinAmount)}
+		sendingCoin         sdk.Coin    = sdk.NewCoin(denom, sendAmount)
+		feeCoin             sdk.Coin    = sdk.NewCoin(denom, feeAmount)
+		ethDestination                  = "0x3c9289da00b02dC623d0D8D907619890301D26d4"
 	)
 	assert.Nil(tv.t, err)
 
@@ -143,7 +143,7 @@ func lockCoinsInModule(tv *testingVars) {
 		ChainFee:  zeroCoin,
 	}
 
-	_, err = tv.h(tv.ctx, msg)
+	_, err = tv.msgServer.SendToEth(tv.ctx, msg)
 	require.NoError(tv.t, err)
 
 	// Check that user balance has gone down
@@ -167,7 +167,7 @@ func acceptDepositEvent(tv *testingVars) {
 	require.NoError(tv.t, err)
 
 	myErc20 := types.ERC20Token{
-		Amount:   sdk.NewInt(12),
+		Amount:   sdkmath.NewInt(12),
 		Contract: tv.erc20,
 	}
 
@@ -183,7 +183,7 @@ func acceptDepositEvent(tv *testingVars) {
 			Orchestrator:   v.String(),
 		}
 
-		_, err := tv.h(tv.ctx, &ethClaim)
+		_, err := tv.msgServer.SendToCosmosClaim(tv.ctx, &ethClaim)
 		require.NoError(tv.t, err)
 		EndBlocker(tv.ctx, tv.input.GravityKeeper)
 
@@ -202,7 +202,7 @@ func acceptDepositEvent(tv *testingVars) {
 	// Check that gravity balance has gone down
 	gravityAddr := tv.input.AccountKeeper.GetModuleAddress(types.ModuleName)
 	assert.Equal(tv.t,
-		sdk.Coins{sdk.NewCoin(tv.denom, sdk.NewIntFromUint64(55).Sub(myErc20.Amount))},
+		sdk.Coins{sdk.NewCoin(tv.denom, sdkmath.NewIntFromUint64(55).Sub(myErc20.Amount))},
 		tv.input.BankKeeper.GetAllBalances(tv.ctx, gravityAddr),
 	)
 }
@@ -239,7 +239,7 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 			Decimals:       6,
 			Orchestrator:   v.String(),
 		}
-		_, err := tv.h(tv.ctx, &ethClaim)
+		_, err := tv.msgServer.ERC20DeployedClaim(tv.ctx, &ethClaim)
 		require.NoError(tv.t, err)
 
 		// check if attestations persisted

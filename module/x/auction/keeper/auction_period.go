@@ -10,7 +10,7 @@ import (
 
 // UpdateAuctionPeriod replaces the current auction period with the given one
 func (k Keeper) UpdateAuctionPeriod(ctx sdk.Context, auctionPeriod types.AuctionPeriod) error {
-	if enabled := k.GetParams(ctx).Enabled; !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return types.ErrDisabledModule
 	}
 
@@ -64,10 +64,13 @@ func (k Keeper) GetAuctionPeriod(ctx sdk.Context) *types.AuctionPeriod {
 // and then creates auctions for the new period
 // Note: This function does not check the Enabled param because it may be used by InitGenesis to bootstrap the module
 func (k Keeper) CreateNewAuctionPeriod(ctx sdk.Context) (types.AuctionPeriod, error) {
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return types.AuctionPeriod{}, errorsmod.Wrap(err, "failed to get auction params")
+	}
 	startBlock := uint64(ctx.BlockHeight()) + 1
 	auctionPeriod := k.initializeAuctionPeriodFromParams(startBlock, params)
-	err := k.UpdateAuctionPeriod(ctx, auctionPeriod)
+	err = k.UpdateAuctionPeriod(ctx, auctionPeriod)
 	if err != nil {
 		return types.AuctionPeriod{}, errorsmod.Wrapf(err, "unable to create new auction period with start height %d and end height %d", auctionPeriod.StartBlockHeight, auctionPeriod.EndBlockHeight)
 	}
@@ -87,7 +90,10 @@ func (k Keeper) initializeAuctionPeriodFromParams(startBlock uint64, params type
 // CreateAuctionsForActivePeriod will iterate through all acceptable auction pool balances and store auctions for them
 // Returns an error if the module is disabled, an active period is detected, or on failure
 func (k Keeper) CreateAuctionsForAuctionPeriod(ctx sdk.Context) error {
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to get auction params")
+	}
 	if !params.Enabled {
 		return types.ErrDisabledModule
 	}

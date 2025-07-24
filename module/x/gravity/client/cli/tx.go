@@ -7,9 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	errorsmod "cosmossdk.io/errors"
 	"github.com/spf13/cobra"
 
+	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -137,7 +138,7 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 			if err != nil {
 				return errorsmod.Wrap(types.ErrInternal, "Failed to get supply data?")
 			}
-			if supply.GetAmount().Amount.Equal(sdk.ZeroInt()) {
+			if supply.GetAmount().Amount.Equal(sdkmath.ZeroInt()) {
 				return errorsmod.Wrap(types.ErrInvalid, "This ibc hash does not seem to exist on Gravity, are you sure you have the right one?")
 			}
 
@@ -151,9 +152,6 @@ func CmdGovIbcMetadataProposal() *cobra.Command {
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
-			}
-			if err := msg.ValidateBasic(); err != nil {
-				return errorsmod.Wrap(err, "Your proposal.json is not valid, please correct it")
 			}
 			// Send it
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
@@ -244,9 +242,6 @@ func CmdGovAirdropProposal() *cobra.Command {
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 			// Send it
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
@@ -302,9 +297,6 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Content:        proposalAny,
-			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
 			}
 			// Send it
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)

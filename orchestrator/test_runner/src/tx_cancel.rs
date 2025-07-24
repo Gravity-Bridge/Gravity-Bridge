@@ -40,7 +40,7 @@ pub async fn send_to_eth_and_cancel(
     )
     .await;
 
-    let token_name = format!("gravity{}", erc20_address);
+    let token_name = format!("gravity{erc20_address}");
 
     let bridge_denom_fee = Coin {
         denom: token_name.clone(),
@@ -67,7 +67,7 @@ pub async fn send_to_eth_and_cancel(
     )
     .await
     .unwrap();
-    info!("{:?}", res);
+    info!("{res:?}");
     for thing in res.logs() {
         for event in thing.events {
             info!("attribute for {:?}", event.attributes);

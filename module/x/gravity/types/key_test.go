@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkmath "cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,7 +31,7 @@ func getAllKeys() [][]byte {
 	i := 0
 	inc := func(i *int) *int { *i += 1; return i }
 
-	keys := make([][]byte, 47)
+	keys := make([][]byte, 48)
 
 	keys[i] = EthAddressByValidatorKey
 	keys[*inc(&i)] = ValidatorByEthAddressKey
@@ -60,6 +60,7 @@ func getAllKeys() [][]byte {
 	keys[*inc(&i)] = LastUnBondingBlockHeight
 	keys[*inc(&i)] = LastObservedValsetKey
 	keys[*inc(&i)] = PastEthSignatureCheckpointKey
+	keys[*inc(&i)] = ParamsKey
 
 	// sdk.AccAddress, sdk.ValAddress
 	dummyAddr := []byte("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -74,7 +75,7 @@ func getAllKeys() [][]byte {
 	// Claim, InvalidationId
 	dummyBytes := []byte("0xc783df8a850f42e7F7e57013759C285caa701eB6")
 	// InternationalERC20Token
-	dummyErc := InternalERC20Token{Amount: sdk.OneInt(), Contract: dummyEthAddr}
+	dummyErc := InternalERC20Token{Amount: sdkmath.OneInt(), Contract: dummyEthAddr}
 	// Denom
 	dummyDenom := "footoken"
 

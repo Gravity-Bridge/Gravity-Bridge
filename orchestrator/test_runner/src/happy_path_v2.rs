@@ -199,7 +199,7 @@ pub async fn deploy_and_bridge_cosmos_token(
         if latest_claim.type_url == MSG_BATCH_SEND_TO_ETH_TYPE_URL {
             let msg = decode_any::<MsgBatchSendToEthClaim>(latest_claim)
                 .expect("Any was not decodeable into MsgBatchSendToEth!");
-            info!("Discovered the expected MsgBatchSendToEthClaim: {:?}", msg);
+            info!("Discovered the expected MsgBatchSendToEthClaim: {msg:?}");
             return;
         }
         sleep(Duration::from_secs(10)).await;
@@ -234,8 +234,8 @@ pub async fn send_to_eth_and_confirm(
     )
     .await
     .unwrap();
-    info!("Send to eth res {:?}", res);
-    info!("Locked up {} to send to Cosmos", amount_to_bridge);
+    info!("Send to eth res {res:?}");
+    info!("Locked up {amount_to_bridge} to send to Cosmos");
 
     info!("Waiting for batch to be signed and relayed to Ethereum");
 
@@ -251,11 +251,11 @@ pub async fn send_to_eth_and_confirm(
         }
         let balance = new_balance.unwrap();
         if balance - starting_balance == amount_to_bridge {
-            info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
+            info!("Successfully bridged {amount_to_bridge} to Ethereum!");
             assert!(balance == amount_to_bridge);
             return true;
         } else if balance - starting_balance != 0u8.into() {
-            error!("Expected {} but got {} instead", amount_to_bridge, balance);
+            error!("Expected {amount_to_bridge} but got {balance} instead");
             return false;
         }
         sleep(Duration::from_secs(1)).await;
@@ -306,8 +306,7 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
 
     assert!(starting_event_nonce != ending_event_nonce);
     info!(
-        "Successfully deployed new ERC20 representing FooToken on Cosmos with event nonce {}",
-        ending_event_nonce
+        "Successfully deployed new ERC20 representing FooToken on Cosmos with event nonce {ending_event_nonce}"
     );
 
     // if no keys are provided we assume the caller does not want to spawn
@@ -353,25 +352,25 @@ pub async fn deploy_cosmos_representing_erc20_and_check_adoption(
 
     // now that we have the contract, validate that it has the properties we want
     let got_decimals = web30
-        .get_erc20_decimals(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_decimals(erc20_contract, *MINER_ADDRESS, vec![])
         .await
         .unwrap();
     assert_eq!(Uint256::from(cosmos_decimals), got_decimals);
 
     let got_name = web30
-        .get_erc20_name(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_name(erc20_contract, *MINER_ADDRESS, vec![])
         .await
         .unwrap();
     assert_eq!(got_name, token_metadata.name);
 
     let got_symbol = web30
-        .get_erc20_symbol(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_symbol(erc20_contract, *MINER_ADDRESS, vec![])
         .await
         .unwrap();
     assert_eq!(got_symbol, token_metadata.symbol);
 
     let got_supply = web30
-        .get_erc20_supply(erc20_contract, *MINER_ADDRESS)
+        .get_erc20_supply(erc20_contract, *MINER_ADDRESS, vec![])
         .await
         .unwrap();
     assert_eq!(got_supply, 0u8.into());

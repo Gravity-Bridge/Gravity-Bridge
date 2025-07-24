@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
@@ -14,7 +14,10 @@ import (
 func InitGenesis(ctx sdk.Context, k Keeper, genState types.GenesisState) []abci.ValidatorUpdate {
 	fmt.Println("Creating auction pool account (", types.AuctionPoolAccountName, ")")
 	k.AccountKeeper.GetModuleAccount(ctx, types.AuctionPoolAccountName)
-	k.SetParams(ctx, genState.Params)
+	err := k.SetParams(ctx, genState.Params)
+	if err != nil {
+		panic(fmt.Sprintf("failed to set params: %v", err))
+	}
 
 	// Previous module state
 	if genState.ActivePeriod != nil {
@@ -54,7 +57,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, genState types.GenesisState) []abci.
 // ExportGenesis returns the module's exported genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) *types.GenesisState {
 	genesis := types.DefaultGenesis()
-	genesis.Params = k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get auction params: %v", err))
+	}
+	genesis.Params = params
 
 	auctionPeriod := k.GetAuctionPeriod(ctx)
 	genesis.ActivePeriod = auctionPeriod

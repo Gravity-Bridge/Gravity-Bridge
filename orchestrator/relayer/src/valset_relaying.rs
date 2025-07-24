@@ -61,10 +61,7 @@ pub async fn relay_valsets(
         Ok(v) => v,
         Err(GravityError::ValsetUpToDate) => return,
         Err(e) => {
-            error!(
-                "We were unable to find a valid validator set update to submit! {:?}",
-                e
-            );
+            error!("We were unable to find a valid validator set update to submit! {e:?}");
             return;
         }
     };
@@ -151,7 +148,7 @@ async fn relay_valid_valset(
         )
         .await;
         if let Err(e) = res {
-            error!("Failed to relay validator set with {:?}", e);
+            error!("Failed to relay validator set with {e:?}");
         }
     }
 }
@@ -242,9 +239,8 @@ async fn should_relay_valset(
                     Ok(price) => price > cost_with_margin,
                     Err(e) => {
                         info!(
-                            "Unable to determine swap price of token {} for WETH \n
-                             it may just not be on Uniswap - Will not be relaying valset {:?}",
-                            reward_token, e
+                            "Unable to determine swap price of token {reward_token} for WETH \n
+                             it may just not be on Uniswap - Will not be relaying valset {e:?}"
                         );
                         false
                     }

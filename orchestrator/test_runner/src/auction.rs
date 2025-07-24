@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::slice::from_ref;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
@@ -98,7 +99,7 @@ pub async fn auction_disabled_test(
     if auctions.is_empty() {
         panic!("Expecting at least some auctions to be open, found none");
     }
-    info!("Found auctions {:?}", auctions);
+    info!("Found auctions {auctions:?}");
 
     wait_for_block(contact, period.end_block_height)
         .await
@@ -234,7 +235,7 @@ pub async fn auction_test_static(
     if auctions.is_empty() {
         panic!("Expecting at least some auctions to be open, found none");
     }
-    info!("Found auctions {:?}", auctions);
+    info!("Found auctions {auctions:?}");
 
     let min_bid_fee = auction_qc
         .params(QueryParamsRequest {})
@@ -394,7 +395,7 @@ pub async fn auction_test_random(
     if auctions.is_empty() {
         panic!("Expecting at least some auctions to be open, found none");
     }
-    info!("Found auctions {:?}", auctions);
+    info!("Found auctions {auctions:?}");
     let min_bid_fee = auction_qc
         .params(QueryParamsRequest {})
         .await
@@ -454,7 +455,7 @@ pub async fn auction_test_random(
         .unwrap()
         .into_inner()
         .auctions;
-    info!("Found auctions {:?}", auctions);
+    info!("Found auctions {auctions:?}");
 
     // Check that the last successful bidder received the auction tokens
     assert_user_won_auctions(contact, *(bids.clone().last().unwrap().1), &auctions[0..3]).await;
@@ -560,7 +561,7 @@ pub async fn setup(
         )
         .await
         .expect("Failed to send tokens to Cosmos");
-        info!("Send to Cosmos txid: {:#066x}", tx_id);
+        info!("Send to Cosmos txid: {tx_id:#066x}");
         web30
             .wait_for_transaction(tx_id, OPERATION_TIMEOUT, None)
             .await
@@ -614,7 +615,7 @@ pub async fn setup(
 
 // Seeds the auction pool with the bridged `erc20_address`, footoken, and footoken2
 async fn seed_pool_multi(contact: &Contact, keys: &[ValidatorKeys], erc20_address: EthAddress) {
-    let denom = format!("gravity{}", erc20_address);
+    let denom = format!("gravity{erc20_address}");
     seed_pool(contact, keys, denom).await;
     let footoken = footoken_metadata(contact).await;
     seed_pool(contact, keys, footoken.base).await;
@@ -841,7 +842,7 @@ pub async fn execute_and_validate_bid(
         .send_message(
             &[msg],
             None,
-            &[tx_fee.clone()],
+            from_ref(&tx_fee),
             Some(OPERATION_TIMEOUT),
             None,
             user.cosmos_key,
@@ -862,8 +863,7 @@ pub async fn execute_and_validate_bid(
         let expected_module_change: Uint256 = Uint256::from(bid_amount) - previous_bid;
 
         info!(
-            "Expecting user balance change: {} ({:?} -> {:?})",
-            expected_user_change, pre_user_balances, post_user_balances
+            "Expecting user balance change: {expected_user_change} ({pre_user_balances:?} -> {post_user_balances:?})"
         );
         info!("Log: {}", res.raw_log());
         validate_balance_changes(
@@ -876,8 +876,7 @@ pub async fn execute_and_validate_bid(
             true,
         );
         info!(
-            "Expecting module balance change: {} ({:?} -> {:?})",
-            expected_module_change, pre_module_balances, post_module_balances
+            "Expecting module balance change: {expected_module_change} ({pre_module_balances:?} -> {post_module_balances:?})"
         );
         validate_balance_changes(
             pre_module_balances,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -14,7 +15,7 @@ import (
 
 // Creates auctions in the store and tests the auction storage and query functions
 func (suite *KeeperTestSuite) TestAuctionStorage() {
-	accounts := suite.AppTestHelper.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdk.NewInt(1))))
+	accounts := suite.AppTestHelper.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdkmath.NewInt(1))))
 	t := suite.T()
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
@@ -23,7 +24,7 @@ func (suite *KeeperTestSuite) TestAuctionStorage() {
 	ak.DeleteAllAuctions(ctx)
 
 	// Create and store multiple Auctions
-	auction := types.NewAuction(1, sdk.NewCoin("test", sdk.OneInt()))
+	auction := types.NewAuction(1, sdk.NewCoin("test", sdkmath.OneInt()))
 	err := ak.StoreAuction(ctx, auction)
 	require.NoError(t, err)
 	stored := ak.GetAllAuctions(ctx)
@@ -34,7 +35,7 @@ func (suite *KeeperTestSuite) TestAuctionStorage() {
 	for i := 1; i < 30; i++ {
 		random, err := rand.Int(rand.Reader, (&big.Int{}).Exp(big.NewInt(2), big.NewInt(256), nil))
 		require.NoError(t, err)
-		auction := types.NewAuction(uint64(i+1), sdk.NewCoin(fmt.Sprintf("test%d", i+2), sdk.NewIntFromBigInt(random)))
+		auction := types.NewAuction(uint64(i+1), sdk.NewCoin(fmt.Sprintf("test%d", i+2), sdkmath.NewIntFromBigInt(random)))
 		err = ak.StoreAuction(ctx, auction)
 		require.NoError(t, err)
 	}
@@ -122,7 +123,7 @@ func (suite *KeeperTestSuite) TestAuctionStorage() {
 
 // Tests the auction functions when there are no auctions
 func (suite *KeeperTestSuite) TestEmptyAuctionFunctions() {
-	accounts := suite.AppTestHelper.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdk.NewInt(1))))
+	accounts := suite.AppTestHelper.CreateAndFundRandomAccounts(5, sdk.NewCoins(sdk.NewCoin("Hello", sdkmath.NewInt(1))))
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
 	initialPeriod := ak.GetAuctionPeriod(ctx)
@@ -173,7 +174,8 @@ func (suite *KeeperTestSuite) TestDisabledAuctionFunctions() {
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
 	t := suite.T()
-	params := ak.GetParams(ctx)
+	params, err := ak.GetParams(ctx)
+	require.NoError(t, err, "failed to get auction params")
 
 	ctx = ctx.WithBlockHeight(int64(params.AuctionLength) + ctx.BlockHeight())
 	auction.EndBlocker(ctx, *ak)
@@ -185,7 +187,8 @@ func (suite *KeeperTestSuite) TestDisabledAuctionFunctions() {
 
 	// Disable the module
 	params.Enabled = false
-	ak.SetParams(ctx, params)
+	err = ak.SetParams(ctx, params)
+	require.NoError(t, err)
 
 	// Get the auctions after disable, assert they haven't changed
 	postDisableAuctions := ak.GetAllAuctions(ctx)
@@ -208,7 +211,7 @@ func (suite *KeeperTestSuite) TestDisabledAuctionFunctions() {
 		BidAmount:     100000000,
 		BidderAddress: string(sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), newBidder)),
 	}
-	err := ak.UpdateHighestBidder(ctx, auc0.Id, newBid)
+	err = ak.UpdateHighestBidder(ctx, auc0.Id, newBid)
 	require.Error(t, err)
 	// Check that the stored value hasn't changed
 	updatedAuc0 := ak.GetAuctionById(ctx, auc0.Id)
@@ -238,12 +241,14 @@ func (suite *KeeperTestSuite) TestDisabledAuctionFunctions() {
 
 	// Re-enable to update the auction without running end blocker
 	params.Enabled = true
-	ak.SetParams(ctx, params)
+	err = ak.SetParams(ctx, params)
+	require.NoError(t, err)
 	// Set a highest bidder so we can call CloseAuctionWithWinner
 	err = ak.UpdateHighestBidder(ctx, auc0.Id, newBid)
 	require.NoError(t, err)
 	params.Enabled = true
-	ak.SetParams(ctx, params)
+	err = ak.SetParams(ctx, params)
+	require.NoError(t, err)
 
 	auc0WithBid := ak.GetAuctionById(ctx, auc0.Id)
 	require.NotNil(t, auc0WithBid)

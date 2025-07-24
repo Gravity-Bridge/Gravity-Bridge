@@ -2,17 +2,15 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 // AccountKeeper defines the expected account keeper used for simulations (noalias)
 // Methods imported from account should be defined here
 type AccountKeeper interface {
-	NewAccount(sdk.Context, authtypes.AccountI) authtypes.AccountI
-	SetAccount(ctx sdk.Context, acc authtypes.AccountI)
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) types.AccountI
-	GetModuleAccount(ctx sdk.Context, moduleName string) types.ModuleAccountI
+	NewAccount(sdk.Context, sdk.AccountI) sdk.AccountI
+	SetAccount(ctx sdk.Context, acc sdk.AccountI)
+	GetAccount(ctx sdk.Context, addr sdk.AccAddress) sdk.AccountI
+	GetModuleAccount(ctx sdk.Context, moduleName string) sdk.ModuleAccountI
 }
 
 // BankKeeper defines the expected interface needed to retrieve account balances and send token.

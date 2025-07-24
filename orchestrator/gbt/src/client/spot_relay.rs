@@ -106,7 +106,7 @@ pub async fn spot_relay(args: SpotRelayOpts, address_prefix: String) {
 
         let current_valset = find_latest_valset(&mut grpc, gravity_contract_address, &web3).await;
         if current_valset.is_err() {
-            error!("Could not get current valset! {:?}", current_valset);
+            error!("Could not get current valset! {current_valset:?}");
             return;
         }
         let current_valset = current_valset.unwrap();
@@ -116,7 +116,7 @@ pub async fn spot_relay(args: SpotRelayOpts, address_prefix: String) {
 
         if let Err(e) = current_valset.order_sigs(&hash, &sigs, false) {
             error!("Current validator set is not valid to relay this batch, a validator set update must be submitted!");
-            error!("{:?}", e);
+            error!("{e:?}");
             return;
         }
 
@@ -138,7 +138,7 @@ pub async fn spot_relay(args: SpotRelayOpts, address_prefix: String) {
         .await;
         match res {
             Ok(_) => info!("Batch submission was successful! Check Etherscan and your wallet"),
-            Err(e) => error!("Batch submission has failed {:?}", e),
+            Err(e) => error!("Batch submission has failed {e:?}"),
         }
         return;
     }
@@ -173,7 +173,7 @@ pub async fn spot_relay(args: SpotRelayOpts, address_prefix: String) {
                 if e.to_string().contains("would not be more profitable") {
                     info!("Batch would not have been more profitable, no new batch created, how did you get here?");
                 } else {
-                    warn!("Failed to request batch with {:?}", e);
+                    warn!("Failed to request batch with {e:?}");
                 }
 
             },

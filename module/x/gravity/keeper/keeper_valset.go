@@ -9,7 +9,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	math "cosmossdk.io/math"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
+	"cosmossdk.io/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -52,6 +52,7 @@ func (k Keeper) SetValsetRequest(ctx sdk.Context) types.Valset {
 		panic(err)
 	}
 
+	k.Logger(ctx).Debug("Valset request set", "valset", valset)
 	return valset
 }
 
@@ -256,8 +257,8 @@ func (k Keeper) IterateValsetBySlashedValsetNonce(ctx sdk.Context, lastSlashedVa
 // you should call this function, evaluate if you want to save this new valset, and discard
 // it or save
 func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
-	validators := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
-	if len(validators) == 0 {
+	validators, err := k.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	if err != nil || len(validators) == 0 {
 		// nolint: exhaustruct
 		return types.Valset{}, types.ErrNoValidators
 	}
@@ -265,16 +266,23 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	// so that we have an array with extra capacity but the correct length depending
 	// on how many validators have keys set.
 	bridgeValidators := make([]*types.InternalBridgeValidator, 0, len(validators))
-	totalPower := sdk.NewInt(0)
+	totalPower := math.NewInt(0)
 	// TODO someone with in depth info on Cosmos staking should determine
 	// if this is doing what I think it's doing
 	for _, validator := range validators {
-		val := validator.GetOperator()
+		val, err := sdk.ValAddressFromBech32(validator.GetOperator())
+		if err != nil {
+			return types.Valset{}, errorsmod.Wrap(err, types.ErrInvalidValAddress.Error())
+		}
 		if err := sdk.VerifyAddressFormat(val); err != nil {
 			return types.Valset{}, errorsmod.Wrap(err, types.ErrInvalidValAddress.Error())
 		}
 
-		p := sdk.NewInt(k.StakingKeeper.GetLastValidatorPower(ctx, val))
+		power, err := k.StakingKeeper.GetLastValidatorPower(ctx, val)
+		if err != nil {
+			return types.Valset{}, errorsmod.Wrapf(err, "failed to get last validator power for %s", val)
+		}
+		p := math.NewInt(power)
 
 		if ethAddr, found := k.GetEthAddressByValidator(ctx, val); found {
 			bv := types.BridgeValidator{Power: p.Uint64(), EthereumAddress: ethAddr.GetAddress().Hex()}
@@ -292,7 +300,11 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	}
 
 	// get the reward from the params store
-	reward := k.GetParams(ctx).ValsetReward
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get params"))
+	}
+	reward := params.ValsetReward
 	var rewardToken *types.EthAddress
 	var rewardAmount math.Int
 	if !reward.IsValid() || reward.IsZero() {
@@ -301,7 +313,7 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 		// params, a coin with a blank denom and/or zero amount is interpreted in this way.
 		za := types.ZeroAddress()
 		rewardToken = &za
-		rewardAmount = sdk.NewIntFromUint64(0)
+		rewardAmount = math.NewIntFromUint64(0)
 
 	} else {
 		rewardToken, rewardAmount = k.RewardToERC20Lookup(ctx, reward)

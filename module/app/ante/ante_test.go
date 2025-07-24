@@ -1,6 +1,7 @@
 package ante
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"testing"
@@ -9,19 +10,23 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 
+	signingv1beta1 "cosmossdk.io/api/cosmos/tx/signing/v1beta1"
+	"cosmossdk.io/x/tx/signing"
 	client "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	txsigning "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/gogoproto/proto"
 
 	eip712signer "github.com/ethereum/go-ethereum/signer/core/apitypes"
 	ethante "github.com/evmos/ethermint/app/ante"
@@ -51,7 +56,7 @@ func MakeAnteHandler(t *testing.T, input keeper.TestInput) sdk.AnteHandler {
 		ExtensionOptionChecker: nil,
 		TxFeeChecker:           nil,
 	}
-	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainID)
+	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainIDs)
 	require.NoError(t, err)
 	require.NotNil(t, ah)
 	return *ah
@@ -119,31 +124,32 @@ func BuildRegularTx(t *testing.T, ctx sdk.Context, txConfig client.TxConfig, ak 
 	account := ak.GetAccount(ctx, keeper.AccAddrs[0])
 	an := account.GetAccountNumber()
 	s := account.GetSequence()
-	err := SignRegular(t, tx, signing.SignMode_SIGN_MODE_DIRECT, txConfig, ctx.ChainID(), an, s)
+	err := SignRegular(t, ctx, tx, txConfig.SignModeHandler().DefaultMode(), txConfig, ctx.ChainID(), an, s)
 	require.NoError(t, err)
 
 	return tx.GetTx()
 }
 
 // Signs the WIP Tx in txBuilder using the standard cosmos signing style
-func SignRegular(t *testing.T, txBuilder client.TxBuilder, signMode signing.SignMode, txConfig client.TxConfig, chainID string, accNum uint64, seq uint64) error {
-	if signMode == signing.SignMode_SIGN_MODE_UNSPECIFIED {
-		// use the SignModeHandler's default mode if unspecified
-		signMode = txConfig.SignModeHandler().DefaultMode()
+func SignRegular(t *testing.T, ctx context.Context, txBuilder client.TxBuilder, signMode signingv1beta1.SignMode, txConfig client.TxConfig, chainID string, accNum uint64, seq uint64) error {
+	// use the SignModeHandler's default mode if unspecified
+	internalSignMode, err := authsigning.APISignModeToInternal(txConfig.SignModeHandler().DefaultMode())
+	if err != nil {
+		return err
 	}
 	pubKey := keeper.AccPubKeys[0]
 	// nolint: exhaustruct
-	signerData := authsigning.SignerData{
+	signerData := signing.SignerData{
 		ChainID:       chainID,
 		AccountNumber: accNum,
 		Sequence:      seq,
 	}
 
-	sigData := signing.SingleSignatureData{
-		SignMode:  signMode,
+	sigData := txsigning.SingleSignatureData{
+		SignMode:  internalSignMode,
 		Signature: nil,
 	}
-	sig := signing.SignatureV2{
+	sig := txsigning.SignatureV2{
 		PubKey:   pubKey,
 		Data:     &sigData,
 		Sequence: seq,
@@ -153,7 +159,15 @@ func SignRegular(t *testing.T, txBuilder client.TxBuilder, signMode signing.Sign
 	}
 
 	// Generate the bytes to be signed.
-	bytesToSign, err := txConfig.SignModeHandler().GetSignBytes(signMode, signerData, txBuilder.GetTx())
+
+	builtTx := txBuilder.GetTx()
+	adaptableTx, ok := builtTx.(authsigning.V2AdaptableTx)
+	if !ok {
+		return errors.New("txBuilder.GetTx() does not implement authsigning.V2AdaptableTx")
+	}
+	txData := adaptableTx.GetSigningTxData()
+
+	bytesToSign, err := txConfig.SignModeHandler().GetSignBytes(ctx, signMode, signerData, txData)
 	if err != nil {
 		return err
 	}
@@ -166,11 +180,11 @@ func SignRegular(t *testing.T, txBuilder client.TxBuilder, signMode signing.Sign
 	}
 
 	// Construct the SignatureV2 struct
-	sigData = signing.SingleSignatureData{
-		SignMode:  signMode,
+	sigData = txsigning.SingleSignatureData{
+		SignMode:  txsigning.SignMode(signMode),
 		Signature: sigBytes,
 	}
-	sig = signing.SignatureV2{
+	sig = txsigning.SignatureV2{
 		PubKey:   pubKey,
 		Data:     &sigData,
 		Sequence: seq,
@@ -192,7 +206,7 @@ func BuildWeb3ExtensionTx(t *testing.T, ctx sdk.Context, txConfig client.TxConfi
 
 	fees := sdk.NewCoins()
 	gasAmount := uint64(2000000)
-	chainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainID, 10, 64)
+	chainId, err := strconv.ParseUint(gravityconfig.GravityEvmChainIDs[0], 10, 64)
 	require.NoError(t, err)
 	tx.SetFeeAmount(fees)
 	tx.SetGasLimit(gasAmount)
@@ -238,7 +252,7 @@ func SignEip712(
 
 	fee := legacytx.NewStdFee(gas, fees) //nolint: staticcheck
 
-	data := legacytx.StdSignBytes(ctx.ChainID(), accNumber, nonce, 0, fee, msgs, "", nil)
+	data := legacytx.StdSignBytes(ctx.ChainID(), accNumber, nonce, 0, fee, msgs, "")
 
 	typedData, err := CreateTypedData(chainId, msgs[0], data, from)
 	if err != nil {
@@ -265,7 +279,7 @@ func SignEip712(
 	}
 
 	keyringSigner := testtx.NewSigner(privKey)
-	signature, pubKey, err := keyringSigner.SignByAddress(from, sigHash)
+	signature, pubKey, err := keyringSigner.SignByAddress(from, sigHash, txsigning.SignMode(txCfg.SignModeHandler().DefaultMode()))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -285,10 +299,10 @@ func SignEip712(
 	builder.SetGasLimit(gas)
 
 	// nolint: exhaustruct
-	sigsV2 := signing.SignatureV2{
+	sigsV2 := txsigning.SignatureV2{
 		PubKey: pubKey,
-		Data: &signing.SingleSignatureData{
-			SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+		Data: &txsigning.SingleSignatureData{
+			SignMode: txsigning.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
 		},
 		Sequence: nonce,
 	}
@@ -304,10 +318,26 @@ func SignEip712(
 
 // This is a helper function used to convert a Tx (as signData) to TypedData derived from the msg type (needed for EIP712 signing)
 func CreateTypedData(chainID uint64, msg sdk.Msg, signData []byte, from sdk.AccAddress) (eip712signer.TypedData, error) {
-	registry := codectypes.NewInterfaceRegistry()
-	etherminttypes.RegisterInterfaces(registry)
-	cryptocodec.RegisterInterfaces(registry)
-	ethermintCodec := codec.NewProtoCodec(registry)
+	// nolint: exhaustruct
+	signingOptions := signing.Options{
+		AddressCodec: address.Bech32Codec{
+			Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
+		},
+		ValidatorAddressCodec: address.Bech32Codec{
+			Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix(),
+		},
+	}
+	interfaceRegistry, err := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
+		ProtoFiles:     proto.HybridResolver,
+		SigningOptions: signingOptions,
+	})
+	if err != nil {
+		// nolint: exhaustruct
+		return eip712signer.TypedData{}, err
+	}
+	etherminttypes.RegisterInterfaces(interfaceRegistry)
+	cryptocodec.RegisterInterfaces(interfaceRegistry)
+	ethermintCodec := codec.NewProtoCodec(interfaceRegistry)
 
 	return eip712.LegacyWrapTxToTypedData(
 		ethermintCodec,

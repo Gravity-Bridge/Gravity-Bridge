@@ -11,10 +11,31 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 
 // Msg defines the state transitions possible within gravity
 service Msg {
+  option (cosmos.msg.v1.service) = true;
+  
+  rpc UpdateParamsProposal(MsgUpdateParamsProposal) returns (MsgUpdateParamsProposalResponse) {}
   rpc IBCMetadataProposal(MsgIBCMetadataProposal) returns (MsgIBCMetadataProposalResponse) {}
   rpc AirdropProposal(MsgAirdropProposal) returns (MsgAirdropProposalResponse) {}
   rpc UnhaltBridgeProposal(MsgUnhaltBridgeProposal) returns (MsgUnhaltBridgeProposalResponse) {}
 }
+
+// MsgUpdateParamsProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and a collection of params which may be updated in the proposal.
+// Only the provided params will be updated, and they will all be validated before execution.
+message MsgUpdateParamsProposal {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1;
+
+  repeated Param param_updates = 2;
+}
+
+message Param {
+  string key = 1;
+  string value = 2;
+}
+
+message MsgUpdateParamsProposalResponse {}
 
 // MsgIBCMetadataProposal
 // This message is used by the new x/gov v1 proposal system, it contains an authority

@@ -1,6 +1,8 @@
 package bech32ibc
 
 import (
+	"fmt"
+
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,7 +11,10 @@ import (
 // InitGenesis initializes the module's state from a provided genesis
 // state.
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) {
-	k.SetNativeHrp(ctx, genState.NativeHRP)
+	err := k.SetNativeHrp(ctx, genState.NativeHRP)
+	if err != nil {
+		panic(fmt.Sprintf("failed to set native HRP: %v", err))
+	}
 	k.SetHrpIbcRecords(ctx, genState.HrpIBCRecords)
 }
 

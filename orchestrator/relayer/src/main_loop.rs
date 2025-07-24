@@ -166,7 +166,7 @@ pub async fn single_relayer_iteration(
 
     let current_valset = find_latest_valset(&mut grpc_client, gravity_contract_address, web3).await;
     if current_valset.is_err() {
-        error!("Could not get current valset! {:?}", current_valset);
+        error!("Could not get current valset! {current_valset:?}");
         return;
     }
     let current_valset = current_valset.unwrap();

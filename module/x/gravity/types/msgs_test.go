@@ -16,11 +16,11 @@ func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 	var (
 		ethAddress                   = "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
 		cosmosAddress sdk.AccAddress = bytes.Repeat([]byte{0x1}, 20)
-		valAddress    sdk.ValAddress = bytes.Repeat([]byte{0x1}, 20)
+		valAddress    sdk.AccAddress = bytes.Repeat([]byte{0x1}, 20)
 	)
 	specs := map[string]struct {
 		srcCosmosAddr sdk.AccAddress
-		srcValAddr    sdk.ValAddress
+		srcValAddr    sdk.AccAddress
 		srcETHAddr    string
 		expErr        bool
 	}{

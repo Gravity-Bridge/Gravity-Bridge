@@ -103,11 +103,11 @@ pub async fn batch_timeout_test(
     // request batches and check that everyone got their expected amounts even after the timeout/reconsolidation
 
     for denom in denoms {
-        info!("Requesting batch for {}", denom);
+        info!("Requesting batch for {denom}");
         let res = send_request_batch(keys[0].validator_key, denom, Some(get_fee(None)), contact)
             .await
             .unwrap();
-        info!("batch request response is {:?}", res);
+        info!("batch request response is {res:?}");
     }
 
     let starting_eth = one_eth() * STARTING_ETH.into();
@@ -162,7 +162,7 @@ async fn set_batch_timeout(
     let halt = ParamChange {
         subspace: "gravity".to_string(),
         key: "TargetBatchTimeout".to_string(),
-        value: format!("\"{}\"", timeout),
+        value: format!("\"{timeout}\""),
     };
     params_to_change.push(halt);
 

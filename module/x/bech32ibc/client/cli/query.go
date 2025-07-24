@@ -14,6 +14,7 @@ import (
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd(queryRoute string) *cobra.Command {
 	// Group queries under a subcommand
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
@@ -33,6 +34,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 // GetCmdGaugeIds takes the pool id and returns the matching gauge ids and durations
 func GetCmdHrpIbcRecords() *cobra.Command {
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "hrp-ibc-records",
 		Short: "Query the entire mapping of bech32 prefixes to ibc source channels",
@@ -68,6 +70,7 @@ $ %s query bech32ibc hrp-ibc-records
 
 // GetCmdHrpIbcRecord returns the source channel associated with a specific bech32 prefix
 func GetCmdHrpIbcRecord() *cobra.Command {
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "hrp-ibc-record",
 		Short: "Query the pool id associated with a specific whitelisted fee token",
@@ -105,6 +108,7 @@ $ %s query bech32ibc hrp-ibc-record [source-channel]
 
 // GetCmdNativeHrp returns the native bech32 prefix for the chain
 func GetCmdNativeHrp() *cobra.Command {
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "native-hrp",
 		Short: "Query the native bech32 prefix for the chain.",

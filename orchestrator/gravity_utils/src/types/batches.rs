@@ -85,7 +85,7 @@ impl TransactionBatch {
         let fee_value_dai = get_dai_price(pubkey, token, fee_total, web30);
         let tx_value_weth = get_weth_price(pubkey, token, tx_total, web30);
         let tx_value_dai = get_dai_price(pubkey, token, tx_total, web30);
-        let token_symbol = web30.get_erc20_symbol(token, pubkey);
+        let token_symbol = web30.get_erc20_symbol(token, pubkey, vec![]);
         let current_block = web30.eth_block_number();
         if let (
             Ok(fee_value_weth),
@@ -103,7 +103,7 @@ impl TransactionBatch {
             current_block,
         ) {
             info!("Batch Info:");
-            info!("Token: {}  Contract Address: {}", token_symbol, token);
+            info!("Token: {token_symbol}  Contract Address: {token}");
             info!(
                 "Contains {} transactions, total value {} DAI {} ETH",
                 self.transactions.len(),
@@ -123,13 +123,12 @@ impl TransactionBatch {
             }
         } else {
             info!("Batch Info:");
-            info!("Contract Address: {}", token);
+            info!("Contract Address: {token}");
             info!(
-                "Contains {} transactions, total value {}",
+                "Contains {} transactions, total value {tx_total}",
                 self.transactions.len(),
-                tx_total,
             );
-            info!("Total fee value {}", fee_total);
+            info!("Total fee value {fee_total}");
             info!("Timeout block is {}", self.batch_timeout);
         }
     }

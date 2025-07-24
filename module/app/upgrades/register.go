@@ -1,19 +1,22 @@
 package upgrades
 
 import (
+	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	bech32ibckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	consensusparamskeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v6/modules/apps/transfer/keeper"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/antares"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/apollo"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/aurora"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/neutrino"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
@@ -30,6 +33,7 @@ func RegisterUpgradeHandlers(
 	bankKeeper *bankkeeper.BaseKeeper, bech32IbcKeeper *bech32ibckeeper.Keeper, distrKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper, upgradeKeeper *upgradekeeper.Keeper,
 	crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper, auctionKeeper *auctionkeeper.Keeper,
+	paramsKeeper *paramskeeper.Keeper, consensusparamsKeeper *consensusparamskeeper.Keeper,
 ) {
 	if mm == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
 		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil || upgradeKeeper == nil || auctionKeeper == nil {
@@ -86,5 +90,11 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		neutrino.ApolloToNeutrinoPlanName,
 		neutrino.GetNeutrinoUpgradeHandler(mm, configurator, crisisKeeper, auctionKeeper),
+	)
+
+	// Aurora upgrade handler
+	upgradeKeeper.SetUpgradeHandler(
+		aurora.NeutrinoToAuroraPlanName,
+		aurora.GetAuroraUpgradeHandler(mm, configurator, crisisKeeper, paramsKeeper, consensusparamsKeeper, upgradeKeeper),
 	)
 }

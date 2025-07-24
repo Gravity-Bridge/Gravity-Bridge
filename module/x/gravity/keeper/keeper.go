@@ -7,27 +7,24 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	errorsmod "cosmossdk.io/errors"
-
+	"cosmossdk.io/log"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v6/modules/apps/transfer/keeper"
-	"github.com/tendermint/tendermint/libs/log"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 
 	bech32ibckeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/keeper"
 
+	"cosmossdk.io/store/prefix"
 	auctionkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
 // Check that our expected keeper types are implemented
@@ -38,8 +35,7 @@ var _ types.DistributionKeeper = (*distrkeeper.Keeper)(nil)
 // Keeper maintains the link to storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
-	storeKey   storetypes.StoreKey // Unexposed key to access store from sdk.Context
-	paramSpace paramtypes.Subspace
+	storeKey storetypes.StoreKey // Unexposed key to access store from sdk.Context
 
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
 	cdc               codec.BinaryCodec // The wire codec for binary encoding/decoding.
@@ -89,7 +85,6 @@ func (k Keeper) ValidateMembers() {
 // NewKeeper returns a new instance of the gravity keeper
 func NewKeeper(
 	storeKey storetypes.StoreKey,
-	paramSpace paramtypes.Subspace,
 	cdc codec.BinaryCodec,
 	bankKeeper *bankkeeper.BaseKeeper,
 	stakingKeeper *stakingkeeper.Keeper,
@@ -101,14 +96,8 @@ func NewKeeper(
 	auctionKeeper *auctionkeeper.Keeper,
 	proposalAuthority string,
 ) Keeper {
-	// set KeyTable if it has not already been set
-	if !paramSpace.HasKeyTable() {
-		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
-	}
-
 	k := Keeper{
-		storeKey:   storeKey,
-		paramSpace: paramSpace,
+		storeKey: storeKey,
 
 		cdc:                cdc,
 		bankKeeper:         bankKeeper,
@@ -142,9 +131,15 @@ func (k Keeper) SendToCommunityPool(ctx sdk.Context, coins sdk.Coins) error {
 	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, distrtypes.ModuleName, coins); err != nil {
 		return errorsmod.Wrap(err, "transfer to community pool failed")
 	}
-	feePool := k.DistKeeper.GetFeePool(ctx)
+	feePool, err := k.DistKeeper.FeePool.Get(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to get fee pool")
+	}
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
-	k.DistKeeper.SetFeePool(ctx, feePool)
+	err = k.DistKeeper.FeePool.Set(ctx, feePool)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to set fee pool")
+	}
 	return nil
 }
 
@@ -152,85 +147,8 @@ func (k Keeper) GetAuthority() string {
 	return k.proposalAuthority
 }
 
-/////////////////////////////
-//////// PARAMETERS /////////
-/////////////////////////////
-
-// GetParamsIfSet returns the parameters from the store if they exist, or an error
-// This is useful for certain contexts where the store is not yet set up, like
-// in an AnteHandler during InitGenesis
-func (k Keeper) GetParamsIfSet(ctx sdk.Context) (params types.Params, err error) {
-	for _, pair := range params.ParamSetPairs() {
-		if !k.paramSpace.Has(ctx, pair.Key) {
-			return types.Params{}, errorsmod.Wrapf(sdkerrors.ErrNotFound, "the param key %s has not been set", string(pair.Key))
-		}
-		k.paramSpace.Get(ctx, pair.Key, pair.Value)
-	}
-
-	return
-}
-
-// GetParams returns the parameters from the store
-func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.paramSpace.GetParamSet(ctx, &params)
-	return
-}
-
-// SetParams sets the parameters in the store
-func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
-	k.paramSpace.SetParamSet(ctx, &ps)
-}
-
-// GetBridgeContractAddress returns the bridge contract address on ETH
-func (k Keeper) GetBridgeContractAddress(ctx sdk.Context) *types.EthAddress {
-	var a string
-	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeEthereumAddress, &a)
-	addr, err := types.NewEthAddress(a)
-	if err != nil {
-		panic(errorsmod.Wrapf(err, "found invalid bridge contract address in store: %v", a))
-	}
-	return addr
-}
-
-// GetBridgeChainID returns the chain id of the ETH chain we are running against
-func (k Keeper) GetBridgeChainID(ctx sdk.Context) uint64 {
-	var a uint64
-	k.paramSpace.Get(ctx, types.ParamsStoreKeyBridgeContractChainID, &a)
-	return a
-}
-
-// GetGravityID returns the GravityID the GravityID is essentially a salt value
-// for bridge signatures, provided each chain running Gravity has a unique ID
-// it won't be possible to play back signatures from one bridge onto another
-// even if they share a validator set.
-//
-// The lifecycle of the GravityID is that it is set in the Genesis file
-// read from the live chain for the contract deployment, once a Gravity contract
-// is deployed the GravityID CAN NOT BE CHANGED. Meaning that it can't just be the
-// same as the chain id since the chain id may be changed many times with each
-// successive chain in charge of the same bridge
-func (k Keeper) GetGravityID(ctx sdk.Context) string {
-	var a string
-	k.paramSpace.Get(ctx, types.ParamsStoreKeyGravityID, &a)
-	return a
-}
-
-// Set GravityID sets the GravityID the GravityID is essentially a salt value
-// for bridge signatures, provided each chain running Gravity has a unique ID
-// it won't be possible to play back signatures from one bridge onto another
-// even if they share a validator set.
-//
-// The lifecycle of the GravityID is that it is set in the Genesis file
-// read from the live chain for the contract deployment, once a Gravity contract
-// is deployed the GravityID CAN NOT BE CHANGED. Meaning that it can't just be the
-// same as the chain id since the chain id may be changed many times with each
-// successive chain in charge of the same bridge
-func (k Keeper) SetGravityID(ctx sdk.Context, v string) {
-	k.paramSpace.Set(ctx, types.ParamsStoreKeyGravityID, v)
-}
-
-// logger returns a module-specific logger.
-func (k Keeper) logger(ctx sdk.Context) log.Logger {
+// Logger returns a module-specific Logger.
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
@@ -483,7 +401,10 @@ func (k Keeper) DeserializeValidatorIterator(vals []byte) stakingtypes.ValAddres
 
 // Checks if the provided Ethereum address is on the Governance blacklist
 func (k Keeper) IsOnBlacklist(ctx sdk.Context, addr types.EthAddress) bool {
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get params"))
+	}
 	// Checks the address if it's inside the blacklisted address list and marks
 	// if it's inside the list.
 	for index := 0; index < len(params.EthereumBlacklist); index++ {

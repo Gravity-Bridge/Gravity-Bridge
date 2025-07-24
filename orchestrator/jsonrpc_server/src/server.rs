@@ -183,9 +183,9 @@ pub async fn run(
     let port = port.unwrap_or(DEFAULT_PORT.to_string());
     let use_ssl = use_ssl.unwrap_or(false);
     let cert_chain_path =
-        cert_chain_path.unwrap_or(format!("/etc/letsencrypt/live/{}/fullchain.pem", domain));
+        cert_chain_path.unwrap_or(format!("/etc/letsencrypt/live/{domain}/fullchain.pem"));
     let cert_key_path =
-        cert_key_path.unwrap_or(format!("/etc/letsencrypt/live/{}/privkey.pem", domain));
+        cert_key_path.unwrap_or(format!("/etc/letsencrypt/live/{domain}/privkey.pem"));
 
     let server = HttpServer::new(move || {
         App::new()
@@ -209,9 +209,9 @@ pub async fn run(
             .with_single_cert(cert_chain, keys)
             .unwrap();
         info!("Binding to SSL");
-        server.bind_rustls_0_23(format!("{}:{}", domain, port), config)?
+        server.bind_rustls_0_23(format!("{domain}:{port}"), config)?
     } else {
-        server.bind(format!("{}:{}", domain, port))?
+        server.bind(format!("{domain}:{port}"))?
     };
 
     server.run().await?;

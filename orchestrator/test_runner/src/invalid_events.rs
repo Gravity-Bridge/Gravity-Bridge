@@ -38,7 +38,7 @@ pub async fn invalid_events(
     grpc_client: GravityQueryClient<Channel>,
 ) {
     let mut grpc_client = grpc_client;
-    let erc20_denom = format!("gravity{}", erc20_address);
+    let erc20_denom = format!("gravity{erc20_address}");
 
     // figure out how many of a given erc20 we already have on startup so that we can
     // keep track of incrementation. This makes it possible to run this test again without
@@ -249,18 +249,24 @@ pub async fn send_to_cosmos_invalid(
     // rapidly changing gas prices can cause this to fail, a quick retry loop here
     // retries in a way that assists our transaction stress test
     let mut approved = web3
-        .get_erc20_allowance(erc20, *MINER_ADDRESS, gravity_contract)
+        .get_erc20_allowance(erc20, *MINER_ADDRESS, gravity_contract, vec![])
         .await
         .unwrap()
-        >= web3.get_erc20_balance(erc20, *MINER_ADDRESS).await.unwrap();
+        >= web3
+            .get_erc20_balance(erc20, *MINER_ADDRESS, vec![])
+            .await
+            .unwrap();
     let start = Instant::now();
     // keep trying while there's still time
     while !approved && Instant::now() - start < TOTAL_TIMEOUT {
         approved = web3
-            .get_erc20_allowance(erc20, *MINER_ADDRESS, gravity_contract)
+            .get_erc20_allowance(erc20, *MINER_ADDRESS, gravity_contract, vec![])
             .await
             .unwrap()
-            >= web3.get_erc20_balance(erc20, *MINER_ADDRESS).await.unwrap();
+            >= web3
+                .get_erc20_balance(erc20, *MINER_ADDRESS, vec![])
+                .await
+                .unwrap();
     }
 
     if !approved {
@@ -273,7 +279,9 @@ pub async fn send_to_cosmos_invalid(
         let txid = web3
             .erc20_approve(
                 erc20,
-                web3.get_erc20_balance(erc20, *MINER_ADDRESS).await.unwrap(),
+                web3.get_erc20_balance(erc20, *MINER_ADDRESS, vec![])
+                    .await
+                    .unwrap(),
                 *MINER_PRIVATE_KEY,
                 gravity_contract,
                 None,
@@ -281,10 +289,7 @@ pub async fn send_to_cosmos_invalid(
             )
             .await
             .unwrap();
-        trace!(
-            "We are not approved for ERC20 transfers, approving txid: {:#066x}",
-            txid
-        );
+        trace!("We are not approved for ERC20 transfers, approving txid: {txid:#066x}");
         web3.wait_for_transaction(txid, TOTAL_TIMEOUT, None)
             .await
             .unwrap();
@@ -378,8 +383,5 @@ async fn deploy_invalid_erc20(
             .unwrap();
 
     assert!(starting_event_nonce != ending_event_nonce);
-    info!(
-        "Successfully deployed an invalid ERC20 on Cosmos with event nonce {}",
-        ending_event_nonce
-    );
+    info!("Successfully deployed an invalid ERC20 on Cosmos with event nonce {ending_event_nonce}");
 }

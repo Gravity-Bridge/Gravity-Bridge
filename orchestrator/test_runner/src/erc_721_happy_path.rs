@@ -29,15 +29,12 @@ pub async fn erc721_happy_path_test(
             .await
             .unwrap();
 
-    info!("ERC721 address is {}", erc721_address);
+    info!("ERC721 address is {erc721_address}");
     info!("Miner address is {}", *MINER_ADDRESS);
     info!("Miner pk is {}", *MINER_PRIVATE_KEY);
-    info!(
-        "grav_sol_address_in_erc721 is {}",
-        grav_sol_address_in_erc721
-    );
-    info!("Gravity address is {}", gravity_address);
-    info!("GravityERC721 address is {}", gravity_erc721_address);
+    info!("grav_sol_address_in_erc721 is {grav_sol_address_in_erc721}");
+    info!("Gravity address is {gravity_address}");
+    info!("GravityERC721 address is {gravity_erc721_address}");
 
     assert_eq!(grav_sol_address_in_erc721, gravity_address);
 
@@ -105,7 +102,7 @@ pub async fn test_erc721_deposit_panic(
     .await
     {
         Ok(_) => {
-            info!("Successfully bridged ERC721 for token id {}!", token_id)
+            info!("Successfully bridged ERC721 for token id {token_id}!")
         }
         Err(_) => {
             panic!("Failed to bridge ERC721 for token id {}!", token_id)
@@ -130,10 +127,10 @@ pub async fn test_erc721_deposit_result(
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
 
     let val = web30
-        .get_erc721_symbol(erc721_address, *MINER_ADDRESS)
+        .get_erc721_symbol(erc721_address, *MINER_ADDRESS, vec![])
         .await
         .expect("Not a valid ERC721 contract address");
-    info!("In erc721_happy_path_test symbol is {}", val);
+    info!("In erc721_happy_path_test symbol is {val}");
 
     info!(
         "Sending to Cosmos from miner adddress {} to {} with token id {}",
@@ -168,7 +165,7 @@ pub async fn test_erc721_deposit_result(
     while Instant::now() - start < duration {
         // in this while loop wait for owner to change OR wait for event to fire
         let owner = web30
-            .get_erc721_owner_of(erc721_address, *MINER_ADDRESS, token_id)
+            .get_erc721_owner_of(erc721_address, *MINER_ADDRESS, token_id, vec![])
             .await;
 
         if owner.unwrap() == gravityerc721_address {
@@ -211,7 +208,7 @@ pub async fn test_erc721_transfer_utils(
         .await
     {
         Ok(_) => {
-            info!("Successfully called ERC721 transfer util for {}!", token_id)
+            info!("Successfully called ERC721 transfer util for {token_id}!")
         }
         Err(_) => {
             panic!("Failed ERC721 transfer util for {}!", token_id)

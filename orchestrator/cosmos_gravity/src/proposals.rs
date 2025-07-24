@@ -199,7 +199,7 @@ pub async fn submit_parameter_change_proposal(
     // encode as a generic proposal
     let any = encode_any(proposal, PARAMETER_CHANGE_PROPOSAL_TYPE_URL.to_string());
     contact
-        .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
         .await
 }
 
@@ -215,10 +215,25 @@ pub async fn submit_upgrade_proposal(
     // encode as a generic proposal
     let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
     contact
-        .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .create_gov_proposal(vec![any], String::new(), deposit, fee, key, wait_timeout)
         .await
 }
 
+/// Encodes and submits a proposal to upgrade chain software, should maybe be in deep_space (sorry)
+pub async fn submit_legacy_upgrade_proposal(
+    proposal: SoftwareUpgradeProposal,
+    deposit: Coin,
+    fee: Coin,
+    contact: &Contact,
+    key: impl PrivateKey,
+    wait_timeout: Option<Duration>,
+) -> Result<TransactionResponse, CosmosGrpcError> {
+    // encode as a generic proposal
+    let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
+    contact
+        .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .await
+}
 // local types for which we can implement serialize/deserialize
 // for json work
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -357,7 +372,7 @@ pub async fn submit_auction_params_proposal(
         let param = ParamChange {
             subspace: "auction".to_string(),
             key: "AuctionLength".to_string(),
-            value: format!("\"{}\"", val),
+            value: format!("\"{val}\""),
         };
         params_to_change.push(param);
     }
@@ -365,7 +380,7 @@ pub async fn submit_auction_params_proposal(
         let param = ParamChange {
             subspace: "auction".to_string(),
             key: "MinBidFee".to_string(),
-            value: format!("\"{}\"", val),
+            value: format!("\"{val}\""),
         };
         params_to_change.push(param);
     }
@@ -382,7 +397,7 @@ pub async fn submit_auction_params_proposal(
         let param = ParamChange {
             subspace: "auction".to_string(),
             key: "BurnWinningBids".to_string(),
-            value: format!("{}", val),
+            value: format!("{val}"),
         };
         params_to_change.push(param);
     }
@@ -390,7 +405,7 @@ pub async fn submit_auction_params_proposal(
         let param = ParamChange {
             subspace: "auction".to_string(),
             key: "Enabled".to_string(),
-            value: format!("{}", val),
+            value: format!("{val}"),
         };
         params_to_change.push(param);
     }
@@ -399,7 +414,7 @@ pub async fn submit_auction_params_proposal(
         description: proposal.description,
         changes: params_to_change,
     };
-    info!("Submitting auction params proposal:\n{:?}", proposal);
+    info!("Submitting auction params proposal:\n{proposal:?}");
     submit_parameter_change_proposal(proposal, deposit, fee, contact, key, wait_timeout).await
 }
 

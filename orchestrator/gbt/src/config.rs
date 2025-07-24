@@ -88,7 +88,7 @@ pub fn load_config(home_dir: &Path) -> GravityBridgeToolsConfig {
     match val {
         Ok(v) => v.into(),
         Err(e) => {
-            error!("Invalid config! {:?}", e);
+            error!("Invalid config! {e:?}");
             exit(1);
         }
     }
@@ -109,7 +109,7 @@ pub fn load_keys(home_dir: &Path) -> KeyStorage {
     match toml::from_str(&keys) {
         Ok(v) => v,
         Err(e) => {
-            error!("Invalid keys! {:?}", e);
+            error!("Invalid keys! {e:?}");
             exit(1);
         }
     }

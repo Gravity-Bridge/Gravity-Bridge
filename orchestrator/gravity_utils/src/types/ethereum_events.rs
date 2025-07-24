@@ -111,8 +111,7 @@ impl ValsetUpdatedEvent {
         let reward_token = EthAddress::from_slice(&reward_token_data[12..]);
         if let Err(e) = reward_token {
             return Err(GravityError::InvalidEventLogError(format!(
-                "Bad reward address, must be incorrect parsing {:?}",
-                e
+                "Bad reward address, must be incorrect parsing {e:?}"
             )));
         }
         let reward_token = reward_token.unwrap();
@@ -199,8 +198,7 @@ impl ValsetUpdatedEvent {
         // if the validator set is not sorted we're in a bad spot
         if validators != check {
             trace!(
-                "Someone submitted an unsorted validator set, this means all updates will fail until someone feeds in this unsorted value by hand {:?} instead of {:?}",
-                validators, check
+                "Someone submitted an unsorted validator set, this means all updates will fail until someone feeds in this unsorted value by hand {validators:?} instead of {check:?}",
             );
         }
 
@@ -497,9 +495,9 @@ impl SendToCosmosEvent {
         let dest = String::from_utf8(destination.to_vec());
         if dest.is_err() {
             if destination.len() < 1000 {
-                warn!("Event nonce {} sends tokens to {} which is invalid utf-8, these funds will be allocated to the community pool", event_nonce, bytes_to_hex_str(destination));
+                warn!("Event nonce {event_nonce} sends tokens to {} which is invalid utf-8, these funds will be allocated to the community pool", bytes_to_hex_str(destination));
             } else {
-                warn!("Event nonce {} sends tokens to a destination that is invalid utf-8, these funds will be allocated to the community pool", event_nonce);
+                warn!("Event nonce {event_nonce} sends tokens to a destination that is invalid utf-8, these funds will be allocated to the community pool");
             }
             return Ok(SendToCosmosEventData {
                 destination: String::new(),
@@ -511,7 +509,7 @@ impl SendToCosmosEvent {
         let dest = dest.unwrap().trim().to_string();
 
         if dest.len() > ONE_MEGABYTE {
-            warn!("Event nonce {} sends tokens to a destination that exceeds the length limit, these funds will be allocated to the community pool", event_nonce);
+            warn!("Event nonce {event_nonce} sends tokens to a destination that exceeds the length limit, these funds will be allocated to the community pool");
             Ok(SendToCosmosEventData {
                 destination: String::new(),
                 event_nonce,
@@ -566,9 +564,9 @@ impl EthereumEvent for SendToCosmosEvent {
                     Ok(v) => Some(v),
                     Err(_) => {
                         if data.destination.len() < 1000 {
-                            warn!("Event nonce {} sends tokens to {} which is invalid bech32, these funds will be allocated to the community pool", event_nonce, data.destination);
+                            warn!("Event nonce {event_nonce} sends tokens to {} which is invalid bech32, these funds will be allocated to the community pool", data.destination);
                         } else {
-                            warn!("Event nonce {} sends tokens to a destination which is invalid bech32, these funds will be allocated to the community pool", event_nonce);
+                            warn!("Event nonce {event_nonce} sends tokens to a destination which is invalid bech32, these funds will be allocated to the community pool");
                         }
                         None
                     }
@@ -711,7 +709,7 @@ impl Erc20DeployedEvent {
         let index_start = 6 * 32;
         let index_end = index_start + denom_len;
         let denom = String::from_utf8(data[index_start..index_end].to_vec());
-        trace!("Denom {:?}", denom);
+        trace!("Denom {denom:?}");
         if denom.is_err() {
             warn!("Deployed ERC20 has invalid utf8, will not be adopted");
             // we must return a dummy event in order to finish processing
@@ -783,7 +781,7 @@ impl Erc20DeployedEvent {
                 event_nonce,
             });
         }
-        trace!("ERC20 Name {:?}", erc20_name);
+        trace!("ERC20 Name {erc20_name:?}");
         let erc20_name = erc20_name.unwrap();
         if erc20_name.len() > ONE_MEGABYTE {
             warn!("Deployed ERC20 is too large! will not be adopted");
@@ -825,7 +823,7 @@ impl Erc20DeployedEvent {
         }
 
         let symbol = String::from_utf8(data[index_start..index_end].to_vec());
-        trace!("Symbol {:?}", symbol);
+        trace!("Symbol {symbol:?}");
         if symbol.is_err() {
             warn!("Deployed ERC20 has invalid utf8, will not be adopted");
             // we must return a dummy event in order to finish processing

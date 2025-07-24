@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{slice::from_ref, str::FromStr};
 
 use clarity::Address as EthAddress;
 use deep_space::{
@@ -188,10 +188,7 @@ pub async fn setup(contact: &Contact, keys: &[ValidatorKeys], addr: CosmosAddres
 }
 
 pub fn wrap_transaction(transaction: &str) -> String {
-    format!(
-        "{{ \"tx_bytes\": [{}], \"mode\": \"BROADCAST_MODE_BLOCK\" }}",
-        transaction
-    )
+    format!("{{ \"tx_bytes\": [{transaction}], \"mode\": \"BROADCAST_MODE_BLOCK\" }}")
 }
 
 pub async fn send_eip712_tx(
@@ -294,7 +291,7 @@ pub async fn send_bad_deep_space_tx(
     let ds_msg = deep_space::Msg::new(MSG_SEND_TYPE_URL, msg);
     let fee = contact
         .get_fee_info(
-            &[ds_msg.clone()],
+            from_ref(&ds_msg),
             &[get_fee(Some(STAKING_TOKEN.clone()))],
             user.cosmos_key,
         )

@@ -97,7 +97,7 @@ pub async fn slashing_delegation_test(
             )
             .await
             .unwrap();
-        info!("Delegation result is {:?}", res);
+        info!("Delegation result is {res:?}");
     }
 
     // reduce slashing window so that slashing occurs quickly
@@ -118,7 +118,7 @@ pub async fn slashing_delegation_test(
             )
             .await
             .unwrap();
-        info!("Delegation result is {:?}", res);
+        info!("Delegation result is {res:?}");
     }
 
     info!("Waiting to withdraw delegation rewards");
@@ -135,10 +135,7 @@ pub async fn slashing_delegation_test(
             )
             .await
             .unwrap();
-        info!(
-            "Rewards withdraw result for pre-slashing delegation is {:?}",
-            res
-        );
+        info!("Rewards withdraw result for pre-slashing delegation is {res:?}");
     }
     for user in [user_b, user_d] {
         let res = contact
@@ -150,10 +147,7 @@ pub async fn slashing_delegation_test(
             )
             .await
             .unwrap();
-        info!(
-            "Rewards withdraw result for post-slashing delegation is {:?}",
-            res
-        );
+        info!("Rewards withdraw result for post-slashing delegation is {res:?}");
     }
 
     // test unbonding
@@ -168,7 +162,7 @@ pub async fn slashing_delegation_test(
             )
             .await
             .unwrap();
-        info!("Unbonding result is {:?}", res);
+        info!("Unbonding result is {res:?}");
     }
     // test redelegating
     for user in [user_c, user_d] {
@@ -183,7 +177,7 @@ pub async fn slashing_delegation_test(
             )
             .await
             .unwrap();
-        info!("Redelegate result is {:?}", res);
+        info!("Redelegate result is {res:?}");
     }
     let res = contact
         .withdraw_validator_commission(
@@ -194,7 +188,7 @@ pub async fn slashing_delegation_test(
         )
         .await
         .unwrap();
-    info!("Validator commission withdraw result is {:?}", res);
+    info!("Validator commission withdraw result is {res:?}");
 
     info!("Successfully completed Slashing Delegation test!");
 }

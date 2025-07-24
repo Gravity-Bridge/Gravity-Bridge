@@ -125,18 +125,18 @@ pub async fn deploy_erc20_representation(
                                             error!("Your ERC20 contract has been rejected by the Gravity Bridge chain, please check the metadata and try again");
                                             exit(1);
                                         } else {
-                                            error!("Validators have not finished processing this deployment event after {} seconds", WAIT_TIME);
+                                            error!("Validators have not finished processing this deployment event after {WAIT_TIME} seconds");
                                             error!("At this time your ERC20 contract may or may not have been adopted by the bridge, you will have to confirm either by checking the erc20_to_denom field of a genesis dump or using the denom_to_erc20 query endpoint.");
                                             exit(1);
                                         }
                                     }
                                 }
                             }
-                            error!("We were unable to find your ERC20 as a claim after {} seconds. Are you sure the Ethereum transaction went through? Is the node you are using keeping up with the chain?", WAIT_TIME);
+                            error!("We were unable to find your ERC20 as a claim after {WAIT_TIME} seconds. Are you sure the Ethereum transaction went through? Is the node you are using keeping up with the chain?");
                             exit(1);
                         }
                         Err(e) => {
-                            error!("After waiting {} seconds the ERC20 contract was not adopted, when attempting to check why the adoption failed we encountered an error {:?}", WAIT_TIME, e);
+                            error!("After waiting {WAIT_TIME} seconds the ERC20 contract was not adopted, when attempting to check why the adoption failed we encountered an error {e:?}");
                             error!("At this time your ERC20 contract may or may not have been adopted by the bridge, you will have to confirm either by checking the erc20_to_denom field of a genesis dump or using the denom_to_erc20 query endpoint.");
                             exit(1);
                         }
@@ -146,10 +146,10 @@ pub async fn deploy_erc20_representation(
             }
         }
         Ok(None) => {
-            warn!("denom {} has no denom metadata set, this means it is impossible to deploy an ERC20 representation at this time", denom);
+            warn!("denom {denom} has no denom metadata set, this means it is impossible to deploy an ERC20 representation at this time");
             warn!("A governance proposal to set this denoms metadata will need to pass before running this command");
         }
-        Err(e) => error!("Unable to make metadata request, check grpc {:?}", e),
+        Err(e) => error!("Unable to make metadata request, check grpc {e:?}"),
     }
 }
 
@@ -173,7 +173,7 @@ mod tests {
             })
             .await
             .unwrap();
-        println!("{:?}", res);
+        println!("{res:?}");
     }
 
     // Check that our attestation querying and decoding will work, this is hand test and should probably
@@ -207,7 +207,7 @@ mod tests {
                     buf.extend_from_slice(&claim.value);
                     let claim_contents =
                         MsgErc20DeployedClaim::decode(buf).expect("Failed to decode claim");
-                    println!("Got claim {:?}", claim_contents);
+                    println!("Got claim {claim_contents:?}");
                 }
             }
         }

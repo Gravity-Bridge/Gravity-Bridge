@@ -194,7 +194,7 @@ pub async fn test_ibc_transfer(
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_nanos() as u64;
-    info!("Calculated 150 minutes from now: {:?}", timeout_timestamp);
+    info!("Calculated 150 minutes from now: {timeout_timestamp:?}");
     let coin = coin.unwrap_or(Coin {
         denom: STAKING_TOKEN.to_string(),
         amount: one_atom().to_string(),
@@ -209,7 +209,7 @@ pub async fn test_ibc_transfer(
         timeout_timestamp, // 150 minutes from now
         ..Default::default()
     };
-    info!("Submitting MsgTransfer {:?}", msg_transfer);
+    info!("Submitting MsgTransfer {msg_transfer:?}");
     let msg_transfer = Msg::new(MSG_TRANSFER_TYPE_URL, msg_transfer);
     let fee_coin = fee_coin.unwrap_or(DSCoin {
         amount: 100u16.into(),
@@ -225,7 +225,7 @@ pub async fn test_ibc_transfer(
             sender,
         )
         .await;
-    info!("Sent MsgTransfer with response {:?}", send_res);
+    info!("Sent MsgTransfer with response {send_res:?}");
 
     // Give the ibc-relayer a bit of time to work in the event of multiple runs
     delay_for(Duration::from_secs(10)).await;
@@ -246,7 +246,7 @@ pub async fn test_ibc_transfer(
     .await;
     match (pre_bal, post_bal) {
         (None, None) => {
-            error!("Failed to transfer stake to ibc-test-1 user {}!", receiver);
+            error!("Failed to transfer stake to ibc-test-1 user {receiver}!");
             return false;
         }
         (None, Some(post)) => {
@@ -281,10 +281,7 @@ pub async fn test_ibc_transfer(
             );
         }
         (Some(_), None) => {
-            error!(
-                "User wound up with no balance after ibc transfer? {}",
-                receiver,
-            );
+            error!("User wound up with no balance after ibc transfer? {receiver}",);
             return false;
         }
     }
@@ -389,6 +386,7 @@ pub async fn get_ibc_balance(
             .all_balances(Bank::QueryAllBalancesRequest {
                 address: account.to_string(),
                 pagination: None,
+                resolve_denom: false,
             })
             .await;
         let res = res.expect("No response from bank balance query?");
@@ -499,7 +497,7 @@ pub async fn test_ibc_auto_forward_happy_path(
         Some(Duration::from_secs(5)),
     )
     .await;
-    info!("Found pre-forward-balance of {:?}", pre_forward_balance);
+    info!("Found pre-forward-balance of {pre_forward_balance:?}");
     // First Send to Cosmos
     send_erc20_deposit(
         web30,
@@ -558,7 +556,7 @@ pub async fn test_ibc_auto_forward_happy_path(
     )
     .await;
     // Potential race condition: Slow gravity relayers and/or ibc relayer
-    info!("Found a post-forward-balance of {:?}", post_forward_balance);
+    info!("Found a post-forward-balance of {post_forward_balance:?}");
     match (pre_forward_balance, post_forward_balance) {
         (None, None) => {
             panic!("Never found an ibc auto-forward balance for user {}", dest);
@@ -570,10 +568,7 @@ pub async fn test_ibc_auto_forward_happy_path(
                     dest, post.amount, amount,
                 );
             }
-            info!(
-                "Successful IBC auto-forward of amount {} to {}",
-                amount, dest,
-            );
+            info!("Successful IBC auto-forward of amount {amount} to {dest}",);
             Ok(())
         }
         (Some(pre), Some(post)) => {
@@ -674,8 +669,7 @@ pub async fn test_ibc_auto_forward_failure<
         .get_balance(input.src_address, bridged_erc20.clone())
         .await?;
     info!(
-        "Found pre-forward-balance: ibc {:?}, gravity {:?}",
-        ibc_pre_forward_balance, gravity_pre_forward_balance
+        "Found pre-forward-balance: ibc {ibc_pre_forward_balance:?}, gravity {gravity_pre_forward_balance:?}"
     );
     // First Send to Cosmos
     send_erc20_deposit(
@@ -734,8 +728,7 @@ pub async fn test_ibc_auto_forward_failure<
         .await?;
 
     info!(
-        "Found post-forward-balance: ibc {:?}, gravity {:?}",
-        ibc_post_forward_balance, gravity_post_forward_balance
+        "Found post-forward-balance: ibc {ibc_post_forward_balance:?}, gravity {gravity_post_forward_balance:?}"
     );
 
     // Call the match functions to determine if the test passed or failed based on balance changes
@@ -790,8 +783,7 @@ pub async fn test_ibc_auto_forward_native_hijack(
         match (pre_balance, post_balance) {
             (None, None) => {
                 info!(
-                    "Never found a native hijack ibc balance for user {}, still need to check local balance",
-                    ibc_dest,
+                    "Never found a native hijack ibc balance for user {ibc_dest}, still need to check local balance",
                 );
             }
             (None, Some(post)) => {
@@ -804,9 +796,7 @@ pub async fn test_ibc_auto_forward_native_hijack(
                     );
                 } else {
                     warn!(
-                        "Discovered potentially unrelated native hijack ibc balance: ibc transferred amount {} to {}",
-                        amt,
-                        ibc_dest
+                        "Discovered potentially unrelated native hijack ibc balance: ibc transferred amount {amt} to {ibc_dest}"
                     );
                 }
             }
@@ -816,8 +806,7 @@ pub async fn test_ibc_auto_forward_native_hijack(
                 if pre_amt == post_amt {
                     // Balance unchaged is good
                     info!(
-                        "User {}'s IBC balance unchanged after native hijack attemt, still need to check local balance",
-                        ibc_dest,
+                        "User {ibc_dest}'s IBC balance unchanged after native hijack attemt, still need to check local balance",
                     )
                 } else if post_amt > pre_amt && post_amt - pre_amt == amt {
                     panic!(
@@ -836,8 +825,7 @@ pub async fn test_ibc_auto_forward_native_hijack(
             }
             (Some(_), None) => {
                 info!(
-                    "User wound up with no ibc balance after native hijack attempt {}, still need to check local balance",
-                    ibc_dest
+                    "User wound up with no ibc balance after native hijack attempt {ibc_dest}, still need to check local balance"
                 );
             }
         };
@@ -957,8 +945,7 @@ pub async fn test_ibc_auto_forward_unregistered_chain(
         match (pre_balance, post_balance) {
             (None, None) => {
                 info!(
-                    "Never found an unregistered ibc balance for user {}, still need to check local balance",
-                    ibc_address,
+                    "Never found an unregistered ibc balance for user {ibc_address}, still need to check local balance",
                 );
             }
             (None, Some(post)) => {
@@ -1000,8 +987,7 @@ pub async fn test_ibc_auto_forward_unregistered_chain(
             }
             (Some(_), None) => {
                 info!(
-                    "User wound up with no balance ibc native hijack attempt {}, still need to check local balance",
-                    ibc_address
+                    "User wound up with no balance ibc native hijack attempt {ibc_address}, still need to check local balance"
                 );
             }
         };

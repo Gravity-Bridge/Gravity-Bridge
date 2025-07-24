@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -28,14 +28,14 @@ func TestGenesisStateValidate(t *testing.T) {
 				TargetBatchTimeout:           0,
 				AverageBlockTime:             0,
 				AverageEthereumBlockTime:     0,
-				SlashFractionValset:          sdk.Dec{},
-				SlashFractionBatch:           sdk.Dec{},
-				SlashFractionLogicCall:       sdk.Dec{},
+				SlashFractionValset:          sdkmath.LegacyDec{},
+				SlashFractionBatch:           sdkmath.LegacyDec{},
+				SlashFractionLogicCall:       sdkmath.LegacyDec{},
 				UnbondSlashingValsetsWindow:  0,
-				SlashFractionBadEthSignature: sdk.Dec{},
+				SlashFractionBadEthSignature: sdkmath.LegacyDec{},
 				ValsetReward: sdk.Coin{
 					Denom:  "",
-					Amount: math.Int{},
+					Amount: sdkmath.Int{},
 				},
 			},
 			GravityNonces:      GravityNonces{},
@@ -62,14 +62,14 @@ func TestGenesisStateValidate(t *testing.T) {
 				TargetBatchTimeout:           0,
 				AverageBlockTime:             0,
 				AverageEthereumBlockTime:     0,
-				SlashFractionValset:          sdk.Dec{},
-				SlashFractionBatch:           sdk.Dec{},
-				SlashFractionLogicCall:       sdk.Dec{},
+				SlashFractionValset:          sdkmath.LegacyDec{},
+				SlashFractionBatch:           sdkmath.LegacyDec{},
+				SlashFractionLogicCall:       sdkmath.LegacyDec{},
 				UnbondSlashingValsetsWindow:  0,
-				SlashFractionBadEthSignature: sdk.Dec{},
+				SlashFractionBadEthSignature: sdkmath.LegacyDec{},
 				ValsetReward: sdk.Coin{
 					Denom:  "",
-					Amount: math.Int{},
+					Amount: sdkmath.Int{},
 				},
 			},
 			GravityNonces:      GravityNonces{},

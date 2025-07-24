@@ -47,8 +47,7 @@ pub async fn get_last_checked_block(
 
     while current_block > 0u8.into() {
         info!(
-            "Oracle is resyncing, looking back into the history to find our last event nonce {}, on block {}",
-            last_event_nonce, current_block
+            "Oracle is resyncing, looking back into the history to find our last event nonce {last_event_nonce}, on block {current_block}"
         );
         let end_search = if current_block < BLOCKS_TO_SEARCH.into() {
             0u8.into()
@@ -136,7 +135,7 @@ pub async fn get_last_checked_block(
                     }
                 }
                 Err(e) => {
-                    error!("Got batch event that we can't parse {}", e);
+                    error!("Got batch event that we can't parse {e}");
                     metrics_errors_counter(1, "Got batch event that we can't parse");
                 }
             }
@@ -155,7 +154,7 @@ pub async fn get_last_checked_block(
                     }
                 }
                 Err(e) => {
-                    error!("Got SendToCosmos event that we can't parse {}", e);
+                    error!("Got SendToCosmos event that we can't parse {e}");
                     metrics_errors_counter(3, "Got SendToCosmos event that we can't parse");
                 }
             }
@@ -175,7 +174,7 @@ pub async fn get_last_checked_block(
                     }
                 }
                 Err(e) => {
-                    error!("Got ERC20Deployed event that we can't parse {}", e);
+                    error!("Got ERC20Deployed event that we can't parse {e}");
                     metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
                 }
             }
@@ -194,7 +193,7 @@ pub async fn get_last_checked_block(
                     }
                 }
                 Err(e) => {
-                    error!("Got ERC20Deployed event that we can't parse {}", e);
+                    error!("Got ERC20Deployed event that we can't parse {e}");
                     metrics_errors_counter(3, "Got ERC20Deployed event that we can't parse");
                 }
             }
@@ -231,7 +230,7 @@ pub async fn get_last_checked_block(
                     }
                 }
                 Err(e) => {
-                    error!("Got valset event that we can't parse {}", e);
+                    error!("Got valset event that we can't parse {e}");
                     metrics_errors_counter(3, "Got valset event that we can't parse");
                 }
             }

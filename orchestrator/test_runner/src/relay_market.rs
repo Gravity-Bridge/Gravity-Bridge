@@ -120,7 +120,7 @@ async fn setup_batch_test(
             break;
         }
     }
-    info!("Swap result is {:?}", token_acquired);
+    info!("Swap result is {token_acquired:?}");
     assert!(
         token_acquired.is_ok(),
         "Unable to give the miner 1000 WETH worth of {}",
@@ -171,26 +171,22 @@ async fn setup_batch_test(
     )
     .await;
     let cdai_held = contact
-        .get_balance(dest_cosmos_address, format!("gravity{}", erc20_contract))
+        .get_balance(dest_cosmos_address, format!("gravity{erc20_contract}"))
         .await
         .unwrap()
         .unwrap();
     let cdai_name = cdai_held.denom.clone();
     let cdai_amount = cdai_held.amount;
-    info!(
-        "generated address' cosmos balance of {} is {}",
-        cdai_name, cdai_amount
-    );
+    info!("generated address' cosmos balance of {cdai_name} is {cdai_amount}");
 
     let bridge_denom_fee = Coin {
         amount: bridge_fee_amount,
         denom: cdai_name.clone(),
     };
-    info!("bridge_denom_fee {:?}", bridge_denom_fee);
+    info!("bridge_denom_fee {bridge_denom_fee:?}");
     let send_amount = one_eth() * 200u8.into();
     info!(
-        "Sending {} {} from {} on Cosmos back to Ethereum",
-        send_amount, cdai_name, dest_cosmos_address
+        "Sending {send_amount} {cdai_name} from {dest_cosmos_address} on Cosmos back to Ethereum"
     );
     let res = send_to_eth(
         dest_cosmos_private_key,
@@ -206,7 +202,7 @@ async fn setup_batch_test(
     )
     .await
     .unwrap();
-    info!("Sent tokens to Ethereum with {:?}", res);
+    info!("Sent tokens to Ethereum with {res:?}");
     (
         cdai_held.clone(),
         send_amount,
@@ -239,10 +235,7 @@ async fn wait_for_batch(
 
     let start = Instant::now();
     while starting_batch_nonce == current_eth_batch_nonce {
-        info!(
-            "Batch is not yet submitted {}>, waiting",
-            starting_batch_nonce
-        );
+        info!("Batch is not yet submitted {starting_batch_nonce}>, waiting");
         current_eth_batch_nonce =
             get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
                 .await
@@ -333,8 +326,7 @@ async fn test_good_batch(
 
     assert_eq!(
         dest_eth_bal, send_amount,
-        "destination eth balance {} != {}",
-        dest_eth_bal, send_amount,
+        "destination eth balance {dest_eth_bal} != {send_amount}",
     );
 
     info!(
@@ -390,8 +382,7 @@ async fn test_bad_batch(
 
     assert_ne!(
         dest_eth_bal, send_amount,
-        "destination eth balance {} == {}",
-        dest_eth_bal, send_amount,
+        "destination eth balance {dest_eth_bal} == {send_amount}",
     );
 
     info!(

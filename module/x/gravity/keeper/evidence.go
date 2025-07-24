@@ -9,8 +9,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"cosmossdk.io/store/prefix"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 )
 
 func (k Keeper) CheckBadSignatureEvidence(
@@ -77,10 +77,19 @@ func (k Keeper) checkBadSignatureEvidenceInternal(ctx sdk.Context, subject types
 		return errorsmod.Wrap(err, "Could not get consensus key address for validator")
 	}
 
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "Could not get params for slashing")
+	}
 	if !val.IsJailed() {
-		k.StakingKeeper.Jail(ctx, cons)
-		k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBadEthSignature)
+		err := k.StakingKeeper.Jail(ctx, cons)
+		if err != nil {
+			return errorsmod.Wrap(err, "Could not jail validator")
+		}
+		_, err = k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBadEthSignature)
+		if err != nil {
+			return errorsmod.Wrap(err, "Could not slash validator")
+		}
 	}
 
 	return nil

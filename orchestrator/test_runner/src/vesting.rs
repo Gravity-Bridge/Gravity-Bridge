@@ -27,10 +27,7 @@ pub async fn vesting_test(contact: &Contact, vesting_keys: Vec<CosmosPrivateKey>
         denom: (*STAKING_TOKEN).clone(),
         amount: expected_amount.to_string(),
     };
-    info!(
-        "Expecting to see a final vested amount {} of stake",
-        expected_amount
-    );
+    info!("Expecting to see a final vested amount {expected_amount} of stake");
 
     // Check that starting vested balance is 0
 
@@ -190,12 +187,11 @@ pub async fn check_vesting_accounts_at_height(
             .amount
             .parse()
             .expect("Invalid spendable amount returned from bank query!");
-        info!("Discovered spendable balance of {}, expecting that to be less than {} but more than {}", spendable_amt, hi_amount, lo_amount);
+        info!("Discovered spendable balance of {spendable_amt}, expecting that to be less than {hi_amount} but more than {lo_amount}");
         assert!(lo_amount <= spendable_amt && spendable_amt <= hi_amount);
 
         debug!(
-            "Vesting account {} discovered, these are its spendable balances: {:?}",
-            addr, spendable
+            "Vesting account {addr} discovered, these are its spendable balances: {spendable:?}"
         );
     }
     Ok(vesting_times)

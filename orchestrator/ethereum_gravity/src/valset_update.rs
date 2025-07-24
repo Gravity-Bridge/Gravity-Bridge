@@ -25,15 +25,11 @@ pub async fn send_eth_valset_update(
     assert!(new_nonce > old_nonce);
     let eth_address = our_eth_key.to_address();
     info!(
-        "Ordering signatures and submitting validator set {} -> {} update to Ethereum",
-        old_nonce, new_nonce
+        "Ordering signatures and submitting validator set {old_nonce} -> {new_nonce} update to Ethereum",
     );
     let before_nonce = get_valset_nonce(gravity_contract_address, eth_address, web3).await?;
     if before_nonce != old_nonce {
-        info!(
-            "Someone else updated the valset to {}, exiting early",
-            before_nonce
-        );
+        info!("Someone else updated the valset to {before_nonce}, exiting early",);
         return Ok(());
     }
 
@@ -52,21 +48,15 @@ pub async fn send_eth_valset_update(
             .await?,
         )
         .await?;
-    info!("Sent valset update with txid {:#066x}", tx);
+    info!("Sent valset update with txid {tx:#066x}");
 
     web3.wait_for_transaction(tx, timeout, None).await?;
 
     let last_nonce = get_valset_nonce(gravity_contract_address, eth_address, web3).await?;
     if last_nonce != new_nonce {
-        error!(
-            "Current nonce is {} expected to update to nonce {}",
-            last_nonce, new_nonce
-        );
+        error!("Current nonce is {last_nonce} expected to update to nonce {new_nonce}",);
     } else {
-        info!(
-            "Successfully updated Valset with new Nonce {:?}",
-            last_nonce
-        );
+        info!("Successfully updated Valset with new Nonce {last_nonce:?}",);
     }
     Ok(())
 }

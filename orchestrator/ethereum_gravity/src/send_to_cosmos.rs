@@ -36,17 +36,21 @@ pub async fn send_to_cosmos(
     // rapidly changing gas prices can cause this to fail, a quick retry loop here
     // retries in a way that assists our transaction stress test
     let mut approved = web3
-        .get_erc20_allowance(erc20, sender_address, gravity_contract)
+        .get_erc20_allowance(erc20, sender_address, gravity_contract, vec![])
         .await?
-        >= web3.get_erc20_balance(erc20, sender_address).await?;
+        >= web3
+            .get_erc20_balance(erc20, sender_address, vec![])
+            .await?;
     if let Some(w) = wait_timeout {
         let start = Instant::now();
         // keep trying while there's still time
         while !approved && Instant::now() - start < w {
             approved = web3
-                .get_erc20_allowance(erc20, sender_address, gravity_contract)
+                .get_erc20_allowance(erc20, sender_address, gravity_contract, vec![])
                 .await?
-                >= web3.get_erc20_balance(erc20, sender_address).await?;
+                >= web3
+                    .get_erc20_balance(erc20, sender_address, vec![])
+                    .await?;
         }
     }
     if !approved {
@@ -57,17 +61,15 @@ pub async fn send_to_cosmos(
         let txid = web3
             .erc20_approve(
                 erc20,
-                web3.get_erc20_balance(erc20, sender_address).await?,
+                web3.get_erc20_balance(erc20, sender_address, vec![])
+                    .await?,
                 sender_secret,
                 gravity_contract,
                 None,
                 options,
             )
             .await?;
-        trace!(
-            "We are not approved for ERC20 transfers, approving txid: {:#066x}",
-            txid
-        );
+        trace!("We are not approved for ERC20 transfers, approving txid: {txid:#066x}",);
         if let Some(timeout) = wait_timeout {
             web3.wait_for_transaction(txid, timeout, None).await?;
         }
@@ -92,7 +94,7 @@ pub async fn send_to_cosmos(
         options.push(SendTxOption::Nonce(nonce + 1u8.into()));
     }
 
-    info!("sending to on cosmos {}", cosmos_destination);
+    info!("sending to on cosmos {cosmos_destination}");
     let encoded_destination_address = Token::String(cosmos_destination.to_string());
 
     let tx_hash = web3

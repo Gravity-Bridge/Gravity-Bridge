@@ -24,7 +24,7 @@ pub async fn cosmos_to_eth_cmd(args: CosmosToEthOpts, address_prefix: String) {
 
     let cosmos_address = cosmos_key.to_address(&address_prefix).unwrap();
 
-    info!("Sending from Cosmos address {}", cosmos_address);
+    info!("Sending from Cosmos address {cosmos_address}");
     let connections =
         create_rpc_connections(address_prefix, Some(cosmos_grpc), None, TIMEOUT).await;
     let contact = connections.contact.unwrap();
@@ -61,7 +61,7 @@ pub async fn cosmos_to_eth(
     let is_cosmos_originated = match res {
         Ok(v) => v.cosmos_originated,
         Err(e) => {
-            error!("Could not lookup denom is it valid? {:?}", e);
+            error!("Could not lookup denom is it valid? {e:?}");
             exit(1);
         }
     };
@@ -132,7 +132,7 @@ pub async fn cosmos_to_eth(
     .await;
     match res {
         Ok(tx_id) => info!("Send to Eth txid {}", tx_id.txhash()),
-        Err(e) => info!("Failed to send tokens! {:?}", e),
+        Err(e) => info!("Failed to send tokens! {e:?}"),
     }
     info!("Your funds are now waiting to be sent to Ethereum in a transaction batch!");
     info!("Depending on how much you and others attached in fees, this might take a while!");

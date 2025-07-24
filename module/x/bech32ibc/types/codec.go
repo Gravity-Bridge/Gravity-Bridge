@@ -7,17 +7,18 @@ import (
 )
 
 func RegisterCodec(cdc *codec.LegacyAmino) {
+	// nolint: exhaustruct
 	cdc.RegisterConcrete(&UpdateHrpIbcChannelProposal{}, "osmosis/UpdateHrpIbcChannelProposal", nil)
 }
 
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*govtypes.Content)(nil),
+		// nolint: exhaustruct
 		&UpdateHrpIbcChannelProposal{},
 	)
 }
 
 var (
-	amino     = codec.NewLegacyAmino()
-	ModuleCdc = codec.NewAminoCodec(amino)
+	ModuleCdc = codec.NewLegacyAmino()
 )

@@ -16,11 +16,13 @@ use crate::deposit_overflow::deposit_overflow_test;
 use crate::eip_712::eip_712_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
+use crate::feegrant::feegrant_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::ica_host::ica_host_happy_path;
 use crate::inflation_knockdown::inflation_knockdown_test;
 use crate::invalid_events::invalid_events;
+use crate::param_change_paranoia::param_change_paranoia_test;
 use crate::pause_bridge::pause_bridge_test;
 use crate::send_to_eth_fees::send_to_eth_fees_test;
 use crate::signature_slashing::signature_slashing_test;
@@ -63,6 +65,7 @@ mod erc_721_happy_path;
 mod ethereum_blacklist_test;
 mod ethereum_keys;
 mod evidence_based_slashing;
+mod feegrant;
 mod happy_path;
 mod happy_path_v2;
 mod ibc_auto_forward;
@@ -72,6 +75,7 @@ mod inflation_knockdown;
 mod invalid_events;
 mod orch_keys;
 mod orch_only;
+mod param_change_paranoia;
 mod pause_bridge;
 mod relay_market;
 mod send_to_eth_fees;
@@ -103,8 +107,8 @@ lazy_static! {
         env::var("STAKING_TOKEN").unwrap_or_else(|_| "ugraviton".to_owned());
     static ref COSMOS_NODE_GRPC: String =
         env::var("COSMOS_NODE_GRPC").unwrap_or_else(|_| "http://localhost:9090".to_owned());
-    static ref COSMOS_NODE_ABCI: String =
-        env::var("COSMOS_NODE_ABCI").unwrap_or_else(|_| "http://localhost:26657".to_owned());
+    static ref COSMOS_NODE_API: String =
+        env::var("COSMOS_NODE_API").unwrap_or_else(|_| "http://localhost:1317".to_owned());
 
     // IBC CHAIN CONSTANTS
     // These constants all apply to the gaiad instance running (ibc-test-1)
@@ -232,10 +236,13 @@ pub async fn main() {
     let keys = get_keys();
     // keys for the IBC chain connected to the main test chain
     let ibc_keys = parse_ibc_validator_keys();
+
     // if we detect this env var we are only deploying contracts, do that then exit.
     if should_deploy_contracts() {
+        let upgrade_testing =
+            env::var("OLD_BINARY_LOCATION").map_or_else(|_| false, |v| !v.is_empty());
         info!("test-runner in contract deploying mode, deploying contracts, then exiting");
-        deploy_contracts(&gravity_contact).await;
+        deploy_contracts(&gravity_contact, upgrade_testing).await;
         exit(0);
     }
 
@@ -303,7 +310,7 @@ pub async fn main() {
     // RUN_ORCH_ONLY runs only the orchestrators, for local testing where you want the chain to just run.
     // INFLATION_KNOCKDOWN tests a governance proposal to reduce inflation
     let test_type = env::var("TEST_TYPE");
-    info!("Starting tests with {:?}", test_type);
+    info!("Starting tests with {test_type:?}");
     if let Ok(test_type) = test_type {
         if test_type == "VALIDATOR_OUT" {
             info!("Starting Validator out test");
@@ -660,6 +667,14 @@ pub async fn main() {
                 erc20_addresses,
             )
             .await;
+            return;
+        } else if test_type == "FEEGRANT" {
+            info!("Starting Feegrant test");
+            feegrant_test(&gravity_contact, keys).await;
+            return;
+        } else if test_type == "PARAM_CHANGE_PARANOIA" {
+            info!("Starting Param Change Paranoia test");
+            param_change_paranoia_test(&gravity_contact, keys).await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;

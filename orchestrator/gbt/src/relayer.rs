@@ -65,7 +65,7 @@ pub async fn relayer(
 
     let public_eth_key = ethereum_key.to_address();
     info!("Starting Gravity Relayer");
-    info!("Ethereum Address: {}", public_eth_key);
+    info!("Ethereum Address: {public_eth_key}");
 
     let contact = connections.contact.clone().unwrap();
     let web3 = connections.web3.unwrap();
@@ -103,7 +103,7 @@ pub async fn relayer(
             }
         }
     };
-    info!("Gravity contract address {}", contract_address);
+    info!("Gravity contract address {contract_address}");
 
     // setup and explain relayer settings
     if let (Some(fee), Some(cosmos_key)) = (args.fees.clone(), cosmos_key) {

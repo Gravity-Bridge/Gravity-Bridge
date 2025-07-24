@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -22,6 +23,7 @@ var (
 )
 
 func NewTxCmd() *cobra.Command {
+	// nolint: exhaustruct
 	txCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "bech32ibc transaction subcommands",
@@ -38,6 +40,7 @@ func NewTxCmd() *cobra.Command {
 }
 
 func NewCmdSubmitUpdateHrpIbcRecordProposal() *cobra.Command {
+	// nolint: exhaustruct
 	cmd := &cobra.Command{
 		Use:   "update-hrp-ibc-record [human-readable-prefix] [channel-id]",
 		Args:  cobra.ExactArgs(2),
@@ -56,6 +59,7 @@ func NewCmdSubmitUpdateHrpIbcRecordProposal() *cobra.Command {
 				return err
 			}
 
+			// nolint: staticcheck
 			description, err := cmd.Flags().GetString(cli.FlagDescription)
 			if err != nil {
 				return err
@@ -82,6 +86,9 @@ func NewCmdSubmitUpdateHrpIbcRecordProposal() *cobra.Command {
 				return err
 			}
 			durationOffset, err := time.ParseDuration(durationOffsetText)
+			if err != nil {
+				return err
+			}
 
 			content := types.NewUpdateHrpIBCRecordProposal(title, description, hrp, channelId, heightOffset, durationOffset)
 
@@ -90,22 +97,26 @@ func NewCmdSubmitUpdateHrpIbcRecordProposal() *cobra.Command {
 				return err
 			}
 
-			if err = msg.ValidateBasic(); err != nil {
-				return err
-			}
-
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
 	cmd.Flags().String(cli.FlagTitle, "", "title of proposal")
+	// nolint: staticcheck
 	cmd.Flags().String(cli.FlagDescription, "", "description of proposal")
 	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
 	cmd.Flags().Uint64(IcsToHeightOffset, 0, "timeout for IBC routed packets through this channel, in blocks. A value of X here, means that if a packet is attempted to get relayed at counter-party chain height of N, and fails to be ack'd by height N+X, the packet will bounce back to the source chain.")
 	cmd.Flags().String(IcsToTimeoutOffset, "", "the offset of timeout to expire on target chain")
 	flags.AddTxFlagsToCmd(cmd)
-	cmd.MarkFlagRequired(cli.FlagTitle)
-	cmd.MarkFlagRequired(cli.FlagDescription)
+	err := cmd.MarkFlagRequired(cli.FlagTitle)
+	if err != nil {
+		panic(fmt.Sprintf("failed to mark title flag as required: %v", err))
+	}
+	// nolint: staticcheck
+	err = cmd.MarkFlagRequired(cli.FlagDescription)
+	if err != nil {
+		panic(fmt.Sprintf("failed to mark description flag as required: %v", err))
+	}
 
 	return cmd
 }

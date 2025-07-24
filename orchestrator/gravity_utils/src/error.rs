@@ -33,30 +33,30 @@ pub enum GravityError {
 impl fmt::Display for GravityError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            GravityError::GravityGrpcError(val) => write!(f, "Gravity gRPC error {}", val),
-            GravityError::CosmosGrpcError(val) => write!(f, "Cosmos gRPC error {}", val),
+            GravityError::GravityGrpcError(val) => write!(f, "Gravity gRPC error {val}"),
+            GravityError::CosmosGrpcError(val) => write!(f, "Cosmos gRPC error {val}"),
             GravityError::InvalidBigInt(val) => {
-                write!(f, "Got invalid BigInt from cosmos! {}", val)
+                write!(f, "Got invalid BigInt from cosmos! {val}")
             }
-            GravityError::CosmosAddressError(val) => write!(f, "Cosmos Address error {}", val),
-            GravityError::EthereumRestError(val) => write!(f, "Ethereum REST error {}", val),
+            GravityError::CosmosAddressError(val) => write!(f, "Cosmos Address error {val}"),
+            GravityError::EthereumRestError(val) => write!(f, "Ethereum REST error {val}"),
             GravityError::InvalidOptionsError(val) => {
-                write!(f, "Invalid TX options for this call {}", val)
+                write!(f, "Invalid TX options for this call {val}")
             }
             GravityError::InvalidBridgeStateError(val) => {
-                write!(f, "Invalid bridge state! {}", val)
+                write!(f, "Invalid bridge state! {val}")
             }
             GravityError::FailedToUpdateValset => write!(f, "ValidatorSetUpdate Failed!"),
             GravityError::TimeoutError => write!(f, "Operation timed out!"),
-            GravityError::ClarityError(val) => write!(f, "Clarity Error {}", val),
-            GravityError::InvalidEventLogError(val) => write!(f, "InvalidEvent: {}", val),
+            GravityError::ClarityError(val) => write!(f, "Clarity Error {val}"),
+            GravityError::InvalidEventLogError(val) => write!(f, "InvalidEvent: {val}"),
             GravityError::EthereumContractError(val) => {
-                write!(f, "Contract operation failed: {}", val)
+                write!(f, "Contract operation failed: {val}")
             }
             GravityError::InsufficientVotingPowerToPass(val) => {
-                write!(f, "{}", val)
+                write!(f, "{val}")
             }
-            GravityError::ParseBigIntError(val) => write!(f, "Failed to parse big integer {}", val),
+            GravityError::ParseBigIntError(val) => write!(f, "Failed to parse big integer {val}"),
             GravityError::ValsetUpToDate => {
                 write!(
                     f,

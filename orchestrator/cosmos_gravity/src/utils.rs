@@ -30,10 +30,7 @@ pub async fn get_last_event_nonce_with_retry(
     let mut res =
         get_last_event_nonce_for_validator(client, our_cosmos_address, prefix.clone()).await;
     while res.is_err() {
-        error!(
-            "Failed to get last event nonce, is the Cosmos GRPC working? {:?}",
-            res
-        );
+        error!("Failed to get last event nonce, is the Cosmos GRPC working? {res:?}");
         sleep(RETRY_TIME).await;
         res = get_last_event_nonce_for_validator(client, our_cosmos_address, prefix.clone()).await;
     }

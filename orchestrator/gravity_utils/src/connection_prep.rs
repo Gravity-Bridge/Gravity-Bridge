@@ -12,7 +12,7 @@ use gravity_proto::gravity::v1::QueryDelegateKeysByEthAddress;
 use gravity_proto::gravity::v1::QueryDelegateKeysByOrchestratorAddress;
 use std::process::exit;
 use std::time::Duration;
-use tokio::time::sleep as delay_for;
+use tokio::time::sleep;
 use tonic::transport::Channel;
 use url::Url;
 use web30::client::Web3;
@@ -53,27 +53,24 @@ pub async fn create_rpc_connections(
             }
             // did not work, now we check if it's localhost
             Err(e) => {
-                warn!(
-                    "Failed to access Cosmos gRPC with {:?} trying fallback options",
-                    e
-                );
+                warn!("Failed to access Cosmos gRPC with {e:?} trying fallback options",);
                 if grpc_url.to_lowercase().contains("localhost") {
                     let port = url.port().unwrap_or(80);
                     // this should be http or https
                     let prefix = url.scheme();
-                    let ipv6_url = format!("{}://::1:{}", prefix, port);
-                    let ipv4_url = format!("{}://127.0.0.1:{}", prefix, port);
+                    let ipv6_url = format!("{prefix}://::1:{port}");
+                    let ipv4_url = format!("{prefix}://127.0.0.1:{port}");
                     let ipv6 = GravityQueryClient::connect(ipv6_url.clone()).await;
                     let ipv4 = GravityQueryClient::connect(ipv4_url.clone()).await;
-                    warn!("Trying fallback urls {} {}", ipv6_url, ipv4_url);
+                    warn!("Trying fallback urls {ipv6_url} {ipv4_url}");
                     match (ipv4, ipv6) {
                         (Ok(v), Err(_)) => {
-                            info!("Url fallback succeeded, your cosmos gRPC url {} has been corrected to {}", grpc_url, ipv4_url);
+                            info!("Url fallback succeeded, your cosmos gRPC url {grpc_url} has been corrected to {ipv4_url}");
                             contact = Some(Contact::new(&ipv4_url, timeout, &address_prefix).unwrap());
                             grpc = Some(v)
                         },
                         (Err(_), Ok(v)) => {
-                            info!("Url fallback succeeded, your cosmos gRPC url {} has been corrected to {}", grpc_url, ipv6_url);
+                            info!("Url fallback succeeded, your cosmos gRPC url {grpc_url} has been corrected to {ipv6_url}");
                             contact = Some(Contact::new(&ipv6_url, timeout, &address_prefix).unwrap());
                             grpc = Some(v)
                         },
@@ -85,22 +82,19 @@ pub async fn create_rpc_connections(
                         panic!("Cosmos gRPC url contains no host? {}", grpc_url)
                     });
                     // transparently upgrade to https if available, we can't transparently downgrade for obvious security reasons
-                    let https_on_80_url = format!("https://{}:80", body);
-                    let https_on_443_url = format!("https://{}:443", body);
+                    let https_on_80_url = format!("https://{body}:80");
+                    let https_on_443_url = format!("https://{body}:443");
                     let https_on_80 = GravityQueryClient::connect(https_on_80_url.clone()).await;
                     let https_on_443 = GravityQueryClient::connect(https_on_443_url.clone()).await;
-                    warn!(
-                        "Trying fallback urls {} {}",
-                        https_on_443_url, https_on_80_url
-                    );
+                    warn!("Trying fallback urls {https_on_443_url} {https_on_80_url}");
                     match (https_on_80, https_on_443) {
                         (Ok(v), Err(_)) => {
-                            info!("Https upgrade succeeded, your cosmos gRPC url {} has been corrected to {}", grpc_url, https_on_80_url);
+                            info!("Https upgrade succeeded, your cosmos gRPC url {grpc_url} has been corrected to {https_on_80_url}");
                             contact = Some(Contact::new(&https_on_80_url, timeout, &address_prefix).unwrap());
                             grpc = Some(v)
                         },
                         (Err(_), Ok(v)) => {
-                            info!("Https upgrade succeeded, your cosmos gRPC url {} has been corrected to {}", grpc_url, https_on_443_url);
+                            info!("Https upgrade succeeded, your cosmos gRPC url {grpc_url} has been corrected to {https_on_443_url}");
                             contact = Some(Contact::new(&https_on_443_url, timeout, &address_prefix).unwrap());
                             grpc = Some(v)
                         },
@@ -125,28 +119,25 @@ pub async fn create_rpc_connections(
             Ok(_) => web3 = Some(base_web30),
             // did not work, now we check if it's localhost
             Err(e) => {
-                warn!(
-                    "Failed to access Ethereum RPC with {:?} trying fallback options",
-                    e
-                );
+                warn!("Failed to access Ethereum RPC with {e:?} trying fallback options");
                 if eth_url.to_lowercase().contains("localhost") {
                     let port = url.port().unwrap_or(80);
                     // this should be http or https
                     let prefix = url.scheme();
-                    let ipv6_url = format!("{}://::1:{}", prefix, port);
-                    let ipv4_url = format!("{}://127.0.0.1:{}", prefix, port);
+                    let ipv6_url = format!("{prefix}://::1:{port}");
+                    let ipv4_url = format!("{prefix}://127.0.0.1:{port}");
                     let ipv6_web3 = Web3::new(&ipv6_url, timeout);
                     let ipv4_web3 = Web3::new(&ipv4_url, timeout);
                     let ipv6_test = ipv6_web3.eth_block_number().await;
                     let ipv4_test = ipv4_web3.eth_block_number().await;
-                    warn!("Trying fallback urls {} {}", ipv6_url, ipv4_url);
+                    warn!("Trying fallback urls {ipv6_url} {ipv4_url}");
                     match (ipv4_test, ipv6_test) {
                         (Ok(_), Err(_)) => {
-                            info!("Url fallback succeeded, your Ethereum rpc url {} has been corrected to {}", eth_rpc_url, ipv4_url);
+                            info!("Url fallback succeeded, your Ethereum rpc url {eth_rpc_url} has been corrected to {ipv4_url}");
                             web3 = Some(ipv4_web3)
                         }
                         (Err(_), Ok(_)) => {
-                            info!("Url fallback succeeded, your Ethereum  rpc url {} has been corrected to {}", eth_rpc_url, ipv6_url);
+                            info!("Url fallback succeeded, your Ethereum  rpc url {eth_rpc_url} has been corrected to {ipv6_url}");
                             web3 = Some(ipv6_web3)
                         },
                         (Ok(_), Ok(_)) => panic!("This should never happen? Why didn't things work the first time?"),
@@ -157,23 +148,20 @@ pub async fn create_rpc_connections(
                         panic!("Ethereum rpc url contains no host? {}", eth_rpc_url)
                     });
                     // transparently upgrade to https if available, we can't transparently downgrade for obvious security reasons
-                    let https_on_80_url = format!("https://{}:80", body);
-                    let https_on_443_url = format!("https://{}:443", body);
+                    let https_on_80_url = format!("https://{body}:80");
+                    let https_on_443_url = format!("https://{body}:443");
                     let https_on_80_web3 = Web3::new(&https_on_80_url, timeout);
                     let https_on_443_web3 = Web3::new(&https_on_443_url, timeout);
                     let https_on_80_test = https_on_80_web3.eth_block_number().await;
                     let https_on_443_test = https_on_443_web3.eth_block_number().await;
-                    warn!(
-                        "Trying fallback urls {} {}",
-                        https_on_443_url, https_on_80_url
-                    );
+                    warn!("Trying fallback urls {https_on_443_url} {https_on_80_url}",);
                     match (https_on_80_test, https_on_443_test) {
                         (Ok(_), Err(_)) => {
-                            info!("Https upgrade succeeded, your Ethereum rpc url {} has been corrected to {}", eth_rpc_url, https_on_80_url);
+                            info!("Https upgrade succeeded, your Ethereum rpc url {eth_rpc_url} has been corrected to {https_on_80_url}");
                             web3 = Some(https_on_80_web3)
                         },
                         (Err(_), Ok(_)) => {
-                            info!("Https upgrade succeeded, your Ethereum rpc url {} has been corrected to {}", eth_rpc_url, https_on_443_url);
+                            info!("Https upgrade succeeded, your Ethereum rpc url {eth_rpc_url} has been corrected to {https_on_443_url}");
                             web3 = Some(https_on_443_web3)
                         },
                         (Ok(_), Ok(_)) => panic!("This should never happen? Why didn't things work the first time?"),
@@ -220,12 +208,9 @@ pub async fn wait_for_cosmos_node_ready(contact: &Contact) {
             Ok(ChainStatus::Moving { .. }) => {
                 break;
             }
-            Err(e) => warn!(
-                "Could not get syncing status, is your Cosmos node up? {:?}",
-                e
-            ),
+            Err(e) => warn!("Could not get syncing status, is your Cosmos node up? {e:?}"),
         }
-        delay_for(WAIT_TIME).await;
+        sleep(WAIT_TIME).await;
     }
 }
 
@@ -249,7 +234,7 @@ pub async fn check_delegate_addresses(
             orchestrator_address: delegate_orchestrator_address.to_bech32(prefix).unwrap(),
         })
         .await;
-    trace!("{:?} {:?}", eth_response, orchestrator_response);
+    trace!("{eth_response:?} {orchestrator_response:?}");
     match (eth_response, orchestrator_response) {
         (Ok(e), Ok(o)) => {
             let e = e.into_inner();
@@ -263,12 +248,10 @@ pub async fn check_delegate_addresses(
                 error!("Your Gravity Delegate addresses are both incorrect!");
                 error!("If you are getting this error you must have made at least two validators and mixed up the keys between them");
                 error!(
-                    "You provided {}  Correct Value {}",
-                    delegate_eth_address, req_delegate_eth_address
+                    "You provided {delegate_eth_address}  Correct Value {req_delegate_eth_address}",
                 );
                 error!(
-                    "You provided {}  Correct Value {}",
-                    delegate_orchestrator_address, req_delegate_orchestrator_address
+                    "You provided {delegate_orchestrator_address}  Correct Value {req_delegate_orchestrator_address}",
                 );
                 error!("In order to resolve this issue locate the key phrase and private key you registered for this validator and run the following commands");
                 error!("`gbt keys set-ethereum-key --key \"eth private key\"`");
@@ -279,8 +262,7 @@ pub async fn check_delegate_addresses(
             } else if req_delegate_eth_address != delegate_eth_address {
                 error!("Your Delegate Ethereum address is incorrect!");
                 error!(
-                    "You provided {}  Correct Value {}",
-                    delegate_eth_address, req_delegate_eth_address
+                    "You provided {delegate_eth_address}  Correct Value {req_delegate_eth_address}",
                 );
                 error!("In order to resolve this issue locate the private key you registered for this validator and run the following command");
                 error!("`gbt keys set-ethereum-key --key \"eth private key\"`");
@@ -289,8 +271,7 @@ pub async fn check_delegate_addresses(
             } else if req_delegate_orchestrator_address != delegate_orchestrator_address {
                 error!("Your Delegate Orchestrator address is incorrect!");
                 error!(
-                    "You provided {}  Correct Value {}",
-                    delegate_eth_address, req_delegate_eth_address
+                    "You provided {delegate_orchestrator_address}  Correct Value {req_delegate_orchestrator_address}",
                 );
                 error!("In order to resolve this issue locate the key phrase you registered for this validator and run the following command");
                 error!("`gbt keys set-orchestrator-key --phrase \"orchestrator key phrase\"`");
@@ -308,12 +289,12 @@ pub async fn check_delegate_addresses(
             }
         }
         (Err(e), Ok(_)) => {
-            error!("Your Gravity Orchestrator Ethereum key is incorrect, please double check you private key. If you can't locate the correct private key you will need to create a new validator {:?}", e);
+            error!("Your Gravity Orchestrator Ethereum key is incorrect, please double check you private key. If you can't locate the correct private key you will need to create a new validator {e:?}");
             error!("If you are seeing this error please read this documentation carefully https://github.com/Gravity-Bridge/Gravity-Docs/blob/main/docs/setting-up-a-validator.md#generate-your-delegate-keys");
             exit(1);
         }
         (Ok(_), Err(e)) => {
-            error!("Your Gravity Orchestrator Cosmos key is incorrect, please double check your phrase. If you can't locate the correct phrase you will need to create a new validator {:?}", e);
+            error!("Your Gravity Orchestrator Cosmos key is incorrect, please double check your phrase. If you can't locate the correct phrase you will need to create a new validator {e:?}");
             error!("If you are seeing this error please read this documentation carefully https://github.com/Gravity-Bridge/Gravity-Docs/blob/main/docs/setting-up-a-validator.md#generate-your-delegate-keys");
             exit(1);
         }
@@ -334,8 +315,7 @@ pub async fn check_for_fee(fee: &Coin, address: CosmosAddress, contact: &Contact
         if let Err(CosmosGrpcError::NoToken) = contact.get_account_info(address).await {
             error!("Your Orchestrator address has no tokens of any kind. Even if you are paying zero fees this account needs to be 'initialized' by depositing tokens");
             error!(
-                "Send the smallest possible unit of any token to {} to resolve this error",
-                address
+                "Send the smallest possible unit of any token to {address} to resolve this error"
             );
             exit(1);
         }
@@ -352,7 +332,7 @@ pub async fn check_for_fee(fee: &Coin, address: CosmosAddress, contact: &Contact
             }
         }
     }
-    error!("You have specified that fees should be paid in {} but account {} has no balance of that token!", fee.denom, address);
+    error!("You have specified that fees should be paid in {} but account {address} has no balance of that token!", fee.denom);
     exit(1);
 }
 
@@ -360,7 +340,7 @@ pub async fn check_for_fee(fee: &Coin, address: CosmosAddress, contact: &Contact
 pub async fn check_for_eth(address: EthAddress, web3: &Web3) {
     let balance = get_eth_balances_with_retry(address, web3).await;
     if balance == 0u8.into() {
-        error!("You don't have any Ethereum! You will need to send some to {} for this program to work. Dust will do for basic operations, more info about average relaying costs will be presented as the program runs", address);
+        error!("You don't have any Ethereum! You will need to send some to {address} for this program to work. Dust will do for basic operations, more info about average relaying costs will be presented as the program runs");
         error!("You can disable relaying by editing your config file in $HOME/.gbt/config");
         error!(
             "Even if you disable relaying you still need some dust so that the oracle can function"

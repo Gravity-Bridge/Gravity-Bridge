@@ -99,7 +99,7 @@ pub async fn send_valset_confirms(
     let mut messages = Vec::new();
 
     for valset in valsets {
-        trace!("Submitting signature for valset {:?}", valset);
+        trace!("Submitting signature for valset {valset:?}");
         let message = encode_valset_confirm(gravity_id.clone(), valset.clone());
         let eth_signature = eth_private_key.sign_ethereum_msg(&message);
         trace!(
@@ -126,7 +126,7 @@ pub async fn send_valset_confirms(
             private_key,
         )
         .await;
-    info!("Valset confirm res is {:?}", res);
+    info!("Valset confirm res is {res:?}");
     res
 }
 
@@ -145,7 +145,7 @@ pub async fn send_batch_confirm(
     let mut messages = Vec::new();
 
     for batch in transaction_batches {
-        trace!("Submitting signature for batch {:?}", batch);
+        trace!("Submitting signature for batch {batch:?}");
         let message = encode_tx_batch_confirm(gravity_id.clone(), batch.clone());
         let eth_signature = eth_private_key.sign_ethereum_msg(&message);
         trace!(
@@ -190,7 +190,7 @@ pub async fn send_logic_call_confirm(
     let mut messages = Vec::new();
 
     for call in logic_calls {
-        trace!("Submitting signature for LogicCall {:?}", call);
+        trace!("Submitting signature for LogicCall {call:?}");
         let message = encode_logic_call_confirm(gravity_id.clone(), call.clone());
         let eth_signature = eth_private_key.sign_ethereum_msg(&message);
         trace!(
@@ -367,10 +367,7 @@ pub async fn send_to_eth(
         bridge_fee: Some(bridge_fee.into()),
         chain_fee: Some(chain_fee.into()),
     };
-    info!(
-        "Sending to Ethereum with MsgSendToEth: {:?}",
-        msg_send_to_eth
-    );
+    info!("Sending to Ethereum with MsgSendToEth: {msg_send_to_eth:?}");
 
     let msg = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth);
     contact

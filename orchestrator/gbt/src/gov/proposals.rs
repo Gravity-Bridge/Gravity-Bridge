@@ -33,25 +33,19 @@ pub async fn submit_ibc_metadata(opts: IbcMetadataProposalOpts, prefix: String) 
                     match res {
                         Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
                         Err(e) => {
-                            error!("Failed to submit proposal with {:?}", e);
+                            error!("Failed to submit proposal with {e:?}");
                             exit(1);
                         }
                     }
                 }
                 Err(e) => {
-                    error!(
-                        "Failed to deserialize your proposal.json, check the contents! {:?}",
-                        e
-                    );
+                    error!("Failed to deserialize your proposal.json, check the contents! {e:?}");
                     exit(1);
                 }
             }
         }
         Err(e) => {
-            error!(
-                "Failed to read your proposal.json check the file path! {:?}",
-                e
-            );
+            error!("Failed to read your proposal.json check the file path! {e:?}");
             exit(1);
         }
     }
@@ -81,25 +75,19 @@ pub async fn submit_airdrop(opts: AirdropProposalOpts, prefix: String) {
                     match res {
                         Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
                         Err(e) => {
-                            error!("Failed to submit proposal with {:?}", e);
+                            error!("Failed to submit proposal with {e:?}");
                             exit(1);
                         }
                     }
                 }
                 Err(e) => {
-                    error!(
-                        "Failed to deserialize your proposal.json, check the contents! {:?}",
-                        e
-                    );
+                    error!("Failed to deserialize your proposal.json, check the contents! {e:?}");
                     exit(1);
                 }
             }
         }
         Err(e) => {
-            error!(
-                "Failed to read your proposal.json check the file path! {:?}",
-                e
-            );
+            error!("Failed to read your proposal.json check the file path! {e:?}");
             exit(1);
         }
     }
@@ -126,25 +114,19 @@ pub async fn submit_emergency_bridge_halt(opts: EmergencyBridgeHaltProposalOpts,
                     match res {
                         Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
                         Err(e) => {
-                            error!("Failed to submit proposal with {:?}", e);
+                            error!("Failed to submit proposal with {e:?}");
                             exit(1);
                         }
                     }
                 }
                 Err(e) => {
-                    error!(
-                        "Failed to deserialize your proposal.json, check the contents! {:?}",
-                        e
-                    );
+                    error!("Failed to deserialize your proposal.json, check the contents! {e:?}");
                     exit(1);
                 }
             }
         }
         Err(e) => {
-            error!(
-                "Failed to read your proposal.json check the file path! {:?}",
-                e
-            );
+            error!("Failed to read your proposal.json check the file path! {e:?}");
             exit(1);
         }
     }
@@ -172,25 +154,19 @@ pub async fn submit_oracle_unhalt(opts: OracleUnhaltProposalOpts, prefix: String
                     match res {
                         Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
                         Err(e) => {
-                            error!("Failed to submit proposal with {:?}", e);
+                            error!("Failed to submit proposal with {e:?}");
                             exit(1);
                         }
                     }
                 }
                 Err(e) => {
-                    error!(
-                        "Failed to deserialize your proposal.json, check the contents! {:?}",
-                        e
-                    );
+                    error!("Failed to deserialize your proposal.json, check the contents! {e:?}");
                     exit(1);
                 }
             }
         }
         Err(e) => {
-            error!(
-                "Failed to read your proposal.json check the file path! {:?}",
-                e
-            );
+            error!("Failed to read your proposal.json check the file path! {e:?}");
             exit(1);
         }
     }

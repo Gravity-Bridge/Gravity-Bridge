@@ -5,8 +5,9 @@ import (
 	"strconv"
 
 	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
+	"cosmossdk.io/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -29,7 +30,10 @@ func (k Keeper) BuildOutgoingTXBatch(
 	if maxElements == 0 {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "max elements value")
 	}
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to get params")
+	}
 	if !params.BridgeActive {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "bridge paused")
 	}
@@ -84,7 +88,10 @@ func (k Keeper) BuildOutgoingTXBatch(
 
 // This gets the batch timeout height in Ethereum blocks.
 func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context) uint64 {
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get params"))
+	}
 	currentCosmosHeight := ctx.BlockHeight()
 	// we store the last observed Cosmos and Ethereum heights, we do not concern ourselves if these values are zero because
 	// no batch can be produced if the last Ethereum block height is not first populated by a deposit event.
@@ -116,7 +123,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 	contract := b.TokenContract
 	// Burn tokens if they're Ethereum originated
 	if isCosmosOriginated, _ := k.ERC20ToDenomLookup(ctx, contract); !isCosmosOriginated {
-		totalToBurn := sdk.NewInt(0)
+		totalToBurn := sdkmath.NewInt(0)
 		for _, tx := range b.Transactions {
 			totalToBurn = totalToBurn.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
 		}

@@ -29,31 +29,29 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     check_for_eth(ethereum_public_key, &web3).await;
 
     let res = web3
-        .get_erc20_decimals(erc20_address, ethereum_public_key)
+        .get_erc20_decimals(erc20_address, ethereum_public_key, vec![])
         .await
         .expect("Failed to query ERC20 contract");
     let decimals: u8 = res.to_string().parse().unwrap();
     let amount = fraction_to_exponent(amount, decimals);
 
     let erc20_balance = web3
-        .get_erc20_balance(erc20_address, ethereum_public_key)
+        .get_erc20_balance(erc20_address, ethereum_public_key, vec![])
         .await
         .expect("Failed to get balance, check ERC20 contract address");
 
     if erc20_balance == 0u8.into() {
         error!(
-            "You have zero {} tokens, please double check your sender and erc20 addresses!",
-            erc20_address
+            "You have zero {erc20_address} tokens, please double check your sender and erc20 addresses!"
         );
         exit(1);
     } else if amount > erc20_balance {
-        error!("Insufficient balance {} > {}", amount, erc20_balance);
+        error!("Insufficient balance {amount} > {erc20_balance}");
         exit(1);
     }
 
     info!(
-        "Sending {} / {} to Cosmos from {} to {}",
-        amount, erc20_address, ethereum_public_key, cosmos_dest
+        "Sending {amount} / {erc20_address} to Cosmos from {ethereum_public_key} to {cosmos_dest}"
     );
     // we send some erc20 tokens to the gravity contract to register a deposit
     let res = send_to_cosmos(
@@ -68,12 +66,11 @@ pub async fn eth_to_cosmos(args: EthToCosmosOpts, prefix: String) {
     )
     .await;
     match res {
-        Ok(tx_id) => info!("Send to Cosmos txid: {:#066x}", tx_id),
-        Err(e) => info!("Failed to send tokens! {:?}", e),
+        Ok(tx_id) => info!("Send to Cosmos txid: {tx_id:#066x}"),
+        Err(e) => info!("Failed to send tokens! {e:?}"),
     }
 
     info!(
-        "Your tokens should show up in the account {} on the destination chain within 5 minutes",
-        cosmos_dest
+        "Your tokens should show up in the account {cosmos_dest} on the destination chain within 5 minutes"
     )
 }

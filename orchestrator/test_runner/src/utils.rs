@@ -11,7 +11,8 @@ use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
-use cosmos_gravity::proposals::{submit_parameter_change_proposal, submit_upgrade_proposal};
+use cosmos_gravity::proposals::submit_legacy_upgrade_proposal;
+use cosmos_gravity::proposals::submit_parameter_change_proposal;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::client::ChainStatus;
@@ -230,7 +231,7 @@ pub async fn get_erc20_balance_safe(
     // and cause any individual request to fail.
     let mut new_balance = Err(Web3Error::BadInput("Intentional Error".to_string()));
     while new_balance.is_err() && Instant::now() - start < TOTAL_TIMEOUT {
-        new_balance = web3.get_erc20_balance(erc20, address).await;
+        new_balance = web3.get_erc20_balance(erc20, address, vec![]).await;
         // only keep trying if our error is gas related
         if let Err(ref e) = new_balance {
             if !e.to_string().contains("maxFeePerGas") {
@@ -415,7 +416,7 @@ pub async fn submit_false_claims(
             ethereum_sender: ethereum_sender.to_string(),
             orchestrator: orch_addr.to_string(),
         };
-        info!("Oracle number {} submitting false deposit {:?}", i, claim);
+        info!("Oracle number {i} submitting false deposit {claim:?}");
         let msg_url = "/gravity.v1.MsgSendToCosmosClaim";
         let msg = Msg::new(msg_url, claim.clone());
         let res = contact
@@ -429,7 +430,7 @@ pub async fn submit_false_claims(
             )
             .await
             .expect("Failed to submit false claim");
-        info!("Oracle {} false claim response {:?}", i, res);
+        info!("Oracle {i} false claim response {res:?}");
     }
 }
 
@@ -455,7 +456,7 @@ pub async fn create_parameter_change_proposal(
     )
     .await
     .unwrap();
-    trace!("Gov proposal executed with {:?}", res);
+    trace!("Gov proposal executed with {res:?}");
 }
 
 /// Gets the operator address for a given validator private key
@@ -512,7 +513,7 @@ pub async fn execute_upgrade_proposal(
         description: upgrade_params.proposal_desc,
         plan: Some(plan),
     };
-    let res = submit_upgrade_proposal(
+    let res = submit_legacy_upgrade_proposal(
         proposal,
         get_deposit(None),
         get_fee(None),
@@ -522,7 +523,7 @@ pub async fn execute_upgrade_proposal(
     )
     .await
     .unwrap();
-    info!("Gov proposal executed with {:?}", res);
+    info!("Gov proposal executed with {res:?}");
 
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
@@ -589,10 +590,7 @@ pub async fn vote_yes_with_retry(
             .await;
         counter += 1;
         if counter > MAX_VOTES {
-            error!(
-                "Vote for proposal has failed more than {} times, error {:?}",
-                MAX_VOTES, e
-            );
+            error!("Vote for proposal has failed more than {MAX_VOTES} times, error {e:?}");
             panic!("failed to vote{}", e);
         }
     }
@@ -683,21 +681,6 @@ pub async fn get_event_nonce_safe(
         }
     }
     Ok(new_balance.unwrap())
-}
-
-/// waits for the cosmos chain to start producing blocks, used to prevent race conditions
-/// where our tests try to start running before the Cosmos chain is ready
-pub async fn wait_for_cosmos_online(contact: &Contact, timeout: Duration) {
-    let start = Instant::now();
-    while let Err(CosmosGrpcError::NodeNotSynced) | Err(CosmosGrpcError::ChainNotRunning) =
-        contact.wait_for_next_block(timeout).await
-    {
-        sleep(Duration::from_secs(1)).await;
-        if Instant::now() - start > timeout {
-            panic!("Cosmos node has not come online during timeout!")
-        }
-    }
-    contact.wait_for_next_block(timeout).await.unwrap();
 }
 
 /// This function returns the valoper address of a validator
@@ -793,7 +776,7 @@ pub async fn delegate_and_confirm(
             delegate_to,
             deleg_result.unwrap_err()
         );
-        error!("{}", err_str);
+        error!("{err_str}");
         return Err(CosmosGrpcError::BadResponse(err_str));
     }
     let deleg_confirm = contact.get_delegation(delegate_to, user_address).await;
@@ -804,7 +787,7 @@ pub async fn delegate_and_confirm(
             delegate_to,
             deleg_confirm.unwrap_err()
         );
-        error!("{}", err_str);
+        error!("{err_str}");
         return Err(CosmosGrpcError::BadResponse(err_str));
     }
     Ok(deleg_confirm.unwrap())
@@ -833,4 +816,19 @@ pub async fn wait_for_balance(
     }
 
     panic!("User did not attain >= expected balance");
+}
+
+/// waits for the cosmos chain to start producing blocks, used to prevent race conditions
+/// where our tests try to start running before the Cosmos chain is ready
+pub async fn wait_for_cosmos_online(contact: &Contact, timeout: Duration) {
+    let start = Instant::now();
+    while let Err(CosmosGrpcError::NodeNotSynced) | Err(CosmosGrpcError::ChainNotRunning) =
+        contact.wait_for_next_block(timeout).await
+    {
+        sleep(Duration::from_secs(1)).await;
+        if Instant::now() - start > timeout {
+            panic!("Cosmos node has not come online during timeout!")
+        }
+    }
+    contact.wait_for_next_block(timeout).await.unwrap();
 }

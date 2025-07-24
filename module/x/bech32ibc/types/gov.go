@@ -16,6 +16,7 @@ func init() {
 	govtypes.RegisterProposalType(ProposalTypeUpdateHrpIbcChannel)
 }
 
+// nolint: exhaustruct
 var _ govtypes.Content = &UpdateHrpIbcChannelProposal{}
 
 func NewUpdateHrpIBCRecordProposal(title, description, hrp, sourceChannel string, toHeightOffset uint64, toTimeOffset time.Duration) govtypes.Content {

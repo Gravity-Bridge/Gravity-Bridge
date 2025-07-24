@@ -1,9 +1,17 @@
 package v3
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	storetypes "cosmossdk.io/store/types"
+	"cosmossdk.io/x/evidence"
+	"cosmossdk.io/x/tx/signing"
+	"cosmossdk.io/x/upgrade"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -12,11 +20,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/capability"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
-	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
-	"github.com/cosmos/cosmos-sdk/x/evidence"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
@@ -25,9 +30,8 @@ import (
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/cosmos/cosmos-sdk/x/upgrade"
-	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
-	"github.com/stretchr/testify/require"
+	proto "github.com/cosmos/gogoproto/proto"
+	"github.com/cosmos/ibc-go/modules/capability"
 
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/migrations/v2"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -35,8 +39,8 @@ import (
 
 func TestMigrateAttestation(t *testing.T) {
 	// create old prefixes KV store
-	gravityKey := sdk.NewKVStoreKey("gravity")
-	ctx := testutil.DefaultContext(gravityKey, sdk.NewTransientStoreKey("transient-test"))
+	gravityKey := storetypes.NewKVStoreKey("gravity")
+	ctx := testutil.DefaultContext(gravityKey, storetypes.NewTransientStoreKey("transient-test"))
 	store := ctx.KVStore(gravityKey)
 	marshaler := MakeTestMarshaler()
 
@@ -87,6 +91,7 @@ func TestMigrateAttestation(t *testing.T) {
 var (
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
+		// nolint: exhaustruct
 		genutil.AppModuleBasic{},
 		bank.AppModuleBasic{},
 		capability.AppModuleBasic{},
@@ -94,7 +99,7 @@ var (
 		mint.AppModuleBasic{},
 		distribution.AppModuleBasic{},
 		gov.NewAppModuleBasic(
-			[]govclient.ProposalHandler{paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.LegacyProposalHandler, upgradeclient.LegacyCancelProposalHandler},
+			[]govclient.ProposalHandler{paramsclient.ProposalHandler},
 		),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
@@ -107,7 +112,22 @@ var (
 
 // MakeTestMarshaler creates a proto codec for use in testing
 func MakeTestMarshaler() codec.Codec {
-	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	// nolint: exhaustruct
+	signingOptions := signing.Options{
+		AddressCodec: address.Bech32Codec{
+			Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
+		},
+		ValidatorAddressCodec: address.Bech32Codec{
+			Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix(),
+		},
+	}
+	interfaceRegistry, err := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
+		ProtoFiles:     proto.HybridResolver,
+		SigningOptions: signingOptions,
+	})
+	if err != nil {
+		panic(fmt.Errorf("failed to create interface registry: %w", err))
+	}
 	std.RegisterInterfaces(interfaceRegistry)
 	ModuleBasics.RegisterInterfaces(interfaceRegistry)
 	types.RegisterInterfaces(interfaceRegistry)

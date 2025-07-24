@@ -9,7 +9,7 @@ use deep_space::{
     private_key::{CosmosPrivateKey, PrivateKey},
 };
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
-use gravity_utils::get_with_retry::get_net_version_with_retry;
+use gravity_utils::get_with_retry::get_eth_chainid_with_retry;
 use gravity_utils::get_with_retry::{get_block_number_with_retry, get_finalized_block_with_retry};
 use gravity_utils::types::event_signatures::*;
 use gravity_utils::{
@@ -43,11 +43,7 @@ pub async fn check_for_events(
 ) -> Result<CheckedNonces, GravityError> {
     let our_cosmos_address = our_private_key.to_address(&contact.get_prefix()).unwrap();
     let latest_block = get_latest_safe_block(web3).await;
-    trace!(
-        "Checking for events starting {} safe {}",
-        starting_block,
-        latest_block
-    );
+    trace!("Checking for events starting {starting_block} safe {latest_block}");
 
     // if the latest block is more than BLOCKS_TO_SEARCH ahead do not search the full history
     // comparison only to prevent panic on underflow.
@@ -67,7 +63,7 @@ pub async fn check_for_events(
             vec![SENT_TO_COSMOS_EVENT_SIG],
         )
         .await;
-    trace!("Deposits {:?}", deposits);
+    trace!("Deposits {deposits:?}");
 
     let batches = web3
         .check_for_events(
@@ -77,7 +73,7 @@ pub async fn check_for_events(
             vec![TRANSACTION_BATCH_EXECUTED_EVENT_SIG],
         )
         .await;
-    trace!("Batches {:?}", batches);
+    trace!("Batches {batches:?}");
 
     let valsets = web3
         .check_for_events(
@@ -87,7 +83,7 @@ pub async fn check_for_events(
             vec![VALSET_UPDATED_EVENT_SIG],
         )
         .await;
-    trace!("Valsets {:?}", valsets);
+    trace!("Valsets {valsets:?}");
 
     let erc20_deployed = web3
         .check_for_events(
@@ -97,7 +93,7 @@ pub async fn check_for_events(
             vec![ERC20_DEPLOYED_EVENT_SIG],
         )
         .await;
-    trace!("ERC20 Deployments {:?}", erc20_deployed);
+    trace!("ERC20 Deployments {erc20_deployed:?}");
 
     let logic_call_executed = web3
         .check_for_events(
@@ -107,7 +103,7 @@ pub async fn check_for_events(
             vec![LOGIC_CALL_EVENT_SIG],
         )
         .await;
-    trace!("Logic call executions {:?}", logic_call_executed);
+    trace!("Logic call executions {logic_call_executed:?}");
 
     if let (Ok(valsets), Ok(batches), Ok(deposits), Ok(deploys), Ok(logic_calls)) = (
         valsets,
@@ -117,15 +113,15 @@ pub async fn check_for_events(
         logic_call_executed,
     ) {
         let valsets = ValsetUpdatedEvent::from_logs(&valsets)?;
-        trace!("parsed valsets {:?}", valsets);
+        trace!("parsed valsets {valsets:?}");
         let withdraws = TransactionBatchExecutedEvent::from_logs(&batches)?;
-        trace!("parsed batches {:?}", batches);
+        trace!("parsed batches {batches:?}");
         let deposits = SendToCosmosEvent::from_logs(&deposits)?;
-        trace!("parsed deposits {:?}", deposits);
+        trace!("parsed deposits {deposits:?}");
         let erc20_deploys = Erc20DeployedEvent::from_logs(&deploys)?;
-        trace!("parsed erc20 deploys {:?}", erc20_deploys);
+        trace!("parsed erc20 deploys {erc20_deploys:?}");
         let logic_calls = LogicCallExecutedEvent::from_logs(&logic_calls)?;
-        trace!("logic call executions {:?}", logic_calls);
+        trace!("logic call executions {logic_calls:?}");
 
         // note that starting block overlaps with our last checked block, because we have to deal with
         // the possibility that the relayer was killed after relaying only one of multiple events in a single
@@ -212,16 +208,16 @@ pub async fn check_for_events(
             )
             .await?;
 
-            info!("Current event nonce is {}", new_event_nonce);
+            info!("Current event nonce is {new_event_nonce}");
 
             // since we can't actually trust that the above txresponse is correct we have to check here
             // we may be able to trust the tx response post grpc
             if new_event_nonce == last_event_nonce {
                 return Err(GravityError::InvalidBridgeStateError(
-                    format!("Claims did not process, trying to update but still on {}, trying again in a moment, check txhash {:?} for errors", last_event_nonce, res),
+                    format!("Claims did not process, trying to update but still on {last_event_nonce}, trying again in a moment, check txhash {res:?} for errors"),
                 ));
             } else {
-                info!("Claims processed, new nonce {}", new_event_nonce);
+                info!("Claims processed, new nonce {new_event_nonce}");
             }
 
             // find the eth block for our newest event nonce
@@ -289,10 +285,10 @@ pub async fn check_for_events(
 /// https://hackmd.io/@prysmaticlabs/finality
 ///
 pub async fn get_latest_safe_block(web3: &Web3) -> Uint256 {
-    let net_version = get_net_version_with_retry(web3).await;
+    let chainid = get_eth_chainid_with_retry(web3).await;
     let block_number = get_block_number_with_retry(web3).await;
 
-    match net_version {
+    match chainid {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
         // all Ethereum proof of stake Chains
         1 | 3 | 6 | 7 => get_finalized_block_with_retry(web3).await,

@@ -186,7 +186,7 @@ impl Valset {
                         sig.get_eth_address(),
                         sig.get_signature()
                     );
-                    error!("{}", err);
+                    error!("{err}");
                     return Err(GravityError::InvalidBridgeStateError(err));
                 }
             } else {

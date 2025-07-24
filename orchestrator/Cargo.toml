@@ -4,11 +4,11 @@ default-members = ["gbt"]
 resolver = "2"
 
 [workspace.dependencies]
-gravity_proto = "0.8.0"
+gravity_proto = "0.9.2"
 num256 = "0.6"
 clarity = "1.5.2"
 web30 = "1.7"
-deep_space = "2.28"
+deep_space = "2.29.1"
 prost = "0.13"
 prost-types = "0.13"
 tonic = "0.12"

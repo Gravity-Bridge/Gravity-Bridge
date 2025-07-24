@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -64,7 +65,7 @@ func (k Keeper) UpdateAuction(ctx sdk.Context, auction types.Auction) error {
 		return err
 	}
 
-	if enabled := k.GetParams(ctx).Enabled; !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return types.ErrDisabledModule
 	}
 
@@ -87,7 +88,7 @@ func (k Keeper) UpdateAuction(ctx sdk.Context, auction types.Auction) error {
 
 // DeleteAllAuctions will clear the current auctions to prepare for storing the next period's auctions
 func (k Keeper) DeleteAllAuctions(ctx sdk.Context) {
-	if enabled := k.GetParams(ctx).Enabled; !enabled {
+	if !k.ModuleEnabled(ctx) {
 		panic("cannot delete auctions while the module is disabled")
 	}
 	auctionPeriod := k.GetAuctionPeriod(ctx)
@@ -234,8 +235,11 @@ func (k Keeper) unsafeSetAuctionNonce(ctx sdk.Context, nonce types.AuctionId) {
 // Note this function takes the auction_id instead of the auction itself to ensure
 // correct payouts of auctions
 func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error {
-	enabled := k.GetParams(ctx).Enabled
-	if !enabled {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to get auction params")
+	}
+	if !params.Enabled {
 		return errorsmod.Wrap(types.ErrDisabledModule, "unable to close an auction when the module is not enabled")
 	}
 	// Ensure this auction is currently stored
@@ -247,11 +251,15 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error
 		panic(fmt.Sprintf("unexpected unsuccessful auction: %s", auction.String()))
 	}
 
-	burnWinningBids := k.GetParams(ctx).BurnWinningBids
+	burnWinningBids := params.BurnWinningBids
 
 	highestBidAmount := auction.HighestBid.BidAmount
-	highestBidInt := sdk.NewIntFromUint64(highestBidAmount)
-	bidToken := k.MintKeeper.GetParams(ctx).MintDenom
+	highestBidInt := sdkmath.NewIntFromUint64(highestBidAmount)
+	mintParams, err := k.MintKeeper.Params.Get(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get mint params: %v", err))
+	}
+	bidToken := mintParams.MintDenom
 	highestBidCoin := sdk.NewCoin(bidToken, highestBidInt)
 	highestBidder := sdk.MustAccAddressFromBech32(auction.HighestBid.BidderAddress)
 
@@ -281,8 +289,7 @@ func (k Keeper) CloseAuctionWithWinner(ctx sdk.Context, auction_id uint64) error
 // Note this function takes the auction_id instead of the auction itself to ensure
 // correct payouts of auctions
 func (k Keeper) CloseAuctionNoWinner(ctx sdk.Context, auction_id uint64) error {
-	enabled := k.GetParams(ctx).Enabled
-	if !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return errorsmod.Wrap(types.ErrDisabledModule, "unable to close an auction when the module is not enabled")
 	}
 	// Ensure this auction is currently stored

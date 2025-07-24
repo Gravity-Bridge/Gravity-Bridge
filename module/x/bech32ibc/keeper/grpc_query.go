@@ -11,6 +11,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types"
 )
 
+// nolint: exhaustruct
 var _ types.QueryServer = Keeper{}
 
 func (k Keeper) HrpIbcRecords(ctx context.Context, _ *types.QueryHrpIbcRecordsRequest) (*types.QueryHrpIbcRecordsResponse, error) {

@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -17,7 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	abci "github.com/tendermint/tendermint/abci/types"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/client/cli"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
@@ -30,6 +30,11 @@ import (
 var (
 	_ module.AppModule      = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
+
+	_ module.HasServices     = AppModule{}
+	_ module.HasInvariants   = AppModule{}
+	_ module.HasABCIGenesis  = AppModule{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic object for module implementation
@@ -94,22 +99,30 @@ func (b AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry
 // AppModule object for module implementation
 type AppModule struct {
 	AppModuleBasic
-	keeper     keeper.Keeper
-	bankKeeper bankkeeper.Keeper
+	keeper           keeper.Keeper
+	legacyParamSpace paramstypes.Subspace
+	bankKeeper       bankkeeper.Keeper
 }
 
 func (am AppModule) ConsensusVersion() uint64 {
-	return 5
+	return 6
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k keeper.Keeper, bankKeeper bankkeeper.Keeper) AppModule {
+func NewAppModule(k keeper.Keeper, legacyParamSpace paramstypes.Subspace, bankKeeper bankkeeper.Keeper) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		bankKeeper:     bankKeeper,
+		AppModuleBasic:   AppModuleBasic{},
+		legacyParamSpace: legacyParamSpace,
+		keeper:           k,
+		bankKeeper:       bankKeeper,
 	}
 }
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
 
 // Name implements app module
 func (AppModule) Name() string {
@@ -122,21 +135,6 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 	ir.RegisterRoute(types.ModuleName, "store-validity", keeper.StoreValidityInvariant(am.keeper))
 }
 
-// Route implements app module
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
-}
-
-// QuerierRoute implements app module
-func (am AppModule) QuerierRoute() string {
-	return types.QuerierRoute
-}
-
-// LegacyQuerierHandler returns the distribution module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper)
-}
-
 // RegisterServices registers module services.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	msgServer := keeper.NewMsgServerImpl(am.keeper)
@@ -145,12 +143,9 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	typesv2.RegisterMsgServer(cfg.MsgServer(), msgServer.(typesv2.MsgServer))
 	typesv2.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
-	m := keeper.NewMigrator(am.keeper)
-	if err := cfg.RegisterMigration(types.ModuleName, 3, m.Migrate3to4); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/gravity from version 3 to 4: %v", err))
-	}
-	if err := cfg.RegisterMigration(types.ModuleName, 4, m.Migrate4to5); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/gravity from version 4 to 5: %v", err))
+	m := keeper.NewMigrator(am.keeper, am.legacyParamSpace)
+	if err := cfg.RegisterMigration(types.ModuleName, 5, m.Migrate5to6); err != nil {
+		panic(fmt.Sprintf("failed to migrate x/gravity from version 5 to 6: %v", err))
 	}
 }
 
@@ -168,13 +163,12 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(&gs)
 }
 
-// BeginBlock implements app module
-func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {}
-
-// EndBlock implements app module
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+// EndBlock returns the end blocker for the staking module. It returns no validator
+// updates.
+func (am AppModule) EndBlock(c context.Context) ([]abci.ValidatorUpdate, error) {
+	ctx := sdk.UnwrapSDKContext(c)
 	EndBlocker(ctx, am.keeper)
-	return []abci.ValidatorUpdate{}
+	return []abci.ValidatorUpdate{}, nil
 }
 
 // ___________________________________________________________________________
@@ -185,25 +179,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.Val
 func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	// TODO: implement gravity simulation stuffs
 	// simulation.RandomizedGenState(simState)
-}
-
-// ProposalContents returns all the distribution content functions used to
-// simulate governance proposals.
-func (am AppModule) ProposalContents(simState module.SimulationState) []simtypes.WeightedProposalContent {
-	// TODO: implement gravity simulation stuffs
-	return nil
-}
-
-// RandomizedParams creates randomized distribution param changes for the simulator.
-func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
-	// TODO: implement gravity simulation stuffs
-	return nil
-}
-
-// RegisterStoreDecoder registers a decoder for distribution module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
-	// TODO: implement gravity simulation stuffs
-	// sdr[types.StoreKey] = simulation.NewDecodeStore(am.cdc)
 }
 
 // WeightedOperations returns the all the gov module operations with their respective weights.

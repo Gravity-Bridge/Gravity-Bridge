@@ -3,66 +3,82 @@ package keeper
 import (
 	errorsmod "cosmossdk.io/errors"
 
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
 )
 
 type Keeper struct {
-	storeKey   storetypes.StoreKey // Unexposed key to access store from sdk.Context
-	paramSpace paramtypes.Subspace
+	storeKey storetypes.StoreKey // Unexposed key to access store from sdk.Context
 
 	cdc           codec.BinaryCodec // The wire codec for binary encoding/decoding.
 	BankKeeper    *bankkeeper.BaseKeeper
 	AccountKeeper *authkeeper.AccountKeeper
 	DistKeeper    *distrkeeper.Keeper
 	MintKeeper    *mintkeeper.Keeper
+	authority     string // The authority for the keeper, used for governance proposals.
 }
 
 func NewKeeper(
 	storeKey storetypes.StoreKey,
-	paramSpace paramtypes.Subspace,
 	cdc codec.BinaryCodec,
 	bankKeeper *bankkeeper.BaseKeeper,
 	accKeeper *authkeeper.AccountKeeper,
 	distKeeper *distrkeeper.Keeper,
 	mintKeeper *mintkeeper.Keeper,
+	authority string,
 ) Keeper {
-	// set KeyTable if it has not already been set
-	if !paramSpace.HasKeyTable() {
-		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
-	}
-
 	k := Keeper{
 		storeKey:      storeKey,
-		paramSpace:    paramSpace,
 		cdc:           cdc,
 		BankKeeper:    bankKeeper,
 		AccountKeeper: accKeeper,
 		DistKeeper:    distKeeper,
 		MintKeeper:    mintKeeper,
+		authority:     authority,
 	}
 	return k
 }
 
-// GetParams returns the parameters from the store
-func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.paramSpace.GetParamSet(ctx, &params)
-	return
+func (k Keeper) GetParams(ctx sdk.Context) (params types.Params, err error) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get([]byte(types.KeyParams))
+	if bz == nil {
+		return params, types.ErrParamsNotFound
+	}
+	err = k.cdc.Unmarshal(bz, &params)
+	if err != nil {
+		return params, err
+	}
+	return params, nil
 }
 
-// SetParams sets the parameters in the store
-func (k Keeper) SetParams(ctx sdk.Context, ps types.Params) {
-	k.paramSpace.SetParamSet(ctx, &ps)
+func (k Keeper) SetParams(ctx sdk.Context, params types.Params) error {
+	if err := params.ValidateBasic(); err != nil {
+		return err
+	}
+	store := ctx.KVStore(k.storeKey)
+	bz, err := k.cdc.Marshal(&params)
+	if err != nil {
+		return err
+	}
+	store.Set([]byte(types.KeyParams), bz)
+	return nil
+}
+
+func (k Keeper) GetAuthority() string {
+	if k.authority == "" {
+		panic("authority is not set for auction keeper")
+	}
+	return k.authority
 }
 
 // Fetches the auction pool account, which holds tokens to be auctioned in the next period
@@ -75,11 +91,18 @@ func (k Keeper) GetAuctionPoolBalances(ctx sdk.Context) sdk.Coins {
 	return k.BankKeeper.GetAllBalances(ctx, k.GetAuctionPoolAccount(ctx))
 }
 
+func (k Keeper) ModuleEnabled(ctx sdk.Context) bool {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get auction params"))
+	}
+	return params.Enabled
+}
+
 // SendToAuctionPool sends the `coins` from module account to the auction pool
 // Returns an error if the module is disabled, or on failure to send tokens
 func (k Keeper) SendToAuctionPool(ctx sdk.Context, coins sdk.Coins) error {
-	enabled := k.GetParams(ctx).Enabled
-	if !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return types.ErrDisabledModule
 	}
 
@@ -97,8 +120,7 @@ func (k Keeper) RemoveFromAuctionPool(ctx sdk.Context, coin sdk.Coin) error {
 	if coin.Denom == native {
 		return errorsmod.Wrapf(types.ErrInvalidAuction, "not allowed to collect community pool native token balance")
 	}
-	enabled := k.GetParams(ctx).Enabled
-	if !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return types.ErrDisabledModule
 	}
 
@@ -112,8 +134,7 @@ func (k Keeper) RemoveFromAuctionPool(ctx sdk.Context, coin sdk.Coin) error {
 // ReturnPreviousBidAmount sends the `amount` from the module account to the `recipient`
 // Returns an error if the module is disabled, or on failure to return tokens
 func (k Keeper) ReturnPreviousBidAmount(ctx sdk.Context, recipient sdk.AccAddress, amount sdk.Coin) error {
-	enabled := k.GetParams(ctx).Enabled
-	if !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return types.ErrDisabledModule
 	}
 
@@ -124,8 +145,7 @@ func (k Keeper) ReturnPreviousBidAmount(ctx sdk.Context, recipient sdk.AccAddres
 // LockBidAmount sends the `amount` from the `sender` to the module account
 // Returns an error if the module is disabled, or on failure to lock tokens
 func (k Keeper) LockBidAmount(ctx sdk.Context, sender sdk.AccAddress, amount sdk.Coin) error {
-	enabled := k.GetParams(ctx).Enabled
-	if !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return types.ErrDisabledModule
 	}
 
@@ -136,8 +156,7 @@ func (k Keeper) LockBidAmount(ctx sdk.Context, sender sdk.AccAddress, amount sdk
 // AwardAuction pays out the locked balance of `amount` to `bidder`
 // Returns an error if the module is disabled, or on failure to award tokens
 func (k Keeper) AwardAuction(ctx sdk.Context, bidder sdk.AccAddress, amount sdk.Coin) error {
-	enabled := k.GetParams(ctx).Enabled
-	if !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return types.ErrDisabledModule
 	}
 
@@ -148,11 +167,19 @@ func (k Keeper) AwardAuction(ctx sdk.Context, bidder sdk.AccAddress, amount sdk.
 // IsDenomAuctionable Checks `denom“ against the NonAuctionableTokens list
 // Returns true if not in the list and false otherwise
 func (k Keeper) IsDenomAuctionable(ctx sdk.Context, denom string) bool {
-	if denom == k.MintKeeper.GetParams(ctx).MintDenom {
+	mintParams, err := k.MintKeeper.Params.Get(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get mint params"))
+	}
+	if denom == mintParams.MintDenom {
 		return false
 	}
 
-	nonAuctionableTokens := k.GetParams(ctx).NonAuctionableTokens
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get auction params"))
+	}
+	nonAuctionableTokens := params.NonAuctionableTokens
 	for _, nonAuctionable := range nonAuctionableTokens {
 		if denom == nonAuctionable {
 			return false
@@ -180,9 +207,15 @@ func (k Keeper) sendFromModuleAccountToCommunityPool(ctx sdk.Context, coin sdk.C
 	if err := k.BankKeeper.SendCoinsFromModuleToModule(ctx, moduleName, distrtypes.ModuleName, coins); err != nil {
 		return errorsmod.Wrap(err, "Failure to transfer tokens from auction pool to community pool")
 	}
-	feePool := k.DistKeeper.GetFeePool(ctx)
+	feePool, err := k.DistKeeper.FeePool.Get(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "Failed to get fee pool")
+	}
 	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(coins...)...)
-	k.DistKeeper.SetFeePool(ctx, feePool)
+	err = k.DistKeeper.FeePool.Set(ctx, feePool)
+	if err != nil {
+		return errorsmod.Wrap(err, "Failed to set fee pool")
+	}
 
 	return nil
 }

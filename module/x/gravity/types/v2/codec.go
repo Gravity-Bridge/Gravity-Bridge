@@ -13,6 +13,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgAirdropProposal{},
 		&MsgIBCMetadataProposal{},
 		&MsgUnhaltBridgeProposal{},
+		&MsgUpdateParamsProposal{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

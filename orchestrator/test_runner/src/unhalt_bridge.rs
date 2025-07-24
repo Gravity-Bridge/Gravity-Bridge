@@ -159,28 +159,24 @@ pub async fn unhalt_bridge_test(
 
     info!("Getting latest nonce after bridge halt check");
     let after_halt_nonces = get_nonces(&mut grpc_client, &keys, &prefix).await;
-    info!(
-        "initial_nonce: {} after_halt_nonces: {:?}",
-        initial_valid_nonce, after_halt_nonces,
-    );
+    info!("initial_nonce: {initial_valid_nonce} after_halt_nonces: {after_halt_nonces:?}",);
 
     info!(
-        "Bridge successfully locked, starting governance vote to reset nonce to {}.",
-        initial_valid_nonce
+        "Bridge successfully locked, starting governance vote to reset nonce to {initial_valid_nonce}."
     );
 
     //checking the balance before the bridge is unhalted
     let balance_after_halt = contact
         .get_balance(
             bridge_user.cosmos_address,
-            format!("gravity{}", erc20_address),
+            format!("gravity{erc20_address}"),
         )
         .await
         .unwrap()
         .unwrap()
         .amount;
 
-    info!("Balance after halting bridge {}", balance_after_halt);
+    info!("Balance after halting bridge {balance_after_halt}");
 
     info!("Preparing governance proposal!!");
     // Unhalt the bridge
@@ -243,7 +239,7 @@ async fn submit_and_pass_unhalt_bridge_proposal(
         description: "this resets the oracle to an earlier nonce".to_string(),
         target_nonce: nonce,
     };
-    info!("Submit and pass gov proposal: nonce is {}", nonce);
+    info!("Submit and pass gov proposal: nonce is {nonce}");
     let res = submit_unhalt_bridge_proposal(
         proposal_content,
         get_deposit(None),
@@ -254,7 +250,7 @@ async fn submit_and_pass_unhalt_bridge_proposal(
     )
     .await
     .unwrap();
-    trace!("Gov proposal executed with {:?}", res);
+    trace!("Gov proposal executed with {res:?}");
 
     vote_yes_on_proposals(contact, keys, None).await;
 }
@@ -312,7 +308,7 @@ async fn wait_for_balance_increase(
     let start = Instant::now();
     while Instant::now() - start < TOTAL_TIMEOUT {
         if let Some(new_balance) = contact
-            .get_balance(destination, format!("gravity{}", erc20_address))
+            .get_balance(destination, format!("gravity{erc20_address}"))
             .await
             .unwrap()
         {

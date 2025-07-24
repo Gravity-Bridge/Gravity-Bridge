@@ -45,14 +45,14 @@ pub async fn request_batches(
     // get the gas price once
     let eth_gas_price = web30.eth_gas_price().await;
     if let Err(e) = eth_gas_price {
-        warn!("Could not get gas price for auto batch request {:?}", e);
+        warn!("Could not get gas price for auto batch request {e:?}");
         return;
     }
     let eth_gas_price = eth_gas_price.unwrap();
 
     let batch_fees = get_pending_batch_fees(grpc_client).await;
     if let Err(e) = batch_fees {
-        warn!("Failed to get batch fees with {:?}", e);
+        warn!("Failed to get batch fees with {e:?}");
         return;
     }
     let batch_fees = batch_fees.unwrap();
@@ -95,7 +95,7 @@ pub async fn request_batches(
                                 if e.to_string().contains("would not be more profitable") {
                                     info!("Batch would not have been more profitable, no new batch created");
                                 } else {
-                                    warn!("Failed to request batch with {:?}", e);
+                                    warn!("Failed to request batch with {e:?}");
                                 }
                             } else {
                                 batch_requested = true;
@@ -129,7 +129,7 @@ pub async fn request_batches(
                     )
                     .await;
                     if let Err(e) = res {
-                        warn!("Failed to request batch with {:?}", e);
+                        warn!("Failed to request batch with {e:?}");
                     } else {
                         batch_requested = true;
                     }
@@ -141,7 +141,7 @@ pub async fn request_batches(
                     send_request_batch(private_key.clone(), denom, request_fee.clone(), contact)
                         .await;
                 if let Err(e) = res {
-                    warn!("Failed to request batch with {:?}", e);
+                    warn!("Failed to request batch with {e:?}");
                 } else {
                     batch_requested = true;
                 }

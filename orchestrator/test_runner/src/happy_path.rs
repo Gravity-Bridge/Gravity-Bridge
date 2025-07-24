@@ -140,9 +140,9 @@ pub async fn iterate_attestations<F: FnMut(T), T: Message + Default>(
         .expect("Something happened while getting attestations after delegating to validator");
     for (i, att) in attestations.into_iter().enumerate() {
         let claim = att.clone().claim;
-        trace!("Processing attestation {}", i);
+        trace!("Processing attestation {i}");
         if claim.is_none() {
-            trace!("Attestation returned with no claim: {:?}", att);
+            trace!("Attestation returned with no claim: {att:?}");
             continue;
         }
         let claim = claim.unwrap();
@@ -205,10 +205,7 @@ pub async fn test_valset_update(
     let start = Instant::now();
 
     let (delegate_address, amount) = get_validator_to_delegate_to(contact).await;
-    info!(
-        "Delegating {} to {} in order to generate a validator set update",
-        amount, delegate_address
-    );
+    info!("Delegating {amount} to {delegate_address} in order to generate a validator set update");
     contact
         .delegate_to_validator(
             delegate_address,
@@ -227,10 +224,7 @@ pub async fn test_valset_update(
         .expect("Failed to get current eth valset");
 
     while starting_eth_valset_nonce == current_eth_valset_nonce {
-        info!(
-            "Validator set is not yet updated to {}>, waiting",
-            starting_eth_valset_nonce
-        );
+        info!("Validator set is not yet updated to {starting_eth_valset_nonce}>, waiting");
         current_eth_valset_nonce = get_valset_nonce(gravity_address, *MINER_ADDRESS, web30)
             .await
             .expect("Failed to get current eth valset");
@@ -328,7 +322,7 @@ pub async fn test_erc20_deposit_result(
     expected_change: Option<Uint256>, // provide an expected change when multiple transactions will take place at once
 ) -> Result<(), GravityError> {
     let start_coin = contact
-        .get_balance(dest, format!("gravity{}", erc20_address))
+        .get_balance(dest, format!("gravity{erc20_address}"))
         .await
         .unwrap();
 
@@ -351,7 +345,7 @@ pub async fn test_erc20_deposit_result(
         match (
             start_coin.clone(),
             contact
-                .get_balance(dest, format!("gravity{}", erc20_address))
+                .get_balance(dest, format!("gravity{erc20_address}"))
                 .await
                 .unwrap(),
         ) {
@@ -430,7 +424,7 @@ pub async fn send_erc20_deposit(
         .await
         .expect("Incorrect Gravity Address or otherwise unable to contact Gravity");
     web30
-        .get_erc20_name(erc20_address, *MINER_ADDRESS)
+        .get_erc20_name(erc20_address, *MINER_ADDRESS, vec![])
         .await
         .expect("Not a valid ERC20 contract address");
 
@@ -453,7 +447,7 @@ pub async fn send_erc20_deposit(
     )
     .await
     .expect("Failed to send tokens to Cosmos");
-    info!("Send to Cosmos txid: {:#066x}", tx_id);
+    info!("Send to Cosmos txid: {tx_id:#066x}");
 
     let _tx_res = web30
         .wait_for_transaction(tx_id, OPERATION_TIMEOUT, None)
@@ -517,7 +511,7 @@ async fn test_batch(
         .to_address(&contact.get_prefix())
         .unwrap();
     let coin = contact
-        .get_balance(dest_cosmos_address, format!("gravity{}", erc20_contract))
+        .get_balance(dest_cosmos_address, format!("gravity{erc20_contract}"))
         .await
         .unwrap()
         .unwrap();
@@ -529,10 +523,7 @@ async fn test_batch(
         amount: 1u64.into(),
     };
     let amount = amount - 5u64.into();
-    info!(
-        "Sending {}{} from {} on Cosmos back to Ethereum",
-        amount, token_name, dest_cosmos_address
-    );
+    info!("Sending {amount}{token_name} from {dest_cosmos_address} on Cosmos back to Ethereum");
 
     let res = send_to_eth(
         dest_cosmos_private_key,
@@ -548,7 +539,7 @@ async fn test_batch(
     )
     .await
     .unwrap();
-    info!("Sent tokens to Ethereum with {:?}", res);
+    info!("Sent tokens to Ethereum with {res:?}");
 
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
     let requester_address = requester_cosmos_private_key
@@ -570,10 +561,7 @@ async fn test_batch(
 
     let start = Instant::now();
     while starting_batch_nonce == current_eth_batch_nonce {
-        info!(
-            "Batch is not yet submitted {}>, waiting",
-            starting_batch_nonce
-        );
+        info!("Batch is not yet submitted {starting_batch_nonce}>, waiting");
         current_eth_batch_nonce =
             get_tx_batch_nonce(gravity_address, erc20_contract, *MINER_ADDRESS, web30)
                 .await
@@ -591,8 +579,7 @@ async fn test_batch(
 
     check_erc20_balance(erc20_contract, amount, dest_eth_address, web30).await;
     info!(
-        "Successfully updated txbatch nonce to {} and sent {}{} tokens to Ethereum!",
-        current_eth_batch_nonce, amount, token_name
+        "Successfully updated txbatch nonce to {current_eth_batch_nonce} and sent {amount}{token_name} tokens to Ethereum!"
     );
 }
 
@@ -608,7 +595,7 @@ async fn submit_duplicate_erc20_send(
     keys: &[ValidatorKeys],
 ) {
     let start_coin = contact
-        .get_balance(receiver, format!("gravity{}", erc20_address))
+        .get_balance(receiver, format!("gravity{erc20_address}"))
         .await
         .unwrap()
         .unwrap();
@@ -641,13 +628,13 @@ async fn submit_duplicate_erc20_send(
             get_fee(None),
         )
         .await;
-        info!("Submitted duplicate sendToCosmos event: {:?}", res);
+        info!("Submitted duplicate sendToCosmos event: {res:?}");
     }
 
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
     let end_coin = contact
-        .get_balance(receiver, format!("gravity{}", erc20_address))
+        .get_balance(receiver, format!("gravity{erc20_address}"))
         .await
         .unwrap()
         .unwrap();

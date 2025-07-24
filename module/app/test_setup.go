@@ -4,21 +4,20 @@ import (
 	"encoding/json"
 	"time"
 
-	"cosmossdk.io/math"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	dbm "github.com/tendermint/tm-db"
-
+	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
+	abci "github.com/cometbft/cometbft/abci/types"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	ccrypto "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/simapp"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -53,8 +52,7 @@ func InitGravityTestApp(initChain bool) *Gravity {
 		map[int64]bool{},
 		DefaultNodeHome,
 		5,
-		MakeEncodingConfig(),
-		simapp.EmptyAppOptions{},
+		simtestutil.EmptyAppOptions{},
 	)
 	if initChain {
 		genesisState := NewDefaultGenesisState()
@@ -65,14 +63,17 @@ func InitGravityTestApp(initChain bool) *Gravity {
 			panic(err)
 		}
 
-		app.BaseApp.InitChain(
+		_, err = app.BaseApp.InitChain(
 			// nolint: exhaustruct
-			abci.RequestInitChain{
+			&abci.RequestInitChain{
 				Validators:      []abci.ValidatorUpdate{},
-				ConsensusParams: simapp.DefaultConsensusParams,
+				ConsensusParams: simtestutil.DefaultConsensusParams,
 				AppStateBytes:   stateBytes,
 			},
 		)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return app
@@ -103,9 +104,9 @@ func replaceStakeWithGrav(genState *GenesisState, cdc codec.Codec) {
 	if govGenesis == nil {
 		panic("Nil gov genesis")
 	}
-	var govGenState govv1beta1.GenesisState
+	var govGenState govv1.GenesisState
 	cdc.MustUnmarshalJSON(govGenesis, &govGenState)
-	govGenState.DepositParams.MinDeposit[0].Denom = config.NativeTokenDenom
+	govGenState.Params.MinDeposit[0].Denom = config.NativeTokenDenom
 	(*genState)[govtypes.ModuleName] = cdc.MustMarshalJSON(&govGenState)
 
 	mintGenesis := (*genState)[minttypes.ModuleName]
@@ -195,7 +196,8 @@ func addValidators(genState *GenesisState, cdc codec.Codec) {
 	}
 
 	// initialize the validators
-	valShares := sdk.NewDecFromInt(valTokens)
+	valShares := sdkmath.LegacyNewDecFromInt(valTokens)
+	// nolint: exhaustruct
 	bondedVal1 := stakingtypes.Validator{
 		OperatorAddress: sdk.ValAddress(AccAddresses[0]).String(),
 		ConsensusPubkey: pk0,
@@ -208,9 +210,10 @@ func addValidators(genState *GenesisState, cdc codec.Codec) {
 		UnbondingTime:   time.Time{},
 		// nolint: exhaustruct
 		Commission:        stakingtypes.Commission{},
-		MinSelfDelegation: math.Int{},
+		MinSelfDelegation: sdkmath.Int{},
 	}
 	delegations = append(delegations, stakingtypes.Delegation{ValidatorAddress: sdk.ValAddress(AccAddresses[0]).String(), DelegatorAddress: AccAddresses[0].String(), Shares: valShares})
+	// nolint: exhaustruct
 	bondedVal2 := stakingtypes.Validator{
 		OperatorAddress: sdk.ValAddress(AccAddresses[1]).String(),
 		ConsensusPubkey: pk1,
@@ -223,12 +226,12 @@ func addValidators(genState *GenesisState, cdc codec.Codec) {
 		UnbondingTime:   time.Time{},
 		// nolint: exhaustruct
 		Commission:        stakingtypes.Commission{},
-		MinSelfDelegation: math.Int{},
+		MinSelfDelegation: sdkmath.Int{},
 	}
 	delegations = append(delegations, stakingtypes.Delegation{ValidatorAddress: sdk.ValAddress(AccAddresses[1]).String(), DelegatorAddress: AccAddresses[1].String(), Shares: valShares})
 
 	bondedPool := authtypes.NewModuleAddress(stakingtypes.BondedPoolName)
-	bondedTokens := valTokens.Mul(math.NewInt(2))
+	bondedTokens := valTokens.Mul(sdkmath.NewInt(2))
 	bankGenState.Balances = append(
 		bankGenState.Balances,
 		banktypes.Balance{Address: bondedPool.String(), Coins: sdk.NewCoins(sdk.NewCoin(config.NativeTokenDenom, bondedTokens))},

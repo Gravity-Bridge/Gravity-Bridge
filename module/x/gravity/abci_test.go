@@ -9,14 +9,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
 func TestValsetCreationIfNotAvailable(t *testing.T) {
@@ -41,13 +42,14 @@ func TestValsetCreationUponUnbonding(t *testing.T) {
 
 	input.Context = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
 	// begin unbonding
-	sMsgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
+	sMsgServer := stakingkeeper.NewMsgServerImpl(&input.StakingKeeper)
 	undelegateMsg := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[0], keeper.StakingAmount)
 	_, err := sMsgServer.Undelegate(input.Context, undelegateMsg)
 	require.NoError(t, err)
 
 	// Run the staking endblocker to ensure valset is set in state
-	staking.EndBlocker(input.Context, input.StakingKeeper)
+	_, err = input.StakingKeeper.EndBlocker(input.Context)
+	require.NoError(t, err)
 	EndBlocker(input.Context, pk)
 
 	// TODO: Is this the right check to replace blockHeight == latestValsetNonce with?
@@ -61,7 +63,8 @@ func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 
 	vs, err := pk.GetCurrentValset(ctx)
 	require.NoError(t, err)
@@ -74,7 +77,8 @@ func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
 	EndBlocker(ctx, pk)
 
 	// ensure that the  validator who is bonded after valset is created is not slashed
-	val := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
+	val, err := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
+	require.NoError(t, err)
 	require.False(t, val.IsJailed())
 }
 
@@ -85,7 +89,8 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
 	vs, err := pk.GetCurrentValset(ctx)
@@ -112,11 +117,13 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	EndBlocker(ctx, pk)
 
 	// ensure that the  validator who is bonded before valset is created is slashed
-	val := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
+	val, err := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
+	require.NoError(t, err)
 	require.True(t, val.IsJailed())
 
 	// ensure that the  validator who attested the valset is not slashed.
-	val = input.StakingKeeper.Validator(ctx, keeper.ValAddrs[1])
+	val, err = input.StakingKeeper.Validator(ctx, keeper.ValAddrs[1])
+	require.NoError(t, err)
 	require.False(t, val.IsJailed())
 
 }
@@ -128,7 +135,8 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 
 	// Create not nice guy with very little stake
 	consPrivKey := ed25519.GenPrivKey()
@@ -145,7 +153,7 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	)
 
 	require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, keeper.InitCoins))
-	err := input.BankKeeper.SendCoinsFromModuleToAccount(
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(
 		input.Context,
 		types.ModuleName,
 		accAddr,
@@ -156,14 +164,15 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	// Set the account in state
 	input.AccountKeeper.SetAccount(input.Context, acc)
 
-	sMsgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
+	sMsgServer := stakingkeeper.NewMsgServerImpl(&input.StakingKeeper)
 	_, err = sMsgServer.CreateValidator(
 		input.Context,
-		keeper.NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(1)),
+		keeper.NewTestMsgCreateValidator(valAddr, consPubKey, sdkmath.NewIntFromUint64(1)),
 	)
 	require.NoError(t, err)
 	// Run the staking endblocker to ensure valset is correct in state
-	staking.EndBlocker(input.Context, input.StakingKeeper)
+	_, err = input.StakingKeeper.EndBlocker(input.Context)
+	require.NoError(t, err)
 
 	ethAddr, err := types.NewEthAddress("0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B")
 	if err != nil {
@@ -204,7 +213,7 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	// Now remove all the stake
 	_, err = sMsgServer.Undelegate(
 		input.Context,
-		keeper.NewTestMsgUnDelegateValidator(valAddr, sdk.NewIntFromUint64(1)),
+		keeper.NewTestMsgUnDelegateValidator(valAddr, sdkmath.NewIntFromUint64(1)),
 	)
 	require.NoError(t, err)
 
@@ -219,7 +228,8 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 
 	// Define slashing variables
 	validatorStartHeight := ctx.BlockHeight()                                                        // 0
@@ -240,9 +250,9 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	// Validator-1  Unbond slash window is not expired. if not attested, slash
 	// Validator-2  Unbond slash window is not expired. if attested, don't slash
 	input.Context = ctx.WithBlockHeight(valUnbondingHeight)
-	sMsgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
+	sMsgServer := stakingkeeper.NewMsgServerImpl(&input.StakingKeeper)
 	undelegateMsg1 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[0], keeper.StakingAmount)
-	_, err := sMsgServer.Undelegate(input.Context, undelegateMsg1)
+	_, err = sMsgServer.Undelegate(input.Context, undelegateMsg1)
 	require.NoError(t, err)
 	undelegateMsg2 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[1], keeper.StakingAmount)
 	_, err = sMsgServer.Undelegate(input.Context, undelegateMsg2)
@@ -259,17 +269,20 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 		conf := types.NewMsgValsetConfirm(vs.Nonce, *ethAddr, orch, "dummysig")
 		pk.SetValsetConfirm(ctx, *conf)
 	}
-	staking.EndBlocker(input.Context, input.StakingKeeper)
+	_, err = input.StakingKeeper.EndBlocker(input.Context)
+	require.NoError(t, err)
 
 	ctx = ctx.WithBlockHeight(currentBlockHeight)
 	EndBlocker(ctx, pk)
 
 	// Assertions
-	val1 := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
+	val1, err := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
+	require.NoError(t, err)
 	assert.True(t, val1.IsJailed())
 	// check if tokens are slashed for val1.
 
-	val2 := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[1])
+	val2, err := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[1])
+	require.NoError(t, err)
 	assert.True(t, val2.IsJailed())
 	// check if tokens shouldn't be slashed for val2.
 }
@@ -281,7 +294,8 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := pk.GetParams(ctx)
+	params, err := pk.GetParams(ctx)
+	require.NoError(t, err)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
 
@@ -300,7 +314,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	)
 
 	require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, keeper.InitCoins))
-	err := input.BankKeeper.SendCoinsFromModuleToAccount(
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(
 		input.Context,
 		types.ModuleName,
 		accAddr,
@@ -311,14 +325,15 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	// Set the account in state
 	input.AccountKeeper.SetAccount(input.Context, acc)
 
-	sMsgServer := stakingkeeper.NewMsgServerImpl(input.StakingKeeper)
+	sMsgServer := stakingkeeper.NewMsgServerImpl(&input.StakingKeeper)
 	_, err = sMsgServer.CreateValidator(
 		input.Context,
-		keeper.NewTestMsgCreateValidator(valAddr, consPubKey, sdk.NewIntFromUint64(1)),
+		keeper.NewTestMsgCreateValidator(valAddr, consPubKey, sdkmath.NewIntFromUint64(1)),
 	)
 	require.NoError(t, err)
 	// Run the staking endblocker to ensure valset is correct in state
-	staking.EndBlocker(input.Context, input.StakingKeeper)
+	_, err = input.StakingKeeper.EndBlocker(input.Context)
+	require.NoError(t, err)
 
 	ethAddr, err := types.NewEthAddress("0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B")
 	if err != nil {
@@ -368,7 +383,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	// Now remove all the stake
 	_, err = sMsgServer.Undelegate(
 		input.Context,
-		keeper.NewTestMsgUnDelegateValidator(valAddr, sdk.NewIntFromUint64(1)),
+		keeper.NewTestMsgUnDelegateValidator(valAddr, sdkmath.NewIntFromUint64(1)),
 	)
 	require.NoError(t, err)
 
@@ -380,7 +395,8 @@ func TestBatchSlashing(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := pk.GetParams(ctx)
+	params, err := pk.GetParams(ctx)
+	require.NoError(t, err)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
 
@@ -405,7 +421,8 @@ func TestBatchSlashing(t *testing.T) {
 		}
 		if i == 1 {
 			// don't sign with 2nd validator. set val bond height > batch block height
-			validator := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[i])
+			validator, err := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[i])
+			require.NoError(t, err)
 			valConsAddr, err := validator.GetConsAddr()
 			require.NoError(t, err)
 			valSigningInfo := slashingtypes.ValidatorSigningInfo{
@@ -416,7 +433,8 @@ func TestBatchSlashing(t *testing.T) {
 				Tombstoned:          false,
 				MissedBlocksCounter: 0,
 			}
-			input.SlashingKeeper.SetValidatorSigningInfo(ctx, valConsAddr, valSigningInfo)
+			err = input.SlashingKeeper.SetValidatorSigningInfo(ctx, valConsAddr, valSigningInfo)
+			require.NoError(t, err)
 			continue
 		}
 
@@ -432,11 +450,13 @@ func TestBatchSlashing(t *testing.T) {
 	EndBlocker(ctx, pk)
 
 	// ensure that the  validator is jailed and slashed
-	val := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
+	val, err := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[0])
+	require.NoError(t, err)
 	require.True(t, val.IsJailed())
 
 	// ensure that the 2nd  validator is not jailed and slashed
-	val2 := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[1])
+	val2, err := input.StakingKeeper.Validator(ctx, keeper.ValAddrs[1])
+	require.NoError(t, err)
 	require.False(t, val2.IsJailed())
 
 	// Ensure that the last slashed valset nonce is set properly
@@ -487,13 +507,15 @@ func TestBatchTimeout(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := pk.GetParams(ctx)
+	params, err := pk.GetParams(ctx)
+	require.NoError(t, err)
+
 	var (
 		now                 = time.Now().UTC()
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
-		token, e2           = types.NewInternalERC20Token(sdk.NewInt(99999), myTokenContractAddr)
+		token, e2           = types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr)
 		allVouchers         = sdk.NewCoins(token.GravityCoin())
 	)
 	require.NoError(t, e1)
@@ -514,10 +536,10 @@ func TestBatchTimeout(t *testing.T) {
 
 	// add some TX to the pool
 	for i, v := range []uint64{4, 3, 3, 4, 5, 6} {
-		amountToken, err := types.NewInternalERC20Token(sdk.NewInt(int64(i+100)), myTokenContractAddr)
+		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
 		amount := amountToken.GravityCoin()
-		feeToken, err := types.NewInternalERC20Token(sdk.NewIntFromUint64(v), myTokenContractAddr)
+		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
 		fee := feeToken.GravityCoin()
 
@@ -608,7 +630,8 @@ func TestValsetPruning(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := pk.GetParams(ctx)
+	params, err := pk.GetParams(ctx)
+	require.NoError(t, err)
 
 	// Create new validator set with nonce 1
 	pk.SetValsetRequest(ctx)

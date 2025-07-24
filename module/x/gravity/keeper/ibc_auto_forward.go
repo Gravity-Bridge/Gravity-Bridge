@@ -16,14 +16,14 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 
+	"cosmossdk.io/store/prefix"
 	bech32ibctypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 )
 
 // ValidatePendingIbcAutoForward performs basic validation, asserts the nonce is not ahead of what gravity is aware of,
@@ -131,7 +131,7 @@ func (k Keeper) addPendingIbcAutoForward(ctx sdk.Context, forward types.PendingI
 	}
 	store.Set(key, k.cdc.MustMarshal(&forward))
 
-	k.logger(ctx).Info("SendToCosmos Pending IBC Auto-Forward", "ibcReceiver", forward.ForeignReceiver,
+	k.Logger(ctx).Info("SendToCosmos Pending IBC Auto-Forward", "ibcReceiver", forward.ForeignReceiver,
 		"token", token, "denom", forward.Token.Denom, "amount", forward.Token.Amount.String(),
 		"ibc-port", k.ibcTransferKeeper.GetPort(ctx), "ibcChannel", forward.IbcChannel, "claimNonce", forward.EventNonce,
 		"cosmosBlockTime", ctx.BlockTime(), "cosmosBlockHeight", ctx.BlockHeight(),
@@ -219,9 +219,8 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context) (stop bool, er
 	msgTransfer := createIbcMsgTransfer(portId, *forward, fallback.String(), uint64(timeoutTime.UnixNano()))
 
 	// Make the ibc-transfer attempt
-	wCtx := sdk.WrapSDKContext(ctx)
-	_, recoverableErr := k.ibcTransferKeeper.Transfer(wCtx, &msgTransfer)
-	ctx = sdk.UnwrapSDKContext(wCtx)
+	_, recoverableErr := k.ibcTransferKeeper.Transfer(ctx, &msgTransfer)
+	ctx = sdk.UnwrapSDKContext(ctx)
 
 	// Log + emit event
 	if recoverableErr == nil {
@@ -281,7 +280,7 @@ func (k Keeper) logEmitIbcForwardSuccessEvent(
 	forward types.PendingIbcAutoForward,
 	msgTransfer ibctransfertypes.MsgTransfer,
 ) {
-	k.logger(ctx).Info("SendToCosmos IBC Auto-Forward", "ibcReceiver", forward.ForeignReceiver, "denom", forward.Token.Denom,
+	k.Logger(ctx).Info("SendToCosmos IBC Auto-Forward", "ibcReceiver", forward.ForeignReceiver, "denom", forward.Token.Denom,
 		"amount", forward.Token.Amount.String(), "ibc-port", msgTransfer.SourcePort, "ibcChannel", forward.IbcChannel,
 		"timeoutHeight", msgTransfer.TimeoutHeight.String(), "timeoutTimestamp", msgTransfer.TimeoutTimestamp,
 		"claimNonce", forward.EventNonce, "cosmosBlockHeight", ctx.BlockHeight(),
@@ -308,7 +307,7 @@ func (k Keeper) logEmitIbcForwardFailureEvent(ctx sdk.Context, forward types.Pen
 	if er != nil {
 		panic(err)
 	}
-	k.logger(ctx).Error("SendToCosmos IBC Auto-Forward Failure: funds sent to local address",
+	k.Logger(ctx).Error("SendToCosmos IBC Auto-Forward Failure: funds sent to local address",
 		"localReceiver", localReceiver, "denom", forward.Token.Denom, "amount", forward.Token.Amount.String(),
 		"failedIbcPort", ibctransfertypes.PortID, "failedIbcChannel", forward.IbcChannel,
 		"claimNonce", forward.EventNonce, "cosmosBlockHeight", ctx.BlockHeight(), "err", err,

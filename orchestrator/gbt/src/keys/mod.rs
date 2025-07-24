@@ -23,14 +23,14 @@ pub fn show_keys(home_dir: &Path, prefix: &str) {
             let key = CosmosPrivateKey::from_phrase(&v, "")
                 .expect("Failed to decode key in keyfile. Did you edit it manually?");
             let address = key.to_address(prefix).unwrap();
-            info!("Your Orchestrator key, {}", address);
+            info!("Your Orchestrator key, {address}");
         }
         None => info!("You do not have an Orchestrator key set"),
     }
     match keys.ethereum_key {
         Some(v) => {
             let address = v.to_address();
-            info!("Your Ethereum key, {}", address);
+            info!("Your Ethereum key, {address}");
         }
         None => info!("You do not have an Ethereum key set"),
     }
@@ -89,7 +89,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
         }
         let cosmos_destination = args.cosmos_destination.unwrap();
         if cosmos_destination.get_prefix() != address_prefix {
-            error!("The provided destination address ({}) does not have the --address-prefix value ({}), are you sure you're sending to the right address?", cosmos_destination, address_prefix);
+            error!("The provided destination address ({cosmos_destination}) does not have the --address-prefix value ({address_prefix}), are you sure you're sending to the right address?");
             exit(1);
         }
 
@@ -151,10 +151,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
             let chain_fee_amount = get_reasonable_send_to_eth_fee(&contact, amount.amount)
                 .await
                 .map_err(|e| {
-                    format!(
-                        "Unable to get a reasonable chain fee due to communication error: {}",
-                        e
-                    )
+                    format!("Unable to get a reasonable chain fee due to communication error: {e}")
                 })
                 .unwrap();
             amount.amount -= chain_fee_amount;

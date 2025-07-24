@@ -67,7 +67,7 @@ pub async fn query_airdrops(opts: AirdropQueryOpts, prefix: String) {
             }
         }
         Err(e) => {
-            error!("Failed to get proposals, check your cosmos gRPC {:?}", e);
+            error!("Failed to get proposals, check your cosmos gRPC {e:?}");
             exit(1);
         }
     }

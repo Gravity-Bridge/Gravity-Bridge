@@ -359,7 +359,7 @@ pub async fn enable_ica_host(
         .await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-    trace!("Gov proposal executed with {:?}", res);
+    trace!("Gov proposal executed with {res:?}");
 }
 
 /// Creates and ratifies a ParameterChangeProposal to enable the ICA Controller module
@@ -415,7 +415,7 @@ pub async fn enable_ica_controller(
         .await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-    trace!("Gov proposal executed with {:?}", res);
+    trace!("Gov proposal executed with {res:?}");
 }
 
 /// Very similar to `send_to_eth_and_confirm()`, but submits the MsgSendToEth to the ICA Controller chain
@@ -452,8 +452,8 @@ pub async fn send_to_eth_via_ica_and_confirm(
     )
     .await
     .unwrap();
-    info!("Send to eth res {:?}", res);
-    info!("Locked up {} to send to Cosmos", amount_to_bridge);
+    info!("Send to eth res {res:?}");
+    info!("Locked up {amount_to_bridge} to send to Cosmos");
 
     info!("Waiting for batch to be signed and relayed to Ethereum");
 
@@ -469,11 +469,11 @@ pub async fn send_to_eth_via_ica_and_confirm(
         }
         let balance = new_balance.unwrap();
         if balance - starting_balance == amount_to_bridge {
-            info!("Successfully bridged {} to Ethereum!", amount_to_bridge);
+            info!("Successfully bridged {amount_to_bridge} to Ethereum!");
             assert!(balance == amount_to_bridge);
             return true;
         } else if balance - starting_balance != 0u8.into() {
-            error!("Expected {} but got {} instead", amount_to_bridge, balance);
+            error!("Expected {amount_to_bridge} but got {balance} instead");
             return false;
         }
         sleep(Duration::from_secs(1)).await;
@@ -545,10 +545,7 @@ pub async fn send_to_eth_via_ica(
         bridge_fee: Some(bridge_fee.into()),
         chain_fee: Some(chain_fee.into()),
     };
-    info!(
-        "Sending to Ethereum with MsgSendToEth: {:?}",
-        msg_send_to_eth
-    );
+    info!("Sending to Ethereum with MsgSendToEth: {msg_send_to_eth:?}");
     let msg = encode_any(msg_send_to_eth, MSG_SEND_TO_ETH_TYPE_URL);
 
     let ica_submit = MsgSubmitTx {

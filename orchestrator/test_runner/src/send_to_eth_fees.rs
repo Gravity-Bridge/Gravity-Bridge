@@ -20,6 +20,7 @@ use gravity_utils::num_conversion::one_atom;
 use num::ToPrimitive;
 use num256::Uint256;
 use std::ops::Mul;
+use std::slice::from_ref;
 use std::time::{Duration, Instant};
 use tonic::transport::Channel;
 use web30::client::Web3;
@@ -250,7 +251,7 @@ pub async fn setup(
                 v.validator_key,
             )
             .await;
-        info!("Sent coins to staker with response {:?}", res)
+        info!("Sent coins to staker with response {res:?}")
     }
     info!("Staker delegating stake to each validator");
     for v in &keys {
@@ -267,7 +268,7 @@ pub async fn setup(
                 Some(OPERATION_TIMEOUT),
             )
             .await;
-        info!("Delegated to validator with response {:?}", res)
+        info!("Delegated to validator with response {res:?}")
     }
 
     (ibc_metadata, staker_key)
@@ -298,7 +299,7 @@ pub async fn send_to_eth_one_msg_txs(
     info!("send_to_eth_one_msg_txs: setting up transactions");
     // Create the test transactions
     let queued_transactions = setup_transactions(current_fee_basis_points, 1);
-    info!("queued transactions {:?}", queued_transactions);
+    info!("queued transactions {queued_transactions:?}");
 
     // Send the transactions
     let sender_addr = sender
@@ -406,14 +407,14 @@ async fn send_single_msg_txs(
             .send_message(
                 &[msg],
                 None,
-                &[tx_fee.clone()],
+                from_ref(&tx_fee),
                 Some(OPERATION_TIMEOUT),
                 None,
                 sender,
             )
             .await;
         if expect_success {
-            info!("sent msg with res {:?}", res);
+            info!("sent msg with res {res:?}");
         } else if res.is_ok() {
             panic!("Expected a failure due to fees, but got success? {:?}", res);
         }
@@ -454,10 +455,7 @@ pub async fn send_to_eth_multi_msg_txs(
     // The number of Msgs in our 1st, 2nd, 3rd, ... Txs
     let tx_sizes: Vec<usize> = vec![3, 6, 4, 2, 5, 7, 10, 8, 1, 2, 2, 2, 2, 2, 1];
     let mut tx_idx = 0; // Our pointer into tx_sizes
-    info!(
-        "send_to_eth_multi_msg_txs: sending transactions \n\n\n[{:?}]\n\n\n",
-        queued_transactions
-    );
+    info!("send_to_eth_multi_msg_txs: sending transactions \n\n\n[{queued_transactions:?}]\n\n\n");
     // Craft MsgSendToEth's, add them to the buffer, occasionally submit the Msgs in one Tx
 
     send_multi_msg_txs(
@@ -572,18 +570,18 @@ async fn send_multi_msg_txs(
             if tx_idx < &mut (tx_sizes.len() - 1) {
                 *tx_idx += 1;
             }
-            info!("Sending multiple MsgSendToEth: \n\n\n{:?}\n\n\n", msgs);
+            info!("Sending multiple MsgSendToEth: \n\n\n{msgs:?}\n\n\n");
             let res = contact
                 .send_message(
                     &to_send,
                     None,
-                    &[tx_fee.clone()],
+                    from_ref(&tx_fee),
                     Some(OPERATION_TIMEOUT),
                     None,
                     sender,
                 )
                 .await;
-            info!("Sent MsgSendToEth with res {:?}", res);
+            info!("Sent MsgSendToEth with res {res:?}");
         }
     }
     if !msgs.is_empty() {
@@ -591,13 +589,13 @@ async fn send_multi_msg_txs(
             .send_message(
                 msgs,
                 None,
-                &[tx_fee.clone()],
+                from_ref(&tx_fee),
                 Some(OPERATION_TIMEOUT),
                 None,
                 sender,
             )
             .await;
-        info!("Sent FINAL MsgSendToEth with res {:?}", res);
+        info!("Sent FINAL MsgSendToEth with res {res:?}");
     }
 }
 /// Creates a number of sends to Ethereum while changing the minimum fees up at the same time
@@ -824,7 +822,7 @@ pub async fn execute_queued_msgs(
         let res = contact
             .send_message_with_args(&msgs, None, args, Some(OPERATION_TIMEOUT), sender.clone())
             .await;
-        info!("Sent MsgSendToEth with res {:?}", res);
+        info!("Sent MsgSendToEth with res {res:?}");
     }
 }
 
@@ -851,8 +849,7 @@ fn setup_transactions(
     let erc20_success_fees: Vec<Uint256> = get_success_test_fees(erc20_min_fee);
     let erc20_fail_fees: Vec<Uint256> = get_fail_test_fees(erc20_min_fee);
     info!(
-        "setup_transactions: Created erc20 fees: \nSuccess [{:?}]\nFailure[{:?}]",
-        erc20_success_fees, erc20_fail_fees
+        "setup_transactions: Created erc20 fees: \nSuccess [{erc20_success_fees:?}]\nFailure[{erc20_fail_fees:?}]"
     );
 
     // ... and for a send of one atom (1 * 10^6)
@@ -861,8 +858,7 @@ fn setup_transactions(
     let cosmos_success_fees: Vec<Uint256> = get_success_test_fees(cosmos_min_fee);
     let cosmos_fail_fees: Vec<Uint256> = get_fail_test_fees(cosmos_min_fee);
     info!(
-        "setup_transactions: Created footoken fees: \nSuccess [{:?}]\nFailure[{:?}]",
-        cosmos_success_fees, cosmos_fail_fees
+        "setup_transactions: Created footoken fees: \nSuccess [{cosmos_success_fees:?}]\nFailure[{cosmos_fail_fees:?}]"
     );
 
     let mut erc20_good_amounts = vec![];
@@ -986,10 +982,7 @@ pub async fn submit_and_pass_send_to_eth_fees_proposal(
     keys: &[ValidatorKeys],
 ) {
     let proposal_content = SendToEthFeesProposalJson {
-        title: format!(
-            "Set MinChainFeeBasisPoints to {}",
-            min_chain_fee_basis_points
-        ),
+        title: format!("Set MinChainFeeBasisPoints to {min_chain_fee_basis_points}"),
         description: "MinChainFeeBasisPoints!".to_string(),
         min_chain_fee_basis_points,
     };
@@ -1004,7 +997,7 @@ pub async fn submit_and_pass_send_to_eth_fees_proposal(
     .await;
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-    info!("Gov proposal executed with {:?}", res);
+    info!("Gov proposal executed with {res:?}");
 
     let start = Instant::now();
     while Instant::now() - start < OPERATION_TIMEOUT {
@@ -1014,10 +1007,7 @@ pub async fn submit_and_pass_send_to_eth_fees_proposal(
         if min_chain_fee_basis_points != set_value {
             continue;
         }
-        info!(
-            "Successfully updated MinChainFeeBasisPoints parameter to {}!",
-            set_value
-        );
+        info!("Successfully updated MinChainFeeBasisPoints parameter to {set_value}!");
         return;
     }
     panic!("Unable to set MinChainFeeBasisPoints");
@@ -1036,8 +1026,7 @@ pub fn assert_fees_collected(
     // So we want to find fees paid = current balance - start balance + amounts bridged
 
     info!(
-        "start_sender_bal: {:?}\nend_sender_bal: {:?}\nfee_expectations: {:?}",
-        start_sender_bal, end_sender_bal, fee_expectations,
+        "start_sender_bal: {start_sender_bal:?}\nend_sender_bal: {end_sender_bal:?}\nfee_expectations: {fee_expectations:?}",
     );
 
     let mut cosmos_diff: i128 = 0u8.into();
@@ -1051,10 +1040,7 @@ pub fn assert_fees_collected(
         }
         continue;
     }
-    info!(
-        "set ending bals: cosmos_diff {} erc20_diff {}",
-        cosmos_diff, erc20_diff
-    );
+    info!("set ending bals: cosmos_diff {cosmos_diff} erc20_diff {erc20_diff}");
 
     // Add to the current balance the amounts bridged, to get starting balance - fees
     cosmos_diff += fee_expectations
@@ -1066,10 +1052,7 @@ pub fn assert_fees_collected(
         .to_i128()
         .unwrap_or(0i128);
 
-    info!(
-        "add bridge amounts: cosmos_diff {} erc20_diff {}",
-        cosmos_diff, erc20_diff
-    );
+    info!("add bridge amounts: cosmos_diff {cosmos_diff} erc20_diff {erc20_diff}");
     // Find fees = starting balance - (starting balance - fees)
     for token in &start_sender_bal {
         let pre = token.amount.to_i128().unwrap_or(0i128);
@@ -1081,8 +1064,7 @@ pub fn assert_fees_collected(
         continue;
     }
     info!(
-        "add starting bals, should be just fees left: cosmos_diff {} erc20_diff {}",
-        cosmos_diff, erc20_diff
+        "add starting bals, should be just fees left: cosmos_diff {cosmos_diff} erc20_diff {erc20_diff}"
     );
 
     let expected_cosmos_fee = fee_expectations

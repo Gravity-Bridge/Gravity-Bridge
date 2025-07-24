@@ -17,4 +17,5 @@ var (
 	ErrBidCollectionFailure = errorsmod.Register(ModuleName, 9, "Failed to collect bid")
 	ErrAwardFailure         = errorsmod.Register(ModuleName, 10, "Failed to award auction to highest bidder")
 	ErrDisabledModule       = errorsmod.Register(ModuleName, 11, "Auction Module is not currently enabled")
+	ErrParamsNotFound       = errorsmod.Register(ModuleName, 12, "Auction Params not found")
 )

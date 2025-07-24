@@ -53,7 +53,7 @@ pub async fn evidence_based_slashing(
 
     let starting_valset_nonce =
         latest_valset_nonce(&get_latest_valsets(&mut grpc_client).await.unwrap());
-    info!("Starting valset nonce is {:?}", starting_valset_nonce);
+    info!("Starting valset nonce is {starting_valset_nonce:?}");
 
     // our slashing victim is just the first validator
     let cosmos_private_key = keys[0].validator_key;
@@ -107,7 +107,7 @@ pub async fn evidence_based_slashing(
     )
     .await
     .unwrap();
-    trace!("{:?}", res);
+    trace!("{res:?}");
 
     // confirm that the validator for which the evidence has been submitted is removed
     let (is_in_set, jailed) =
@@ -178,5 +178,5 @@ async fn delegate_to_validator(keys: &[ValidatorKeys], to: impl PrivateKey, cont
         )
         .await
         .unwrap();
-    trace!("{:?}", res);
+    trace!("{res:?}");
 }

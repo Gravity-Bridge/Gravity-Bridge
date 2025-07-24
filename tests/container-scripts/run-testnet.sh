@@ -40,7 +40,12 @@ do
         # to the docker host
         RPC_ADDRESS="--rpc.laddr tcp://0.0.0.0:26657"
         GRPC_ADDRESS="--grpc.address 0.0.0.0:9090"
-        GRPC_WEB_ADDRESS="--grpc-web.address 0.0.0.0:9092"
+        # TODO: Remove this after we upgrade past SDK v0.50, at which point this will break upgrade tests
+        if [[ "$BIN" != "gravity" ]]; then
+            echo "Setting --grpc-web.address for old upgrade test compatibility"
+            GRPC_ADDRESS="${GRPC_ADDRESS} --grpc-web.address 0.0.0.0:9092"
+        fi
+
         sed -i 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' /validator$i/config/app.toml
         sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /validator$i/config/app.toml
         sed -i 's/enable = false/enable = true/g' /validator$i/config/app.toml #enables more than we want, but will work for now
@@ -51,14 +56,18 @@ do
         # for reasons that are not clear to me right now.
         RPC_ADDRESS="--rpc.laddr tcp://7.7.7.$i:26658"
         GRPC_ADDRESS="--grpc.address 7.7.7.$i:9091"
-        GRPC_WEB_ADDRESS="--grpc-web.address 7.7.7.$i:9093"
+        # TODO: Remove this after we upgrade past SDK v0.50, at which point this will break upgrade tests
+        if [[ "$BIN" != "gravity" ]]; then
+            echo "Setting --grpc-web.address for old upgrade test compatibility"
+            GRPC_ADDRESS="${GRPC_ADDRESS} --grpc-web.address 7.7.7.$i:9093"
+        fi
     fi
     LISTEN_ADDRESS="--address tcp://7.7.7.$i:26655"
     P2P_ADDRESS="--p2p.laddr tcp://7.7.7.$i:26656"
     LOG_LEVEL="--log_level info"
     INVARIANTS_CHECK="--inv-check-period 1"
     MIN_GAS_PRICES="--minimum-gas-prices 0stake"
-    ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $GRPC_WEB_ADDRESS $LOG_LEVEL $INVARIANTS_CHECK $P2P_ADDRESS $MIN_GAS_PRICES"
+    ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $LOG_LEVEL $INVARIANTS_CHECK $P2P_ADDRESS $MIN_GAS_PRICES"
     $BIN $ARGS start &> /validator$i/logs &
 done
 

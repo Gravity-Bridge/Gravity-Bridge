@@ -6,6 +6,7 @@ tests/dockerfile/gravity.tar.gz
 solidity/dist
 orchestrator/bins
 oldgravity
+module/app/testdata
 
 # IDE files
 .idea/

@@ -22,8 +22,7 @@ pub async fn find_latest_valset(
 
     while current_block > 0u8.into() {
         trace!(
-            "About to submit a Valset or Batch looking back into the history to find the last Valset Update, on block {}",
-            current_block
+            "About to submit a Valset or Batch looking back into the history to find the last Valset Update, on block {current_block}"
         );
         let end_search = if current_block < BLOCKS_TO_SEARCH.into() {
             0u8.into()
@@ -41,7 +40,7 @@ pub async fn find_latest_valset(
         // by default the lowest found valset goes first, we want the highest.
         all_valset_events.reverse();
 
-        trace!("Found events {:?}", all_valset_events);
+        trace!("Found events {all_valset_events:?}");
 
         // we take only the first event if we find any at all.
         if !all_valset_events.is_empty() {
@@ -60,7 +59,7 @@ pub async fn find_latest_valset(
                     check_if_valsets_differ(cosmos_chain_valset, &latest_eth_valset);
                     return Ok(latest_eth_valset);
                 }
-                Err(e) => error!("Got valset event that we can't parse {}", e),
+                Err(e) => error!("Got valset event that we can't parse {e}"),
             }
         }
         current_block = end_search;

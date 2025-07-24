@@ -23,10 +23,10 @@ pub async fn send_eth_transaction_batch(
     let new_batch_nonce = batch.nonce;
     let eth_address = our_eth_key.to_address();
     info!(
-        "Ordering signatures and submitting TransactionBatch {}:{} to Ethereum",
-        batch.token_contract, new_batch_nonce
+        "Ordering signatures and submitting TransactionBatch {}:{new_batch_nonce} to Ethereum",
+        batch.token_contract
     );
-    trace!("Batch {:?}", batch);
+    trace!("Batch {batch:?}");
 
     let before_nonce = get_tx_batch_nonce(
         gravity_contract_address,
@@ -37,15 +37,12 @@ pub async fn send_eth_transaction_batch(
     .await?;
     let current_block_height = web3.eth_block_number().await?;
     if before_nonce >= new_batch_nonce {
-        info!(
-            "Someone else updated the batch to {}, exiting early",
-            before_nonce
-        );
+        info!("Someone else updated the batch to {before_nonce}, exiting early",);
         return Ok(());
     } else if current_block_height > batch.batch_timeout.into() {
         info!(
-            "This batch is timed out. timeout block: {} current block: {}, exiting early",
-            current_block_height, batch.batch_timeout
+            "This batch is timed out. timeout block: {} current block: {current_block_height}, exiting early",
+            batch.batch_timeout
         );
         return Ok(());
     }
@@ -63,7 +60,7 @@ pub async fn send_eth_transaction_batch(
             .await?,
         )
         .await?;
-    info!("Sent batch update with txid {:#066x}", tx);
+    info!("Sent batch update with txid {tx:#066x}");
 
     web3.wait_for_transaction(tx, timeout, None).await?;
 
@@ -75,12 +72,9 @@ pub async fn send_eth_transaction_batch(
     )
     .await?;
     if last_nonce != new_batch_nonce {
-        error!(
-            "Current nonce is {} expected to update to nonce {}",
-            last_nonce, new_batch_nonce
-        );
+        error!("Current nonce is {last_nonce} expected to update to nonce {new_batch_nonce}",);
     } else {
-        info!("Successfully updated Batch with new Nonce {:?}", last_nonce);
+        info!("Successfully updated Batch with new Nonce {last_nonce:?}");
     }
     Ok(())
 }
@@ -174,7 +168,7 @@ pub fn encode_batch_payload(
     ];
     let payload = clarity::abi::encode_call("submitBatch((address[],uint256[],uint256,uint256,address),(uint8,bytes32,bytes32)[],uint256[],address[],uint256[],uint256,address,uint256)",
     tokens).unwrap();
-    trace!("Tokens {:?}", tokens);
+    trace!("Tokens {tokens:?}");
 
     Ok(payload)
 }

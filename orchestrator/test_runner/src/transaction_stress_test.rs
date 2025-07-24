@@ -104,7 +104,7 @@ pub async fn transaction_stress_test(
         )
         .await
         .unwrap();
-        info!("{:?}", res);
+        info!("{res:?}");
     }
 
     contact.wait_for_next_block(TIMEOUT).await.unwrap();
@@ -113,7 +113,7 @@ pub async fn transaction_stress_test(
     let pending = get_pending_send_to_eth(&mut grpc_client, user_who_cancels.cosmos_address)
         .await
         .unwrap();
-    info!("{:?}", pending);
+    info!("{pending:?}");
     assert!(pending.transfers_in_batches.is_empty());
     assert!(pending.unbatched_transfers.is_empty());
 
@@ -137,15 +137,15 @@ pub async fn transaction_stress_test(
             tx.id,
         )
         .await;
-        info!("{:?}", res);
+        info!("{res:?}");
     }
 
     for denom in denoms {
-        info!("Requesting batch for {}", denom);
+        info!("Requesting batch for {denom}");
         let res = send_request_batch(keys[0].validator_key, denom, Some(get_fee(None)), contact)
             .await
             .unwrap();
-        info!("batch request response is {:?}", res);
+        info!("batch request response is {res:?}");
     }
 
     // we sent a random amount below 100 tokens to each user, now we're sending
@@ -230,13 +230,13 @@ pub async fn prep_users_for_deposit(
     eth_destinations.extend(dest_eth_addresses);
     let start_amt: Uint256 = one_eth() * 2u8.into();
     send_eth_bulk(start_amt, &eth_destinations, web30).await;
-    info!("Sent {} addresses {} ETH", NUM_USERS, start_amt);
+    info!("Sent {NUM_USERS} addresses {start_amt} ETH");
 
     // now we need to send all the sending eth addresses erc20's to send
     let starting_eth: Uint256 = one_eth() * STARTING_ETH.into();
     for token in erc20_addresses.iter() {
         send_erc20_bulk(starting_eth, *token, &sending_eth_addresses, web30).await;
-        info!("Sent {} addresses {} {}", NUM_USERS, STARTING_ETH, token);
+        info!("Sent {NUM_USERS} addresses {STARTING_ETH} {token}");
     }
     // wait one block to make sure all sends are processed
     web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
@@ -290,10 +290,7 @@ pub async fn test_bulk_send_to_cosmos(
             let result = result.unwrap();
             result.get_block_number().unwrap();
         }
-        info!(
-            "Locked 100 {} from {} into the Gravity Ethereum Contract",
-            token, NUM_USERS
-        );
+        info!("Locked 100 {token} from {NUM_USERS} into the Gravity Ethereum Contract");
         web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
     }
 
@@ -430,11 +427,11 @@ pub async fn lock_funds_in_pool(
                 let results = join_all(futs).await;
                 for result in results {
                     let result = result.unwrap();
-                    trace!("SendToEth result {:?}", result);
+                    trace!("SendToEth result {result:?}");
                 }
                 futs = Vec::new();
 
-                info!("Requesting batch for {}", denom);
+                info!("Requesting batch for {denom}");
                 let res = send_request_batch(
                     validator_keys[0].validator_key,
                     denom,
@@ -443,18 +440,15 @@ pub async fn lock_funds_in_pool(
                 )
                 .await
                 .unwrap();
-                info!("batch request response is {:?}", res);
+                info!("batch request response is {res:?}");
             }
         }
         let results = join_all(futs).await;
         for result in results {
             let result = result.unwrap();
-            trace!("SendToEth result {:?}", result);
+            trace!("SendToEth result {result:?}");
         }
-        info!(
-            "Successfully placed {} {} into the tx pool",
-            NUM_USERS, token
-        );
+        info!("Successfully placed {NUM_USERS} {token} into the tx pool");
     }
     denoms
 }

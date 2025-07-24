@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use crate::get_deposit;
 use crate::ibc_auto_forward::get_channel;
+use crate::utils::ValidatorKeys;
 use crate::COSMOS_NODE_GRPC;
 use crate::GRAVITY_RELAYER_ADDRESS;
 use crate::HERMES_CONFIG;
@@ -14,7 +15,6 @@ use crate::OPERATION_TIMEOUT;
 use crate::RELAYER_MNEMONIC;
 use crate::TOTAL_TIMEOUT;
 use crate::{get_gravity_chain_id, get_ibc_chain_id, ETH_NODE};
-use crate::{utils::ValidatorKeys, COSMOS_NODE_ABCI};
 use clarity::Address as EthAddress;
 use clarity::PrivateKey as EthPrivateKey;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey, DEFAULT_COSMOS_HD_PATH};
@@ -83,7 +83,7 @@ fn parse_phrases(filename: &str) -> Vec<CosmosPrivateKey> {
 /// that we have one key for each validator in this file.
 pub fn parse_validator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/validator-phrases";
-    info!("Reading mnemonics from {}", filename);
+    info!("Reading mnemonics from {filename}");
     parse_phrases(filename)
 }
 
@@ -91,7 +91,7 @@ pub fn parse_validator_keys() -> Vec<CosmosPrivateKey> {
 /// over IBC for testing purposes
 pub fn parse_ibc_validator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/ibc-validator-phrases";
-    info!("Reading mnemonics from {}", filename);
+    info!("Reading mnemonics from {filename}");
     parse_phrases(filename)
 }
 
@@ -100,7 +100,7 @@ pub fn parse_ibc_validator_keys() -> Vec<CosmosPrivateKey> {
 /// similar file /orchestrator-phrases
 pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/orchestrator-phrases";
-    info!("Reading orchestrator phrases from {}", filename);
+    info!("Reading orchestrator phrases from {filename}");
 
     parse_phrases(filename)
 }
@@ -110,7 +110,7 @@ pub fn parse_orchestrator_keys() -> Vec<CosmosPrivateKey> {
 /// similar file /vesting-phrases
 pub fn parse_vesting_keys() -> Vec<CosmosPrivateKey> {
     let filename = "/vesting-phrases";
-    info!("Reading vesting phrases from {}", filename);
+    info!("Reading vesting phrases from {filename}");
 
     parse_phrases(filename)
 }
@@ -136,7 +136,7 @@ const CONTRACTS_PATH: &str = "/tmp/contracts";
 /// this runs only when the DEPLOY_CONTRACTS env var is set right after
 /// the Ethereum test chain starts in the testing environment. We write
 /// the stdout of this to a file for later test runs to parse
-pub async fn deploy_contracts(contact: &Contact) {
+pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
     // prevents the node deployer from failing (rarely) when the chain has not
     // yet produced the next block after submitting each eth address
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
@@ -192,11 +192,14 @@ pub async fn deploy_contracts(contact: &Contact) {
         "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
         "/home/runner/work/gravity-private/gravity-private/solidity/",
     ];
+    if upgrade_testing {
+        info!("test-runner in upgrade testing mode, using old REST endpoints");
+    }
     let output = if all_paths_exist(&A) || all_paths_exist(&B) {
         let paths = return_existing(A, B);
         Command::new(paths[0])
             .args([
-                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--cosmos-node={}", "http://localhost"),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", paths[1]),
@@ -205,6 +208,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--contractERC20B={}", paths[4]),
                 &format!("--contractERC20C={}", paths[5]),
                 "--test-mode=true",
+                &format!("--use-old-rest-methods={upgrade_testing}"),
             ])
             .output()
             .expect("Failed to deploy contracts!")
@@ -213,7 +217,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 C[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--cosmos-node={}", "http://localhost"),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", C[1]),
@@ -222,6 +226,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--contractERC20B={}", C[4]),
                 &format!("--contractERC20C={}", C[5]),
                 "--test-mode=true",
+                &format!("--use-old-rest-methods={upgrade_testing}"),
             ])
             .current_dir(C[6])
             .output()
@@ -231,7 +236,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 D[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--cosmos-node={}", "http://localhost"),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", D[1]),
@@ -240,6 +245,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--contractERC20B={}", D[4]),
                 &format!("--contractERC20C={}", D[5]),
                 "--test-mode=true",
+                &format!("--use-old-rest-methods={upgrade_testing}"),
             ])
             .current_dir(D[6])
             .output()
@@ -249,7 +255,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 E[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_ABCI.as_str()),
+                &format!("--cosmos-node={}", "http://localhost"),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", E[1]),
@@ -258,6 +264,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--contractERC20B={}", E[4]),
                 &format!("--contractERC20C={}", E[5]),
                 "--test-mode=true",
+                &format!("--use-old-rest-methods={upgrade_testing}"),
             ])
             .current_dir(E[6])
             .output()
@@ -303,11 +310,11 @@ pub fn parse_contract_addresses() -> BootstrapContractAddresses {
         } else if line.contains("ERC20 deployed at Address -") {
             let address_string = line.split('-').next_back().unwrap();
             erc20_addresses.push(address_string.trim().parse().unwrap());
-            info!("found erc20 address it is {}", address_string);
+            info!("found erc20 address it is {address_string}");
         } else if line.contains("ERC721 deployed at Address -") {
             let address_string = line.split('-').next_back().unwrap();
             erc721_addresses.push(address_string.trim().parse().unwrap());
-            info!("found erc721 address it is {}", address_string);
+            info!("found erc721 address it is {address_string}");
         }
     }
     let gravity_address: EthAddress = maybe_gravity_address.unwrap();
@@ -409,7 +416,7 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
         let create_channel = create_channel
             .stdout(Stdio::from_raw_fd(out_file))
             .stderr(Stdio::from_raw_fd(out_file));
-        info!("Create channel command: {:?}", create_channel);
+        info!("Create channel command: {create_channel:?}");
         create_channel
             .spawn()
             .expect("Could not create channel")

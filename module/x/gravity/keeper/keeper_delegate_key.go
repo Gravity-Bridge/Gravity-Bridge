@@ -38,6 +38,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 	}
 
 	if !foundValAddr && valAddr == nil {
+		// nolint: exhaustruct
 		return stakingtypes.Validator{
 			OperatorAddress: "",
 			ConsensusPubkey: &codectypes.Any{
@@ -50,7 +51,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 			Jailed:          false,
 			Status:          0,
 			Tokens:          math.Int{},
-			DelegatorShares: sdk.Dec{},
+			DelegatorShares: math.LegacyDec{},
 			Description: stakingtypes.Description{
 				Moniker:         "",
 				Identity:        "",
@@ -62,17 +63,18 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 			UnbondingTime:   time.Time{},
 			Commission: stakingtypes.Commission{
 				CommissionRates: stakingtypes.CommissionRates{
-					Rate:          sdk.Dec{},
-					MaxRate:       sdk.Dec{},
-					MaxChangeRate: sdk.Dec{},
+					Rate:          math.LegacyDec{},
+					MaxRate:       math.LegacyDec{},
+					MaxChangeRate: math.LegacyDec{},
 				},
 				UpdateTime: time.Time{},
 			},
 			MinSelfDelegation: math.Int{},
 		}, false
 	}
-	validator, found = k.StakingKeeper.GetValidator(ctx, valAddr)
-	if !found {
+	validator, err := k.StakingKeeper.GetValidator(ctx, valAddr)
+	if err != nil {
+		// nolint: exhaustruct
 		return stakingtypes.Validator{
 			OperatorAddress: "",
 			ConsensusPubkey: &codectypes.Any{
@@ -85,7 +87,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 			Jailed:          false,
 			Status:          0,
 			Tokens:          math.Int{},
-			DelegatorShares: sdk.Dec{},
+			DelegatorShares: math.LegacyDec{},
 			Description: stakingtypes.Description{
 				Moniker:         "",
 				Identity:        "",
@@ -97,9 +99,9 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 			UnbondingTime:   time.Time{},
 			Commission: stakingtypes.Commission{
 				CommissionRates: stakingtypes.CommissionRates{
-					Rate:          sdk.Dec{},
-					MaxRate:       sdk.Dec{},
-					MaxChangeRate: sdk.Dec{},
+					Rate:          math.LegacyDec{},
+					MaxRate:       math.LegacyDec{},
+					MaxChangeRate: math.LegacyDec{},
 				},
 				UpdateTime: time.Time{},
 			},
@@ -164,6 +166,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 	store := ctx.KVStore(k.storeKey)
 	valAddr := store.Get([]byte(types.GetValidatorByEthAddressKey(ethAddr)))
 	if valAddr == nil {
+		// nolint: exhaustruct
 		return stakingtypes.Validator{
 			OperatorAddress: "",
 			ConsensusPubkey: &codectypes.Any{
@@ -176,7 +179,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 			Jailed:          false,
 			Status:          0,
 			Tokens:          math.Int{},
-			DelegatorShares: sdk.Dec{},
+			DelegatorShares: math.LegacyDec{},
 			Description: stakingtypes.Description{
 				Moniker:         "",
 				Identity:        "",
@@ -188,17 +191,18 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 			UnbondingTime:   time.Time{},
 			Commission: stakingtypes.Commission{
 				CommissionRates: stakingtypes.CommissionRates{
-					Rate:          sdk.Dec{},
-					MaxRate:       sdk.Dec{},
-					MaxChangeRate: sdk.Dec{},
+					Rate:          math.LegacyDec{},
+					MaxRate:       math.LegacyDec{},
+					MaxChangeRate: math.LegacyDec{},
 				},
 				UpdateTime: time.Time{},
 			},
 			MinSelfDelegation: math.Int{},
 		}, false
 	}
-	validator, found = k.StakingKeeper.GetValidator(ctx, valAddr)
-	if !found {
+	validator, err := k.StakingKeeper.GetValidator(ctx, valAddr)
+	if err != nil {
+		// nolint: exhaustruct
 		return stakingtypes.Validator{
 			OperatorAddress: "",
 			ConsensusPubkey: &codectypes.Any{
@@ -211,7 +215,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 			Jailed:          false,
 			Status:          0,
 			Tokens:          math.Int{},
-			DelegatorShares: sdk.Dec{},
+			DelegatorShares: math.LegacyDec{},
 			Description: stakingtypes.Description{
 				Moniker:         "",
 				Identity:        "",
@@ -223,9 +227,9 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 			UnbondingTime:   time.Time{},
 			Commission: stakingtypes.Commission{
 				CommissionRates: stakingtypes.CommissionRates{
-					Rate:          sdk.Dec{},
-					MaxRate:       sdk.Dec{},
-					MaxChangeRate: sdk.Dec{},
+					Rate:          math.LegacyDec{},
+					MaxRate:       math.LegacyDec{},
+					MaxChangeRate: math.LegacyDec{},
 				},
 				UpdateTime: time.Time{},
 			},

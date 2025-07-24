@@ -174,11 +174,7 @@ pub async fn eth_oracle_main_loop(
 
         match (&latest_eth_block, latest_cosmos_block) {
             (Ok(latest_eth_block), Ok(ChainStatus::Moving { block_height })) => {
-                trace!(
-                    "Latest Eth block {} Latest Cosmos block {}",
-                    latest_eth_block,
-                    block_height,
-                );
+                trace!("Latest Eth block {latest_eth_block} Latest Cosmos block {block_height}",);
 
                 metrics_latest(block_height, "latest_cosmos_block");
                 // Converting into u64
@@ -270,7 +266,7 @@ pub async fn eth_oracle_main_loop(
                 );
             }
             Err(e) => {
-                error!("Failed to get events for block range, Check your Eth node and Cosmos gRPC {:?}", e);
+                error!("Failed to get events for block range, Check your Eth node and Cosmos gRPC {e:?}");
                 metrics_errors_counter(0, "Failed to get events for block range");
             }
         }
@@ -307,7 +303,7 @@ pub async fn eth_signer_main_loop(
         let params = match get_gravity_params(&mut grpc_client).await {
             Ok(p) => p,
             Err(e) => {
-                error!("Failed to get Gravity parameters with {} correct your Cosmos gRPC connection immediately, you are risking slashing",e);
+                error!("Failed to get Gravity parameters with {e} correct your Cosmos gRPC connection immediately, you are risking slashing");
                 metrics_errors_counter(2, "Failed to get Gravity parameters correct your Cosmos gRPC connection immediately, you are risking slashing");
                 continue;
             }
@@ -321,11 +317,11 @@ pub async fn eth_signer_main_loop(
         let latest_cosmos_block = contact.get_chain_status().await;
         match latest_cosmos_block {
             Ok(ChainStatus::Moving { block_height }) => {
-                trace!("Latest Cosmos block {}", block_height,);
+                trace!("Latest Cosmos block {block_height}",);
             }
             Ok(ChainStatus::Syncing) => {
                 warn!("Cosmos node syncing, Eth signer paused");
-                warn!("If this operation will take more than {} blocks of time you must find another node to submit signatures or risk slashing", blocks_until_slashing);
+                warn!("If this operation will take more than {blocks_until_slashing} blocks of time you must find another node to submit signatures or risk slashing");
                 metrics_warnings_counter(2, "Cosmos node syncing, Eth signer paused");
                 metrics_latest(blocks_until_slashing, "blocks_until_slashing");
                 delay_for(DELAY).await;
@@ -341,7 +337,7 @@ pub async fn eth_signer_main_loop(
                 continue;
             }
             Err(_) => {
-                error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {} blocks", blocks_until_slashing);
+                error!("Could not reach Cosmos rpc! You must correct this or you risk being slashed in {blocks_until_slashing} blocks");
                 delay_for(DELAY).await;
                 metrics_latest(blocks_until_slashing, "blocks_until_slashing");
                 metrics_errors_counter(
@@ -378,14 +374,11 @@ pub async fn eth_signer_main_loop(
                         gravity_id.clone(),
                     )
                     .await;
-                    trace!("Valset confirm result is {:?}", res);
+                    trace!("Valset confirm result is {res:?}");
                     check_for_fee_error(res, &fee);
                 }
             }
-            Err(e) => trace!(
-                "Failed to get unsigned valsets, check your Cosmos gRPC {:?}",
-                e
-            ),
+            Err(e) => trace!("Failed to get unsigned valsets, check your Cosmos gRPC {e:?}"),
         }
 
         // sign the last unsigned batch, TODO check if we already have signed this
@@ -415,14 +408,11 @@ pub async fn eth_signer_main_loop(
                         gravity_id.clone(),
                     )
                     .await;
-                    trace!("Batch confirm result is {:?}", res);
+                    trace!("Batch confirm result is {res:?}");
                     check_for_fee_error(res, &fee);
                 }
             }
-            Err(e) => trace!(
-                "Failed to get unsigned Batches, check your Cosmos gRPC {:?}",
-                e
-            ),
+            Err(e) => trace!("Failed to get unsigned Batches, check your Cosmos gRPC {e:?}"),
         }
 
         match get_oldest_unsigned_logic_calls(
@@ -450,14 +440,11 @@ pub async fn eth_signer_main_loop(
                         gravity_id.clone(),
                     )
                     .await;
-                    trace!("call confirm result is {:?}", res);
+                    trace!("call confirm result is {res:?}");
                     check_for_fee_error(res, &fee);
                 }
             }
-            Err(e) => info!(
-                "Failed to get unsigned Logic Calls, check your Cosmos gRPC {:?}",
-                e
-            ),
+            Err(e) => info!("Failed to get unsigned Logic Calls, check your Cosmos gRPC {e:?}"),
         }
 
         // a bit of logic that tires to keep things running every LOOP_SPEED seconds exactly

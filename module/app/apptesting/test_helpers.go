@@ -5,10 +5,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/ibc-go/v6/testing/simapp"
+	"github.com/cosmos/ibc-go/v8/testing/simapp"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmtypes "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/cometbft/cometbft/crypto/ed25519"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app"
 )
@@ -33,7 +32,8 @@ type AppTestHelper struct {
 func (s *AppTestHelper) Setup() {
 	s.App = app.InitGravityTestApp(true)
 	// nolint: exhaustruct
-	s.Ctx = s.App.BaseApp.NewContext(false, tmtypes.Header{Height: 1, ChainID: ChainID})
+	s.Ctx = s.App.BaseApp.NewContext(false)
+	s.Ctx = s.Ctx.WithBlockHeight(1).WithChainID(ChainID)
 	s.QueryHelper = &baseapp.QueryServiceTestHelper{
 		GRPCQueryRouter: s.App.GRPCQueryRouter(),
 		Ctx:             s.Ctx,

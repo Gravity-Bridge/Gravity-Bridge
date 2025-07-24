@@ -71,7 +71,7 @@ pub async fn relay_logic_calls(
     let our_ethereum_address = ethereum_key.to_address();
 
     let latest_calls = get_latest_logic_calls(grpc_client).await;
-    trace!("Latest Logic calls {:?}", latest_calls);
+    trace!("Latest Logic calls {latest_calls:?}");
     if latest_calls.is_err() {
         return;
     }
@@ -85,7 +85,7 @@ pub async fn relay_logic_calls(
             call.invalidation_nonce,
         )
         .await;
-        trace!("Got sigs {:?}", sigs);
+        trace!("Got sigs {sigs:?}");
         if let Ok(sigs) = sigs {
             let hash = encode_logic_call_confirm_hashed(gravity_id.clone(), call.clone());
             // this checks that the signatures for the batch are actually possible to submit to the chain
@@ -123,10 +123,7 @@ pub async fn relay_logic_calls(
     )
     .await;
     if latest_ethereum_call.is_err() {
-        error!(
-            "Failed to get latest Ethereum LogicCall with {:?}",
-            latest_ethereum_call
-        );
+        error!("Failed to get latest Ethereum LogicCall with {latest_ethereum_call:?}");
         return;
     }
     let latest_ethereum_call = latest_ethereum_call.unwrap();
@@ -143,7 +140,7 @@ pub async fn relay_logic_calls(
         )
         .await;
         if cost.is_err() {
-            error!("LogicCall cost estimate failed with {:?}", cost);
+            error!("LogicCall cost estimate failed with {cost:?}");
             return;
         }
         let cost = cost.unwrap();
@@ -181,12 +178,11 @@ pub async fn relay_logic_calls(
             )
             .await;
             if res.is_err() {
-                info!("LogicCall submission failed with {:?}", res);
+                info!("LogicCall submission failed with {res:?}");
             }
         } else {
             info!(
-                "Not relaying logic call because it is not profitable to do so: {:?}",
-                oldest_signed_call
+                "Not relaying logic call because it is not profitable to do so: {oldest_signed_call:?}"
             );
         }
     }

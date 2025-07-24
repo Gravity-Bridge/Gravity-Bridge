@@ -24,11 +24,10 @@ pub async fn send_eth_logic_call(
     let new_call_nonce = call.invalidation_nonce;
     let eth_address = our_eth_key.to_address();
     info!(
-        "Ordering signatures and submitting LogicCall {}:{} to Ethereum",
+        "Ordering signatures and submitting LogicCall {}:{new_call_nonce} to Ethereum",
         bytes_to_hex_str(&call.invalidation_id),
-        new_call_nonce
     );
-    trace!("Call {:?}", call);
+    trace!("Call {call:?}");
 
     let before_nonce = get_logic_call_nonce(
         gravity_contract_address,
@@ -39,15 +38,12 @@ pub async fn send_eth_logic_call(
     .await?;
     let current_block_height = web3.eth_block_number().await?;
     if before_nonce >= new_call_nonce {
-        info!(
-            "Someone else updated the LogicCall to {}, exiting early",
-            before_nonce
-        );
+        info!("Someone else updated the LogicCall to {before_nonce}, exiting early",);
         return Ok(());
     } else if current_block_height > call.timeout.into() {
         info!(
-            "This LogicCall is timed out. timeout block: {} current block: {}, exiting early",
-            current_block_height, call.timeout
+            "This LogicCall is timed out. timeout block: {} current block: {current_block_height}, exiting early",
+            call.timeout,
         );
         return Ok(());
     }
@@ -69,7 +65,7 @@ pub async fn send_eth_logic_call(
             .await?,
         )
         .await?;
-    info!("Sent batch update with txid {:#066x}", tx);
+    info!("Sent batch update with txid {tx:#066x}");
 
     web3.wait_for_transaction(tx, timeout, None).await?;
 
@@ -81,15 +77,9 @@ pub async fn send_eth_logic_call(
     )
     .await?;
     if last_nonce != new_call_nonce {
-        error!(
-            "Current nonce is {} expected to update to nonce {}",
-            last_nonce, new_call_nonce
-        );
+        error!("Current nonce is {last_nonce} expected to update to nonce {new_call_nonce}",);
     } else {
-        info!(
-            "Successfully updated LogicCall with new Nonce {:?}",
-            last_nonce
-        );
+        info!("Successfully updated LogicCall with new Nonce {last_nonce:?}",);
     }
     Ok(())
 }
@@ -213,7 +203,7 @@ fn encode_logic_call_payload(
         tokens,
     )
     .unwrap();
-    trace!("Tokens {:?}", tokens);
+    trace!("Tokens {tokens:?}");
 
     Ok(payload)
 }

@@ -41,11 +41,11 @@ pub async fn get_balances_with_retry(address: CosmosAddress, contact: &Contact) 
     res.unwrap()
 }
 
-/// gets the net version, no matter how long it takes
-pub async fn get_net_version_with_retry(web3: &Web3) -> u64 {
+/// gets the eth chainid, no matter how long it takes
+pub async fn get_eth_chainid_with_retry(web3: &Web3) -> u64 {
     let mut res = web3.eth_chainid().await;
     while res.is_err() {
-        error!("Failed to get net version! Is your Eth node working?");
+        error!("Failed to get eth chainid! Is your Eth node working?");
         delay_for(RETRY_TIME).await;
         res = web3.eth_chainid().await;
     }

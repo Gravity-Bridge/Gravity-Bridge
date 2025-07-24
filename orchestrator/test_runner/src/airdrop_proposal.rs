@@ -79,7 +79,7 @@ async fn submit_and_pass_airdrop_proposal(
         generate_valid_accounts_and_amounts(num_recipients, starting_amount_in_pool.amount);
 
     let proposal_content = AirdropProposalJson {
-        title: format!("Proposal to perform {} airdrop", denom),
+        title: format!("Proposal to perform {denom} airdrop"),
         description: "Airdrop time!".to_string(),
         denom: denom.clone(),
         amounts: amounts.to_vec(),
@@ -129,10 +129,7 @@ async fn submit_and_pass_airdrop_proposal(
                 }
             }
             None => {
-                error!(
-                    "Address {} did not get an airdrop, should have {} got nothing",
-                    key, amount
-                );
+                error!("Address {key} did not get an airdrop, should have {amount} got nothing");
                 error = true;
             }
         }
@@ -202,7 +199,7 @@ async fn submit_and_fail_airdrop_proposal(
     }
 
     let proposal_content = AirdropProposalMsg {
-        title: format!("Proposal to perform {} airdrop", denom),
+        title: format!("Proposal to perform {denom} airdrop"),
         description: "Airdrop time!".to_string(),
         denom,
         amounts: amounts.to_vec(),
