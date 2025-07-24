@@ -25,6 +25,7 @@ use ibc_relayer::config::AddressType;
 use ibc_relayer::keyring::Secp256k1KeyPair;
 use ibc_relayer::keyring::SigningKeyPair;
 use ibc_relayer::keyring::{KeyRing, Store};
+use ibc_relayer::upgrade_chain;
 use ibc_relayer_types::core::ics24_host::identifier::ChainId;
 use std::os::unix::io::{FromRawFd, IntoRawFd};
 use std::process::{Command, Stdio};
@@ -136,7 +137,7 @@ const CONTRACTS_PATH: &str = "/tmp/contracts";
 /// this runs only when the DEPLOY_CONTRACTS env var is set right after
 /// the Ethereum test chain starts in the testing environment. We write
 /// the stdout of this to a file for later test runs to parse
-pub async fn deploy_contracts(contact: &Contact) {
+pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
     // prevents the node deployer from failing (rarely) when the chain has not
     // yet produced the next block after submitting each eth address
     contact.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
@@ -192,11 +193,14 @@ pub async fn deploy_contracts(contact: &Contact) {
         "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
         "/home/runner/work/gravity-private/gravity-private/solidity/",
     ];
+    if upgrade_testing {
+        info!("test-runner in upgrade testing mode, using old REST endpoints");
+    }
     let output = if all_paths_exist(&A) || all_paths_exist(&B) {
         let paths = return_existing(A, B);
         Command::new(paths[0])
             .args([
-                &format!("--cosmos-node={}", COSMOS_NODE_API.as_str()),
+                &format!("--cosmos-node={}", "http://localhost"),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", paths[1]),
@@ -205,6 +209,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--contractERC20B={}", paths[4]),
                 &format!("--contractERC20C={}", paths[5]),
                 "--test-mode=true",
+                &format!("--use-old-rest-methods={}", upgrade_testing),
             ])
             .output()
             .expect("Failed to deploy contracts!")
@@ -213,7 +218,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 C[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_API.as_str()),
+                &format!("--cosmos-node={}", "http://localhost"),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", C[1]),
@@ -222,6 +227,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--contractERC20B={}", C[4]),
                 &format!("--contractERC20C={}", C[5]),
                 "--test-mode=true",
+                &format!("--use-old-rest-methods={}", upgrade_testing),
             ])
             .current_dir(C[6])
             .output()
@@ -231,7 +237,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 D[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_API.as_str()),
+                &format!("--cosmos-node={}", "http://localhost"),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", D[1]),
@@ -240,6 +246,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--contractERC20B={}", D[4]),
                 &format!("--contractERC20C={}", D[5]),
                 "--test-mode=true",
+                &format!("--use-old-rest-methods={}", upgrade_testing),
             ])
             .current_dir(D[6])
             .output()
@@ -249,7 +256,7 @@ pub async fn deploy_contracts(contact: &Contact) {
             .args([
                 "ts-node",
                 E[0],
-                &format!("--cosmos-node={}", COSMOS_NODE_API.as_str()),
+                &format!("--cosmos-node={}", "http://localhost"),
                 &format!("--eth-node={}", ETH_NODE.as_str()),
                 &format!("--eth-privkey={:#x}", *MINER_PRIVATE_KEY),
                 &format!("--contract={}", E[1]),
@@ -258,6 +265,7 @@ pub async fn deploy_contracts(contact: &Contact) {
                 &format!("--contractERC20B={}", E[4]),
                 &format!("--contractERC20C={}", E[5]),
                 "--test-mode=true",
+                &format!("--use-old-rest-methods={}", upgrade_testing),
             ])
             .current_dir(E[6])
             .output()

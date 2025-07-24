@@ -27,12 +27,7 @@ const args = commandLineArgs([
   { name: "contractERC20C", type: String },
   // test mode, if enabled this script deploys three ERC20 contracts for testing
   { name: "test-mode", type: String },
-  // if true, the deployer will use the old REST methods to get the valset and gravity ID
-  { name: "use-old-rest-methods" },
 ]);
-
-const grpcPort = 9090; // default gRPC port for Cosmos SDK based chains
-const restPort = 1317; // default REST port for Cosmos SDK based chains (outdated)
 
 // 4. Now, the deployer script hits a full node api, gets the Eth signatures of the valset from the latest block, and deploys the Ethereum contract.
 //     - We will consider the scenario that many deployers deploy many valid gravity eth contracts.
@@ -43,16 +38,13 @@ type Validator = {
   ethereum_address: string;
 };
 type ValsetTypeWrapper = {
-  valset: Valset;
+  type: string;
+  value: Valset;
 }
 type Valset = {
   members: Validator[];
   nonce: number;
 };
-type OldValsetTypeWrapper = {
-  type: string;
-  value: Valset;
- }
 type ABCIWrapper = {
   jsonrpc: string;
   id: string;
@@ -75,7 +67,6 @@ type StatusWrapper = {
   id: string,
   result: NodeStatus
 };
-
 type NodeInfo = {
   protocol_version: JSON,
   id: string,
@@ -165,14 +156,7 @@ async function deploy() {
     const erc20TestAddress2 = testERC202.address;
     console.log("ERC20 deployed at Address - ", erc20TestAddress2);
   }
-  var gravityIdString: string;
-  if (args["use-old-rest-methods"]) {
-    console.log("Using old REST methods to get the gravity ID");
-    gravityIdString = await getGravityIdREST();
-  } else {
-    console.log("Using new gRPC methods to get the gravity ID");
-    gravityIdString = await getGravityId();
-  }
+  const gravityIdString = await getGravityId();
   const gravityId = ethers.utils.formatBytes32String(gravityIdString);
 
   console.log("Starting Gravity contract deploy");
@@ -180,14 +164,8 @@ async function deploy() {
   const factory = new ethers.ContractFactory(abi, bytecode, wallet);
 
   console.log("About to get latest Gravity valset");
-  var latestValset: Valset;
-  if (args["use-old-rest-methods"]) {
-    console.log("Using old REST methods to get the valset");
-    latestValset = await getLatestValsetREST();
-  } else {
-    console.log("Using new gRPC methods to get the valset");
-    latestValset = await getLatestValset();
-  }
+  const latestValset = await getLatestValset();
+
   let eth_addresses = [];
   let powers = [];
   let powers_sum = 0;
@@ -246,51 +224,15 @@ function getContractArtifacts(path: string): { bytecode: string; abi: string } {
 const decode = (str: string): string => Buffer.from(str, 'base64').toString('binary');
 
 async function getLatestValset(): Promise<Valset> {
-  let block_height_request_string = args["cosmos-node"] + ':' + grpcPort + '/cosmos/base/node/v1beta1/status';
+  let block_height_request_string = args["cosmos-node"] + '/status';
   let block_height_response = await axios.get(block_height_request_string);
-  let status = await block_height_response.data;
-  // let block_height = info.result.sync_info.latest_block_height;
-  if (status == null) {
-    console.log("This node is still syncing! You can not deploy using this validator set!");
-    exit(1);
-  }
-  let request_string = args["cosmos-node"] + ':' + grpcPort + "/gravity/v1beta/valset/current";
-  let response = await axios.get(request_string);
-
-  // if in test mode retry the request as needed in some cases
-  // the cosmos nodes do not start in time
-  var startTime = new Date();
-  if (args["test-mode"] == "True" || args["test-mode"] == "true") {
-    while (response.data == null) {
-      var present = new Date();
-      var timeDiff: number = present.getTime() - startTime.getTime();
-      timeDiff = timeDiff / 1000
-
-      response = await axios.get(request_string);
-
-      if (timeDiff > 600) {
-        console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
-        exit(1)
-      }
-      await sleep(1000);
-    }
-  }
-
-  let valset: ValsetTypeWrapper = await response.data;
-  return valset.valset;
-}
-async function getLatestValsetREST(): Promise<Valset> {
-  let block_height_request_string = args["cosmos-node"] + ':' + restPort + '/status';
-  console.log("Requesting latest block height from Cosmos REST API at ", block_height_request_string);
-  let block_height_response = await axios.get(block_height_request_string);
-  console.log("Response from Cosmos REST API: ", block_height_response.data);
   let info: StatusWrapper = await block_height_response.data;
   let block_height = info.result.sync_info.latest_block_height;
   if (info.result.sync_info.catching_up) {
     console.log("This node is still syncing! You can not deploy using this validator set!");
     exit(1);
   }
-  let request_string = args["cosmos-node"] + ':' + restPort + "/abci_query"
+  let request_string = args["cosmos-node"] + "/abci_query"
   let params = {
     params: {
       path: "\"/custom/gravity/currentValset/\"",
@@ -298,9 +240,7 @@ async function getLatestValsetREST(): Promise<Valset> {
       prove: "false",
     }
   };
-  console.log("Requesting latest Valset from Cosmos REST API at ", request_string, " with params ", params);
   let response = await axios.get(request_string, params);
-  console.log("Response from Cosmos REST API: ", response.data);
   let valsets: ABCIWrapper = await response.data;
 
 
@@ -308,6 +248,7 @@ async function getLatestValsetREST(): Promise<Valset> {
   // the cosmos nodes do not start in time
   var startTime = new Date();
   if (args["test-mode"] == "True" || args["test-mode"] == "true") {
+    var success = false;
     while (valsets.result.response.value == null) {
       var present = new Date();
       var timeDiff: number = present.getTime() - startTime.getTime();
@@ -316,7 +257,6 @@ async function getLatestValsetREST(): Promise<Valset> {
       response = await axios.get(request_string,
         params);
       valsets = await response.data;
-      console.log("Response from Cosmos REST API: ", response.data);
 
       if (timeDiff > 600) {
         console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
@@ -326,61 +266,21 @@ async function getLatestValsetREST(): Promise<Valset> {
     }
   }
 
+
   console.log(decode(valsets.result.response.value));
-  let valset: OldValsetTypeWrapper = JSON.parse(decode(valsets.result.response.value))
+  let valset: ValsetTypeWrapper = JSON.parse(decode(valsets.result.response.value))
   return valset.value;
 }
 async function getGravityId(): Promise<string> {
-  let block_height_request_string = args["cosmos-node"] + ':' + grpcPort + '/cosmos/base/node/v1beta1/status';
+  let block_height_request_string = args["cosmos-node"] + '/status';
   let block_height_response = await axios.get(block_height_request_string);
-  let info: StatusWrapper = await block_height_response.data;
-  if (info.result.sync_info.catching_up) {
-    console.log("This node is still syncing! You can not deploy using this validator set!");
-    exit(1);
-  }
-
-  let request_string = args["cosmos-node"] + "/gravity/v1beta/params"
-  let response = await axios.get(request_string);
-  let gravityParams  = await response.data;
-
-  // if in test mode retry the request as needed in some cases
-  // the cosmos nodes do not start in time
-  var startTime = new Date();
-  if (args["test-mode"] == "True" || args["test-mode"] == "true") {
-    while (gravityParams == null) {
-      var present = new Date();
-      var timeDiff: number = present.getTime() - startTime.getTime();
-      timeDiff = timeDiff / 1000
-
-      response = await axios.get(request_string);
-
-      gravityParams = await response.data;
-
-      if (timeDiff > 600) {
-        console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
-        exit(1)
-      }
-      await sleep(1000);
-    }
-  }
-
-  let gravityID: string = gravityParams.params.gravity_id;
-  return gravityID;
-
-}
-async function getGravityIdREST(): Promise<string> {
-  let block_height_request_string = args["cosmos-node"] + ':' + restPort + '/status';
-  console.log("Requesting latest block height from Cosmos REST API at ", block_height_request_string);
-  let block_height_response = await axios.get(block_height_request_string);
-  console.log("Response from Cosmos REST API: ", block_height_response.data);
   let info: StatusWrapper = await block_height_response.data;
   let block_height = info.result.sync_info.latest_block_height;
   if (info.result.sync_info.catching_up) {
-    console.log("This node is still syncing! You can not deploy using this validator set!");
+    console.log("This node is still syncing! You can not deploy using this gravityID!");
     exit(1);
   }
-
-  let request_string = args["cosmos-node"] + ':' + restPort + "/abci_query"
+  let request_string = args["cosmos-node"] + "/abci_query"
   let params = {
     params: {
       path: "\"/custom/gravity/gravityID/\"",
@@ -389,16 +289,15 @@ async function getGravityIdREST(): Promise<string> {
     }
   };
 
-  console.log("Requesting Gravity ID from Cosmos REST API at ", request_string, " with params ", params);
   let response = await axios.get(request_string,
     params);
   let gravityIDABCIResponse: ABCIWrapper = await response.data;
-  console.log("Response from Cosmos REST API: ", gravityIDABCIResponse);
 
   // if in test mode retry the request as needed in some cases
   // the cosmos nodes do not start in time
   var startTime = new Date();
   if (args["test-mode"] == "True" || args["test-mode"] == "true") {
+    var success = false;
     while (gravityIDABCIResponse.result.response.value == null) {
       var present = new Date();
       var timeDiff: number = present.getTime() - startTime.getTime();
@@ -407,7 +306,6 @@ async function getGravityIdREST(): Promise<string> {
       response = await axios.get(request_string,
         params);
       gravityIDABCIResponse = await response.data;
-      console.log("Response from Cosmos REST API: ", gravityIDABCIResponse);
 
       if (timeDiff > 600) {
         console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
@@ -421,6 +319,7 @@ async function getGravityIdREST(): Promise<string> {
   return gravityID;
 
 }
+
 async function submitGravityAddress(address: string) { }
 
 async function main() {

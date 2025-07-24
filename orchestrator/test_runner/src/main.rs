@@ -46,6 +46,7 @@ use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use orch_only::orch_only_test;
 use relay_market::relay_market_test;
+use std::env::VarError;
 use std::process::exit;
 use std::{env, time::Duration};
 use tokio::time::sleep;
@@ -232,10 +233,12 @@ pub async fn main() {
     let keys = get_keys();
     // keys for the IBC chain connected to the main test chain
     let ibc_keys = parse_ibc_validator_keys();
+
     // if we detect this env var we are only deploying contracts, do that then exit.
     if should_deploy_contracts() {
+        let upgrade_testing = env::var("OLD_BINARY_LOCATION").map_or_else(|_| { false }, |v| if !v.is_empty() { true } else { false });
         info!("test-runner in contract deploying mode, deploying contracts, then exiting");
-        deploy_contracts(&gravity_contact).await;
+        deploy_contracts(&gravity_contact, upgrade_testing).await;
         exit(0);
     }
 
