@@ -225,6 +225,7 @@ pub async fn main() {
     info!("Waiting for Cosmos chain to come online");
     let upgrade_testing = env::var("OLD_BINARY_LOCATION").map_or_else(|e| if let VarError::NotPresent = e { false } else { true }, |_| true);
     if  upgrade_testing {
+        info!("Using old deep space contact for upgrade testing");
         // If we are upgrade testing, use the old wait for cosmos online function
         let old_contact = old_deep_space::Contact::new(COSMOS_NODE_GRPC.as_str(), OPERATION_TIMEOUT, ADDRESS_PREFIX.as_str())
             .unwrap();
