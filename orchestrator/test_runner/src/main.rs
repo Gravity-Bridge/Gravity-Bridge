@@ -46,7 +46,6 @@ use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use orch_only::orch_only_test;
 use relay_market::relay_market_test;
-use std::env::VarError;
 use std::process::exit;
 use std::{env, time::Duration};
 use tokio::time::sleep;
@@ -223,17 +222,7 @@ pub async fn main() {
     .unwrap();
 
     info!("Waiting for Cosmos chain to come online");
-    let upgrade_testing = env::var("OLD_BINARY_LOCATION").map_or_else(|e| if let VarError::NotPresent = e { false } else { true }, |_| true);
-    if  upgrade_testing {
-        info!("Using old deep space contact for upgrade testing");
-        // If we are upgrade testing, use the old wait for cosmos online function
-        let old_contact = old_deep_space::Contact::new(COSMOS_NODE_GRPC.as_str(), OPERATION_TIMEOUT, ADDRESS_PREFIX.as_str())
-            .unwrap();
-        old_wait_for_cosmos_online(&old_contact, TOTAL_TIMEOUT).await;
-    } else {
-        // Otherwise the current one will be fine
-        wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
-    }
+    wait_for_cosmos_online(&gravity_contact, TOTAL_TIMEOUT).await;
 
     let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
         .await

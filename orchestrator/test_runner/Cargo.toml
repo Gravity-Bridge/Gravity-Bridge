@@ -41,5 +41,3 @@ ibc-relayer = "0.26.0"
 ibc-relayer-types = "0.26.0"
 hdpath = "0.6.3"
 reqwest = "0.11"
-
-old_deep_space = {package = "deep_space", git = "https://github.com/althea-net/deep_space", tag = "v2.28.0"}
