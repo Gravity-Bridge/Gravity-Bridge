@@ -39,6 +39,7 @@ use deep_space::{CosmosPrivateKey, PrivateKey};
 use erc_721_happy_path::erc721_happy_path_test;
 use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_utils::connection_prep::wait_for_cosmos_online;
 use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
 use happy_path_v2::happy_path_test_v2_native;

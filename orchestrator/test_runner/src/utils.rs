@@ -685,21 +685,6 @@ pub async fn get_event_nonce_safe(
     Ok(new_balance.unwrap())
 }
 
-/// waits for the cosmos chain to start producing blocks, used to prevent race conditions
-/// where our tests try to start running before the Cosmos chain is ready
-pub async fn wait_for_cosmos_online(contact: &Contact, timeout: Duration) {
-    let start = Instant::now();
-    while let Err(CosmosGrpcError::NodeNotSynced) | Err(CosmosGrpcError::ChainNotRunning) =
-        contact.wait_for_next_block(timeout).await
-    {
-        sleep(Duration::from_secs(1)).await;
-        if Instant::now() - start > timeout {
-            panic!("Cosmos node has not come online during timeout!")
-        }
-    }
-    contact.wait_for_next_block(timeout).await.unwrap();
-}
-
 /// This function returns the valoper address of a validator
 /// to whom delegating the returned amount of staking token will
 /// create a 5% or greater change in voting power, triggering the

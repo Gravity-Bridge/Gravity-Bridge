@@ -12,7 +12,8 @@ use gravity_proto::gravity::v1::QueryDelegateKeysByEthAddress;
 use gravity_proto::gravity::v1::QueryDelegateKeysByOrchestratorAddress;
 use std::process::exit;
 use std::time::Duration;
-use tokio::time::sleep as delay_for;
+use std::time::Instant;
+use tokio::time::sleep;
 use tonic::transport::Channel;
 use url::Url;
 use web30::client::Web3;
@@ -225,7 +226,7 @@ pub async fn wait_for_cosmos_node_ready(contact: &Contact) {
                 e
             ),
         }
-        delay_for(WAIT_TIME).await;
+        sleep(WAIT_TIME).await;
     }
 }
 
@@ -368,3 +369,19 @@ pub async fn check_for_eth(address: EthAddress, web3: &Web3) {
         exit(1);
     }
 }
+
+/// waits for the cosmos chain to start producing blocks, used to prevent race conditions
+/// where our tests try to start running before the Cosmos chain is ready
+pub async fn wait_for_cosmos_online(contact: &Contact, timeout: Duration) {
+    let start = Instant::now();
+    while let Err(CosmosGrpcError::NodeNotSynced) | Err(CosmosGrpcError::ChainNotRunning) =
+        contact.wait_for_next_block(timeout).await
+    {
+        sleep(Duration::from_secs(1)).await;
+        if Instant::now() - start > timeout {
+            panic!("Cosmos node has not come online during timeout!")
+        }
+    }
+    contact.wait_for_next_block(timeout).await.unwrap();
+}
+
