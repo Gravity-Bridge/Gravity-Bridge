@@ -28,4 +28,4 @@ fi
 
 # Run new test container instance
 PORTS="-p 9090:9090 -p 26657:26657 -p 1317:1317 -p 8545:8545"
-docker run --name gravity_test_instance --mount type=bind,source="$(pwd)"/,target=/gravity $PLATFORM_CMD --cap-add=NET_ADMIN $PORTS -it gravity-base /bin/bash /gravity/tests/container-scripts/manual-upgrade-test-internal.sh $NODES $OLD_VERSION
+docker run --name gravity_test_instance --mount type=bind,source="$(pwd)"/,target=/gravity --mount type=bind,source="/deep_space",target=/deep_space --mount type=bind,source="/cosmos-sdk",target=/cosmos-sdk $PLATFORM_CMD --cap-add=NET_ADMIN $PORTS -it gravity-base /bin/bash /gravity/tests/container-scripts/manual-upgrade-test-internal.sh $NODES $OLD_VERSION

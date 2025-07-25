@@ -29,10 +29,16 @@ func GetNextUpgradeHandler(
 		ctx := sdk.UnwrapSDKContext(c)
 		ctx.Logger().Info("Next upgrade: Enter handler")
 
-		fromVM := make(map[string]uint64)
-		ctx.Logger().Info("Next upgrade: Creating version map")
+		ctx.Logger().Info("Next Upgrade: Running any configured module migrations")
+		out, outErr := ModuleManager.RunMigrations(ctx, *configurator, vmap)
+
 		for moduleName, mod := range ModuleManager.Modules {
-			fromVM[moduleName] = mod.(module.HasConsensusVersion).ConsensusVersion()
+			cvMod, ok := mod.(module.HasConsensusVersion)
+			if !ok {
+				continue
+			}
+			version := cvMod.ConsensusVersion()
+			ctx.Logger().Info("Next upgrade: Module version updated", "module", moduleName, "version", version)
 		}
 
 		ctx.Logger().Info("Next upgrade: Migrating consensus params from paramspace to consensus module")
@@ -43,9 +49,6 @@ func GetNextUpgradeHandler(
 		} else {
 			ctx.Logger().Info("warning: consensus parameters are undefined; skipping migration", "upgrade", "next")
 		}
-
-		ctx.Logger().Info("Next Upgrade: Running any configured module migrations")
-		out, outErr := ModuleManager.RunMigrations(ctx, *configurator, fromVM)
 
 		ctx.Logger().Info("Asserting invariants after upgrade")
 		crisisKeeper.AssertInvariants(ctx)

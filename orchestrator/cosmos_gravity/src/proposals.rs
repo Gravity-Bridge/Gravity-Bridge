@@ -219,6 +219,21 @@ pub async fn submit_upgrade_proposal(
         .await
 }
 
+/// Encodes and submits a proposal to upgrade chain software, should maybe be in deep_space (sorry)
+pub async fn submit_legacy_upgrade_proposal(
+    proposal: SoftwareUpgradeProposal,
+    deposit: Coin,
+    fee: Coin,
+    contact: &Contact,
+    key: impl PrivateKey,
+    wait_timeout: Option<Duration>,
+) -> Result<TransactionResponse, CosmosGrpcError> {
+    // encode as a generic proposal
+    let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
+    contact
+        .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
+        .await
+}
 // local types for which we can implement serialize/deserialize
 // for json work
 #[derive(Serialize, Deserialize, Clone, Debug)]

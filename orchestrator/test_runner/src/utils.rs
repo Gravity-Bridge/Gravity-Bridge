@@ -11,7 +11,8 @@ use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
-use cosmos_gravity::proposals::{submit_parameter_change_proposal, submit_upgrade_proposal};
+use cosmos_gravity::proposals::submit_legacy_upgrade_proposal;
+use cosmos_gravity::proposals::submit_parameter_change_proposal;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::address::Address as CosmosAddress;
 use deep_space::client::ChainStatus;
@@ -512,7 +513,7 @@ pub async fn execute_upgrade_proposal(
         description: upgrade_params.proposal_desc,
         plan: Some(plan),
     };
-    let res = submit_upgrade_proposal(
+    let res = submit_legacy_upgrade_proposal(
         proposal,
         get_deposit(None),
         get_fee(None),
