@@ -32,7 +32,7 @@ const args = commandLineArgs([
 ]);
 
 const grpcPort = 9090; // default gRPC port for Cosmos SDK based chains
-const restPort = 1317; // default REST port for Cosmos SDK based chains (outdated)
+const restPort = 26657; // default REST port for Cosmos SDK based chains (outdated)
 
 // 4. Now, the deployer script hits a full node api, gets the Eth signatures of the valset from the latest block, and deploys the Ethereum contract.
 //     - We will consider the scenario that many deployers deploy many valid gravity eth contracts.
