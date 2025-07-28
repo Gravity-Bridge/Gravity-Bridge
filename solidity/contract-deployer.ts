@@ -28,10 +28,10 @@ const args = commandLineArgs([
   // test mode, if enabled this script deploys three ERC20 contracts for testing
   { name: "test-mode", type: String },
   // if true, the deployer will use the old REST methods to get the valset and gravity ID
-  { name: "use-old-rest-methods" },
+  { name: "use-old-rest-methods", type: String },
 ]);
 
-const grpcPort = 9090; // default gRPC port for Cosmos SDK based chains
+const grpcPort = 1317; // default gRPC-web port for Cosmos SDK based chains
 const restPort = 26657; // default REST port for Cosmos SDK based chains (outdated)
 
 // 4. Now, the deployer script hits a full node api, gets the Eth signatures of the valset from the latest block, and deploys the Ethereum contract.
@@ -166,7 +166,7 @@ async function deploy() {
     console.log("ERC20 deployed at Address - ", erc20TestAddress2);
   }
   var gravityIdString: string;
-  if (args["use-old-rest-methods"]) {
+  if (args["use-old-rest-methods"] == "True" || args["use-old-rest-methods"] == "true") {
     console.log("Using old REST methods to get the gravity ID");
     gravityIdString = await getGravityIdREST();
   } else {
@@ -332,15 +332,19 @@ async function getLatestValsetREST(): Promise<Valset> {
 }
 async function getGravityId(): Promise<string> {
   let block_height_request_string = args["cosmos-node"] + ':' + grpcPort + '/cosmos/base/node/v1beta1/status';
+  console.log("Requesting latest block height from Cosmos gRPC API at ", block_height_request_string);
   let block_height_response = await axios.get(block_height_request_string);
+  console.log("Response from Cosmos gRPC API: ", block_height_response.data);
   let info: StatusWrapper = await block_height_response.data;
   if (info.result.sync_info.catching_up) {
     console.log("This node is still syncing! You can not deploy using this validator set!");
     exit(1);
   }
 
-  let request_string = args["cosmos-node"] + "/gravity/v1beta/params"
+  let request_string = args["cosmos-node"] + ':' + grpcPort + "/gravity/v1beta/params"
+  console.log("Requesting Gravity ID from Cosmos gRPC API at ", request_string);
   let response = await axios.get(request_string);
+  console.log("Response from Cosmos gRPC API: ", response);
   let gravityParams  = await response.data;
 
   // if in test mode retry the request as needed in some cases
