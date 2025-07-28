@@ -8,10 +8,7 @@ gravity_proto = "0.9.1"
 num256 = "0.6"
 clarity = "1.5.2"
 web30 = "1.7"
-deep_space = "2.29"
+deep_space = "2.29.1"
 prost = "0.13"
 prost-types = "0.13"
 tonic = "0.12"
-
-[patch.crates-io]
-deep_space = {path = "/deep_space"}
