@@ -86,7 +86,7 @@ func (msg *MsgSetOrchestratorAddress) Type() string { return AMINO_TYPE_SET_ORCH
 
 // ValidateBasic performs stateless checks
 func (msg *MsgSetOrchestratorAddress) ValidateBasic() (err error) {
-	if _, err = sdk.AccAddressFromBech32(msg.Validator); err != nil {
+	if _, err = sdk.ValAddressFromBech32(msg.Validator); err != nil {
 		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, msg.Validator)
 	}
 	if _, err = sdk.AccAddressFromBech32(msg.Orchestrator); err != nil {

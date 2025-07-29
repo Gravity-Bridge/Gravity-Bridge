@@ -168,7 +168,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	// now that we have the denom-erc20 mapping we need to validate
 	// that the valset reward is possible and cosmos originated remove
 	// this if you want a non-cosmos originated reward
-	valsetReward := k.GetParams(ctx).ValsetReward
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get params"))
+	}
+	valsetReward := params.ValsetReward
 	if valsetReward.IsValid() && !valsetReward.IsZero() {
 		_, exists := k.GetCosmosOriginatedERC20(ctx, valsetReward.Denom)
 		if !exists {
@@ -200,7 +204,7 @@ func hasDuplicates(d []types.MsgSetOrchestratorAddress) bool {
 // from the current state of the chain
 func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	var (
-		p                  = k.GetParams(ctx)
+		p, err             = k.GetParams(ctx)
 		calls              = k.GetOutgoingLogicCalls(ctx)
 		batches            = k.GetOutgoingTxBatches(ctx)
 		valsets            = k.GetValsets(ctx)
@@ -214,6 +218,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		unbatchedTransfers = k.GetUnbatchedTransactions(ctx)
 		pendingForwards    = k.PendingIbcAutoForwards(ctx, 0)
 	)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get params"))
+	}
 	var forwards []types.PendingIbcAutoForward
 	for _, forward := range pendingForwards {
 		forwards = append(forwards, *forward)

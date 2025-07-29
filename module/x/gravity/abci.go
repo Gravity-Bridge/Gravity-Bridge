@@ -13,7 +13,10 @@ import (
 
 // EndBlocker is called at the end of every block
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get params: %v", err))
+	}
 	slashing(ctx, k)
 	attestationTally(ctx, k)
 	cleanupTimedOutBatches(ctx, k)
@@ -96,7 +99,10 @@ func pruneValsets(ctx sdk.Context, k keeper.Keeper, params types.Params) {
 }
 
 func slashing(ctx sdk.Context, k keeper.Keeper) {
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get params: %v", err))
+	}
 
 	// Slash validator for not confirming valset requests, batch requests, logic call requests
 	valsetSlashing(ctx, k, params)
@@ -108,7 +114,10 @@ func slashing(ctx sdk.Context, k keeper.Keeper) {
 // "Observe" those who have passed the threshold. Break the loop once we see
 // an attestation that has not passed the threshold
 func attestationTally(ctx sdk.Context, k keeper.Keeper) {
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get params: %v", err))
+	}
 	// bridge is currently disabled, do not process attestations from Ethereum
 	if !params.BridgeActive {
 		return

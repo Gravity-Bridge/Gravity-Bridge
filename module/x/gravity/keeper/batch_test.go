@@ -730,7 +730,8 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	ctx := input.Context
 
 	// pause the bridge
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 	params.BridgeActive = false
 	input.GravityKeeper.SetParams(ctx, params)
 
@@ -779,7 +780,7 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	ctx = ctx.WithBlockTime(now)
 
 	// tx batch size is 2, so that some of them stay behind
-	_, err := input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
+	_, err = input.GravityKeeper.BuildOutgoingTXBatch(ctx, *myTokenContractAddr, 2)
 	require.Error(t, err)
 
 	// then batch is persisted
@@ -825,7 +826,8 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 	require.NoError(t, e5)
 
 	// add the blacklisted address to the blacklist
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 	params.EthereumBlacklist = append(params.EthereumBlacklist, blacklistedReceiver.GetAddress().Hex())
 	input.GravityKeeper.SetParams(ctx, params)
 

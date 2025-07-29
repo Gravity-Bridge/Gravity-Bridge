@@ -156,6 +156,10 @@ var (
 	// PendingIbcAutoForwards indexes pending SendToCosmos sends via IBC, queued by event nonce
 	// [0x5b89a7c5dc9abd2a7abc2560d6eb42ea]
 	PendingIbcAutoForwards = HashString("IbcAutoForwardQueue")
+
+	// ParamsKey indexes the module params
+	// [0x8585aab8398d6c73ace6c099f0664647]
+	ParamsKey = HashString("ParamsKey")
 )
 
 // GetOrchestratorAddressKey returns the following key format

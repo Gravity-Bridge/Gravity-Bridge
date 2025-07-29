@@ -30,7 +30,10 @@ func (k Keeper) BuildOutgoingTXBatch(
 	if maxElements == 0 {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "max elements value")
 	}
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to get params")
+	}
 	if !params.BridgeActive {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "bridge paused")
 	}
@@ -85,7 +88,10 @@ func (k Keeper) BuildOutgoingTXBatch(
 
 // This gets the batch timeout height in Ethereum blocks.
 func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context) uint64 {
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get params"))
+	}
 	currentCosmosHeight := ctx.BlockHeight()
 	// we store the last observed Cosmos and Ethereum heights, we do not concern ourselves if these values are zero because
 	// no batch can be produced if the last Ethereum block height is not first populated by a deposit event.

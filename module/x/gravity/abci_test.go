@@ -62,7 +62,8 @@ func TestValsetSlashing_ValsetCreated_Before_ValidatorBonded(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 
 	vs, err := pk.GetCurrentValset(ctx)
 	require.NoError(t, err)
@@ -87,7 +88,8 @@ func TestValsetSlashing_ValsetCreated_After_ValidatorBonded(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
 	vs, err := pk.GetCurrentValset(ctx)
@@ -132,7 +134,8 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 
 	// Create not nice guy with very little stake
 	consPrivKey := ed25519.GenPrivKey()
@@ -149,7 +152,7 @@ func TestNonValidatorValsetConfirm(t *testing.T) {
 	)
 
 	require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, keeper.InitCoins))
-	err := input.BankKeeper.SendCoinsFromModuleToAccount(
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(
 		input.Context,
 		types.ModuleName,
 		accAddr,
@@ -223,7 +226,8 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := input.GravityKeeper.GetParams(ctx)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
 
 	// Define slashing variables
 	validatorStartHeight := ctx.BlockHeight()                                                        // 0
@@ -246,7 +250,7 @@ func TestValsetSlashing_UnbondingValidator_UnbondWindow_NotExpired(t *testing.T)
 	input.Context = ctx.WithBlockHeight(valUnbondingHeight)
 	sMsgServer := stakingkeeper.NewMsgServerImpl(&input.StakingKeeper)
 	undelegateMsg1 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[0], keeper.StakingAmount)
-	_, err := sMsgServer.Undelegate(input.Context, undelegateMsg1)
+	_, err = sMsgServer.Undelegate(input.Context, undelegateMsg1)
 	require.NoError(t, err)
 	undelegateMsg2 := keeper.NewTestMsgUnDelegateValidator(keeper.ValAddrs[1], keeper.StakingAmount)
 	_, err = sMsgServer.Undelegate(input.Context, undelegateMsg2)
@@ -287,7 +291,8 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := pk.GetParams(ctx)
+	params, err := pk.GetParams(ctx)
+	require.NoError(t, err)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
 
@@ -306,7 +311,7 @@ func TestNonValidatorBatchConfirm(t *testing.T) {
 	)
 
 	require.NoError(t, input.BankKeeper.MintCoins(input.Context, types.ModuleName, keeper.InitCoins))
-	err := input.BankKeeper.SendCoinsFromModuleToAccount(
+	err = input.BankKeeper.SendCoinsFromModuleToAccount(
 		input.Context,
 		types.ModuleName,
 		accAddr,
@@ -386,7 +391,8 @@ func TestBatchSlashing(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := pk.GetParams(ctx)
+	params, err := pk.GetParams(ctx)
+	require.NoError(t, err)
 
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + int64(params.SignedValsetsWindow) + 2)
 
@@ -496,7 +502,9 @@ func TestBatchTimeout(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := pk.GetParams(ctx)
+	params, err := pk.GetParams(ctx)
+	require.NoError(t, err)
+
 	var (
 		now                 = time.Now().UTC()
 		mySender, e1        = sdk.AccAddressFromBech32("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")
@@ -617,7 +625,8 @@ func TestValsetPruning(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	pk := input.GravityKeeper
-	params := pk.GetParams(ctx)
+	params, err := pk.GetParams(ctx)
+	require.NoError(t, err)
 
 	// Create new validator set with nonce 1
 	pk.SetValsetRequest(ctx)

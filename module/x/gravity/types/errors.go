@@ -25,4 +25,5 @@ var (
 	ErrInvalidAttestation       = errorsmod.Register(ModuleName, 18, "invalid attestation submitted")
 	ErrInvalidClaim             = errorsmod.Register(ModuleName, 19, "invalid claim submitted")
 	ErrInvalidLogicCall         = errorsmod.Register(ModuleName, 20, "invalid logic call submitted")
+	ErrParamsNotFound           = errorsmod.Register(ModuleName, 21, "params not found")
 )

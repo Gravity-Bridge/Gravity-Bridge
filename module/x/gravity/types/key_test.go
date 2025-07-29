@@ -31,7 +31,7 @@ func getAllKeys() [][]byte {
 	i := 0
 	inc := func(i *int) *int { *i += 1; return i }
 
-	keys := make([][]byte, 47)
+	keys := make([][]byte, 48)
 
 	keys[i] = EthAddressByValidatorKey
 	keys[*inc(&i)] = ValidatorByEthAddressKey
@@ -60,6 +60,7 @@ func getAllKeys() [][]byte {
 	keys[*inc(&i)] = LastUnBondingBlockHeight
 	keys[*inc(&i)] = LastObservedValsetKey
 	keys[*inc(&i)] = PastEthSignatureCheckpointKey
+	keys[*inc(&i)] = ParamsKey
 
 	// sdk.AccAddress, sdk.ValAddress
 	dummyAddr := []byte("gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm")

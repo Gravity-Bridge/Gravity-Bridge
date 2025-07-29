@@ -77,7 +77,10 @@ func (k Keeper) checkBadSignatureEvidenceInternal(ctx sdk.Context, subject types
 		return errorsmod.Wrap(err, "Could not get consensus key address for validator")
 	}
 
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "Could not get params for slashing")
+	}
 	if !val.IsJailed() {
 		k.StakingKeeper.Jail(ctx, cons)
 		k.StakingKeeper.Slash(ctx, cons, ctx.BlockHeight(), val.ConsensusPower(sdk.DefaultPowerReduction), params.SlashFractionBadEthSignature)

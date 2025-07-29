@@ -297,7 +297,11 @@ func (k Keeper) GetCurrentValset(ctx sdk.Context) (types.Valset, error) {
 	}
 
 	// get the reward from the params store
-	reward := k.GetParams(ctx).ValsetReward
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrap(err, "failed to get params"))
+	}
+	reward := params.ValsetReward
 	var rewardToken *types.EthAddress
 	var rewardAmount math.Int
 	if !reward.IsValid() || reward.IsZero() {

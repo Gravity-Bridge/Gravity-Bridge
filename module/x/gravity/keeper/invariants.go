@@ -439,7 +439,10 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	}
 
 	// Finally the params, which are not placed in the store
-	params := k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return fmt.Errorf("Discovered invalid params: %v", err)
+	}
 	err = params.ValidateBasic()
 	if err != nil {
 		return fmt.Errorf("Discovered invalid params %v: %v", params, err)
