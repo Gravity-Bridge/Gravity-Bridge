@@ -181,7 +181,7 @@ async function deploy() {
 
   console.log("About to get latest Gravity valset");
   var latestValset: Valset;
-  if (args["use-old-rest-methods"]) {
+  if (args["use-old-rest-methods"] == "True" || args["use-old-rest-methods"] == "true") {
     console.log("Using old REST methods to get the valset");
     latestValset = await getLatestValsetREST();
   } else {
@@ -247,9 +247,10 @@ const decode = (str: string): string => Buffer.from(str, 'base64').toString('bin
 
 async function getLatestValset(): Promise<Valset> {
   let block_height_request_string = args["cosmos-node"] + ':' + grpcPort + '/cosmos/base/node/v1beta1/status';
+  console.log("Requesting latest block height from Cosmos gRPC API at ", block_height_request_string);
   let block_height_response = await axios.get(block_height_request_string);
+  console.log("Response from Cosmos gRPC API: ", block_height_response.data);
   let status = await block_height_response.data;
-  // let block_height = info.result.sync_info.latest_block_height;
   if (status == null) {
     console.log("This node is still syncing! You can not deploy using this validator set!");
     exit(1);
@@ -268,8 +269,8 @@ async function getLatestValset(): Promise<Valset> {
 
       response = await axios.get(request_string);
 
-      if (timeDiff > 600) {
-        console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
+      if (timeDiff > 300) {
+        console.log("Could not contact Cosmos ABCI after 5 minutes, check the URL!")
         exit(1)
       }
       await sleep(1000);
@@ -335,8 +336,8 @@ async function getGravityId(): Promise<string> {
   console.log("Requesting latest block height from Cosmos gRPC API at ", block_height_request_string);
   let block_height_response = await axios.get(block_height_request_string);
   console.log("Response from Cosmos gRPC API: ", block_height_response.data);
-  let info: StatusWrapper = await block_height_response.data;
-  if (info.result.sync_info.catching_up) {
+  let status = await block_height_response.data;
+  if (status == null) {
     console.log("This node is still syncing! You can not deploy using this validator set!");
     exit(1);
   }
