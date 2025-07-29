@@ -249,7 +249,6 @@ async function getLatestValset(): Promise<Valset> {
   let block_height_request_string = args["cosmos-node"] + ':' + grpcPort + '/cosmos/base/node/v1beta1/status';
   console.log("Requesting latest block height from Cosmos gRPC API at ", block_height_request_string);
   let block_height_response = await axios.get(block_height_request_string);
-  console.log("Response from Cosmos gRPC API: ", block_height_response.data);
   let status = await block_height_response.data;
   if (status == null) {
     console.log("This node is still syncing! You can not deploy using this validator set!");
@@ -284,7 +283,6 @@ async function getLatestValsetREST(): Promise<Valset> {
   let block_height_request_string = args["cosmos-node"] + ':' + restPort + '/status';
   console.log("Requesting latest block height from Cosmos REST API at ", block_height_request_string);
   let block_height_response = await axios.get(block_height_request_string);
-  console.log("Response from Cosmos REST API: ", block_height_response.data);
   let info: StatusWrapper = await block_height_response.data;
   let block_height = info.result.sync_info.latest_block_height;
   if (info.result.sync_info.catching_up) {
@@ -301,7 +299,6 @@ async function getLatestValsetREST(): Promise<Valset> {
   };
   console.log("Requesting latest Valset from Cosmos REST API at ", request_string, " with params ", params);
   let response = await axios.get(request_string, params);
-  console.log("Response from Cosmos REST API: ", response.data);
   let valsets: ABCIWrapper = await response.data;
 
 
@@ -317,7 +314,6 @@ async function getLatestValsetREST(): Promise<Valset> {
       response = await axios.get(request_string,
         params);
       valsets = await response.data;
-      console.log("Response from Cosmos REST API: ", response.data);
 
       if (timeDiff > 600) {
         console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
@@ -327,7 +323,6 @@ async function getLatestValsetREST(): Promise<Valset> {
     }
   }
 
-  console.log(decode(valsets.result.response.value));
   let valset: OldValsetTypeWrapper = JSON.parse(decode(valsets.result.response.value))
   return valset.value;
 }
@@ -335,7 +330,6 @@ async function getGravityId(): Promise<string> {
   let block_height_request_string = args["cosmos-node"] + ':' + grpcPort + '/cosmos/base/node/v1beta1/status';
   console.log("Requesting latest block height from Cosmos gRPC API at ", block_height_request_string);
   let block_height_response = await axios.get(block_height_request_string);
-  console.log("Response from Cosmos gRPC API: ", block_height_response.data);
   let status = await block_height_response.data;
   if (status == null) {
     console.log("This node is still syncing! You can not deploy using this validator set!");
@@ -345,7 +339,6 @@ async function getGravityId(): Promise<string> {
   let request_string = args["cosmos-node"] + ':' + grpcPort + "/gravity/v1beta/params"
   console.log("Requesting Gravity ID from Cosmos gRPC API at ", request_string);
   let response = await axios.get(request_string);
-  console.log("Response from Cosmos gRPC API: ", response);
   let gravityParams  = await response.data;
 
   // if in test mode retry the request as needed in some cases
@@ -377,7 +370,6 @@ async function getGravityIdREST(): Promise<string> {
   let block_height_request_string = args["cosmos-node"] + ':' + restPort + '/status';
   console.log("Requesting latest block height from Cosmos REST API at ", block_height_request_string);
   let block_height_response = await axios.get(block_height_request_string);
-  console.log("Response from Cosmos REST API: ", block_height_response.data);
   let info: StatusWrapper = await block_height_response.data;
   let block_height = info.result.sync_info.latest_block_height;
   if (info.result.sync_info.catching_up) {
@@ -398,7 +390,6 @@ async function getGravityIdREST(): Promise<string> {
   let response = await axios.get(request_string,
     params);
   let gravityIDABCIResponse: ABCIWrapper = await response.data;
-  console.log("Response from Cosmos REST API: ", gravityIDABCIResponse);
 
   // if in test mode retry the request as needed in some cases
   // the cosmos nodes do not start in time
@@ -412,7 +403,6 @@ async function getGravityIdREST(): Promise<string> {
       response = await axios.get(request_string,
         params);
       gravityIDABCIResponse = await response.data;
-      console.log("Response from Cosmos REST API: ", gravityIDABCIResponse);
 
       if (timeDiff > 600) {
         console.log("Could not contact Cosmos ABCI after 10 minutes, check the URL!")
