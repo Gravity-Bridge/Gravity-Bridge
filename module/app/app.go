@@ -650,16 +650,15 @@ func NewGravityApp(
 
 	auctionKeeper := auckeeper.NewKeeper(
 		keys[auctiontypes.StoreKey],
-		app.GetSubspace(auctiontypes.ModuleName),
 		appCodec,
 		&bankKeeper,
 		&accountKeeper,
 		&distrKeeper,
 		&mintKeeper,
+		govAuthority,
 	)
 	app.AuctionKeeper = &auctionKeeper
 
-	govModuleAddress := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	gravityKeeper := keeper.NewKeeper(
 		keys[gravitytypes.StoreKey],
 		appCodec,
@@ -671,7 +670,7 @@ func NewGravityApp(
 		&ibcTransferKeeper,
 		&bech32IbcKeeper,
 		&auctionKeeper,
-		govModuleAddress,
+		govAuthority,
 	)
 	app.GravityKeeper = &gravityKeeper
 
@@ -838,8 +837,7 @@ func NewGravityApp(
 		),
 		auction.NewAppModule(
 			auctionKeeper,
-			bankKeeper,
-			accountKeeper,
+			app.GetSubspace(auctiontypes.ModuleName),
 		),
 		bech32ibc.NewAppModule(
 			appCodec,

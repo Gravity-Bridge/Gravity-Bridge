@@ -54,7 +54,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, genState types.GenesisState) []abci.
 // ExportGenesis returns the module's exported genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) *types.GenesisState {
 	genesis := types.DefaultGenesis()
-	genesis.Params = k.GetParams(ctx)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get auction params: %v", err))
+	}
+	genesis.Params = params
 
 	auctionPeriod := k.GetAuctionPeriod(ctx)
 	genesis.ActivePeriod = auctionPeriod

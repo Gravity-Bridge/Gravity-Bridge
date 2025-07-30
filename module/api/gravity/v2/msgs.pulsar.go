@@ -2,16 +2,14 @@
 package gravityv2
 
 import (
-	_ "cosmossdk.io/api/cosmos/base/v1beta1"
-	_ "cosmossdk.io/api/cosmos/msg/v1"
-
-	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/api/gravity/v1"
-
 	fmt "fmt"
 	io "io"
 	reflect "reflect"
 	sync "sync"
 
+	_ "cosmossdk.io/api/cosmos/base/v1beta1"
+	_ "cosmossdk.io/api/cosmos/msg/v1"
+	v1 "github.com/Gravity-Bridge/Gravity-Bridge/module/api/gravity/v1"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"

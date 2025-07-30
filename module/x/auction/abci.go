@@ -34,7 +34,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 	}()
 
 	// Do nothing if the module is disabled, the current auctions must remain locked
-	if enabled := k.GetParams(ctx).Enabled; !enabled {
+	if !k.ModuleEnabled(ctx) {
 		return
 	}
 
@@ -131,7 +131,11 @@ func assertSupplyIntegrity(ctx sdk.Context, k keeper.Keeper, startSupplies sdk.C
 	} else {
 		// During an auction period changeover, only the native token supply should have changed while BurnWinningBids = true
 		// Expecting a decrease if any sort of change, Sub panics on negative values
-		burnWinningBids := k.GetParams(ctx).BurnWinningBids
+		params, err := k.GetParams(ctx)
+		if err != nil {
+			panic(fmt.Sprintf("failed to get auction params: %v", err))
+		}
+		burnWinningBids := params.BurnWinningBids
 		difference := startSupplies.Sub(endSupplies...)
 		if !difference.IsZero() {
 			if difference.Len() != 1 {

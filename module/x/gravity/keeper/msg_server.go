@@ -756,6 +756,8 @@ func (k msgServer) UpdateParamsProposal(c context.Context, msg *typesv2.MsgUpdat
 				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid ChainFeeAuctionPoolFraction: %s", param.Value)
 			}
 			updatedParams.ChainFeeAuctionPoolFraction = chainFeeAuctionPoolFraction
+		default:
+			return nil, errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unknown parameter key: %s", param.Key)
 		}
 	}
 

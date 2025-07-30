@@ -28,7 +28,8 @@ func (suite *KeeperTestSuite) TestEndBlockerAuction() {
 
 	ctx := suite.Ctx
 	auctionKeeper := suite.App.AuctionKeeper
-	auctionParams := auctionKeeper.GetParams(ctx)
+	auctionParams, err := auctionKeeper.GetParams(ctx)
+	require.NoError(suite.T(), err, "failed to get auction params")
 	auctionParams.BurnWinningBids = false
 	auctionKeeper.SetParams(ctx, auctionParams)
 
@@ -123,14 +124,16 @@ func (suite *KeeperTestSuite) TestWinningBidBurning() {
 
 	ctx := suite.Ctx
 	auctionKeeper := suite.App.AuctionKeeper
-	auctionParams := auctionKeeper.GetParams(ctx)
+	auctionParams, err := auctionKeeper.GetParams(ctx)
+	require.NoError(suite.T(), err, "failed to get auction params")
 
 	ctx = ctx.WithBlockHeight(int64(auctionParams.AuctionLength) + ctx.BlockHeight())
 	auction.EndBlocker(ctx, *auctionKeeper)
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
 
 	// Create an auction period
-	params := auctionKeeper.GetParams(ctx)
+	params, err := auctionKeeper.GetParams(ctx)
+	require.NoError(suite.T(), err, "failed to get auction params")
 
 	// Update to burn the winning bids
 	params.BurnWinningBids = true
@@ -193,7 +196,8 @@ func InitPoolAndAuctionTokens(suite *KeeperTestSuite) {
 	testGrav := sdk.NewCoin(GravDenom, testAmount)
 	TestAccounts = suite.CreateAndFundRandomAccounts(3, sdk.NewCoins(testGrav))
 
-	params := suite.App.AuctionKeeper.GetParams(ctx)
+	params, err := suite.App.AuctionKeeper.GetParams(ctx)
+	require.NoError(suite.T(), err, "failed to get auction params")
 	params.NonAuctionableTokens = []string{GravDenom}
 	suite.App.AuctionKeeper.SetParams(ctx, params)
 

@@ -42,7 +42,9 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 	require.NoError(t, err)
 	auctions := ak.GetAllAuctions(ctx)
 	require.Equal(t, 3, len(auctions))
-	minFee := ak.GetParams(ctx).MinBidFee
+	params, err := ak.GetParams(ctx)
+	require.NoError(t, err, "failed to get auction params")
+	minFee := params.MinBidFee
 
 	testCases := map[string]struct {
 		msg          types.MsgBid

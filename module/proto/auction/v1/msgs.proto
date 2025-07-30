@@ -9,9 +9,11 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/t
 // Msg defines the state transitions possible within auction
 service Msg {
   option (cosmos.msg.v1.service) = true;
+
   rpc Bid(MsgBid) returns (MsgBidResponse) {
     option (google.api.http).post = "/auction/v1/bid";
   }
+  rpc UpdateParamsProposal(MsgUpdateParamsProposal) returns (MsgUpdateParamsProposalResponse) {}
 }
 
 // MsgBid is a message type for placing a bid on an auction with given
@@ -30,3 +32,21 @@ message MsgBid {
 }
 
 message MsgBidResponse {}
+
+// MsgUpdateParamsProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and a collection of params which may be updated in the proposal.
+// Only the provided params will be updated, and they will all be validated before execution.
+message MsgUpdateParamsProposal {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1;
+
+  repeated Param paramUpdates = 2;
+}
+
+message Param {
+  string key = 1;
+  string value = 2;
+}
+
+message MsgUpdateParamsProposalResponse {}

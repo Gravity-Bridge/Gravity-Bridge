@@ -13,8 +13,10 @@ var _ types.QueryServer = Keeper{}
 
 // Params returns the current module Params
 func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
-	var params types.Params
-	k.paramSpace.GetParamSet(sdk.UnwrapSDKContext(c), &params)
+	params, err := k.GetParams(sdk.UnwrapSDKContext(c))
+	if err != nil {
+		return nil, err
+	}
 	return &types.QueryParamsResponse{Params: params}, nil
 }
 

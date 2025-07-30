@@ -64,6 +64,14 @@ func DefaultParams() Params {
 	)
 }
 
+const (
+	ParamAuctionLength        = "AuctionLength"
+	ParamMinBidFee            = "MinBidFee"
+	ParamNonAuctionableTokens = "NonAuctionableTokens"
+	ParamBurnWinningBids      = "BurnWinningBids"
+	ParamEnabled              = "Enabled"
+)
+
 // ParamSetPairs get the params.ParamSet
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{

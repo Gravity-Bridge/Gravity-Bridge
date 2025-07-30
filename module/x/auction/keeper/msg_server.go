@@ -2,13 +2,16 @@ package keeper
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
@@ -64,7 +67,10 @@ func (m msgServer) Bid(goCtx context.Context, msg *types.MsgBid) (res *types.Msg
 		}
 	}()
 
-	params := m.GetParams(ctx)
+	params, err := m.GetParams(ctx)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to get auction params")
+	}
 	if !params.Enabled {
 		return nil, types.ErrDisabledModule
 	}
@@ -230,4 +236,59 @@ func assertBalanceChanges(
 		panic(fmt.Sprintf("Expected new bidder Grav balance to decrease by bid + fee amount, instead their balance decreased by: %v", newBidderDiff))
 	}
 
+}
+
+func (m msgServer) UpdateParamsProposal(goCtx context.Context, msg *types.MsgUpdateParamsProposal) (res *types.MsgUpdateParamsProposalResponse, err error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	if m.Keeper.GetAuthority() != msg.Authority {
+		return nil, errorsmod.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", m.Keeper.GetAuthority(), msg.Authority)
+	}
+
+	updatedParams, err := m.Keeper.GetParams(ctx)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to get auction params")
+	}
+
+	for _, param := range msg.ParamUpdates {
+		switch param.Key {
+		case types.ParamAuctionLength:
+			auctionLength, err := strconv.ParseUint(param.Value, 10, 64)
+			if err != nil {
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid auction length: %s", param.Value)
+			}
+			updatedParams.AuctionLength = auctionLength
+		case types.ParamMinBidFee:
+			minBidFee, err := strconv.ParseUint(param.Value, 10, 64)
+			if err != nil {
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid min bid fee: %s", param.Value)
+			}
+			updatedParams.MinBidFee = minBidFee
+		case types.ParamNonAuctionableTokens:
+			var nonAuctionableTokens []string
+			if err := json.Unmarshal([]byte(param.Value), &nonAuctionableTokens); err != nil {
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid non-auctionable tokens: %s", param.Value)
+			}
+			updatedParams.NonAuctionableTokens = nonAuctionableTokens
+		case types.ParamBurnWinningBids:
+			burnWinningBids, err := strconv.ParseBool(param.Value)
+			if err != nil {
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid burn winning bids: %s", param.Value)
+			}
+			updatedParams.BurnWinningBids = burnWinningBids
+		case types.ParamEnabled:
+			enabled, err := strconv.ParseBool(param.Value)
+			if err != nil {
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid enabled status: %s", param.Value)
+			}
+			updatedParams.Enabled = enabled
+		default:
+			return nil, errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unknown parameter key: %s", param.Key)
+		}
+	}
+
+	if err := m.Keeper.SetParams(ctx, updatedParams); err != nil {
+		return nil, errorsmod.Wrap(err, "failed to set auction params")
+	}
+
+	return &types.MsgUpdateParamsProposalResponse{}, nil
 }

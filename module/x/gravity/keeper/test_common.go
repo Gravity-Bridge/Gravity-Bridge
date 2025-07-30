@@ -667,11 +667,11 @@ func CreateTestEnv(t *testing.T) TestInput {
 	mintKeeper := mintkeeper.NewKeeper(appCodec, runtime.NewKVStoreService(keyMint), stakingKeeper, accountKeeper, bankKeeper, authtypes.FeeCollectorName, govAuthority)
 	mintKeeper.Params.Set(ctx, minttypes.DefaultParams())
 
-	auctionKeeper := auctionkeeper.NewKeeper(keyAuction, getSubspace(paramsKeeper, auctiontypes.ModuleName), appCodec, &bankKeeper, &accountKeeper, &distKeeper, &mintKeeper)
+	auctionKeeper := auctionkeeper.NewKeeper(keyAuction, appCodec, &bankKeeper, &accountKeeper, &distKeeper, &mintKeeper, govAuthority)
 	auctionKeeper.SetParams(ctx, auctiontypes.DefaultParams())
 
 	k := NewKeeper(gravityKey, appCodec, &bankKeeper,
-		stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper, &ibcTransferKeeper, &bech32IbcKeeper, &auctionKeeper, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+		stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper, &ibcTransferKeeper, &bech32IbcKeeper, &auctionKeeper, govAuthority)
 
 	stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(

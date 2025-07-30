@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Msg_Bid_FullMethodName = "/auction.v1.Msg/Bid"
+	Msg_Bid_FullMethodName                  = "/auction.v1.Msg/Bid"
+	Msg_UpdateParamsProposal_FullMethodName = "/auction.v1.Msg/UpdateParamsProposal"
 )
 
 // MsgClient is the client API for Msg service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MsgClient interface {
 	Bid(ctx context.Context, in *MsgBid, opts ...grpc.CallOption) (*MsgBidResponse, error)
+	UpdateParamsProposal(ctx context.Context, in *MsgUpdateParamsProposal, opts ...grpc.CallOption) (*MsgUpdateParamsProposalResponse, error)
 }
 
 type msgClient struct {
@@ -46,11 +48,21 @@ func (c *msgClient) Bid(ctx context.Context, in *MsgBid, opts ...grpc.CallOption
 	return out, nil
 }
 
+func (c *msgClient) UpdateParamsProposal(ctx context.Context, in *MsgUpdateParamsProposal, opts ...grpc.CallOption) (*MsgUpdateParamsProposalResponse, error) {
+	out := new(MsgUpdateParamsProposalResponse)
+	err := c.cc.Invoke(ctx, Msg_UpdateParamsProposal_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
 type MsgServer interface {
 	Bid(context.Context, *MsgBid) (*MsgBidResponse, error)
+	UpdateParamsProposal(context.Context, *MsgUpdateParamsProposal) (*MsgUpdateParamsProposalResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -60,6 +72,9 @@ type UnimplementedMsgServer struct {
 
 func (UnimplementedMsgServer) Bid(context.Context, *MsgBid) (*MsgBidResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bid not implemented")
+}
+func (UnimplementedMsgServer) UpdateParamsProposal(context.Context, *MsgUpdateParamsProposal) (*MsgUpdateParamsProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateParamsProposal not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -92,6 +107,24 @@ func _Msg_Bid_Handler(srv interface{}, ctx context.Context, dec func(interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_UpdateParamsProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateParamsProposal)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateParamsProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_UpdateParamsProposal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateParamsProposal(ctx, req.(*MsgUpdateParamsProposal))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -102,6 +135,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Bid",
 			Handler:    _Msg_Bid_Handler,
+		},
+		{
+			MethodName: "UpdateParamsProposal",
+			Handler:    _Msg_UpdateParamsProposal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

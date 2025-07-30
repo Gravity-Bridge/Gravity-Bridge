@@ -30,4 +30,5 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 // nolint: exhaustruct
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgBid{}, "gravity/MsgBid", nil)
+	cdc.RegisterConcrete(&MsgUpdateParamsProposal{}, "gravity/MsgUpdateParamsProposal", nil)
 }

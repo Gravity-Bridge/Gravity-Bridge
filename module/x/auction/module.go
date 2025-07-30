@@ -15,8 +15,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/client/cli"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
@@ -95,11 +94,12 @@ func (b AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry
 // AppModule object for module implementation
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
+	keeper           keeper.Keeper
+	legacyParamSpace paramstypes.Subspace
 }
 
 func (am AppModule) ConsensusVersion() uint64 {
-	return 1
+	return 2
 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
@@ -109,10 +109,11 @@ func (am AppModule) IsOnePerModuleType() {}
 func (am AppModule) IsAppModule() {}
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k keeper.Keeper, bankKeeper bankkeeper.Keeper, accountkeeper authKeeper.AccountKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, legacyParamSpace paramstypes.Subspace) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
+		AppModuleBasic:   AppModuleBasic{},
+		keeper:           k,
+		legacyParamSpace: legacyParamSpace,
 	}
 }
 
@@ -131,6 +132,11 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+
+	m := keeper.NewMigrator(am.keeper, am.legacyParamSpace)
+	if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
+		panic(fmt.Sprintf("failed to migrate x/gravity from version 5 to 6: %v", err))
+	}
 }
 
 // InitGenesis initializes the genesis state for this module and implements app module.

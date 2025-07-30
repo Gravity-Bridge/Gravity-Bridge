@@ -33,7 +33,11 @@ func (app *Gravity) assertBech32PrefixMatches(ctx sdk.Context) {
 // (which would have to be for MUCH less GRAV than it is worth), assert that the NonAuctionableTokens list
 // contains GRAV (ugraviton)
 func (app *Gravity) assertNativeTokenIsNonAuctionable(ctx sdk.Context) {
-	nonAuctionableTokens := app.AuctionKeeper.GetParams(ctx).NonAuctionableTokens
+	params, err := app.AuctionKeeper.GetParams(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("Error obtaining auction params: %v", err))
+	}
+	nonAuctionableTokens := params.NonAuctionableTokens
 	mintParams, err := app.MintKeeper.Params.Get(ctx)
 	if err != nil {
 		panic(fmt.Sprintf("Error obtaining mint params: %v", err))

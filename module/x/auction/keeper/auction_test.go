@@ -174,7 +174,8 @@ func (suite *KeeperTestSuite) TestDisabledAuctionFunctions() {
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
 	t := suite.T()
-	params := ak.GetParams(ctx)
+	params, err := ak.GetParams(ctx)
+	require.NoError(t, err, "failed to get auction params")
 
 	ctx = ctx.WithBlockHeight(int64(params.AuctionLength) + ctx.BlockHeight())
 	auction.EndBlocker(ctx, *ak)
@@ -209,7 +210,7 @@ func (suite *KeeperTestSuite) TestDisabledAuctionFunctions() {
 		BidAmount:     100000000,
 		BidderAddress: string(sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), newBidder)),
 	}
-	err := ak.UpdateHighestBidder(ctx, auc0.Id, newBid)
+	err = ak.UpdateHighestBidder(ctx, auc0.Id, newBid)
 	require.Error(t, err)
 	// Check that the stored value hasn't changed
 	updatedAuc0 := ak.GetAuctionById(ctx, auc0.Id)

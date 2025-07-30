@@ -10,7 +10,8 @@ import (
 func (suite *KeeperTestSuite) TestAuctionPeriodStorage() {
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
-	params := ak.GetParams(ctx)
+	params, err := ak.GetParams(ctx)
+	require.NoError(suite.T(), err, "failed to get auction params")
 	// Create and store multiple AuctionPeriods
 	startAP := ak.GetAuctionPeriod(ctx)
 	// The first period should start on the first block
@@ -23,7 +24,7 @@ func (suite *KeeperTestSuite) TestAuctionPeriodStorage() {
 		EndBlockHeight:   startAP.EndBlockHeight + 2,
 	}
 	// Fail to update in the middle of an auction period
-	err := ak.UpdateAuctionPeriod(ctx, newAP)
+	err = ak.UpdateAuctionPeriod(ctx, newAP)
 	require.Error(suite.T(), err)
 
 	// Update at the end of the auction period
@@ -62,7 +63,8 @@ func (suite *KeeperTestSuite) TestAuctionPeriodWhileDisabled() {
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
 	t := suite.T()
-	params := ak.GetParams(ctx)
+	params, err := ak.GetParams(ctx)
+	require.NoError(t, err, "failed to get auction params")
 	// Create and store multiple AuctionPeriods
 	startAP := ak.GetAuctionPeriod(ctx)
 	// The first period should start on the first block
@@ -81,7 +83,7 @@ func (suite *KeeperTestSuite) TestAuctionPeriodWhileDisabled() {
 	ctx = ctx.WithBlockHeight(int64(startAP.EndBlockHeight))
 
 	// Fail to update the auction period to the new auction
-	err := ak.UpdateAuctionPeriod(ctx, newAP)
+	err = ak.UpdateAuctionPeriod(ctx, newAP)
 	require.Error(t, err)
 
 	// Fail to create new auctions (at the wrong time but still should fail)

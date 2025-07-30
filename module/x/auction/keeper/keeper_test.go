@@ -35,7 +35,8 @@ func (suite *KeeperTestSuite) TestParams() {
 	ctx := suite.Ctx
 	ak := suite.App.AuctionKeeper
 
-	params := ak.GetParams(ctx)
+	params, err := ak.GetParams(ctx)
+	require.NoError(t, err, "failed to get auction params")
 	defaultParams := types.DefaultParams()
 	require.Equal(t, defaultParams, params)
 
@@ -44,8 +45,11 @@ func (suite *KeeperTestSuite) TestParams() {
 	grav := config.NativeTokenDenom
 	params.NonAuctionableTokens = []string{grav, "hi-there", "this", "is-not", "a-token", "ibc/abcdefg"}
 
-	ak.SetParams(ctx, params)
-	stored := ak.GetParams(ctx)
+	err = ak.SetParams(ctx, params)
+	require.NoError(t, err, "failed to set auction params")
+
+	stored, err := ak.GetParams(ctx)
+	require.NoError(t, err, "failed to get auction params")
 	require.Equal(t, params, stored)
 }
 
