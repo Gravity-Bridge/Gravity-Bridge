@@ -670,7 +670,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	auctionKeeper := auctionkeeper.NewKeeper(keyAuction, getSubspace(paramsKeeper, auctiontypes.ModuleName), appCodec, &bankKeeper, &accountKeeper, &distKeeper, &mintKeeper)
 	auctionKeeper.SetParams(ctx, auctiontypes.DefaultParams())
 
-	k := NewKeeper(gravityKey, getSubspace(paramsKeeper, types.DefaultParamspace), appCodec, &bankKeeper,
+	k := NewKeeper(gravityKey, appCodec, &bankKeeper,
 		stakingKeeper, &slashingKeeper, &distKeeper, &accountKeeper, &ibcTransferKeeper, &bech32IbcKeeper, &auctionKeeper, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
 	stakingKeeper.SetHooks(

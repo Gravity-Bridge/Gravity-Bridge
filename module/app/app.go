@@ -662,7 +662,6 @@ func NewGravityApp(
 	govModuleAddress := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	gravityKeeper := keeper.NewKeeper(
 		keys[gravitytypes.StoreKey],
-		app.GetSubspace(gravitytypes.ModuleName),
 		appCodec,
 		&bankKeeper,
 		&stakingKeeper,
@@ -834,6 +833,7 @@ func NewGravityApp(
 		ibcTransferAppModule,
 		gravity.NewAppModule(
 			gravityKeeper,
+			app.GetSubspace(gravitytypes.ModuleName),
 			bankKeeper,
 		),
 		auction.NewAppModule(

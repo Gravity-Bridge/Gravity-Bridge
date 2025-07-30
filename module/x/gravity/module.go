@@ -17,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/client/cli"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
@@ -98,8 +99,9 @@ func (b AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry
 // AppModule object for module implementation
 type AppModule struct {
 	AppModuleBasic
-	keeper     keeper.Keeper
-	bankKeeper bankkeeper.Keeper
+	keeper           keeper.Keeper
+	legacyParamSpace paramstypes.Subspace
+	bankKeeper       bankkeeper.Keeper
 }
 
 func (am AppModule) ConsensusVersion() uint64 {
@@ -107,11 +109,12 @@ func (am AppModule) ConsensusVersion() uint64 {
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k keeper.Keeper, bankKeeper bankkeeper.Keeper) AppModule {
+func NewAppModule(k keeper.Keeper, legacyParamSpace paramstypes.Subspace, bankKeeper bankkeeper.Keeper) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		bankKeeper:     bankKeeper,
+		AppModuleBasic:   AppModuleBasic{},
+		legacyParamSpace: legacyParamSpace,
+		keeper:           k,
+		bankKeeper:       bankKeeper,
 	}
 }
 
@@ -140,13 +143,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	typesv2.RegisterMsgServer(cfg.MsgServer(), msgServer.(typesv2.MsgServer))
 	typesv2.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
-	m := keeper.NewMigrator(am.keeper)
-	if err := cfg.RegisterMigration(types.ModuleName, 3, m.Migrate3to4); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/gravity from version 3 to 4: %v", err))
-	}
-	if err := cfg.RegisterMigration(types.ModuleName, 4, m.Migrate4to5); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/gravity from version 4 to 5: %v", err))
-	}
+	m := keeper.NewMigrator(am.keeper, am.legacyParamSpace)
 	if err := cfg.RegisterMigration(types.ModuleName, 5, m.Migrate5to6); err != nil {
 		panic(fmt.Sprintf("failed to migrate x/gravity from version 5 to 6: %v", err))
 	}

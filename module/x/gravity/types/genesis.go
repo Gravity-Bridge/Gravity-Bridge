@@ -180,6 +180,29 @@ func DefaultParams() *Params {
 	}
 }
 
+const (
+	ParamGravityId                    = "GravityId"
+	ParamContractHash                 = "ContractSourceHash"
+	ParamBridgeEthereumAddress        = "BridgeEthereumAddress"
+	ParamBridgeChainId                = "BridgeChainId"
+	ParamSignedValsetsWindow          = "SignedValsetsWindow"
+	ParamSignedBatchesWindow          = "SignedBatchesWindow"
+	ParamSignedLogicCallsWindow       = "SignedLogicCallsWindow"
+	ParamTargetBatchTimeout           = "TargetBatchTimeout"
+	ParamAverageBlockTime             = "AverageBlockTime"
+	ParamAverageEthereumBlockTime     = "AverageEthereumBlockTime"
+	ParamSlashFractionValset          = "SlashFractionValset"
+	ParamSlashFractionBatch           = "SlashFractionBatch"
+	ParamSlashFractionLogicCall       = "SlashFractionLogicCall"
+	ParamUnbondSlashingValsetsWindow  = "UnbondSlashingValsetsWindow"
+	ParamSlashFractionBadEthSignature = "SlashFractionBadEthSignature"
+	ParamValsetRewardAmount           = "ValsetReward"
+	ParamBridgeActive                 = "BridgeActive"
+	ParamEthereumBlacklist            = "EthereumBlacklist"
+	ParamMinChainFeeBasisPoints       = "MinChainFeeBasisPoints"
+	ParamChainFeeAuctionPoolFraction  = "ChainFeeAuctionPoolFraction"
+)
+
 // ValidateBasic checks that the parameters have valid values.
 func (p Params) ValidateBasic() error {
 	if err := validateGravityID(p.GravityId); err != nil {

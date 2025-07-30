@@ -15,7 +15,6 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -36,8 +35,7 @@ var _ types.DistributionKeeper = (*distrkeeper.Keeper)(nil)
 // Keeper maintains the link to storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
-	storeKey   storetypes.StoreKey // Unexposed key to access store from sdk.Context
-	paramSpace paramtypes.Subspace
+	storeKey storetypes.StoreKey // Unexposed key to access store from sdk.Context
 
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
 	cdc               codec.BinaryCodec // The wire codec for binary encoding/decoding.
@@ -87,7 +85,6 @@ func (k Keeper) ValidateMembers() {
 // NewKeeper returns a new instance of the gravity keeper
 func NewKeeper(
 	storeKey storetypes.StoreKey,
-	paramSpace paramtypes.Subspace,
 	cdc codec.BinaryCodec,
 	bankKeeper *bankkeeper.BaseKeeper,
 	stakingKeeper *stakingkeeper.Keeper,
@@ -99,14 +96,8 @@ func NewKeeper(
 	auctionKeeper *auctionkeeper.Keeper,
 	proposalAuthority string,
 ) Keeper {
-	// set KeyTable if it has not already been set
-	if !paramSpace.HasKeyTable() {
-		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
-	}
-
 	k := Keeper{
-		storeKey:   storeKey,
-		paramSpace: paramSpace,
+		storeKey: storeKey,
 
 		cdc:                cdc,
 		bankKeeper:         bankKeeper,

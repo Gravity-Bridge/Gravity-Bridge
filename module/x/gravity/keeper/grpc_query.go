@@ -27,8 +27,10 @@ const QUERY_ATTESTATIONS_LIMIT uint64 = 1000
 
 // Params queries the params of the gravity module
 func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
-	var params types.Params
-	k.paramSpace.GetParamSet(sdk.UnwrapSDKContext(c), &params)
+	params, err := k.GetParams(sdk.UnwrapSDKContext(c))
+	if err != nil {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "failed to get params")
+	}
 	return &types.QueryParamsResponse{Params: params}, nil
 }
 
