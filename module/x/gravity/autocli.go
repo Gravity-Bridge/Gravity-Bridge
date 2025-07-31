@@ -2,16 +2,16 @@ package gravity
 
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	api "github.com/Gravity-Bridge/Gravity-Bridge/module/api/gravity/v1"
 )
 
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service: types.Query_serviceDesc.ServiceName,
+			Service: api.Query_ServiceDesc.ServiceName,
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
-			Service: types.Msg_serviceDesc.ServiceName,
+			Service: api.Msg_ServiceDesc.ServiceName,
 		},
 	}
 }

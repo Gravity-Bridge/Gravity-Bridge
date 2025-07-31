@@ -2,13 +2,13 @@ package auction
 
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
+	api "github.com/Gravity-Bridge/Gravity-Bridge/module/api/auction/v1"
 )
 
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service:              types.Query_serviceDesc.ServiceName,
+			Service:              api.Query_ServiceDesc.ServiceName,
 			EnhanceCustomCommand: true, // We provide custom Storage and Code in client/cli/tx.go
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
@@ -56,7 +56,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
-			Service: types.Msg_serviceDesc.ServiceName,
+			Service: api.Msg_ServiceDesc.ServiceName,
 		},
 	}
 }

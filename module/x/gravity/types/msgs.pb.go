@@ -2794,7 +2794,7 @@ func (*UnimplementedMsgServer) SubmitBadSignatureEvidence(ctx context.Context, r
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
-	s.RegisterService(&Msg_serviceDesc, srv)
+	s.RegisterService(&_Msg_serviceDesc, srv)
 }
 
 func _Msg_ValsetConfirm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -3049,7 +3049,7 @@ func _Msg_SubmitBadSignatureEvidence_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-var Msg_serviceDesc = grpc.ServiceDesc{
+var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gravity.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{

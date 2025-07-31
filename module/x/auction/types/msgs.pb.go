@@ -388,7 +388,7 @@ func (*UnimplementedMsgServer) UpdateParamsProposal(ctx context.Context, req *Ms
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
-	s.RegisterService(&Msg_serviceDesc, srv)
+	s.RegisterService(&_Msg_serviceDesc, srv)
 }
 
 func _Msg_Bid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -427,7 +427,7 @@ func _Msg_UpdateParamsProposal_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-var Msg_serviceDesc = grpc.ServiceDesc{
+var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "auction.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
