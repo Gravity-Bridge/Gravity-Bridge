@@ -4,9 +4,19 @@ use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::get_fee;
 use crate::utils::{create_parameter_change_proposal, vote_yes_on_proposals, ValidatorKeys};
 use deep_space::Contact;
+use gravity_proto::cosmos_sdk_proto::cosmos::mint::v1beta1::{Params, QueryParamsRequest};
+use gravity_proto::cosmos_sdk_proto::cosmos::mint::v1beta1::query_client::QueryClient as MintQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 
-async fn get_mint_param_as_float(param: &str, contact: &Contact) -> f32 {
+// Module params have moved to be held by their modules, so this is the new method we use to get mint params
+async fn get_mint_params(contact: &Contact) -> Result<Params, tonic::Status> {
+    let mut mint_qc = MintQueryClient::connect(contact.get_url()).await.unwrap();
+    mint_qc.params(QueryParamsRequest{}).await.map(|v| v.into_inner().params.unwrap_or_default())
+}
+
+// This outdated method is used to get mint params in case the chain is not yet at sdk v0.50
+async fn fallback_get_mint_param_as_float(param: &str, contact: &Contact) -> f32 {
+    #[allow(deprecated)]
     let param = contact.get_param("mint", param).await.unwrap();
     param
         .param
@@ -51,12 +61,23 @@ pub async fn inflation_knockdown_test(contact: &Contact, keys: Vec<ValidatorKeys
     vote_yes_on_proposals(contact, &keys, None).await;
     wait_for_proposals_to_execute(contact).await;
 
-    assert_eq!(
-        get_mint_param_as_float("InflationRateChange", contact).await,
-        1.0
-    );
-    assert_eq!(get_mint_param_as_float("InflationMin", contact).await, 0.01);
-    assert_eq!(get_mint_param_as_float("InflationMax", contact).await, 0.01);
+    let params = get_mint_params(contact).await;
+    match params {
+        Ok(params) => {
+            assert_eq!(params.inflation_rate_change.parse::<f64>().unwrap(), 1.0);
+            assert_eq!(params.inflation_min.parse::<f64>().unwrap(), 0.01);
+            assert_eq!(params.inflation_max.parse::<f64>().unwrap(), 0.01);
+        }
+        Err(_) => {
+        assert_eq!(
+            fallback_get_mint_param_as_float("InflationRateChange", contact).await,
+            -1.0
+        );
+        assert_eq!(fallback_get_mint_param_as_float("InflationMin", contact).await, -2.01);
+        assert_eq!(fallback_get_mint_param_as_float("InflationMax", contact).await, -2.01);
+        }
+    };
+
 
     let mut params_to_change = Vec::new();
     let change = ParamChange {
@@ -75,7 +96,15 @@ pub async fn inflation_knockdown_test(contact: &Contact, keys: Vec<ValidatorKeys
     vote_yes_on_proposals(contact, &keys, None).await;
     wait_for_proposals_to_execute(contact).await;
 
-    assert_eq!(get_mint_param_as_float("InflationMax", contact).await, 0.07);
+    let params = get_mint_params(contact).await;
+    match params {
+        Ok(params) => {
+            assert_eq!(params.inflation_max.parse::<f64>().unwrap(), 0.07);
+        }
+        Err(_) => {
+            assert_eq!(fallback_get_mint_param_as_float("InflationMax", contact).await, 0.07);
+        }
+    };
 
     info!("Successfully passed inflation knockdown test!")
 }

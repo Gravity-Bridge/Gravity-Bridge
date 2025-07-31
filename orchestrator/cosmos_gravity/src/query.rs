@@ -383,10 +383,22 @@ pub async fn get_all_pending_ibc_auto_forwards(
     pending_forwards.into_inner().pending_ibc_auto_forwards
 }
 
-// Fetches the MinChainFeeBasisPoints param from the Gravity module, parsing into a u64.
-// If no value is set, returns 0. Panics if an invalid value is set.
+/// Fetches the MinChainFeeBasisPoints param from the Gravity module, parsing into a u64.
+/// Falls back to a legacy method if the gRPC call fails.
 pub async fn get_min_chain_fee_basis_points(contact: &Contact) -> Result<u64, CosmosGrpcError> {
+    let mut gravity_qc = GravityQueryClient::connect(contact.get_url()).await?;
+    match get_gravity_params(&mut gravity_qc).await {
+        Ok(params) => {
+            Ok(params.min_chain_fee_basis_points)
+        }
+        Err(_) => fallback_get_min_chain_fee_basis_points(contact).await,
+    }
+}
+
+
+async fn fallback_get_min_chain_fee_basis_points(contact: &Contact) -> Result<u64, CosmosGrpcError> {
     // Get the current minimum fee parameter
+    #[allow(deprecated)]
     let fee_param = contact
         .get_param("gravity", "MinChainFeeBasisPoints")
         .await?

@@ -46,7 +46,6 @@ use lazy_static::lazy_static;
 use orch_keys::orch_keys;
 use orch_only::orch_only_test;
 use relay_market::relay_market_test;
-use std::env::VarError;
 use std::process::exit;
 use std::{env, time::Duration};
 use tokio::time::sleep;
