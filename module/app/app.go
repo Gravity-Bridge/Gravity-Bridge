@@ -1043,8 +1043,7 @@ func (app *Gravity) setAnteHandler(encodingConfig simappparams.EncodingConfig) {
 		TxFeeChecker:           nil,
 	}
 
-	// Note: If feegrant keeper is added, add it to the NewAnteHandler call instead of nil
-	ah, err := ante.NewAnteHandler(options, app.GravityKeeper, app.AccountKeeper, app.BankKeeper, nil, app.IbcKeeper, app.AppCodec, gravityconfig.GravityEvmChainIDs)
+	ah, err := ante.NewAnteHandler(options, app.GravityKeeper, app.AccountKeeper, app.BankKeeper, app.FeegrantKeeper, app.IbcKeeper, app.AppCodec, gravityconfig.GravityEvmChainIDs)
 	if err != nil {
 		panic("invalid antehandler created")
 	}
