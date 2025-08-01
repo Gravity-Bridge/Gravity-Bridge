@@ -26,6 +26,9 @@ import (
 	"cosmossdk.io/x/evidence"
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
 	evidencetypes "cosmossdk.io/x/evidence/types"
+	feegranttypes "cosmossdk.io/x/feegrant"
+	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
+	feegrant "cosmossdk.io/x/feegrant/module"
 	"cosmossdk.io/x/tx/signing"
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
@@ -268,6 +271,7 @@ type Gravity struct {
 	IcaHostKeeper         *icahostkeeper.Keeper
 	GroupKeeper           *groupkeeper.Keeper
 	ConsensusParamsKeeper *consensusparamkeeper.Keeper
+	FeegrantKeeper        *feegrantkeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	// NOTE: If you add anything to this struct, add a nil check to ValidateMembers below!
@@ -365,6 +369,9 @@ func (app Gravity) ValidateMembers() {
 	if app.ConsensusParamsKeeper == nil {
 		panic("Nil ConsensusParamsKeeper!")
 	}
+	if app.FeegrantKeeper == nil {
+		panic("Nil feegrantKeeper!")
+	}
 
 	// scoped keepers
 	if app.ScopedIBCKeeper == nil {
@@ -460,6 +467,7 @@ func NewGravityApp(
 		ibcexported.StoreKey, upgradetypes.StoreKey, evidencetypes.StoreKey,
 		ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		icahosttypes.StoreKey, group.StoreKey, crisistypes.StoreKey, consensusparamtypes.StoreKey,
+		feegranttypes.StoreKey,
 
 		gravitytypes.StoreKey, auctiontypes.StoreKey, bech32ibctypes.StoreKey,
 	)
@@ -742,6 +750,9 @@ func NewGravityApp(
 	groupKeeper := groupkeeper.NewKeeper(keys[group.StoreKey], appCodec, app.MsgServiceRouter(), app.AccountKeeper, groupConfig)
 	app.GroupKeeper = &groupKeeper
 
+	feegrantKeeper := feegrantkeeper.NewKeeper(appCodec, runtime.NewKVStoreService(keys[feegranttypes.StoreKey]), accountKeeper)
+	app.FeegrantKeeper = &feegrantKeeper
+
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	app.registerStoreLoaders()
@@ -846,6 +857,7 @@ func NewGravityApp(
 		icaAppModule,
 		groupmodule.NewAppModule(appCodec, groupKeeper, accountKeeper, bankKeeper, interfaceRegistry),
 		consensus.NewAppModule(appCodec, consensusParamsKeeper),
+		feegrant.NewAppModule(appCodec, accountKeeper, bankKeeper, feegrantKeeper, interfaceRegistry),
 	)
 	app.ModuleManager = &moduleManager
 
@@ -891,6 +903,7 @@ func NewGravityApp(
 		authtypes.ModuleName,
 		vestingtypes.ModuleName,
 		ibctransfertypes.ModuleName,
+		feegranttypes.ModuleName,
 		bech32ibctypes.ModuleName,
 		gravitytypes.ModuleName,
 		auctiontypes.ModuleName,
@@ -904,6 +917,7 @@ func NewGravityApp(
 	)
 	moduleManager.SetOrderEndBlockers(
 		crisistypes.ModuleName,
+		feegranttypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		icatypes.ModuleName,
@@ -927,7 +941,7 @@ func NewGravityApp(
 		group.ModuleName,
 		consensusparamtypes.ModuleName,
 	)
-	moduleManager.SetOrderInitGenesis(
+	genesisModuleOrder := []string{
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
@@ -938,6 +952,7 @@ func NewGravityApp(
 		minttypes.ModuleName,
 		upgradetypes.ModuleName,
 		ibcexported.ModuleName,
+		feegranttypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
@@ -951,7 +966,9 @@ func NewGravityApp(
 		icatypes.ModuleName,
 		group.ModuleName,
 		consensusparamtypes.ModuleName,
-	)
+	}
+	moduleManager.SetOrderInitGenesis(genesisModuleOrder...)
+	moduleManager.SetOrderExportGenesis(genesisModuleOrder...)
 
 	moduleManager.RegisterInvariants(&crisisKeeper)
 	configurator := module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
@@ -1019,7 +1036,7 @@ func (app *Gravity) setAnteHandler(encodingConfig simappparams.EncodingConfig) {
 	options := sdkante.HandlerOptions{
 		AccountKeeper:          app.AccountKeeper,
 		BankKeeper:             app.BankKeeper,
-		FeegrantKeeper:         nil,
+		FeegrantKeeper:         app.FeegrantKeeper,
 		SignModeHandler:        encodingConfig.TxConfig.SignModeHandler(),
 		SigGasConsumer:         ethante.DefaultSigVerificationGasConsumer,
 		ExtensionOptionChecker: nil,
