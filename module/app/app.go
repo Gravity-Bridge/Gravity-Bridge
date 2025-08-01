@@ -1298,7 +1298,7 @@ func (app *Gravity) registerStoreLoaders() {
 	if upgradeInfo.Name == next.NeutrinoToNextPlanName {
 		// Register the Group module as a new module that needs a new store allocated
 		storeUpgrades := storetypes.StoreUpgrades{
-			Added:   []string{crisistypes.ModuleName, consensusparamtypes.ModuleName},
+			Added:   []string{crisistypes.ModuleName, consensusparamtypes.ModuleName, feegranttypes.ModuleName},
 			Renamed: nil,
 			Deleted: nil,
 		}
