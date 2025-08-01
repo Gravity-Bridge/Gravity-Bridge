@@ -70,7 +70,7 @@ const (
 )
 
 // NewMsgSetOrchestratorAddress returns a new msgSetOrchestratorAddress
-func NewMsgSetOrchestratorAddress(val sdk.ValAddress, oper sdk.AccAddress, eth EthAddress) *MsgSetOrchestratorAddress {
+func NewMsgSetOrchestratorAddress(val sdk.AccAddress, oper sdk.AccAddress, eth EthAddress) *MsgSetOrchestratorAddress {
 	return &MsgSetOrchestratorAddress{
 		Validator:    val.String(),
 		Orchestrator: oper.String(),
