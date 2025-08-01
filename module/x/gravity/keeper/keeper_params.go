@@ -61,9 +61,6 @@ func (k Keeper) GetBridgeChainID(ctx sdk.Context) uint64 {
 	if err != nil {
 		panic(errorsmod.Wrap(err, "failed to get params"))
 	}
-	if params.BridgeChainId == 0 {
-		panic("BridgeChainId is not set in params")
-	}
 	return params.BridgeChainId
 }
 
