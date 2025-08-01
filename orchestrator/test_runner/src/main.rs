@@ -235,8 +235,6 @@ pub async fn main() {
 
     // if we detect this env var we are only deploying contracts, do that then exit.
     if should_deploy_contracts() {
-        info!("Sleep");
-        sleep(Duration::from_secs(30)).await;
         let upgrade_testing = env::var("OLD_BINARY_LOCATION").map_or_else(|_| { false }, |v| if !v.is_empty() { true } else { false });
         info!("test-runner in contract deploying mode, deploying contracts, then exiting");
         deploy_contracts(&gravity_contact, upgrade_testing).await;
