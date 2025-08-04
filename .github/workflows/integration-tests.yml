@@ -398,3 +398,14 @@ jobs:
           workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
       - name: Test auction module params validation
         run: tests/all-up-test-ci.sh AUCTION_DISABLE
+  feegrant:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v5
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+      - name: Test feegrant module
+        run: tests/all-up-test-ci.sh FEEGRANT

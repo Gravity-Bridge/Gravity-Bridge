@@ -16,6 +16,7 @@ use crate::deposit_overflow::deposit_overflow_test;
 use crate::eip_712::eip_712_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
+use crate::feegrant::feegrant_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::ica_host::ica_host_happy_path;
@@ -63,6 +64,7 @@ mod erc_721_happy_path;
 mod ethereum_blacklist_test;
 mod ethereum_keys;
 mod evidence_based_slashing;
+mod feegrant;
 mod happy_path;
 mod happy_path_v2;
 mod ibc_auto_forward;
@@ -662,6 +664,10 @@ pub async fn main() {
                 erc20_addresses,
             )
             .await;
+            return;
+        } else if test_type == "FEEGRANT" {
+            info!("Starting Feegrant test");
+            feegrant_test(&web30, grpc_client, &gravity_contact, keys).await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;
