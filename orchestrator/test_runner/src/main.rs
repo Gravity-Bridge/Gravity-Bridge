@@ -22,6 +22,7 @@ use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::ica_host::ica_host_happy_path;
 use crate::inflation_knockdown::inflation_knockdown_test;
 use crate::invalid_events::invalid_events;
+use crate::param_change_paranoia::param_change_paranoia_test;
 use crate::pause_bridge::pause_bridge_test;
 use crate::send_to_eth_fees::send_to_eth_fees_test;
 use crate::signature_slashing::signature_slashing_test;
@@ -74,6 +75,7 @@ mod inflation_knockdown;
 mod invalid_events;
 mod orch_keys;
 mod orch_only;
+mod param_change_paranoia;
 mod pause_bridge;
 mod relay_market;
 mod send_to_eth_fees;
@@ -668,6 +670,10 @@ pub async fn main() {
         } else if test_type == "FEEGRANT" {
             info!("Starting Feegrant test");
             feegrant_test(&web30, grpc_client, &gravity_contact, keys).await;
+            return;
+        } else if test_type == "PARAM_CHANGE_PARANOIA" {
+            info!("Starting Param Change Paranoia test");
+            param_change_paranoia_test(&gravity_contact, keys).await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;

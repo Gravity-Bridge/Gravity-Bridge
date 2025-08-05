@@ -409,3 +409,14 @@ jobs:
           workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
       - name: Test feegrant module
         run: tests/all-up-test-ci.sh FEEGRANT
+  param-change-paranoia:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v5
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+      - name: Test param change messages can't be submitted outside of a proposal
+        run: tests/all-up-test-ci.sh PARAM_CHANGE_PARANOIA
