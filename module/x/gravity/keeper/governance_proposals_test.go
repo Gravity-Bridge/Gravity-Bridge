@@ -1,17 +1,22 @@
 package keeper
 
 import (
+	"fmt"
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
-	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
-	typesv2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	sdkmath "cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
+	typesv2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2"
 )
 
 // nolint: exhaustruct
@@ -373,4 +378,501 @@ func TestMsgUnhaltBridgeProposal(t *testing.T) {
 	msgProposal.Authority = authority
 	_, err := msgServer.UnhaltBridgeProposal(ctx, &msgProposal)
 	require.NoError(t, err)
+}
+
+func TestMsgUpdateParamsProposal(t *testing.T) {
+	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	govAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
+
+	ctx := input.Context
+
+	gravityId := typesv2.Param{
+		Key:   "GravityId",
+		Value: "1",
+	}
+	contractSourceHash := typesv2.Param{
+		Key:   "ContractSourceHash",
+		Value: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+	}
+	bridgeEthereumAddress := typesv2.Param{
+		Key:   "BridgeEthereumAddress",
+		Value: "0x0000000000000000000000000000000000000000",
+	}
+	bridgeChainId := typesv2.Param{
+		Key:   "BridgeChainId",
+		Value: "1",
+	}
+	signedValsetsWindow := typesv2.Param{
+		Key:   "SignedValsetsWindow",
+		Value: "100",
+	}
+	signedBatchesWindow := typesv2.Param{
+		Key:   "SignedBatchesWindow",
+		Value: "100",
+	}
+	signedLogicCallsWindow := typesv2.Param{
+		Key:   "SignedLogicCallsWindow",
+		Value: "100",
+	}
+	targetBatchTimeout := typesv2.Param{
+		Key:   "TargetBatchTimeout",
+		Value: "1000000",
+	}
+	averageBlockTime := typesv2.Param{
+		Key:   "AverageBlockTime",
+		Value: "1000",
+	}
+	averageEthereumBlockTime := typesv2.Param{
+		Key:   "AverageEthereumBlockTime",
+		Value: "25000",
+	}
+	slashFractionValset := typesv2.Param{
+		Key:   "SlashFractionValset",
+		Value: "0.020000000000000000",
+	}
+	slashFractionBatch := typesv2.Param{
+		Key:   "SlashFractionBatch",
+		Value: "0.020000000000000000",
+	}
+	slashFractionLogicCall := typesv2.Param{
+		Key:   "SlashFractionLogicCall",
+		Value: "0.010000000000000000",
+	}
+	unbondSlashingValsetsWindow := typesv2.Param{
+		Key:   "UnbondSlashingValsetsWindow",
+		Value: "100",
+	}
+	slashFractionBadEthSignature := typesv2.Param{
+		Key:   "SlashFractionBadEthSignature",
+		Value: "0.020000000000000000",
+	}
+	valsetReward := typesv2.Param{
+		Key:   "ValsetReward",
+		Value: "10ugraviton",
+	}
+	bridgeActive := typesv2.Param{
+		Key:   "BridgeActive",
+		Value: "false",
+	}
+	ethereumBlacklist := typesv2.Param{
+		Key:   "EthereumBlacklist",
+		Value: "[\"0x0000000000000000000000000000000000000000\"]",
+	}
+	minChainFeeBasisPoints := typesv2.Param{
+		Key:   "MinChainFeeBasisPoints",
+		Value: "100",
+	}
+	chainFeeAuctionPoolFraction := typesv2.Param{
+		Key:   "ChainFeeAuctionPoolFraction",
+		Value: "0.100000000000000000",
+	}
+
+	testCases := []struct {
+		name           string
+		msg            typesv2.MsgUpdateParamsProposal
+		expectError    bool
+		expectedParams func(input TestInput) types.Params
+	}{
+		{
+			name: "All fields set",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&gravityId, &contractSourceHash, &bridgeEthereumAddress, &bridgeChainId,
+					&signedValsetsWindow, &signedBatchesWindow, &signedLogicCallsWindow,
+					&targetBatchTimeout, &averageBlockTime, &averageEthereumBlockTime,
+					&slashFractionValset, &slashFractionBatch, &slashFractionLogicCall,
+					&unbondSlashingValsetsWindow, &slashFractionBadEthSignature,
+					&valsetReward, &bridgeActive, &ethereumBlacklist,
+					&minChainFeeBasisPoints, &chainFeeAuctionPoolFraction,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				return types.Params{
+					GravityId:                    gravityId.Value,
+					ContractSourceHash:           contractSourceHash.Value,
+					BridgeEthereumAddress:        bridgeEthereumAddress.Value,
+					BridgeChainId:                1,
+					SignedValsetsWindow:          100,
+					SignedBatchesWindow:          100,
+					SignedLogicCallsWindow:       100,
+					TargetBatchTimeout:           1000000,
+					AverageBlockTime:             1000,
+					AverageEthereumBlockTime:     25000,
+					SlashFractionValset:          sdkmath.LegacyMustNewDecFromStr(slashFractionValset.Value),
+					SlashFractionBatch:           sdkmath.LegacyMustNewDecFromStr(slashFractionBatch.Value),
+					SlashFractionLogicCall:       sdkmath.LegacyMustNewDecFromStr(slashFractionLogicCall.Value),
+					UnbondSlashingValsetsWindow:  100,
+					SlashFractionBadEthSignature: sdkmath.LegacyMustNewDecFromStr(slashFractionBadEthSignature.Value),
+					ValsetReward:                 sdk.NewCoin("ugraviton", sdkmath.NewInt(10)),
+					BridgeActive:                 false,
+					EthereumBlacklist:            []string{"0x0000000000000000000000000000000000000000"},
+					MinChainFeeBasisPoints:       100,
+					ChainFeeAuctionPoolFraction:  sdkmath.LegacyMustNewDecFromStr(chainFeeAuctionPoolFraction.Value),
+				}
+			},
+		},
+		{
+			name: "Update only GravityId",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&gravityId,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.GravityId = gravityId.Value
+				return params
+			},
+		},
+		{
+			name: "Update only ContractSourceHash",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&contractSourceHash,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.ContractSourceHash = contractSourceHash.Value
+				return params
+			},
+		},
+		{
+			name: "Update only BridgeEthereumAddress",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&bridgeEthereumAddress,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.BridgeEthereumAddress = bridgeEthereumAddress.Value
+				return params
+			},
+		},
+		{
+			name: "Update only BridgeChainId",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&bridgeChainId,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.BridgeChainId = 1
+				return params
+			},
+		},
+		{
+			name: "Update only SignedValsetsWindow",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&signedValsetsWindow,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.SignedValsetsWindow = 100
+				return params
+			},
+		},
+		{
+			name: "Update only SignedBatchesWindow",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&signedBatchesWindow,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.SignedBatchesWindow = 100
+				return params
+			},
+		},
+		{
+			name: "Update only SignedLogicCallsWindow",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&signedLogicCallsWindow,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.SignedLogicCallsWindow = 100
+				return params
+			},
+		},
+		{
+			name: "Update only TargetBatchTimeout",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&targetBatchTimeout,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.TargetBatchTimeout = 1000000
+				return params
+			},
+		},
+		{
+			name: "Update only AverageBlockTime",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&averageBlockTime,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.AverageBlockTime = 1000
+				return params
+			},
+		},
+		{
+			name: "Update only AverageEthereumBlockTime",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&averageEthereumBlockTime,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.AverageEthereumBlockTime = 25000
+				return params
+			},
+		},
+		{
+			name: "Update only SlashFractionValset",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&slashFractionValset,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.SlashFractionValset = sdkmath.LegacyMustNewDecFromStr(slashFractionValset.Value)
+				return params
+			},
+		},
+		{
+			name: "Update only SlashFractionBatch",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&slashFractionBatch,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.SlashFractionBatch = sdkmath.LegacyMustNewDecFromStr(slashFractionBatch.Value)
+				return params
+			},
+		},
+		{
+			name: "Update only SlashFractionLogicCall",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&slashFractionLogicCall,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.SlashFractionLogicCall = sdkmath.LegacyMustNewDecFromStr(slashFractionLogicCall.Value)
+				return params
+			},
+		},
+		{
+			name: "Update only UnbondSlashingValsetsWindow",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&unbondSlashingValsetsWindow,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.UnbondSlashingValsetsWindow = 100
+				return params
+			},
+		},
+		{
+			name: "Update only SlashFractionBadEthSignature",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&slashFractionBadEthSignature,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.SlashFractionBadEthSignature = sdkmath.LegacyMustNewDecFromStr(slashFractionBadEthSignature.Value)
+				return params
+			},
+		},
+		{
+			name: "Update only ValsetReward",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&valsetReward,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.ValsetReward = sdk.NewCoin("ugraviton", sdkmath.NewInt(10))
+				return params
+			},
+		},
+		{
+			name: "Update only BridgeActive",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&bridgeActive,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.BridgeActive = false
+				return params
+			},
+		},
+		{
+			name: "Update only EthereumBlacklist",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&ethereumBlacklist,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.EthereumBlacklist = []string{"0x0000000000000000000000000000000000000000"}
+				return params
+			},
+		},
+		{
+			name: "Update only MinChainFeeBasisPoints",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&minChainFeeBasisPoints,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.MinChainFeeBasisPoints = 100
+				return params
+			},
+		},
+		{
+			name: "Update only ChainFeeAuctionPoolFraction",
+			msg: typesv2.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*typesv2.Param{
+					&chainFeeAuctionPoolFraction,
+				},
+			},
+			expectError: false,
+			expectedParams: func(input TestInput) types.Params {
+				params, err := input.GravityKeeper.GetParams(input.Context)
+				require.NoError(t, err)
+				params.ChainFeeAuctionPoolFraction = sdkmath.LegacyMustNewDecFromStr(chainFeeAuctionPoolFraction.Value)
+				return params
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cacheCtx, _ := ctx.CacheContext()
+			msgServer := msgServer{input.GravityKeeper}
+			expectedParams := tc.expectedParams(input)
+			_, err := msgServer.UpdateParamsProposal(cacheCtx, &tc.msg)
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				params, err := input.GravityKeeper.GetParams(cacheCtx)
+				require.NoError(t, err)
+
+				fmt.Println("Expected Params:", expectedParams)
+				fmt.Println("Actual Params:", params)
+				require.Equal(t, expectedParams.GravityId, params.GravityId, "Expected gravity id to match after proposal execution")
+				require.Equal(t, expectedParams.ContractSourceHash, params.ContractSourceHash, "Expected contract source hash to match after proposal execution")
+				require.Equal(t, expectedParams.BridgeEthereumAddress, params.BridgeEthereumAddress, "Expected bridge ethereum address to match after proposal execution")
+				require.Equal(t, expectedParams.BridgeChainId, params.BridgeChainId, "Expected bridge chain id to match after proposal execution")
+				require.Equal(t, expectedParams.SignedValsetsWindow, params.SignedValsetsWindow, "Expected signed valsets window to match after proposal execution")
+				require.Equal(t, expectedParams.SignedBatchesWindow, params.SignedBatchesWindow, "Expected signed batches window to match after proposal execution")
+				require.Equal(t, expectedParams.SignedLogicCallsWindow, params.SignedLogicCallsWindow, "Expected signed logic calls window to match after proposal execution")
+				require.Equal(t, expectedParams.TargetBatchTimeout, params.TargetBatchTimeout, "Expected target batch timeout to match after proposal execution")
+				require.Equal(t, expectedParams.AverageBlockTime, params.AverageBlockTime, "Expected average block time to match after proposal execution")
+				require.Equal(t, expectedParams.AverageEthereumBlockTime, params.AverageEthereumBlockTime, "Expected average ethereum block time to match after proposal execution")
+				require.Equal(t, expectedParams.SlashFractionValset, params.SlashFractionValset, "Expected slash fraction valset to match after proposal execution")
+				require.Equal(t, expectedParams.SlashFractionBatch, params.SlashFractionBatch, "Expected slash fraction batch to match after proposal execution")
+				require.Equal(t, expectedParams.SlashFractionLogicCall, params.SlashFractionLogicCall, "Expected slash fraction logic call to match after proposal execution")
+				require.Equal(t, expectedParams.UnbondSlashingValsetsWindow, params.UnbondSlashingValsetsWindow, "Expected unbond slashing valsets window to match after proposal execution")
+				require.Equal(t, expectedParams.SlashFractionBadEthSignature, params.SlashFractionBadEthSignature, "Expected slash fraction bad eth signature to match after proposal execution")
+				require.Equal(t, expectedParams.ValsetReward, params.ValsetReward, "Expected valset reward to match after proposal execution")
+				require.Equal(t, expectedParams.BridgeActive, params.BridgeActive, "Expected bridge active to match after proposal execution")
+				require.Equal(t, expectedParams.EthereumBlacklist, params.EthereumBlacklist, "Expected ethereum blacklist to match after proposal execution")
+				require.Equal(t, expectedParams.MinChainFeeBasisPoints, params.MinChainFeeBasisPoints, "Expected min chain fee basis points to match after proposal execution")
+				require.Equal(t, expectedParams.ChainFeeAuctionPoolFraction, params.ChainFeeAuctionPoolFraction, "Expected chain fee auction pool fraction to match after proposal execution")
+			}
+		})
+	}
 }
