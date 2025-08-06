@@ -1,10 +1,16 @@
 package keeper_test
 
 import (
+	"encoding/json"
+	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/types"
@@ -112,6 +118,173 @@ func (suite *KeeperTestSuite) TestMsgBid() {
 				suite.Require().True(expDiff.Equal(accDiff.Amount))
 			} else {
 				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *KeeperTestSuite) TestMsgUpdateParamsProposal() {
+	ctx := suite.Ctx
+	t := suite.T()
+
+	govAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
+
+	auctionLength := types.Param{
+		Key:   "AuctionLength",
+		Value: "1000",
+	}
+	minBidFee := types.Param{
+		Key:   "MinBidFee",
+		Value: "10",
+	}
+	nonAuctionableTokens := types.Param{
+		Key:   "NonAuctionableTokens",
+		Value: "[\"ugraviton\",\"foo\"]",
+	}
+	burnWinningBids := types.Param{
+		Key:   "BurnWinningBids",
+		Value: "true",
+	}
+	enabled := types.Param{
+		Key:   "Enabled",
+		Value: "true",
+	}
+
+	testCases := []struct {
+		name           string
+		msg            types.MsgUpdateParamsProposal
+		expectError    bool
+		expectedParams func(ctx sdk.Context, keeper keeper.Keeper) types.Params
+	}{
+		{
+			name: "All fields set",
+			msg: types.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*types.Param{
+					&auctionLength,
+					&minBidFee,
+					&nonAuctionableTokens,
+					&burnWinningBids,
+					&enabled,
+				},
+			},
+			expectError: false,
+			expectedParams: func(ctx sdk.Context, keeper keeper.Keeper) types.Params {
+				return types.Params{
+					AuctionLength:        1000,
+					MinBidFee:            10,
+					NonAuctionableTokens: []string{"ugraviton", "foo"},
+					BurnWinningBids:      true,
+					Enabled:              true,
+				}
+			},
+		},
+		{
+			name: "Update only AuctionLength",
+			msg: types.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*types.Param{
+					&auctionLength,
+				},
+			},
+			expectError: false,
+			expectedParams: func(ctx sdk.Context, keeper keeper.Keeper) types.Params {
+				params, err := keeper.GetParams(ctx)
+				require.NoError(t, err)
+				params.AuctionLength = 1000
+				require.NoError(t, err)
+				return params
+			},
+		},
+		{
+			name: "Update only MinBidFee",
+			msg: types.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*types.Param{
+					&minBidFee,
+				},
+			},
+			expectError: false,
+			expectedParams: func(ctx sdk.Context, keeper keeper.Keeper) types.Params {
+				params, err := keeper.GetParams(ctx)
+				require.NoError(t, err)
+				params.MinBidFee = 10
+				return params
+			},
+		},
+		{
+			name: "Update only NonAuctionableTokens",
+			msg: types.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*types.Param{
+					&nonAuctionableTokens,
+				},
+			},
+			expectError: false,
+			expectedParams: func(ctx sdk.Context, keeper keeper.Keeper) types.Params {
+				params, err := keeper.GetParams(ctx)
+				require.NoError(t, err)
+				var tokens []string
+				err = json.Unmarshal([]byte(nonAuctionableTokens.Value), &tokens)
+				require.NoError(t, err)
+				params.NonAuctionableTokens = tokens
+				return params
+			},
+		},
+		{
+			name: "Update only BurnWinningBids",
+			msg: types.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*types.Param{
+					&burnWinningBids,
+				},
+			},
+			expectError: false,
+			expectedParams: func(ctx sdk.Context, keeper keeper.Keeper) types.Params {
+				params, err := keeper.GetParams(ctx)
+				require.NoError(t, err)
+				params.BurnWinningBids = true
+				return params
+			},
+		},
+		{
+			name: "Update only Enabled",
+			msg: types.MsgUpdateParamsProposal{
+				Authority: govAddress.String(),
+				ParamUpdates: []*types.Param{
+					&enabled,
+				},
+			},
+			expectError: false,
+			expectedParams: func(ctx sdk.Context, keeper keeper.Keeper) types.Params {
+				params, err := keeper.GetParams(ctx)
+				require.NoError(t, err)
+				params.Enabled = true
+				return params
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cacheCtx, _ := ctx.CacheContext()
+			msgServer := keeper.NewMsgServerImpl(*suite.App.AuctionKeeper)
+			expectedParams := tc.expectedParams(cacheCtx, *suite.App.AuctionKeeper)
+			_, err := msgServer.UpdateParamsProposal(cacheCtx, &tc.msg)
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				params, err := suite.App.AuctionKeeper.GetParams(cacheCtx)
+				require.NoError(t, err)
+
+				fmt.Println("Expected Params:", expectedParams)
+				fmt.Println("Actual Params:", params)
+				require.Equal(t, expectedParams.AuctionLength, params.AuctionLength, "Expected auction length to match after proposal execution")
+				require.Equal(t, expectedParams.MinBidFee, params.MinBidFee, "Expected min bid fee to match after proposal execution")
+				require.Equal(t, expectedParams.NonAuctionableTokens, params.NonAuctionableTokens, "Expected non-auctionable tokens to match after proposal execution")
+				require.Equal(t, expectedParams.BurnWinningBids, params.BurnWinningBids, "Expected burn winning bids to match after proposal execution")
+				require.Equal(t, expectedParams.Enabled, params.Enabled, "Expected enabled to match after proposal execution")
 			}
 		})
 	}
