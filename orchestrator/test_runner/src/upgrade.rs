@@ -1,9 +1,11 @@
 use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
-use crate::{happy_path_test, happy_path_test_v2, utils::*};
+use crate::{happy_path_test, happy_path_test_v2, utils::*, ADDRESS_PREFIX, OPERATION_TIMEOUT};
 use clarity::Address as EthAddress;
+use deep_space::client::type_urls::MSG_SEND_TYPE_URL;
+use deep_space::client::types::LatestBlock;
 use deep_space::client::ChainStatus;
 use deep_space::utils::decode_any;
-use deep_space::{Contact, CosmosPrivateKey};
+use deep_space::{Coin, Contact, CosmosPrivateKey, PrivateKey};
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::gravity::v1::query_client::{QueryClient as GravityQueryClient, QueryClient};
 use gravity_proto::gravity::v1::{
@@ -20,6 +22,8 @@ use std::time::Duration;
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
+use std::fs::{self, File};
+use std::io::Write;
 
 pub const UPGRADE_NAME: &str = "next";
 
@@ -254,15 +258,49 @@ pub async fn run_all_recoverable_tests(
 #[allow(clippy::too_many_arguments)]
 pub async fn run_upgrade_specific_tests(
     _web30: &Web3,
-    _gravity_contact: &Contact,
+    gravity_contact: &Contact,
     _ibc_contact: &Contact,
     _grpc_client: GravityQueryClient<Channel>,
-    _keys: Vec<ValidatorKeys>,
+    keys: Vec<ValidatorKeys>,
     _ibc_keys: Vec<CosmosPrivateKey>,
     _gravity_address: EthAddress,
     _erc20_addresses: Vec<EthAddress>,
-    _post_upgrade: bool,
+    post_upgrade: bool,
 ) {
+    if !post_upgrade {
+        info!("Gathering chain ID and txhash for upgrade part 1");
+        let block = gravity_contact.get_latest_block().await.expect("Failed to get latest block");
+        let chain_id = match block {
+            LatestBlock::Latest { block } => block.header.unwrap().chain_id,
+            LatestBlock::Syncing { block } => block.header.unwrap().chain_id,
+            LatestBlock::WaitingToStart => panic!("Chain is not moving!"),
+        };
+
+        let mut file = File::create("/upgrade_chain_id.txt").expect("Unable to create file");
+        write!(file, "{}", chain_id).expect("Unable to write chain_id to file");
+
+        let txhash = gravity_contact.send_coins(Coin{amount: 1u32.into(), denom: "ugraviton".to_string()}, None, keys[1].orch_key.to_address(&*ADDRESS_PREFIX).unwrap(), Some(OPERATION_TIMEOUT), keys[0].orch_key.clone()).await.expect("Failed to send coins").txhash();
+
+        let mut file = File::create("/upgrade_txhash.txt").expect("Unable to create file");
+        write!(file, "{}", txhash).expect("Unable to write txhash to file");
+    } else {
+        let chain_id = fs::read_to_string("/upgrade_chain_id.txt").expect("Unable to open file");
+        let chain_id = chain_id.trim().to_string();
+        let block = gravity_contact.get_latest_block().await.expect("Failed to get latest block");
+        let updated_chain_id = match block {
+            LatestBlock::Latest { block } => block.header.unwrap().chain_id,
+            LatestBlock::Syncing { block } => block.header.unwrap().chain_id,
+            LatestBlock::WaitingToStart => panic!("Chain is not moving!"),
+        };
+
+        assert_eq!(chain_id, updated_chain_id.to_string(), "Chain ID has changed after upgrade!");
+
+        let txhash = fs::read_to_string("/upgrade_txhash.txt").expect("Unable to open file");
+        let txhash = txhash.trim().to_string();
+
+        let tx = gravity_contact.get_tx_by_hash(txhash).await.expect("Failed to get tx by hash");
+        assert!(tx.tx.is_some() && tx.tx.unwrap().body.unwrap().messages[0].type_url == MSG_SEND_TYPE_URL, "Transaction not found after upgrade!");
+    }
 }
 
 /// Checks that the expected attestations are returned from the grpc endpoint
