@@ -10,23 +10,30 @@ jobs:
   happy-path-geth:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
           cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run all up happy-path test
         run: tests/all-up-test-ci.sh
   happy-path-hardhat:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run all up happy-path test
         run: tests/all-up-test-ci.sh
         env:
@@ -35,66 +42,90 @@ jobs:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run all up test with a validator out
         run: tests/all-up-test-ci.sh VALIDATOR_OUT
   valset-stress:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run all up valset stress test
         run: tests/all-up-test-ci.sh VALSET_STRESS
   batch-stress:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run all up batch stress test
         run: tests/all-up-test-ci.sh BATCH_STRESS
   v2-happy-path:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run Happy path v2 test (Cosmos -> Eth)
         run: tests/all-up-test-ci.sh V2_HAPPY_PATH
   v2-happy-path-native:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run Happy path v2 test with the native token
         run: tests/all-up-test-ci.sh V2_HAPPY_PATH_NATIVE
   #  relay-market:
-  #    runs-on: ubuntu-latest
-  #    needs: happy-path-geth
-  #    steps:
-  #      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v5
-  #      - uses: Swatinem/rust-cache@v2
-  #        with:
-  #          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+  #   runs-on: ubuntu-latest
+  #   needs: happy-path-geth
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-go@v5
+  #     - uses: Swatinem/rust-cache@v2
+  #       with:
+  #         workspaces: orchestrator/
+  #         cache-on-failure: true
+  #         cache-all-crates: true
+  #         cache-workspace-crates: true
+  #         shared-key: "integration-tests-rust-cache"
   #      - name: Run all up relay market test
   #        env:
   #          ALCHEMY_ID: ${{ secrets.ALCHEMY_ID }}
@@ -105,161 +136,217 @@ jobs:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run orchestrator key setting test
         run: tests/all-up-test-ci.sh ORCHESTRATOR_KEYS
   valset_update_rewards:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run the validator set update rewards test
         run: tests/all-up-test-ci.sh VALSET_REWARDS
   evidence_based_slashing:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run the evidence based slashing test
         run: tests/all-up-test-ci.sh EVIDENCE
   transaction-cancel:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Run the transaction cancel test
         run: tests/all-up-test-ci.sh TXCANCEL
   invalid-events:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Submit invalid events
         run: tests/all-up-test-ci.sh INVALID_EVENTS
   unhalt-bridge:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Halt bridge with ETH hardfork and then unhalt the bridge via governance
         run: tests/all-up-test-ci.sh UNHALT_BRIDGE
   pause-bridge:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Pause and then resume the bridge via governance
         run: tests/all-up-test-ci.sh PAUSE_BRIDGE
   deposit-overflow:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Submit an overflowing deposit
         run: tests/all-up-test-ci.sh DEPOSIT_OVERFLOW
   ethereum-blacklist:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Attempt to deposit to a blacklisted address
         run: tests/all-up-test-ci.sh ETHEREUM_BLACKLIST
   airdrop_proposal:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Execute a governance powered airdrop
         run: tests/all-up-test-ci.sh AIRDROP_PROPOSAL
   signature_slashing:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test slashing for unsubmitted signatures
         run: tests/all-up-test-ci.sh SIGNATURE_SLASHING
   slashing_delegation:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test delegation after slashing
         run: tests/all-up-test-ci.sh SLASHING_DELEGATION
   ibc_metadata:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test setting metadata for IBC tokens
         run: tests/all-up-test-ci.sh IBC_METADATA
   erc721_happy_path:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test ERC721 happy path
         run: tests/all-up-test-ci.sh ERC721_HAPPY_PATH
   upgrade_test:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
@@ -274,153 +361,209 @@ jobs:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test Eth->Gravity IBC Auto-Forwarding
         run: tests/all-up-test-ci.sh IBC_AUTO_FORWARD
   ethereum_keys:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test Ethereum Keys signing support between deep_space and Gravity Bridge Chain
         run: tests/all-up-test-ci.sh ETHEREUM_KEYS
   batch_timeout:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test extremely agressive batch timeout scenarios
         run: tests/all-up-test-ci.sh BATCH_TIMEOUT
   vesting:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test simple vesting account behavior
         run: tests/all-up-test-ci.sh VESTING
   send_to_eth_fees:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test Prop 86 Cosmos->Eth fees
         run: tests/all-up-test-ci.sh SEND_TO_ETH_FEES
   ica_host_happy_path:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test the Interchain Accounts Host module functionality with Gravity
         run: tests/all-up-test-ci.sh ICA_HOST_HAPPY_PATH
   inflation-knockdown:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test adjusting inflation parameters via governance
         run: tests/all-up-test-ci.sh INFLATION_KNOCKDOWN
   eip-712:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test EIP-712 signature verification
         run: tests/all-up-test-ci.sh EIP712
   auction-static:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test the auction module with static bids
         run: tests/all-up-test-ci.sh AUCTION_STATIC
   auction-random:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test the auction module with random bids
         run: tests/all-up-test-ci.sh AUCTION_RANDOM
   auction-invalid-params:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test auction module params validation
         run: tests/all-up-test-ci.sh AUCTION_INVALID_PARAMS
   auction-disable:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test auction module params validation
         run: tests/all-up-test-ci.sh AUCTION_DISABLE
   feegrant:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test feegrant module
         run: tests/all-up-test-ci.sh FEEGRANT
   param-change-paranoia:
     runs-on: ubuntu-latest
     needs: happy-path-geth
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: /home/runner/work/Gravity-Bridge/Gravity-Bridge/orchestrator/
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
       - name: Test param change messages can't be submitted outside of a proposal
         run: tests/all-up-test-ci.sh PARAM_CHANGE_PARANOIA
