@@ -1,4 +1,4 @@
-FROM golang:1.22
+FROM golang:1.24
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get --no-install-recommends -y install \
