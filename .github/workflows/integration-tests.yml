@@ -12,6 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -27,6 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -44,6 +50,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -59,6 +68,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -74,6 +86,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -89,6 +104,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -104,6 +122,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -119,6 +140,9 @@ jobs:
   #   steps:
   #     - uses: actions/checkout@v4
   #     - uses: actions/setup-go@v5
+  #       with:
+  #         cache-dependency-path: module/go.sum
+  #         go-version-file: module/go.mod
   #     - uses: Swatinem/rust-cache@v2
   #       with:
   #         workspaces: orchestrator/
@@ -138,6 +162,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -153,6 +180,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -168,6 +198,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -183,6 +216,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -198,6 +234,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -213,6 +252,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -228,6 +270,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -243,6 +288,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -258,6 +306,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -273,6 +324,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -288,6 +342,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -303,6 +360,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -318,6 +378,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -333,6 +396,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -348,6 +414,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -363,6 +432,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -378,6 +450,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -393,6 +468,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -408,6 +486,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -423,6 +504,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -438,6 +522,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -453,6 +540,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -468,6 +558,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -483,6 +576,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -498,6 +594,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -513,6 +612,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -528,6 +630,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -543,6 +648,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
@@ -558,6 +666,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: orchestrator/
