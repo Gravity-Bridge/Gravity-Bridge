@@ -170,7 +170,7 @@ func (k Keeper) addUnbatchedTX(ctx sdk.Context, val *types.InternalOutgoingTrans
 	return err
 }
 
-// removeUnbatchedTXIndex removes the tx from the pool
+// removeUnbatchedTX removes the tx from the pool
 // WARNING: Do not make this function public
 func (k Keeper) removeUnbatchedTX(ctx sdk.Context, fee types.InternalERC20Token, txID uint64) error {
 	store := ctx.KVStore(k.storeKey)
