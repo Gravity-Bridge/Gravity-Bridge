@@ -130,13 +130,17 @@ build-reproducible: go.sum
 	$(DOCKER) rm release-builder || true
 	$(DOCKER) build --ulimit nofile=65536:65536 -t release-builder ./rbuilder
 	$(DOCKER) run --volume=$(CURDIR)/.././:/sources:ro \
-        --env TARGET_PLATFORMS='linux/amd64' \
+		--env TARGET_PLATFORMS='linux/amd64' \
         --env APP=gravity \
         --env VERSION=$(VERSION) \
         --env COMMIT=$(COMMIT) \
         --env LEDGER_ENABLED=$(LEDGER_ENABLED) \
         --name latest-build release-builder
 	$(DOCKER) cp -a latest-build:/home/builder/artifacts/ $(CURDIR)/
+
+# Static build: fully statically linked binary using musl-gcc
+static: go.sum
+	CGO_ENABLED=1 CC=musl-gcc go install -tags "netgo osusergo static_build" -ldflags "$(ldflags) -w -s -linkmode external -extldflags '-static-pie -fPIC'" ./cmd/gravity
 
 clean:
 	rm -rf $(BUILDDIR)/ artifacts/
