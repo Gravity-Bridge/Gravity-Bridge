@@ -1216,9 +1216,9 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
 name = "deep_space"
-version = "2.29.2"
+version = "2.29.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31a2a102b1873d64af7842ee29eb366d5352c77a08f5f5c2964b8b58f592254f"
+checksum = "809c36ff2cd4c262c0b4508d0fe0be074edcd565d245dc28e8b594ec6d697c1b"
 dependencies = [
  "base64 0.22.1",
  "bech32",
@@ -2637,7 +2637,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07033963ba89ebaf1584d767badaa2e8fcec21aedea6b8c0346d487d49c28667"
 dependencies = [
  "cfg-if 1.0.1",
- "windows-targets 0.53.2",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -5354,7 +5354,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
