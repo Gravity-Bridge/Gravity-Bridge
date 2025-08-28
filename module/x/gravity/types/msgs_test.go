@@ -3,13 +3,13 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"testing"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
