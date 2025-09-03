@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	signingv1beta1 "cosmossdk.io/api/cosmos/tx/signing/v1beta1"
+	simappparams "cosmossdk.io/simapp/params"
 	"cosmossdk.io/x/tx/signing"
 	client "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -56,7 +57,13 @@ func MakeAnteHandler(t *testing.T, input keeper.TestInput) sdk.AnteHandler {
 		ExtensionOptionChecker: nil,
 		TxFeeChecker:           nil,
 	}
-	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainIDs)
+	encConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: encodingConfig.InterfaceRegistry,
+		Codec:             encodingConfig.Marshaler,
+		TxConfig:          encodingConfig.TxConfig,
+		Amino:             encodingConfig.Amino,
+	}
+	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainIDs, encConfig)
 	require.NoError(t, err)
 	require.NotNil(t, ah)
 	return *ah

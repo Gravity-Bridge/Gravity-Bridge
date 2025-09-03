@@ -3,6 +3,7 @@ package ante
 import (
 	"fmt"
 
+	simapparams "cosmossdk.io/simapp/params"
 	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -36,6 +37,7 @@ func NewAnteHandler(
 	ibcKeeper *ibckeeper.Keeper,
 	cdc codec.Codec,
 	evmChainIDs []string,
+	encodingConfig simapparams.EncodingConfig,
 ) (*sdk.AnteHandler, error) {
 	if len(evmChainIDs) == 0 {
 		return nil, fmt.Errorf("evmChainIDs not specified, EIP-712 signing will fail")
@@ -61,7 +63,7 @@ func NewAnteHandler(
 		sdkante.NewValidateSigCountDecorator(accountKeeper),
 		sdkante.NewSigGasConsumeDecorator(accountKeeper, options.SigGasConsumer),
 		// Delegates to EIP-712 verification OR to regular SDK verification depending on the extension option
-		NewGravitySigVerificationDecorator(cdc, accountKeeper, *options.SignModeHandler, evmChainIDs),
+		NewGravitySigVerificationDecorator(cdc, accountKeeper, *options.SignModeHandler, evmChainIDs, encodingConfig),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),
 		ibcante.NewRedundantRelayDecorator(ibcKeeper),
 		// Enforces the minimum commission for Gravity Prop #1

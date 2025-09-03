@@ -3,6 +3,7 @@ package ante
 import (
 	errorsmod "cosmossdk.io/errors"
 
+	simappparams "cosmossdk.io/simapp/params"
 	"cosmossdk.io/x/tx/signing"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,11 +30,11 @@ type GravitySigVerificationDecorator struct {
 
 // See GravitySigVerificationDecorator for more info
 func NewGravitySigVerificationDecorator(
-	cdc codec.Codec, ak *authkeeper.AccountKeeper, signModeHandler signing.HandlerMap, evmChainIDs []string,
+	cdc codec.Codec, ak *authkeeper.AccountKeeper, signModeHandler signing.HandlerMap, evmChainIDs []string, encodingConfig simappparams.EncodingConfig,
 ) GravitySigVerificationDecorator {
 	sdkSVD := sdkante.NewSigVerificationDecorator(ak, &signModeHandler)
 	// nolint: staticcheck
-	ethermintSVD := ethermintante.NewLegacyEip712SigVerificationDecorator(ak, &signModeHandler, evmChainIDs)
+	ethermintSVD := ethermintante.NewLegacyEip712SigVerificationDecorator(ak, &signModeHandler, evmChainIDs, encodingConfig)
 	return GravitySigVerificationDecorator{cdc, sdkSVD, ethermintSVD}
 }
 

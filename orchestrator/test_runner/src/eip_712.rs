@@ -2,13 +2,11 @@ use std::{slice::from_ref, str::FromStr};
 
 use clarity::Address as EthAddress;
 use deep_space::{
-    client::type_urls::MSG_SEND_TYPE_URL, utils::decode_bytes, Address as CosmosAddress, Coin,
-    Contact, CosmosPrivateKey, EthermintPrivateKey, PrivateKey,
+    Address as CosmosAddress, Coin, Contact, CosmosPrivateKey, EthermintPrivateKey, PrivateKey, client::{type_urls::MSG_SEND_TYPE_URL}, utils::decode_bytes
 };
 use gravity_proto::{
     cosmos_sdk_proto::cosmos::{
-        bank::v1beta1::MsgSend,
-        tx::v1beta1::{BroadcastMode, TxRaw},
+        bank::v1beta1::MsgSend, base::abci::v1beta1::TxResponse, tx::v1beta1::{BroadcastMode, TxRaw}
     },
     gravity::v1::query_client::QueryClient as GravityQueryClient,
 };
@@ -106,9 +104,9 @@ pub async fn eip_712_test(
     let tx_post_host =
         contact.get_url().rsplit_once(':').unwrap().0.to_string() + ":" + TX_POST_PORT;
     let tx_post_url = tx_post_host + TX_POST_ENDPOINT;
-    debug!("Sending Tx to {tx_post_url}");
+    info!("Sending Valid EIP712 MsgSend (expect success) Tx to {tx_post_url}");
     let req_body = wrap_transaction(SUCCESSFUL_EIP712_MSG_SEND);
-    debug!("Tx request is {req_body}");
+    info!("Tx request is {req_body}");
     send_eip712_tx(
         &http_client,
         tx_post_url.clone(),
@@ -121,9 +119,9 @@ pub async fn eip_712_test(
     .await;
 
     // Send a second EIP712 transaction which has an invalid signature
-
+    info!("Sending Invalid EIP712 MsgSend (expect signature verification failure) Tx to {tx_post_url}");
     let second_req = wrap_transaction(BAD_SECOND_MESSAGE);
-    debug!("Tx request is {second_req}");
+    info!("Tx request is {second_req}");
     send_eip712_tx(
         &http_client,
         tx_post_url.clone(),
@@ -188,7 +186,7 @@ pub async fn setup(contact: &Contact, keys: &[ValidatorKeys], addr: CosmosAddres
 }
 
 pub fn wrap_transaction(transaction: &str) -> String {
-    format!("{{ \"tx_bytes\": [{transaction}], \"mode\": \"BROADCAST_MODE_BLOCK\" }}")
+    format!("{{ \"tx_bytes\": [{transaction}], \"mode\": \"BROADCAST_MODE_SYNC\" }}")
 }
 
 pub async fn send_eip712_tx(
@@ -221,7 +219,26 @@ pub async fn send_eip712_tx(
         .expect("Transaction submission failure")
         .text()
         .await;
-    debug!("Tx submission res: {res:?}");
+    info!("Tx submission res: {res:?}");
+
+    assert!(res.is_ok());
+    let res = res.unwrap();
+
+    let parsed_res = serde_json::from_str::<serde_json::Value>(&res)
+        .expect("Could not parse response as JSON");
+    let tx_response = &parsed_res["tx_response"];
+    let tx_hash = tx_response["txhash"]
+        .as_str()
+        .expect("Could not get txhash from response");
+    info!("Tx hash: {tx_hash}");
+    if expect_signature_success {
+        let response = contact.wait_for_tx(TxResponse{txhash: tx_hash.to_string(), ..Default::default()}.into(), OPERATION_TIMEOUT).await.expect("tx never got included?");
+        assert_eq!(response.code(), 0, "tx failed: {:?}", response.raw_log());
+        info!("Tx included in block: {:?}", response);
+    } else {
+        let response = contact.wait_for_tx(TxResponse{txhash: tx_hash.to_string(), ..Default::default()}.into(), OPERATION_TIMEOUT).await.expect_err("tx included in block, but it was invalid");
+        debug!("Expecting failure for this tx, error is: {:?}", response);
+    }
 
     let sender_postbal = contact
         .get_balance(*sender, STAKING_TOKEN.to_string())
@@ -234,8 +251,6 @@ pub async fn send_eip712_tx(
         .expect("Could not get receiver's balance")
         .expect("receiver has no balance");
 
-    assert!(res.is_ok());
-    let res = res.unwrap();
     if expect_signature_success {
         assert!(!res.contains("signature verification failed")); // The signature must be invalid
 
@@ -332,6 +347,7 @@ pub async fn send_bad_deep_space_tx(
         .expect("Could not get receiver's balance")
         .expect("receiver has no balance");
 
+    info!("Sending a bad deep space tx, expecting an error to be returned");
     let err_response = contact
         .send_transaction(bad_tx_buf, BroadcastMode::Sync)
         .await

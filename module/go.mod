@@ -12,7 +12,7 @@ replace (
 	github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.10.26
 
 	// Althea-net fork adds nice features to the evm, upgraded to SDK 50
-	github.com/evmos/ethermint => github.com/althea-net/ethermint v0.23.0-multi-chainids
+	github.com/evmos/ethermint => github.com/althea-net/ethermint v0.23.1-multi-chainids
 
 	// Fix node query errors like "failed to load state at height 5; version does not exist (latest height: 5)"
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
