@@ -2,11 +2,14 @@ use std::{slice::from_ref, str::FromStr};
 
 use clarity::Address as EthAddress;
 use deep_space::{
-    Address as CosmosAddress, Coin, Contact, CosmosPrivateKey, EthermintPrivateKey, PrivateKey, client::{type_urls::MSG_SEND_TYPE_URL}, utils::decode_bytes
+    client::type_urls::MSG_SEND_TYPE_URL, utils::decode_bytes, Address as CosmosAddress, Coin,
+    Contact, CosmosPrivateKey, EthermintPrivateKey, PrivateKey,
 };
 use gravity_proto::{
     cosmos_sdk_proto::cosmos::{
-        bank::v1beta1::MsgSend, base::abci::v1beta1::TxResponse, tx::v1beta1::{BroadcastMode, TxRaw}
+        bank::v1beta1::MsgSend,
+        base::abci::v1beta1::TxResponse,
+        tx::v1beta1::{BroadcastMode, TxRaw},
     },
     gravity::v1::query_client::QueryClient as GravityQueryClient,
 };
@@ -224,19 +227,39 @@ pub async fn send_eip712_tx(
     assert!(res.is_ok());
     let res = res.unwrap();
 
-    let parsed_res = serde_json::from_str::<serde_json::Value>(&res)
-        .expect("Could not parse response as JSON");
+    let parsed_res =
+        serde_json::from_str::<serde_json::Value>(&res).expect("Could not parse response as JSON");
     let tx_response = &parsed_res["tx_response"];
     let tx_hash = tx_response["txhash"]
         .as_str()
         .expect("Could not get txhash from response");
     info!("Tx hash: {tx_hash}");
     if expect_signature_success {
-        let response = contact.wait_for_tx(TxResponse{txhash: tx_hash.to_string(), ..Default::default()}.into(), OPERATION_TIMEOUT).await.expect("tx never got included?");
+        let response = contact
+            .wait_for_tx(
+                TxResponse {
+                    txhash: tx_hash.to_string(),
+                    ..Default::default()
+                }
+                .into(),
+                OPERATION_TIMEOUT,
+            )
+            .await
+            .expect("tx never got included?");
         assert_eq!(response.code(), 0, "tx failed: {:?}", response.raw_log());
         info!("Tx included in block: {:?}", response);
     } else {
-        let response = contact.wait_for_tx(TxResponse{txhash: tx_hash.to_string(), ..Default::default()}.into(), OPERATION_TIMEOUT).await.expect_err("tx included in block, but it was invalid");
+        let response = contact
+            .wait_for_tx(
+                TxResponse {
+                    txhash: tx_hash.to_string(),
+                    ..Default::default()
+                }
+                .into(),
+                OPERATION_TIMEOUT,
+            )
+            .await
+            .expect_err("tx included in block, but it was invalid");
         debug!("Expecting failure for this tx, error is: {:?}", response);
     }
 
