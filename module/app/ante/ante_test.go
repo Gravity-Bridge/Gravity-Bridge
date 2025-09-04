@@ -63,7 +63,7 @@ func MakeAnteHandler(t *testing.T, input keeper.TestInput) sdk.AnteHandler {
 		TxConfig:          encodingConfig.TxConfig,
 		Amino:             encodingConfig.Amino,
 	}
-	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainIDs, encConfig)
+	ah, err := NewAnteHandler(options, &gk, &ak, &bk, nil, &ibck, input.Marshaler, gravityconfig.GravityEvmChainIDs, encConfig, 8675309)
 	require.NoError(t, err)
 	require.NotNil(t, ah)
 	return *ah

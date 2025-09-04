@@ -157,6 +157,7 @@ import (
 )
 
 const appName = "app"
+const EIP712_CHANGEOVER_HEIGHT = 8675309 // TODO set this to the correct height
 
 var (
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
@@ -998,7 +999,18 @@ func (app *Gravity) setAnteHandler(encodingConfig simappparams.EncodingConfig) {
 		TxFeeChecker:           nil,
 	}
 
-	ah, err := ante.NewAnteHandler(options, app.GravityKeeper, app.AccountKeeper, app.BankKeeper, app.FeegrantKeeper, app.IbcKeeper, app.AppCodec, gravityconfig.GravityEvmChainIDs, encodingConfig)
+	ah, err := ante.NewAnteHandler(
+		options,
+		app.GravityKeeper,
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.FeegrantKeeper,
+		app.IbcKeeper,
+		app.AppCodec,
+		gravityconfig.GravityEvmChainIDs,
+		encodingConfig,
+		EIP712_CHANGEOVER_HEIGHT,
+	)
 	if err != nil {
 		panic("invalid antehandler created")
 	}
