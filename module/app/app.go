@@ -157,7 +157,7 @@ import (
 )
 
 const appName = "app"
-const EIP712_CHANGEOVER_HEIGHT = 8675309 // TODO set this to the correct height
+const EIP712_CHANGEOVER_HEIGHT = 18755588
 
 var (
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
