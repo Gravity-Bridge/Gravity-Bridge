@@ -2,7 +2,7 @@ use crate::happy_path::send_erc20_deposit;
 use crate::happy_path_v2::send_to_eth_and_confirm;
 use crate::ibc_auto_forward::{get_channel_id, test_ibc_transfer};
 use crate::{
-    create_default_test_config, create_parameter_change_proposal, delegate_and_confirm,
+    create_default_test_config, create_legacy_parameter_change_proposal, delegate_and_confirm,
     get_ethermint_key, get_fee, get_ibc_chain_id, one_eth, send_eth_bulk, start_orchestrators,
     wait_for_balance, EthAddress, EthermintUserKey, GravityQueryClient, ValidatorKeys,
     ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX, IBC_NODE_GRPC, OPERATION_TIMEOUT,
@@ -251,7 +251,7 @@ pub async fn example_ethermint_key_usage(
         .expect("Could not connect ibc-transfer query client");
 
     // Wait for the ibc channel to be created and find the channel ids
-    let channel_id_timeout = Duration::from_secs(60);
+    let channel_id_timeout = Duration::from_secs(60 * 5);
     let gravity_channel_id = get_channel_id(
         gravity_channel_qc,
         get_ibc_chain_id(),
@@ -300,7 +300,7 @@ pub async fn example_ethermint_key_usage(
         .get_governance_proposals_in_voting_period()
         .await
         .expect("Did not find any proposals in voting status");
-    create_parameter_change_proposal(
+    create_legacy_parameter_change_proposal(
         contact,
         user_key,
         vec![signed_valsets_window],

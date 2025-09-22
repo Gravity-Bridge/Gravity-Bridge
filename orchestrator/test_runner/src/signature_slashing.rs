@@ -5,15 +5,14 @@
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::test_valset_update;
 use crate::utils::{
-    create_default_test_config, create_parameter_change_proposal, start_orchestrators,
-    vote_yes_on_proposals, ValidatorKeys,
+    create_default_test_config, create_gravity_params_proposal, start_orchestrators,
+    vote_yes_on_proposals, GravityProposalParams, ValidatorKeys,
 };
-use crate::{get_fee, TOTAL_TIMEOUT};
+use crate::{get_deposit, get_fee, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
 use deep_space::client::types::ChainStatus;
 use deep_space::Contact;
-use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
@@ -82,34 +81,20 @@ pub async fn reduce_slashing_window(
     grpc_client: &mut GravityQueryClient<Channel>,
     keys: &[ValidatorKeys],
 ) {
-    let mut params_to_change = Vec::new();
-    let signed_valsets_window = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "SignedValsetsWindow".to_string(),
-        value: r#""10""#.to_string(),
-    };
-    params_to_change.push(signed_valsets_window);
-    let signed_batches_window = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "SignedBatchesWindow".to_string(),
-        value: r#""10""#.to_string(),
-    };
-    params_to_change.push(signed_batches_window);
-    let signed_logic_call_window = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "SignedLogicCallsWindow".to_string(),
-        value: r#""10""#.to_string(),
-    };
-    params_to_change.push(signed_logic_call_window);
-
     // next we create a governance proposal to use the newly bridged asset as the reward
     // and vote to pass the proposal
     info!("Creating parameter change governance proposal");
-    create_parameter_change_proposal(
+    create_gravity_params_proposal(
         contact,
         keys[0].validator_key,
-        params_to_change,
+        get_deposit(None),
         get_fee(None),
+        GravityProposalParams {
+            signed_valsets_window: Some("10".to_string()),
+            signed_batches_window: Some("10".to_string()),
+            signed_logic_calls_window: Some("10".to_string()),
+            ..Default::default()
+        },
     )
     .await;
 

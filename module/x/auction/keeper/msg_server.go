@@ -254,39 +254,46 @@ func (m msgServer) UpdateParamsProposal(goCtx context.Context, msg *types.MsgUpd
 		case types.ParamAuctionLength:
 			auctionLength, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid auction length: %s", param.Value)
+				m.Keeper.Logger(ctx).Error("invalid auction length", "error", err, "value", param.Value, "parsedValue", auctionLength)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid auction length: %s", err.Error())
 			}
 			updatedParams.AuctionLength = auctionLength
 		case types.ParamMinBidFee:
 			minBidFee, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid min bid fee: %s", param.Value)
+				m.Keeper.Logger(ctx).Error("invalid min bid fee", "error", err, "value", param.Value, "parsedValue", minBidFee)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid min bid fee: %s", err.Error())
 			}
 			updatedParams.MinBidFee = minBidFee
 		case types.ParamNonAuctionableTokens:
 			var nonAuctionableTokens []string
 			if err := json.Unmarshal([]byte(param.Value), &nonAuctionableTokens); err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid non-auctionable tokens: %s", param.Value)
+				m.Keeper.Logger(ctx).Error("invalid non-auctionable tokens", "error", err, "value", param.Value, "parsedValue", nonAuctionableTokens)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid non-auctionable tokens: %s", err.Error())
 			}
 			updatedParams.NonAuctionableTokens = nonAuctionableTokens
 		case types.ParamBurnWinningBids:
 			burnWinningBids, err := strconv.ParseBool(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid burn winning bids: %s", param.Value)
+				m.Keeper.Logger(ctx).Error("invalid burn winning bids", "error", err, "value", param.Value, "parsedValue", burnWinningBids)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid burn winning bids: %s", err.Error())
 			}
 			updatedParams.BurnWinningBids = burnWinningBids
 		case types.ParamEnabled:
 			enabled, err := strconv.ParseBool(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid enabled status: %s", param.Value)
+				m.Keeper.Logger(ctx).Error("invalid enabled status", "error", err, "value", param.Value, "parsedValue", enabled)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid enabled status: %s", err.Error())
 			}
 			updatedParams.Enabled = enabled
 		default:
+			m.Keeper.Logger(ctx).Error("unknown parameter key", "key", param.Key)
 			return nil, errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unknown parameter key: %s", param.Key)
 		}
 	}
 
 	if err := m.Keeper.SetParams(ctx, updatedParams); err != nil {
+		m.Keeper.Logger(ctx).Error("failed to set auction params", "error", err)
 		return nil, errorsmod.Wrap(err, "failed to set auction params")
 	}
 

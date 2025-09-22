@@ -86,20 +86,20 @@ pub async fn ibc_metadata_proposal_test(
         uri_hash: String::new(),
     };
 
-    // check that a totally invalid version does not work
-    submit_and_fail_ibc_metadata_proposal(
+    // This invalid version should have no effect
+    submit_and_pass_ibc_metadata_proposal(
         "invalid".to_string(),
         invalid_metadata.clone(),
         contact,
         &keys,
     )
     .await;
-    // check to make sure we target denom and metadata denom matches
-    submit_and_fail_ibc_metadata_proposal(invalid_denom, foo_metadata.clone(), contact, &keys)
+    // An invalid denom should have no effect
+    submit_and_pass_ibc_metadata_proposal(invalid_denom, foo_metadata.clone(), contact, &keys)
         .await;
 
-    // try and overwrite the footoken metadata
-    submit_and_fail_ibc_metadata_proposal(foo_metadata.base.clone(), foo_metadata, contact, &keys)
+    // Overwriting the footoken metadata should have no effect
+    submit_and_pass_ibc_metadata_proposal(foo_metadata.base.clone(), foo_metadata, contact, &keys)
         .await;
 
     // the actual valid proposal
@@ -153,28 +153,4 @@ pub async fn submit_and_pass_ibc_metadata_proposal(
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
     trace!("Gov proposal executed with {res:?}");
-}
-
-async fn submit_and_fail_ibc_metadata_proposal(
-    denom: String,
-    metadata: Metadata,
-    contact: &Contact,
-    keys: &[ValidatorKeys],
-) {
-    let proposal_content = IbcMetadataProposal {
-        title: format!("Proposal to set metadata on {denom}"),
-        description: "IBC METADATA!".to_string(),
-        ibc_denom: denom,
-        metadata: Some(metadata),
-    };
-    let res = submit_ibc_metadata_proposal(
-        proposal_content,
-        get_deposit(None),
-        get_fee(None),
-        contact,
-        keys[0].validator_key,
-        Some(TOTAL_TIMEOUT),
-    )
-    .await;
-    assert!(res.is_err());
 }

@@ -1,6 +1,6 @@
 use crate::{
     airdrop_proposal::wait_for_proposals_to_execute,
-    get_fee,
+    get_deposit, get_fee,
     happy_path::test_erc20_deposit_panic,
     one_eth, one_hundred_eth,
     transaction_stress_test::{
@@ -14,10 +14,7 @@ use cosmos_gravity::{
     query::get_gravity_params, send::send_request_batch, utils::get_reasonable_send_to_eth_fee,
 };
 use deep_space::Contact;
-use gravity_proto::{
-    cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange,
-    gravity::v1::query_client::QueryClient as GravityQueryClient,
-};
+use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use std::time::{Duration, Instant};
 use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
@@ -158,20 +155,17 @@ async fn set_batch_timeout(
     grpc_client: &mut GravityQueryClient<Channel>,
 ) {
     info!("Voting to change batch timeout!");
-    let mut params_to_change = Vec::new();
-    let halt = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "TargetBatchTimeout".to_string(),
-        value: format!("\"{timeout}\""),
-    };
-    params_to_change.push(halt);
 
     // next we create a governance proposal to
-    create_parameter_change_proposal(
+    create_gravity_params_proposal(
         contact,
         keys[0].validator_key,
-        params_to_change,
+        get_deposit(None),
         get_fee(None),
+        GravityProposalParams {
+            target_batch_timeout: Some(format!("{timeout}")),
+            ..Default::default()
+        },
     )
     .await;
 

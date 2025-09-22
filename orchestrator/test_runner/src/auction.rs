@@ -44,8 +44,27 @@ lazy_static! {
 
 // Ensure that the auction module params cannot be updated to auction off the ugraviton supply
 pub async fn auction_invalid_params_test(contact: &Contact, keys: Vec<ValidatorKeys>) {
-    let res = set_non_auctionable_tokens(contact, &keys, vec![]).await;
-    assert!(res.is_err());
+    let mut auction_qc = AuctionQueryClient::connect(contact.get_url())
+        .await
+        .expect("Unable to connect to auction query client");
+    let params_before = auction_qc
+        .params(QueryParamsRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .params;
+    let _ = set_non_auctionable_tokens(contact, &keys, vec![]).await;
+    vote_yes_on_proposals(contact, &keys, Some(OPERATION_TIMEOUT)).await;
+    wait_for_proposals_to_execute(contact).await;
+
+    let params_after = auction_qc
+        .params(QueryParamsRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .params;
+
+    assert_eq!(params_before, params_after);
     info!("Successfully tested auction params validation");
 }
 
@@ -636,8 +655,14 @@ async fn seed_pool(contact: &Contact, keys: &[ValidatorKeys], denom: String) {
         denom: denom.clone(),
         amount: chain_fee,
     };
-    for _ in 0..3 {
+    for i in 0..3 {
+        info!("Seeding auction pool with {denom}: {i}");
         for v in keys {
+            let balance = contact
+                .get_balance(v.validator_key.to_address(&ADDRESS_PREFIX).unwrap(), denom.clone())
+                .await
+                .expect("Failed to get balance");
+            info!("Validator balance: {balance:?}");
             let ste_msg = MsgSendToEth {
                 amount: Some(ste_coin.clone().into()),
                 sender: v

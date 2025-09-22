@@ -19,3 +19,6 @@ artifacts
 
 #build artifacts
 /module/artifacts
+
+#Testing
+test-ready-to-run

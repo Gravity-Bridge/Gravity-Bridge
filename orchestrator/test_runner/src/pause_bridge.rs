@@ -3,8 +3,8 @@
 //!
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::{test_erc20_deposit_panic, test_erc20_deposit_result};
-use crate::utils::*;
 use crate::MINER_ADDRESS;
+use crate::{get_deposit, utils::*};
 use crate::{get_fee, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::get_gravity_params;
@@ -71,11 +71,15 @@ pub async fn pause_bridge_test(
     params_to_change.push(halt);
 
     // next we create a governance proposal halt the bridge temporarily
-    create_parameter_change_proposal(
+    create_gravity_params_proposal(
         contact,
         keys[0].validator_key,
-        params_to_change,
+        get_deposit(None),
         get_fee(None),
+        GravityProposalParams {
+            bridge_active: Some("false".to_string()),
+            ..Default::default()
+        },
     )
     .await;
 
@@ -165,21 +169,16 @@ pub async fn pause_bridge_test(
     );
     info!("Batch creation was blocked by bridge pause!");
 
-    info!("Voting to resume bridge operations!");
-    let mut params_to_change = Vec::new();
-    let unhalt = ParamChange {
-        subspace: "gravity".to_string(),
-        key: "BridgeActive".to_string(),
-        value: format!("{}", true),
-    };
-    params_to_change.push(unhalt);
-
     // crate a governance proposal to resume the bridge
-    create_parameter_change_proposal(
+    create_gravity_params_proposal(
         contact,
         keys[0].validator_key,
-        params_to_change,
+        get_deposit(None),
         get_fee(None),
+        GravityProposalParams {
+            bridge_active: Some("true".to_string()),
+            ..Default::default()
+        },
     )
     .await;
 

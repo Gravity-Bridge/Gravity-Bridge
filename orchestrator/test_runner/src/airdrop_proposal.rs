@@ -2,7 +2,8 @@
 //! and automatically execute an Airdrop out of the community pool
 
 use crate::utils::{
-    create_parameter_change_proposal, get_coins, vote_yes_on_proposals, ValidatorKeys,
+    create_mint_params_proposal, get_coins, vote_yes_on_proposals, MintProposalParams,
+    ValidatorKeys,
 };
 use crate::ADDRESS_PREFIX;
 use crate::STAKING_TOKEN;
@@ -13,9 +14,8 @@ use cosmos_gravity::proposals::{
 };
 use deep_space::error::CosmosGrpcError;
 use deep_space::utils::encode_any;
-use deep_space::Address as CosmosAddress;
 use deep_space::Contact;
-use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
+use deep_space::{Address as CosmosAddress, Coin};
 use gravity_proto::gravity::v1::AirdropProposal as AirdropProposalMsg;
 use gravity_proto::gravity::v2::MsgAirdropProposal;
 use rand::prelude::ThreadRng;
@@ -32,18 +32,22 @@ pub async fn airdrop_proposal_test(contact: &Contact, keys: Vec<ValidatorKeys>) 
     // we start by disabling inflation, this allows us to check that the correct
     // amount of tokens was withdrawn from the community pool, if we don't do this inflation
     // in the community pool may be larger than our actual airdrop amount spent.
+    info!("Diabling inflation");
     disable_inflation(contact, &keys).await;
 
     // now that inflation is disabled we can query the community pool and expect the value to only go down
     let bad_airdrop_denom = "notoken".to_string();
 
     // submit an invalid airdrop token type
+    info!("Submitting (expecting failure) an invalid denom airdrop");
     submit_and_fail_airdrop_proposal(bad_airdrop_denom.clone(), &keys, contact, false, false).await;
 
     // submit an airdrop token with an invalid address
+    info!("Submitting (expecting failure) an invalid address airdrop");
     submit_and_fail_airdrop_proposal(STAKING_TOKEN.clone(), &keys, contact, true, false).await;
 
     // submit the actual valid airdrop, max number of possible recipients
+    info!("Submitting (expecting success) a valid airdrop");
     submit_and_pass_airdrop_proposal(
         STAKING_TOKEN.clone(),
         NUM_AIRDROP_RECIPIENTS,
@@ -56,11 +60,13 @@ pub async fn airdrop_proposal_test(contact: &Contact, keys: Vec<ValidatorKeys>) 
     // submit one more airdrop with a random number of recipients
     let mut rng = rand::thread_rng();
     let recipients: u16 = rng.gen_range(1..NUM_AIRDROP_RECIPIENTS);
+    info!("Submitting (expecting success) a valid airdrop (random recipients)");
     submit_and_pass_airdrop_proposal(STAKING_TOKEN.clone(), recipients, &keys, contact)
         .await
         .unwrap();
 
     // submit an airdrop that contains more tokens than are in the community pool
+    info!("Submitting (expecting success) a valid airdrop (too many tokens)");
     submit_and_fail_airdrop_proposal(STAKING_TOKEN.clone(), &keys, contact, false, true).await;
 }
 
@@ -189,9 +195,14 @@ async fn submit_and_fail_airdrop_proposal(
     } else {
         generate_valid_accounts_and_amounts(NUM_AIRDROP_RECIPIENTS, starting_amount_in_pool.amount)
     };
+    let mut recipient_balances_before: Vec<Option<Coin>> = vec![];
+    for r in &recipients {
+        let balance = contact.get_balance(*r, denom.clone()).await.unwrap();
+        recipient_balances_before.push(balance);
+    }
 
     let mut byte_recipients = Vec::new();
-    for r in recipients {
+    for r in &recipients {
         byte_recipients.extend_from_slice(r.get_bytes())
     }
     if make_invalid {
@@ -201,7 +212,7 @@ async fn submit_and_fail_airdrop_proposal(
     let proposal_content = AirdropProposalMsg {
         title: format!("Proposal to perform {denom} airdrop"),
         description: "Airdrop time!".to_string(),
-        denom,
+        denom: denom.clone(),
         amounts: amounts.to_vec(),
         recipients: byte_recipients,
     };
@@ -219,8 +230,13 @@ async fn submit_and_fail_airdrop_proposal(
 
     let any = encode_any(msg_proposal, MSG_AIRDROP_PROPOSAL_TYPE_URL.to_string());
 
-    let res = contact
+    let title = "Airdrop proposal title".to_string();
+    let summary = "Airdrop proposal summary".to_string();
+
+    let _ = contact
         .create_gov_proposal(
+            title,
+            summary,
             vec![any],
             String::new(),
             get_deposit(None),
@@ -229,9 +245,28 @@ async fn submit_and_fail_airdrop_proposal(
             Some(TOTAL_TIMEOUT),
         )
         .await;
+    vote_yes_on_proposals(contact, keys, Some(TOTAL_TIMEOUT)).await;
+    wait_for_proposals_to_execute(contact).await;
 
-    // proposal fails tx simulation and does not enter the chain
-    assert!(res.is_err());
+    let mut recipient_balances_after: Vec<Option<Coin>> = vec![];
+    for r in &recipients {
+        let balance = contact.get_balance(*r, denom.clone()).await.unwrap();
+        recipient_balances_after.push(balance);
+    }
+
+    for i in 0..recipients.len() {
+        if recipient_balances_before[i] != recipient_balances_after[i] {
+            panic!(
+                "Airdrop proposal was expected to fail but at least one recipient balance changed"
+            );
+        }
+    }
+    // ensures we are generating a set of recipients and amounts that is possible to execute
+    let community_pool_contents_end = contact.query_community_pool().await.unwrap();
+    let ending_amount_in_pool = get_coins(&STAKING_TOKEN, &community_pool_contents_end).unwrap();
+    assert_eq!(starting_amount_in_pool.amount, ending_amount_in_pool.amount);
+
+    info!("Airdrop proposal failed as expected");
 }
 
 /// waits for the governance proposal to execute by waiting for it to leave
@@ -327,30 +362,17 @@ fn total_array(input: &[u64]) -> Uint256 {
 /// submits and passes a proposal to disable inflation on the chain
 pub async fn disable_inflation(contact: &Contact, keys: &[ValidatorKeys]) {
     info!("Submitting and passing a proposal to zero out inflation");
-    let mut params_to_change = Vec::new();
-    let change = ParamChange {
-        subspace: "mint".to_string(),
-        key: "InflationRateChange".to_string(),
-        value: r#""0""#.to_string(),
-    };
-    params_to_change.push(change);
-    let change = ParamChange {
-        subspace: "mint".to_string(),
-        key: "InflationMin".to_string(),
-        value: r#""0""#.to_string(),
-    };
-    params_to_change.push(change);
-    let change = ParamChange {
-        subspace: "mint".to_string(),
-        key: "InflationMax".to_string(),
-        value: r#""0""#.to_string(),
-    };
-    params_to_change.push(change);
-    create_parameter_change_proposal(
+    create_mint_params_proposal(
         contact,
         keys[0].validator_key,
-        params_to_change,
+        get_deposit(None),
         get_fee(None),
+        MintProposalParams {
+            inflation_max: Some("0".to_string()),
+            inflation_min: Some("0".to_string()),
+            inflation_rate_change: Some("0".to_string()),
+            ..Default::default()
+        },
     )
     .await;
     vote_yes_on_proposals(contact, keys, None).await;

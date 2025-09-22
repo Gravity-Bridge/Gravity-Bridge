@@ -657,107 +657,125 @@ func (k msgServer) UpdateParamsProposal(c context.Context, msg *typesv2.MsgUpdat
 		case types.ParamBridgeChainId:
 			chainId, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid BridgeChainId: %s", param.Value)
+				k.Logger(ctx).Error("invalid BridgeChainId", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid BridgeChainId: %s", err.Error())
 			}
 			updatedParams.BridgeChainId = chainId
 		case types.ParamSignedValsetsWindow:
 			signedValsetsWindow, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SignedValsetsWindow: %s", param.Value)
+				k.Logger(ctx).Error("invalid SignedValsetsWindow", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SignedValsetsWindow: %s", err.Error())
 			}
 			updatedParams.SignedValsetsWindow = signedValsetsWindow
 		case types.ParamSignedBatchesWindow:
 			signedBatchesWindow, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SignedBatchesWindow: %s", param.Value)
+				k.Logger(ctx).Error("invalid SignedBatchesWindow", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SignedBatchesWindow: %s", err.Error())
 			}
 			updatedParams.SignedBatchesWindow = signedBatchesWindow
 		case types.ParamSignedLogicCallsWindow:
 			signedLogicCallsWindow, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SignedLogicCallsWindow: %s", param.Value)
+				k.Logger(ctx).Error("invalid SignedLogicCallsWindow", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SignedLogicCallsWindow: %s", err.Error())
 			}
 			updatedParams.SignedLogicCallsWindow = signedLogicCallsWindow
 		case types.ParamTargetBatchTimeout:
 			targetBatchTimeout, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid TargetBatchTimeout: %s", param.Value)
+				k.Logger(ctx).Error("invalid TargetBatchTimeout", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid TargetBatchTimeout: %s", err.Error())
 			}
 			updatedParams.TargetBatchTimeout = targetBatchTimeout
 		case types.ParamAverageBlockTime:
 			averageBlockTime, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid AverageBlockTime: %s", param.Value)
+				k.Logger(ctx).Error("invalid AverageBlockTime", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid AverageBlockTime: %s", err.Error())
 			}
 			updatedParams.AverageBlockTime = averageBlockTime
 		case types.ParamAverageEthereumBlockTime:
 			averageEthereumBlockTime, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid AverageEthereumBlockTime: %s", param.Value)
+				k.Logger(ctx).Error("invalid AverageEthereumBlockTime", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid AverageEthereumBlockTime: %s", err.Error())
 			}
 			updatedParams.AverageEthereumBlockTime = averageEthereumBlockTime
 		case types.ParamSlashFractionValset:
 			slashFractionValset, err := sdkmath.LegacyNewDecFromStr(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SlashFractionValset: %s", param.Value)
+				k.Logger(ctx).Error("invalid SlashFractionValset", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SlashFractionValset: %s", err.Error())
 			}
 			updatedParams.SlashFractionValset = slashFractionValset
 		case types.ParamSlashFractionBatch:
 			slashFractionBatch, err := sdkmath.LegacyNewDecFromStr(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SlashFractionBatch: %s", param.Value)
+				k.Logger(ctx).Error("invalid SlashFractionBatch", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SlashFractionBatch: %s", err.Error())
 			}
 			updatedParams.SlashFractionBatch = slashFractionBatch
 		case types.ParamSlashFractionLogicCall:
 			slashFractionLogicCall, err := sdkmath.LegacyNewDecFromStr(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SlashFractionLogicCall: %s", param.Value)
+				k.Logger(ctx).Error("invalid SlashFractionLogicCall", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SlashFractionLogicCall: %s", err.Error())
 			}
 			updatedParams.SlashFractionLogicCall = slashFractionLogicCall
 		case types.ParamUnbondSlashingValsetsWindow:
 			unbondSlashingValsetsWindow, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid UnbondSlashingValsetsWindow: %s", param.Value)
+				k.Logger(ctx).Error("invalid UnbondSlashingValsetsWindow", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid UnbondSlashingValsetsWindow: %s", err.Error())
 			}
 			updatedParams.UnbondSlashingValsetsWindow = unbondSlashingValsetsWindow
 		case types.ParamSlashFractionBadEthSignature:
 			slashFractionBadEthSignature, err := sdkmath.LegacyNewDecFromStr(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SlashFractionBadEthSignature: %s", param.Value)
+				k.Logger(ctx).Error("invalid SlashFractionBadEthSignature", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid SlashFractionBadEthSignature: %s", err.Error())
 			}
 			updatedParams.SlashFractionBadEthSignature = slashFractionBadEthSignature
 		case types.ParamValsetRewardAmount:
 			valsetReward, err := sdk.ParseCoinNormalized(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid ValsetReward: %s", param.Value)
+				k.Logger(ctx).Error("invalid ValsetReward", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid ValsetReward: %s", err.Error())
 			}
 			updatedParams.ValsetReward = valsetReward
 		case types.ParamBridgeActive:
 			bridgeActive, err := strconv.ParseBool(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid BridgeActive: %s", param.Value)
+				k.Logger(ctx).Error("invalid BridgeActive", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid BridgeActive: %s", err.Error())
 			}
 			updatedParams.BridgeActive = bridgeActive
 		case types.ParamEthereumBlacklist:
 			blacklist := []string{}
 			err := json.Unmarshal([]byte(param.Value), &blacklist)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrJSONUnmarshal, "invalid EthereumBlacklist: %s", param.Value)
+				k.Logger(ctx).Error("invalid EthereumBlacklist", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrJSONUnmarshal, "invalid EthereumBlacklist: %s", err.Error())
 			}
 			updatedParams.EthereumBlacklist = blacklist
 		case types.ParamMinChainFeeBasisPoints:
 			minChainFeeBasisPoints, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid MinChainFeeBasisPoints: %s", param.Value)
+				k.Logger(ctx).Error("invalid MinChainFeeBasisPoints", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid MinChainFeeBasisPoints: %s", err.Error())
 			}
 			updatedParams.MinChainFeeBasisPoints = minChainFeeBasisPoints
 		case types.ParamChainFeeAuctionPoolFraction:
 			chainFeeAuctionPoolFraction, err := sdkmath.LegacyNewDecFromStr(param.Value)
 			if err != nil {
-				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid ChainFeeAuctionPoolFraction: %s", param.Value)
+				k.Logger(ctx).Error("invalid ChainFeeAuctionPoolFraction", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid ChainFeeAuctionPoolFraction: %s", err.Error())
 			}
 			updatedParams.ChainFeeAuctionPoolFraction = chainFeeAuctionPoolFraction
 		default:
+			k.Logger(ctx).Error("unknown parameter key", "key", param.Key)
 			return nil, errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unknown parameter key: %s", param.Key)
 		}
 	}

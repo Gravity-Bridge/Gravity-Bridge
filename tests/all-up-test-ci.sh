@@ -25,12 +25,17 @@ pushd /tmp/
 wget https://github.com/informalsystems/hermes/releases/download/v1.7.0/hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz
 tar -xvf hermes-v1.7.0-x86_64-unknown-linux-gnu.tar.gz
 sudo mv hermes /usr/bin/
+sudo chmod 777 /usr/bin/hermes
 popd
 
 # make log dirs
 sudo mkdir /ibc-relayer-logs
 sudo touch /ibc-relayer-logs/hermes-logs
 sudo touch /ibc-relayer-logs/channel-creation
+sudo chmod -R 777 /ibc-relayer-logs
+sudo chown -R $USER /ibc-relayer-logs
+sudo cp tests/assets/ibc-relayer-config.toml /ibc-relayer-config.toml
+sudo chmod -R 777 /ibc-relayer-config.toml
 
 pushd module/
 GOPROXY=https://proxy.golang.org make
@@ -55,8 +60,20 @@ pushd orchestrator/test_runner
 DEPLOY_CONTRACTS=1 RUST_BACKTRACE=full RUST_LOG="INFO,relayer=DEBUG,orchestrator=DEBUG" PATH=$PATH:$HOME/.cargo/bin cargo run --release --bin test-runner
 popd
 
+
 # Create a setup complete flag file used by the integration tests
 sudo mkdir /gravity
 sudo touch /gravity/test-ready-to-run
 
+set +e
 bash tests/container-scripts/integration-tests.sh $NODES $TEST_TYPE
+INTEGRATION_EXIT_CODE=$?
+
+# These lines are commented out because it improves readability of CI test results.
+# However, if you have IBC relaying issues you may want to uncomment them to see the logs.
+# echo "Printing channel creation logs"
+# cat /ibc-relayer-logs/channel-creation
+# echo "Printing IBC relayer logs"
+# cat /ibc-relayer-logs/hermes-logs
+
+exit $INTEGRATION_EXIT_CODE

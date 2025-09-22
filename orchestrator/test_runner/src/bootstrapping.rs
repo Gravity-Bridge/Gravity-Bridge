@@ -387,24 +387,34 @@ pub fn setup_relayer_keys(shared_phrase: &str) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+fn hermes_config_file() -> &'static str {
+    if Path::new(HERMES_CONFIG).exists() {
+        HERMES_CONFIG
+    } else {
+        // Path in CI
+        "/ibc-relayer-config.toml"
+    }
+}
+
 // Create a channel between gravity chain and the ibc test chain over the "transfer" port
 // Writes the output to /ibc-relayer-logs/channel-creation
 pub fn create_ibc_channel(hermes_base: &mut Command) {
     // hermes -c config.toml create channel gravity-test-1 ibc-test-1 --port-a transfer --port-b transfer
-    let create_channel = hermes_base.args([
-        "create",
-        "channel",
-        "--a-chain",
-        &get_gravity_chain_id(),
-        "--b-chain",
-        &get_ibc_chain_id(),
-        "--a-port",
-        "transfer",
-        "--b-port",
-        "transfer",
-        "--new-client-connection",
-        "--yes",
-    ]);
+    let create_channel = hermes_base
+        .args([
+            "create",
+            "channel",
+            "--a-chain",
+            &get_gravity_chain_id(),
+            "--b-chain",
+            &get_ibc_chain_id(),
+            "--a-port",
+            "transfer",
+            "--b-port",
+            "transfer",
+            "--new-client-connection",
+            "--yes",
+        ]);
 
     let out_file = File::options()
         .write(true)
@@ -429,11 +439,13 @@ pub fn create_ibc_channel(hermes_base: &mut Command) {
 // full_scan Force a full scan of the chains for clients, connections and channels
 // Writes the output to /ibc-relayer-logs/hermes-logs
 pub fn run_ibc_relayer(full_scan: bool) {
+    let config_file = hermes_config_file();
+
     unsafe {
         // unsafe needed for stdout + stderr redirect to file
         thread::spawn(move || {
             let mut hermes_base = Command::new("hermes");
-            let hermes_base = hermes_base.arg("--config").arg(HERMES_CONFIG);
+            let hermes_base = hermes_base.arg("--config").arg(config_file);
             let mut start = hermes_base.arg("start");
             if full_scan {
                 start = start.arg("--full-scan");
@@ -489,8 +501,9 @@ pub async fn start_ibc_relayer(
         .await
         .unwrap();
     info!("test-runner starting IBC relayer mode: init hermes, create ibc channel, start hermes");
+    let config_file = hermes_config_file();
     let mut hermes_base = Command::new("hermes");
-    let hermes_base = hermes_base.arg("--config").arg(HERMES_CONFIG);
+    let hermes_base = hermes_base.arg("--config").arg(config_file);
     setup_relayer_keys(&RELAYER_MNEMONIC).unwrap();
 
     let gravity_channel_qc = IbcChannelQueryClient::connect(COSMOS_NODE_GRPC.as_str())

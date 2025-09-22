@@ -19,11 +19,15 @@ use deep_space::client::ChainStatus;
 use deep_space::coin::Coin;
 use deep_space::error::CosmosGrpcError;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
+use deep_space::utils::encode_any;
 use deep_space::{Address, Contact, EthermintPrivateKey, Fee, Msg};
 use ethereum_gravity::utils::get_event_nonce;
 use futures::future::join_all;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
+use gravity_proto::cosmos_sdk_proto::cosmos::mint::v1beta1::query_client::QueryClient as MintQueryClient;
+use gravity_proto::cosmos_sdk_proto::cosmos::mint::v1beta1::MsgUpdateParams as MintMsgUpdateParams;
+use gravity_proto::cosmos_sdk_proto::cosmos::mint::v1beta1::QueryParamsRequest as MintQueryParamsRequest;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::{
     ParamChange, ParameterChangeProposal,
 };
@@ -33,6 +37,8 @@ use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::{Plan, SoftwareUpgradeProposal};
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_proto::gravity::v1::MsgSendToCosmosClaim;
+use gravity_proto::gravity::v2::MsgUpdateParamsProposal as GravityMsgUpdateParamsProposal;
+use gravity_proto::gravity::v2::Param as GravityParam;
 use gravity_utils::types::BatchRelayingMode;
 use gravity_utils::types::BatchRequestMode;
 use gravity_utils::types::GravityBridgeToolsConfig;
@@ -435,7 +441,7 @@ pub async fn submit_false_claims(
 }
 
 /// Creates a proposal to change the params of our test chain
-pub async fn create_parameter_change_proposal(
+pub async fn create_legacy_parameter_change_proposal(
     contact: &Contact,
     key: impl PrivateKey,
     params_to_change: Vec<ParamChange>,
@@ -457,6 +463,313 @@ pub async fn create_parameter_change_proposal(
     .await
     .unwrap();
     trace!("Gov proposal executed with {res:?}");
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct MintProposalParams {
+    pub blocks_per_year: Option<u64>,
+    pub goal_bonded: Option<String>,
+    pub inflation_max: Option<String>,
+    pub inflation_min: Option<String>,
+    pub inflation_rate_change: Option<String>,
+    pub mint_denom: Option<String>,
+}
+pub async fn create_mint_params_proposal(
+    contact: &Contact,
+    key: impl PrivateKey,
+    deposit: Coin,
+    fee: Coin,
+    MintProposalParams {
+        blocks_per_year,
+        goal_bonded,
+        inflation_max,
+        inflation_min,
+        inflation_rate_change,
+        mint_denom,
+    }: MintProposalParams,
+) {
+    let mut mint_qc = MintQueryClient::connect(COSMOS_NODE_GRPC.as_str())
+        .await
+        .unwrap();
+    let mut params = mint_qc
+        .params(MintQueryParamsRequest {})
+        .await
+        .unwrap()
+        .into_inner()
+        .params
+        .unwrap();
+    if let Some(bpy) = blocks_per_year {
+        params.blocks_per_year = bpy;
+    }
+    if let Some(gb) = goal_bonded {
+        params.goal_bonded = format_legacy_dec_input(&gb);
+    }
+    if let Some(im) = inflation_max {
+        params.inflation_max = format_legacy_dec_input(&im);
+    }
+    if let Some(im) = inflation_min {
+        params.inflation_min = format_legacy_dec_input(&im);
+    }
+    if let Some(ir) = inflation_rate_change {
+        params.inflation_rate_change = format_legacy_dec_input(&ir);
+    }
+    if let Some(md) = mint_denom {
+        params.mint_denom = md;
+    }
+    let proposal = MintMsgUpdateParams {
+        authority: deep_space::address::get_module_account_address("gov", Some(&*ADDRESS_PREFIX))
+            .unwrap()
+            .to_string(),
+        params: Some(params),
+    };
+    let proposal_any = encode_any(proposal, "/cosmos.mint.v1beta1.MsgUpdateParams");
+
+    let _ = contact
+        .create_gov_proposal(
+            "Mint Params Proposal".to_string(),
+            "Mint Params Summary".to_string(),
+            vec![proposal_any],
+            String::new(),
+            deposit,
+            fee,
+            key,
+            Some(OPERATION_TIMEOUT),
+        )
+        .await.expect("Failed to create gov proposal");
+}
+
+pub fn format_legacy_dec_input(input: &str) -> String {
+    let mut formatted = if input.contains('.') {
+        // Dec values are encoded in an implicit and poorly documented way (because of course they are)
+        // so we need to convert them to the proper string representation
+        // A proper Dec value has 18 decimal places, so we need to remove the decimal point and pad with sufficient zeros
+        input.replace('.', "").trim_start_matches('0').to_string()
+    } else {
+        input.to_string()
+    };
+    // Add enough zeros to the end to account for the missing decimal places.
+    // we want 18 if we got a whole number, otherwise we want 18 - the number of decimal places
+    let decimal_index = input.find('.').map(|i| i + 1).unwrap_or(0);
+    formatted.push_str(&"0".repeat(18 - decimal_index));
+    formatted
+}
+
+const PARAM_GRAVITY_ID: &str = "GravityId";
+const PARAM_CONTRACT_HASH: &str = "ContractSourceHash";
+const PARAM_BRIDGE_ETHEREUM_ADDRESS: &str = "BridgeEthereumAddress";
+const PARAM_BRIDGE_CHAIN_ID: &str = "BridgeChainId";
+const PARAM_SIGNED_VALSETS_WINDOW: &str = "SignedValsetsWindow";
+const PARAM_SIGNED_BATCHES_WINDOW: &str = "SignedBatchesWindow";
+const PARAM_SIGNED_LOGIC_CALLS_WINDOW: &str = "SignedLogicCallsWindow";
+const PARAM_TARGET_BATCH_TIMEOUT: &str = "TargetBatchTimeout";
+const PARAM_AVERAGE_BLOCK_TIME: &str = "AverageBlockTime";
+const PARAM_AVERAGE_ETHEREUM_BLOCK_TIME: &str = "AverageEthereumBlockTime";
+const PARAM_SLASH_FRACTION_VALSET: &str = "SlashFractionValset";
+const PARAM_SLASH_FRACTION_BATCH: &str = "SlashFractionBatch";
+const PARAM_SLASH_FRACTION_LOGIC_CALL: &str = "SlashFractionLogicCall";
+const PARAM_UNBOND_SLASHING_VALSETS_WINDOW: &str = "UnbondSlashingValsetsWindow";
+const PARAM_SLASH_FRACTION_BAD_ETH_SIGNATURE: &str = "SlashFractionBadEthSignature";
+const PARAM_VALSET_REWARD_AMOUNT: &str = "ValsetReward";
+const PARAM_BRIDGE_ACTIVE: &str = "BridgeActive";
+const PARAM_ETHEREUM_BLACKLIST: &str = "EthereumBlacklist";
+const PARAM_MIN_CHAIN_FEE_BASIS_POINTS: &str = "MinChainFeeBasisPoints";
+const PARAM_CHAIN_FEE_AUCTION_POOL_FRACTION: &str = "ChainFeeAuctionPoolFraction";
+
+#[derive(Debug, Default, Clone)]
+pub struct GravityProposalParams {
+    pub gravity_id: Option<String>,
+    pub contract_hash: Option<String>,
+    pub bridge_ethereum_address: Option<String>,
+    pub bridge_chain_id: Option<String>,
+    pub signed_valsets_window: Option<String>,
+    pub signed_batches_window: Option<String>,
+    pub signed_logic_calls_window: Option<String>,
+    pub target_batch_timeout: Option<String>,
+    pub average_block_time: Option<String>,
+    pub average_ethereum_block_time: Option<String>,
+    pub slash_fraction_valset: Option<String>,
+    pub slash_fraction_batch: Option<String>,
+    pub slash_fraction_logic_call: Option<String>,
+    pub unbond_slashing_valsets_window: Option<String>,
+    pub slash_fraction_bad_eth_sig: Option<String>,
+    pub valset_reward_amount: Option<String>,
+    pub bridge_active: Option<String>,
+    pub ethereum_blacklist: Option<Vec<String>>,
+    pub min_chain_fee_basis_points: Option<String>,
+    pub chain_fee_auction_pool_fraction: Option<String>,
+}
+
+pub async fn create_gravity_params_proposal(
+    contact: &Contact,
+    key: impl PrivateKey,
+    deposit: Coin,
+    fee: Coin,
+    GravityProposalParams {
+        gravity_id,
+        contract_hash,
+        bridge_ethereum_address,
+        bridge_chain_id,
+        signed_valsets_window,
+        signed_batches_window,
+        signed_logic_calls_window,
+        target_batch_timeout,
+        average_block_time,
+        average_ethereum_block_time,
+        slash_fraction_valset,
+        slash_fraction_batch,
+        slash_fraction_logic_call,
+        unbond_slashing_valsets_window,
+        slash_fraction_bad_eth_sig,
+        valset_reward_amount,
+        bridge_active,
+        ethereum_blacklist,
+        min_chain_fee_basis_points,
+        chain_fee_auction_pool_fraction,
+    }: GravityProposalParams,
+) {
+    let mut param_updates = vec![];
+
+    if let Some(gid) = gravity_id {
+        param_updates.push(GravityParam {
+            key: PARAM_GRAVITY_ID.to_string(),
+            value: gid,
+        });
+    }
+    if let Some(ch) = contract_hash {
+        param_updates.push(GravityParam {
+            key: PARAM_CONTRACT_HASH.to_string(),
+            value: ch,
+        });
+    }
+    if let Some(bea) = bridge_ethereum_address {
+        param_updates.push(GravityParam {
+            key: PARAM_BRIDGE_ETHEREUM_ADDRESS.to_string(),
+            value: bea,
+        });
+    }
+    if let Some(bcid) = bridge_chain_id {
+        param_updates.push(GravityParam {
+            key: PARAM_BRIDGE_CHAIN_ID.to_string(),
+            value: bcid,
+        });
+    }
+    if let Some(svw) = signed_valsets_window {
+        param_updates.push(GravityParam {
+            key: PARAM_SIGNED_VALSETS_WINDOW.to_string(),
+            value: svw,
+        });
+    }
+    if let Some(sbw) = signed_batches_window {
+        param_updates.push(GravityParam {
+            key: PARAM_SIGNED_BATCHES_WINDOW.to_string(),
+            value: sbw,
+        });
+    }
+    if let Some(slw) = signed_logic_calls_window {
+        param_updates.push(GravityParam {
+            key: PARAM_SIGNED_LOGIC_CALLS_WINDOW.to_string(),
+            value: slw,
+        });
+    }
+    if let Some(tbt) = target_batch_timeout {
+        param_updates.push(GravityParam {
+            key: PARAM_TARGET_BATCH_TIMEOUT.to_string(),
+            value: tbt,
+        });
+    }
+    if let Some(abt) = average_block_time {
+        param_updates.push(GravityParam {
+            key: PARAM_AVERAGE_BLOCK_TIME.to_string(),
+            value: abt,
+        });
+    }
+    if let Some(aebt) = average_ethereum_block_time {
+        param_updates.push(GravityParam {
+            key: PARAM_AVERAGE_ETHEREUM_BLOCK_TIME.to_string(),
+            value: aebt,
+        });
+    }
+    if let Some(sfv) = slash_fraction_valset {
+        param_updates.push(GravityParam {
+            key: PARAM_SLASH_FRACTION_VALSET.to_string(),
+            value: sfv,
+        });
+    }
+    if let Some(sfb) = slash_fraction_batch {
+        param_updates.push(GravityParam {
+            key: PARAM_SLASH_FRACTION_BATCH.to_string(),
+            value: sfb,
+        });
+    }
+    if let Some(sfl) = slash_fraction_logic_call {
+        param_updates.push(GravityParam {
+            key: PARAM_SLASH_FRACTION_LOGIC_CALL.to_string(),
+            value: sfl,
+        });
+    }
+    if let Some(usv) = unbond_slashing_valsets_window {
+        param_updates.push(GravityParam {
+            key: PARAM_UNBOND_SLASHING_VALSETS_WINDOW.to_string(),
+            value: usv,
+        });
+    }
+    if let Some(sfbe) = slash_fraction_bad_eth_sig {
+        param_updates.push(GravityParam {
+            key: PARAM_SLASH_FRACTION_BAD_ETH_SIGNATURE.to_string(),
+            value: sfbe,
+        });
+    }
+    if let Some(vra) = valset_reward_amount {
+        param_updates.push(GravityParam {
+            key: PARAM_VALSET_REWARD_AMOUNT.to_string(),
+            value: vra,
+        });
+    }
+    if let Some(ba) = bridge_active {
+        param_updates.push(GravityParam {
+            key: PARAM_BRIDGE_ACTIVE.to_string(),
+            value: ba,
+        });
+    }
+    if let Some(eb) = ethereum_blacklist {
+        param_updates.push(GravityParam {
+            key: PARAM_ETHEREUM_BLACKLIST.to_string(),
+            value: serde_json::to_string(&eb).unwrap(),
+        });
+    }
+    if let Some(mcf) = min_chain_fee_basis_points {
+        param_updates.push(GravityParam {
+            key: PARAM_MIN_CHAIN_FEE_BASIS_POINTS.to_string(),
+            value: mcf,
+        });
+    }
+    if let Some(cfapf) = chain_fee_auction_pool_fraction {
+        param_updates.push(GravityParam {
+            key: PARAM_CHAIN_FEE_AUCTION_POOL_FRACTION.to_string(),
+            value: cfapf,
+        });
+    }
+
+    let proposal = GravityMsgUpdateParamsProposal {
+        authority: deep_space::address::get_module_account_address("gov", Some(&*ADDRESS_PREFIX))
+            .unwrap()
+            .to_string(),
+        param_updates,
+    };
+    let proposal_any = encode_any(proposal, "/gravity.v2.MsgUpdateParamsProposal");
+
+    let _ = contact
+        .create_gov_proposal(
+            "Gravity Params Proposal".to_string(),
+            "Gravity Params Summary".to_string(),
+            vec![proposal_any],
+            String::new(),
+            deposit,
+            fee,
+            key,
+            Some(OPERATION_TIMEOUT),
+        )
+        .await;
 }
 
 /// Gets the operator address for a given validator private key

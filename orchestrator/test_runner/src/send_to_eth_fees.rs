@@ -2,11 +2,10 @@ use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::test_erc20_deposit_panic;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{
-    footoken_metadata, get_user_key, vote_yes_on_proposals, BridgeUserKey, ValidatorKeys,
+    create_gravity_params_proposal, footoken_metadata, get_user_key, vote_yes_on_proposals,
+    BridgeUserKey, GravityProposalParams, ValidatorKeys,
 };
-use crate::{
-    get_deposit, get_fee, one_eth, ADDRESS_PREFIX, OPERATION_TIMEOUT, STAKING_TOKEN, TOTAL_TIMEOUT,
-};
+use crate::{get_deposit, get_fee, one_eth, ADDRESS_PREFIX, OPERATION_TIMEOUT, STAKING_TOKEN};
 use actix::clock::sleep;
 use clarity::Address as EthAddress;
 use cosmos_gravity::proposals::{submit_send_to_eth_fees_proposal, SendToEthFeesProposalJson};
@@ -981,23 +980,20 @@ pub async fn submit_and_pass_send_to_eth_fees_proposal(
     contact: &Contact,
     keys: &[ValidatorKeys],
 ) {
-    let proposal_content = SendToEthFeesProposalJson {
-        title: format!("Set MinChainFeeBasisPoints to {min_chain_fee_basis_points}"),
-        description: "MinChainFeeBasisPoints!".to_string(),
-        min_chain_fee_basis_points,
-    };
-    let res = submit_send_to_eth_fees_proposal(
-        proposal_content,
-        get_deposit(None),
-        get_fee(None),
+    create_gravity_params_proposal(
         contact,
         keys[0].validator_key,
-        Some(TOTAL_TIMEOUT),
+        get_deposit(None),
+        get_fee(None),
+        GravityProposalParams {
+            min_chain_fee_basis_points: Some(format!("{min_chain_fee_basis_points}")),
+            ..Default::default()
+        },
     )
     .await;
+
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
-    info!("Gov proposal executed with {res:?}");
 
     let start = Instant::now();
     while Instant::now() - start < OPERATION_TIMEOUT {

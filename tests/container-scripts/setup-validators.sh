@@ -39,7 +39,9 @@ jq '.app_state.bank.denom_metadata += [{"name": "Stake Token", "symbol": "GRAV",
 jq '.app_state.bech32ibc.nativeHRP = "gravity"' /bech32ibc-genesis.json > /gov-genesis.json
 
 # a 60 second voting period to allow us to pass governance proposals in the tests
-jq '.app_state.gov.voting_params.voting_period = "120s"' /gov-genesis.json > /eip712-genesis.json
+jq '.app_state.gov.params.max_deposit_period = "120s"' /gov-genesis.json > /gov-genesis-2.json
+jq '.app_state.gov.params.voting_period = "120s"' /gov-genesis-2.json > /gov-genesis-3.json
+jq '.app_state.gov.params.expedited_voting_period = "110s"' /gov-genesis-3.json > /eip712-genesis.json
 
 # Create a user for EIP-712 testing with a reliable account number (13) so that the hardcoded transaction routinely succeeds
 # 13 seems to be the first user account which can be created, but this is more reliable than waiting for test time

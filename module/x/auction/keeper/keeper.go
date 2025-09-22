@@ -2,8 +2,9 @@ package keeper
 
 import (
 	errorsmod "cosmossdk.io/errors"
-
+	log "cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -46,6 +47,10 @@ func NewKeeper(
 		authority:     authority,
 	}
 	return k
+}
+
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", "x/"+types.ModuleName)
 }
 
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params, err error) {

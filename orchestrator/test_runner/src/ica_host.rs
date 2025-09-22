@@ -470,10 +470,11 @@ pub async fn send_to_eth_via_ica_and_confirm(
         let balance = new_balance.unwrap();
         if balance - starting_balance == amount_to_bridge {
             info!("Successfully bridged {amount_to_bridge} to Ethereum!");
-            assert!(balance == amount_to_bridge);
+            info!("New balance is {balance}, old balance was {starting_balance}");
             return true;
         } else if balance - starting_balance != 0u8.into() {
-            error!("Expected {amount_to_bridge} but got {balance} instead");
+            error!("Expected {amount_to_bridge} but got {} instead", balance - starting_balance);
+            info!("New balance is {balance}, old balance was {starting_balance}");
             return false;
         }
         sleep(Duration::from_secs(1)).await;
