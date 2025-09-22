@@ -17,6 +17,7 @@ use crate::eip_712::eip_712_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
 use crate::ethereum_keys::ethereum_keys_test;
 use crate::feegrant::feegrant_test;
+use crate::happy_path::happy_path_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
 use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::ica_host::ica_host_happy_path;
@@ -41,7 +42,6 @@ use deep_space::{CosmosPrivateKey, PrivateKey};
 use erc_721_happy_path::erc721_happy_path_test;
 use evidence_based_slashing::evidence_based_slashing;
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
-use happy_path::happy_path_test;
 use happy_path_v2::happy_path_test_v2;
 use happy_path_v2::happy_path_test_v2_native;
 use lazy_static::lazy_static;
@@ -325,7 +325,21 @@ pub async fn main() {
             )
             .await;
             return;
+        } else if test_type == "HAPPY_PATH" {
+            info!("Starting Happy path test");
+            happy_path_test(
+                &web30,
+                grpc_client,
+                &gravity_contact,
+                keys,
+                gravity_address,
+                erc20_addresses[0],
+                false,
+            )
+            .await;
+            return;
         } else if test_type == "BATCH_STRESS" {
+            info!("Starting Batch stress test");
             // 300s timeout contact instead of 30s
             let contact = Contact::new(
                 COSMOS_NODE_GRPC.as_str(),
@@ -684,27 +698,6 @@ pub async fn main() {
             panic!("Err Unknown test type")
         }
     }
-    let grpc_client = GravityQueryClient::connect(COSMOS_NODE_GRPC.as_str())
-        .await
-        .unwrap();
-    let keys = get_keys();
-    let erc20_addresses = contracts.erc20_addresses;
-
-    info!("Starting Happy path test");
-    happy_path_test(
-        &web30,
-        grpc_client,
-        &gravity_contact,
-        keys,
-        gravity_address,
-        erc20_addresses[0],
-        false,
-    )
-    .await;
-
-    // this checks that the chain is continuing at the end of each test.
-    gravity_contact
-        .wait_for_next_block(TOTAL_TIMEOUT)
-        .await
-        .expect("Error chain has halted unexpectedly!");
+    error!("No TEST_TYPE provided, exiting with error");
+    std::process::exit(1);
 }

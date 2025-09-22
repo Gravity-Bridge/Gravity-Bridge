@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script is used in Github actions CI to prep and run a testnet environment
-TEST_TYPE=$2
+TEST_TYPE=$1
 set -eux
 NODES=4
 FILE_PATH="$GITHUB_WORKSPACE"
