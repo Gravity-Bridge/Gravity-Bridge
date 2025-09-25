@@ -1,8 +1,10 @@
 //! This is a test for inflation param changes governance handler
 
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
+use crate::utils::{
+    create_mint_params_proposal, vote_yes_on_proposals, MintProposalParams, ValidatorKeys,
+};
 use crate::{get_deposit, get_fee};
-use crate::utils::{MintProposalParams, ValidatorKeys, create_mint_params_proposal, vote_yes_on_proposals};
 use deep_space::Contact;
 use gravity_proto::cosmos_sdk_proto::cosmos::mint::v1beta1::query_client::QueryClient as MintQueryClient;
 use gravity_proto::cosmos_sdk_proto::cosmos::mint::v1beta1::{Params, QueryParamsRequest};
@@ -44,7 +46,7 @@ pub async fn inflation_knockdown_test(contact: &Contact, keys: Vec<ValidatorKeys
             inflation_min: Some("0.01".to_string()),
             inflation_rate_change: Some("1".to_string()),
             ..Default::default()
-        }
+        },
     )
     .await;
     vote_yes_on_proposals(contact, &keys, None).await;
@@ -54,9 +56,18 @@ pub async fn inflation_knockdown_test(contact: &Contact, keys: Vec<ValidatorKeys
     info!("Mint Params query result: {params:?}");
     match params {
         Ok(params) => {
-            assert_eq!(params.inflation_rate_change.parse::<f64>().unwrap() / 10f64.powi(18), 1.0);
-            assert_eq!(params.inflation_min.parse::<f64>().unwrap() / 10f64.powi(18), 0.01);
-            assert_eq!(params.inflation_max.parse::<f64>().unwrap() / 10f64.powi(18), 0.01);
+            assert_eq!(
+                params.inflation_rate_change.parse::<f64>().unwrap() / 10f64.powi(18),
+                1.0
+            );
+            assert_eq!(
+                params.inflation_min.parse::<f64>().unwrap() / 10f64.powi(18),
+                0.01
+            );
+            assert_eq!(
+                params.inflation_max.parse::<f64>().unwrap() / 10f64.powi(18),
+                0.01
+            );
         }
         Err(_) => {
             assert_eq!(
@@ -82,7 +93,7 @@ pub async fn inflation_knockdown_test(contact: &Contact, keys: Vec<ValidatorKeys
         MintProposalParams {
             inflation_max: Some("0.07".to_string()),
             ..Default::default()
-        }
+        },
     )
     .await;
     vote_yes_on_proposals(contact, &keys, None).await;
@@ -91,7 +102,10 @@ pub async fn inflation_knockdown_test(contact: &Contact, keys: Vec<ValidatorKeys
     let params = get_mint_params(contact).await;
     match params {
         Ok(params) => {
-            assert_eq!(params.inflation_max.parse::<f64>().unwrap() / 10f64.powi(18), 0.07);
+            assert_eq!(
+                params.inflation_max.parse::<f64>().unwrap() / 10f64.powi(18),
+                0.07
+            );
         }
         Err(_) => {
             assert_eq!(

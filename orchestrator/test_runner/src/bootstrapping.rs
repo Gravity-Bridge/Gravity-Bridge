@@ -400,21 +400,20 @@ fn hermes_config_file() -> &'static str {
 // Writes the output to /ibc-relayer-logs/channel-creation
 pub fn create_ibc_channel(hermes_base: &mut Command) {
     // hermes -c config.toml create channel gravity-test-1 ibc-test-1 --port-a transfer --port-b transfer
-    let create_channel = hermes_base
-        .args([
-            "create",
-            "channel",
-            "--a-chain",
-            &get_gravity_chain_id(),
-            "--b-chain",
-            &get_ibc_chain_id(),
-            "--a-port",
-            "transfer",
-            "--b-port",
-            "transfer",
-            "--new-client-connection",
-            "--yes",
-        ]);
+    let create_channel = hermes_base.args([
+        "create",
+        "channel",
+        "--a-chain",
+        &get_gravity_chain_id(),
+        "--b-chain",
+        &get_ibc_chain_id(),
+        "--a-port",
+        "transfer",
+        "--b-port",
+        "transfer",
+        "--new-client-connection",
+        "--yes",
+    ]);
 
     let out_file = File::options()
         .write(true)

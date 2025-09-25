@@ -659,7 +659,10 @@ async fn seed_pool(contact: &Contact, keys: &[ValidatorKeys], denom: String) {
         info!("Seeding auction pool with {denom}: {i}");
         for v in keys {
             let balance = contact
-                .get_balance(v.validator_key.to_address(&ADDRESS_PREFIX).unwrap(), denom.clone())
+                .get_balance(
+                    v.validator_key.to_address(&ADDRESS_PREFIX).unwrap(),
+                    denom.clone(),
+                )
                 .await
                 .expect("Failed to get balance");
             info!("Validator balance: {balance:?}");

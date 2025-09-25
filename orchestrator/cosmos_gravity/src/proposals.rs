@@ -8,6 +8,8 @@ use deep_space::Address;
 use deep_space::Coin;
 use deep_space::Contact;
 use deep_space::PrivateKey;
+use gravity_proto::auction::MsgUpdateParamsProposal as AuctionMsgUpdateParamsProposal;
+use gravity_proto::auction::Param as AuctionParam;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::DenomUnit;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
@@ -19,8 +21,6 @@ use gravity_proto::gravity::v1::UnhaltBridgeProposal;
 use gravity_proto::gravity::v2::MsgAirdropProposal;
 use gravity_proto::gravity::v2::MsgIbcMetadataProposal;
 use gravity_proto::gravity::v2::MsgUnhaltBridgeProposal;
-use gravity_proto::auction::MsgUpdateParamsProposal as AuctionMsgUpdateParamsProposal;
-use gravity_proto::auction::Param as AuctionParam;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use std::convert::TryFrom;
@@ -422,33 +422,33 @@ pub async fn submit_auction_params_proposal(
 ) -> Result<TransactionResponse, CosmosGrpcError> {
     let mut params = vec![];
     if let Some(val) = proposal.auction_length {
-        params.push(AuctionParam{
+        params.push(AuctionParam {
             key: PARAM_AUCTION_LENGTH.to_string(),
             value: format!("{val}"),
         });
     }
 
     if let Some(val) = proposal.min_bid_fee {
-        params.push(AuctionParam{
+        params.push(AuctionParam {
             key: PARAM_MIN_BID_FEE.to_string(),
             value: format!("{val}"),
         });
     }
     if let Some(val) = proposal.non_auctionable_tokens {
         let json_value = serde_json::to_string(&val).unwrap();
-        params.push(AuctionParam{
+        params.push(AuctionParam {
             key: PARAM_NON_AUCTIONABLE_TOKENS.to_string(),
             value: json_value,
         });
     }
     if let Some(val) = proposal.burn_winning_bids {
-        params.push(AuctionParam{
+        params.push(AuctionParam {
             key: PARAM_BURN_WINNING_BIDS.to_string(),
             value: format!("{val}"),
         });
     }
     if let Some(val) = proposal.enabled {
-        params.push(AuctionParam{
+        params.push(AuctionParam {
             key: PARAM_ENABLED.to_string(),
             value: format!("{val}"),
         });
@@ -461,7 +461,18 @@ pub async fn submit_auction_params_proposal(
     let proposal_any = encode_any(proposal, AUCTION_MSG_UPDATE_PARAMS_PROPOSAL.to_string());
     let title = "Auction Params proposal title".to_string();
     let summary = "Auction Params proposal summary".to_string();
-    contact.create_gov_proposal(title, summary, vec![proposal_any], String::new(), deposit, fee, key, wait_timeout).await
+    contact
+        .create_gov_proposal(
+            title,
+            summary,
+            vec![proposal_any],
+            String::new(),
+            deposit,
+            fee,
+            key,
+            wait_timeout,
+        )
+        .await
 }
 
 fn gov_module_address() -> Result<Address, AddressError> {

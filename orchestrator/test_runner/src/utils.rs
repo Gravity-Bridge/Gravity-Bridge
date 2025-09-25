@@ -535,7 +535,8 @@ pub async fn create_mint_params_proposal(
             key,
             Some(OPERATION_TIMEOUT),
         )
-        .await.expect("Failed to create gov proposal");
+        .await
+        .expect("Failed to create gov proposal");
 }
 
 pub fn format_legacy_dec_input(input: &str) -> String {

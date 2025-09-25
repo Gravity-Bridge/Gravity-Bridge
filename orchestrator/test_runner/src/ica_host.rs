@@ -473,7 +473,10 @@ pub async fn send_to_eth_via_ica_and_confirm(
             info!("New balance is {balance}, old balance was {starting_balance}");
             return true;
         } else if balance - starting_balance != 0u8.into() {
-            error!("Expected {amount_to_bridge} but got {} instead", balance - starting_balance);
+            error!(
+                "Expected {amount_to_bridge} but got {} instead",
+                balance - starting_balance
+            );
             info!("New balance is {balance}, old balance was {starting_balance}");
             return false;
         }
