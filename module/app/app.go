@@ -157,7 +157,6 @@ import (
 )
 
 const appName = "app"
-const EIP712_CHANGEOVER_HEIGHT = 0
 
 var (
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
@@ -1009,7 +1008,6 @@ func (app *Gravity) setAnteHandler(encodingConfig simappparams.EncodingConfig) {
 		app.AppCodec,
 		gravityconfig.GravityEvmChainIDs,
 		encodingConfig,
-		EIP712_CHANGEOVER_HEIGHT,
 	)
 	if err != nil {
 		panic("invalid antehandler created")

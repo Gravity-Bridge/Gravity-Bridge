@@ -35,11 +35,10 @@ func NewGravitySigVerificationDecorator(
 	signModeHandler signing.HandlerMap,
 	evmChainIDs []string,
 	encodingConfig simappparams.EncodingConfig,
-	eip712ChangeoverHeight uint64,
 ) GravitySigVerificationDecorator {
 	sdkSVD := sdkante.NewSigVerificationDecorator(ak, &signModeHandler)
 	// nolint: staticcheck
-	ethermintSVD := ethermintante.NewLegacyEip712SigVerificationDecorator(ak, &signModeHandler, evmChainIDs, encodingConfig, eip712ChangeoverHeight)
+	ethermintSVD := ethermintante.NewLegacyEip712SigVerificationDecorator(ak, &signModeHandler, evmChainIDs, encodingConfig)
 	return GravitySigVerificationDecorator{cdc, sdkSVD, ethermintSVD}
 }
 
