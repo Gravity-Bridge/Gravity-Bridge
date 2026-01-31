@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/spf13/cast"
+	"github.com/spf13/cobra"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmos "github.com/cometbft/cometbft/libs/os"
@@ -1294,14 +1295,56 @@ func (app *Gravity) AutoCliOpts() autocli.AppOptions {
 		}
 	}
 
+	// Wrap the gov module with one that has the legacy proposal handlers for GetTxCmd().
+	// The AppModule created via NewAppModule() doesn't have legacyProposalHandlers set,
+	// so its GetTxCmd() returns a command without the param-change subcommand.
+	// We use the ModuleBasicManager's gov module which was created with the handlers.
+	if govBasicModule, ok := (*app.ModuleBasicManager)[govtypes.ModuleName]; ok {
+		if govAppModule, ok := modules[govtypes.ModuleName].(gov.AppModule); ok {
+			modules[govtypes.ModuleName] = govAppModuleWithCustomTxCmd{
+				AppModule:     govAppModule,
+				basicForTxCmd: govBasicModule,
+			}
+		}
+	}
+
+	moduleOptions := runtimeservices.ExtractAutoCLIOptions(app.ModuleManager.Modules)
+	// Override gov module's Tx EnhanceCustomCommand to true so that legacy proposal handlers
+	// (like param-change) are properly included as subcommands of submit-legacy-proposal.
+	// The SDK's default is false which causes the custom GetTxCmd() to be ignored.
+	if govOpts, ok := moduleOptions[govtypes.ModuleName]; ok && govOpts.Tx != nil {
+		govOpts.Tx.EnhanceCustomCommand = true
+		moduleOptions[govtypes.ModuleName] = govOpts
+	}
+
 	// nolint: exhaustruct
 	return autocli.AppOptions{
 		Modules:               modules,
-		ModuleOptions:         runtimeservices.ExtractAutoCLIOptions(app.ModuleManager.Modules),
+		ModuleOptions:         moduleOptions,
 		AddressCodec:          authcodec.NewBech32Codec(gravityconfig.Bech32PrefixAccAddr),
 		ValidatorAddressCodec: authcodec.NewBech32Codec(gravityconfig.Bech32PrefixValAddr),
 		ConsensusAddressCodec: authcodec.NewBech32Codec(gravityconfig.Bech32PrefixConsAddr),
 	}
+}
+
+// hasTxCmd is an interface for modules that provide a GetTxCmd method.
+type hasTxCmd interface {
+	GetTxCmd() *cobra.Command
+}
+
+// govAppModuleWithCustomTxCmd wraps gov.AppModule to provide GetTxCmd() from the
+// AppModuleBasic that has the legacy proposal handlers configured.
+type govAppModuleWithCustomTxCmd struct {
+	gov.AppModule
+	basicForTxCmd module.AppModuleBasic
+}
+
+// GetTxCmd returns the tx command from the AppModuleBasic that has legacy proposal handlers.
+func (g govAppModuleWithCustomTxCmd) GetTxCmd() *cobra.Command {
+	if mod, ok := g.basicForTxCmd.(hasTxCmd); ok {
+		return mod.GetTxCmd()
+	}
+	return nil
 }
 
 // DefaultGenesis returns a default genesis from the registered AppModuleBasic's.
