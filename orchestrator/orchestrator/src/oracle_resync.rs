@@ -129,9 +129,10 @@ pub async fn get_last_checked_block(
                         batch.event_nonce,
                         last_event_nonce
                     );
-                    if upcast(batch.event_nonce) == last_event_nonce && event.block_number.is_some()
-                    {
-                        return event.block_number.unwrap();
+                    if upcast(batch.event_nonce) == last_event_nonce {
+                        if let Some(block_number) = event.block_number {
+                            return block_number;
+                        }
                     }
                 }
                 Err(e) => {
@@ -148,9 +149,10 @@ pub async fn get_last_checked_block(
                         send.event_nonce,
                         last_event_nonce
                     );
-                    if upcast(send.event_nonce) == last_event_nonce && event.block_number.is_some()
-                    {
-                        return event.block_number.unwrap();
+                    if upcast(send.event_nonce) == last_event_nonce {
+                        if let Some(block_number) = event.block_number {
+                            return block_number;
+                        }
                     }
                 }
                 Err(e) => {
@@ -167,10 +169,10 @@ pub async fn get_last_checked_block(
                         deploy.event_nonce,
                         last_event_nonce
                     );
-                    if upcast(deploy.event_nonce) == last_event_nonce
-                        && event.block_number.is_some()
-                    {
-                        return event.block_number.unwrap();
+                    if upcast(deploy.event_nonce) == last_event_nonce {
+                        if let Some(block_number) = event.block_number {
+                            return block_number;
+                        }
                     }
                 }
                 Err(e) => {
@@ -187,9 +189,10 @@ pub async fn get_last_checked_block(
                         call.event_nonce,
                         last_event_nonce
                     );
-                    if upcast(call.event_nonce) == last_event_nonce && event.block_number.is_some()
-                    {
-                        return event.block_number.unwrap();
+                    if upcast(call.event_nonce) == last_event_nonce {
+                        if let Some(block_number) = event.block_number {
+                            return block_number;
+                        }
                     }
                 }
                 Err(e) => {

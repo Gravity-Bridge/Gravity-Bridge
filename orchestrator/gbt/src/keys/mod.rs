@@ -139,8 +139,7 @@ pub async fn recover_funds(args: RecoverFundsOpts, address_prefix: String) {
             error!("--eth-destination must be provided with --send-to-eth!");
             exit(1);
         }
-        let chain_fee = if args.chain_fee.is_some() {
-            let chain_fee = args.chain_fee.unwrap();
+        let chain_fee = if let Some(chain_fee) = args.chain_fee {
             if amount.denom != chain_fee.denom {
                 error!("--chain-fee value must be the same denom as the bridge amount!");
                 exit(1);

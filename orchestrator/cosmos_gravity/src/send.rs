@@ -255,10 +255,10 @@ pub async fn send_ethereum_claims(
     // Collect all of the claims into an iterator, then add them to unordered_msgs
     deposit_nonces_msgs
         .into_iter()
-        .chain(withdraw_nonces_msgs.into_iter())
-        .chain(deploy_nonces_msgs.into_iter())
-        .chain(logic_nonces_msgs.into_iter())
-        .chain(valset_nonces_msgs.into_iter())
+        .chain(withdraw_nonces_msgs)
+        .chain(deploy_nonces_msgs)
+        .chain(logic_nonces_msgs)
+        .chain(valset_nonces_msgs)
         .map(|(nonce, msg)| assert!(unordered_msgs.insert(nonce, msg).is_none()))
         .for_each(drop); // Exhaust the iterator so that `unordered_msgs` is populated from .map()
 
