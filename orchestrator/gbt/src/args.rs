@@ -138,6 +138,7 @@ pub enum ClientSubcommand {
     DeployErc20Representation(DeployErc20RepresentationOpts),
     SpotRelay(SpotRelayOpts),
     RequestAllBatches(RequestAllBatchesOpts),
+    IbcAutoForward(IbcAutoForwardOpts),
 }
 
 /// Send Cosmos tokens to Ethereum
@@ -244,6 +245,25 @@ pub struct SpotRelayOpts {
     /// The Cosmos Denom and amount to pay Cosmos chain fees, if blank no fee will be paid
     #[clap(short, long, parse(try_from_str))]
     pub fees: Option<Coin>,
+}
+
+/// Checks for pending IBC auto forwards and executes them. This is a one-off command
+/// that queries for any pending forwards (created when SendToCosmos targets a non-native
+/// address prefix) and submits a MsgExecuteIbcAutoForwards to relay them.
+#[derive(Parser)]
+pub struct IbcAutoForwardOpts {
+    /// (Optional) The Cosmos gRPC server that will be used
+    #[clap(long, default_value = DEFAULT_GRPC_ADDRESS)]
+    pub cosmos_grpc: String,
+    /// Cosmos mnemonic phrase used to sign and pay for the execute transaction
+    #[clap(short, long, parse(try_from_str))]
+    pub cosmos_phrase: Option<CosmosPrivateKey>,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees, if blank no fee will be paid
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Option<Coin>,
+    /// Maximum number of pending forwards to execute in a single transaction
+    #[clap(long, default_value = "50")]
+    pub forwards_to_execute: u64,
 }
 
 /// Requests all possible batches for all token types. Useful to deal with relayers that will

@@ -12,6 +12,7 @@ use clap::Parser;
 use client::cosmos_to_eth::cosmos_to_eth_cmd;
 use client::deploy_erc20_representation::deploy_erc20_representation;
 use client::eth_to_cosmos::eth_to_cosmos;
+use client::ibc_auto_forward::ibc_auto_forward;
 use client::request_all_batches::request_all_batches;
 use client::spot_relay::spot_relay;
 use config::{get_home_dir, load_config};
@@ -74,6 +75,9 @@ async fn main() {
             }
             ClientSubcommand::RequestAllBatches(request_all_batches_opts) => {
                 request_all_batches(request_all_batches_opts, address_prefix).await
+            }
+            ClientSubcommand::IbcAutoForward(ibc_auto_forward_opts) => {
+                ibc_auto_forward(ibc_auto_forward_opts, address_prefix).await
             }
         },
         SubCommand::Keys(key_opts) => match key_opts.subcmd {
