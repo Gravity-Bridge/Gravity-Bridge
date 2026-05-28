@@ -137,6 +137,7 @@ pub enum ClientSubcommand {
     EthToCosmos(EthToCosmosOpts),
     DeployErc20Representation(DeployErc20RepresentationOpts),
     SpotRelay(SpotRelayOpts),
+    RelayValset(RelayValsetOpts),
     RequestAllBatches(RequestAllBatchesOpts),
     IbcAutoForward(IbcAutoForwardOpts),
 }
@@ -245,6 +246,28 @@ pub struct SpotRelayOpts {
     /// The Cosmos Denom and amount to pay Cosmos chain fees, if blank no fee will be paid
     #[clap(short, long, parse(try_from_str))]
     pub fees: Option<Coin>,
+}
+
+/// Finds the most recent submittable validator set update and relays it to the Gravity
+/// contract on Ethereum, then exits. This is a one-off command useful for bringing the
+/// validator set in the bridge up to date so that batches can be relayed, without running
+/// a full relayer. The validator set update itself carries no reward, so the relayer must
+/// pay the Ethereum gas cost.
+#[derive(Parser)]
+pub struct RelayValsetOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = DEFAULT_GRPC_ADDRESS)]
+    pub cosmos_grpc: String,
+    /// (Optional) The Ethereum RPC server that will be used to submit the transaction
+    #[clap(long, default_value = DEFAULT_ETH_RPC_ADDRESS)]
+    pub ethereum_rpc: String,
+    /// An Ethereum private key, containing enough ETH to pay for the transaction
+    #[clap(short, long, parse(try_from_str))]
+    pub ethereum_key: EthPrivateKey,
+    /// (Optional) The address of the Gravity contract on Ethereum, this should be auto filled
+    /// from chain parameters
+    #[clap(short, long, parse(try_from_str))]
+    pub gravity_contract_address: Option<EthAddress>,
 }
 
 /// Checks for pending IBC auto forwards and executes them. This is a one-off command
