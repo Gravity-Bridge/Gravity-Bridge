@@ -70,6 +70,534 @@ func (ClaimType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e3205613bbab7525, []int{0}
 }
 
+// Components used in MsgSendToCosmosClaim.ClaimHash()
+type SendToCosmosClaimComponents struct {
+	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	TokenContract  string `protobuf:"bytes,3,opt,name=token_contract,json=tokenContract,proto3" json:"token_contract,omitempty"`
+	Amount         string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	EthereumSender string `protobuf:"bytes,5,opt,name=ethereum_sender,json=ethereumSender,proto3" json:"ethereum_sender,omitempty"`
+	CosmosReceiver string `protobuf:"bytes,6,opt,name=cosmos_receiver,json=cosmosReceiver,proto3" json:"cosmos_receiver,omitempty"`
+}
+
+func (m *SendToCosmosClaimComponents) Reset()         { *m = SendToCosmosClaimComponents{} }
+func (m *SendToCosmosClaimComponents) String() string { return proto.CompactTextString(m) }
+func (*SendToCosmosClaimComponents) ProtoMessage()    {}
+func (*SendToCosmosClaimComponents) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e3205613bbab7525, []int{0}
+}
+func (m *SendToCosmosClaimComponents) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SendToCosmosClaimComponents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SendToCosmosClaimComponents.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SendToCosmosClaimComponents) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendToCosmosClaimComponents.Merge(m, src)
+}
+func (m *SendToCosmosClaimComponents) XXX_Size() int {
+	return m.Size()
+}
+func (m *SendToCosmosClaimComponents) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendToCosmosClaimComponents.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendToCosmosClaimComponents proto.InternalMessageInfo
+
+func (m *SendToCosmosClaimComponents) GetEventNonce() uint64 {
+	if m != nil {
+		return m.EventNonce
+	}
+	return 0
+}
+
+func (m *SendToCosmosClaimComponents) GetEthBlockHeight() uint64 {
+	if m != nil {
+		return m.EthBlockHeight
+	}
+	return 0
+}
+
+func (m *SendToCosmosClaimComponents) GetTokenContract() string {
+	if m != nil {
+		return m.TokenContract
+	}
+	return ""
+}
+
+func (m *SendToCosmosClaimComponents) GetAmount() string {
+	if m != nil {
+		return m.Amount
+	}
+	return ""
+}
+
+func (m *SendToCosmosClaimComponents) GetEthereumSender() string {
+	if m != nil {
+		return m.EthereumSender
+	}
+	return ""
+}
+
+func (m *SendToCosmosClaimComponents) GetCosmosReceiver() string {
+	if m != nil {
+		return m.CosmosReceiver
+	}
+	return ""
+}
+
+// Components used in MsgBatchSendToEthClaim.ClaimHash()
+type BatchSendToEthClaimComponents struct {
+	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	BatchNonce     uint64 `protobuf:"varint,3,opt,name=batch_nonce,json=batchNonce,proto3" json:"batch_nonce,omitempty"`
+	TokenContract  string `protobuf:"bytes,4,opt,name=token_contract,json=tokenContract,proto3" json:"token_contract,omitempty"`
+}
+
+func (m *BatchSendToEthClaimComponents) Reset()         { *m = BatchSendToEthClaimComponents{} }
+func (m *BatchSendToEthClaimComponents) String() string { return proto.CompactTextString(m) }
+func (*BatchSendToEthClaimComponents) ProtoMessage()    {}
+func (*BatchSendToEthClaimComponents) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e3205613bbab7525, []int{1}
+}
+func (m *BatchSendToEthClaimComponents) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BatchSendToEthClaimComponents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BatchSendToEthClaimComponents.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BatchSendToEthClaimComponents) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchSendToEthClaimComponents.Merge(m, src)
+}
+func (m *BatchSendToEthClaimComponents) XXX_Size() int {
+	return m.Size()
+}
+func (m *BatchSendToEthClaimComponents) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchSendToEthClaimComponents.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchSendToEthClaimComponents proto.InternalMessageInfo
+
+func (m *BatchSendToEthClaimComponents) GetEventNonce() uint64 {
+	if m != nil {
+		return m.EventNonce
+	}
+	return 0
+}
+
+func (m *BatchSendToEthClaimComponents) GetEthBlockHeight() uint64 {
+	if m != nil {
+		return m.EthBlockHeight
+	}
+	return 0
+}
+
+func (m *BatchSendToEthClaimComponents) GetBatchNonce() uint64 {
+	if m != nil {
+		return m.BatchNonce
+	}
+	return 0
+}
+
+func (m *BatchSendToEthClaimComponents) GetTokenContract() string {
+	if m != nil {
+		return m.TokenContract
+	}
+	return ""
+}
+
+// Components used in MsgERC20DeployedClaim.ClaimHash()
+type ERC20DeployedClaimComponents struct {
+	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	CosmosDenom    string `protobuf:"bytes,3,opt,name=cosmos_denom,json=cosmosDenom,proto3" json:"cosmos_denom,omitempty"`
+	TokenContract  string `protobuf:"bytes,4,opt,name=token_contract,json=tokenContract,proto3" json:"token_contract,omitempty"`
+	Name           string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
+	Symbol         string `protobuf:"bytes,6,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Decimals       uint64 `protobuf:"varint,7,opt,name=decimals,proto3" json:"decimals,omitempty"`
+}
+
+func (m *ERC20DeployedClaimComponents) Reset()         { *m = ERC20DeployedClaimComponents{} }
+func (m *ERC20DeployedClaimComponents) String() string { return proto.CompactTextString(m) }
+func (*ERC20DeployedClaimComponents) ProtoMessage()    {}
+func (*ERC20DeployedClaimComponents) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e3205613bbab7525, []int{2}
+}
+func (m *ERC20DeployedClaimComponents) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ERC20DeployedClaimComponents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ERC20DeployedClaimComponents.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ERC20DeployedClaimComponents) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ERC20DeployedClaimComponents.Merge(m, src)
+}
+func (m *ERC20DeployedClaimComponents) XXX_Size() int {
+	return m.Size()
+}
+func (m *ERC20DeployedClaimComponents) XXX_DiscardUnknown() {
+	xxx_messageInfo_ERC20DeployedClaimComponents.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ERC20DeployedClaimComponents proto.InternalMessageInfo
+
+func (m *ERC20DeployedClaimComponents) GetEventNonce() uint64 {
+	if m != nil {
+		return m.EventNonce
+	}
+	return 0
+}
+
+func (m *ERC20DeployedClaimComponents) GetEthBlockHeight() uint64 {
+	if m != nil {
+		return m.EthBlockHeight
+	}
+	return 0
+}
+
+func (m *ERC20DeployedClaimComponents) GetCosmosDenom() string {
+	if m != nil {
+		return m.CosmosDenom
+	}
+	return ""
+}
+
+func (m *ERC20DeployedClaimComponents) GetTokenContract() string {
+	if m != nil {
+		return m.TokenContract
+	}
+	return ""
+}
+
+func (m *ERC20DeployedClaimComponents) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ERC20DeployedClaimComponents) GetSymbol() string {
+	if m != nil {
+		return m.Symbol
+	}
+	return ""
+}
+
+func (m *ERC20DeployedClaimComponents) GetDecimals() uint64 {
+	if m != nil {
+		return m.Decimals
+	}
+	return 0
+}
+
+// Components used in MsgLogicCallExecutedClaim.ClaimHash()
+type LogicCallExecutedClaimComponents struct {
+	EventNonce        uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	EthBlockHeight    uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	InvalidationId    []byte `protobuf:"bytes,3,opt,name=invalidation_id,json=invalidationId,proto3" json:"invalidation_id,omitempty"`
+	InvalidationNonce uint64 `protobuf:"varint,4,opt,name=invalidation_nonce,json=invalidationNonce,proto3" json:"invalidation_nonce,omitempty"`
+}
+
+func (m *LogicCallExecutedClaimComponents) Reset()         { *m = LogicCallExecutedClaimComponents{} }
+func (m *LogicCallExecutedClaimComponents) String() string { return proto.CompactTextString(m) }
+func (*LogicCallExecutedClaimComponents) ProtoMessage()    {}
+func (*LogicCallExecutedClaimComponents) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e3205613bbab7525, []int{3}
+}
+func (m *LogicCallExecutedClaimComponents) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LogicCallExecutedClaimComponents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LogicCallExecutedClaimComponents.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LogicCallExecutedClaimComponents) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogicCallExecutedClaimComponents.Merge(m, src)
+}
+func (m *LogicCallExecutedClaimComponents) XXX_Size() int {
+	return m.Size()
+}
+func (m *LogicCallExecutedClaimComponents) XXX_DiscardUnknown() {
+	xxx_messageInfo_LogicCallExecutedClaimComponents.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LogicCallExecutedClaimComponents proto.InternalMessageInfo
+
+func (m *LogicCallExecutedClaimComponents) GetEventNonce() uint64 {
+	if m != nil {
+		return m.EventNonce
+	}
+	return 0
+}
+
+func (m *LogicCallExecutedClaimComponents) GetEthBlockHeight() uint64 {
+	if m != nil {
+		return m.EthBlockHeight
+	}
+	return 0
+}
+
+func (m *LogicCallExecutedClaimComponents) GetInvalidationId() []byte {
+	if m != nil {
+		return m.InvalidationId
+	}
+	return nil
+}
+
+func (m *LogicCallExecutedClaimComponents) GetInvalidationNonce() uint64 {
+	if m != nil {
+		return m.InvalidationNonce
+	}
+	return 0
+}
+
+// Components used in MsgValsetUpdatedClaim.ClaimHash()
+// Note: members MUST be sorted before hashing, mirroring the existing claim logic.
+type ValsetUpdatedClaimComponents struct {
+	EventNonce     uint64            `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	ValsetNonce    uint64            `protobuf:"varint,2,opt,name=valset_nonce,json=valsetNonce,proto3" json:"valset_nonce,omitempty"`
+	EthBlockHeight uint64            `protobuf:"varint,3,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	Members        []BridgeValidator `protobuf:"bytes,4,rep,name=members,proto3" json:"members"`
+	RewardAmount   string            `protobuf:"bytes,5,opt,name=reward_amount,json=rewardAmount,proto3" json:"reward_amount,omitempty"`
+	RewardToken    string            `protobuf:"bytes,6,opt,name=reward_token,json=rewardToken,proto3" json:"reward_token,omitempty"`
+}
+
+func (m *ValsetUpdatedClaimComponents) Reset()         { *m = ValsetUpdatedClaimComponents{} }
+func (m *ValsetUpdatedClaimComponents) String() string { return proto.CompactTextString(m) }
+func (*ValsetUpdatedClaimComponents) ProtoMessage()    {}
+func (*ValsetUpdatedClaimComponents) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e3205613bbab7525, []int{4}
+}
+func (m *ValsetUpdatedClaimComponents) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ValsetUpdatedClaimComponents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ValsetUpdatedClaimComponents.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ValsetUpdatedClaimComponents) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValsetUpdatedClaimComponents.Merge(m, src)
+}
+func (m *ValsetUpdatedClaimComponents) XXX_Size() int {
+	return m.Size()
+}
+func (m *ValsetUpdatedClaimComponents) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValsetUpdatedClaimComponents.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ValsetUpdatedClaimComponents proto.InternalMessageInfo
+
+func (m *ValsetUpdatedClaimComponents) GetEventNonce() uint64 {
+	if m != nil {
+		return m.EventNonce
+	}
+	return 0
+}
+
+func (m *ValsetUpdatedClaimComponents) GetValsetNonce() uint64 {
+	if m != nil {
+		return m.ValsetNonce
+	}
+	return 0
+}
+
+func (m *ValsetUpdatedClaimComponents) GetEthBlockHeight() uint64 {
+	if m != nil {
+		return m.EthBlockHeight
+	}
+	return 0
+}
+
+func (m *ValsetUpdatedClaimComponents) GetMembers() []BridgeValidator {
+	if m != nil {
+		return m.Members
+	}
+	return nil
+}
+
+func (m *ValsetUpdatedClaimComponents) GetRewardAmount() string {
+	if m != nil {
+		return m.RewardAmount
+	}
+	return ""
+}
+
+func (m *ValsetUpdatedClaimComponents) GetRewardToken() string {
+	if m != nil {
+		return m.RewardToken
+	}
+	return ""
+}
+
+// A discriminated union holding exactly the components for one claim type
+type ClaimHashComponents struct {
+	// Types that are valid to be assigned to Components:
+	//
+	//	*ClaimHashComponents_SendToCosmos
+	//	*ClaimHashComponents_BatchSendToEth
+	//	*ClaimHashComponents_Erc20Deployed
+	//	*ClaimHashComponents_LogicCallExecuted
+	//	*ClaimHashComponents_ValsetUpdated
+	Components isClaimHashComponents_Components `protobuf_oneof:"components"`
+}
+
+func (m *ClaimHashComponents) Reset()         { *m = ClaimHashComponents{} }
+func (m *ClaimHashComponents) String() string { return proto.CompactTextString(m) }
+func (*ClaimHashComponents) ProtoMessage()    {}
+func (*ClaimHashComponents) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e3205613bbab7525, []int{5}
+}
+func (m *ClaimHashComponents) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ClaimHashComponents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ClaimHashComponents.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ClaimHashComponents) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClaimHashComponents.Merge(m, src)
+}
+func (m *ClaimHashComponents) XXX_Size() int {
+	return m.Size()
+}
+func (m *ClaimHashComponents) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClaimHashComponents.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ClaimHashComponents proto.InternalMessageInfo
+
+type isClaimHashComponents_Components interface {
+	isClaimHashComponents_Components()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type ClaimHashComponents_SendToCosmos struct {
+	SendToCosmos *SendToCosmosClaimComponents `protobuf:"bytes,1,opt,name=send_to_cosmos,json=sendToCosmos,proto3,oneof" json:"send_to_cosmos,omitempty"`
+}
+type ClaimHashComponents_BatchSendToEth struct {
+	BatchSendToEth *BatchSendToEthClaimComponents `protobuf:"bytes,2,opt,name=batch_send_to_eth,json=batchSendToEth,proto3,oneof" json:"batch_send_to_eth,omitempty"`
+}
+type ClaimHashComponents_Erc20Deployed struct {
+	Erc20Deployed *ERC20DeployedClaimComponents `protobuf:"bytes,3,opt,name=erc20_deployed,json=erc20Deployed,proto3,oneof" json:"erc20_deployed,omitempty"`
+}
+type ClaimHashComponents_LogicCallExecuted struct {
+	LogicCallExecuted *LogicCallExecutedClaimComponents `protobuf:"bytes,4,opt,name=logic_call_executed,json=logicCallExecuted,proto3,oneof" json:"logic_call_executed,omitempty"`
+}
+type ClaimHashComponents_ValsetUpdated struct {
+	ValsetUpdated *ValsetUpdatedClaimComponents `protobuf:"bytes,5,opt,name=valset_updated,json=valsetUpdated,proto3,oneof" json:"valset_updated,omitempty"`
+}
+
+func (*ClaimHashComponents_SendToCosmos) isClaimHashComponents_Components()      {}
+func (*ClaimHashComponents_BatchSendToEth) isClaimHashComponents_Components()    {}
+func (*ClaimHashComponents_Erc20Deployed) isClaimHashComponents_Components()     {}
+func (*ClaimHashComponents_LogicCallExecuted) isClaimHashComponents_Components() {}
+func (*ClaimHashComponents_ValsetUpdated) isClaimHashComponents_Components()     {}
+
+func (m *ClaimHashComponents) GetComponents() isClaimHashComponents_Components {
+	if m != nil {
+		return m.Components
+	}
+	return nil
+}
+
+func (m *ClaimHashComponents) GetSendToCosmos() *SendToCosmosClaimComponents {
+	if x, ok := m.GetComponents().(*ClaimHashComponents_SendToCosmos); ok {
+		return x.SendToCosmos
+	}
+	return nil
+}
+
+func (m *ClaimHashComponents) GetBatchSendToEth() *BatchSendToEthClaimComponents {
+	if x, ok := m.GetComponents().(*ClaimHashComponents_BatchSendToEth); ok {
+		return x.BatchSendToEth
+	}
+	return nil
+}
+
+func (m *ClaimHashComponents) GetErc20Deployed() *ERC20DeployedClaimComponents {
+	if x, ok := m.GetComponents().(*ClaimHashComponents_Erc20Deployed); ok {
+		return x.Erc20Deployed
+	}
+	return nil
+}
+
+func (m *ClaimHashComponents) GetLogicCallExecuted() *LogicCallExecutedClaimComponents {
+	if x, ok := m.GetComponents().(*ClaimHashComponents_LogicCallExecuted); ok {
+		return x.LogicCallExecuted
+	}
+	return nil
+}
+
+func (m *ClaimHashComponents) GetValsetUpdated() *ValsetUpdatedClaimComponents {
+	if x, ok := m.GetComponents().(*ClaimHashComponents_ValsetUpdated); ok {
+		return x.ValsetUpdated
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ClaimHashComponents) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ClaimHashComponents_SendToCosmos)(nil),
+		(*ClaimHashComponents_BatchSendToEth)(nil),
+		(*ClaimHashComponents_Erc20Deployed)(nil),
+		(*ClaimHashComponents_LogicCallExecuted)(nil),
+		(*ClaimHashComponents_ValsetUpdated)(nil),
+	}
+}
+
 // Attestation is an aggregate of `claims` that eventually becomes `observed` by
 // all orchestrators
 // EVENT_NONCE:
@@ -79,24 +607,20 @@ func (ClaimType) EnumDescriptor() ([]byte, []int) {
 // OBSERVED:
 // Observed indicates that >67% of validators have attested to the event,
 // and that the event should be executed by the gravity state machine
-//
-// The actual content of the claims is passed in with the transaction making the
-// claim and then passed through the call stack alongside the attestation while
-// it is processed the key in which the attestation is stored is keyed on the
-// exact details of the claim but there is no reason to store those exact
-// details becuause the next message sender will kindly provide you with them.
 type Attestation struct {
-	Observed bool       `protobuf:"varint,1,opt,name=observed,proto3" json:"observed,omitempty"`
-	Votes    []string   `protobuf:"bytes,2,rep,name=votes,proto3" json:"votes,omitempty"`
-	Height   uint64     `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
-	Claim    *types.Any `protobuf:"bytes,4,opt,name=claim,proto3" json:"claim,omitempty"`
+	Observed        bool                 `protobuf:"varint,1,opt,name=observed,proto3" json:"observed,omitempty"`
+	Votes           []string             `protobuf:"bytes,2,rep,name=votes,proto3" json:"votes,omitempty"`
+	Height          uint64               `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Claim           *types.Any           `protobuf:"bytes,4,opt,name=claim,proto3" json:"claim,omitempty"`
+	ClaimType       ClaimType            `protobuf:"varint,5,opt,name=claim_type,json=claimType,proto3,enum=gravity.v1.ClaimType" json:"claim_type,omitempty"`
+	ClaimComponents *ClaimHashComponents `protobuf:"bytes,6,opt,name=claim_components,json=claimComponents,proto3" json:"claim_components,omitempty"`
 }
 
 func (m *Attestation) Reset()         { *m = Attestation{} }
 func (m *Attestation) String() string { return proto.CompactTextString(m) }
 func (*Attestation) ProtoMessage()    {}
 func (*Attestation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3205613bbab7525, []int{0}
+	return fileDescriptor_e3205613bbab7525, []int{6}
 }
 func (m *Attestation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -153,6 +677,20 @@ func (m *Attestation) GetClaim() *types.Any {
 	return nil
 }
 
+func (m *Attestation) GetClaimType() ClaimType {
+	if m != nil {
+		return m.ClaimType
+	}
+	return CLAIM_TYPE_UNSPECIFIED
+}
+
+func (m *Attestation) GetClaimComponents() *ClaimHashComponents {
+	if m != nil {
+		return m.ClaimComponents
+	}
+	return nil
+}
+
 // ERC20Token unique identifier for an Ethereum ERC20 token.
 // CONTRACT:
 // The contract address on ETH of the token, this could be a Cosmos
@@ -168,7 +706,7 @@ func (m *ERC20Token) Reset()         { *m = ERC20Token{} }
 func (m *ERC20Token) String() string { return proto.CompactTextString(m) }
 func (*ERC20Token) ProtoMessage()    {}
 func (*ERC20Token) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3205613bbab7525, []int{1}
+	return fileDescriptor_e3205613bbab7525, []int{7}
 }
 func (m *ERC20Token) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -216,7 +754,7 @@ func (m *EventObservation) Reset()         { *m = EventObservation{} }
 func (m *EventObservation) String() string { return proto.CompactTextString(m) }
 func (*EventObservation) ProtoMessage()    {}
 func (*EventObservation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3205613bbab7525, []int{2}
+	return fileDescriptor_e3205613bbab7525, []int{8}
 }
 func (m *EventObservation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -291,7 +829,7 @@ func (m *EventInvalidSendToCosmosReceiver) Reset()         { *m = EventInvalidSe
 func (m *EventInvalidSendToCosmosReceiver) String() string { return proto.CompactTextString(m) }
 func (*EventInvalidSendToCosmosReceiver) ProtoMessage()    {}
 func (*EventInvalidSendToCosmosReceiver) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3205613bbab7525, []int{3}
+	return fileDescriptor_e3205613bbab7525, []int{9}
 }
 func (m *EventInvalidSendToCosmosReceiver) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -358,7 +896,7 @@ func (m *EventSendToCosmos) Reset()         { *m = EventSendToCosmos{} }
 func (m *EventSendToCosmos) String() string { return proto.CompactTextString(m) }
 func (*EventSendToCosmos) ProtoMessage()    {}
 func (*EventSendToCosmos) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3205613bbab7525, []int{4}
+	return fileDescriptor_e3205613bbab7525, []int{10}
 }
 func (m *EventSendToCosmos) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -419,7 +957,7 @@ func (m *EventSendToCosmosLocal) Reset()         { *m = EventSendToCosmosLocal{}
 func (m *EventSendToCosmosLocal) String() string { return proto.CompactTextString(m) }
 func (*EventSendToCosmosLocal) ProtoMessage()    {}
 func (*EventSendToCosmosLocal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3205613bbab7525, []int{5}
+	return fileDescriptor_e3205613bbab7525, []int{11}
 }
 func (m *EventSendToCosmosLocal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -490,7 +1028,7 @@ func (m *EventSendToCosmosPendingIbcAutoForward) Reset() {
 func (m *EventSendToCosmosPendingIbcAutoForward) String() string { return proto.CompactTextString(m) }
 func (*EventSendToCosmosPendingIbcAutoForward) ProtoMessage()    {}
 func (*EventSendToCosmosPendingIbcAutoForward) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3205613bbab7525, []int{6}
+	return fileDescriptor_e3205613bbab7525, []int{12}
 }
 func (m *EventSendToCosmosPendingIbcAutoForward) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -570,7 +1108,7 @@ func (m *EventSendToCosmosExecutedIbcAutoForward) Reset() {
 func (m *EventSendToCosmosExecutedIbcAutoForward) String() string { return proto.CompactTextString(m) }
 func (*EventSendToCosmosExecutedIbcAutoForward) ProtoMessage()    {}
 func (*EventSendToCosmosExecutedIbcAutoForward) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3205613bbab7525, []int{7}
+	return fileDescriptor_e3205613bbab7525, []int{13}
 }
 func (m *EventSendToCosmosExecutedIbcAutoForward) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -650,6 +1188,12 @@ func (m *EventSendToCosmosExecutedIbcAutoForward) GetTimeoutHeight() string {
 
 func init() {
 	proto.RegisterEnum("gravity.v1.ClaimType", ClaimType_name, ClaimType_value)
+	proto.RegisterType((*SendToCosmosClaimComponents)(nil), "gravity.v1.SendToCosmosClaimComponents")
+	proto.RegisterType((*BatchSendToEthClaimComponents)(nil), "gravity.v1.BatchSendToEthClaimComponents")
+	proto.RegisterType((*ERC20DeployedClaimComponents)(nil), "gravity.v1.ERC20DeployedClaimComponents")
+	proto.RegisterType((*LogicCallExecutedClaimComponents)(nil), "gravity.v1.LogicCallExecutedClaimComponents")
+	proto.RegisterType((*ValsetUpdatedClaimComponents)(nil), "gravity.v1.ValsetUpdatedClaimComponents")
+	proto.RegisterType((*ClaimHashComponents)(nil), "gravity.v1.ClaimHashComponents")
 	proto.RegisterType((*Attestation)(nil), "gravity.v1.Attestation")
 	proto.RegisterType((*ERC20Token)(nil), "gravity.v1.ERC20Token")
 	proto.RegisterType((*EventObservation)(nil), "gravity.v1.EventObservation")
@@ -663,56 +1207,511 @@ func init() {
 func init() { proto.RegisterFile("gravity/v1/attestation.proto", fileDescriptor_e3205613bbab7525) }
 
 var fileDescriptor_e3205613bbab7525 = []byte{
-	// 751 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x55, 0xc1, 0x4e, 0xdb, 0x58,
-	0x14, 0x8d, 0x43, 0x12, 0xc8, 0x63, 0x80, 0x8c, 0xc5, 0x20, 0x13, 0x81, 0xc9, 0x58, 0x1a, 0xc8,
-	0x20, 0x8d, 0x3d, 0x30, 0x9a, 0xf5, 0xc8, 0x71, 0x0c, 0x58, 0x0a, 0x24, 0x72, 0xcc, 0xcc, 0xd0,
-	0x8d, 0xe5, 0xd8, 0xaf, 0x8e, 0x45, 0xfc, 0x1e, 0xb2, 0x5f, 0x5c, 0xb2, 0xe9, 0xa6, 0x9b, 0x2e,
-	0xfb, 0x0d, 0xed, 0xcf, 0x20, 0x75, 0xc3, 0xb2, 0xea, 0x02, 0x55, 0xb0, 0xee, 0x3f, 0x54, 0x7e,
-	0x7e, 0x49, 0x2c, 0x50, 0x77, 0xad, 0xd4, 0x55, 0x72, 0xce, 0xb9, 0x3a, 0xf7, 0xdc, 0x6b, 0xe7,
-	0x06, 0x6c, 0xf9, 0x91, 0x93, 0x04, 0x64, 0xa2, 0x24, 0x07, 0x8a, 0x43, 0x08, 0x8c, 0x89, 0x43,
-	0x02, 0x8c, 0xe4, 0xab, 0x08, 0x13, 0xcc, 0x03, 0xa6, 0xca, 0xc9, 0x41, 0x7d, 0xdd, 0xc7, 0x3e,
-	0xa6, 0xb4, 0x92, 0x7e, 0xcb, 0x2a, 0xea, 0x9b, 0x3e, 0xc6, 0xfe, 0x08, 0x2a, 0x14, 0x0d, 0xc6,
-	0xcf, 0x15, 0x07, 0x4d, 0x32, 0x49, 0x7a, 0xc5, 0x81, 0x65, 0x75, 0x6e, 0xc9, 0xd7, 0xc1, 0x12,
-	0x1e, 0xc4, 0x30, 0x4a, 0xa0, 0x27, 0x70, 0x0d, 0xae, 0xb9, 0x64, 0xce, 0x30, 0xbf, 0x0e, 0xca,
-	0x09, 0x26, 0x30, 0x16, 0x8a, 0x8d, 0x85, 0x66, 0xd5, 0xcc, 0x00, 0xbf, 0x01, 0x2a, 0x43, 0x18,
-	0xf8, 0x43, 0x22, 0x2c, 0x34, 0xb8, 0x66, 0xc9, 0x64, 0x88, 0xdf, 0x07, 0x65, 0x77, 0xe4, 0x04,
-	0xa1, 0x50, 0x6a, 0x70, 0xcd, 0xe5, 0xc3, 0x75, 0x39, 0x0b, 0x21, 0x4f, 0x43, 0xc8, 0x2a, 0x9a,
-	0x98, 0x59, 0x89, 0x64, 0x03, 0xa0, 0x9b, 0xda, 0xe1, 0x9f, 0x16, 0xbe, 0x84, 0x34, 0x83, 0x8b,
-	0x11, 0x89, 0x1c, 0x97, 0xd0, 0x0c, 0x55, 0x73, 0x86, 0xf9, 0xbf, 0x41, 0xc5, 0x09, 0xf1, 0x18,
-	0x11, 0xa1, 0x98, 0x2a, 0xad, 0xed, 0x9b, 0xbb, 0x9d, 0xc2, 0xc7, 0xbb, 0x9d, 0x5f, 0x5c, 0x1c,
-	0x87, 0x38, 0x8e, 0xbd, 0x4b, 0x39, 0xc0, 0x4a, 0xe8, 0x90, 0xa1, 0x6c, 0x20, 0x62, 0xb2, 0x62,
-	0xe9, 0x3d, 0x07, 0x6a, 0x7a, 0x02, 0x11, 0xe9, 0xd2, 0x61, 0xb2, 0x59, 0x7f, 0x07, 0xb5, 0xdc,
-	0x36, 0x6d, 0x32, 0xb9, 0x82, 0xac, 0xdf, 0x5a, 0x8e, 0xb7, 0x26, 0x57, 0x90, 0xdf, 0x03, 0x6b,
-	0x83, 0x28, 0xf0, 0x7c, 0x68, 0xcf, 0x92, 0xd1, 0xfe, 0xe6, 0x6a, 0x46, 0x6b, 0xd3, 0x7c, 0xbb,
-	0xf3, 0xc2, 0xa1, 0x13, 0x20, 0x3b, 0xf0, 0xe8, 0x5a, 0xaa, 0xe6, 0x0a, 0x2b, 0x4c, 0x59, 0xc3,
-	0xe3, 0x7f, 0x03, 0xab, 0xf9, 0xde, 0x81, 0x47, 0xd7, 0x54, 0x35, 0x57, 0x72, 0xac, 0x41, 0x57,
-	0x8e, 0x30, 0x72, 0xa1, 0x50, 0xa6, 0x6a, 0x06, 0xa4, 0x97, 0xa0, 0x41, 0x87, 0x31, 0x50, 0xe2,
-	0x8c, 0x02, 0xaf, 0x0f, 0x91, 0x67, 0x61, 0x8d, 0x2e, 0xc0, 0x84, 0x2e, 0x0c, 0x12, 0x18, 0xa5,
-	0x8f, 0x85, 0x2d, 0x2a, 0x1b, 0x89, 0xa1, 0xb9, 0x63, 0x31, 0xe7, 0x98, 0xb2, 0x24, 0xdd, 0x3d,
-	0x0b, 0x9b, 0x81, 0xd4, 0x23, 0x86, 0xc8, 0x83, 0x11, 0x0b, 0xc7, 0x90, 0xf4, 0x1f, 0xf8, 0x99,
-	0xf6, 0xcf, 0x37, 0xfe, 0x16, 0x0d, 0xa5, 0x6b, 0xb0, 0xf1, 0xc4, 0xb8, 0x83, 0x5d, 0x67, 0x34,
-	0x77, 0xe1, 0xf2, 0x2e, 0x75, 0xb0, 0x14, 0xb1, 0x81, 0x99, 0xfd, 0x0c, 0x7f, 0x7d, 0x24, 0x96,
-	0xb2, 0x94, 0x4f, 0x29, 0xbd, 0xe5, 0xc0, 0xee, 0x93, 0xd6, 0x3d, 0x88, 0xbc, 0x00, 0xf9, 0xc6,
-	0xc0, 0x55, 0xc7, 0x04, 0x1f, 0xe1, 0xe8, 0x85, 0x13, 0x79, 0xdf, 0x3b, 0x0a, 0x2f, 0x80, 0x45,
-	0x77, 0xe8, 0x20, 0x04, 0x47, 0xec, 0xa9, 0x4f, 0xa1, 0xf4, 0x99, 0x03, 0x7b, 0x4f, 0x42, 0xea,
-	0xd7, 0xd0, 0x1d, 0x13, 0xe8, 0xfd, 0x28, 0x29, 0xf9, 0x5f, 0xc1, 0x4f, 0x24, 0x08, 0x21, 0x1e,
-	0x13, 0x3b, 0xfd, 0x14, 0x2a, 0x54, 0x5e, 0x66, 0x9c, 0x15, 0x84, 0x30, 0x7d, 0xfb, 0xa7, 0x25,
-	0xec, 0x76, 0x2c, 0x66, 0x6f, 0x3f, 0x63, 0x4f, 0x28, 0xb9, 0x7f, 0xcb, 0x81, 0xaa, 0x96, 0x1e,
-	0x08, 0xfa, 0x1b, 0xac, 0x83, 0x0d, 0xad, 0xa3, 0x1a, 0xa7, 0xb6, 0x75, 0xd1, 0xd3, 0xed, 0xf3,
-	0xb3, 0x7e, 0x4f, 0xd7, 0x8c, 0x23, 0x43, 0x6f, 0xd7, 0x0a, 0xfc, 0x36, 0xd8, 0xcc, 0x69, 0x7d,
-	0xfd, 0xac, 0x6d, 0x5b, 0x5d, 0x5b, 0xeb, 0xf6, 0x4f, 0xbb, 0xfd, 0x1a, 0xc7, 0x37, 0xc0, 0x56,
-	0x4e, 0x6e, 0xa9, 0x96, 0x76, 0x32, 0x2b, 0xd2, 0xad, 0x93, 0x5a, 0xf1, 0x91, 0x01, 0x3d, 0x46,
-	0x76, 0x5b, 0xef, 0x75, 0xba, 0x17, 0x7a, 0xbb, 0xb6, 0xc0, 0x4b, 0x40, 0xcc, 0xc9, 0x9d, 0xee,
-	0xb1, 0xa1, 0xd9, 0x9a, 0xda, 0xe9, 0xd8, 0xfa, 0xff, 0xba, 0x76, 0x6e, 0xe9, 0xed, 0x5a, 0xe9,
-	0x91, 0xc5, 0xbf, 0x6a, 0xa7, 0xaf, 0x5b, 0xf6, 0x79, 0xaf, 0xad, 0xa6, 0x72, 0xb9, 0x5e, 0x7a,
-	0xfd, 0x4e, 0x2c, 0xb4, 0x2e, 0x6e, 0xee, 0x45, 0xee, 0xf6, 0x5e, 0xe4, 0x3e, 0xdd, 0x8b, 0xdc,
-	0x9b, 0x07, 0xb1, 0x70, 0xfb, 0x20, 0x16, 0x3e, 0x3c, 0x88, 0x85, 0x67, 0xff, 0xf8, 0x01, 0x19,
-	0x8e, 0x07, 0xb2, 0x8b, 0x43, 0xe5, 0x38, 0xbb, 0xe8, 0x7f, 0xb4, 0xe8, 0xcd, 0x78, 0x0c, 0x43,
-	0xec, 0x8d, 0x47, 0x50, 0xb9, 0x56, 0xa6, 0x7f, 0x0b, 0xe9, 0xe5, 0x8a, 0x07, 0x15, 0x7a, 0x59,
-	0xff, 0xfa, 0x12, 0x00, 0x00, 0xff, 0xff, 0x1c, 0x8b, 0x9f, 0x11, 0x2e, 0x06, 0x00, 0x00,
+	// 1306 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x57, 0xcd, 0x6e, 0x1b, 0xd5,
+	0x17, 0xf7, 0xd8, 0x4e, 0xd3, 0x1c, 0x27, 0x8e, 0x33, 0x6d, 0x23, 0x37, 0x4d, 0x1d, 0x77, 0xfe,
+	0xfa, 0x37, 0x69, 0x45, 0xed, 0xd6, 0xc0, 0x8a, 0x05, 0xf2, 0xc7, 0xb4, 0x36, 0x72, 0xeb, 0x30,
+	0x76, 0x02, 0x65, 0xc1, 0xd5, 0x78, 0xe6, 0xe2, 0x19, 0x75, 0x66, 0x6e, 0x34, 0x73, 0x6d, 0xea,
+	0x0d, 0x3b, 0x24, 0x96, 0xf0, 0x0a, 0xf0, 0x06, 0xbc, 0x03, 0x52, 0x25, 0x36, 0x15, 0x2b, 0xc4,
+	0xa2, 0x42, 0xed, 0x9a, 0x07, 0x40, 0x6c, 0xd0, 0xfd, 0x98, 0xc9, 0x38, 0x69, 0x03, 0x42, 0x44,
+	0x62, 0x95, 0x39, 0xbf, 0x73, 0x7c, 0xee, 0xf9, 0x3e, 0x27, 0xb0, 0x3d, 0x09, 0xcd, 0x99, 0x4b,
+	0xe7, 0xf5, 0xd9, 0xbd, 0xba, 0x49, 0x29, 0x8e, 0xa8, 0x49, 0x5d, 0x12, 0xd4, 0x8e, 0x42, 0x42,
+	0x89, 0x0a, 0x92, 0x5b, 0x9b, 0xdd, 0xdb, 0xba, 0x3c, 0x21, 0x13, 0xc2, 0xe1, 0x3a, 0xfb, 0x12,
+	0x12, 0x5b, 0x57, 0x27, 0x84, 0x4c, 0x3c, 0x5c, 0xe7, 0xd4, 0x78, 0xfa, 0x59, 0xdd, 0x0c, 0xe6,
+	0x92, 0xb5, 0x99, 0x52, 0x4d, 0xe7, 0x47, 0x38, 0x12, 0xb8, 0xf6, 0xbb, 0x02, 0xd7, 0x86, 0x38,
+	0xb0, 0x47, 0xa4, 0x4d, 0x22, 0x9f, 0x44, 0x6d, 0xcf, 0x74, 0xfd, 0x36, 0xf1, 0x8f, 0x48, 0x80,
+	0x03, 0x1a, 0xa9, 0x3b, 0x50, 0xc0, 0x33, 0x1c, 0x50, 0x14, 0x90, 0xc0, 0xc2, 0x65, 0xa5, 0xaa,
+	0xec, 0xe5, 0x0d, 0xe0, 0xd0, 0x23, 0x86, 0xa8, 0x7b, 0x50, 0xc2, 0xd4, 0x41, 0x63, 0x8f, 0x58,
+	0x4f, 0x90, 0x83, 0xdd, 0x89, 0x43, 0xcb, 0x59, 0x2e, 0x55, 0xc4, 0xd4, 0x69, 0x31, 0xb8, 0xcb,
+	0x51, 0xf5, 0xff, 0x50, 0xa4, 0xe4, 0x09, 0x0e, 0x90, 0x45, 0x02, 0x1a, 0x9a, 0x16, 0x2d, 0xe7,
+	0xaa, 0xca, 0xde, 0x8a, 0xb1, 0xc6, 0xd1, 0xb6, 0x04, 0xd5, 0x4d, 0xb8, 0x60, 0xfa, 0x64, 0x1a,
+	0xd0, 0x72, 0x9e, 0xb3, 0x25, 0xa5, 0xee, 0xc2, 0x3a, 0xa6, 0x0e, 0x0e, 0xf1, 0xd4, 0x47, 0x11,
+	0x0e, 0x6c, 0x1c, 0x96, 0x97, 0xb8, 0x40, 0x31, 0x86, 0x87, 0x1c, 0x65, 0x82, 0x16, 0xf7, 0x05,
+	0x85, 0xd8, 0xc2, 0xee, 0x0c, 0x87, 0xe5, 0x0b, 0x42, 0x50, 0xc0, 0x86, 0x44, 0xb5, 0xef, 0x15,
+	0xb8, 0xde, 0x32, 0xa9, 0xe5, 0x88, 0x00, 0xe8, 0xd4, 0x39, 0x47, 0xef, 0x77, 0xa0, 0x30, 0x66,
+	0x6f, 0x49, 0x55, 0x39, 0xa1, 0x8a, 0x43, 0x42, 0xd5, 0xe9, 0xf0, 0xe4, 0x5f, 0x13, 0x1e, 0xed,
+	0x0f, 0x05, 0xb6, 0x75, 0xa3, 0xdd, 0xb8, 0xdb, 0xc1, 0x47, 0x1e, 0x99, 0x63, 0xfb, 0x1c, 0x6d,
+	0xbe, 0x01, 0xab, 0x32, 0x92, 0x36, 0x0e, 0x88, 0x2f, 0xf3, 0x55, 0x10, 0x58, 0x87, 0x41, 0x7f,
+	0xd3, 0x6a, 0x55, 0x85, 0x7c, 0x60, 0xfa, 0x58, 0x66, 0x8c, 0x7f, 0xb3, 0x44, 0x47, 0x73, 0x7f,
+	0x4c, 0x3c, 0x99, 0x1e, 0x49, 0xa9, 0x5b, 0x70, 0xd1, 0xc6, 0x96, 0xeb, 0x9b, 0x5e, 0x54, 0x5e,
+	0xe6, 0x76, 0x25, 0xb4, 0xf6, 0x83, 0x02, 0xd5, 0x3e, 0x99, 0xb8, 0x56, 0xdb, 0xf4, 0x3c, 0xfd,
+	0x29, 0xb6, 0xa6, 0xf4, 0x5c, 0x23, 0xb0, 0x0b, 0xeb, 0x6e, 0x30, 0x33, 0x3d, 0xd7, 0xe6, 0x9d,
+	0x88, 0x5c, 0x9b, 0x07, 0x61, 0xd5, 0x28, 0xa6, 0xe1, 0x9e, 0xad, 0xde, 0x01, 0x75, 0x41, 0x50,
+	0x3c, 0x9d, 0xe7, 0x4a, 0x37, 0xd2, 0x1c, 0x6e, 0x81, 0xf6, 0x4d, 0x16, 0xb6, 0x0f, 0x4d, 0x2f,
+	0xc2, 0xf4, 0xe0, 0xc8, 0x36, 0xff, 0x89, 0x0f, 0x37, 0x60, 0x75, 0xc6, 0x15, 0x48, 0x09, 0x61,
+	0x7f, 0x41, 0x60, 0x6f, 0x76, 0x33, 0xf7, 0x5a, 0x37, 0xdf, 0x83, 0x65, 0x1f, 0xfb, 0x63, 0x1c,
+	0x46, 0xe5, 0x7c, 0x35, 0xb7, 0x57, 0x68, 0x5c, 0xab, 0x1d, 0x0f, 0x9b, 0x5a, 0x2b, 0x74, 0xed,
+	0x09, 0x3e, 0x14, 0x2e, 0x90, 0xb0, 0x95, 0x7f, 0xf6, 0x62, 0x27, 0x63, 0xc4, 0xbf, 0x50, 0xff,
+	0x07, 0x6b, 0x21, 0xfe, 0xdc, 0x0c, 0x6d, 0x24, 0xfb, 0x56, 0x24, 0x79, 0x55, 0x80, 0x4d, 0xd1,
+	0xbd, 0x37, 0x40, 0xd2, 0x88, 0x17, 0x86, 0x4c, 0x79, 0x41, 0x60, 0x23, 0x06, 0x69, 0x3f, 0xe5,
+	0xe0, 0x12, 0x0f, 0x43, 0xd7, 0x8c, 0x9c, 0x54, 0x28, 0x06, 0x50, 0x64, 0xfd, 0x8e, 0x28, 0x41,
+	0xa2, 0xf2, 0x78, 0x34, 0x0a, 0x8d, 0xdd, 0xb4, 0x8d, 0x67, 0xcc, 0xb0, 0x6e, 0xc6, 0x58, 0x8d,
+	0x52, 0x6c, 0xf5, 0x10, 0x36, 0x44, 0x2b, 0xc6, 0x6a, 0x31, 0x75, 0x78, 0xfc, 0x0a, 0x8d, 0x5b,
+	0x0b, 0x7e, 0x9f, 0x35, 0x1b, 0xba, 0x19, 0xa3, 0x38, 0x5e, 0x10, 0x50, 0x3f, 0x84, 0x22, 0x0e,
+	0xad, 0xc6, 0x5d, 0x64, 0xcb, 0xd6, 0xe4, 0xd1, 0x2e, 0x34, 0xf6, 0xd2, 0x4a, 0xcf, 0xea, 0xdd,
+	0x6e, 0xc6, 0x58, 0xe3, 0x1a, 0x62, 0xbe, 0xfa, 0x29, 0x5c, 0xf2, 0x58, 0xb9, 0x23, 0xcb, 0xf4,
+	0x3c, 0x84, 0x65, 0xc1, 0xf3, 0xba, 0x2a, 0x34, 0xde, 0x4a, 0xeb, 0xfd, 0xab, 0xae, 0xe8, 0x66,
+	0x8c, 0x0d, 0xef, 0xa4, 0x0c, 0x33, 0x59, 0x56, 0xd1, 0x54, 0xd4, 0x21, 0x4f, 0xde, 0x09, 0x93,
+	0xcf, 0x2a, 0x54, 0x66, 0xf2, 0x2c, 0xcd, 0x6f, 0xad, 0x02, 0x58, 0x09, 0x5b, 0xfb, 0x32, 0x0b,
+	0x85, 0xe6, 0xf1, 0x2a, 0x63, 0xcd, 0x4d, 0xc6, 0x11, 0x0e, 0x67, 0xd8, 0xe6, 0x69, 0xbc, 0x68,
+	0x24, 0xb4, 0x7a, 0x19, 0x96, 0x66, 0x84, 0xe2, 0xa8, 0x9c, 0xad, 0xe6, 0xf6, 0x56, 0x0c, 0x41,
+	0xb0, 0x31, 0xb1, 0x50, 0xbb, 0x92, 0x52, 0x6f, 0xc3, 0x92, 0xc5, 0x6c, 0x91, 0xc1, 0xb8, 0x5c,
+	0x13, 0xcb, 0xaf, 0x16, 0x2f, 0xbf, 0x5a, 0x33, 0x98, 0x1b, 0x42, 0x44, 0x7d, 0x07, 0x80, 0x7f,
+	0x20, 0xb6, 0xfa, 0xb8, 0x8b, 0xc5, 0xc6, 0x95, 0xb4, 0x8b, 0xdc, 0xab, 0xd1, 0xfc, 0x08, 0x1b,
+	0x2b, 0x56, 0xfc, 0xa9, 0x7e, 0x00, 0x25, 0xf1, 0xab, 0x63, 0x7f, 0x78, 0xdd, 0x16, 0x1a, 0x3b,
+	0xa7, 0x7e, 0xbb, 0x58, 0xb3, 0xc6, 0xba, 0xb5, 0x18, 0x26, 0x0d, 0x01, 0xf0, 0xcc, 0xf3, 0x52,
+	0x67, 0x51, 0x48, 0xe6, 0xa5, 0xc2, 0x3b, 0x21, 0xa1, 0xd5, 0x77, 0x93, 0xfd, 0xc7, 0x4a, 0x72,
+	0xa5, 0x75, 0x9d, 0x75, 0xdb, 0x2f, 0x2f, 0x76, 0xae, 0x88, 0xe2, 0x8f, 0xec, 0x27, 0x35, 0x97,
+	0xd4, 0x7d, 0x93, 0x3a, 0xb5, 0x5e, 0x40, 0xe3, 0xf5, 0xa8, 0xfd, 0xa8, 0x40, 0x49, 0x67, 0xe3,
+	0x61, 0xc0, 0xc3, 0x29, 0xa2, 0x7d, 0x0b, 0x4a, 0xa9, 0x3b, 0x42, 0x78, 0x2f, 0xde, 0x5b, 0x4f,
+	0xe1, 0xdc, 0xd9, 0x5d, 0x58, 0x1f, 0xf3, 0x3e, 0x3f, 0x9e, 0xe4, 0x59, 0xb1, 0x35, 0x05, 0x9c,
+	0x8c, 0xf2, 0x9b, 0xc7, 0x82, 0x8e, 0xe9, 0x26, 0x23, 0x71, 0xc5, 0x58, 0x93, 0x82, 0x0c, 0xed,
+	0xd9, 0x6c, 0x33, 0xa4, 0xdf, 0x76, 0xed, 0x78, 0x33, 0xa4, 0xd0, 0x1e, 0x4f, 0xba, 0x18, 0x60,
+	0x62, 0x6a, 0x08, 0x42, 0xfb, 0x02, 0xaa, 0xdc, 0x99, 0x9e, 0x98, 0x9c, 0xe9, 0xee, 0x8e, 0xd7,
+	0x77, 0xea, 0x50, 0x50, 0x16, 0x0e, 0x85, 0x44, 0x63, 0x36, 0xa5, 0x91, 0xa1, 0x62, 0xf2, 0x08,
+	0x63, 0x05, 0xc1, 0x77, 0x90, 0xb8, 0x25, 0xe4, 0xb1, 0x21, 0x28, 0xed, 0x23, 0xd8, 0xe0, 0xef,
+	0xa7, 0x1f, 0xfe, 0x37, 0x1e, 0xd4, 0x9e, 0xc2, 0xe6, 0x29, 0xc5, 0x7d, 0x62, 0x99, 0xde, 0xb1,
+	0x16, 0x25, 0xad, 0x65, 0x0b, 0x2e, 0x26, 0x57, 0x8c, 0x50, 0x9f, 0xd0, 0x6f, 0x76, 0xe9, 0x75,
+	0xf7, 0x93, 0xf6, 0xad, 0x02, 0x37, 0x4f, 0x3d, 0xbd, 0x8f, 0x03, 0xdb, 0x0d, 0x26, 0xbd, 0xb1,
+	0xd5, 0x9c, 0x52, 0x72, 0x9f, 0x84, 0x6c, 0x1c, 0x9f, 0xb7, 0x29, 0x6a, 0x19, 0x96, 0x2d, 0xc7,
+	0x0c, 0x02, 0xec, 0xc9, 0xac, 0xc7, 0xa4, 0xf6, 0x9b, 0x02, 0xbb, 0xa7, 0x8c, 0x8c, 0xa7, 0xd5,
+	0x7f, 0xc5, 0x4a, 0xb6, 0xcc, 0xa8, 0xeb, 0x63, 0x32, 0xa5, 0x88, 0xfd, 0x8d, 0x97, 0x99, 0xc4,
+	0x46, 0xae, 0x2f, 0xae, 0x39, 0x29, 0x22, 0xa7, 0xd7, 0xb2, 0xbc, 0x8b, 0x04, 0x2a, 0x16, 0xef,
+	0xed, 0xe7, 0x0a, 0xac, 0x24, 0xb3, 0x47, 0xdd, 0x82, 0xcd, 0x76, 0xbf, 0xd9, 0x7b, 0x88, 0x46,
+	0x8f, 0xf7, 0x75, 0x74, 0xf0, 0x68, 0xb8, 0xaf, 0xb7, 0x7b, 0xf7, 0x7b, 0x7a, 0xa7, 0x94, 0x51,
+	0xaf, 0xc3, 0xd5, 0x14, 0x6f, 0xa8, 0x3f, 0xea, 0xa0, 0xd1, 0x00, 0xb5, 0x07, 0xc3, 0x87, 0x83,
+	0x61, 0x49, 0x51, 0xab, 0xb0, 0x9d, 0x62, 0xb7, 0x9a, 0xa3, 0x76, 0x37, 0x11, 0xd2, 0x47, 0xdd,
+	0x52, 0xf6, 0x84, 0x02, 0x3e, 0x8c, 0x50, 0x47, 0xdf, 0xef, 0x0f, 0x1e, 0xeb, 0x9d, 0x52, 0x4e,
+	0xd5, 0xa0, 0x92, 0x62, 0xf7, 0x07, 0x0f, 0x7a, 0x6d, 0xd4, 0x6e, 0xf6, 0xfb, 0x48, 0xff, 0x58,
+	0x6f, 0x1f, 0x8c, 0xf4, 0x4e, 0x29, 0x7f, 0x42, 0xc5, 0x61, 0xb3, 0x3f, 0xd4, 0x47, 0xe8, 0x60,
+	0xbf, 0xd3, 0x64, 0xec, 0xa5, 0xad, 0xfc, 0x57, 0xdf, 0x55, 0x32, 0xad, 0xc7, 0xcf, 0x5e, 0x56,
+	0x94, 0xe7, 0x2f, 0x2b, 0xca, 0xaf, 0x2f, 0x2b, 0xca, 0xd7, 0xaf, 0x2a, 0x99, 0xe7, 0xaf, 0x2a,
+	0x99, 0x9f, 0x5f, 0x55, 0x32, 0x9f, 0xbc, 0x3f, 0x71, 0xa9, 0x33, 0x1d, 0xd7, 0x2c, 0xe2, 0xd7,
+	0x1f, 0x88, 0xf9, 0x79, 0x47, 0xdc, 0x16, 0x27, 0x49, 0x9f, 0xd8, 0x53, 0x0f, 0xd7, 0x9f, 0xd6,
+	0xe3, 0xff, 0x5a, 0xf8, 0xbf, 0x2c, 0xe3, 0x0b, 0x7c, 0xb6, 0xbf, 0xfd, 0x67, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0x64, 0xf5, 0x90, 0x3d, 0x28, 0x0d, 0x00, 0x00,
 }
 
+func (m *SendToCosmosClaimComponents) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SendToCosmosClaimComponents) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SendToCosmosClaimComponents) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.CosmosReceiver) > 0 {
+		i -= len(m.CosmosReceiver)
+		copy(dAtA[i:], m.CosmosReceiver)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.CosmosReceiver)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.EthereumSender) > 0 {
+		i -= len(m.EthereumSender)
+		copy(dAtA[i:], m.EthereumSender)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.EthereumSender)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Amount) > 0 {
+		i -= len(m.Amount)
+		copy(dAtA[i:], m.Amount)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.Amount)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.TokenContract) > 0 {
+		i -= len(m.TokenContract)
+		copy(dAtA[i:], m.TokenContract)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.TokenContract)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.EthBlockHeight != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EthBlockHeight))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.EventNonce != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EventNonce))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BatchSendToEthClaimComponents) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BatchSendToEthClaimComponents) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BatchSendToEthClaimComponents) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.TokenContract) > 0 {
+		i -= len(m.TokenContract)
+		copy(dAtA[i:], m.TokenContract)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.TokenContract)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.BatchNonce != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.BatchNonce))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.EthBlockHeight != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EthBlockHeight))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.EventNonce != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EventNonce))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ERC20DeployedClaimComponents) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ERC20DeployedClaimComponents) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ERC20DeployedClaimComponents) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Decimals != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.Decimals))
+		i--
+		dAtA[i] = 0x38
+	}
+	if len(m.Symbol) > 0 {
+		i -= len(m.Symbol)
+		copy(dAtA[i:], m.Symbol)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.Symbol)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.TokenContract) > 0 {
+		i -= len(m.TokenContract)
+		copy(dAtA[i:], m.TokenContract)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.TokenContract)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.CosmosDenom) > 0 {
+		i -= len(m.CosmosDenom)
+		copy(dAtA[i:], m.CosmosDenom)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.CosmosDenom)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.EthBlockHeight != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EthBlockHeight))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.EventNonce != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EventNonce))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *LogicCallExecutedClaimComponents) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LogicCallExecutedClaimComponents) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LogicCallExecutedClaimComponents) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.InvalidationNonce != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.InvalidationNonce))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.InvalidationId) > 0 {
+		i -= len(m.InvalidationId)
+		copy(dAtA[i:], m.InvalidationId)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.InvalidationId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.EthBlockHeight != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EthBlockHeight))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.EventNonce != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EventNonce))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ValsetUpdatedClaimComponents) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ValsetUpdatedClaimComponents) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ValsetUpdatedClaimComponents) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.RewardToken) > 0 {
+		i -= len(m.RewardToken)
+		copy(dAtA[i:], m.RewardToken)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.RewardToken)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.RewardAmount) > 0 {
+		i -= len(m.RewardAmount)
+		copy(dAtA[i:], m.RewardAmount)
+		i = encodeVarintAttestation(dAtA, i, uint64(len(m.RewardAmount)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Members) > 0 {
+		for iNdEx := len(m.Members) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Members[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintAttestation(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if m.EthBlockHeight != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EthBlockHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.ValsetNonce != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.ValsetNonce))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.EventNonce != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.EventNonce))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClaimHashComponents) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClaimHashComponents) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClaimHashComponents) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Components != nil {
+		{
+			size := m.Components.Size()
+			i -= size
+			if _, err := m.Components.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClaimHashComponents_SendToCosmos) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClaimHashComponents_SendToCosmos) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.SendToCosmos != nil {
+		{
+			size, err := m.SendToCosmos.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAttestation(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClaimHashComponents_BatchSendToEth) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClaimHashComponents_BatchSendToEth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.BatchSendToEth != nil {
+		{
+			size, err := m.BatchSendToEth.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAttestation(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClaimHashComponents_Erc20Deployed) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClaimHashComponents_Erc20Deployed) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Erc20Deployed != nil {
+		{
+			size, err := m.Erc20Deployed.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAttestation(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClaimHashComponents_LogicCallExecuted) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClaimHashComponents_LogicCallExecuted) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.LogicCallExecuted != nil {
+		{
+			size, err := m.LogicCallExecuted.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAttestation(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClaimHashComponents_ValsetUpdated) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClaimHashComponents_ValsetUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ValsetUpdated != nil {
+		{
+			size, err := m.ValsetUpdated.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAttestation(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *Attestation) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -733,6 +1732,23 @@ func (m *Attestation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.ClaimComponents != nil {
+		{
+			size, err := m.ClaimComponents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAttestation(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.ClaimType != 0 {
+		i = encodeVarintAttestation(dAtA, i, uint64(m.ClaimType))
+		i--
+		dAtA[i] = 0x28
+	}
 	if m.Claim != nil {
 		{
 			size, err := m.Claim.MarshalToSizedBuffer(dAtA[:i])
@@ -1157,6 +2173,219 @@ func encodeVarintAttestation(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *SendToCosmosClaimComponents) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EventNonce != 0 {
+		n += 1 + sovAttestation(uint64(m.EventNonce))
+	}
+	if m.EthBlockHeight != 0 {
+		n += 1 + sovAttestation(uint64(m.EthBlockHeight))
+	}
+	l = len(m.TokenContract)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	l = len(m.Amount)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	l = len(m.EthereumSender)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	l = len(m.CosmosReceiver)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	return n
+}
+
+func (m *BatchSendToEthClaimComponents) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EventNonce != 0 {
+		n += 1 + sovAttestation(uint64(m.EventNonce))
+	}
+	if m.EthBlockHeight != 0 {
+		n += 1 + sovAttestation(uint64(m.EthBlockHeight))
+	}
+	if m.BatchNonce != 0 {
+		n += 1 + sovAttestation(uint64(m.BatchNonce))
+	}
+	l = len(m.TokenContract)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	return n
+}
+
+func (m *ERC20DeployedClaimComponents) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EventNonce != 0 {
+		n += 1 + sovAttestation(uint64(m.EventNonce))
+	}
+	if m.EthBlockHeight != 0 {
+		n += 1 + sovAttestation(uint64(m.EthBlockHeight))
+	}
+	l = len(m.CosmosDenom)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	l = len(m.TokenContract)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	l = len(m.Symbol)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	if m.Decimals != 0 {
+		n += 1 + sovAttestation(uint64(m.Decimals))
+	}
+	return n
+}
+
+func (m *LogicCallExecutedClaimComponents) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EventNonce != 0 {
+		n += 1 + sovAttestation(uint64(m.EventNonce))
+	}
+	if m.EthBlockHeight != 0 {
+		n += 1 + sovAttestation(uint64(m.EthBlockHeight))
+	}
+	l = len(m.InvalidationId)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	if m.InvalidationNonce != 0 {
+		n += 1 + sovAttestation(uint64(m.InvalidationNonce))
+	}
+	return n
+}
+
+func (m *ValsetUpdatedClaimComponents) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EventNonce != 0 {
+		n += 1 + sovAttestation(uint64(m.EventNonce))
+	}
+	if m.ValsetNonce != 0 {
+		n += 1 + sovAttestation(uint64(m.ValsetNonce))
+	}
+	if m.EthBlockHeight != 0 {
+		n += 1 + sovAttestation(uint64(m.EthBlockHeight))
+	}
+	if len(m.Members) > 0 {
+		for _, e := range m.Members {
+			l = e.Size()
+			n += 1 + l + sovAttestation(uint64(l))
+		}
+	}
+	l = len(m.RewardAmount)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	l = len(m.RewardToken)
+	if l > 0 {
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	return n
+}
+
+func (m *ClaimHashComponents) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Components != nil {
+		n += m.Components.Size()
+	}
+	return n
+}
+
+func (m *ClaimHashComponents_SendToCosmos) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SendToCosmos != nil {
+		l = m.SendToCosmos.Size()
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	return n
+}
+func (m *ClaimHashComponents_BatchSendToEth) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BatchSendToEth != nil {
+		l = m.BatchSendToEth.Size()
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	return n
+}
+func (m *ClaimHashComponents_Erc20Deployed) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Erc20Deployed != nil {
+		l = m.Erc20Deployed.Size()
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	return n
+}
+func (m *ClaimHashComponents_LogicCallExecuted) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.LogicCallExecuted != nil {
+		l = m.LogicCallExecuted.Size()
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	return n
+}
+func (m *ClaimHashComponents_ValsetUpdated) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ValsetUpdated != nil {
+		l = m.ValsetUpdated.Size()
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	return n
+}
 func (m *Attestation) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1177,6 +2406,13 @@ func (m *Attestation) Size() (n int) {
 	}
 	if m.Claim != nil {
 		l = m.Claim.Size()
+		n += 1 + l + sovAttestation(uint64(l))
+	}
+	if m.ClaimType != 0 {
+		n += 1 + sovAttestation(uint64(m.ClaimType))
+	}
+	if m.ClaimComponents != nil {
+		l = m.ClaimComponents.Size()
 		n += 1 + l + sovAttestation(uint64(l))
 	}
 	return n
@@ -1369,6 +2605,1167 @@ func sovAttestation(x uint64) (n int) {
 func sozAttestation(x uint64) (n int) {
 	return sovAttestation(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+func (m *SendToCosmosClaimComponents) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAttestation
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SendToCosmosClaimComponents: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SendToCosmosClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+			}
+			m.EventNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EventNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+			}
+			m.EthBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EthBlockHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenContract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenContract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Amount = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthereumSender", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EthereumSender = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CosmosReceiver", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CosmosReceiver = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAttestation(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BatchSendToEthClaimComponents) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAttestation
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BatchSendToEthClaimComponents: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BatchSendToEthClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+			}
+			m.EventNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EventNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+			}
+			m.EthBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EthBlockHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchNonce", wireType)
+			}
+			m.BatchNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BatchNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenContract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenContract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAttestation(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ERC20DeployedClaimComponents) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAttestation
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ERC20DeployedClaimComponents: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ERC20DeployedClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+			}
+			m.EventNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EventNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+			}
+			m.EthBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EthBlockHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CosmosDenom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CosmosDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenContract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenContract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Symbol", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Symbol = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Decimals", wireType)
+			}
+			m.Decimals = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Decimals |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAttestation(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LogicCallExecutedClaimComponents) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAttestation
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LogicCallExecutedClaimComponents: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LogicCallExecutedClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+			}
+			m.EventNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EventNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+			}
+			m.EthBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EthBlockHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InvalidationId", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.InvalidationId = append(m.InvalidationId[:0], dAtA[iNdEx:postIndex]...)
+			if m.InvalidationId == nil {
+				m.InvalidationId = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InvalidationNonce", wireType)
+			}
+			m.InvalidationNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.InvalidationNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAttestation(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ValsetUpdatedClaimComponents) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAttestation
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ValsetUpdatedClaimComponents: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ValsetUpdatedClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+			}
+			m.EventNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EventNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValsetNonce", wireType)
+			}
+			m.ValsetNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ValsetNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+			}
+			m.EthBlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EthBlockHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Members", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Members = append(m.Members, BridgeValidator{})
+			if err := m.Members[len(m.Members)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RewardAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RewardAmount = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RewardToken", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RewardToken = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAttestation(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClaimHashComponents) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAttestation
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClaimHashComponents: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClaimHashComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SendToCosmos", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &SendToCosmosClaimComponents{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Components = &ClaimHashComponents_SendToCosmos{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchSendToEth", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &BatchSendToEthClaimComponents{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Components = &ClaimHashComponents_BatchSendToEth{v}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Erc20Deployed", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ERC20DeployedClaimComponents{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Components = &ClaimHashComponents_Erc20Deployed{v}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LogicCallExecuted", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &LogicCallExecutedClaimComponents{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Components = &ClaimHashComponents_LogicCallExecuted{v}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValsetUpdated", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ValsetUpdatedClaimComponents{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Components = &ClaimHashComponents_ValsetUpdated{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAttestation(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Attestation) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1502,6 +3899,61 @@ func (m *Attestation) Unmarshal(dAtA []byte) error {
 				m.Claim = &types.Any{}
 			}
 			if err := m.Claim.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimType", wireType)
+			}
+			m.ClaimType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimType |= ClaimType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimComponents", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAttestation
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAttestation
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClaimComponents == nil {
+				m.ClaimComponents = &ClaimHashComponents{}
+			}
+			if err := m.ClaimComponents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

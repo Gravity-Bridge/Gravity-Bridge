@@ -3,6 +3,7 @@ package gravity.v1;
 
 import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
+import "gravity/v1/types.proto";
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types";
 
@@ -25,6 +26,68 @@ enum ClaimType {
   CLAIM_TYPE_VALSET_UPDATED = 5;
 }
 
+// Components used in MsgSendToCosmosClaim's ClaimHash()
+message SendToCosmosClaimComponents {
+  uint64 event_nonce = 1;
+  uint64 eth_block_height = 2;
+  string token_contract = 3;
+  string amount = 4; // Must be sdkmath.Int.String()
+  string ethereum_sender = 5;
+  string cosmos_receiver = 6;
+}
+
+// Components used in MsgBatchSendToEthClaim's ClaimHash()
+message BatchSendToEthClaimComponents {
+  uint64 event_nonce = 1;
+  uint64 eth_block_height = 2;
+  uint64 batch_nonce = 3;
+  string token_contract = 4;
+}
+
+// Components used in MsgERC20DeployedClaim's ClaimHash()
+message ERC20DeployedClaimComponents {
+  uint64 event_nonce = 1;
+  uint64 eth_block_height = 2;
+  string cosmos_denom = 3;
+  string token_contract = 4;
+  string name = 5;
+  string symbol = 6;
+  uint64 decimals = 7;
+}
+
+// Components used in MsgLogicCallExecutedClaim's ClaimHash()
+message LogicCallExecutedClaimComponents {
+  uint64 event_nonce = 1;
+  uint64 eth_block_height = 2;
+  bytes invalidation_id = 3; // Raw bytes; formatted with %s during reconstruction
+  uint64 invalidation_nonce = 4;
+}
+
+// Components used in MsgValsetUpdatedClaim's ClaimHash()
+// NOTE: MUST SORT valset members before hashing
+message ValsetUpdatedClaimComponents {
+  uint64 event_nonce = 1;
+  uint64 valset_nonce = 2;
+  uint64 eth_block_height = 3;
+  repeated BridgeValidator members = 4 [
+    (gogoproto.nullable) = false
+  ];
+  string reward_amount = 5; // Must be sdkmath.Int.String()
+  string reward_token = 6;
+}
+
+// Holds the components used in a Claim's ClaimHash() function, used as an additional security measure against tampering
+message ClaimHashComponents {
+  // The actual components used in ClaimHash()
+  oneof components {
+    SendToCosmosClaimComponents send_to_cosmos = 1;
+    BatchSendToEthClaimComponents batch_send_to_eth = 2;
+    ERC20DeployedClaimComponents erc20_deployed = 3;
+    LogicCallExecutedClaimComponents logic_call_executed = 4;
+    ValsetUpdatedClaimComponents valset_updated = 5;
+  }
+}
+
 // Attestation is an aggregate of `claims` that eventually becomes `observed` by
 // all orchestrators
 // EVENT_NONCE:
@@ -34,17 +97,13 @@ enum ClaimType {
 // OBSERVED:
 // Observed indicates that >67% of validators have attested to the event,
 // and that the event should be executed by the gravity state machine
-//
-// The actual content of the claims is passed in with the transaction making the
-// claim and then passed through the call stack alongside the attestation while
-// it is processed the key in which the attestation is stored is keyed on the
-// exact details of the claim but there is no reason to store those exact
-// details becuause the next message sender will kindly provide you with them.
 message Attestation {
   bool observed = 1;
   repeated string votes = 2;
   uint64 height = 3;
   google.protobuf.Any claim = 4;
+  ClaimType claim_type = 5;
+  ClaimHashComponents claim_components = 6;
 }
 
 // ERC20Token unique identifier for an Ethereum ERC20 token.

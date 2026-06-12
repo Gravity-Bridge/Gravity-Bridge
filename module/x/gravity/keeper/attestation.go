@@ -1,9 +1,13 @@
 package keeper
 
 import (
+	"bytes"
 	"fmt"
+
 	"sort"
 	"strconv"
+
+	gogoproto "github.com/gogo/protobuf/proto"
 
 	errorsmod "cosmossdk.io/errors"
 	math "cosmossdk.io/math"
@@ -31,15 +35,15 @@ func (k Keeper) Attest(
 	if err != nil {
 		panic(fmt.Errorf("Failed to parse validator operator address: %w", err))
 	}
-	if err := sdk.VerifyAddressFormat(valAddr); err != nil {
-		return nil, errorsmod.Wrap(err, "invalid orchestrator validator address")
-	}
 	// Check that the nonce of this event is exactly one higher than the last nonce stored by this validator.
 	// We check the event nonce in processAttestation as well,
 	// but checking it here gives individual eth signers a chance to retry,
 	// and prevents validators from submitting two claims with the same nonce.
 	// This prevents there being two attestations with the same nonce that get 2/3s of the votes
 	// in the endBlocker.
+	if err := sdk.VerifyAddressFormat(valAddr); err != nil {
+		return nil, errorsmod.Wrap(err, "invalid orchestrator validator address")
+	}
 	lastEventNonce := k.GetLastEventNonceByValidator(ctx, valAddr)
 	if claim.GetEventNonce() != lastEventNonce+1 {
 		return nil, fmt.Errorf(types.ErrNonContiguousEventNonce.Error(), lastEventNonce+1, claim.GetEventNonce())
@@ -54,31 +58,55 @@ func (k Keeper) Attest(
 
 	// If it does not exist, create a new one.
 	if att == nil {
+		components, err := types.ExtractClaimHashComponents(claim)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "unable to extract claim hash components")
+		}
 		att = &types.Attestation{
-			Observed: false,
-			Votes:    []string{},
-			Height:   uint64(ctx.BlockHeight()),
-			Claim:    anyClaim,
+			Observed:        false,
+			Votes:           []string{},
+			Height:          uint64(ctx.BlockHeight()),
+			Claim:           anyClaim,
+			ClaimType:       claim.GetType(),
+			ClaimComponents: components,
 		}
 	}
 
-	ethClaim, err := k.UnpackAttestationClaim(att)
-	if err != nil {
-		panic(fmt.Sprintf("could not unpack stored attestation claim, %v", err))
-	}
+	// Attestation exists: verify stored components are consistent with incoming claim.
+	if att.ClaimComponents != nil {
+		// Re-hash the stored components and compare against the incoming
+		storedHash, err := att.ClaimComponents.ComputeClaimHash(att.ClaimType)
+		if err != nil {
+			panic(fmt.Sprintf("could not compute hash from stored components: %v", err))
+		}
+		if !bytes.Equal(storedHash, hash) {
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"incoming claim does not match stored attestation components: incoming (%v) stored (%v)",
+				claim, att.ClaimComponents)
+		}
 
-	if ethClaim.GetEthBlockHeight() == claim.GetEthBlockHeight() {
-
-		// Add the validator's vote to this attestation
-		att.Votes = append(att.Votes, valAddr.String())
-
-		k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
-		k.SetLastEventNonceByValidator(ctx, valAddr, claim.GetEventNonce())
-
-		return att, nil
+		// Extract components from the incoming claim and compare
+		// them directly against the stored components to prevent tampering
+		incomingComponents, err := types.ExtractClaimHashComponents(claim)
+		if err != nil {
+			panic(fmt.Sprintf("unable to extract incoming claim components for comparison: %v", err))
+		}
+		if !gogoproto.Equal(att.ClaimComponents, incomingComponents) {
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"incoming claim fields do not match stored attestation components: incoming: (%v) stored: (%v)",
+				incomingComponents, att.ClaimComponents)
+		}
 	} else {
-		return nil, fmt.Errorf("invalid height - this claim's height is %v while the stored height is %v", claim.GetEthBlockHeight(), ethClaim.GetEthBlockHeight())
+		panic("attestation claim components should never be nil")
 	}
+
+	// Add the validator's vote to this attestation
+	att.Votes = append(att.Votes, valAddr.String())
+
+	k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
+	k.SetLastEventNonceByValidator(ctx, valAddr, claim.GetEventNonce())
+
+	return att, nil
 }
 
 // TryAttestation checks if an attestation has enough votes to be applied to the consensus state

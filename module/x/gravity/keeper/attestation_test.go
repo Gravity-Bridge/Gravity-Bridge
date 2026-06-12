@@ -2,7 +2,10 @@ package keeper
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"strings"
 	"testing"
 
 	sdkmath "cosmossdk.io/math"
@@ -11,6 +14,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -292,4 +296,252 @@ func TestInvalidHeight(t *testing.T) {
 		require.Equal(t, len(att.Votes), i+1) // Only these good orchestrators votes should be counted
 	}
 
+}
+
+// TestAttestStoresComponents verifies that when a new attestation is created via Attest(),
+// the corresponding ClaimType and ClaimComponents are stored in state.
+func TestAttestStoresComponents(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+	k := input.GravityKeeper
+
+	lastNonce := k.GetLastObservedEventNonce(ctx)
+	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	orch0 := OrchAddrs[0]
+
+	claim := types.MsgBatchSendToEthClaim{
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: 1,
+		BatchNonce:     1,
+		TokenContract:  tokenContract,
+		Orchestrator:   orch0.String(),
+	}
+	claimAny, err := codectypes.NewAnyWithValue(&claim)
+	require.NoError(t, err)
+
+	_, err = k.Attest(ctx, &claim, claimAny)
+	require.NoError(t, err)
+
+	hash, err := claim.ClaimHash()
+	require.NoError(t, err)
+	att := k.GetAttestation(ctx, claim.GetEventNonce(), hash)
+	require.NotNil(t, att)
+	require.False(t, att.Observed)
+	require.Equal(t, types.CLAIM_TYPE_BATCH_SEND_TO_ETH, att.ClaimType)
+	require.NotNil(t, att.ClaimComponents)
+	require.NotNil(t, att.ClaimComponents.GetBatchSendToEth())
+	storedComp := att.ClaimComponents.GetBatchSendToEth()
+	require.Equal(t, claim.BatchNonce, storedComp.BatchNonce)
+	require.Equal(t, claim.TokenContract, storedComp.TokenContract)
+	require.Equal(t, claim.EthBlockHeight, storedComp.EthBlockHeight)
+}
+
+// TestAttestDuplicateClaimMatchingComponents verifies that a second attestation of an
+// identical claim is accepted when the stored ClaimHashComponents hash matches the
+// incoming claim hash.
+func TestAttestDuplicateClaimMatchingComponents(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+	k := input.GravityKeeper
+
+	lastNonce := k.GetLastObservedEventNonce(ctx)
+	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	orch0 := OrchAddrs[0]
+	orch1 := OrchAddrs[1]
+
+	claim := types.MsgBatchSendToEthClaim{
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: 1,
+		BatchNonce:     1,
+		TokenContract:  tokenContract,
+		Orchestrator:   orch0.String(),
+	}
+	claimAny, err := codectypes.NewAnyWithValue(&claim)
+	require.NoError(t, err)
+
+	_, err = k.Attest(ctx, &claim, claimAny)
+	require.NoError(t, err)
+
+	hash, err := claim.ClaimHash()
+	require.NoError(t, err)
+	att := k.GetAttestation(ctx, claim.GetEventNonce(), hash)
+	require.NotNil(t, att)
+	require.Equal(t, 1, len(att.Votes)) // first vote
+
+	// Duplicate claim from another orchestrator with the same fields
+	claim2 := types.MsgBatchSendToEthClaim{
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: 1,
+		BatchNonce:     1,
+		TokenContract:  tokenContract,
+		Orchestrator:   orch1.String(),
+	}
+	claim2Any, err := codectypes.NewAnyWithValue(&claim2)
+	require.NoError(t, err)
+
+	_, err = k.Attest(ctx, &claim2, claim2Any)
+	require.NoError(t, err)
+
+	att = k.GetAttestation(ctx, claim.GetEventNonce(), hash)
+	require.NotNil(t, att)
+	require.Equal(t, 2, len(att.Votes)) // both votes
+}
+
+// TestAttestMismatchingComponents verifies that Attest rejects a claim when the
+// stored ClaimHashComponents have been tampered with (simulating data corruption).
+func TestAttestMismatchingComponents(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Skipping invariants check due to intentional state tampering") }()
+	k := input.GravityKeeper
+
+	lastNonce := k.GetLastObservedEventNonce(ctx)
+	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	orch0 := OrchAddrs[0]
+	orch1 := OrchAddrs[1]
+
+	claim := types.MsgBatchSendToEthClaim{
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: 1,
+		BatchNonce:     1,
+		TokenContract:  tokenContract,
+		Orchestrator:   orch0.String(),
+	}
+	claimAny, err := codectypes.NewAnyWithValue(&claim)
+	require.NoError(t, err)
+
+	_, err = k.Attest(ctx, &claim, claimAny)
+	require.NoError(t, err)
+
+	hash, err := claim.ClaimHash()
+	require.NoError(t, err)
+	att := k.GetAttestation(ctx, claim.GetEventNonce(), hash)
+	require.NotNil(t, att)
+
+	// Tamper with stored components directly: change BatchNonce
+	require.NotNil(t, att.ClaimComponents)
+	att.ClaimComponents.GetBatchSendToEth().BatchNonce = 9999
+	k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
+
+	// Second validator attests to the same claim (same fields)
+	claim2 := types.MsgBatchSendToEthClaim{
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: 1,
+		BatchNonce:     1,
+		TokenContract:  tokenContract,
+		Orchestrator:   orch1.String(),
+	}
+	claim2Any, err := codectypes.NewAnyWithValue(&claim2)
+	require.NoError(t, err)
+
+	_, err = k.Attest(ctx, &claim2, claim2Any)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "incoming claim does not match stored attestation components")
+}
+
+// TestERC20DeployedClaimHashCollision attempts to engineer a collision in the ClaimHash of an ERC20DeployedClaim
+// by replicating the IBC Transfer module's behavior of adding bank denom metadata for a malicious IBC token.
+func TestERC20DeployedClaimHashCollision(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+	k := input.GravityKeeper
+
+	lastNonce := k.GetLastObservedEventNonce(ctx)
+	eventNonce := lastNonce + 1
+
+	const (
+		gravityDestPort    = "transfer"
+		gravityDestChannel = "channel-10"
+		// footokenAddr is the Ethereum-originating asset the attacker wants to hijack.
+		footokenAddr = "0x0412C7c846bb6b7DC462CF6B453f76D8440b2609"
+		// newERC20Addr is the ERC20 Gravity.sol deployed to represent the IBC token.
+		newERC20Addr = "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	)
+
+	// Simulate creation of a malicious token on the foreign chain
+	// The attacker's token denom is footokenAddr + "/token", IBC Transfer produces metadata like
+	//   Path:      "transfer/channel-10"
+	//   BaseDenom: "0x0412C7c846bb6b7DC462CF6B453f76D8440b2609/token"
+	// This places footokenAddr at a potentially vulnerable position in the IBC denom
+	const denomSuffix = "token"
+	baseDenom := footokenAddr + "/" + denomSuffix
+	fullDenomPath := gravityDestPort + "/" + gravityDestChannel + "/" + baseDenom
+	t.Logf("attacker's foreign denom : %s", baseDenom)
+	t.Logf("full IBC denom path: %s", fullDenomPath)
+	rawHash := sha256.Sum256([]byte(fullDenomPath))
+	ibcDenom := "ibc/" + strings.ToUpper(hex.EncodeToString(rawHash[:]))
+
+	// Create bank denom metadata for the token in the way IBC Transfer will do so
+	ibcTokenName := fmt.Sprintf("%s IBC token", fullDenomPath)
+	ibcTokenSymbol := strings.ToUpper(baseDenom)
+	t.Logf("bank metadata.Name  : %s", ibcTokenName)
+	t.Logf("bank metadata.Symbol: %s", ibcTokenSymbol)
+	metadata := banktypes.Metadata{
+		Description: fmt.Sprintf("IBC token from %s", fullDenomPath),
+		DenomUnits: []*banktypes.DenomUnit{
+			{Denom: baseDenom, Exponent: 0},
+		},
+		Base:    ibcDenom,
+		Display: fullDenomPath,
+		Name:    ibcTokenName,
+		Symbol:  ibcTokenSymbol,
+	}
+	input.BankKeeper.SetDenomMetaData(ctx, metadata)
+	t.Logf("bank DenomMetaData stored for %s", ibcDenom)
+
+	// Simulate an erc20 deploy event
+	honestClaim := types.MsgERC20DeployedClaim{
+		EventNonce:     eventNonce,
+		EthBlockHeight: 1,
+		CosmosDenom:    ibcDenom,
+		TokenContract:  newERC20Addr,
+		Name:           ibcTokenName,
+		Symbol:         ibcTokenSymbol,
+		Decimals:       0,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	// Attempt to create a collision with a forged claim (must be submitted by a validator)
+	forgedCosmosDenom := ibcDenom + "/" + newERC20Addr + "/" + gravityDestPort + "/" + gravityDestChannel
+	forgedName := denomSuffix + " IBC token"
+	forgedClaim := types.MsgERC20DeployedClaim{
+		EventNonce:     eventNonce,
+		EthBlockHeight: 1,
+		CosmosDenom:    forgedCosmosDenom,
+		TokenContract:  footokenAddr,
+		Name:           forgedName,
+		Symbol:         ibcTokenSymbol,
+		Decimals:       0,
+		Orchestrator:   OrchAddrs[1].String(),
+	}
+	// Confirm the collision is PREVENTED by AttestationSeparator
+	honestHash, err := honestClaim.ClaimHash()
+	require.NoError(t, err)
+	forgedHash, err := forgedClaim.ClaimHash()
+	require.NoError(t, err)
+	t.Logf("honest ClaimHash = %x", honestHash)
+	t.Logf("forged ClaimHash = %x", forgedHash)
+	require.NotEqual(t, honestHash, forgedHash,
+		"AttestationSeparator prevents the hash collision - hashes must differ")
+	require.NotEqual(t, honestClaim.CosmosDenom, forgedClaim.CosmosDenom)
+	require.NotEqual(t, honestClaim.TokenContract, forgedClaim.TokenContract)
+
+	// Confirm ValidateBasic rejects the invalid claim
+	err = forgedClaim.ValidateBasic()
+	require.Error(t, err)
+
+	// Confirm honest claim is accepted by the chain
+	honestAny, err := codectypes.NewAnyWithValue(&honestClaim)
+	require.NoError(t, err)
+	t.Logf("submitting honest claim for %s", honestClaim.TokenContract)
+	_, err = k.Attest(ctx, &honestClaim, honestAny)
+	require.NoError(t, err)
+
+	// Verify the honest attestation was stored with the correct components.
+	honestAtt := k.GetAttestation(ctx, eventNonce, honestHash)
+	require.NotNil(t, honestAtt)
+	require.NotNil(t, honestAtt.ClaimComponents)
+	honestComp := honestAtt.ClaimComponents.GetErc20Deployed()
+	require.NotNil(t, honestComp)
+	require.Equal(t, newERC20Addr, honestComp.TokenContract)
+	require.Equal(t, 1, len(honestAtt.Votes))
 }

@@ -14,6 +14,4256 @@ import (
 	sync "sync"
 )
 
+var (
+	md_SendToCosmosClaimComponents                  protoreflect.MessageDescriptor
+	fd_SendToCosmosClaimComponents_event_nonce      protoreflect.FieldDescriptor
+	fd_SendToCosmosClaimComponents_eth_block_height protoreflect.FieldDescriptor
+	fd_SendToCosmosClaimComponents_token_contract   protoreflect.FieldDescriptor
+	fd_SendToCosmosClaimComponents_amount           protoreflect.FieldDescriptor
+	fd_SendToCosmosClaimComponents_ethereum_sender  protoreflect.FieldDescriptor
+	fd_SendToCosmosClaimComponents_cosmos_receiver  protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_gravity_v1_attestation_proto_init()
+	md_SendToCosmosClaimComponents = File_gravity_v1_attestation_proto.Messages().ByName("SendToCosmosClaimComponents")
+	fd_SendToCosmosClaimComponents_event_nonce = md_SendToCosmosClaimComponents.Fields().ByName("event_nonce")
+	fd_SendToCosmosClaimComponents_eth_block_height = md_SendToCosmosClaimComponents.Fields().ByName("eth_block_height")
+	fd_SendToCosmosClaimComponents_token_contract = md_SendToCosmosClaimComponents.Fields().ByName("token_contract")
+	fd_SendToCosmosClaimComponents_amount = md_SendToCosmosClaimComponents.Fields().ByName("amount")
+	fd_SendToCosmosClaimComponents_ethereum_sender = md_SendToCosmosClaimComponents.Fields().ByName("ethereum_sender")
+	fd_SendToCosmosClaimComponents_cosmos_receiver = md_SendToCosmosClaimComponents.Fields().ByName("cosmos_receiver")
+}
+
+var _ protoreflect.Message = (*fastReflection_SendToCosmosClaimComponents)(nil)
+
+type fastReflection_SendToCosmosClaimComponents SendToCosmosClaimComponents
+
+func (x *SendToCosmosClaimComponents) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_SendToCosmosClaimComponents)(x)
+}
+
+func (x *SendToCosmosClaimComponents) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v1_attestation_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_SendToCosmosClaimComponents_messageType fastReflection_SendToCosmosClaimComponents_messageType
+var _ protoreflect.MessageType = fastReflection_SendToCosmosClaimComponents_messageType{}
+
+type fastReflection_SendToCosmosClaimComponents_messageType struct{}
+
+func (x fastReflection_SendToCosmosClaimComponents_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_SendToCosmosClaimComponents)(nil)
+}
+func (x fastReflection_SendToCosmosClaimComponents_messageType) New() protoreflect.Message {
+	return new(fastReflection_SendToCosmosClaimComponents)
+}
+func (x fastReflection_SendToCosmosClaimComponents_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_SendToCosmosClaimComponents
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_SendToCosmosClaimComponents) Descriptor() protoreflect.MessageDescriptor {
+	return md_SendToCosmosClaimComponents
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_SendToCosmosClaimComponents) Type() protoreflect.MessageType {
+	return _fastReflection_SendToCosmosClaimComponents_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_SendToCosmosClaimComponents) New() protoreflect.Message {
+	return new(fastReflection_SendToCosmosClaimComponents)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_SendToCosmosClaimComponents) Interface() protoreflect.ProtoMessage {
+	return (*SendToCosmosClaimComponents)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_SendToCosmosClaimComponents) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.EventNonce != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EventNonce)
+		if !f(fd_SendToCosmosClaimComponents_event_nonce, value) {
+			return
+		}
+	}
+	if x.EthBlockHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EthBlockHeight)
+		if !f(fd_SendToCosmosClaimComponents_eth_block_height, value) {
+			return
+		}
+	}
+	if x.TokenContract != "" {
+		value := protoreflect.ValueOfString(x.TokenContract)
+		if !f(fd_SendToCosmosClaimComponents_token_contract, value) {
+			return
+		}
+	}
+	if x.Amount != "" {
+		value := protoreflect.ValueOfString(x.Amount)
+		if !f(fd_SendToCosmosClaimComponents_amount, value) {
+			return
+		}
+	}
+	if x.EthereumSender != "" {
+		value := protoreflect.ValueOfString(x.EthereumSender)
+		if !f(fd_SendToCosmosClaimComponents_ethereum_sender, value) {
+			return
+		}
+	}
+	if x.CosmosReceiver != "" {
+		value := protoreflect.ValueOfString(x.CosmosReceiver)
+		if !f(fd_SendToCosmosClaimComponents_cosmos_receiver, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_SendToCosmosClaimComponents) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "gravity.v1.SendToCosmosClaimComponents.event_nonce":
+		return x.EventNonce != uint64(0)
+	case "gravity.v1.SendToCosmosClaimComponents.eth_block_height":
+		return x.EthBlockHeight != uint64(0)
+	case "gravity.v1.SendToCosmosClaimComponents.token_contract":
+		return x.TokenContract != ""
+	case "gravity.v1.SendToCosmosClaimComponents.amount":
+		return x.Amount != ""
+	case "gravity.v1.SendToCosmosClaimComponents.ethereum_sender":
+		return x.EthereumSender != ""
+	case "gravity.v1.SendToCosmosClaimComponents.cosmos_receiver":
+		return x.CosmosReceiver != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SendToCosmosClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.SendToCosmosClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_SendToCosmosClaimComponents) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "gravity.v1.SendToCosmosClaimComponents.event_nonce":
+		x.EventNonce = uint64(0)
+	case "gravity.v1.SendToCosmosClaimComponents.eth_block_height":
+		x.EthBlockHeight = uint64(0)
+	case "gravity.v1.SendToCosmosClaimComponents.token_contract":
+		x.TokenContract = ""
+	case "gravity.v1.SendToCosmosClaimComponents.amount":
+		x.Amount = ""
+	case "gravity.v1.SendToCosmosClaimComponents.ethereum_sender":
+		x.EthereumSender = ""
+	case "gravity.v1.SendToCosmosClaimComponents.cosmos_receiver":
+		x.CosmosReceiver = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SendToCosmosClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.SendToCosmosClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_SendToCosmosClaimComponents) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "gravity.v1.SendToCosmosClaimComponents.event_nonce":
+		value := x.EventNonce
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.SendToCosmosClaimComponents.eth_block_height":
+		value := x.EthBlockHeight
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.SendToCosmosClaimComponents.token_contract":
+		value := x.TokenContract
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.SendToCosmosClaimComponents.amount":
+		value := x.Amount
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.SendToCosmosClaimComponents.ethereum_sender":
+		value := x.EthereumSender
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.SendToCosmosClaimComponents.cosmos_receiver":
+		value := x.CosmosReceiver
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SendToCosmosClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.SendToCosmosClaimComponents does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_SendToCosmosClaimComponents) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "gravity.v1.SendToCosmosClaimComponents.event_nonce":
+		x.EventNonce = value.Uint()
+	case "gravity.v1.SendToCosmosClaimComponents.eth_block_height":
+		x.EthBlockHeight = value.Uint()
+	case "gravity.v1.SendToCosmosClaimComponents.token_contract":
+		x.TokenContract = value.Interface().(string)
+	case "gravity.v1.SendToCosmosClaimComponents.amount":
+		x.Amount = value.Interface().(string)
+	case "gravity.v1.SendToCosmosClaimComponents.ethereum_sender":
+		x.EthereumSender = value.Interface().(string)
+	case "gravity.v1.SendToCosmosClaimComponents.cosmos_receiver":
+		x.CosmosReceiver = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SendToCosmosClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.SendToCosmosClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_SendToCosmosClaimComponents) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.SendToCosmosClaimComponents.event_nonce":
+		panic(fmt.Errorf("field event_nonce of message gravity.v1.SendToCosmosClaimComponents is not mutable"))
+	case "gravity.v1.SendToCosmosClaimComponents.eth_block_height":
+		panic(fmt.Errorf("field eth_block_height of message gravity.v1.SendToCosmosClaimComponents is not mutable"))
+	case "gravity.v1.SendToCosmosClaimComponents.token_contract":
+		panic(fmt.Errorf("field token_contract of message gravity.v1.SendToCosmosClaimComponents is not mutable"))
+	case "gravity.v1.SendToCosmosClaimComponents.amount":
+		panic(fmt.Errorf("field amount of message gravity.v1.SendToCosmosClaimComponents is not mutable"))
+	case "gravity.v1.SendToCosmosClaimComponents.ethereum_sender":
+		panic(fmt.Errorf("field ethereum_sender of message gravity.v1.SendToCosmosClaimComponents is not mutable"))
+	case "gravity.v1.SendToCosmosClaimComponents.cosmos_receiver":
+		panic(fmt.Errorf("field cosmos_receiver of message gravity.v1.SendToCosmosClaimComponents is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SendToCosmosClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.SendToCosmosClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_SendToCosmosClaimComponents) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.SendToCosmosClaimComponents.event_nonce":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.SendToCosmosClaimComponents.eth_block_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.SendToCosmosClaimComponents.token_contract":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.SendToCosmosClaimComponents.amount":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.SendToCosmosClaimComponents.ethereum_sender":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.SendToCosmosClaimComponents.cosmos_receiver":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SendToCosmosClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.SendToCosmosClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_SendToCosmosClaimComponents) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.SendToCosmosClaimComponents", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_SendToCosmosClaimComponents) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_SendToCosmosClaimComponents) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_SendToCosmosClaimComponents) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_SendToCosmosClaimComponents) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*SendToCosmosClaimComponents)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.EventNonce != 0 {
+			n += 1 + runtime.Sov(uint64(x.EventNonce))
+		}
+		if x.EthBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.EthBlockHeight))
+		}
+		l = len(x.TokenContract)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Amount)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.EthereumSender)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.CosmosReceiver)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*SendToCosmosClaimComponents)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.CosmosReceiver) > 0 {
+			i -= len(x.CosmosReceiver)
+			copy(dAtA[i:], x.CosmosReceiver)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.CosmosReceiver)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if len(x.EthereumSender) > 0 {
+			i -= len(x.EthereumSender)
+			copy(dAtA[i:], x.EthereumSender)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.EthereumSender)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.Amount) > 0 {
+			i -= len(x.Amount)
+			copy(dAtA[i:], x.Amount)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Amount)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if len(x.TokenContract) > 0 {
+			i -= len(x.TokenContract)
+			copy(dAtA[i:], x.TokenContract)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TokenContract)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.EthBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EthBlockHeight))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.EventNonce != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EventNonce))
+			i--
+			dAtA[i] = 0x8
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*SendToCosmosClaimComponents)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: SendToCosmosClaimComponents: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: SendToCosmosClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+				}
+				x.EventNonce = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EventNonce |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+				}
+				x.EthBlockHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EthBlockHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenContract", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TokenContract = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Amount = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EthereumSender", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.EthereumSender = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CosmosReceiver", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.CosmosReceiver = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_BatchSendToEthClaimComponents                  protoreflect.MessageDescriptor
+	fd_BatchSendToEthClaimComponents_event_nonce      protoreflect.FieldDescriptor
+	fd_BatchSendToEthClaimComponents_eth_block_height protoreflect.FieldDescriptor
+	fd_BatchSendToEthClaimComponents_batch_nonce      protoreflect.FieldDescriptor
+	fd_BatchSendToEthClaimComponents_token_contract   protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_gravity_v1_attestation_proto_init()
+	md_BatchSendToEthClaimComponents = File_gravity_v1_attestation_proto.Messages().ByName("BatchSendToEthClaimComponents")
+	fd_BatchSendToEthClaimComponents_event_nonce = md_BatchSendToEthClaimComponents.Fields().ByName("event_nonce")
+	fd_BatchSendToEthClaimComponents_eth_block_height = md_BatchSendToEthClaimComponents.Fields().ByName("eth_block_height")
+	fd_BatchSendToEthClaimComponents_batch_nonce = md_BatchSendToEthClaimComponents.Fields().ByName("batch_nonce")
+	fd_BatchSendToEthClaimComponents_token_contract = md_BatchSendToEthClaimComponents.Fields().ByName("token_contract")
+}
+
+var _ protoreflect.Message = (*fastReflection_BatchSendToEthClaimComponents)(nil)
+
+type fastReflection_BatchSendToEthClaimComponents BatchSendToEthClaimComponents
+
+func (x *BatchSendToEthClaimComponents) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_BatchSendToEthClaimComponents)(x)
+}
+
+func (x *BatchSendToEthClaimComponents) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v1_attestation_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_BatchSendToEthClaimComponents_messageType fastReflection_BatchSendToEthClaimComponents_messageType
+var _ protoreflect.MessageType = fastReflection_BatchSendToEthClaimComponents_messageType{}
+
+type fastReflection_BatchSendToEthClaimComponents_messageType struct{}
+
+func (x fastReflection_BatchSendToEthClaimComponents_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_BatchSendToEthClaimComponents)(nil)
+}
+func (x fastReflection_BatchSendToEthClaimComponents_messageType) New() protoreflect.Message {
+	return new(fastReflection_BatchSendToEthClaimComponents)
+}
+func (x fastReflection_BatchSendToEthClaimComponents_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_BatchSendToEthClaimComponents
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_BatchSendToEthClaimComponents) Descriptor() protoreflect.MessageDescriptor {
+	return md_BatchSendToEthClaimComponents
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_BatchSendToEthClaimComponents) Type() protoreflect.MessageType {
+	return _fastReflection_BatchSendToEthClaimComponents_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_BatchSendToEthClaimComponents) New() protoreflect.Message {
+	return new(fastReflection_BatchSendToEthClaimComponents)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_BatchSendToEthClaimComponents) Interface() protoreflect.ProtoMessage {
+	return (*BatchSendToEthClaimComponents)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_BatchSendToEthClaimComponents) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.EventNonce != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EventNonce)
+		if !f(fd_BatchSendToEthClaimComponents_event_nonce, value) {
+			return
+		}
+	}
+	if x.EthBlockHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EthBlockHeight)
+		if !f(fd_BatchSendToEthClaimComponents_eth_block_height, value) {
+			return
+		}
+	}
+	if x.BatchNonce != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.BatchNonce)
+		if !f(fd_BatchSendToEthClaimComponents_batch_nonce, value) {
+			return
+		}
+	}
+	if x.TokenContract != "" {
+		value := protoreflect.ValueOfString(x.TokenContract)
+		if !f(fd_BatchSendToEthClaimComponents_token_contract, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_BatchSendToEthClaimComponents) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "gravity.v1.BatchSendToEthClaimComponents.event_nonce":
+		return x.EventNonce != uint64(0)
+	case "gravity.v1.BatchSendToEthClaimComponents.eth_block_height":
+		return x.EthBlockHeight != uint64(0)
+	case "gravity.v1.BatchSendToEthClaimComponents.batch_nonce":
+		return x.BatchNonce != uint64(0)
+	case "gravity.v1.BatchSendToEthClaimComponents.token_contract":
+		return x.TokenContract != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.BatchSendToEthClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.BatchSendToEthClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_BatchSendToEthClaimComponents) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "gravity.v1.BatchSendToEthClaimComponents.event_nonce":
+		x.EventNonce = uint64(0)
+	case "gravity.v1.BatchSendToEthClaimComponents.eth_block_height":
+		x.EthBlockHeight = uint64(0)
+	case "gravity.v1.BatchSendToEthClaimComponents.batch_nonce":
+		x.BatchNonce = uint64(0)
+	case "gravity.v1.BatchSendToEthClaimComponents.token_contract":
+		x.TokenContract = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.BatchSendToEthClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.BatchSendToEthClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_BatchSendToEthClaimComponents) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "gravity.v1.BatchSendToEthClaimComponents.event_nonce":
+		value := x.EventNonce
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.BatchSendToEthClaimComponents.eth_block_height":
+		value := x.EthBlockHeight
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.BatchSendToEthClaimComponents.batch_nonce":
+		value := x.BatchNonce
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.BatchSendToEthClaimComponents.token_contract":
+		value := x.TokenContract
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.BatchSendToEthClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.BatchSendToEthClaimComponents does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_BatchSendToEthClaimComponents) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "gravity.v1.BatchSendToEthClaimComponents.event_nonce":
+		x.EventNonce = value.Uint()
+	case "gravity.v1.BatchSendToEthClaimComponents.eth_block_height":
+		x.EthBlockHeight = value.Uint()
+	case "gravity.v1.BatchSendToEthClaimComponents.batch_nonce":
+		x.BatchNonce = value.Uint()
+	case "gravity.v1.BatchSendToEthClaimComponents.token_contract":
+		x.TokenContract = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.BatchSendToEthClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.BatchSendToEthClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_BatchSendToEthClaimComponents) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.BatchSendToEthClaimComponents.event_nonce":
+		panic(fmt.Errorf("field event_nonce of message gravity.v1.BatchSendToEthClaimComponents is not mutable"))
+	case "gravity.v1.BatchSendToEthClaimComponents.eth_block_height":
+		panic(fmt.Errorf("field eth_block_height of message gravity.v1.BatchSendToEthClaimComponents is not mutable"))
+	case "gravity.v1.BatchSendToEthClaimComponents.batch_nonce":
+		panic(fmt.Errorf("field batch_nonce of message gravity.v1.BatchSendToEthClaimComponents is not mutable"))
+	case "gravity.v1.BatchSendToEthClaimComponents.token_contract":
+		panic(fmt.Errorf("field token_contract of message gravity.v1.BatchSendToEthClaimComponents is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.BatchSendToEthClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.BatchSendToEthClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_BatchSendToEthClaimComponents) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.BatchSendToEthClaimComponents.event_nonce":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.BatchSendToEthClaimComponents.eth_block_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.BatchSendToEthClaimComponents.batch_nonce":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.BatchSendToEthClaimComponents.token_contract":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.BatchSendToEthClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.BatchSendToEthClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_BatchSendToEthClaimComponents) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.BatchSendToEthClaimComponents", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_BatchSendToEthClaimComponents) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_BatchSendToEthClaimComponents) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_BatchSendToEthClaimComponents) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_BatchSendToEthClaimComponents) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*BatchSendToEthClaimComponents)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.EventNonce != 0 {
+			n += 1 + runtime.Sov(uint64(x.EventNonce))
+		}
+		if x.EthBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.EthBlockHeight))
+		}
+		if x.BatchNonce != 0 {
+			n += 1 + runtime.Sov(uint64(x.BatchNonce))
+		}
+		l = len(x.TokenContract)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*BatchSendToEthClaimComponents)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.TokenContract) > 0 {
+			i -= len(x.TokenContract)
+			copy(dAtA[i:], x.TokenContract)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TokenContract)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if x.BatchNonce != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.BatchNonce))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.EthBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EthBlockHeight))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.EventNonce != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EventNonce))
+			i--
+			dAtA[i] = 0x8
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*BatchSendToEthClaimComponents)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: BatchSendToEthClaimComponents: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: BatchSendToEthClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+				}
+				x.EventNonce = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EventNonce |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+				}
+				x.EthBlockHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EthBlockHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BatchNonce", wireType)
+				}
+				x.BatchNonce = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.BatchNonce |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenContract", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TokenContract = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_ERC20DeployedClaimComponents                  protoreflect.MessageDescriptor
+	fd_ERC20DeployedClaimComponents_event_nonce      protoreflect.FieldDescriptor
+	fd_ERC20DeployedClaimComponents_eth_block_height protoreflect.FieldDescriptor
+	fd_ERC20DeployedClaimComponents_cosmos_denom     protoreflect.FieldDescriptor
+	fd_ERC20DeployedClaimComponents_token_contract   protoreflect.FieldDescriptor
+	fd_ERC20DeployedClaimComponents_name             protoreflect.FieldDescriptor
+	fd_ERC20DeployedClaimComponents_symbol           protoreflect.FieldDescriptor
+	fd_ERC20DeployedClaimComponents_decimals         protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_gravity_v1_attestation_proto_init()
+	md_ERC20DeployedClaimComponents = File_gravity_v1_attestation_proto.Messages().ByName("ERC20DeployedClaimComponents")
+	fd_ERC20DeployedClaimComponents_event_nonce = md_ERC20DeployedClaimComponents.Fields().ByName("event_nonce")
+	fd_ERC20DeployedClaimComponents_eth_block_height = md_ERC20DeployedClaimComponents.Fields().ByName("eth_block_height")
+	fd_ERC20DeployedClaimComponents_cosmos_denom = md_ERC20DeployedClaimComponents.Fields().ByName("cosmos_denom")
+	fd_ERC20DeployedClaimComponents_token_contract = md_ERC20DeployedClaimComponents.Fields().ByName("token_contract")
+	fd_ERC20DeployedClaimComponents_name = md_ERC20DeployedClaimComponents.Fields().ByName("name")
+	fd_ERC20DeployedClaimComponents_symbol = md_ERC20DeployedClaimComponents.Fields().ByName("symbol")
+	fd_ERC20DeployedClaimComponents_decimals = md_ERC20DeployedClaimComponents.Fields().ByName("decimals")
+}
+
+var _ protoreflect.Message = (*fastReflection_ERC20DeployedClaimComponents)(nil)
+
+type fastReflection_ERC20DeployedClaimComponents ERC20DeployedClaimComponents
+
+func (x *ERC20DeployedClaimComponents) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ERC20DeployedClaimComponents)(x)
+}
+
+func (x *ERC20DeployedClaimComponents) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v1_attestation_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ERC20DeployedClaimComponents_messageType fastReflection_ERC20DeployedClaimComponents_messageType
+var _ protoreflect.MessageType = fastReflection_ERC20DeployedClaimComponents_messageType{}
+
+type fastReflection_ERC20DeployedClaimComponents_messageType struct{}
+
+func (x fastReflection_ERC20DeployedClaimComponents_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ERC20DeployedClaimComponents)(nil)
+}
+func (x fastReflection_ERC20DeployedClaimComponents_messageType) New() protoreflect.Message {
+	return new(fastReflection_ERC20DeployedClaimComponents)
+}
+func (x fastReflection_ERC20DeployedClaimComponents_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ERC20DeployedClaimComponents
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ERC20DeployedClaimComponents) Descriptor() protoreflect.MessageDescriptor {
+	return md_ERC20DeployedClaimComponents
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ERC20DeployedClaimComponents) Type() protoreflect.MessageType {
+	return _fastReflection_ERC20DeployedClaimComponents_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ERC20DeployedClaimComponents) New() protoreflect.Message {
+	return new(fastReflection_ERC20DeployedClaimComponents)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ERC20DeployedClaimComponents) Interface() protoreflect.ProtoMessage {
+	return (*ERC20DeployedClaimComponents)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ERC20DeployedClaimComponents) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.EventNonce != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EventNonce)
+		if !f(fd_ERC20DeployedClaimComponents_event_nonce, value) {
+			return
+		}
+	}
+	if x.EthBlockHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EthBlockHeight)
+		if !f(fd_ERC20DeployedClaimComponents_eth_block_height, value) {
+			return
+		}
+	}
+	if x.CosmosDenom != "" {
+		value := protoreflect.ValueOfString(x.CosmosDenom)
+		if !f(fd_ERC20DeployedClaimComponents_cosmos_denom, value) {
+			return
+		}
+	}
+	if x.TokenContract != "" {
+		value := protoreflect.ValueOfString(x.TokenContract)
+		if !f(fd_ERC20DeployedClaimComponents_token_contract, value) {
+			return
+		}
+	}
+	if x.Name != "" {
+		value := protoreflect.ValueOfString(x.Name)
+		if !f(fd_ERC20DeployedClaimComponents_name, value) {
+			return
+		}
+	}
+	if x.Symbol != "" {
+		value := protoreflect.ValueOfString(x.Symbol)
+		if !f(fd_ERC20DeployedClaimComponents_symbol, value) {
+			return
+		}
+	}
+	if x.Decimals != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Decimals)
+		if !f(fd_ERC20DeployedClaimComponents_decimals, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ERC20DeployedClaimComponents) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "gravity.v1.ERC20DeployedClaimComponents.event_nonce":
+		return x.EventNonce != uint64(0)
+	case "gravity.v1.ERC20DeployedClaimComponents.eth_block_height":
+		return x.EthBlockHeight != uint64(0)
+	case "gravity.v1.ERC20DeployedClaimComponents.cosmos_denom":
+		return x.CosmosDenom != ""
+	case "gravity.v1.ERC20DeployedClaimComponents.token_contract":
+		return x.TokenContract != ""
+	case "gravity.v1.ERC20DeployedClaimComponents.name":
+		return x.Name != ""
+	case "gravity.v1.ERC20DeployedClaimComponents.symbol":
+		return x.Symbol != ""
+	case "gravity.v1.ERC20DeployedClaimComponents.decimals":
+		return x.Decimals != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ERC20DeployedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ERC20DeployedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ERC20DeployedClaimComponents) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "gravity.v1.ERC20DeployedClaimComponents.event_nonce":
+		x.EventNonce = uint64(0)
+	case "gravity.v1.ERC20DeployedClaimComponents.eth_block_height":
+		x.EthBlockHeight = uint64(0)
+	case "gravity.v1.ERC20DeployedClaimComponents.cosmos_denom":
+		x.CosmosDenom = ""
+	case "gravity.v1.ERC20DeployedClaimComponents.token_contract":
+		x.TokenContract = ""
+	case "gravity.v1.ERC20DeployedClaimComponents.name":
+		x.Name = ""
+	case "gravity.v1.ERC20DeployedClaimComponents.symbol":
+		x.Symbol = ""
+	case "gravity.v1.ERC20DeployedClaimComponents.decimals":
+		x.Decimals = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ERC20DeployedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ERC20DeployedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ERC20DeployedClaimComponents) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "gravity.v1.ERC20DeployedClaimComponents.event_nonce":
+		value := x.EventNonce
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.ERC20DeployedClaimComponents.eth_block_height":
+		value := x.EthBlockHeight
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.ERC20DeployedClaimComponents.cosmos_denom":
+		value := x.CosmosDenom
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.ERC20DeployedClaimComponents.token_contract":
+		value := x.TokenContract
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.ERC20DeployedClaimComponents.name":
+		value := x.Name
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.ERC20DeployedClaimComponents.symbol":
+		value := x.Symbol
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.ERC20DeployedClaimComponents.decimals":
+		value := x.Decimals
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ERC20DeployedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ERC20DeployedClaimComponents does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ERC20DeployedClaimComponents) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "gravity.v1.ERC20DeployedClaimComponents.event_nonce":
+		x.EventNonce = value.Uint()
+	case "gravity.v1.ERC20DeployedClaimComponents.eth_block_height":
+		x.EthBlockHeight = value.Uint()
+	case "gravity.v1.ERC20DeployedClaimComponents.cosmos_denom":
+		x.CosmosDenom = value.Interface().(string)
+	case "gravity.v1.ERC20DeployedClaimComponents.token_contract":
+		x.TokenContract = value.Interface().(string)
+	case "gravity.v1.ERC20DeployedClaimComponents.name":
+		x.Name = value.Interface().(string)
+	case "gravity.v1.ERC20DeployedClaimComponents.symbol":
+		x.Symbol = value.Interface().(string)
+	case "gravity.v1.ERC20DeployedClaimComponents.decimals":
+		x.Decimals = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ERC20DeployedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ERC20DeployedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ERC20DeployedClaimComponents) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.ERC20DeployedClaimComponents.event_nonce":
+		panic(fmt.Errorf("field event_nonce of message gravity.v1.ERC20DeployedClaimComponents is not mutable"))
+	case "gravity.v1.ERC20DeployedClaimComponents.eth_block_height":
+		panic(fmt.Errorf("field eth_block_height of message gravity.v1.ERC20DeployedClaimComponents is not mutable"))
+	case "gravity.v1.ERC20DeployedClaimComponents.cosmos_denom":
+		panic(fmt.Errorf("field cosmos_denom of message gravity.v1.ERC20DeployedClaimComponents is not mutable"))
+	case "gravity.v1.ERC20DeployedClaimComponents.token_contract":
+		panic(fmt.Errorf("field token_contract of message gravity.v1.ERC20DeployedClaimComponents is not mutable"))
+	case "gravity.v1.ERC20DeployedClaimComponents.name":
+		panic(fmt.Errorf("field name of message gravity.v1.ERC20DeployedClaimComponents is not mutable"))
+	case "gravity.v1.ERC20DeployedClaimComponents.symbol":
+		panic(fmt.Errorf("field symbol of message gravity.v1.ERC20DeployedClaimComponents is not mutable"))
+	case "gravity.v1.ERC20DeployedClaimComponents.decimals":
+		panic(fmt.Errorf("field decimals of message gravity.v1.ERC20DeployedClaimComponents is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ERC20DeployedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ERC20DeployedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ERC20DeployedClaimComponents) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.ERC20DeployedClaimComponents.event_nonce":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.ERC20DeployedClaimComponents.eth_block_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.ERC20DeployedClaimComponents.cosmos_denom":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.ERC20DeployedClaimComponents.token_contract":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.ERC20DeployedClaimComponents.name":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.ERC20DeployedClaimComponents.symbol":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.ERC20DeployedClaimComponents.decimals":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ERC20DeployedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ERC20DeployedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ERC20DeployedClaimComponents) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.ERC20DeployedClaimComponents", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ERC20DeployedClaimComponents) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ERC20DeployedClaimComponents) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ERC20DeployedClaimComponents) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ERC20DeployedClaimComponents) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ERC20DeployedClaimComponents)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.EventNonce != 0 {
+			n += 1 + runtime.Sov(uint64(x.EventNonce))
+		}
+		if x.EthBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.EthBlockHeight))
+		}
+		l = len(x.CosmosDenom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.TokenContract)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Name)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Symbol)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.Decimals != 0 {
+			n += 1 + runtime.Sov(uint64(x.Decimals))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ERC20DeployedClaimComponents)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Decimals != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Decimals))
+			i--
+			dAtA[i] = 0x38
+		}
+		if len(x.Symbol) > 0 {
+			i -= len(x.Symbol)
+			copy(dAtA[i:], x.Symbol)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Symbol)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if len(x.Name) > 0 {
+			i -= len(x.Name)
+			copy(dAtA[i:], x.Name)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Name)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.TokenContract) > 0 {
+			i -= len(x.TokenContract)
+			copy(dAtA[i:], x.TokenContract)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TokenContract)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if len(x.CosmosDenom) > 0 {
+			i -= len(x.CosmosDenom)
+			copy(dAtA[i:], x.CosmosDenom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.CosmosDenom)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.EthBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EthBlockHeight))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.EventNonce != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EventNonce))
+			i--
+			dAtA[i] = 0x8
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ERC20DeployedClaimComponents)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ERC20DeployedClaimComponents: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ERC20DeployedClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+				}
+				x.EventNonce = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EventNonce |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+				}
+				x.EthBlockHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EthBlockHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CosmosDenom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.CosmosDenom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenContract", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TokenContract = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Name = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Symbol", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Symbol = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 7:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Decimals", wireType)
+				}
+				x.Decimals = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.Decimals |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_LogicCallExecutedClaimComponents                    protoreflect.MessageDescriptor
+	fd_LogicCallExecutedClaimComponents_event_nonce        protoreflect.FieldDescriptor
+	fd_LogicCallExecutedClaimComponents_eth_block_height   protoreflect.FieldDescriptor
+	fd_LogicCallExecutedClaimComponents_invalidation_id    protoreflect.FieldDescriptor
+	fd_LogicCallExecutedClaimComponents_invalidation_nonce protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_gravity_v1_attestation_proto_init()
+	md_LogicCallExecutedClaimComponents = File_gravity_v1_attestation_proto.Messages().ByName("LogicCallExecutedClaimComponents")
+	fd_LogicCallExecutedClaimComponents_event_nonce = md_LogicCallExecutedClaimComponents.Fields().ByName("event_nonce")
+	fd_LogicCallExecutedClaimComponents_eth_block_height = md_LogicCallExecutedClaimComponents.Fields().ByName("eth_block_height")
+	fd_LogicCallExecutedClaimComponents_invalidation_id = md_LogicCallExecutedClaimComponents.Fields().ByName("invalidation_id")
+	fd_LogicCallExecutedClaimComponents_invalidation_nonce = md_LogicCallExecutedClaimComponents.Fields().ByName("invalidation_nonce")
+}
+
+var _ protoreflect.Message = (*fastReflection_LogicCallExecutedClaimComponents)(nil)
+
+type fastReflection_LogicCallExecutedClaimComponents LogicCallExecutedClaimComponents
+
+func (x *LogicCallExecutedClaimComponents) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_LogicCallExecutedClaimComponents)(x)
+}
+
+func (x *LogicCallExecutedClaimComponents) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v1_attestation_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_LogicCallExecutedClaimComponents_messageType fastReflection_LogicCallExecutedClaimComponents_messageType
+var _ protoreflect.MessageType = fastReflection_LogicCallExecutedClaimComponents_messageType{}
+
+type fastReflection_LogicCallExecutedClaimComponents_messageType struct{}
+
+func (x fastReflection_LogicCallExecutedClaimComponents_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_LogicCallExecutedClaimComponents)(nil)
+}
+func (x fastReflection_LogicCallExecutedClaimComponents_messageType) New() protoreflect.Message {
+	return new(fastReflection_LogicCallExecutedClaimComponents)
+}
+func (x fastReflection_LogicCallExecutedClaimComponents_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_LogicCallExecutedClaimComponents
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Descriptor() protoreflect.MessageDescriptor {
+	return md_LogicCallExecutedClaimComponents
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Type() protoreflect.MessageType {
+	return _fastReflection_LogicCallExecutedClaimComponents_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_LogicCallExecutedClaimComponents) New() protoreflect.Message {
+	return new(fastReflection_LogicCallExecutedClaimComponents)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Interface() protoreflect.ProtoMessage {
+	return (*LogicCallExecutedClaimComponents)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.EventNonce != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EventNonce)
+		if !f(fd_LogicCallExecutedClaimComponents_event_nonce, value) {
+			return
+		}
+	}
+	if x.EthBlockHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EthBlockHeight)
+		if !f(fd_LogicCallExecutedClaimComponents_eth_block_height, value) {
+			return
+		}
+	}
+	if len(x.InvalidationId) != 0 {
+		value := protoreflect.ValueOfBytes(x.InvalidationId)
+		if !f(fd_LogicCallExecutedClaimComponents_invalidation_id, value) {
+			return
+		}
+	}
+	if x.InvalidationNonce != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.InvalidationNonce)
+		if !f(fd_LogicCallExecutedClaimComponents_invalidation_nonce, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "gravity.v1.LogicCallExecutedClaimComponents.event_nonce":
+		return x.EventNonce != uint64(0)
+	case "gravity.v1.LogicCallExecutedClaimComponents.eth_block_height":
+		return x.EthBlockHeight != uint64(0)
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_id":
+		return len(x.InvalidationId) != 0
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_nonce":
+		return x.InvalidationNonce != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.LogicCallExecutedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.LogicCallExecutedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "gravity.v1.LogicCallExecutedClaimComponents.event_nonce":
+		x.EventNonce = uint64(0)
+	case "gravity.v1.LogicCallExecutedClaimComponents.eth_block_height":
+		x.EthBlockHeight = uint64(0)
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_id":
+		x.InvalidationId = nil
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_nonce":
+		x.InvalidationNonce = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.LogicCallExecutedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.LogicCallExecutedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "gravity.v1.LogicCallExecutedClaimComponents.event_nonce":
+		value := x.EventNonce
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.LogicCallExecutedClaimComponents.eth_block_height":
+		value := x.EthBlockHeight
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_id":
+		value := x.InvalidationId
+		return protoreflect.ValueOfBytes(value)
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_nonce":
+		value := x.InvalidationNonce
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.LogicCallExecutedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.LogicCallExecutedClaimComponents does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "gravity.v1.LogicCallExecutedClaimComponents.event_nonce":
+		x.EventNonce = value.Uint()
+	case "gravity.v1.LogicCallExecutedClaimComponents.eth_block_height":
+		x.EthBlockHeight = value.Uint()
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_id":
+		x.InvalidationId = value.Bytes()
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_nonce":
+		x.InvalidationNonce = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.LogicCallExecutedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.LogicCallExecutedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_LogicCallExecutedClaimComponents) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.LogicCallExecutedClaimComponents.event_nonce":
+		panic(fmt.Errorf("field event_nonce of message gravity.v1.LogicCallExecutedClaimComponents is not mutable"))
+	case "gravity.v1.LogicCallExecutedClaimComponents.eth_block_height":
+		panic(fmt.Errorf("field eth_block_height of message gravity.v1.LogicCallExecutedClaimComponents is not mutable"))
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_id":
+		panic(fmt.Errorf("field invalidation_id of message gravity.v1.LogicCallExecutedClaimComponents is not mutable"))
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_nonce":
+		panic(fmt.Errorf("field invalidation_nonce of message gravity.v1.LogicCallExecutedClaimComponents is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.LogicCallExecutedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.LogicCallExecutedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_LogicCallExecutedClaimComponents) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.LogicCallExecutedClaimComponents.event_nonce":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.LogicCallExecutedClaimComponents.eth_block_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_id":
+		return protoreflect.ValueOfBytes(nil)
+	case "gravity.v1.LogicCallExecutedClaimComponents.invalidation_nonce":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.LogicCallExecutedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.LogicCallExecutedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_LogicCallExecutedClaimComponents) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.LogicCallExecutedClaimComponents", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_LogicCallExecutedClaimComponents) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_LogicCallExecutedClaimComponents) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_LogicCallExecutedClaimComponents) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_LogicCallExecutedClaimComponents) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*LogicCallExecutedClaimComponents)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.EventNonce != 0 {
+			n += 1 + runtime.Sov(uint64(x.EventNonce))
+		}
+		if x.EthBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.EthBlockHeight))
+		}
+		l = len(x.InvalidationId)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.InvalidationNonce != 0 {
+			n += 1 + runtime.Sov(uint64(x.InvalidationNonce))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*LogicCallExecutedClaimComponents)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.InvalidationNonce != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.InvalidationNonce))
+			i--
+			dAtA[i] = 0x20
+		}
+		if len(x.InvalidationId) > 0 {
+			i -= len(x.InvalidationId)
+			copy(dAtA[i:], x.InvalidationId)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.InvalidationId)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.EthBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EthBlockHeight))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.EventNonce != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EventNonce))
+			i--
+			dAtA[i] = 0x8
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*LogicCallExecutedClaimComponents)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: LogicCallExecutedClaimComponents: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: LogicCallExecutedClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+				}
+				x.EventNonce = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EventNonce |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+				}
+				x.EthBlockHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EthBlockHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field InvalidationId", wireType)
+				}
+				var byteLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					byteLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if byteLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + byteLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.InvalidationId = append(x.InvalidationId[:0], dAtA[iNdEx:postIndex]...)
+				if x.InvalidationId == nil {
+					x.InvalidationId = []byte{}
+				}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field InvalidationNonce", wireType)
+				}
+				x.InvalidationNonce = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.InvalidationNonce |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var _ protoreflect.List = (*_ValsetUpdatedClaimComponents_4_list)(nil)
+
+type _ValsetUpdatedClaimComponents_4_list struct {
+	list *[]*BridgeValidator
+}
+
+func (x *_ValsetUpdatedClaimComponents_4_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_ValsetUpdatedClaimComponents_4_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_ValsetUpdatedClaimComponents_4_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*BridgeValidator)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_ValsetUpdatedClaimComponents_4_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*BridgeValidator)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_ValsetUpdatedClaimComponents_4_list) AppendMutable() protoreflect.Value {
+	v := new(BridgeValidator)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_ValsetUpdatedClaimComponents_4_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_ValsetUpdatedClaimComponents_4_list) NewElement() protoreflect.Value {
+	v := new(BridgeValidator)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_ValsetUpdatedClaimComponents_4_list) IsValid() bool {
+	return x.list != nil
+}
+
+var (
+	md_ValsetUpdatedClaimComponents                  protoreflect.MessageDescriptor
+	fd_ValsetUpdatedClaimComponents_event_nonce      protoreflect.FieldDescriptor
+	fd_ValsetUpdatedClaimComponents_valset_nonce     protoreflect.FieldDescriptor
+	fd_ValsetUpdatedClaimComponents_eth_block_height protoreflect.FieldDescriptor
+	fd_ValsetUpdatedClaimComponents_members          protoreflect.FieldDescriptor
+	fd_ValsetUpdatedClaimComponents_reward_amount    protoreflect.FieldDescriptor
+	fd_ValsetUpdatedClaimComponents_reward_token     protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_gravity_v1_attestation_proto_init()
+	md_ValsetUpdatedClaimComponents = File_gravity_v1_attestation_proto.Messages().ByName("ValsetUpdatedClaimComponents")
+	fd_ValsetUpdatedClaimComponents_event_nonce = md_ValsetUpdatedClaimComponents.Fields().ByName("event_nonce")
+	fd_ValsetUpdatedClaimComponents_valset_nonce = md_ValsetUpdatedClaimComponents.Fields().ByName("valset_nonce")
+	fd_ValsetUpdatedClaimComponents_eth_block_height = md_ValsetUpdatedClaimComponents.Fields().ByName("eth_block_height")
+	fd_ValsetUpdatedClaimComponents_members = md_ValsetUpdatedClaimComponents.Fields().ByName("members")
+	fd_ValsetUpdatedClaimComponents_reward_amount = md_ValsetUpdatedClaimComponents.Fields().ByName("reward_amount")
+	fd_ValsetUpdatedClaimComponents_reward_token = md_ValsetUpdatedClaimComponents.Fields().ByName("reward_token")
+}
+
+var _ protoreflect.Message = (*fastReflection_ValsetUpdatedClaimComponents)(nil)
+
+type fastReflection_ValsetUpdatedClaimComponents ValsetUpdatedClaimComponents
+
+func (x *ValsetUpdatedClaimComponents) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ValsetUpdatedClaimComponents)(x)
+}
+
+func (x *ValsetUpdatedClaimComponents) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v1_attestation_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ValsetUpdatedClaimComponents_messageType fastReflection_ValsetUpdatedClaimComponents_messageType
+var _ protoreflect.MessageType = fastReflection_ValsetUpdatedClaimComponents_messageType{}
+
+type fastReflection_ValsetUpdatedClaimComponents_messageType struct{}
+
+func (x fastReflection_ValsetUpdatedClaimComponents_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ValsetUpdatedClaimComponents)(nil)
+}
+func (x fastReflection_ValsetUpdatedClaimComponents_messageType) New() protoreflect.Message {
+	return new(fastReflection_ValsetUpdatedClaimComponents)
+}
+func (x fastReflection_ValsetUpdatedClaimComponents_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ValsetUpdatedClaimComponents
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Descriptor() protoreflect.MessageDescriptor {
+	return md_ValsetUpdatedClaimComponents
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Type() protoreflect.MessageType {
+	return _fastReflection_ValsetUpdatedClaimComponents_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ValsetUpdatedClaimComponents) New() protoreflect.Message {
+	return new(fastReflection_ValsetUpdatedClaimComponents)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Interface() protoreflect.ProtoMessage {
+	return (*ValsetUpdatedClaimComponents)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.EventNonce != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EventNonce)
+		if !f(fd_ValsetUpdatedClaimComponents_event_nonce, value) {
+			return
+		}
+	}
+	if x.ValsetNonce != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ValsetNonce)
+		if !f(fd_ValsetUpdatedClaimComponents_valset_nonce, value) {
+			return
+		}
+	}
+	if x.EthBlockHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EthBlockHeight)
+		if !f(fd_ValsetUpdatedClaimComponents_eth_block_height, value) {
+			return
+		}
+	}
+	if len(x.Members) != 0 {
+		value := protoreflect.ValueOfList(&_ValsetUpdatedClaimComponents_4_list{list: &x.Members})
+		if !f(fd_ValsetUpdatedClaimComponents_members, value) {
+			return
+		}
+	}
+	if x.RewardAmount != "" {
+		value := protoreflect.ValueOfString(x.RewardAmount)
+		if !f(fd_ValsetUpdatedClaimComponents_reward_amount, value) {
+			return
+		}
+	}
+	if x.RewardToken != "" {
+		value := protoreflect.ValueOfString(x.RewardToken)
+		if !f(fd_ValsetUpdatedClaimComponents_reward_token, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "gravity.v1.ValsetUpdatedClaimComponents.event_nonce":
+		return x.EventNonce != uint64(0)
+	case "gravity.v1.ValsetUpdatedClaimComponents.valset_nonce":
+		return x.ValsetNonce != uint64(0)
+	case "gravity.v1.ValsetUpdatedClaimComponents.eth_block_height":
+		return x.EthBlockHeight != uint64(0)
+	case "gravity.v1.ValsetUpdatedClaimComponents.members":
+		return len(x.Members) != 0
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_amount":
+		return x.RewardAmount != ""
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_token":
+		return x.RewardToken != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ValsetUpdatedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ValsetUpdatedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "gravity.v1.ValsetUpdatedClaimComponents.event_nonce":
+		x.EventNonce = uint64(0)
+	case "gravity.v1.ValsetUpdatedClaimComponents.valset_nonce":
+		x.ValsetNonce = uint64(0)
+	case "gravity.v1.ValsetUpdatedClaimComponents.eth_block_height":
+		x.EthBlockHeight = uint64(0)
+	case "gravity.v1.ValsetUpdatedClaimComponents.members":
+		x.Members = nil
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_amount":
+		x.RewardAmount = ""
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_token":
+		x.RewardToken = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ValsetUpdatedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ValsetUpdatedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "gravity.v1.ValsetUpdatedClaimComponents.event_nonce":
+		value := x.EventNonce
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.ValsetUpdatedClaimComponents.valset_nonce":
+		value := x.ValsetNonce
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.ValsetUpdatedClaimComponents.eth_block_height":
+		value := x.EthBlockHeight
+		return protoreflect.ValueOfUint64(value)
+	case "gravity.v1.ValsetUpdatedClaimComponents.members":
+		if len(x.Members) == 0 {
+			return protoreflect.ValueOfList(&_ValsetUpdatedClaimComponents_4_list{})
+		}
+		listValue := &_ValsetUpdatedClaimComponents_4_list{list: &x.Members}
+		return protoreflect.ValueOfList(listValue)
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_amount":
+		value := x.RewardAmount
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_token":
+		value := x.RewardToken
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ValsetUpdatedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ValsetUpdatedClaimComponents does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "gravity.v1.ValsetUpdatedClaimComponents.event_nonce":
+		x.EventNonce = value.Uint()
+	case "gravity.v1.ValsetUpdatedClaimComponents.valset_nonce":
+		x.ValsetNonce = value.Uint()
+	case "gravity.v1.ValsetUpdatedClaimComponents.eth_block_height":
+		x.EthBlockHeight = value.Uint()
+	case "gravity.v1.ValsetUpdatedClaimComponents.members":
+		lv := value.List()
+		clv := lv.(*_ValsetUpdatedClaimComponents_4_list)
+		x.Members = *clv.list
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_amount":
+		x.RewardAmount = value.Interface().(string)
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_token":
+		x.RewardToken = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ValsetUpdatedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ValsetUpdatedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ValsetUpdatedClaimComponents) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.ValsetUpdatedClaimComponents.members":
+		if x.Members == nil {
+			x.Members = []*BridgeValidator{}
+		}
+		value := &_ValsetUpdatedClaimComponents_4_list{list: &x.Members}
+		return protoreflect.ValueOfList(value)
+	case "gravity.v1.ValsetUpdatedClaimComponents.event_nonce":
+		panic(fmt.Errorf("field event_nonce of message gravity.v1.ValsetUpdatedClaimComponents is not mutable"))
+	case "gravity.v1.ValsetUpdatedClaimComponents.valset_nonce":
+		panic(fmt.Errorf("field valset_nonce of message gravity.v1.ValsetUpdatedClaimComponents is not mutable"))
+	case "gravity.v1.ValsetUpdatedClaimComponents.eth_block_height":
+		panic(fmt.Errorf("field eth_block_height of message gravity.v1.ValsetUpdatedClaimComponents is not mutable"))
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_amount":
+		panic(fmt.Errorf("field reward_amount of message gravity.v1.ValsetUpdatedClaimComponents is not mutable"))
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_token":
+		panic(fmt.Errorf("field reward_token of message gravity.v1.ValsetUpdatedClaimComponents is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ValsetUpdatedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ValsetUpdatedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ValsetUpdatedClaimComponents) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.ValsetUpdatedClaimComponents.event_nonce":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.ValsetUpdatedClaimComponents.valset_nonce":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.ValsetUpdatedClaimComponents.eth_block_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "gravity.v1.ValsetUpdatedClaimComponents.members":
+		list := []*BridgeValidator{}
+		return protoreflect.ValueOfList(&_ValsetUpdatedClaimComponents_4_list{list: &list})
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_amount":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.ValsetUpdatedClaimComponents.reward_token":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ValsetUpdatedClaimComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ValsetUpdatedClaimComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ValsetUpdatedClaimComponents) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.ValsetUpdatedClaimComponents", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ValsetUpdatedClaimComponents) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ValsetUpdatedClaimComponents) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ValsetUpdatedClaimComponents) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ValsetUpdatedClaimComponents) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ValsetUpdatedClaimComponents)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.EventNonce != 0 {
+			n += 1 + runtime.Sov(uint64(x.EventNonce))
+		}
+		if x.ValsetNonce != 0 {
+			n += 1 + runtime.Sov(uint64(x.ValsetNonce))
+		}
+		if x.EthBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.EthBlockHeight))
+		}
+		if len(x.Members) > 0 {
+			for _, e := range x.Members {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		l = len(x.RewardAmount)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.RewardToken)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ValsetUpdatedClaimComponents)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.RewardToken) > 0 {
+			i -= len(x.RewardToken)
+			copy(dAtA[i:], x.RewardToken)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.RewardToken)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if len(x.RewardAmount) > 0 {
+			i -= len(x.RewardAmount)
+			copy(dAtA[i:], x.RewardAmount)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.RewardAmount)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.Members) > 0 {
+			for iNdEx := len(x.Members) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Members[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x22
+			}
+		}
+		if x.EthBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EthBlockHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.ValsetNonce != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ValsetNonce))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.EventNonce != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EventNonce))
+			i--
+			dAtA[i] = 0x8
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ValsetUpdatedClaimComponents)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ValsetUpdatedClaimComponents: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ValsetUpdatedClaimComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EventNonce", wireType)
+				}
+				x.EventNonce = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EventNonce |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ValsetNonce", wireType)
+				}
+				x.ValsetNonce = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ValsetNonce |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EthBlockHeight", wireType)
+				}
+				x.EthBlockHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.EthBlockHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Members", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Members = append(x.Members, &BridgeValidator{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Members[len(x.Members)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RewardAmount", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.RewardAmount = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RewardToken", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.RewardToken = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_ClaimHashComponents                     protoreflect.MessageDescriptor
+	fd_ClaimHashComponents_send_to_cosmos      protoreflect.FieldDescriptor
+	fd_ClaimHashComponents_batch_send_to_eth   protoreflect.FieldDescriptor
+	fd_ClaimHashComponents_erc20_deployed      protoreflect.FieldDescriptor
+	fd_ClaimHashComponents_logic_call_executed protoreflect.FieldDescriptor
+	fd_ClaimHashComponents_valset_updated      protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_gravity_v1_attestation_proto_init()
+	md_ClaimHashComponents = File_gravity_v1_attestation_proto.Messages().ByName("ClaimHashComponents")
+	fd_ClaimHashComponents_send_to_cosmos = md_ClaimHashComponents.Fields().ByName("send_to_cosmos")
+	fd_ClaimHashComponents_batch_send_to_eth = md_ClaimHashComponents.Fields().ByName("batch_send_to_eth")
+	fd_ClaimHashComponents_erc20_deployed = md_ClaimHashComponents.Fields().ByName("erc20_deployed")
+	fd_ClaimHashComponents_logic_call_executed = md_ClaimHashComponents.Fields().ByName("logic_call_executed")
+	fd_ClaimHashComponents_valset_updated = md_ClaimHashComponents.Fields().ByName("valset_updated")
+}
+
+var _ protoreflect.Message = (*fastReflection_ClaimHashComponents)(nil)
+
+type fastReflection_ClaimHashComponents ClaimHashComponents
+
+func (x *ClaimHashComponents) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ClaimHashComponents)(x)
+}
+
+func (x *ClaimHashComponents) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v1_attestation_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ClaimHashComponents_messageType fastReflection_ClaimHashComponents_messageType
+var _ protoreflect.MessageType = fastReflection_ClaimHashComponents_messageType{}
+
+type fastReflection_ClaimHashComponents_messageType struct{}
+
+func (x fastReflection_ClaimHashComponents_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ClaimHashComponents)(nil)
+}
+func (x fastReflection_ClaimHashComponents_messageType) New() protoreflect.Message {
+	return new(fastReflection_ClaimHashComponents)
+}
+func (x fastReflection_ClaimHashComponents_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ClaimHashComponents
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ClaimHashComponents) Descriptor() protoreflect.MessageDescriptor {
+	return md_ClaimHashComponents
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ClaimHashComponents) Type() protoreflect.MessageType {
+	return _fastReflection_ClaimHashComponents_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ClaimHashComponents) New() protoreflect.Message {
+	return new(fastReflection_ClaimHashComponents)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ClaimHashComponents) Interface() protoreflect.ProtoMessage {
+	return (*ClaimHashComponents)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ClaimHashComponents) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Components != nil {
+		switch o := x.Components.(type) {
+		case *ClaimHashComponents_SendToCosmos:
+			v := o.SendToCosmos
+			value := protoreflect.ValueOfMessage(v.ProtoReflect())
+			if !f(fd_ClaimHashComponents_send_to_cosmos, value) {
+				return
+			}
+		case *ClaimHashComponents_BatchSendToEth:
+			v := o.BatchSendToEth
+			value := protoreflect.ValueOfMessage(v.ProtoReflect())
+			if !f(fd_ClaimHashComponents_batch_send_to_eth, value) {
+				return
+			}
+		case *ClaimHashComponents_Erc20Deployed:
+			v := o.Erc20Deployed
+			value := protoreflect.ValueOfMessage(v.ProtoReflect())
+			if !f(fd_ClaimHashComponents_erc20_deployed, value) {
+				return
+			}
+		case *ClaimHashComponents_LogicCallExecuted:
+			v := o.LogicCallExecuted
+			value := protoreflect.ValueOfMessage(v.ProtoReflect())
+			if !f(fd_ClaimHashComponents_logic_call_executed, value) {
+				return
+			}
+		case *ClaimHashComponents_ValsetUpdated:
+			v := o.ValsetUpdated
+			value := protoreflect.ValueOfMessage(v.ProtoReflect())
+			if !f(fd_ClaimHashComponents_valset_updated, value) {
+				return
+			}
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ClaimHashComponents) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "gravity.v1.ClaimHashComponents.send_to_cosmos":
+		if x.Components == nil {
+			return false
+		} else if _, ok := x.Components.(*ClaimHashComponents_SendToCosmos); ok {
+			return true
+		} else {
+			return false
+		}
+	case "gravity.v1.ClaimHashComponents.batch_send_to_eth":
+		if x.Components == nil {
+			return false
+		} else if _, ok := x.Components.(*ClaimHashComponents_BatchSendToEth); ok {
+			return true
+		} else {
+			return false
+		}
+	case "gravity.v1.ClaimHashComponents.erc20_deployed":
+		if x.Components == nil {
+			return false
+		} else if _, ok := x.Components.(*ClaimHashComponents_Erc20Deployed); ok {
+			return true
+		} else {
+			return false
+		}
+	case "gravity.v1.ClaimHashComponents.logic_call_executed":
+		if x.Components == nil {
+			return false
+		} else if _, ok := x.Components.(*ClaimHashComponents_LogicCallExecuted); ok {
+			return true
+		} else {
+			return false
+		}
+	case "gravity.v1.ClaimHashComponents.valset_updated":
+		if x.Components == nil {
+			return false
+		} else if _, ok := x.Components.(*ClaimHashComponents_ValsetUpdated); ok {
+			return true
+		} else {
+			return false
+		}
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ClaimHashComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ClaimHashComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ClaimHashComponents) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "gravity.v1.ClaimHashComponents.send_to_cosmos":
+		x.Components = nil
+	case "gravity.v1.ClaimHashComponents.batch_send_to_eth":
+		x.Components = nil
+	case "gravity.v1.ClaimHashComponents.erc20_deployed":
+		x.Components = nil
+	case "gravity.v1.ClaimHashComponents.logic_call_executed":
+		x.Components = nil
+	case "gravity.v1.ClaimHashComponents.valset_updated":
+		x.Components = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ClaimHashComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ClaimHashComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ClaimHashComponents) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "gravity.v1.ClaimHashComponents.send_to_cosmos":
+		if x.Components == nil {
+			return protoreflect.ValueOfMessage((*SendToCosmosClaimComponents)(nil).ProtoReflect())
+		} else if v, ok := x.Components.(*ClaimHashComponents_SendToCosmos); ok {
+			return protoreflect.ValueOfMessage(v.SendToCosmos.ProtoReflect())
+		} else {
+			return protoreflect.ValueOfMessage((*SendToCosmosClaimComponents)(nil).ProtoReflect())
+		}
+	case "gravity.v1.ClaimHashComponents.batch_send_to_eth":
+		if x.Components == nil {
+			return protoreflect.ValueOfMessage((*BatchSendToEthClaimComponents)(nil).ProtoReflect())
+		} else if v, ok := x.Components.(*ClaimHashComponents_BatchSendToEth); ok {
+			return protoreflect.ValueOfMessage(v.BatchSendToEth.ProtoReflect())
+		} else {
+			return protoreflect.ValueOfMessage((*BatchSendToEthClaimComponents)(nil).ProtoReflect())
+		}
+	case "gravity.v1.ClaimHashComponents.erc20_deployed":
+		if x.Components == nil {
+			return protoreflect.ValueOfMessage((*ERC20DeployedClaimComponents)(nil).ProtoReflect())
+		} else if v, ok := x.Components.(*ClaimHashComponents_Erc20Deployed); ok {
+			return protoreflect.ValueOfMessage(v.Erc20Deployed.ProtoReflect())
+		} else {
+			return protoreflect.ValueOfMessage((*ERC20DeployedClaimComponents)(nil).ProtoReflect())
+		}
+	case "gravity.v1.ClaimHashComponents.logic_call_executed":
+		if x.Components == nil {
+			return protoreflect.ValueOfMessage((*LogicCallExecutedClaimComponents)(nil).ProtoReflect())
+		} else if v, ok := x.Components.(*ClaimHashComponents_LogicCallExecuted); ok {
+			return protoreflect.ValueOfMessage(v.LogicCallExecuted.ProtoReflect())
+		} else {
+			return protoreflect.ValueOfMessage((*LogicCallExecutedClaimComponents)(nil).ProtoReflect())
+		}
+	case "gravity.v1.ClaimHashComponents.valset_updated":
+		if x.Components == nil {
+			return protoreflect.ValueOfMessage((*ValsetUpdatedClaimComponents)(nil).ProtoReflect())
+		} else if v, ok := x.Components.(*ClaimHashComponents_ValsetUpdated); ok {
+			return protoreflect.ValueOfMessage(v.ValsetUpdated.ProtoReflect())
+		} else {
+			return protoreflect.ValueOfMessage((*ValsetUpdatedClaimComponents)(nil).ProtoReflect())
+		}
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ClaimHashComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ClaimHashComponents does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ClaimHashComponents) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "gravity.v1.ClaimHashComponents.send_to_cosmos":
+		cv := value.Message().Interface().(*SendToCosmosClaimComponents)
+		x.Components = &ClaimHashComponents_SendToCosmos{SendToCosmos: cv}
+	case "gravity.v1.ClaimHashComponents.batch_send_to_eth":
+		cv := value.Message().Interface().(*BatchSendToEthClaimComponents)
+		x.Components = &ClaimHashComponents_BatchSendToEth{BatchSendToEth: cv}
+	case "gravity.v1.ClaimHashComponents.erc20_deployed":
+		cv := value.Message().Interface().(*ERC20DeployedClaimComponents)
+		x.Components = &ClaimHashComponents_Erc20Deployed{Erc20Deployed: cv}
+	case "gravity.v1.ClaimHashComponents.logic_call_executed":
+		cv := value.Message().Interface().(*LogicCallExecutedClaimComponents)
+		x.Components = &ClaimHashComponents_LogicCallExecuted{LogicCallExecuted: cv}
+	case "gravity.v1.ClaimHashComponents.valset_updated":
+		cv := value.Message().Interface().(*ValsetUpdatedClaimComponents)
+		x.Components = &ClaimHashComponents_ValsetUpdated{ValsetUpdated: cv}
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ClaimHashComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ClaimHashComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ClaimHashComponents) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.ClaimHashComponents.send_to_cosmos":
+		if x.Components == nil {
+			value := &SendToCosmosClaimComponents{}
+			oneofValue := &ClaimHashComponents_SendToCosmos{SendToCosmos: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+		switch m := x.Components.(type) {
+		case *ClaimHashComponents_SendToCosmos:
+			return protoreflect.ValueOfMessage(m.SendToCosmos.ProtoReflect())
+		default:
+			value := &SendToCosmosClaimComponents{}
+			oneofValue := &ClaimHashComponents_SendToCosmos{SendToCosmos: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+	case "gravity.v1.ClaimHashComponents.batch_send_to_eth":
+		if x.Components == nil {
+			value := &BatchSendToEthClaimComponents{}
+			oneofValue := &ClaimHashComponents_BatchSendToEth{BatchSendToEth: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+		switch m := x.Components.(type) {
+		case *ClaimHashComponents_BatchSendToEth:
+			return protoreflect.ValueOfMessage(m.BatchSendToEth.ProtoReflect())
+		default:
+			value := &BatchSendToEthClaimComponents{}
+			oneofValue := &ClaimHashComponents_BatchSendToEth{BatchSendToEth: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+	case "gravity.v1.ClaimHashComponents.erc20_deployed":
+		if x.Components == nil {
+			value := &ERC20DeployedClaimComponents{}
+			oneofValue := &ClaimHashComponents_Erc20Deployed{Erc20Deployed: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+		switch m := x.Components.(type) {
+		case *ClaimHashComponents_Erc20Deployed:
+			return protoreflect.ValueOfMessage(m.Erc20Deployed.ProtoReflect())
+		default:
+			value := &ERC20DeployedClaimComponents{}
+			oneofValue := &ClaimHashComponents_Erc20Deployed{Erc20Deployed: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+	case "gravity.v1.ClaimHashComponents.logic_call_executed":
+		if x.Components == nil {
+			value := &LogicCallExecutedClaimComponents{}
+			oneofValue := &ClaimHashComponents_LogicCallExecuted{LogicCallExecuted: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+		switch m := x.Components.(type) {
+		case *ClaimHashComponents_LogicCallExecuted:
+			return protoreflect.ValueOfMessage(m.LogicCallExecuted.ProtoReflect())
+		default:
+			value := &LogicCallExecutedClaimComponents{}
+			oneofValue := &ClaimHashComponents_LogicCallExecuted{LogicCallExecuted: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+	case "gravity.v1.ClaimHashComponents.valset_updated":
+		if x.Components == nil {
+			value := &ValsetUpdatedClaimComponents{}
+			oneofValue := &ClaimHashComponents_ValsetUpdated{ValsetUpdated: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+		switch m := x.Components.(type) {
+		case *ClaimHashComponents_ValsetUpdated:
+			return protoreflect.ValueOfMessage(m.ValsetUpdated.ProtoReflect())
+		default:
+			value := &ValsetUpdatedClaimComponents{}
+			oneofValue := &ClaimHashComponents_ValsetUpdated{ValsetUpdated: value}
+			x.Components = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ClaimHashComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ClaimHashComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ClaimHashComponents) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.ClaimHashComponents.send_to_cosmos":
+		value := &SendToCosmosClaimComponents{}
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "gravity.v1.ClaimHashComponents.batch_send_to_eth":
+		value := &BatchSendToEthClaimComponents{}
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "gravity.v1.ClaimHashComponents.erc20_deployed":
+		value := &ERC20DeployedClaimComponents{}
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "gravity.v1.ClaimHashComponents.logic_call_executed":
+		value := &LogicCallExecutedClaimComponents{}
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "gravity.v1.ClaimHashComponents.valset_updated":
+		value := &ValsetUpdatedClaimComponents{}
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.ClaimHashComponents"))
+		}
+		panic(fmt.Errorf("message gravity.v1.ClaimHashComponents does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ClaimHashComponents) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	case "gravity.v1.ClaimHashComponents.components":
+		if x.Components == nil {
+			return nil
+		}
+		switch x.Components.(type) {
+		case *ClaimHashComponents_SendToCosmos:
+			return x.Descriptor().Fields().ByName("send_to_cosmos")
+		case *ClaimHashComponents_BatchSendToEth:
+			return x.Descriptor().Fields().ByName("batch_send_to_eth")
+		case *ClaimHashComponents_Erc20Deployed:
+			return x.Descriptor().Fields().ByName("erc20_deployed")
+		case *ClaimHashComponents_LogicCallExecuted:
+			return x.Descriptor().Fields().ByName("logic_call_executed")
+		case *ClaimHashComponents_ValsetUpdated:
+			return x.Descriptor().Fields().ByName("valset_updated")
+		}
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.ClaimHashComponents", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ClaimHashComponents) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ClaimHashComponents) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ClaimHashComponents) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ClaimHashComponents) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ClaimHashComponents)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		switch x := x.Components.(type) {
+		case *ClaimHashComponents_SendToCosmos:
+			if x == nil {
+				break
+			}
+			l = options.Size(x.SendToCosmos)
+			n += 1 + l + runtime.Sov(uint64(l))
+		case *ClaimHashComponents_BatchSendToEth:
+			if x == nil {
+				break
+			}
+			l = options.Size(x.BatchSendToEth)
+			n += 1 + l + runtime.Sov(uint64(l))
+		case *ClaimHashComponents_Erc20Deployed:
+			if x == nil {
+				break
+			}
+			l = options.Size(x.Erc20Deployed)
+			n += 1 + l + runtime.Sov(uint64(l))
+		case *ClaimHashComponents_LogicCallExecuted:
+			if x == nil {
+				break
+			}
+			l = options.Size(x.LogicCallExecuted)
+			n += 1 + l + runtime.Sov(uint64(l))
+		case *ClaimHashComponents_ValsetUpdated:
+			if x == nil {
+				break
+			}
+			l = options.Size(x.ValsetUpdated)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ClaimHashComponents)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		switch x := x.Components.(type) {
+		case *ClaimHashComponents_SendToCosmos:
+			encoded, err := options.Marshal(x.SendToCosmos)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		case *ClaimHashComponents_BatchSendToEth:
+			encoded, err := options.Marshal(x.BatchSendToEth)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		case *ClaimHashComponents_Erc20Deployed:
+			encoded, err := options.Marshal(x.Erc20Deployed)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x1a
+		case *ClaimHashComponents_LogicCallExecuted:
+			encoded, err := options.Marshal(x.LogicCallExecuted)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x22
+		case *ClaimHashComponents_ValsetUpdated:
+			encoded, err := options.Marshal(x.ValsetUpdated)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ClaimHashComponents)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ClaimHashComponents: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ClaimHashComponents: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SendToCosmos", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				v := &SendToCosmosClaimComponents{}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				x.Components = &ClaimHashComponents_SendToCosmos{v}
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BatchSendToEth", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				v := &BatchSendToEthClaimComponents{}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				x.Components = &ClaimHashComponents_BatchSendToEth{v}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Erc20Deployed", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				v := &ERC20DeployedClaimComponents{}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				x.Components = &ClaimHashComponents_Erc20Deployed{v}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LogicCallExecuted", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				v := &LogicCallExecutedClaimComponents{}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				x.Components = &ClaimHashComponents_LogicCallExecuted{v}
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ValsetUpdated", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				v := &ValsetUpdatedClaimComponents{}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				x.Components = &ClaimHashComponents_ValsetUpdated{v}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 var _ protoreflect.List = (*_Attestation_2_list)(nil)
 
 type _Attestation_2_list struct {
@@ -61,11 +4311,13 @@ func (x *_Attestation_2_list) IsValid() bool {
 }
 
 var (
-	md_Attestation          protoreflect.MessageDescriptor
-	fd_Attestation_observed protoreflect.FieldDescriptor
-	fd_Attestation_votes    protoreflect.FieldDescriptor
-	fd_Attestation_height   protoreflect.FieldDescriptor
-	fd_Attestation_claim    protoreflect.FieldDescriptor
+	md_Attestation                  protoreflect.MessageDescriptor
+	fd_Attestation_observed         protoreflect.FieldDescriptor
+	fd_Attestation_votes            protoreflect.FieldDescriptor
+	fd_Attestation_height           protoreflect.FieldDescriptor
+	fd_Attestation_claim            protoreflect.FieldDescriptor
+	fd_Attestation_claim_type       protoreflect.FieldDescriptor
+	fd_Attestation_claim_components protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -75,6 +4327,8 @@ func init() {
 	fd_Attestation_votes = md_Attestation.Fields().ByName("votes")
 	fd_Attestation_height = md_Attestation.Fields().ByName("height")
 	fd_Attestation_claim = md_Attestation.Fields().ByName("claim")
+	fd_Attestation_claim_type = md_Attestation.Fields().ByName("claim_type")
+	fd_Attestation_claim_components = md_Attestation.Fields().ByName("claim_components")
 }
 
 var _ protoreflect.Message = (*fastReflection_Attestation)(nil)
@@ -86,7 +4340,7 @@ func (x *Attestation) ProtoReflect() protoreflect.Message {
 }
 
 func (x *Attestation) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_attestation_proto_msgTypes[0]
+	mi := &file_gravity_v1_attestation_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -166,6 +4420,18 @@ func (x *fastReflection_Attestation) Range(f func(protoreflect.FieldDescriptor, 
 			return
 		}
 	}
+	if x.ClaimType != 0 {
+		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.ClaimType))
+		if !f(fd_Attestation_claim_type, value) {
+			return
+		}
+	}
+	if x.ClaimComponents != nil {
+		value := protoreflect.ValueOfMessage(x.ClaimComponents.ProtoReflect())
+		if !f(fd_Attestation_claim_components, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -189,6 +4455,10 @@ func (x *fastReflection_Attestation) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.Height != uint64(0)
 	case "gravity.v1.Attestation.claim":
 		return x.Claim != nil
+	case "gravity.v1.Attestation.claim_type":
+		return x.ClaimType != 0
+	case "gravity.v1.Attestation.claim_components":
+		return x.ClaimComponents != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.Attestation"))
@@ -213,6 +4483,10 @@ func (x *fastReflection_Attestation) Clear(fd protoreflect.FieldDescriptor) {
 		x.Height = uint64(0)
 	case "gravity.v1.Attestation.claim":
 		x.Claim = nil
+	case "gravity.v1.Attestation.claim_type":
+		x.ClaimType = 0
+	case "gravity.v1.Attestation.claim_components":
+		x.ClaimComponents = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.Attestation"))
@@ -244,6 +4518,12 @@ func (x *fastReflection_Attestation) Get(descriptor protoreflect.FieldDescriptor
 	case "gravity.v1.Attestation.claim":
 		value := x.Claim
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "gravity.v1.Attestation.claim_type":
+		value := x.ClaimType
+		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
+	case "gravity.v1.Attestation.claim_components":
+		value := x.ClaimComponents
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.Attestation"))
@@ -274,6 +4554,10 @@ func (x *fastReflection_Attestation) Set(fd protoreflect.FieldDescriptor, value 
 		x.Height = value.Uint()
 	case "gravity.v1.Attestation.claim":
 		x.Claim = value.Message().Interface().(*anypb.Any)
+	case "gravity.v1.Attestation.claim_type":
+		x.ClaimType = (ClaimType)(value.Enum())
+	case "gravity.v1.Attestation.claim_components":
+		x.ClaimComponents = value.Message().Interface().(*ClaimHashComponents)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.Attestation"))
@@ -305,10 +4589,17 @@ func (x *fastReflection_Attestation) Mutable(fd protoreflect.FieldDescriptor) pr
 			x.Claim = new(anypb.Any)
 		}
 		return protoreflect.ValueOfMessage(x.Claim.ProtoReflect())
+	case "gravity.v1.Attestation.claim_components":
+		if x.ClaimComponents == nil {
+			x.ClaimComponents = new(ClaimHashComponents)
+		}
+		return protoreflect.ValueOfMessage(x.ClaimComponents.ProtoReflect())
 	case "gravity.v1.Attestation.observed":
 		panic(fmt.Errorf("field observed of message gravity.v1.Attestation is not mutable"))
 	case "gravity.v1.Attestation.height":
 		panic(fmt.Errorf("field height of message gravity.v1.Attestation is not mutable"))
+	case "gravity.v1.Attestation.claim_type":
+		panic(fmt.Errorf("field claim_type of message gravity.v1.Attestation is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.Attestation"))
@@ -331,6 +4622,11 @@ func (x *fastReflection_Attestation) NewField(fd protoreflect.FieldDescriptor) p
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "gravity.v1.Attestation.claim":
 		m := new(anypb.Any)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "gravity.v1.Attestation.claim_type":
+		return protoreflect.ValueOfEnum(0)
+	case "gravity.v1.Attestation.claim_components":
+		m := new(ClaimHashComponents)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -417,6 +4713,13 @@ func (x *fastReflection_Attestation) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Claim)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.ClaimType != 0 {
+			n += 1 + runtime.Sov(uint64(x.ClaimType))
+		}
+		if x.ClaimComponents != nil {
+			l = options.Size(x.ClaimComponents)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -445,6 +4748,25 @@ func (x *fastReflection_Attestation) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ClaimComponents != nil {
+			encoded, err := options.Marshal(x.ClaimComponents)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if x.ClaimType != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ClaimType))
+			i--
+			dAtA[i] = 0x28
 		}
 		if x.Claim != nil {
 			encoded, err := options.Marshal(x.Claim)
@@ -640,6 +4962,61 @@ func (x *fastReflection_Attestation) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 5:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimType", wireType)
+				}
+				x.ClaimType = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ClaimType |= ClaimType(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimComponents", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ClaimComponents == nil {
+					x.ClaimComponents = &ClaimHashComponents{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimComponents); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -697,7 +5074,7 @@ func (x *ERC20Token) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ERC20Token) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_attestation_proto_msgTypes[1]
+	mi := &file_gravity_v1_attestation_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1187,7 +5564,7 @@ func (x *EventObservation) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventObservation) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_attestation_proto_msgTypes[2]
+	mi := &file_gravity_v1_attestation_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1861,7 +6238,7 @@ func (x *EventInvalidSendToCosmosReceiver) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventInvalidSendToCosmosReceiver) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_attestation_proto_msgTypes[3]
+	mi := &file_gravity_v1_attestation_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2471,7 +6848,7 @@ func (x *EventSendToCosmos) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventSendToCosmos) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_attestation_proto_msgTypes[4]
+	mi := &file_gravity_v1_attestation_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3021,7 +7398,7 @@ func (x *EventSendToCosmosLocal) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventSendToCosmosLocal) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_attestation_proto_msgTypes[5]
+	mi := &file_gravity_v1_attestation_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3635,7 +8012,7 @@ func (x *EventSendToCosmosPendingIbcAutoForward) ProtoReflect() protoreflect.Mes
 }
 
 func (x *EventSendToCosmosPendingIbcAutoForward) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_attestation_proto_msgTypes[6]
+	mi := &file_gravity_v1_attestation_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4315,7 +8692,7 @@ func (x *EventSendToCosmosExecutedIbcAutoForward) ProtoReflect() protoreflect.Me
 }
 
 func (x *EventSendToCosmosExecutedIbcAutoForward) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_attestation_proto_msgTypes[7]
+	mi := &file_gravity_v1_attestation_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5166,6 +9543,475 @@ func (ClaimType) EnumDescriptor() ([]byte, []int) {
 	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{0}
 }
 
+// Components used in MsgSendToCosmosClaim.ClaimHash()
+type SendToCosmosClaimComponents struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	TokenContract  string `protobuf:"bytes,3,opt,name=token_contract,json=tokenContract,proto3" json:"token_contract,omitempty"`
+	Amount         string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"` // Must be sdkmath.Int.String()
+	EthereumSender string `protobuf:"bytes,5,opt,name=ethereum_sender,json=ethereumSender,proto3" json:"ethereum_sender,omitempty"`
+	CosmosReceiver string `protobuf:"bytes,6,opt,name=cosmos_receiver,json=cosmosReceiver,proto3" json:"cosmos_receiver,omitempty"`
+}
+
+func (x *SendToCosmosClaimComponents) Reset() {
+	*x = SendToCosmosClaimComponents{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v1_attestation_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SendToCosmosClaimComponents) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendToCosmosClaimComponents) ProtoMessage() {}
+
+// Deprecated: Use SendToCosmosClaimComponents.ProtoReflect.Descriptor instead.
+func (*SendToCosmosClaimComponents) Descriptor() ([]byte, []int) {
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *SendToCosmosClaimComponents) GetEventNonce() uint64 {
+	if x != nil {
+		return x.EventNonce
+	}
+	return 0
+}
+
+func (x *SendToCosmosClaimComponents) GetEthBlockHeight() uint64 {
+	if x != nil {
+		return x.EthBlockHeight
+	}
+	return 0
+}
+
+func (x *SendToCosmosClaimComponents) GetTokenContract() string {
+	if x != nil {
+		return x.TokenContract
+	}
+	return ""
+}
+
+func (x *SendToCosmosClaimComponents) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
+func (x *SendToCosmosClaimComponents) GetEthereumSender() string {
+	if x != nil {
+		return x.EthereumSender
+	}
+	return ""
+}
+
+func (x *SendToCosmosClaimComponents) GetCosmosReceiver() string {
+	if x != nil {
+		return x.CosmosReceiver
+	}
+	return ""
+}
+
+// Components used in MsgBatchSendToEthClaim.ClaimHash()
+type BatchSendToEthClaimComponents struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	BatchNonce     uint64 `protobuf:"varint,3,opt,name=batch_nonce,json=batchNonce,proto3" json:"batch_nonce,omitempty"`
+	TokenContract  string `protobuf:"bytes,4,opt,name=token_contract,json=tokenContract,proto3" json:"token_contract,omitempty"`
+}
+
+func (x *BatchSendToEthClaimComponents) Reset() {
+	*x = BatchSendToEthClaimComponents{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v1_attestation_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BatchSendToEthClaimComponents) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchSendToEthClaimComponents) ProtoMessage() {}
+
+// Deprecated: Use BatchSendToEthClaimComponents.ProtoReflect.Descriptor instead.
+func (*BatchSendToEthClaimComponents) Descriptor() ([]byte, []int) {
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *BatchSendToEthClaimComponents) GetEventNonce() uint64 {
+	if x != nil {
+		return x.EventNonce
+	}
+	return 0
+}
+
+func (x *BatchSendToEthClaimComponents) GetEthBlockHeight() uint64 {
+	if x != nil {
+		return x.EthBlockHeight
+	}
+	return 0
+}
+
+func (x *BatchSendToEthClaimComponents) GetBatchNonce() uint64 {
+	if x != nil {
+		return x.BatchNonce
+	}
+	return 0
+}
+
+func (x *BatchSendToEthClaimComponents) GetTokenContract() string {
+	if x != nil {
+		return x.TokenContract
+	}
+	return ""
+}
+
+// Components used in MsgERC20DeployedClaim.ClaimHash()
+type ERC20DeployedClaimComponents struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	CosmosDenom    string `protobuf:"bytes,3,opt,name=cosmos_denom,json=cosmosDenom,proto3" json:"cosmos_denom,omitempty"`
+	TokenContract  string `protobuf:"bytes,4,opt,name=token_contract,json=tokenContract,proto3" json:"token_contract,omitempty"`
+	Name           string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
+	Symbol         string `protobuf:"bytes,6,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Decimals       uint64 `protobuf:"varint,7,opt,name=decimals,proto3" json:"decimals,omitempty"`
+}
+
+func (x *ERC20DeployedClaimComponents) Reset() {
+	*x = ERC20DeployedClaimComponents{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v1_attestation_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ERC20DeployedClaimComponents) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ERC20DeployedClaimComponents) ProtoMessage() {}
+
+// Deprecated: Use ERC20DeployedClaimComponents.ProtoReflect.Descriptor instead.
+func (*ERC20DeployedClaimComponents) Descriptor() ([]byte, []int) {
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ERC20DeployedClaimComponents) GetEventNonce() uint64 {
+	if x != nil {
+		return x.EventNonce
+	}
+	return 0
+}
+
+func (x *ERC20DeployedClaimComponents) GetEthBlockHeight() uint64 {
+	if x != nil {
+		return x.EthBlockHeight
+	}
+	return 0
+}
+
+func (x *ERC20DeployedClaimComponents) GetCosmosDenom() string {
+	if x != nil {
+		return x.CosmosDenom
+	}
+	return ""
+}
+
+func (x *ERC20DeployedClaimComponents) GetTokenContract() string {
+	if x != nil {
+		return x.TokenContract
+	}
+	return ""
+}
+
+func (x *ERC20DeployedClaimComponents) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ERC20DeployedClaimComponents) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *ERC20DeployedClaimComponents) GetDecimals() uint64 {
+	if x != nil {
+		return x.Decimals
+	}
+	return 0
+}
+
+// Components used in MsgLogicCallExecutedClaim.ClaimHash()
+type LogicCallExecutedClaimComponents struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	EventNonce        uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	EthBlockHeight    uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	InvalidationId    []byte `protobuf:"bytes,3,opt,name=invalidation_id,json=invalidationId,proto3" json:"invalidation_id,omitempty"` // Raw bytes; formatted with %s during reconstruction
+	InvalidationNonce uint64 `protobuf:"varint,4,opt,name=invalidation_nonce,json=invalidationNonce,proto3" json:"invalidation_nonce,omitempty"`
+}
+
+func (x *LogicCallExecutedClaimComponents) Reset() {
+	*x = LogicCallExecutedClaimComponents{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v1_attestation_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LogicCallExecutedClaimComponents) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogicCallExecutedClaimComponents) ProtoMessage() {}
+
+// Deprecated: Use LogicCallExecutedClaimComponents.ProtoReflect.Descriptor instead.
+func (*LogicCallExecutedClaimComponents) Descriptor() ([]byte, []int) {
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *LogicCallExecutedClaimComponents) GetEventNonce() uint64 {
+	if x != nil {
+		return x.EventNonce
+	}
+	return 0
+}
+
+func (x *LogicCallExecutedClaimComponents) GetEthBlockHeight() uint64 {
+	if x != nil {
+		return x.EthBlockHeight
+	}
+	return 0
+}
+
+func (x *LogicCallExecutedClaimComponents) GetInvalidationId() []byte {
+	if x != nil {
+		return x.InvalidationId
+	}
+	return nil
+}
+
+func (x *LogicCallExecutedClaimComponents) GetInvalidationNonce() uint64 {
+	if x != nil {
+		return x.InvalidationNonce
+	}
+	return 0
+}
+
+// Components used in MsgValsetUpdatedClaim.ClaimHash()
+// Note: members MUST be sorted before hashing, mirroring the existing claim logic.
+type ValsetUpdatedClaimComponents struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	EventNonce     uint64             `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
+	ValsetNonce    uint64             `protobuf:"varint,2,opt,name=valset_nonce,json=valsetNonce,proto3" json:"valset_nonce,omitempty"`
+	EthBlockHeight uint64             `protobuf:"varint,3,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
+	Members        []*BridgeValidator `protobuf:"bytes,4,rep,name=members,proto3" json:"members,omitempty"`
+	RewardAmount   string             `protobuf:"bytes,5,opt,name=reward_amount,json=rewardAmount,proto3" json:"reward_amount,omitempty"` // Must be sdkmath.Int.String()
+	RewardToken    string             `protobuf:"bytes,6,opt,name=reward_token,json=rewardToken,proto3" json:"reward_token,omitempty"`
+}
+
+func (x *ValsetUpdatedClaimComponents) Reset() {
+	*x = ValsetUpdatedClaimComponents{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v1_attestation_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ValsetUpdatedClaimComponents) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValsetUpdatedClaimComponents) ProtoMessage() {}
+
+// Deprecated: Use ValsetUpdatedClaimComponents.ProtoReflect.Descriptor instead.
+func (*ValsetUpdatedClaimComponents) Descriptor() ([]byte, []int) {
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ValsetUpdatedClaimComponents) GetEventNonce() uint64 {
+	if x != nil {
+		return x.EventNonce
+	}
+	return 0
+}
+
+func (x *ValsetUpdatedClaimComponents) GetValsetNonce() uint64 {
+	if x != nil {
+		return x.ValsetNonce
+	}
+	return 0
+}
+
+func (x *ValsetUpdatedClaimComponents) GetEthBlockHeight() uint64 {
+	if x != nil {
+		return x.EthBlockHeight
+	}
+	return 0
+}
+
+func (x *ValsetUpdatedClaimComponents) GetMembers() []*BridgeValidator {
+	if x != nil {
+		return x.Members
+	}
+	return nil
+}
+
+func (x *ValsetUpdatedClaimComponents) GetRewardAmount() string {
+	if x != nil {
+		return x.RewardAmount
+	}
+	return ""
+}
+
+func (x *ValsetUpdatedClaimComponents) GetRewardToken() string {
+	if x != nil {
+		return x.RewardToken
+	}
+	return ""
+}
+
+// A discriminated union holding exactly the components for one claim type
+type ClaimHashComponents struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to Components:
+	//
+	//	*ClaimHashComponents_SendToCosmos
+	//	*ClaimHashComponents_BatchSendToEth
+	//	*ClaimHashComponents_Erc20Deployed
+	//	*ClaimHashComponents_LogicCallExecuted
+	//	*ClaimHashComponents_ValsetUpdated
+	Components isClaimHashComponents_Components `protobuf_oneof:"components"`
+}
+
+func (x *ClaimHashComponents) Reset() {
+	*x = ClaimHashComponents{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v1_attestation_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ClaimHashComponents) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClaimHashComponents) ProtoMessage() {}
+
+// Deprecated: Use ClaimHashComponents.ProtoReflect.Descriptor instead.
+func (*ClaimHashComponents) Descriptor() ([]byte, []int) {
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ClaimHashComponents) GetComponents() isClaimHashComponents_Components {
+	if x != nil {
+		return x.Components
+	}
+	return nil
+}
+
+func (x *ClaimHashComponents) GetSendToCosmos() *SendToCosmosClaimComponents {
+	if x, ok := x.GetComponents().(*ClaimHashComponents_SendToCosmos); ok {
+		return x.SendToCosmos
+	}
+	return nil
+}
+
+func (x *ClaimHashComponents) GetBatchSendToEth() *BatchSendToEthClaimComponents {
+	if x, ok := x.GetComponents().(*ClaimHashComponents_BatchSendToEth); ok {
+		return x.BatchSendToEth
+	}
+	return nil
+}
+
+func (x *ClaimHashComponents) GetErc20Deployed() *ERC20DeployedClaimComponents {
+	if x, ok := x.GetComponents().(*ClaimHashComponents_Erc20Deployed); ok {
+		return x.Erc20Deployed
+	}
+	return nil
+}
+
+func (x *ClaimHashComponents) GetLogicCallExecuted() *LogicCallExecutedClaimComponents {
+	if x, ok := x.GetComponents().(*ClaimHashComponents_LogicCallExecuted); ok {
+		return x.LogicCallExecuted
+	}
+	return nil
+}
+
+func (x *ClaimHashComponents) GetValsetUpdated() *ValsetUpdatedClaimComponents {
+	if x, ok := x.GetComponents().(*ClaimHashComponents_ValsetUpdated); ok {
+		return x.ValsetUpdated
+	}
+	return nil
+}
+
+type isClaimHashComponents_Components interface {
+	isClaimHashComponents_Components()
+}
+
+type ClaimHashComponents_SendToCosmos struct {
+	SendToCosmos *SendToCosmosClaimComponents `protobuf:"bytes,1,opt,name=send_to_cosmos,json=sendToCosmos,proto3,oneof"`
+}
+
+type ClaimHashComponents_BatchSendToEth struct {
+	BatchSendToEth *BatchSendToEthClaimComponents `protobuf:"bytes,2,opt,name=batch_send_to_eth,json=batchSendToEth,proto3,oneof"`
+}
+
+type ClaimHashComponents_Erc20Deployed struct {
+	Erc20Deployed *ERC20DeployedClaimComponents `protobuf:"bytes,3,opt,name=erc20_deployed,json=erc20Deployed,proto3,oneof"`
+}
+
+type ClaimHashComponents_LogicCallExecuted struct {
+	LogicCallExecuted *LogicCallExecutedClaimComponents `protobuf:"bytes,4,opt,name=logic_call_executed,json=logicCallExecuted,proto3,oneof"`
+}
+
+type ClaimHashComponents_ValsetUpdated struct {
+	ValsetUpdated *ValsetUpdatedClaimComponents `protobuf:"bytes,5,opt,name=valset_updated,json=valsetUpdated,proto3,oneof"`
+}
+
+func (*ClaimHashComponents_SendToCosmos) isClaimHashComponents_Components() {}
+
+func (*ClaimHashComponents_BatchSendToEth) isClaimHashComponents_Components() {}
+
+func (*ClaimHashComponents_Erc20Deployed) isClaimHashComponents_Components() {}
+
+func (*ClaimHashComponents_LogicCallExecuted) isClaimHashComponents_Components() {}
+
+func (*ClaimHashComponents_ValsetUpdated) isClaimHashComponents_Components() {}
+
 // Attestation is an aggregate of `claims` that eventually becomes `observed` by
 // all orchestrators
 // EVENT_NONCE:
@@ -5175,27 +10021,23 @@ func (ClaimType) EnumDescriptor() ([]byte, []int) {
 // OBSERVED:
 // Observed indicates that >67% of validators have attested to the event,
 // and that the event should be executed by the gravity state machine
-//
-// The actual content of the claims is passed in with the transaction making the
-// claim and then passed through the call stack alongside the attestation while
-// it is processed the key in which the attestation is stored is keyed on the
-// exact details of the claim but there is no reason to store those exact
-// details becuause the next message sender will kindly provide you with them.
 type Attestation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Observed bool       `protobuf:"varint,1,opt,name=observed,proto3" json:"observed,omitempty"`
-	Votes    []string   `protobuf:"bytes,2,rep,name=votes,proto3" json:"votes,omitempty"`
-	Height   uint64     `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
-	Claim    *anypb.Any `protobuf:"bytes,4,opt,name=claim,proto3" json:"claim,omitempty"`
+	Observed        bool                 `protobuf:"varint,1,opt,name=observed,proto3" json:"observed,omitempty"`
+	Votes           []string             `protobuf:"bytes,2,rep,name=votes,proto3" json:"votes,omitempty"`
+	Height          uint64               `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Claim           *anypb.Any           `protobuf:"bytes,4,opt,name=claim,proto3" json:"claim,omitempty"`
+	ClaimType       ClaimType            `protobuf:"varint,5,opt,name=claim_type,json=claimType,proto3,enum=gravity.v1.ClaimType" json:"claim_type,omitempty"`
+	ClaimComponents *ClaimHashComponents `protobuf:"bytes,6,opt,name=claim_components,json=claimComponents,proto3" json:"claim_components,omitempty"`
 }
 
 func (x *Attestation) Reset() {
 	*x = Attestation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_attestation_proto_msgTypes[0]
+		mi := &file_gravity_v1_attestation_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5209,7 +10051,7 @@ func (*Attestation) ProtoMessage() {}
 
 // Deprecated: Use Attestation.ProtoReflect.Descriptor instead.
 func (*Attestation) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{0}
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Attestation) GetObserved() bool {
@@ -5240,6 +10082,20 @@ func (x *Attestation) GetClaim() *anypb.Any {
 	return nil
 }
 
+func (x *Attestation) GetClaimType() ClaimType {
+	if x != nil {
+		return x.ClaimType
+	}
+	return ClaimType_CLAIM_TYPE_UNSPECIFIED
+}
+
+func (x *Attestation) GetClaimComponents() *ClaimHashComponents {
+	if x != nil {
+		return x.ClaimComponents
+	}
+	return nil
+}
+
 // ERC20Token unique identifier for an Ethereum ERC20 token.
 // CONTRACT:
 // The contract address on ETH of the token, this could be a Cosmos
@@ -5258,7 +10114,7 @@ type ERC20Token struct {
 func (x *ERC20Token) Reset() {
 	*x = ERC20Token{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_attestation_proto_msgTypes[1]
+		mi := &file_gravity_v1_attestation_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5272,7 +10128,7 @@ func (*ERC20Token) ProtoMessage() {}
 
 // Deprecated: Use ERC20Token.ProtoReflect.Descriptor instead.
 func (*ERC20Token) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{1}
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ERC20Token) GetContract() string {
@@ -5304,7 +10160,7 @@ type EventObservation struct {
 func (x *EventObservation) Reset() {
 	*x = EventObservation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_attestation_proto_msgTypes[2]
+		mi := &file_gravity_v1_attestation_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5318,7 +10174,7 @@ func (*EventObservation) ProtoMessage() {}
 
 // Deprecated: Use EventObservation.ProtoReflect.Descriptor instead.
 func (*EventObservation) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{2}
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *EventObservation) GetAttestationType() string {
@@ -5370,7 +10226,7 @@ type EventInvalidSendToCosmosReceiver struct {
 func (x *EventInvalidSendToCosmosReceiver) Reset() {
 	*x = EventInvalidSendToCosmosReceiver{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_attestation_proto_msgTypes[3]
+		mi := &file_gravity_v1_attestation_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5384,7 +10240,7 @@ func (*EventInvalidSendToCosmosReceiver) ProtoMessage() {}
 
 // Deprecated: Use EventInvalidSendToCosmosReceiver.ProtoReflect.Descriptor instead.
 func (*EventInvalidSendToCosmosReceiver) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{3}
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *EventInvalidSendToCosmosReceiver) GetAmount() string {
@@ -5428,7 +10284,7 @@ type EventSendToCosmos struct {
 func (x *EventSendToCosmos) Reset() {
 	*x = EventSendToCosmos{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_attestation_proto_msgTypes[4]
+		mi := &file_gravity_v1_attestation_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5442,7 +10298,7 @@ func (*EventSendToCosmos) ProtoMessage() {}
 
 // Deprecated: Use EventSendToCosmos.ProtoReflect.Descriptor instead.
 func (*EventSendToCosmos) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{4}
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *EventSendToCosmos) GetAmount() string {
@@ -5480,7 +10336,7 @@ type EventSendToCosmosLocal struct {
 func (x *EventSendToCosmosLocal) Reset() {
 	*x = EventSendToCosmosLocal{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_attestation_proto_msgTypes[5]
+		mi := &file_gravity_v1_attestation_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5494,7 +10350,7 @@ func (*EventSendToCosmosLocal) ProtoMessage() {}
 
 // Deprecated: Use EventSendToCosmosLocal.ProtoReflect.Descriptor instead.
 func (*EventSendToCosmosLocal) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{5}
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *EventSendToCosmosLocal) GetNonce() string {
@@ -5540,7 +10396,7 @@ type EventSendToCosmosPendingIbcAutoForward struct {
 func (x *EventSendToCosmosPendingIbcAutoForward) Reset() {
 	*x = EventSendToCosmosPendingIbcAutoForward{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_attestation_proto_msgTypes[6]
+		mi := &file_gravity_v1_attestation_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5554,7 +10410,7 @@ func (*EventSendToCosmosPendingIbcAutoForward) ProtoMessage() {}
 
 // Deprecated: Use EventSendToCosmosPendingIbcAutoForward.ProtoReflect.Descriptor instead.
 func (*EventSendToCosmosPendingIbcAutoForward) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{6}
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *EventSendToCosmosPendingIbcAutoForward) GetNonce() string {
@@ -5609,7 +10465,7 @@ type EventSendToCosmosExecutedIbcAutoForward struct {
 func (x *EventSendToCosmosExecutedIbcAutoForward) Reset() {
 	*x = EventSendToCosmosExecutedIbcAutoForward{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_attestation_proto_msgTypes[7]
+		mi := &file_gravity_v1_attestation_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5623,7 +10479,7 @@ func (*EventSendToCosmosExecutedIbcAutoForward) ProtoMessage() {}
 
 // Deprecated: Use EventSendToCosmosExecutedIbcAutoForward.ProtoReflect.Descriptor instead.
 func (*EventSendToCosmosExecutedIbcAutoForward) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{7}
+	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *EventSendToCosmosExecutedIbcAutoForward) GetNonce() string {
@@ -5683,57 +10539,179 @@ var file_gravity_v1_attestation_proto_rawDesc = []byte{
 	0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x1a, 0x19, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
-	0x66, 0x2f, 0x61, 0x6e, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x83, 0x01, 0x0a, 0x0b,
-	0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x6f,
-	0x62, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08, 0x6f,
-	0x62, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73,
-	0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x12, 0x16, 0x0a,
-	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x68,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2a, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x41, 0x6e, 0x79, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69,
-	0x6d, 0x22, 0x5f, 0x0a, 0x0a, 0x45, 0x52, 0x43, 0x32, 0x30, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12,
-	0x1a, 0x0a, 0x08, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x08, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x12, 0x35, 0x0a, 0x06, 0x61,
-	0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x1d, 0xc8, 0xde, 0x1f,
-	0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
-	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75,
-	0x6e, 0x74, 0x22, 0xcb, 0x01, 0x0a, 0x10, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x62, 0x73, 0x65,
-	0x72, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x29, 0x0a, 0x10, 0x61, 0x74, 0x74, 0x65, 0x73,
-	0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0f, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x79,
-	0x70, 0x65, 0x12, 0x27, 0x0a, 0x0f, 0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x5f, 0x63, 0x6f, 0x6e,
-	0x74, 0x72, 0x61, 0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x62, 0x72, 0x69,
-	0x64, 0x67, 0x65, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x12, 0x26, 0x0a, 0x0f, 0x62,
-	0x72, 0x69, 0x64, 0x67, 0x65, 0x5f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x43, 0x68, 0x61, 0x69,
-	0x6e, 0x49, 0x64, 0x12, 0x25, 0x0a, 0x0e, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x61, 0x74, 0x74,
-	0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f,
-	0x6e, 0x63, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65,
-	0x22, 0x7e, 0x0a, 0x20, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x49, 0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64,
-	0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x52, 0x65, 0x63, 0x65,
-	0x69, 0x76, 0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05,
-	0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f, 0x6e,
-	0x63, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64,
-	0x65, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72,
-	0x22, 0x57, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x43,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x14, 0x0a,
-	0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f,
-	0x6e, 0x63, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x78, 0x0a, 0x16, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x4c, 0x6f,
-	0x63, 0x61, 0x6c, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x63,
-	0x65, 0x69, 0x76, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65, 0x63,
-	0x65, 0x69, 0x76, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x61,
-	0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f,
-	0x75, 0x6e, 0x74, 0x22, 0xa2, 0x01, 0x0a, 0x26, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x6e,
-	0x64, 0x54, 0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x66, 0x2f, 0x61, 0x6e, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x16, 0x67, 0x72, 0x61,
+	0x76, 0x69, 0x74, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x22, 0xf9, 0x01, 0x0a, 0x1b, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x43, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65,
+	0x6e, 0x74, 0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x6e, 0x6f, 0x6e,
+	0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x4e,
+	0x6f, 0x6e, 0x63, 0x65, 0x12, 0x28, 0x0a, 0x10, 0x65, 0x74, 0x68, 0x5f, 0x62, 0x6c, 0x6f, 0x63,
+	0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0e,
+	0x65, 0x74, 0x68, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x25,
+	0x0a, 0x0e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x43, 0x6f, 0x6e,
+	0x74, 0x72, 0x61, 0x63, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x27, 0x0a,
+	0x0f, 0x65, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x5f, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x65, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d,
+	0x53, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x27, 0x0a, 0x0f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x5f, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x52, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x22,
+	0xb2, 0x01, 0x0a, 0x1d, 0x42, 0x61, 0x74, 0x63, 0x68, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x45,
+	0x74, 0x68, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
+	0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x6e, 0x6f, 0x6e, 0x63, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x6e,
+	0x63, 0x65, 0x12, 0x28, 0x0a, 0x10, 0x65, 0x74, 0x68, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0e, 0x65, 0x74,
+	0x68, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x1f, 0x0a, 0x0b,
+	0x62, 0x61, 0x74, 0x63, 0x68, 0x5f, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x0a, 0x62, 0x61, 0x74, 0x63, 0x68, 0x4e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x25, 0x0a,
+	0x0e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x43, 0x6f, 0x6e, 0x74,
+	0x72, 0x61, 0x63, 0x74, 0x22, 0xfb, 0x01, 0x0a, 0x1c, 0x45, 0x52, 0x43, 0x32, 0x30, 0x44, 0x65,
+	0x70, 0x6c, 0x6f, 0x79, 0x65, 0x64, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f,
+	0x6e, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x6e,
+	0x6f, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x65, 0x76, 0x65, 0x6e,
+	0x74, 0x4e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x28, 0x0a, 0x10, 0x65, 0x74, 0x68, 0x5f, 0x62, 0x6c,
+	0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x0e, 0x65, 0x74, 0x68, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x12, 0x21, 0x0a, 0x0c, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x44, 0x65,
+	0x6e, 0x6f, 0x6d, 0x12, 0x25, 0x0a, 0x0e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x63, 0x6f, 0x6e,
+	0x74, 0x72, 0x61, 0x63, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x74, 0x6f, 0x6b,
+	0x65, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
+	0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x16,
+	0x0a, 0x06, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06,
+	0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65, 0x63, 0x69, 0x6d, 0x61,
+	0x6c, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x65, 0x63, 0x69, 0x6d, 0x61,
+	0x6c, 0x73, 0x22, 0xc5, 0x01, 0x0a, 0x20, 0x4c, 0x6f, 0x67, 0x69, 0x63, 0x43, 0x61, 0x6c, 0x6c,
+	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x64, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d,
+	0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x65, 0x76, 0x65, 0x6e, 0x74,
+	0x5f, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x65, 0x76,
+	0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x28, 0x0a, 0x10, 0x65, 0x74, 0x68, 0x5f,
+	0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x0e, 0x65, 0x74, 0x68, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x12, 0x27, 0x0a, 0x0f, 0x69, 0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0e, 0x69, 0x6e, 0x76,
+	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x2d, 0x0a, 0x12, 0x69,
+	0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6e, 0x6f, 0x6e, 0x63,
+	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x11, 0x69, 0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4e, 0x6f, 0x6e, 0x63, 0x65, 0x22, 0x91, 0x02, 0x0a, 0x1c, 0x56,
+	0x61, 0x6c, 0x73, 0x65, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x43, 0x6c, 0x61, 0x69,
+	0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x65,
+	0x76, 0x65, 0x6e, 0x74, 0x5f, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x21, 0x0a, 0x0c,
+	0x76, 0x61, 0x6c, 0x73, 0x65, 0x74, 0x5f, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x0b, 0x76, 0x61, 0x6c, 0x73, 0x65, 0x74, 0x4e, 0x6f, 0x6e, 0x63, 0x65, 0x12,
+	0x28, 0x0a, 0x10, 0x65, 0x74, 0x68, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0e, 0x65, 0x74, 0x68, 0x42, 0x6c,
+	0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x3b, 0x0a, 0x07, 0x6d, 0x65, 0x6d,
+	0x62, 0x65, 0x72, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x67, 0x72, 0x61,
+	0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x56, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x07, 0x6d,
+	0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64,
+	0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x72,
+	0x65, 0x77, 0x61, 0x72, 0x64, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x72,
+	0x65, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0b, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0xd2,
+	0x03, 0x0a, 0x13, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x48, 0x61, 0x73, 0x68, 0x43, 0x6f, 0x6d, 0x70,
+	0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x4f, 0x0a, 0x0e, 0x73, 0x65, 0x6e, 0x64, 0x5f, 0x74,
+	0x6f, 0x5f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27,
+	0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x6e, 0x64,
+	0x54, 0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d,
+	0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x48, 0x00, 0x52, 0x0c, 0x73, 0x65, 0x6e, 0x64, 0x54,
+	0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x12, 0x56, 0x0a, 0x11, 0x62, 0x61, 0x74, 0x63, 0x68,
+	0x5f, 0x73, 0x65, 0x6e, 0x64, 0x5f, 0x74, 0x6f, 0x5f, 0x65, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x29, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e,
+	0x42, 0x61, 0x74, 0x63, 0x68, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x45, 0x74, 0x68, 0x43, 0x6c,
+	0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x48, 0x00, 0x52,
+	0x0e, 0x62, 0x61, 0x74, 0x63, 0x68, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x45, 0x74, 0x68, 0x12,
+	0x51, 0x0a, 0x0e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x5f, 0x64, 0x65, 0x70, 0x6c, 0x6f, 0x79, 0x65,
+	0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74,
+	0x79, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x52, 0x43, 0x32, 0x30, 0x44, 0x65, 0x70, 0x6c, 0x6f, 0x79,
+	0x65, 0x64, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
+	0x73, 0x48, 0x00, 0x52, 0x0d, 0x65, 0x72, 0x63, 0x32, 0x30, 0x44, 0x65, 0x70, 0x6c, 0x6f, 0x79,
+	0x65, 0x64, 0x12, 0x5e, 0x0a, 0x13, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x5f, 0x63, 0x61, 0x6c, 0x6c,
+	0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x2c, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x6f, 0x67,
+	0x69, 0x63, 0x43, 0x61, 0x6c, 0x6c, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x64, 0x43, 0x6c,
+	0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x48, 0x00, 0x52,
+	0x11, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x43, 0x61, 0x6c, 0x6c, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74,
+	0x65, 0x64, 0x12, 0x51, 0x0a, 0x0e, 0x76, 0x61, 0x6c, 0x73, 0x65, 0x74, 0x5f, 0x75, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x67, 0x72, 0x61,
+	0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x61, 0x6c, 0x73, 0x65, 0x74, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x64, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e,
+	0x65, 0x6e, 0x74, 0x73, 0x48, 0x00, 0x52, 0x0d, 0x76, 0x61, 0x6c, 0x73, 0x65, 0x74, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x64, 0x42, 0x0c, 0x0a, 0x0a, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65,
+	0x6e, 0x74, 0x73, 0x22, 0x85, 0x02, 0x0a, 0x0b, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x6f, 0x62, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08, 0x6f, 0x62, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x12,
+	0x14, 0x0a, 0x05, 0x76, 0x6f, 0x74, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x05,
+	0x76, 0x6f, 0x74, 0x65, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2a, 0x0a,
+	0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x41,
+	0x6e, 0x79, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x34, 0x0a, 0x0a, 0x63, 0x6c, 0x61,
+	0x69, 0x6d, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x15, 0x2e,
+	0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d,
+	0x54, 0x79, 0x70, 0x65, 0x52, 0x09, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x54, 0x79, 0x70, 0x65, 0x12,
+	0x4a, 0x0a, 0x10, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65,
+	0x6e, 0x74, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x67, 0x72, 0x61, 0x76,
+	0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x48, 0x61, 0x73, 0x68,
+	0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x0f, 0x63, 0x6c, 0x61, 0x69,
+	0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x22, 0x5f, 0x0a, 0x0a, 0x45,
+	0x52, 0x43, 0x32, 0x30, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x6f, 0x6e,
+	0x74, 0x72, 0x61, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x63, 0x6f, 0x6e,
+	0x74, 0x72, 0x61, 0x63, 0x74, 0x12, 0x35, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x1d, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
+	0x2e, 0x49, 0x6e, 0x74, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0xcb, 0x01, 0x0a,
+	0x10, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x62, 0x73, 0x65, 0x72, 0x76, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x12, 0x29, 0x0a, 0x10, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x61, 0x74, 0x74,
+	0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x12, 0x27, 0x0a, 0x0f,
+	0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x43, 0x6f, 0x6e,
+	0x74, 0x72, 0x61, 0x63, 0x74, 0x12, 0x26, 0x0a, 0x0f, 0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x5f,
+	0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d,
+	0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x25, 0x0a,
+	0x0e, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x49, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x22, 0x7e, 0x0a, 0x20, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x49, 0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f,
+	0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x52, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x12, 0x16,
+	0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06,
+	0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x14, 0x0a, 0x05,
+	0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b,
+	0x65, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x22, 0x57, 0x0a, 0x11, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x12,
+	0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x14, 0x0a,
+	0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f,
+	0x6b, 0x65, 0x6e, 0x22, 0x78, 0x0a, 0x16, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x6e, 0x64,
+	0x54, 0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x12, 0x14, 0x0a,
+	0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f,
+	0x6e, 0x63, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x12,
+	0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
+	0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0xa2, 0x01,
+	0x0a, 0x26, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x43, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x49, 0x62, 0x63, 0x41, 0x75, 0x74,
+	0x6f, 0x46, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x1a,
+	0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f,
+	0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
+	0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x6e,
+	0x6e, 0x65, 0x6c, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e,
+	0x65, 0x6c, 0x22, 0xed, 0x01, 0x0a, 0x27, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x6e, 0x64,
+	0x54, 0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x64,
 	0x49, 0x62, 0x63, 0x41, 0x75, 0x74, 0x6f, 0x46, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x12, 0x14,
 	0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6e,
 	0x6f, 0x6e, 0x63, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72,
@@ -5742,45 +10720,35 @@ var file_gravity_v1_attestation_proto_rawDesc = []byte{
 	0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
 	0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x18,
 	0x0a, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x22, 0xed, 0x01, 0x0a, 0x27, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x6f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x45, 0x78,
-	0x65, 0x63, 0x75, 0x74, 0x65, 0x64, 0x49, 0x62, 0x63, 0x41, 0x75, 0x74, 0x6f, 0x46, 0x6f, 0x72,
-	0x77, 0x61, 0x72, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65,
-	0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65,
-	0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x16, 0x0a, 0x06,
-	0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6d,
-	0x6f, 0x75, 0x6e, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x18,
-	0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x12, 0x21,
-	0x0a, 0x0c, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x06,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x54, 0x69, 0x6d,
-	0x65, 0x12, 0x25, 0x0a, 0x0e, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x5f, 0x68, 0x65, 0x69,
-	0x67, 0x68, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x74, 0x69, 0x6d, 0x65, 0x6f,
-	0x75, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x2a, 0xd0, 0x01, 0x0a, 0x09, 0x43, 0x6c, 0x61,
-	0x69, 0x6d, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1a, 0x0a, 0x16, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f,
-	0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44,
-	0x10, 0x00, 0x12, 0x1d, 0x0a, 0x19, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45,
-	0x5f, 0x53, 0x45, 0x4e, 0x44, 0x5f, 0x54, 0x4f, 0x5f, 0x43, 0x4f, 0x53, 0x4d, 0x4f, 0x53, 0x10,
-	0x01, 0x12, 0x20, 0x0a, 0x1c, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f,
-	0x42, 0x41, 0x54, 0x43, 0x48, 0x5f, 0x53, 0x45, 0x4e, 0x44, 0x5f, 0x54, 0x4f, 0x5f, 0x45, 0x54,
-	0x48, 0x10, 0x02, 0x12, 0x1d, 0x0a, 0x19, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50,
-	0x45, 0x5f, 0x45, 0x52, 0x43, 0x32, 0x30, 0x5f, 0x44, 0x45, 0x50, 0x4c, 0x4f, 0x59, 0x45, 0x44,
-	0x10, 0x03, 0x12, 0x22, 0x0a, 0x1e, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45,
-	0x5f, 0x4c, 0x4f, 0x47, 0x49, 0x43, 0x5f, 0x43, 0x41, 0x4c, 0x4c, 0x5f, 0x45, 0x58, 0x45, 0x43,
-	0x55, 0x54, 0x45, 0x44, 0x10, 0x04, 0x12, 0x1d, 0x0a, 0x19, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f,
-	0x54, 0x59, 0x50, 0x45, 0x5f, 0x56, 0x41, 0x4c, 0x53, 0x45, 0x54, 0x5f, 0x55, 0x50, 0x44, 0x41,
-	0x54, 0x45, 0x44, 0x10, 0x05, 0x1a, 0x04, 0x88, 0xa3, 0x1e, 0x00, 0x42, 0x92, 0x01, 0x0a, 0x0e,
-	0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x10,
-	0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2f, 0x76, 0x31, 0x3b,
-	0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x47, 0x58, 0x58, 0xaa,
-	0x02, 0x0a, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0a, 0x47,
-	0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x16, 0x47, 0x72, 0x61, 0x76,
-	0x69, 0x74, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
-	0x74, 0x61, 0xea, 0x02, 0x0b, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x3a, 0x3a, 0x56, 0x31,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x12, 0x21, 0x0a, 0x0c, 0x74, 0x69, 0x6d, 0x65,
+	0x6f, 0x75, 0x74, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
+	0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x25, 0x0a, 0x0e, 0x74,
+	0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x07, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x0d, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x48, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x2a, 0xd0, 0x01, 0x0a, 0x09, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x54, 0x79, 0x70, 0x65,
+	0x12, 0x1a, 0x0a, 0x16, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55,
+	0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x1d, 0x0a, 0x19,
+	0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x53, 0x45, 0x4e, 0x44, 0x5f,
+	0x54, 0x4f, 0x5f, 0x43, 0x4f, 0x53, 0x4d, 0x4f, 0x53, 0x10, 0x01, 0x12, 0x20, 0x0a, 0x1c, 0x43,
+	0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x42, 0x41, 0x54, 0x43, 0x48, 0x5f,
+	0x53, 0x45, 0x4e, 0x44, 0x5f, 0x54, 0x4f, 0x5f, 0x45, 0x54, 0x48, 0x10, 0x02, 0x12, 0x1d, 0x0a,
+	0x19, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x45, 0x52, 0x43, 0x32,
+	0x30, 0x5f, 0x44, 0x45, 0x50, 0x4c, 0x4f, 0x59, 0x45, 0x44, 0x10, 0x03, 0x12, 0x22, 0x0a, 0x1e,
+	0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x4c, 0x4f, 0x47, 0x49, 0x43,
+	0x5f, 0x43, 0x41, 0x4c, 0x4c, 0x5f, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x45, 0x44, 0x10, 0x04,
+	0x12, 0x1d, 0x0a, 0x19, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x56,
+	0x41, 0x4c, 0x53, 0x45, 0x54, 0x5f, 0x55, 0x50, 0x44, 0x41, 0x54, 0x45, 0x44, 0x10, 0x05, 0x1a,
+	0x04, 0x88, 0xa3, 0x1e, 0x00, 0x42, 0x92, 0x01, 0x0a, 0x0e, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x72,
+	0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x10, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67,
+	0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74,
+	0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x47, 0x58, 0x58, 0xaa, 0x02, 0x0a, 0x47, 0x72, 0x61, 0x76,
+	0x69, 0x74, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0a, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79,
+	0x5c, 0x56, 0x31, 0xe2, 0x02, 0x16, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x31,
+	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0b, 0x47,
+	0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -5796,26 +10764,41 @@ func file_gravity_v1_attestation_proto_rawDescGZIP() []byte {
 }
 
 var file_gravity_v1_attestation_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_gravity_v1_attestation_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_gravity_v1_attestation_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_gravity_v1_attestation_proto_goTypes = []interface{}{
 	(ClaimType)(0),                                  // 0: gravity.v1.ClaimType
-	(*Attestation)(nil),                             // 1: gravity.v1.Attestation
-	(*ERC20Token)(nil),                              // 2: gravity.v1.ERC20Token
-	(*EventObservation)(nil),                        // 3: gravity.v1.EventObservation
-	(*EventInvalidSendToCosmosReceiver)(nil),        // 4: gravity.v1.EventInvalidSendToCosmosReceiver
-	(*EventSendToCosmos)(nil),                       // 5: gravity.v1.EventSendToCosmos
-	(*EventSendToCosmosLocal)(nil),                  // 6: gravity.v1.EventSendToCosmosLocal
-	(*EventSendToCosmosPendingIbcAutoForward)(nil),  // 7: gravity.v1.EventSendToCosmosPendingIbcAutoForward
-	(*EventSendToCosmosExecutedIbcAutoForward)(nil), // 8: gravity.v1.EventSendToCosmosExecutedIbcAutoForward
-	(*anypb.Any)(nil),                               // 9: google.protobuf.Any
+	(*SendToCosmosClaimComponents)(nil),             // 1: gravity.v1.SendToCosmosClaimComponents
+	(*BatchSendToEthClaimComponents)(nil),           // 2: gravity.v1.BatchSendToEthClaimComponents
+	(*ERC20DeployedClaimComponents)(nil),            // 3: gravity.v1.ERC20DeployedClaimComponents
+	(*LogicCallExecutedClaimComponents)(nil),        // 4: gravity.v1.LogicCallExecutedClaimComponents
+	(*ValsetUpdatedClaimComponents)(nil),            // 5: gravity.v1.ValsetUpdatedClaimComponents
+	(*ClaimHashComponents)(nil),                     // 6: gravity.v1.ClaimHashComponents
+	(*Attestation)(nil),                             // 7: gravity.v1.Attestation
+	(*ERC20Token)(nil),                              // 8: gravity.v1.ERC20Token
+	(*EventObservation)(nil),                        // 9: gravity.v1.EventObservation
+	(*EventInvalidSendToCosmosReceiver)(nil),        // 10: gravity.v1.EventInvalidSendToCosmosReceiver
+	(*EventSendToCosmos)(nil),                       // 11: gravity.v1.EventSendToCosmos
+	(*EventSendToCosmosLocal)(nil),                  // 12: gravity.v1.EventSendToCosmosLocal
+	(*EventSendToCosmosPendingIbcAutoForward)(nil),  // 13: gravity.v1.EventSendToCosmosPendingIbcAutoForward
+	(*EventSendToCosmosExecutedIbcAutoForward)(nil), // 14: gravity.v1.EventSendToCosmosExecutedIbcAutoForward
+	(*BridgeValidator)(nil),                         // 15: gravity.v1.BridgeValidator
+	(*anypb.Any)(nil),                               // 16: google.protobuf.Any
 }
 var file_gravity_v1_attestation_proto_depIdxs = []int32{
-	9, // 0: gravity.v1.Attestation.claim:type_name -> google.protobuf.Any
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	15, // 0: gravity.v1.ValsetUpdatedClaimComponents.members:type_name -> gravity.v1.BridgeValidator
+	1,  // 1: gravity.v1.ClaimHashComponents.send_to_cosmos:type_name -> gravity.v1.SendToCosmosClaimComponents
+	2,  // 2: gravity.v1.ClaimHashComponents.batch_send_to_eth:type_name -> gravity.v1.BatchSendToEthClaimComponents
+	3,  // 3: gravity.v1.ClaimHashComponents.erc20_deployed:type_name -> gravity.v1.ERC20DeployedClaimComponents
+	4,  // 4: gravity.v1.ClaimHashComponents.logic_call_executed:type_name -> gravity.v1.LogicCallExecutedClaimComponents
+	5,  // 5: gravity.v1.ClaimHashComponents.valset_updated:type_name -> gravity.v1.ValsetUpdatedClaimComponents
+	16, // 6: gravity.v1.Attestation.claim:type_name -> google.protobuf.Any
+	0,  // 7: gravity.v1.Attestation.claim_type:type_name -> gravity.v1.ClaimType
+	6,  // 8: gravity.v1.Attestation.claim_components:type_name -> gravity.v1.ClaimHashComponents
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_gravity_v1_attestation_proto_init() }
@@ -5823,9 +10806,10 @@ func file_gravity_v1_attestation_proto_init() {
 	if File_gravity_v1_attestation_proto != nil {
 		return
 	}
+	file_gravity_v1_types_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_gravity_v1_attestation_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Attestation); i {
+			switch v := v.(*SendToCosmosClaimComponents); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5837,7 +10821,7 @@ func file_gravity_v1_attestation_proto_init() {
 			}
 		}
 		file_gravity_v1_attestation_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ERC20Token); i {
+			switch v := v.(*BatchSendToEthClaimComponents); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5849,7 +10833,7 @@ func file_gravity_v1_attestation_proto_init() {
 			}
 		}
 		file_gravity_v1_attestation_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventObservation); i {
+			switch v := v.(*ERC20DeployedClaimComponents); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5861,7 +10845,7 @@ func file_gravity_v1_attestation_proto_init() {
 			}
 		}
 		file_gravity_v1_attestation_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventInvalidSendToCosmosReceiver); i {
+			switch v := v.(*LogicCallExecutedClaimComponents); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5873,7 +10857,7 @@ func file_gravity_v1_attestation_proto_init() {
 			}
 		}
 		file_gravity_v1_attestation_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventSendToCosmos); i {
+			switch v := v.(*ValsetUpdatedClaimComponents); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5885,7 +10869,7 @@ func file_gravity_v1_attestation_proto_init() {
 			}
 		}
 		file_gravity_v1_attestation_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventSendToCosmosLocal); i {
+			switch v := v.(*ClaimHashComponents); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5897,7 +10881,7 @@ func file_gravity_v1_attestation_proto_init() {
 			}
 		}
 		file_gravity_v1_attestation_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventSendToCosmosPendingIbcAutoForward); i {
+			switch v := v.(*Attestation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5909,6 +10893,78 @@ func file_gravity_v1_attestation_proto_init() {
 			}
 		}
 		file_gravity_v1_attestation_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ERC20Token); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v1_attestation_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventObservation); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v1_attestation_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventInvalidSendToCosmosReceiver); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v1_attestation_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventSendToCosmos); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v1_attestation_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventSendToCosmosLocal); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v1_attestation_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventSendToCosmosPendingIbcAutoForward); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v1_attestation_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventSendToCosmosExecutedIbcAutoForward); i {
 			case 0:
 				return &v.state
@@ -5921,13 +10977,20 @@ func file_gravity_v1_attestation_proto_init() {
 			}
 		}
 	}
+	file_gravity_v1_attestation_proto_msgTypes[5].OneofWrappers = []interface{}{
+		(*ClaimHashComponents_SendToCosmos)(nil),
+		(*ClaimHashComponents_BatchSendToEth)(nil),
+		(*ClaimHashComponents_Erc20Deployed)(nil),
+		(*ClaimHashComponents_LogicCallExecuted)(nil),
+		(*ClaimHashComponents_ValsetUpdated)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_gravity_v1_attestation_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   8,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

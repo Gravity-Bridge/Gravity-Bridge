@@ -130,6 +130,12 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 
 	// Check if coin is Cosmos-originated asset and get denom
 	isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *tokenAddress)
+
+	// Perform more strict validation on the denom
+	if err := types.ValidateStrictDenom(denom); err != nil {
+		return errorsmod.Wrap(err, "invalid derived denom from ERC20 lookup")
+	}
+
 	coin := sdk.NewCoin(denom, claim.Amount)
 	coins := sdk.Coins{coin}
 
@@ -211,6 +217,14 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 	if err != nil {
 		return errorsmod.Wrap(err, "invalid token contract on batch")
 	}
+
+	_, denom := a.keeper.ERC20ToDenomLookup(ctx, *contract)
+
+	// Perform more strict validation on the denom
+	if err := types.ValidateStrictDenom(denom); err != nil {
+		return errorsmod.Wrap(err, "invalid derived denom for batch")
+	}
+
 	a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim)
 
 	err = ctx.EventManager().EmitTypedEvent(
@@ -225,6 +239,11 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 // Upon acceptance of sufficient ERC20 Deployed claims, register claim.TokenContract as the canonical ethereum
 // representation of the metadata governance previously voted for
 func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.MsgERC20DeployedClaim) error {
+	// Perform more strict validation on the cosmos denom
+	if err := types.ValidateStrictDenom(claim.CosmosDenom); err != nil {
+		return errorsmod.Wrap(err, "invalid cosmos denom in ERC20 deployed attestation")
+	}
+
 	tokenAddress, err := types.NewEthAddress(claim.TokenContract)
 	if err != nil {
 		return errorsmod.Wrap(err, "invalid token contract on claim")
@@ -241,6 +260,27 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	metadata, ok := a.keeper.bankKeeper.GetDenomMetaData(ctx, claim.CosmosDenom)
 	if !ok || metadata.Base == "" {
 		return errorsmod.Wrap(types.ErrUnknown, fmt.Sprintf("denom not found %s", claim.CosmosDenom))
+	}
+
+	// Check if this denom is permitted by the CosmosBridgeableTokens allowlist.
+	params, err := a.keeper.GetParams(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to get params")
+	}
+
+	allowed := false
+	for _, allowedDenom := range params.CosmosBridgeableTokens {
+		if allowedDenom == claim.CosmosDenom {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return errorsmod.Wrapf(
+			types.ErrInvalid,
+			"cosmos-originated denom %s is not on the CosmosBridgeableTokens allowlist",
+			claim.CosmosDenom,
+		)
 	}
 
 	// Check if attributes of ERC20 match Cosmos denom
@@ -338,6 +378,12 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 	if claim.RewardAmount.GT(sdkmath.ZeroInt()) && claim.RewardToken != types.ZeroAddressString {
 		// Check if coin is Cosmos-originated asset and get denom
 		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *rewardAddress)
+
+		// Perform more strict validation on the denom
+		if err := types.ValidateStrictDenom(denom); err != nil {
+			return errorsmod.Wrap(err, "invalid derived reward denom")
+		}
+
 		if isCosmosOriginated {
 			// If it is cosmos originated, mint some coins to account
 			// for coins that now exist on Ethereum and may eventually come
