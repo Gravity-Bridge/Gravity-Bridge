@@ -54,6 +54,8 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 		Display:     "foo",
 		Name:        "Foo Token",
 		Symbol:      "FOO",
+		URI:         "",
+		URIHash:     "",
 	}
 	barMetadata := banktypes.Metadata{
 		Description: "Bar Token",
@@ -62,6 +64,8 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 		Display:     "bar",
 		Name:        "Bar Token",
 		Symbol:      "BAR",
+		URI:         "",
+		URIHash:     "",
 	}
 	input.BankKeeper.SetDenomMetaData(ctx, fooMetadata)
 	input.BankKeeper.SetDenomMetaData(ctx, barMetadata)
@@ -113,6 +117,8 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 		Display:     "baz",
 		Name:        "Baz Token",
 		Symbol:      "BAZ",
+		URI:         "",
+		URIHash:     "",
 	}
 	input.BankKeeper.SetDenomMetaData(ctx, bazMetadata)
 

@@ -19,6 +19,10 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
+const (
+	testTokenContract = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+)
+
 func TestGetAndDeleteAttestation(t *testing.T) {
 	input := CreateTestEnv(t)
 	k := input.GravityKeeper
@@ -216,7 +220,6 @@ func TestInvalidHeight(t *testing.T) {
 	lastNonce := pk.GetLastObservedEventNonce(ctx)
 	lastEthHeight := pk.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight
 	lastBatchNonce := 0
-	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
 	goodHeight := lastEthHeight + 1
 	batchTimeout := lastEthHeight + 100
 	badHeight := batchTimeout
@@ -230,15 +233,15 @@ func TestInvalidHeight(t *testing.T) {
 			Sender:      sender.String(),
 			DestAddress: receiver.String(),
 			Erc20Token: types.ERC20Token{
-				Contract: tokenContract,
+				Contract: testTokenContract,
 				Amount:   sdkmath.NewInt(1),
 			},
 			Erc20Fee: types.ERC20Token{
-				Contract: tokenContract,
+				Contract: testTokenContract,
 				Amount:   sdkmath.NewInt(1),
 			},
 		}},
-		TokenContract:      tokenContract,
+		TokenContract:      testTokenContract,
 		CosmosBlockCreated: 0,
 	}
 	b, err := batch.ToInternal()
@@ -247,6 +250,7 @@ func TestInvalidHeight(t *testing.T) {
 
 	// Submit a bad claim with EthBlockHeight >= timeout
 
+	tokenContract := testTokenContract
 	bad := types.MsgBatchSendToEthClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: badHeight,
@@ -276,6 +280,7 @@ func TestInvalidHeight(t *testing.T) {
 	// Attest the actual batch, and assert the votes are correct
 	for i, orch := range OrchAddrs[1:] {
 		log.Info("Submitting good eth claim from orchestrators", "orch", orch.String())
+		tokenContract := testTokenContract
 		good := types.MsgBatchSendToEthClaim{
 			EventNonce:     lastNonce + 1,
 			EthBlockHeight: goodHeight,

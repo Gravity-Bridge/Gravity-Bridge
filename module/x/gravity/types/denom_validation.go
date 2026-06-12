@@ -47,10 +47,8 @@ func ValidateStrictDenom(denom string) error {
 			strings.Contains(denom, "0x") {
 			return errorsmod.Wrap(ErrInvalidDenom, "IBC denom contains forbidden substring")
 		}
-	} else {
-		if strings.Contains(denom, "/") {
-			return errorsmod.Wrap(ErrInvalidDenom, "non-IBC denom contains slash")
-		}
+	} else if strings.Contains(denom, "/") {
+		return errorsmod.Wrap(ErrInvalidDenom, "non-IBC denom contains slash")
 	}
 
 	return nil

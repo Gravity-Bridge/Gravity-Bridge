@@ -174,6 +174,7 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 			Amount:         amount,
 			EthereumSender: comp.EthereumSender,
 			CosmosReceiver: comp.CosmosReceiver,
+			Orchestrator:   "",
 		}, nil
 
 	case *ClaimHashComponents_BatchSendToEth:
@@ -186,6 +187,7 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 			EthBlockHeight: comp.EthBlockHeight,
 			BatchNonce:     comp.BatchNonce,
 			TokenContract:  comp.TokenContract,
+			Orchestrator:   "",
 		}, nil
 
 	case *ClaimHashComponents_Erc20Deployed:
@@ -201,6 +203,7 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 			Name:           comp.Name,
 			Symbol:         comp.Symbol,
 			Decimals:       comp.Decimals,
+			Orchestrator:   "",
 		}, nil
 
 	case *ClaimHashComponents_LogicCallExecuted:
@@ -213,6 +216,7 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 			EthBlockHeight:    comp.EthBlockHeight,
 			InvalidationId:    comp.InvalidationId,
 			InvalidationNonce: comp.InvalidationNonce,
+			Orchestrator:      "",
 		}, nil
 
 	case *ClaimHashComponents_ValsetUpdated:
@@ -231,6 +235,7 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 			Members:        comp.Members,
 			RewardAmount:   amount,
 			RewardToken:    comp.RewardToken,
+			Orchestrator:   "",
 		}, nil
 
 	default:

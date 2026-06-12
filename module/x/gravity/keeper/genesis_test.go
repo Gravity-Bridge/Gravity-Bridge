@@ -140,8 +140,10 @@ func TestBatchAndTxImportExport(t *testing.T) {
 
 	// CREATE FORWARDS
 	// Setup ibc auto-forwarding for a connection which doesn't exist
-	stake := "stake"
-	foreignHrp := "astro"
+	const (
+		stake      = "stake"
+		foreignHrp = "astro"
+	)
 	sourceChannel := "channel-0"
 	rec := bech32ibctypes.HrpIbcRecord{
 		Hrp:               foreignHrp,

@@ -491,16 +491,12 @@ func (k Keeper) IterateOldAttestations(ctx sdk.Context, reverse bool, cb func([]
 
 	for ; iter.Valid(); iter.Next() {
 		att := types.Attestation{
-			Observed: false,
-			Votes:    []string{},
-			Height:   0,
-			Claim: &codectypes.Any{
-				TypeUrl:              "",
-				Value:                []byte{},
-				XXX_NoUnkeyedLiteral: struct{}{},
-				XXX_unrecognized:     []byte{},
-				XXX_sizecache:        0,
-			},
+			Observed:        false,
+			Votes:           []string{},
+			Height:          0,
+			Claim:           &codectypes.Any{},
+			ClaimType:       0,
+			ClaimComponents: nil,
 		}
 		k.cdc.MustUnmarshal(iter.Value(), &att)
 
