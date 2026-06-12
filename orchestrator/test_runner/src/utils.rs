@@ -575,6 +575,7 @@ const PARAM_BRIDGE_ACTIVE: &str = "BridgeActive";
 const PARAM_ETHEREUM_BLACKLIST: &str = "EthereumBlacklist";
 const PARAM_MIN_CHAIN_FEE_BASIS_POINTS: &str = "MinChainFeeBasisPoints";
 const PARAM_CHAIN_FEE_AUCTION_POOL_FRACTION: &str = "ChainFeeAuctionPoolFraction";
+const PARAM_COSMOS_BRIDGEABLE_TOKENS: &str = "CosmosBridgeableTokens";
 
 #[derive(Debug, Default, Clone)]
 pub struct GravityProposalParams {
@@ -598,6 +599,7 @@ pub struct GravityProposalParams {
     pub ethereum_blacklist: Option<Vec<String>>,
     pub min_chain_fee_basis_points: Option<String>,
     pub chain_fee_auction_pool_fraction: Option<String>,
+    pub cosmos_bridgeable_tokens: Option<Vec<String>>,
 }
 
 pub async fn create_gravity_params_proposal(
@@ -626,6 +628,7 @@ pub async fn create_gravity_params_proposal(
         ethereum_blacklist,
         min_chain_fee_basis_points,
         chain_fee_auction_pool_fraction,
+        cosmos_bridgeable_tokens,
     }: GravityProposalParams,
 ) {
     let mut param_updates = vec![];
@@ -750,6 +753,12 @@ pub async fn create_gravity_params_proposal(
             value: cfapf,
         });
     }
+    if let Some(cbt) = cosmos_bridgeable_tokens {
+        param_updates.push(GravityParam {
+            key: PARAM_COSMOS_BRIDGEABLE_TOKENS.to_string(),
+            value: serde_json::to_string(&cbt).unwrap(),
+        });
+    }
 
     let proposal = GravityMsgUpdateParamsProposal {
         authority: deep_space::address::get_module_account_address("gov", Some(&*ADDRESS_PREFIX))
@@ -771,6 +780,27 @@ pub async fn create_gravity_params_proposal(
             Some(OPERATION_TIMEOUT),
         )
         .await;
+}
+
+/// Sets the CosmosBridgeableTokens gravity param via governance and waits for the proposal to execute.
+pub async fn set_cosmos_bridgeable_tokens(
+    contact: &Contact,
+    keys: &[ValidatorKeys],
+    denoms: Vec<String>,
+) {
+    create_gravity_params_proposal(
+        contact,
+        keys[0].validator_key,
+        get_deposit(None),
+        get_fee(None),
+        GravityProposalParams {
+            cosmos_bridgeable_tokens: Some(denoms),
+            ..Default::default()
+        },
+    )
+    .await;
+    vote_yes_on_proposals(contact, keys, None).await;
+    wait_for_proposals_to_execute(contact).await;
 }
 
 /// Gets the operator address for a given validator private key
@@ -1083,23 +1113,19 @@ pub async fn delegate_and_confirm(
             Some(TOTAL_TIMEOUT),
         )
         .await;
-    if deleg_result.is_err() {
+    if let Err(e) = deleg_result {
         let err_str = format!(
             "Failed to delegate {} to validator {}, error {:?}",
-            delegate_amount,
-            delegate_to,
-            deleg_result.unwrap_err()
+            delegate_amount, delegate_to, e
         );
         error!("{err_str}");
         return Err(CosmosGrpcError::BadResponse(err_str));
     }
     let deleg_confirm = contact.get_delegation(delegate_to, user_address).await;
-    if deleg_confirm.is_err() {
+    if let Err(e) = &deleg_confirm {
         let err_str = format!(
             "Failed to query for delegation of {} to validator {}, error {:?}",
-            delegate_amount,
-            delegate_to,
-            deleg_confirm.unwrap_err()
+            delegate_amount, delegate_to, e
         );
         error!("{err_str}");
         return Err(CosmosGrpcError::BadResponse(err_str));

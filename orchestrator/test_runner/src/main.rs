@@ -7,11 +7,15 @@
 extern crate log;
 
 use crate::airdrop_proposal::airdrop_proposal_test;
+use crate::attestation_validation::{
+    attestation_claim_voting_test, attestation_hash_integrity_test,
+};
 use crate::auction::{
     auction_disabled_test, auction_invalid_params_test, auction_test_random, auction_test_static,
 };
 use crate::batch_timeout::batch_timeout_test;
 use crate::bootstrapping::*;
+use crate::cosmos_bridgeable_tokens_test::cosmos_bridgeable_tokens_test;
 use crate::deposit_overflow::deposit_overflow_test;
 use crate::eip_712::eip_712_test;
 use crate::ethereum_blacklist_test::ethereum_blacklist_test;
@@ -56,9 +60,12 @@ use unhalt_bridge::unhalt_bridge_test;
 use valset_stress::validator_set_stress_test;
 
 mod airdrop_proposal;
+mod attestation_validation;
 mod auction;
 mod batch_timeout;
 mod bootstrapping;
+mod cosmos_bridgeable_tokens_test;
+mod denom_validation;
 mod deposit_overflow;
 mod eip_712;
 mod erc_721_happy_path;
@@ -89,6 +96,7 @@ mod utils;
 mod valset_rewards;
 mod valset_stress;
 mod vesting;
+use crate::denom_validation::denom_validation_test;
 
 /// the timeout for individual requests
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
@@ -338,6 +346,33 @@ pub async fn main() {
             )
             .await;
             return;
+        } else if test_type == "ATTESTATION_CLAIM_VOTING" {
+            info!("Starting attestation claim voting test");
+            attestation_claim_voting_test(
+                &web30,
+                grpc_client,
+                &gravity_contact,
+                keys,
+                gravity_address,
+                erc20_addresses[0],
+            )
+            .await;
+            return;
+        } else if test_type == "ATTESTATION_HASH_INTEGRITY" {
+            info!("Starting attestation hash integrity test");
+            start_ibc_relayer(&gravity_contact, &ibc_contact, &keys, &ibc_keys).await;
+            attestation_hash_integrity_test(
+                &web30,
+                grpc_client,
+                &gravity_contact,
+                &ibc_contact,
+                keys,
+                ibc_keys,
+                gravity_address,
+                erc20_addresses[0],
+            )
+            .await;
+            return;
         } else if test_type == "BATCH_STRESS" {
             info!("Starting Batch stress test");
             // 300s timeout contact instead of 30s
@@ -483,6 +518,18 @@ pub async fn main() {
                 grpc_client,
                 &gravity_contact,
                 &web30,
+            )
+            .await;
+            return;
+        } else if test_type == "DENOM_VALIDATION" {
+            info!("Starting denom validation integration test");
+            denom_validation_test(
+                &web30,
+                &gravity_contact,
+                grpc_client.clone(),
+                keys,
+                gravity_address,
+                erc20_addresses[0],
             )
             .await;
             return;
@@ -689,6 +736,18 @@ pub async fn main() {
         } else if test_type == "PARAM_CHANGE_PARANOIA" {
             info!("Starting Param Change Paranoia test");
             param_change_paranoia_test(&gravity_contact, keys).await;
+            return;
+        } else if test_type == "COSMOS_BRIDGEABLE_TOKENS" {
+            info!("Starting CosmosBridgeableTokens test");
+            cosmos_bridgeable_tokens_test(
+                &web30,
+                &gravity_contact,
+                grpc_client,
+                keys,
+                gravity_address,
+                erc20_addresses[0],
+            )
+            .await;
             return;
         } else if test_type == "RUN_ORCH_ONLY" {
             orch_only_test(keys, gravity_address).await;

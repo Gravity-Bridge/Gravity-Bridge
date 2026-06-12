@@ -380,45 +380,45 @@ fn unpack_and_print_claim_info(claim_any: prost_types::Any, i: usize) -> Box<dyn
     if claim_any.type_url == MSG_SEND_TO_COSMOS_CLAIM_TYPE_URL {
         claim = Box::new(decode_any::<MsgSendToCosmosClaim>(claim_any).unwrap());
         info!(
-            "Claim {} is {} at height {} with nonce {}",
+            "Claim {} is {:?} at height {} with nonce {}",
             i,
-            claim.get_type().to_string(),
+            claim.get_type(),
             claim.get_eth_block_height(),
             claim.get_event_nonce()
         )
     } else if claim_any.type_url == MSG_BATCH_SEND_TO_ETH_TYPE_URL {
         claim = Box::new(decode_any::<MsgBatchSendToEthClaim>(claim_any).unwrap());
         info!(
-            "Claim {} is {} at height {} with nonce {}",
+            "Claim {} is {:?} at height {} with nonce {}",
             i,
-            claim.get_type().to_string(),
+            claim.get_type(),
             claim.get_eth_block_height(),
             claim.get_event_nonce()
         )
     } else if claim_any.type_url == MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL {
         claim = Box::new(decode_any::<MsgErc20DeployedClaim>(claim_any).unwrap());
         info!(
-            "Claim {} is {} at height {} with nonce {}",
+            "Claim {} is {:?} at height {} with nonce {}",
             i,
-            claim.get_type().to_string(),
+            claim.get_type(),
             claim.get_eth_block_height(),
             claim.get_event_nonce()
         )
     } else if claim_any.type_url == MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL {
         claim = Box::new(decode_any::<MsgLogicCallExecutedClaim>(claim_any).unwrap());
         info!(
-            "Claim {} is {} at height {} with nonce {}",
+            "Claim {} is {:?} at height {} with nonce {}",
             i,
-            claim.get_type().to_string(),
+            claim.get_type(),
             claim.get_eth_block_height(),
             claim.get_event_nonce()
         )
     } else if claim_any.type_url == MSG_VALSET_UPDATED_CLAIM_TYPE_URL {
         claim = Box::new(decode_any::<MsgValsetUpdatedClaim>(claim_any).unwrap());
         info!(
-            "Claim {} is {} at height {} with nonce {}",
+            "Claim {} is {:?} at height {} with nonce {}",
             i,
-            claim.get_type().to_string(),
+            claim.get_type(),
             claim.get_eth_block_height(),
             claim.get_event_nonce()
         )

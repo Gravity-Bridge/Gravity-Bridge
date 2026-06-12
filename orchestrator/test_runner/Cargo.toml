@@ -37,6 +37,7 @@ rand = "0.8"
 tonic = {workspace = true}
 futures = "0.3"
 serde_json = "1.0"
+sha2 = {workspace = true}
 ibc-relayer = "0.26.0"
 ibc-relayer-types = "0.26.0"
 hdpath = "0.6.3"

@@ -1,4 +1,3 @@
-
 #!/bin/bash
 set -eux
 # your gaiad binary name
@@ -9,7 +8,11 @@ CHAIN_ID="ibc-test-1"
 
 NODES=$1
 
-ALLOCATION="10000000000stake,10000000000footoken"
+# This denom is crafted so that when IBC-transferred to the gravity chain its
+# ibc-go-generated bank metadata Name field contains footokenAddr (0x0412...) between
+# two '/' characters so we can test for ClaimHash collisions
+MALICIOUS_IBC_TOKEN="attack/0x0412C7c846bb6b7DC462CF6B453f76D8440b2609/tok"
+ALLOCATION="10000000000stake,10000000000footoken,10000000000${MALICIOUS_IBC_TOKEN}"
 
 # first we start a genesis.json with validator 1
 # validator 1 will also collect the gentx's once gnerated
@@ -26,10 +29,15 @@ $BIN init $STARTING_VALIDATOR_HOME --chain-id=$CHAIN_ID ibc-validator1
 # add in denom metadata for both native tokens
 jq '.app_state.bank.denom_metadata += [{"name": "Foo Token", "symbol": "FOO", "base": "footoken", display: "mfootoken", "description": "A non-staking test token", "denom_units": [{"denom": "footoken", "exponent": 0}, {"denom": "mfootoken", "exponent": 6}]},{"name": "Stake Token", "symbol": "STEAK", "base": "stake", display: "mstake", "description": "A staking test token", "denom_units": [{"denom": "stake", "exponent": 0}, {"denom": "mstake", "exponent": 6}]}]' /ibc-validator$STARTING_VALIDATOR/config/genesis.json > /ibc-metadata-genesis.json
 
+# add metadata for the malicious IBC transfer test token (non-IBC denom; will be transferred into an "ibc/HASH..." on gravity)
+jq '.app_state.bank.denom_metadata += [{"name": "Bad Token", "symbol": "BAD", "base": "'${MALICIOUS_IBC_TOKEN}'", "display": "mbadtoken", "description": "A malicious-looking test token", "denom_units": [{"denom": "'${MALICIOUS_IBC_TOKEN}'", "exponent": 0}, {"denom": "mbadtoken", "exponent": 6}]}]' /ibc-metadata-genesis.json > /ibc-denom-checks-genesis.json
+
 # a 60 second voting period to allow us to pass governance proposals in the tests
-jq '.app_state.gov.voting_params.voting_period = "60s"' /ibc-metadata-genesis.json > /ibc-edited-genesis.json
+jq '.app_state.gov.voting_params.voting_period = "60s"' /ibc-denom-checks-genesis.json > /ibc-edited-genesis.json
 
 mv /ibc-edited-genesis.json /ibc-genesis.json
+
+ALLOCATION="10000000000stake,10000000000footoken,10000000000${MALICIOUS_IBC_TOKEN}"
 
 
 # Sets up an arbitrary number of validators on a single machine by manipulating

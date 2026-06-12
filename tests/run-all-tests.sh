@@ -4,7 +4,7 @@ set -eux
 # to be run with any PWD
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
-bash all-up-test.sh # Happy path
+bash all-up-test.sh HAPPY_PATH
 export NO_IMAGE_BUILD=1
 bash all-up-test.sh VALIDATOR_OUT
 bash all-up-test.sh VALSET_STRESS

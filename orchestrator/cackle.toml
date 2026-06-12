@@ -200,11 +200,6 @@ from.build.allow_apis = [
     "process",
 ]
 
-[pkg.typenum]
-build.allow_apis = [
-    "fs",
-]
-
 [pkg.version_check]
 from.build.allow_apis = [
     "process",
@@ -658,22 +653,12 @@ allow_apis = [
     "net",
 ]
 
-[pkg.gravity_proto]
-allow_apis = [
-    "net",
-]
-
 [pkg.deep_space]
 allow_apis = [
     "net",
 ]
 
 [pkg.gravity_utils]
-allow_apis = [
-    "net",
-]
-
-[pkg.cosmos-sdk-proto-althea]
 allow_apis = [
     "net",
 ]

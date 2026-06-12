@@ -33,6 +33,9 @@ pub const MSG_VALSET_UPDATED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgValsetUpdate
 /// ERC20 names and deposit destination strings
 const ONE_MEGABYTE: usize = 1000usize.pow(3);
 
+/// Maximum byte length the Cosmos module accepts for a cosmos denom
+/// (mirrors MaxDenomLength in module/x/gravity/types/denom_validation.go)
+const MAX_COSMOS_DENOM_LEN: usize = 256;
 /// A type of event which must be sent to Gravity by Orchestrators in a claim, parsed from the
 /// ethereum logs
 pub trait EthereumEvent
@@ -712,28 +715,44 @@ impl Erc20DeployedEvent {
         trace!("Denom {denom:?}");
         if denom.is_err() {
             warn!("Deployed ERC20 has invalid utf8, will not be adopted");
-            // we must return a dummy event in order to finish processing
-            // otherwise we halt the oracle
-            return Ok(Erc20DeployedEventData {
-                cosmos_denom: String::new(),
-                name: String::new(),
-                symbol: String::new(),
-                decimals: 0,
-                event_nonce,
-            });
+            return Err(GravityError::InvalidEventLogError(
+                "denom has invalid utf8".to_string(),
+            ));
         }
         let denom = denom.unwrap();
+        if denom.is_empty() {
+            warn!("Deployed ERC20 has empty cosmos_denom, will not be adopted");
+            return Err(GravityError::InvalidEventLogError(
+                "denom is empty".to_string(),
+            ));
+        }
+        if denom.len() > MAX_COSMOS_DENOM_LEN {
+            warn!(
+                "Deployed ERC20 has cosmos_denom exceeding the maximum length, will not be adopted"
+            );
+            return Err(GravityError::InvalidEventLogError(
+                "denom exceeds maximum length".to_string(),
+            ));
+        }
+        if denom.len() > MAX_COSMOS_DENOM_LEN {
+            warn!(
+                "Deployed ERC20 has cosmos_denom exceeding the maximum length, will not be adopted"
+            );
+            return Err(GravityError::InvalidEventLogError(
+                "denom exceeds maximum length".to_string(),
+            ));
+        }
+        if !denom.is_ascii() {
+            warn!("Deployed ERC20 has non-ASCII cosmos_denom, will not be adopted");
+            return Err(GravityError::InvalidEventLogError(
+                "denom has non-ASCII characters".to_string(),
+            ));
+        }
         if denom.len() > ONE_MEGABYTE {
             warn!("Deployed ERC20 is too large! will not be adopted");
-            // we must return a dummy event in order to finish processing
-            // otherwise we halt the oracle
-            return Ok(Erc20DeployedEventData {
-                cosmos_denom: String::new(),
-                name: String::new(),
-                symbol: String::new(),
-                decimals: 0,
-                event_nonce,
-            });
+            return Err(GravityError::InvalidEventLogError(
+                "denom exceeds maximum size".to_string(),
+            ));
         }
 
         // beyond this point we are parsing strings placed
@@ -771,29 +790,24 @@ impl Erc20DeployedEvent {
         let erc20_name = String::from_utf8(data[index_start..index_end].to_vec());
         if erc20_name.is_err() {
             warn!("Deployed ERC20 has invalid utf8, will not be adopted");
-            // we must return a dummy event in order to finish processing
-            // otherwise we halt the oracle
-            return Ok(Erc20DeployedEventData {
-                cosmos_denom: String::new(),
-                name: String::new(),
-                symbol: String::new(),
-                decimals: 0,
-                event_nonce,
-            });
+            return Err(GravityError::InvalidEventLogError(
+                "ERC20 Name has invalid UTF-8 characters".to_string(),
+            ));
         }
         trace!("ERC20 Name {erc20_name:?}");
         let erc20_name = erc20_name.unwrap();
         if erc20_name.len() > ONE_MEGABYTE {
             warn!("Deployed ERC20 is too large! will not be adopted");
-            // we must return a dummy event in order to finish processing
-            // otherwise we halt the oracle
-            return Ok(Erc20DeployedEventData {
-                cosmos_denom: String::new(),
-                name: String::new(),
-                symbol: String::new(),
-                decimals: 0,
-                event_nonce,
-            });
+            return Err(GravityError::InvalidEventLogError(
+                "ERC20 Name exceeds maximum size".to_string(),
+            ));
+        }
+        trace!("ERC20 Name {erc20_name:?}");
+        if erc20_name.len() > ONE_MEGABYTE {
+            warn!("Deployed ERC20 is too large! will not be adopted");
+            return Err(GravityError::InvalidEventLogError(
+                "ERC20 Name exceeds maximum size".to_string(),
+            ));
         }
 
         let index_start = index_end.div_ceil(32) * 32;
@@ -826,28 +840,18 @@ impl Erc20DeployedEvent {
         trace!("Symbol {symbol:?}");
         if symbol.is_err() {
             warn!("Deployed ERC20 has invalid utf8, will not be adopted");
-            // we must return a dummy event in order to finish processing
-            // otherwise we halt the oracle
-            return Ok(Erc20DeployedEventData {
-                cosmos_denom: String::new(),
-                name: String::new(),
-                symbol: String::new(),
-                decimals: 0,
-                event_nonce,
-            });
+            return Err(GravityError::InvalidEventLogError(
+                "ERC20 Symbol has invalid UTF-8 characters".to_string(),
+            ));
         }
         let symbol = symbol.unwrap();
         if symbol.len() > ONE_MEGABYTE {
             warn!("Deployed ERC20 is too large! will not be adopted");
             // we must return a dummy event in order to finish processing
             // otherwise we halt the oracle
-            return Ok(Erc20DeployedEventData {
-                cosmos_denom: String::new(),
-                name: String::new(),
-                symbol: String::new(),
-                decimals: 0,
-                event_nonce,
-            });
+            return Err(GravityError::InvalidEventLogError(
+                "ERC20 Symbol exceeds maximum size".to_string(),
+            ));
         }
 
         Ok(Erc20DeployedEventData {

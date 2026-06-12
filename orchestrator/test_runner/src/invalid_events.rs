@@ -9,6 +9,7 @@ use crate::utils::create_default_test_config;
 use crate::utils::footoken_metadata;
 use crate::utils::get_event_nonce_safe;
 use crate::utils::get_user_key;
+use crate::utils::set_cosmos_bridgeable_tokens;
 use crate::utils::start_orchestrators;
 use crate::utils::ValidatorKeys;
 use crate::MINER_ADDRESS;
@@ -107,6 +108,11 @@ pub async fn invalid_events(
 
     web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
+    // footoken must be on the CosmosBridgeableTokens allowlist or the attestation
+    // handler will reject the ERC20 deployment even though the metadata is valid
+    let footoken = footoken_metadata(contact).await;
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.base.clone()]).await;
+
     // make sure this actual deployment works after all the bad ones
     let _ = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
@@ -114,7 +120,7 @@ pub async fn invalid_events(
         None,
         &mut grpc_client,
         false,
-        footoken_metadata(contact).await,
+        footoken,
     )
     .await;
 

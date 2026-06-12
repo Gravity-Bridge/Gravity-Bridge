@@ -16,7 +16,11 @@ else
 fi
 set -u
 
-ALLOCATION="1000000000000000footoken,1000000000000000footoken2,1000000000000000ibc/nometadatatoken,1000000000000000ugraviton"
+# Tokens pre-allocated to validators for integration-test denom validation coverage.
+BAD_IBC_DENOM="ibc/gravity0xbad0000000000000000000000000000000000bad"
+BAD_SLASH_DENOM="gravity/0xbad"
+
+ALLOCATION="1000000000000000footoken,1000000000000000footoken2,1000000000000000ibc/nometadatatoken,1000000000000000ugraviton,5000${BAD_IBC_DENOM},5000${BAD_SLASH_DENOM}"
 
 # first we start a genesis.json with validator 1
 # validator 1 will also collect the gentx's once gnerated

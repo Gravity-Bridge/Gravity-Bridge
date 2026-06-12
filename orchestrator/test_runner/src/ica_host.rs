@@ -30,7 +30,9 @@ use clarity::Address as EthAddress;
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::ibc_auto_forward::get_channel;
-use crate::utils::{footoken_metadata, get_erc20_balance_safe, vote_yes_on_proposals};
+use crate::utils::{
+    footoken_metadata, get_erc20_balance_safe, set_cosmos_bridgeable_tokens, vote_yes_on_proposals,
+};
 use crate::{get_fee, IBC_STAKING_TOKEN, OPERATION_TIMEOUT, STAKING_TOKEN, TOTAL_TIMEOUT};
 use crate::{
     get_ibc_chain_id,
@@ -123,6 +125,8 @@ pub async fn ica_host_happy_path(
         .expect("Failed to fund ICA");
 
     let footoken = footoken_metadata(gravity_contact).await;
+    // Allow the cosmos-originated footoken to cross the bridge before deploying its ERC20
+    set_cosmos_bridgeable_tokens(gravity_contact, &keys, vec![footoken.base.clone()]).await;
     let footoken_deployed = grpc_client
         .denom_to_erc20(QueryDenomToErc20Request {
             denom: footoken.base.clone(),

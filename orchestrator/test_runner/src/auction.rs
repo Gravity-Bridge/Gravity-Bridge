@@ -526,6 +526,14 @@ pub async fn setup(
     let mut grpc_client = grpc_client.clone();
 
     let footoken = footoken_metadata(contact).await;
+    let footoken2 = footoken2_metadata(contact).await;
+    // Allow cosmos-originated footokens to cross the bridge before deploying their ERC20s
+    set_cosmos_bridgeable_tokens(
+        contact,
+        &keys,
+        vec![footoken.base.clone(), footoken2.base.clone()],
+    )
+    .await;
     if grpc_client
         .denom_to_erc20(QueryDenomToErc20Request {
             denom: footoken.base.clone(),
@@ -544,7 +552,6 @@ pub async fn setup(
         )
         .await;
     }
-    let footoken2 = footoken2_metadata(contact).await;
     if grpc_client
         .denom_to_erc20(QueryDenomToErc20Request {
             denom: footoken2.base.clone(),

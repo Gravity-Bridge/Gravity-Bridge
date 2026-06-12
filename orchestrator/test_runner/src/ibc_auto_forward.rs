@@ -392,17 +392,40 @@ pub async fn get_ibc_balance(
         let res = res.expect("No response from bank balance query?");
 
         // Check each ibc/ balance the account holds
-        for bal in res.into_inner().balances {
+        let all_balances = res.into_inner().balances;
+        debug!(
+            "get_ibc_balance: account={} has {} total balance(s): {:?}",
+            account,
+            all_balances.len(),
+            all_balances.iter().map(|b| &b.denom).collect::<Vec<_>>()
+        );
+        for bal in all_balances {
             if bal.denom.clone()[..4] == *"ibc/".to_string() {
                 // only consider ibc denoms
                 let hash = bal.denom.clone();
                 let hash = &hash[4..]; // Strip leading 'ibc/'
+                info!(
+                    "get_ibc_balance: querying DenomTrace for denom='{}' hash_arg='{}' (looking for src_denom='{}')",
+                    bal.denom, hash, src_denom
+                );
                 let denom_res = dst_ibc_transfer_qc
                     .denom_trace(IbcTransferV1::QueryDenomTraceRequest {
                         hash: hash.to_string(),
                     })
-                    .await
-                    .unwrap();
+                    .await;
+                let denom_res = match denom_res {
+                    Ok(r) => r,
+                    Err(e) => {
+                        // The hash portion is not valid hex (e.g. "nometadatatoken") —
+                        // this is a non-standard ibc/ denom that pre-dates the hex-hash
+                        // format or was registered outside the transfer module. Skip it.
+                        warn!(
+                            "get_ibc_balance: skipping denom='{}' — DenomTrace returned error: {}",
+                            bal.denom, e
+                        );
+                        continue;
+                    }
+                };
                 let denom_trace = denom_res.into_inner().denom_trace;
                 if denom_trace.is_none() {
                     // weird, but not critical for the test

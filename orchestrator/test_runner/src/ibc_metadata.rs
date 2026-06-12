@@ -2,7 +2,7 @@
 
 use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
-use crate::utils::{vote_yes_on_proposals, ValidatorKeys};
+use crate::utils::{set_cosmos_bridgeable_tokens, vote_yes_on_proposals, ValidatorKeys};
 use crate::{get_deposit, get_fee, TOTAL_TIMEOUT};
 use clarity::Address;
 use cosmos_gravity::proposals::submit_ibc_metadata_proposal;
@@ -118,6 +118,9 @@ pub async fn ibc_metadata_proposal_test(
     info!("Successfully set IBC metadata");
 
     info!("Deploying representative ERC20");
+    // The denom must be on the CosmosBridgeableTokens allowlist before
+    // its ERC20 can be adopted by the Cosmos chain.
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![found.base.clone()]).await;
     deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,

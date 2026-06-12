@@ -7,6 +7,7 @@ use crate::utils::get_erc20_balance_safe;
 use crate::utils::get_event_nonce_safe;
 use crate::utils::get_user_key;
 use crate::utils::send_one_eth;
+use crate::utils::set_cosmos_bridgeable_tokens;
 use crate::utils::start_orchestrators;
 use crate::utils::ugraviton_metadata;
 use crate::MINER_ADDRESS;
@@ -91,6 +92,8 @@ pub async fn deploy_and_bridge_cosmos_token(
     ibc_metadata: Metadata,
 ) {
     let mut grpc_client = grpc_client;
+    // Allow this cosmos-originated token to cross the bridge before deploying its ERC20
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![ibc_metadata.base.clone()]).await;
     let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,

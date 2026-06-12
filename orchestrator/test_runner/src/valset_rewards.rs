@@ -5,7 +5,7 @@ use crate::happy_path::test_valset_update;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{
     create_gravity_params_proposal, footoken_metadata, get_erc20_balance_safe,
-    vote_yes_on_proposals, GravityProposalParams, ValidatorKeys,
+    set_cosmos_bridgeable_tokens, vote_yes_on_proposals, GravityProposalParams, ValidatorKeys,
 };
 use crate::{get_deposit, get_fee};
 use clarity::Address as EthAddress;
@@ -26,6 +26,8 @@ pub async fn valset_rewards_test(
     let mut grpc_client = grpc_client;
     let token_to_send_to_eth = footoken_metadata(contact).await.base;
 
+    // Allow the cosmos-originated footoken to cross the bridge before deploying its ERC20
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![token_to_send_to_eth.clone()]).await;
     // first we deploy the Cosmos asset that we will use as a reward and make sure it is adopted
     // by the Cosmos chain
     let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(

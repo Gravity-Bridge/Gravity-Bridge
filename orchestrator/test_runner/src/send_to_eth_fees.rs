@@ -2,8 +2,8 @@ use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::test_erc20_deposit_panic;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::{
-    create_gravity_params_proposal, footoken_metadata, get_user_key, vote_yes_on_proposals,
-    BridgeUserKey, GravityProposalParams, ValidatorKeys,
+    create_gravity_params_proposal, footoken_metadata, get_user_key, set_cosmos_bridgeable_tokens,
+    vote_yes_on_proposals, BridgeUserKey, GravityProposalParams, ValidatorKeys,
 };
 use crate::{get_deposit, get_fee, one_eth, ADDRESS_PREFIX, OPERATION_TIMEOUT, STAKING_TOKEN};
 use actix::clock::sleep;
@@ -201,6 +201,8 @@ pub async fn setup(
     info!("Begin setup, create footoken erc20");
     let ibc_metadata = footoken_metadata(contact).await;
 
+    // Allow the cosmos-originated footoken to cross the bridge before deploying its ERC20
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![ibc_metadata.base.clone()]).await;
     let _ = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,
@@ -384,7 +386,7 @@ async fn send_single_msg_txs(
         denom: denom.clone(),
         amount: 1u8.into(),
     };
-    for (bridge, fee) in bridge_amounts.into_iter().zip(fee_amounts.into_iter()) {
+    for (bridge, fee) in bridge_amounts.into_iter().zip(fee_amounts) {
         let bridge_coin = Coin {
             denom: denom.clone(),
             amount: bridge,
@@ -543,7 +545,7 @@ async fn send_multi_msg_txs(
         denom: denom.clone(),
         amount: 1u8.into(),
     };
-    for (bridge, fee) in bridge_amounts.into_iter().zip(fee_amounts.into_iter()) {
+    for (bridge, fee) in bridge_amounts.into_iter().zip(fee_amounts) {
         let bridge_coin = Coin {
             denom: denom.clone(),
             amount: bridge,
