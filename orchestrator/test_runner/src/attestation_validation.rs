@@ -197,7 +197,9 @@ pub async fn attestation_claim_voting_test(
     // than being rejected. Both submissions succeed (code=0) and the two competing attestations
     // coexist on-chain. Neither can reach the >2/3 quorum needed to be marked "observed"
     // because each has only one validator's vote out of four total.
-    info!("ATTESTATION_VALIDATION: Byzantine fork - conflicting claims create separate attestations");
+    info!(
+        "ATTESTATION_VALIDATION: Byzantine fork - conflicting claims create separate attestations"
+    );
     {
         let prefix = contact.get_prefix();
         let orch0_addr = keys[0]
@@ -693,9 +695,7 @@ async fn erc20_deployed_claim_hash_collision(
     );
     let ibc_token_name = format!("{full_denom_path} IBC token");
     let ibc_token_symbol = MALICIOUS_DENOM.to_uppercase();
-    info!(
-        "computed ibc_denom={ibc_denom} name='{ibc_token_name}' symbol='{ibc_token_symbol}'"
-    );
+    info!("computed ibc_denom={ibc_denom} name='{ibc_token_name}' symbol='{ibc_token_symbol}'");
 
     // 1c. Find ibc-test-1 channel ID connecting back to the gravity chain.
     let ibc_channel_qc = IbcChannelQueryClient::connect(IBC_NODE_GRPC.as_str())

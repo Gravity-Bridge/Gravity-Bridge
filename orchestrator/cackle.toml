@@ -50,6 +50,11 @@ build.allow_build_instructions = [
     "cargo:rustc-check-cfg=*",
 ]
 
+[pkg.typenum]
+build.allow_apis = [
+    "fs",
+]
+
 [pkg.prost-derive]
 allow_proc_macro = true
 
