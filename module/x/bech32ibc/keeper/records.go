@@ -36,13 +36,12 @@ func (k Keeper) SetNativeHrp(ctx sdk.Context, hrp string) error {
 	return nil
 }
 
-// ValidateFeeToken validates that a fee token record is valid
+// ValidateHrpIbcRecord validates that an HRP IBC record is valid at runtime.
 // It checks:
 // - The HRP is valid
 // - The HRP is not for the chain's native prefix
-// - Check that IBC channels and ports are real
+// - The IBC channel and port are real (live chain state query)
 func (k Keeper) ValidateHrpIbcRecord(ctx sdk.Context, record types.HrpIbcRecord) error {
-	// TODO: this function is not used in any of the places
 	err := types.ValidateHrp(record.Hrp)
 	if err != nil {
 		return err
@@ -96,7 +95,8 @@ func (k Keeper) GetHrpIbcRecord(ctx sdk.Context, hrp string) (types.HrpIbcRecord
 	return record, nil
 }
 
-// setHrpIbcRecord sets a new hrp ibc record for a specific denom
+// setHrpIbcRecord sets a new hrp ibc record for a specific denom.
+// WARNING: If SourceChannel is empty, the existing record for the HRP is deleted.
 func (k Keeper) setHrpIbcRecord(ctx sdk.Context, hrpIbcRecord types.HrpIbcRecord) error {
 	store := ctx.KVStore(k.storeKey)
 	prefixStore := prefix.NewStore(store, types.HrpIBCRecordStorePrefix)
@@ -104,6 +104,11 @@ func (k Keeper) setHrpIbcRecord(ctx sdk.Context, hrpIbcRecord types.HrpIbcRecord
 	if hrpIbcRecord.SourceChannel == "" {
 		if prefixStore.Has([]byte(hrpIbcRecord.Hrp)) {
 			prefixStore.Delete([]byte(hrpIbcRecord.Hrp))
+			k.Logger(ctx).Info("HRP IBC record deleted", "hrp", hrpIbcRecord.Hrp)
+			ctx.EventManager().EmitEvent(sdk.NewEvent(
+				types.EventTypeHrpIbcRecordDelete,
+				sdk.NewAttribute(types.AttributeKeyHrp, hrpIbcRecord.Hrp),
+			))
 		}
 		return nil
 	}
@@ -114,6 +119,12 @@ func (k Keeper) setHrpIbcRecord(ctx sdk.Context, hrpIbcRecord types.HrpIbcRecord
 	}
 
 	prefixStore.Set([]byte(hrpIbcRecord.Hrp), bz)
+	k.Logger(ctx).Info("HRP IBC record set", "hrp", hrpIbcRecord.Hrp, "channel", hrpIbcRecord.SourceChannel)
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeHrpIbcRecordSet,
+		sdk.NewAttribute(types.AttributeKeyHrp, hrpIbcRecord.Hrp),
+		sdk.NewAttribute(types.AttributeKeyChannel, hrpIbcRecord.SourceChannel),
+	))
 	return nil
 }
 
@@ -142,6 +153,15 @@ func (k Keeper) GetHrpIbcRecords(ctx sdk.Context) (hrpIbcRecords []types.HrpIbcR
 }
 
 func (k Keeper) SetHrpIbcRecords(ctx sdk.Context, hrpIbcRecords []types.HrpIbcRecord) {
+	nativePrefix, err := k.GetNativeHrp(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("native HRP not set: %v", err))
+	}
+
+	gs := types.GenesisState{NativeHRP: nativePrefix, HrpIBCRecords: hrpIbcRecords}
+	if err := gs.Validate(); err != nil {
+		panic(fmt.Sprintf("invalid hrp ibc records: %v", err))
+	}
 	for _, record := range hrpIbcRecords {
 		err := k.setHrpIbcRecord(ctx, record)
 		if err != nil {

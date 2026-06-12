@@ -1203,7 +1203,7 @@ func (app *Gravity) registerUpgradeHandlers() {
 	upgrades.RegisterUpgradeHandlers(
 		app.ModuleManager, app.configurator, app.AccountKeeper, app.BankKeeper, app.Bech32IbcKeeper, app.DistrKeeper,
 		app.MintKeeper, app.StakingKeeper, app.UpgradeKeeper, app.CrisisKeeper, app.IbcTransferKeeper, app.AuctionKeeper,
-		app.ParamsKeeper, app.ConsensusParamsKeeper,
+		app.ParamsKeeper, app.ConsensusParamsKeeper, app.GravityKeeper,
 	)
 
 }

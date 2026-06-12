@@ -45,6 +45,9 @@ func (p *UpdateHrpIbcChannelProposal) ValidateBasic() error {
 	if err != nil {
 		return err
 	}
+	if strings.TrimSpace(p.SourceChannel) == "" {
+		return ErrInvalidIBCData
+	}
 	if p.IcsToHeightOffset == 0 && p.IcsToTimeOffset == 0 {
 		return ErrInvalidOffsetHeightTimeout
 	}

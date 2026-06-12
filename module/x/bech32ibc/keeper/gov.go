@@ -15,6 +15,14 @@ func (k Keeper) HandleUpdateHrpIbcChannelProposal(ctx sdk.Context, p *types.Upda
 		return err
 	}
 
+	nativeHrp, err := k.GetNativeHrp(ctx)
+	if err != nil {
+		return err
+	}
+	if p.Hrp == nativeHrp {
+		return errorsmod.Wrap(types.ErrInvalidHRP, "cannot map an IBC channel for the native prefix")
+	}
+
 	_, found := k.channelKeeper.GetChannel(ctx, k.tk.GetPort(ctx), p.SourceChannel)
 
 	if !found {
