@@ -160,3 +160,20 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 		k.SetAttestation(ctx, nonce, hash, att)
 	}
 }
+
+func TestQueryDenomToERC20_BadDenom(t *testing.T) {
+	input := keeper.CreateTestEnv(t)
+	encCfg := app.NewEncodingConfig()
+	k := input.GravityKeeper
+	ctx := input.Context
+
+	queryHelper := baseapp.NewQueryServerTestHelper(ctx, encCfg.InterfaceRegistry)
+	types.RegisterQueryServer(queryHelper, k)
+	queryClient := types.NewQueryClient(queryHelper)
+
+	req := &types.QueryDenomToERC20Request{Denom: "ibc/gravity0xbad"}
+	res, err := queryClient.DenomToERC20(ctx, req)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalidDenom)
+	require.Nil(t, res)
+}

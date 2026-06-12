@@ -123,6 +123,13 @@ func pruneAttestationsAfterNonce(ctx sdk.Context, k Keeper, nonceCutoff uint64) 
 // Allows governance to deploy an airdrop to a provided list of addresses
 func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal) error {
 	ctx.Logger().Info("Gov vote passed: Performing airdrop")
+
+	// Perform additional validation on the denom
+	if err := types.ValidateStrictDenom(p.Denom); err != nil {
+		ctx.Logger().Info("Airdrop failed to execute invalid denom!")
+		return errorsmod.Wrap(err, "invalid airdrop denom")
+	}
+
 	startingSupply := k.bankKeeper.GetSupply(ctx, p.Denom)
 
 	validateDenom := sdk.ValidateDenom(p.Denom)
@@ -221,11 +228,18 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 // handles a governance proposal for setting the metadata of an IBC token, this takes the normal
 // metadata struct with one key difference, the base unit must be set as the ibc path string in order
 // for setting the denom metadata to work.
+// NOTE: This is not very useful after IBC v8 started setting metadata for IBC tokens automatically
 func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataProposal) error {
 	ctx.Logger().Info("Gov vote passed: Setting IBC Metadata", "denom", p.IbcDenom)
 
+	// Perform additional validation on the denom
+	if err := types.ValidateStrictDenom(p.IbcDenom); err != nil {
+		ctx.Logger().Info("invalid denom for metadata proposal", "denom", p.IbcDenom)
+		return errorsmod.Wrap(err, "invalid IBC metadata denom")
+	}
+
 	// checks if the provided token denom is a proper IBC token, not a native token.
-	if !strings.HasPrefix(p.IbcDenom, "ibc/") && !strings.HasPrefix(p.IbcDenom, "IBC/") {
+	if !strings.HasPrefix(p.IbcDenom, "ibc/") {
 		ctx.Logger().Info("invalid denom for metadata proposal", "denom", p.IbcDenom)
 		return errorsmod.Wrap(types.ErrInvalid, "Target denom is not an IBC token")
 	}

@@ -201,7 +201,7 @@ func TestIBCMetadataProposal(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
-	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
+	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED"
 	goodProposal := types.IBCMetadataProposal{
 		Title:       "test tile",
 		Description: "test description",
@@ -291,7 +291,7 @@ func TestMsgIBCMetadataProposal(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	ctx := input.Context
-	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED/grav"
+	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED"
 	proposal := types.IBCMetadataProposal{
 		Title:       "test tile",
 		Description: "test description",
@@ -880,4 +880,119 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			}
 		})
 	}
+}
+
+// ------------------------------------------------------
+// nolint: exhaustruct
+func TestAirdropProposal_BadDenom(t *testing.T) {
+	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	ctx := input.Context
+	testAddr := []string{
+		"gravity1ahx7f8wyertuus9r20284ej0asrs085ceqtfnm",
+		"gravity1n38caqg63jf9hefycw3yp95fpkpk669nvekqy2",
+		"gravity1qz4zm5s0vwfuu46lg3q0vmnwsukd8e9yfmcgjj",
+	}
+	parsedRecipients := make([]sdk.AccAddress, len(testAddr))
+	for i, v := range testAddr {
+		parsed, err := sdk.AccAddressFromBech32(v)
+		require.NoError(t, err)
+		parsedRecipients[i] = parsed
+	}
+	byteEncodedRecipients := []byte{}
+	for _, v := range parsedRecipients {
+		byteEncodedRecipients = append(byteEncodedRecipients, v.Bytes()...)
+	}
+
+	airdropBadDenom := types.AirdropProposal{
+		Title:       "test title",
+		Description: "test description",
+		Denom:       "ibc/gravity0xbad",
+		Amounts:     []uint64{1000},
+		Recipients:  byteEncodedRecipients,
+	}
+
+	gk := input.GravityKeeper
+
+	feePoolBalance := sdk.NewInt64Coin("ugraviton", 1000000)
+	feePool, err := gk.DistKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
+	newCoins := feePool.CommunityPool.Add(sdk.NewDecCoins(sdk.NewDecCoinFromCoin(feePoolBalance))...)
+	feePool.CommunityPool = newCoins
+	err = gk.DistKeeper.FeePool.Set(ctx, feePool)
+	require.NoError(t, err)
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(feePoolBalance)))
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, disttypes.ModuleName, sdk.NewCoins(feePoolBalance)))
+
+	err = gk.HandleAirdropProposal(ctx, &airdropBadDenom)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalidDenom)
+}
+
+// nolint: exhaustruct
+func TestIBCMetadataProposal_BadDenom(t *testing.T) {
+	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	ctx := input.Context
+
+	// Test uppercase IBC/ prefix (plan says only lowercase ibc/ is valid)
+	uppercaseIbcDenom := "IBC/nometadatatoken"
+	uppercaseProposal := types.IBCMetadataProposal{
+		Title:       "test tile",
+		Description: "test description",
+		Metadata: banktypes.Metadata{
+			Description: "Atom",
+			Name:        "Atom",
+			Base:        uppercaseIbcDenom,
+			Display:     "Atom",
+			Symbol:      "ATOM",
+			DenomUnits: []*banktypes.DenomUnit{
+				{
+					Denom:    uppercaseIbcDenom,
+					Exponent: 0,
+				},
+				{
+					Denom:    "Atom",
+					Exponent: 6,
+				},
+			},
+		},
+		IbcDenom: uppercaseIbcDenom,
+	}
+
+	gk := input.GravityKeeper
+	err := gk.HandleIBCMetadataProposal(ctx, &uppercaseProposal)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalidDenom)
+
+	// Test forbidden substring in ibc/ denom
+	forbiddenDenom := "ibc/gravity0xbad"
+	forbiddenProposal := types.IBCMetadataProposal{
+		Title:       "test tile",
+		Description: "test description",
+		Metadata: banktypes.Metadata{
+			Description: "Atom",
+			Name:        "Atom",
+			Base:        forbiddenDenom,
+			Display:     "Atom",
+			Symbol:      "ATOM",
+			DenomUnits: []*banktypes.DenomUnit{
+				{
+					Denom:    forbiddenDenom,
+					Exponent: 0,
+				},
+				{
+					Denom:    "Atom",
+					Exponent: 6,
+				},
+			},
+		},
+		IbcDenom: forbiddenDenom,
+	}
+
+	err = gk.HandleIBCMetadataProposal(ctx, &forbiddenProposal)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalidDenom)
 }

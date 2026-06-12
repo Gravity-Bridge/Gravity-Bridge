@@ -179,6 +179,17 @@ func (msg MsgSendToEth) Type() string { return AMINO_TYPE_SEND_TO_ETH }
 // ValidateBasic runs stateless checks on the message
 // Checks if the Eth address is valid
 func (msg MsgSendToEth) ValidateBasic() error {
+	// Perform additional validation on the denoms
+	if err := ValidateStrictDenom(msg.Amount.Denom); err != nil {
+		return errorsmod.Wrap(err, "amount denom")
+	}
+	if err := ValidateStrictDenom(msg.BridgeFee.Denom); err != nil {
+		return errorsmod.Wrap(err, "bridge fee denom")
+	}
+	if err := ValidateStrictDenom(msg.ChainFee.Denom); err != nil {
+		return errorsmod.Wrap(err, "chain fee denom")
+	}
+
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
 		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, msg.Sender)
 	}
@@ -243,6 +254,9 @@ func (msg MsgRequestBatch) Type() string { return AMINO_TYPE_REQUEST_BATCH }
 func (msg MsgRequestBatch) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Sender); err != nil {
 		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, msg.Sender)
+	}
+	if err := ValidateStrictDenom(msg.Denom); err != nil {
+		return errorsmod.Wrap(err, "denom")
 	}
 	return nil
 }
@@ -449,7 +463,13 @@ func (msg MsgSendToCosmosClaim) Route() string { return RouterKey }
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (msg *MsgSendToCosmosClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s", msg.EventNonce, msg.EthBlockHeight, msg.TokenContract, msg.Amount.String(), msg.EthereumSender, msg.CosmosReceiver)
+	path := fmt.Sprintf("%d%s%d%s%s%s%s%s%s%s%s",
+		msg.EventNonce, AttestationSeparator,
+		msg.EthBlockHeight, AttestationSeparator,
+		msg.TokenContract, AttestationSeparator,
+		msg.Amount.String(), AttestationSeparator,
+		msg.EthereumSender, AttestationSeparator,
+		msg.CosmosReceiver)
 	return tmhash.Sum([]byte(path)), nil
 }
 
@@ -508,7 +528,11 @@ func (e *MsgBatchSendToEthClaim) ValidateBasic() error {
 
 // Hash implements WithdrawBatch.Hash
 func (msg *MsgBatchSendToEthClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%d/%s", msg.EventNonce, msg.EthBlockHeight, msg.BatchNonce, msg.TokenContract)
+	path := fmt.Sprintf("%d%s%d%s%d%s%s",
+		msg.EventNonce, AttestationSeparator,
+		msg.EthBlockHeight, AttestationSeparator,
+		msg.BatchNonce, AttestationSeparator,
+		msg.TokenContract)
 	return tmhash.Sum([]byte(path)), nil
 }
 
@@ -559,6 +583,9 @@ func (e *MsgERC20DeployedClaim) GetType() ClaimType {
 
 // ValidateBasic performs stateless checks
 func (e *MsgERC20DeployedClaim) ValidateBasic() error {
+	if err := ValidateStrictDenom(e.CosmosDenom); err != nil {
+		return errorsmod.Wrap(err, "cosmos denom")
+	}
 	if err := ValidateEthAddress(e.TokenContract); err != nil {
 		return errorsmod.Wrap(err, "erc20 token")
 	}
@@ -611,7 +638,14 @@ func (msg MsgERC20DeployedClaim) Route() string { return RouterKey }
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (b *MsgERC20DeployedClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%s/%s/%s/%s/%d", b.EventNonce, b.EthBlockHeight, b.CosmosDenom, b.TokenContract, b.Name, b.Symbol, b.Decimals)
+	path := fmt.Sprintf("%d%s%d%s%s%s%s%s%s%s%s%s%d",
+		b.EventNonce, AttestationSeparator,
+		b.EthBlockHeight, AttestationSeparator,
+		b.CosmosDenom, AttestationSeparator,
+		b.TokenContract, AttestationSeparator,
+		b.Name, AttestationSeparator,
+		b.Symbol, AttestationSeparator,
+		b.Decimals)
 	return tmhash.Sum([]byte(path)), nil
 }
 
@@ -678,7 +712,11 @@ func (msg MsgLogicCallExecutedClaim) Route() string { return RouterKey }
 // note that the Orchestrator is the only field excluded from this hash, this is because that value is used higher up in the store
 // structure for who has made what claim and is verified by the msg ante-handler for signatures
 func (b *MsgLogicCallExecutedClaim) ClaimHash() ([]byte, error) {
-	path := fmt.Sprintf("%d/%d/%s/%d", b.EventNonce, b.EthBlockHeight, b.InvalidationId, b.InvalidationNonce)
+	path := fmt.Sprintf("%d%s%d%s%s%s%d",
+		b.EventNonce, AttestationSeparator,
+		b.EthBlockHeight, AttestationSeparator,
+		b.InvalidationId, AttestationSeparator,
+		b.InvalidationNonce)
 	return tmhash.Sum([]byte(path)), nil
 }
 
@@ -763,7 +801,13 @@ func (b *MsgValsetUpdatedClaim) ClaimHash() ([]byte, error) {
 		return nil, errorsmod.Wrap(err, "invalid members")
 	}
 	internalMembers.Sort()
-	path := fmt.Sprintf("%d/%d/%d/%x/%s/%s", b.EventNonce, b.ValsetNonce, b.EthBlockHeight, internalMembers.ToExternal(), b.RewardAmount.String(), b.RewardToken)
+	path := fmt.Sprintf("%d%s%d%s%d%s%x%s%s%s%s",
+		b.EventNonce, AttestationSeparator,
+		b.ValsetNonce, AttestationSeparator,
+		b.EthBlockHeight, AttestationSeparator,
+		internalMembers.ToExternal(), AttestationSeparator,
+		b.RewardAmount.String(), AttestationSeparator,
+		b.RewardToken)
 	return tmhash.Sum([]byte(path)), nil
 }
 

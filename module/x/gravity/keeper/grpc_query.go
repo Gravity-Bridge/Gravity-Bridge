@@ -303,6 +303,9 @@ func (k Keeper) DenomToERC20(
 	c context.Context,
 	req *types.QueryDenomToERC20Request,
 ) (*types.QueryDenomToERC20Response, error) {
+	if err := types.ValidateStrictDenom(req.Denom); err != nil {
+		return nil, errorsmod.Wrap(err, "invalid denom in query request")
+	}
 	ctx := sdk.UnwrapSDKContext(c)
 	cosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, req.Denom)
 	if err != nil {
