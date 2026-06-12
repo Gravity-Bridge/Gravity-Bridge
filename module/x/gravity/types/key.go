@@ -122,6 +122,12 @@ var (
 	// [0x877b20a916c830ad4db23d22f7b2cde0]
 	ERC20ToDenomKey = HashString("ERC20ToDenomKey")
 
+	// RemappedERC20Key prefixes ERC20 addresses that were remapped in the recovery upgrade.
+	// The presence of a key marks the token as remapped; the stored value is
+	// unused.  Remapped tokens: new deposits use the gravity2 prefix,
+	// and old gravity-prefixed vouchers are blocked from bridging back to Ethereum.
+	RemappedERC20Key = HashString("RemappedERC20Key")
+
 	// LastSlashedValsetNonce indexes the latest slashed valset nonce
 	// [0x3adee74534260faaea6ac8e31826b09e]
 	LastSlashedValsetNonce = HashString("LastSlashedValsetNonce")
@@ -291,6 +297,11 @@ func GetDenomToERC20Key(denom string) []byte {
 
 func GetERC20ToDenomKey(erc20 EthAddress) []byte {
 	return AppendBytes(ERC20ToDenomKey, erc20.GetAddress().Bytes())
+}
+
+// GetRemappedERC20Key returns the store key for a single remapped ERC20 entry.
+func GetRemappedERC20Key(erc20 EthAddress) []byte {
+	return AppendBytes(RemappedERC20Key, erc20.GetAddress().Bytes())
 }
 
 func GetOutgoingLogicCallKey(invalidationId []byte, invalidationNonce uint64) []byte {

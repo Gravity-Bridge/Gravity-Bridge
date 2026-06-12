@@ -157,6 +157,13 @@ message Params {
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
+  // cosmos_bridgeable_tokens
+  //
+  // A whitelist of Cosmos-originated token denoms that are permitted to be
+  // sent from the Gravity Bridge chain to Ethereum. Ethereum-originated assets
+  // (with the "gravity" prefix) are permitted regardless of this list
+  // Tokens not on this list will be blocked from SendToEth and acceptance in ERC20 deploy claims
+  repeated string cosmos_bridgeable_tokens = 22;
 }
 
 // GenesisState struct, containing all persistant data required by the Gravity
@@ -180,6 +187,11 @@ message GenesisState {
       [ (gogoproto.nullable) = false ];
   repeated PendingIbcAutoForward pending_ibc_auto_forwards = 13
       [ (gogoproto.nullable) = false ];
+  // remapped_erc20s lists the addresses of ERC20 tokens that
+  // have been remapped to use a new "gravity2" prefix. Old vouchers will not be
+  // exchangeable for their original ethereum assets, and only the new gravity2
+  // vouchers will be redeemable for ethereum tokens.
+  repeated string remapped_erc20s = 14;
 }
 
 // GravityCounters contains the many noces and counters required to maintain the

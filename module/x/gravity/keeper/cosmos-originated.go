@@ -69,22 +69,35 @@ func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, t
 // This will return an error if it cant parse the denom as a gravity denom, and then also can't find the denom
 // in an index of ERC20 contracts deployed on Ethereum to serve as synthetic Cosmos assets.
 func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, *types.EthAddress, error) {
-	// First try parsing the ERC20 out of the denom
-	tc1, err := types.GravityDenomToERC20(denom)
+	// first, prefer gravity2 prefixes for Ethereum-originated assets
+	if tc1, err := types.Gravity2DenomToERC20(denom); err == nil {
+		if k.IsRemappedERC20(ctx, *tc1) {
+			return false, tc1, nil
+		}
+		return false, nil, errorsmod.Wrapf(types.ErrInvalid,
+			"gravity2 denom %s does not correspond to a remapped ERC20", denom)
+	}
 
+	// next, try to look up the regular gravity prefix
+	tc2, err := types.GravityDenomToERC20(denom)
 	if err != nil {
-		// Look up ERC20 contract in index and error if it's not in there.
-		tc2, exists := k.GetCosmosOriginatedERC20(ctx, denom)
+		// finally, check if this is a cosmos originated denom
+		tc3, exists := k.GetCosmosOriginatedERC20(ctx, denom)
 		if !exists {
 			return false, nil,
 				errorsmod.Wrap(types.ErrInvalid, fmt.Sprintf("denom not a gravity voucher coin: %s, and also not in cosmos-originated ERC20 index", err))
 		}
-		// This is a cosmos-originated asset
-		return true, tc2, nil
+		return true, tc3, nil
+	}
+
+	if k.IsRemappedERC20(ctx, *tc2) {
+		return false, nil, errorsmod.Wrapf(types.ErrInvalid,
+			"ERC20 %s was remapped, new deposits use %s.",
+			tc2.GetAddress().Hex(), types.Gravity2Denom(*tc2))
 	}
 
 	// This is an ethereum-originated asset
-	return false, tc1, nil
+	return false, tc2, nil
 }
 
 // RewardToERC20Lookup is a specialized function wrapping DenomToERC20Lookup designed to validate
@@ -116,8 +129,52 @@ func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, tokenContract types.EthAddre
 		return true, dn1
 	}
 
-	// If it is not in there, it is not a cosmos originated token, turn the ERC20 into a gravity denom
+	// if this is a remapped token, make sure to return the gravity2 denom
+	if k.IsRemappedERC20(ctx, tokenContract) {
+		return false, types.Gravity2Denom(tokenContract)
+	}
+
+	// If it is not a cosmos originated token and not a remapped token, turn the ERC20 into a gravity denom
 	return false, types.GravityDenom(tokenContract)
+}
+
+// SetRemappedERC20 marks an Ethereum ERC20 address as having been remapped.
+// Once set, ERC20ToDenomLookup returns the gravity2 denom
+// for new deposits and DenomToERC20Lookup rejects the old gravity-prefixed denom.
+func (k Keeper) SetRemappedERC20(ctx sdk.Context, tokenContract types.EthAddress) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.GetRemappedERC20Key(tokenContract), []byte{0x01})
+}
+
+// IsRemappedERC20 returns true if the given ERC20 address was marked as remapped.
+func (k Keeper) IsRemappedERC20(ctx sdk.Context, tokenContract types.EthAddress) bool {
+	store := ctx.KVStore(k.storeKey)
+	return store.Has(types.GetRemappedERC20Key(tokenContract))
+}
+
+// IterateRemappedERC20s calls cb for each ERC20 address recorded as remapped.
+// cb should return true to stop early.
+func (k Keeper) IterateRemappedERC20s(ctx sdk.Context, cb func(addr types.EthAddress) bool) {
+	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.RemappedERC20Key)
+	iter := prefixStore.Iterator(nil, nil)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		addr, err := types.NewEthAddressFromBytes(iter.Key())
+		if err != nil {
+			panic(fmt.Sprintf("invalid EthAddress in RemappedERC20 store: %v", iter.Key()))
+		}
+		if cb(*addr) {
+			break
+		}
+	}
+}
+
+// DeleteCosmosOriginatedDenomToERC20 removes both directions of the denom to ERC20 mapping
+// for a cosmos-originated registration.
+func (k Keeper) DeleteCosmosOriginatedDenomToERC20(ctx sdk.Context, tokenContract types.EthAddress, denom string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Delete(types.GetDenomToERC20Key(denom))
+	store.Delete(types.GetERC20ToDenomKey(tokenContract))
 }
 
 // IterateERC20ToDenom iterates over erc20 to denom relations

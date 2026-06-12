@@ -118,3 +118,51 @@ func TestStringToByteArray(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateCosmosBridgeableTokens(t *testing.T) {
+	specs := map[string]struct {
+		denoms []string
+		expErr bool
+	}{
+		"empty list is valid":              {denoms: []string{}, expErr: false},
+		"nil list is valid":               {denoms: nil, expErr: false},
+		"single valid denom":              {denoms: []string{"uatom"}, expErr: false},
+		"multiple valid denoms":           {denoms: []string{"uatom", "uosmo", "stake"}, expErr: false},
+		"ibc denom is valid":              {denoms: []string{"ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"}, expErr: false},
+		"duplicate denom rejected":        {denoms: []string{"uatom", "uatom"}, expErr: true},
+		"gravity-prefixed denom rejected": {denoms: []string{"gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"}, expErr: true},
+		"invalid denom rejected":          {denoms: []string{"INVALID DENOM WITH SPACES"}, expErr: true},
+	}
+
+	for msg, spec := range specs {
+		spec := spec
+		t.Run(msg, func(t *testing.T) {
+			err := validateCosmosBridgeableTokens(spec.denoms)
+			if spec.expErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestParamsValidateBasicCosmosBridgeableTokens(t *testing.T) {
+	base := DefaultParams()
+
+	// valid: non-empty allowlist
+	p := *base
+	p.CosmosBridgeableTokens = []string{"uatom", "uosmo"}
+	require.NoError(t, p.ValidateBasic())
+
+	// invalid: duplicate entry
+	p2 := *base
+	p2.CosmosBridgeableTokens = []string{"uatom", "uatom"}
+	require.Error(t, p2.ValidateBasic())
+
+	// invalid: gravity-prefixed entry
+	p3 := *base
+	p3.CosmosBridgeableTokens = []string{"gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"}
+	require.Error(t, p3.ValidateBasic())
+}
+

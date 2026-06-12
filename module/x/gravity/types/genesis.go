@@ -97,6 +97,10 @@ var (
 	// the ChainFee will go to stakers
 	ParamStoreChainFeeAuctionPoolFraction = []byte("ChainFeeAuctionPoolFraction")
 
+	// ParamStoreCosmosBridgeableTokens stores the list of Cosmos-originated token denoms
+	// permitted to be sent from Gravity Bridge to Ethereum
+	ParamStoreCosmosBridgeableTokens = []byte("CosmosBridgeableTokens")
+
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
 		GravityId:                    "",
@@ -122,6 +126,7 @@ var (
 		EthereumBlacklist:           []string{},
 		MinChainFeeBasisPoints:      0,
 		ChainFeeAuctionPoolFraction: sdkmath.LegacyDec{},
+		CosmosBridgeableTokens:      []string{},
 	}
 )
 
@@ -177,6 +182,7 @@ func DefaultParams() *Params {
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       2,
 		ChainFeeAuctionPoolFraction:  sdkmath.LegacyNewDecWithPrec(50, 2), // 50%, the prec parameter moves the decimal to the left that many places
+		CosmosBridgeableTokens:       []string{},
 	}
 }
 
@@ -201,6 +207,7 @@ const (
 	ParamEthereumBlacklist            = "EthereumBlacklist"
 	ParamMinChainFeeBasisPoints       = "MinChainFeeBasisPoints"
 	ParamChainFeeAuctionPoolFraction  = "ChainFeeAuctionPoolFraction"
+	ParamCosmosBridgeableTokens       = "CosmosBridgeableTokens"
 )
 
 // ValidateBasic checks that the parameters have valid values.
@@ -265,6 +272,9 @@ func (p Params) ValidateBasic() error {
 	if err := validateChainFeeAuctionPoolFraction(p.ChainFeeAuctionPoolFraction); err != nil {
 		return errorsmod.Wrap(err, "chain fee auction pool fraction parameter")
 	}
+	if err := validateCosmosBridgeableTokens(p.CosmosBridgeableTokens); err != nil {
+		return errorsmod.Wrap(err, "cosmos bridgeable tokens parameter")
+	}
 	return nil
 }
 
@@ -291,6 +301,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,
 		ChainFeeAuctionPoolFraction:  sdkmath.LegacyDec{},
+		CosmosBridgeableTokens:       []string{},
 	})
 }
 
@@ -317,6 +328,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
 		paramtypes.NewParamSetPair(ParamStoreMinChainFeeBasisPoints, &p.MinChainFeeBasisPoints, validateMinChainFeeBasisPoints),
 		paramtypes.NewParamSetPair(ParamStoreChainFeeAuctionPoolFraction, &p.ChainFeeAuctionPoolFraction, validateChainFeeAuctionPoolFraction),
+		paramtypes.NewParamSetPair(ParamStoreCosmosBridgeableTokens, &p.CosmosBridgeableTokens, validateCosmosBridgeableTokens),
 	}
 }
 
@@ -463,8 +475,18 @@ func validateSlashFractionBadEthSignature(i interface{}) error {
 }
 
 func validateValsetRewardAmount(i interface{}) error {
-	if _, ok := i.(sdk.Coin); !ok {
+	v, ok := i.(sdk.Coin)
+	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	if v.Denom == "" && v.IsZero() {
+		return nil // zero-value coin is valid (means no reward)
+	}
+	if err := sdk.ValidateDenom(v.Denom); err != nil {
+		return errorsmod.Wrap(err, "invalid denom in ValsetReward")
+	}
+	if err := ValidateStrictDenom(v.Denom); err != nil {
+		return errorsmod.Wrap(err, "invalid denom in ValsetReward")
 	}
 	return nil
 }
@@ -519,6 +541,30 @@ func validateChainFeeAuctionPoolFraction(i interface{}) error {
 		return fmt.Errorf("chain fee auction pool fraction too large: %s", v)
 	}
 
+	return nil
+}
+
+func validateCosmosBridgeableTokens(i interface{}) error {
+	denoms, ok := i.([]string)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	seen := make(map[string]struct{}, len(denoms))
+	for _, denom := range denoms {
+		if err := sdk.ValidateDenom(denom); err != nil {
+			return errorsmod.Wrapf(err, "invalid denom in CosmosBridgeableTokens: %s", denom)
+		}
+		if err := ValidateStrictDenom(denom); err != nil {
+			return errorsmod.Wrapf(err, "invalid denom in CosmosBridgeableTokens: %s", denom)
+		}
+		if strings.HasPrefix(denom, GravityDenomPrefix) {
+			return fmt.Errorf("CosmosBridgeableTokens must not contain ethereum-originated (gravity-prefixed) denoms: %s", denom)
+		}
+		if _, dup := seen[denom]; dup {
+			return fmt.Errorf("duplicate denom in CosmosBridgeableTokens: %s", denom)
+		}
+		seen[denom] = struct{}{}
+	}
 	return nil
 }
 

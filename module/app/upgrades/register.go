@@ -21,8 +21,10 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/orion"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/pleiades"
 	polaris "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/polaris"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/recovery"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	auctionkeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction/keeper"
+	gravitykeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 )
 
 // RegisterUpgradeHandlers registers handlers for all upgrades
@@ -34,9 +36,11 @@ func RegisterUpgradeHandlers(
 	mintKeeper *mintkeeper.Keeper, stakingKeeper *stakingkeeper.Keeper, upgradeKeeper *upgradekeeper.Keeper,
 	crisisKeeper *crisiskeeper.Keeper, transferKeeper *ibctransferkeeper.Keeper, auctionKeeper *auctionkeeper.Keeper,
 	paramsKeeper *paramskeeper.Keeper, consensusparamsKeeper *consensusparamskeeper.Keeper,
+	gravityKeeper *gravitykeeper.Keeper,
 ) {
 	if mm == nil || configurator == nil || accountKeeper == nil || bankKeeper == nil || bech32IbcKeeper == nil ||
-		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil || upgradeKeeper == nil || auctionKeeper == nil {
+		distrKeeper == nil || mintKeeper == nil || stakingKeeper == nil || upgradeKeeper == nil || auctionKeeper == nil ||
+		gravityKeeper == nil {
 		panic("Nil argument to RegisterUpgradeHandlers()!")
 	}
 	// Mercury aka v1->v2 UPGRADE HANDLER SETUP
@@ -96,5 +100,11 @@ func RegisterUpgradeHandlers(
 	upgradeKeeper.SetUpgradeHandler(
 		aurora.NeutrinoToAuroraPlanName,
 		aurora.GetAuroraUpgradeHandler(mm, configurator, crisisKeeper, paramsKeeper, consensusparamsKeeper, upgradeKeeper),
+	)
+
+	// Recovery upgrade handler
+	upgradeKeeper.SetUpgradeHandler(
+		recovery.AuroraToRecoveryPlanName,
+		recovery.GetRecoveryUpgradeHandler(mm, configurator, crisisKeeper, gravityKeeper, bankKeeper),
 	)
 }

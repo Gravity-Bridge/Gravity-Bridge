@@ -26,6 +26,10 @@ func AllInvariants(k Keeper) sdk.Invariant {
 		if stop {
 			return res, stop
 		}
+		res, stop = AttestationHashIntegrityInvariant(k)(ctx)
+		if stop {
+			return res, stop
+		}
 		return ModuleBalanceInvariant(k)(ctx)
 
 		/*
@@ -170,6 +174,36 @@ func StoreValidityInvariant(k Keeper) sdk.Invariant {
 
 		// SUCCESS: If execution made it here, everything passes the sanity checks
 		return "", false
+	}
+}
+
+// AttestationHashIntegrityInvariant checks that each attestation's individually stored claim
+// components, when reconstructed into a duplicate claim, produce the same ClaimHash as the
+// stored Any claim. This verifies that the components have not been tampered with.
+func AttestationHashIntegrityInvariant(k Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (string, bool) {
+		var broken []string
+		var checked int
+		const maxChecks = 1000
+
+		k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) bool {
+			// Skip legacy attestations that predate the new fields
+			if att.ClaimType == types.CLAIM_TYPE_UNSPECIFIED {
+				return false
+			}
+			if err := att.VerifyClaimHash(k.cdc); err != nil {
+				broken = append(broken, fmt.Sprintf("attestation %x: %v", key, err))
+			}
+			checked++
+			if checked >= maxChecks {
+				return true // stop early
+			}
+			return false
+		})
+		if len(broken) > 0 {
+			return fmt.Sprintf("broken attestations: %v", broken), true
+		}
+		return "all attestation hashes consistent with stored components", false
 	}
 }
 
@@ -576,7 +610,7 @@ func CheckValsets(ctx sdk.Context, k Keeper) error {
 	return err
 }
 
-// CheckPendingIbcAutoForwards checks each forward is appropriate and also that the transfer module holds enough of each token
+// CheckPendingIbcAutoForwards checks each forward is appropriate
 func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 	nativeHrp := sdk.GetConfig().GetBech32AccountAddrPrefix()
 	pendingForwards := k.PendingIbcAutoForwards(ctx, 0)
@@ -593,7 +627,7 @@ func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 		if !fwd.Token.Amount.IsPositive() {
 			return fmt.Errorf("found pending IBC auto forward (%v) transferring a non-positive balance %s", fwd, fwd.Token.Amount.String())
 		}
-		// Check the denom and account balances
+		// Check the denom
 		fwdDenom := fwd.Token.Denom
 		if strings.HasPrefix(strings.ToLower(fwdDenom), "ibc/") {
 			_, err := k.ibcTransferKeeper.DenomPathFromHash(ctx, fwdDenom)

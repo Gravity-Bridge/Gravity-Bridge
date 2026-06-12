@@ -121,18 +121,15 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 		panic(fmt.Sprintf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", claim.BatchNonce, claim.EthBlockHeight, b.BatchTimeout))
 	}
 	contract := b.TokenContract
-	// Burn tokens if they're Ethereum originated
-	if isCosmosOriginated, _ := k.ERC20ToDenomLookup(ctx, contract); !isCosmosOriginated {
+	// Burn tokens if they're Ethereum originated.
+	// NOTE: Here we can't use GravityCoin() because it returns the old gravity-prefixed denom for all tokens, but
+	// with the remapping now we need to consider the gravity2-prefixed tokens as well
+	if isCosmosOriginated, burnDenom := k.ERC20ToDenomLookup(ctx, contract); !isCosmosOriginated {
 		totalToBurn := sdkmath.NewInt(0)
 		for _, tx := range b.Transactions {
 			totalToBurn = totalToBurn.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))
 		}
-		// burn vouchers to send them back to ETH
-		erc20, err := types.NewInternalERC20Token(totalToBurn, contract.GetAddress().Hex())
-		if err != nil {
-			panic(errorsmod.Wrapf(err, "invalid ERC20 address in executed batch"))
-		}
-		burnVouchers := sdk.NewCoins(erc20.GravityCoin())
+		burnVouchers := sdk.NewCoins(sdk.NewCoin(burnDenom, totalToBurn))
 		if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, burnVouchers); err != nil {
 			panic(err)
 		}

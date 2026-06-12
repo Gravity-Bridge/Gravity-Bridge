@@ -4,14 +4,15 @@
 package types
 
 import (
-	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
-	types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/cosmos/gogoproto/gogoproto"
-	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+
+	cosmossdk_io_math "cosmossdk.io/math"
+	types "github.com/cosmos/cosmos-sdk/types"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -96,6 +97,12 @@ type Params struct {
 	EthereumBlacklist           []string                    `protobuf:"bytes,19,rep,name=ethereum_blacklist,json=ethereumBlacklist,proto3" json:"ethereum_blacklist,omitempty"`
 	MinChainFeeBasisPoints      uint64                      `protobuf:"varint,20,opt,name=min_chain_fee_basis_points,json=minChainFeeBasisPoints,proto3" json:"min_chain_fee_basis_points,omitempty"`
 	ChainFeeAuctionPoolFraction cosmossdk_io_math.LegacyDec `protobuf:"bytes,21,opt,name=chain_fee_auction_pool_fraction,json=chainFeeAuctionPoolFraction,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"chain_fee_auction_pool_fraction"`
+	// An allowlist of Cosmos-originated token denoms that are permitted to be
+	// sent from the Gravity Bridge chain to Ethereum. Ethereum-originated assets
+	// (those whose denom starts with the "gravity" prefix) are always permitted
+	// regardless of this list. Any Cosmos-originated asset NOT on this list will
+	// be rejected by SendToEth.
+	CosmosBridgeableTokens []string `protobuf:"bytes,22,rep,name=cosmos_bridgeable_tokens,json=cosmosBridgeableTokens,proto3" json:"cosmos_bridgeable_tokens,omitempty"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -236,6 +243,13 @@ func (m *Params) GetMinChainFeeBasisPoints() uint64 {
 	return 0
 }
 
+func (m *Params) GetCosmosBridgeableTokens() []string {
+	if m != nil {
+		return m.CosmosBridgeableTokens
+	}
+	return nil
+}
+
 // GenesisState struct, containing all persistant data required by the Gravity
 // module
 type GenesisState struct {
@@ -252,6 +266,7 @@ type GenesisState struct {
 	Erc20ToDenoms          []ERC20ToDenom              `protobuf:"bytes,11,rep,name=erc20_to_denoms,json=erc20ToDenoms,proto3" json:"erc20_to_denoms"`
 	UnbatchedTransfers     []OutgoingTransferTx        `protobuf:"bytes,12,rep,name=unbatched_transfers,json=unbatchedTransfers,proto3" json:"unbatched_transfers"`
 	PendingIbcAutoForwards []PendingIbcAutoForward     `protobuf:"bytes,13,rep,name=pending_ibc_auto_forwards,json=pendingIbcAutoForwards,proto3" json:"pending_ibc_auto_forwards"`
+	RemappedErc20s         []string                    `protobuf:"bytes,14,rep,name=remapped_erc20s,json=remappedErc20s,proto3" json:"remapped_erc20s,omitempty"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -374,6 +389,13 @@ func (m *GenesisState) GetUnbatchedTransfers() []OutgoingTransferTx {
 func (m *GenesisState) GetPendingIbcAutoForwards() []PendingIbcAutoForward {
 	if m != nil {
 		return m.PendingIbcAutoForwards
+	}
+	return nil
+}
+
+func (m *GenesisState) GetRemappedErc20s() []string {
+	if m != nil {
+		return m.RemappedErc20s
 	}
 	return nil
 }
@@ -596,6 +618,17 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.CosmosBridgeableTokens) > 0 {
+		for iNdEx := len(m.CosmosBridgeableTokens) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.CosmosBridgeableTokens[iNdEx])
+			copy(dAtA[i:], m.CosmosBridgeableTokens[iNdEx])
+			i = encodeVarintGenesis(dAtA, i, uint64(len(m.CosmosBridgeableTokens[iNdEx])))
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0xb2
+		}
+	}
 	{
 		size := m.ChainFeeAuctionPoolFraction.Size()
 		i -= size
@@ -788,6 +821,15 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			}
 			i--
 			dAtA[i] = 0x6a
+		}
+	}
+	if len(m.RemappedErc20s) > 0 {
+		for iNdEx := len(m.RemappedErc20s) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.RemappedErc20s[iNdEx])
+			copy(dAtA[i:], m.RemappedErc20s[iNdEx])
+			i = encodeVarintGenesis(dAtA, i, uint64(len(m.RemappedErc20s[iNdEx])))
+			i--
+			dAtA[i] = 0x72
 		}
 	}
 	if len(m.UnbatchedTransfers) > 0 {
@@ -1090,6 +1132,12 @@ func (m *Params) Size() (n int) {
 	}
 	l = m.ChainFeeAuctionPoolFraction.Size()
 	n += 2 + l + sovGenesis(uint64(l))
+	if len(m.CosmosBridgeableTokens) > 0 {
+		for _, s := range m.CosmosBridgeableTokens {
+			l = len(s)
+			n += 2 + l + sovGenesis(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -1168,6 +1216,12 @@ func (m *GenesisState) Size() (n int) {
 	if len(m.PendingIbcAutoForwards) > 0 {
 		for _, e := range m.PendingIbcAutoForwards {
 			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	if len(m.RemappedErc20s) > 0 {
+		for _, s := range m.RemappedErc20s {
+			l = len(s)
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
@@ -1757,6 +1811,38 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CosmosBridgeableTokens", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CosmosBridgeableTokens = append(m.CosmosBridgeableTokens, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])
@@ -2249,6 +2335,38 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if err := m.PendingIbcAutoForwards[len(m.PendingIbcAutoForwards)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RemappedErc20s", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RemappedErc20s = append(m.RemappedErc20s, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

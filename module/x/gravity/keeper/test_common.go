@@ -254,6 +254,7 @@ var (
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,
 		ChainFeeAuctionPoolFraction:  sdkmath.LegacyNewDecWithPrec(50, 2), // 50%
+		CosmosBridgeableTokens:       []string{},
 	}
 )
 

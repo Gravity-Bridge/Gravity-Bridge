@@ -91,6 +91,16 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 			panic("couldn't cast to claim")
 		}
 
+		// If claim_type and claim_components are missing (legacy genesis), populate them now.
+		if att.ClaimType == types.CLAIM_TYPE_UNSPECIFIED || att.ClaimComponents == nil {
+			att.ClaimType = claim.GetType()
+			components, err := types.ExtractClaimHashComponents(claim)
+			if err != nil {
+				panic(fmt.Errorf("error when extracting ClaimHashComponents: %v", err))
+			}
+			att.ClaimComponents = components
+		}
+
 		// TODO: block height?
 		hash, err := claim.ClaimHash()
 		if err != nil {
@@ -165,7 +175,19 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err != nil {
 			panic(fmt.Errorf("invalid erc20 address in Erc20ToDenoms for item %d: %s", i, item.Erc20))
 		}
+		if err := types.ValidateStrictDenom(item.Denom); err != nil {
+			panic(errorsmod.Wrapf(err, "invalid denom in genesis state: %s", item.Denom))
+		}
 		k.setCosmosOriginatedDenomToERC20(ctx, item.Denom, *ethAddr)
+	}
+
+	// populate state with remapped ERC20 addresses (set by the recovery upgrade)
+	for i, hexAddr := range data.RemappedErc20s {
+		addr, err := types.NewEthAddress(hexAddr)
+		if err != nil {
+			panic(fmt.Errorf("invalid remapped ERC20 address in genesis for item %d: %s: %v", i, hexAddr, err))
+		}
+		k.SetRemappedERC20(ctx, *addr)
 	}
 
 	// now that we have the denom-erc20 mapping we need to validate
@@ -177,6 +199,9 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	}
 	valsetReward := params.ValsetReward
 	if valsetReward.IsValid() && !valsetReward.IsZero() {
+		if err := types.ValidateStrictDenom(valsetReward.Denom); err != nil {
+			panic(errorsmod.Wrapf(err, "invalid valset reward denom in genesis state"))
+		}
 		_, exists := k.GetCosmosOriginatedERC20(ctx, valsetReward.Denom)
 		if !exists {
 			panic("Invalid Cosmos originated denom for valset reward")
@@ -263,6 +288,13 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		return false
 	})
 
+	// export remapped ERC20 addresses
+	var remappedERC20s []string
+	k.IterateRemappedERC20s(ctx, func(addr types.EthAddress) bool {
+		remappedERC20s = append(remappedERC20s, addr.GetAddress().Hex())
+		return false
+	})
+
 	unbatchedTxs := make([]types.OutgoingTransferTx, len(unbatchedTransfers))
 	for i, v := range unbatchedTransfers {
 		unbatchedTxs[i] = v.ToExternal()
@@ -290,5 +322,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		Erc20ToDenoms:          erc20ToDenoms,
 		UnbatchedTransfers:     unbatchedTxs,
 		PendingIbcAutoForwards: forwards,
+		RemappedErc20s:         remappedERC20s,
 	}
 }

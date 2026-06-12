@@ -243,3 +243,63 @@ func exportImport(t *testing.T, input *TestInput) {
 	input.BankKeeper.InitGenesis(input.Context, bankGenesis)
 	InitGenesis(input.Context, input.GravityKeeper, genesisState)
 }
+
+func TestInitGenesis_BadErc20ToDenom(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+
+	state := types.GenesisState{Params: types.DefaultParams()}
+	state.Erc20ToDenoms = []types.ERC20ToDenom{
+		{Erc20: "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255", Denom: "ibc/gravity0xbad"},
+	}
+
+	require.Panics(t, func() {
+		InitGenesis(ctx, input.GravityKeeper, state)
+	})
+}
+
+func TestInitGenesis_BadValsetRewardDenom(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+
+	state := types.GenesisState{Params: types.DefaultParams()}
+	state.Params.ValsetReward = sdk.NewCoin("ibc/gravity0xbad", sdkmath.NewInt(1))
+
+	require.Panics(t, func() {
+		InitGenesis(ctx, input.GravityKeeper, state)
+	})
+}
+
+// TestCosmosBridgeableTokensGenesisRoundTrip verifies that a non-empty CosmosBridgeableTokens
+// param survives a full ExportGenesis → InitGenesis round-trip intact.
+func TestCosmosBridgeableTokensGenesisRoundTrip(t *testing.T) {
+	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	ctx := input.Context
+	gk := input.GravityKeeper
+
+	// Set params with a non-empty allowlist
+	params, err := gk.GetParams(ctx)
+	require.NoError(t, err)
+	params.CosmosBridgeableTokens = []string{"uatom", "uosmo", "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"}
+	require.NoError(t, gk.SetParams(ctx, params))
+
+	// Export genesis
+	genesisState := ExportGenesis(ctx, gk)
+	require.NotNil(t, genesisState.Params)
+	require.Equal(t, params.CosmosBridgeableTokens, genesisState.Params.CosmosBridgeableTokens)
+
+	// Re-import into a fresh chain
+	newInput := CreateTestEnv(t)
+	bankGenesis := input.BankKeeper.ExportGenesis(ctx)
+	bech32ibcGenesis := bech32ibc.ExportGenesis(ctx, *gk.bech32IbcKeeper)
+	bech32ibc.InitGenesis(newInput.Context, *newInput.GravityKeeper.bech32IbcKeeper, *bech32ibcGenesis)
+	newInput.BankKeeper.InitGenesis(newInput.Context, bankGenesis)
+	InitGenesis(newInput.Context, newInput.GravityKeeper, genesisState)
+
+	// Verify the param survived the round-trip
+	restoredParams, err := newInput.GravityKeeper.GetParams(newInput.Context)
+	require.NoError(t, err)
+	require.Equal(t, params.CosmosBridgeableTokens, restoredParams.CosmosBridgeableTokens)
+}

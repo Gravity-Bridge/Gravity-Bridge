@@ -34,6 +34,11 @@ func (k Keeper) ValidatePendingIbcAutoForward(ctx sdk.Context, forward types.Pen
 		return err
 	}
 
+	// Perform additional validation on the denom
+	if err := types.ValidateStrictDenom(forward.Token.Denom); err != nil {
+		return errorsmod.Wrap(err, "invalid IBC auto-forward token denom")
+	}
+
 	latestEventNonce := k.GetLastObservedEventNonce(ctx)
 	if forward.EventNonce > latestEventNonce {
 		return errorsmod.Wrap(types.ErrInvalid, "EventNonce must be <= latest observed event nonce")
@@ -191,6 +196,12 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context) (stop bool, er
 		// Fail this tx
 		panic(fmt.Sprintf("Invalid forward found in Pending IBC Auto-Forward queue: %s", err.Error()))
 	}
+
+	// Perform additional validation on the denom
+	if err := types.ValidateStrictDenom(forward.Token.Denom); err != nil {
+		panic(fmt.Sprintf("Invalid denom in Pending IBC Auto-Forward queue: %s", err.Error()))
+	}
+
 	// Point of no return: the funds will be sent somewhere, either the IBC address, local address or the community pool
 	err = k.deletePendingIbcAutoForward(ctx, forward.EventNonce)
 	if err != nil {
@@ -305,7 +316,7 @@ func (k Keeper) logEmitIbcForwardFailureEvent(ctx sdk.Context, forward types.Pen
 	var localReceiver sdk.AccAddress
 	localReceiver, er := types.IBCAddressFromBech32(forward.ForeignReceiver) // checked valid bech32 receiver earlier
 	if er != nil {
-		panic(err)
+		panic(er)
 	}
 	k.Logger(ctx).Error("SendToCosmos IBC Auto-Forward Failure: funds sent to local address",
 		"localReceiver", localReceiver, "denom", forward.Token.Denom, "amount", forward.Token.Amount.String(),
@@ -320,6 +331,6 @@ func (k Keeper) logEmitIbcForwardFailureEvent(ctx sdk.Context, forward types.Pen
 		Amount:   forward.Token.Amount.String(),
 	})
 	if er != nil {
-		panic(err)
+		panic(er)
 	}
 }
