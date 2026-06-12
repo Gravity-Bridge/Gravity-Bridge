@@ -133,6 +133,18 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types.MsgSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgSendToEth", "msg", msg)
+
+	// Perform additional validation on the denoms
+	if err := types.ValidateStrictDenom(msg.Amount.Denom); err != nil {
+		return nil, errorsmod.Wrap(err, "invalid amount denom")
+	}
+	if err := types.ValidateStrictDenom(msg.BridgeFee.Denom); err != nil {
+		return nil, errorsmod.Wrap(err, "invalid bridge fee denom")
+	}
+	if err := types.ValidateStrictDenom(msg.ChainFee.Denom); err != nil {
+		return nil, errorsmod.Wrap(err, "invalid chain fee denom")
+	}
+
 	sender, err := sdk.AccAddressFromBech32(msg.Sender)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid sender")
@@ -143,9 +155,30 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, errorsmod.Wrap(err, "invalid eth dest")
 	}
 
-	_, erc20, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
+	isCosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid denom")
+	}
+
+	if isCosmosOriginated {
+		params, err := k.Keeper.GetParams(ctx)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "could not get params")
+		}
+		allowed := false
+		for _, bridgeable := range params.CosmosBridgeableTokens {
+			if bridgeable == msg.Amount.Denom {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return nil, errorsmod.Wrapf(
+				types.ErrInvalid,
+				"cosmos-originated token %s is not on the CosmosBridgeableTokens allowlist",
+				msg.Amount.Denom,
+			)
+		}
 	}
 
 	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
@@ -249,6 +282,10 @@ func (k msgServer) checkAndDeductSendToEthFees(ctx sdk.Context, sender sdk.AccAd
 func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (*types.MsgRequestBatchResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgRequestBatch", "msg", msg)
+
+	if err := types.ValidateStrictDenom(msg.Denom); err != nil {
+		return nil, errorsmod.Wrap(err, "invalid denom in request batch")
+	}
 
 	// Check if the denom is a gravity coin, if not, check if there is a deployed ERC20 representing it.
 	// If not, error out
@@ -542,6 +579,10 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgERC20DeployedClaim", "msg", msg)
 
+	if err := types.ValidateStrictDenom(msg.CosmosDenom); err != nil {
+		return nil, errorsmod.Wrap(err, "invalid cosmos denom in ERC20 deployed claim")
+	}
+
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not check orchestrator validator in set")
@@ -744,6 +785,9 @@ func (k msgServer) UpdateParamsProposal(c context.Context, msg *typesv2.MsgUpdat
 				k.Logger(ctx).Error("invalid ValsetReward", "error", err, "value", param.Value)
 				return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "invalid ValsetReward: %s", err.Error())
 			}
+			if err := types.ValidateStrictDenom(valsetReward.Denom); err != nil {
+				return nil, errorsmod.Wrap(err, "invalid valset reward denom")
+			}
 			updatedParams.ValsetReward = valsetReward
 		case types.ParamBridgeActive:
 			bridgeActive, err := strconv.ParseBool(param.Value)
@@ -760,6 +804,19 @@ func (k msgServer) UpdateParamsProposal(c context.Context, msg *typesv2.MsgUpdat
 				return nil, errorsmod.Wrapf(sdkerrors.ErrJSONUnmarshal, "invalid EthereumBlacklist: %s", err.Error())
 			}
 			updatedParams.EthereumBlacklist = blacklist
+		case types.ParamCosmosBridgeableTokens:
+			bridgeableTokens := []string{}
+			err := json.Unmarshal([]byte(param.Value), &bridgeableTokens)
+			if err != nil {
+				k.Logger(ctx).Error("invalid CosmosBridgeableTokens", "error", err, "value", param.Value)
+				return nil, errorsmod.Wrapf(sdkerrors.ErrJSONUnmarshal, "invalid CosmosBridgeableTokens: %s", err.Error())
+			}
+			for _, token := range bridgeableTokens {
+				if err := types.ValidateStrictDenom(token); err != nil {
+					return nil, errorsmod.Wrapf(err, "invalid cosmos denom in CosmosBridgeableTokens: %s", token)
+				}
+			}
+			updatedParams.CosmosBridgeableTokens = bridgeableTokens
 		case types.ParamMinChainFeeBasisPoints:
 			minChainFeeBasisPoints, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
