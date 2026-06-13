@@ -769,16 +769,53 @@ pub async fn setup_native_hijack(
     contact: &Contact, // Src chain's deep_space client
     source_channel: String,
     sender: CosmosPrivateKey, // The Src chain's funds sender
-    keys: &[ValidatorKeys],
+    _keys: &[ValidatorKeys],
 ) {
-    setup_gravity_auto_forwards(
-        contact,
-        (*ADDRESS_PREFIX).clone(),
-        source_channel,
-        sender,
-        keys,
-    )
-    .await;
+    // Attempting to map the chain's own native HRP to an IBC channel is a security violation.
+    // Since SDK v0.50 runs proposal content validation at submission time, this proposal
+    // should be rejected immediately with "cannot map an IBC channel for the native prefix".
+    let proposal_any = encode_any(
+        UpdateHrpIbcChannelProposal {
+            title: "title here".to_string(),
+            description: "description here".to_string(),
+            hrp: (*ADDRESS_PREFIX).clone(),
+            source_channel,
+            ics_to_height_offset: u64::MAX,
+            ics_to_time_offset: None,
+        },
+        UPDATE_HRP_IBC_CHANNEL_PROPOSAL,
+    );
+
+    let proposal_res = contact
+        .create_legacy_gov_proposal(
+            proposal_any,
+            DSCoin {
+                denom: (*STAKING_TOKEN).clone(),
+                amount: one_atom().mul(10u8.into()),
+            },
+            DSCoin {
+                denom: (*STAKING_TOKEN).clone(),
+                amount: 0u8.into(),
+            },
+            sender,
+            Some(OPERATION_TIMEOUT),
+        )
+        .await;
+
+    match proposal_res {
+        Err(e) => {
+            let msg = format!("{e:?}");
+            assert!(
+                msg.contains("cannot map an IBC channel for the native prefix")
+                    || msg.contains("Invalid HRP"),
+                "Native hijack proposal was rejected, but with an unexpected error: {e:?}"
+            );
+            info!("Native hijack proposal was correctly rejected at submission: {e:?}");
+        }
+        Ok(_) => {
+            panic!("Native hijack proposal should have been rejected but was submitted successfully!");
+        }
+    }
 }
 
 // Initiates a "SendToCosmos Native Hijack": Runs a SendToCosmos with CosmosReceiver prefixed by
