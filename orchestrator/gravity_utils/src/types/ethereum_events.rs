@@ -734,14 +734,6 @@ impl Erc20DeployedEvent {
                 "denom exceeds maximum length".to_string(),
             ));
         }
-        if denom.len() > MAX_COSMOS_DENOM_LEN {
-            warn!(
-                "Deployed ERC20 has cosmos_denom exceeding the maximum length, will not be adopted"
-            );
-            return Err(GravityError::InvalidEventLogError(
-                "denom exceeds maximum length".to_string(),
-            ));
-        }
         if !denom.is_ascii() {
             warn!("Deployed ERC20 has non-ASCII cosmos_denom, will not be adopted");
             return Err(GravityError::InvalidEventLogError(
@@ -893,17 +885,53 @@ impl EthereumEvent for Erc20DeployedEvent {
                 ));
             };
 
-            let data = Erc20DeployedEvent::decode_data_bytes(&input.data)?;
-
-            Ok(Erc20DeployedEvent {
-                cosmos_denom: data.cosmos_denom,
-                name: data.name,
-                decimals: data.decimals,
-                event_nonce: data.event_nonce,
-                erc20_address: erc20,
-                symbol: data.symbol,
-                block_height,
-            })
+            match Erc20DeployedEvent::decode_data_bytes(&input.data) {
+                Ok(data) => Ok(Erc20DeployedEvent {
+                    cosmos_denom: data.cosmos_denom,
+                    name: data.name,
+                    decimals: data.decimals,
+                    event_nonce: data.event_nonce,
+                    erc20_address: erc20,
+                    symbol: data.symbol,
+                    block_height,
+                }),
+                Err(e) => {
+                    // The log data is content-invalid (bad UTF-8, empty denom, etc.).
+                    // We must still submit a claim for this event nonce so the Cosmos oracle
+                    // can advance sequentially. The event nonce lives at a fixed position
+                    // (offset 4*32) in the ABI-encoded data, parseable independently of the
+                    // variable-length fields that caused the error.
+                    warn!("ERC20 deployed event has invalid data ({e}); submitting stub claim to advance the oracle");
+                    let raw = &input.data;
+                    if raw.len() < 5 * 32 {
+                        return Err(GravityError::InvalidEventLogError(format!(
+                            "ERC20 deployed log too short ({} bytes) to extract event nonce",
+                            raw.len()
+                        )));
+                    }
+                    let nonce = Uint256::from_be_bytes(&raw[4 * 32..5 * 32]);
+                    if nonce > u64::MAX.into() {
+                        return Err(GravityError::InvalidEventLogError(
+                            "ERC20 deployed event nonce overflow in fallback extraction".to_string(),
+                        ));
+                    }
+                    let event_nonce: u64 = nonce.to_string().parse().unwrap();
+                    // Use the token contract address as a structurally valid denom so the
+                    // claim passes ValidateBasic. The attestation handler will reject it
+                    // gracefully (no governance-approved metadata for this denom) and still
+                    // mark the event as observed, advancing the oracle nonce.
+                    let fallback_denom = format!("gravity{erc20}");
+                    Ok(Erc20DeployedEvent {
+                        cosmos_denom: fallback_denom,
+                        name: String::new(),
+                        decimals: 0,
+                        event_nonce,
+                        erc20_address: erc20,
+                        symbol: String::new(),
+                        block_height,
+                    })
+                }
+            }
         } else {
             Err(GravityError::InvalidEventLogError(
                 "Too few topics".to_string(),
