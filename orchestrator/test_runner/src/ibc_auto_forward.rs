@@ -808,9 +808,9 @@ pub async fn setup_native_hijack(
             assert!(
                 msg.contains("cannot map an IBC channel for the native prefix")
                     || msg.contains("Invalid HRP"),
-                "Native hijack proposal was rejected, but with an unexpected error: {e:?}"
+                "Native hijack proposal was rejected, but with an unexpected error"
             );
-            info!("Native hijack proposal was correctly rejected at submission: {e:?}");
+            info!("Native hijack proposal was correctly rejected at submission");
         }
         Ok(_) => {
             panic!("Native hijack proposal should have been rejected but was submitted successfully!");

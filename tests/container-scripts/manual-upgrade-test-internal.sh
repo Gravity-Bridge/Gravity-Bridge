@@ -52,6 +52,7 @@ read -p "Old binary is running, use tests/run-tests.sh to run tests/populate pre
 unset OLD_BINARY_LOCATION
 # Run the new binary
 pkill gravity || true # allowed to fail
+pkill gaiad || true # kill IBC chain validators; they share DB dirs and must not overlap with the new run
 tests/container-scripts/run-testnet.sh $NODES
 
 # This allows the tester to run the first part of the test

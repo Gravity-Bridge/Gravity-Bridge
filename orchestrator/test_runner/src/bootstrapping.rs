@@ -193,7 +193,7 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
         "/home/runner/work/gravity-private/gravity-private/solidity/",
     ];
     if upgrade_testing {
-        info!("test-runner in upgrade testing mode, using old REST endpoints");
+        info!("test-runner in upgrade testing mode");
     }
     let output = if all_paths_exist(&A) || all_paths_exist(&B) {
         let paths = return_existing(A, B);
@@ -208,7 +208,7 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
                 &format!("--contractERC20B={}", paths[4]),
                 &format!("--contractERC20C={}", paths[5]),
                 "--test-mode=true",
-                &format!("--use-old-rest-methods={upgrade_testing}"),
+                "--use-old-rest-methods=false",
             ])
             .output()
             .expect("Failed to deploy contracts!")
@@ -226,7 +226,7 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
                 &format!("--contractERC20B={}", C[4]),
                 &format!("--contractERC20C={}", C[5]),
                 "--test-mode=true",
-                &format!("--use-old-rest-methods={upgrade_testing}"),
+                "--use-old-rest-methods=false",
             ])
             .current_dir(C[6])
             .output()
@@ -245,7 +245,7 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
                 &format!("--contractERC20B={}", D[4]),
                 &format!("--contractERC20C={}", D[5]),
                 "--test-mode=true",
-                &format!("--use-old-rest-methods={upgrade_testing}"),
+                "--use-old-rest-methods=false",
             ])
             .current_dir(D[6])
             .output()
@@ -264,7 +264,7 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
                 &format!("--contractERC20B={}", E[4]),
                 &format!("--contractERC20C={}", E[5]),
                 "--test-mode=true",
-                &format!("--use-old-rest-methods={upgrade_testing}"),
+                "--use-old-rest-methods=false",
             ])
             .current_dir(E[6])
             .output()

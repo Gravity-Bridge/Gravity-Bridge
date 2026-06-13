@@ -40,11 +40,6 @@ do
         # to the docker host
         RPC_ADDRESS="--rpc.laddr tcp://0.0.0.0:26657"
         GRPC_ADDRESS="--grpc.address 0.0.0.0:9090"
-        # TODO: Remove this after we upgrade past SDK v0.50, at which point this will break upgrade tests
-        if [[ "$BIN" != "gravity" ]]; then
-            echo "Setting --grpc-web.address for old upgrade test compatibility"
-            GRPC_ADDRESS="${GRPC_ADDRESS} --grpc-web.address 0.0.0.0:9092"
-        fi
 
         sed -i 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' /validator$i/config/app.toml
         sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /validator$i/config/app.toml
@@ -56,11 +51,6 @@ do
         # for reasons that are not clear to me right now.
         RPC_ADDRESS="--rpc.laddr tcp://7.7.7.$i:26658"
         GRPC_ADDRESS="--grpc.address 7.7.7.$i:9091"
-        # TODO: Remove this after we upgrade past SDK v0.50, at which point this will break upgrade tests
-        if [[ "$BIN" != "gravity" ]]; then
-            echo "Setting --grpc-web.address for old upgrade test compatibility"
-            GRPC_ADDRESS="${GRPC_ADDRESS} --grpc-web.address 7.7.7.$i:9093"
-        fi
     fi
     LISTEN_ADDRESS="--address tcp://7.7.7.$i:26655"
     P2P_ADDRESS="--p2p.laddr tcp://7.7.7.$i:26656"
@@ -84,18 +74,29 @@ do
         # to the docker host
         RPC_ADDRESS="--rpc.laddr tcp://0.0.0.0:27657"
         GRPC_ADDRESS="--grpc.address 0.0.0.0:9190"
-        # Must remap the grpc-web address because it conflicts with what we want to use
-        GRPC_WEB_ADDRESS="--grpc-web.address 0.0.0.0:9192"
+        # gRPC-web is not needed (test runner and Hermes use raw gRPC on 9190);
+        # disabling avoids port conflict with gravity-validator1's gRPC-web on 9091/9191.
+        GRPC_WEB="--grpc-web.enable=false"
+
+        sed -i 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' /ibc-validator$i/config/app.toml
+        sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /ibc-validator$i/config/app.toml
+        sed -i 's/enable = false/enable = true/g' /ibc-validator$i/config/app.toml
+        # Remap ports that would conflict with the gravity chain's validator 1
+        sed -i 's/9090/9190/g' /ibc-validator$i/config/app.toml  # raw gRPC address
+        sed -i 's/1317/1318/g' /ibc-validator$i/config/app.toml
+        sed -i 's/8080/8081/g' /ibc-validator$i/config/app.toml
+        sed -i 's/6060/6061/g' /ibc-validator$i/config/app.toml
+        sed -i 's/6060/6061/g' /ibc-validator$i/config/config.toml
     else
-        RPC_ADDRESS="--rpc.laddr tcp://7.7.8.$i:26658"
-        GRPC_ADDRESS="--grpc.address 7.7.8.$i:9091"
-        # Must remap the grpc-web address because it conflicts with what we want to use
-        GRPC_WEB_ADDRESS="--grpc-web.address 7.7.8.$i:9093"
+        RPC_ADDRESS="--rpc.laddr tcp://7.7.8.$i:27658"
+        GRPC_ADDRESS="--grpc.address 7.7.8.$i:9191"
+        # Disable gRPC-web: default binds 0.0.0.0:9091 which conflicts with gravity-validator1
+        GRPC_WEB="--grpc-web.enable=false"
     fi
     LISTEN_ADDRESS="--address tcp://7.7.8.$i:26655"
     P2P_ADDRESS="--p2p.laddr tcp://7.7.8.$i:26656"
     LOG_LEVEL="--log_level info"
-    ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $GRPC_WEB_ADDRESS $LOG_LEVEL $P2P_ADDRESS"
+    ARGS="$GAIA_HOME $LISTEN_ADDRESS $RPC_ADDRESS $GRPC_ADDRESS $LOG_LEVEL $P2P_ADDRESS $GRPC_WEB"
     $BIN $ARGS start &> /ibc-validator$i/logs &
 done
 

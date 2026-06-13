@@ -25,7 +25,7 @@ use tokio::time::sleep as delay_for;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
-pub const UPGRADE_NAME: &str = "aurora";
+pub const UPGRADE_NAME: &str = "recovery";
 
 // The number of attestations run_all_recoverable_tests and run_upgrade_specific_tests should create
 const MINIMUM_ATTESTATIONS: u64 = 10;
