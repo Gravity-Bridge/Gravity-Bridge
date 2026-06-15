@@ -660,3 +660,93 @@ jobs:
           shared-key: "integration-tests-rust-cache"
       - name: Test param change messages can't be submitted outside of a proposal
         run: tests/all-up-test-ci.sh PARAM_CHANGE_PARANOIA
+  erc721-happy-path:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
+      - name: Test ERC721 happy path
+        run: tests/all-up-test-ci.sh ERC721_HAPPY_PATH
+  attestation-claim-voting:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
+      - name: Test attestation claim voting
+        run: tests/all-up-test-ci.sh ATTESTATION_CLAIM_VOTING
+  attestation-hash-integrity:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
+      - name: Test attestation hash integrity
+        run: tests/all-up-test-ci.sh ATTESTATION_HASH_INTEGRITY
+  denom-validation:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
+      - name: Test denom validation
+        run: tests/all-up-test-ci.sh DENOM_VALIDATION
+  cosmos-bridgeable-tokens:
+    runs-on: ubuntu-latest
+    needs: happy-path-geth
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: module/go.sum
+          go-version-file: module/go.mod
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: orchestrator/
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
+          shared-key: "integration-tests-rust-cache"
+      - name: Test Cosmos bridgeable tokens
+        run: tests/all-up-test-ci.sh COSMOS_BRIDGEABLE_TOKENS

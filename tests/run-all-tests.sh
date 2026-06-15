@@ -29,6 +29,20 @@ bash all-up-test.sh ETHEREUM_KEYS
 bash all-up-test.sh BATCH_TIMEOUT
 bash all-up-test.sh VESTING
 bash all-up-test.sh SEND_TO_ETH_FEES
+bash all-up-test.sh V2_HAPPY_PATH_NATIVE
+bash all-up-test.sh ICA_HOST_HAPPY_PATH
+bash all-up-test.sh INFLATION_KNOCKDOWN
+bash all-up-test.sh EIP712
+bash all-up-test.sh AUCTION_STATIC
+bash all-up-test.sh AUCTION_RANDOM
+bash all-up-test.sh AUCTION_INVALID_PARAMS
+bash all-up-test.sh AUCTION_DISABLE
+bash all-up-test.sh FEEGRANT
+bash all-up-test.sh PARAM_CHANGE_PARANOIA
+bash all-up-test.sh ATTESTATION_CLAIM_VOTING
+bash all-up-test.sh ATTESTATION_HASH_INTEGRITY
+bash all-up-test.sh DENOM_VALIDATION
+bash all-up-test.sh COSMOS_BRIDGEABLE_TOKENS
 if [ ! -z "$ALCHEMY_ID" ]; then
     bash all-up-test.sh RELAY_MARKET $ALCHEMY_ID
     bash all-up-test.sh ARBITRARY_LOGIC $ALCHEMY_ID
