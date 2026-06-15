@@ -35,6 +35,9 @@ func (a AttestationHandler) ValidateMembers() {
 // Handle is the entry point for Attestation processing, only attestations with sufficient validator submissions
 // should be processed through this function, solidifying their effect in chain state
 func (a AttestationHandler) Handle(ctx sdk.Context, att types.Attestation, claim types.EthereumClaim) error {
+	if err := types.ValidateClaimFieldLengths(claim); err != nil {
+		return err
+	}
 	switch claim := claim.(type) {
 
 	case *types.MsgSendToCosmosClaim:
