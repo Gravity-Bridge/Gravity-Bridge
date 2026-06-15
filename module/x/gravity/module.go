@@ -133,6 +133,8 @@ func (AppModule) Name() string {
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 	ir.RegisterRoute(types.ModuleName, "module-balance", keeper.ModuleBalanceInvariant(am.keeper))
 	ir.RegisterRoute(types.ModuleName, "store-validity", keeper.StoreValidityInvariant(am.keeper))
+	ir.RegisterRoute(types.ModuleName, "mapping-one-to-one", keeper.MappingOneToOneInvariant(am.keeper))
+	ir.RegisterRoute(types.ModuleName, "no-gravity-prefix-cosmos-originated", keeper.NoGravityPrefixInCosmosOriginatedInvariant(am.keeper))
 }
 
 // RegisterServices registers module services.

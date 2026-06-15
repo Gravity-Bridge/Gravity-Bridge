@@ -30,16 +30,15 @@ func AllInvariants(k Keeper) sdk.Invariant {
 		if stop {
 			return res, stop
 		}
+		res, stop = MappingOneToOneInvariant(k)(ctx)
+		if stop {
+			return res, stop
+		}
+		res, stop = NoGravityPrefixInCosmosOriginatedInvariant(k)(ctx)
+		if stop {
+			return res, stop
+		}
 		return ModuleBalanceInvariant(k)(ctx)
-
-		/*
-			Example additional invariants:
-			res, stop := FutureInvariant(k)(ctx)
-			if stop {
-				return res, stop
-			}
-			return AnotherFutureInvariant(k)(ctx)
-		*/
 	}
 }
 
@@ -638,4 +637,117 @@ func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 	}
 
 	return nil
+}
+
+// MappingOneToOneInvariant asserts that the DenomToERC20 and ERC20ToDenom indexes are
+// mutually consistent: every forward entry has an exact matching reverse entry and vice
+// versa, and no ERC20 contract address appears as the target of more than one denom.
+func MappingOneToOneInvariant(k Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (string, bool) {
+		var broken []string
+
+		// 1. For every denom->erc20 in DenomToERC20Key, check the reverse entry.
+		seenErc20s := make(map[string]string) // erc20 hex -> denom, to detect duplicates
+		k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) bool {
+			denom := string(key)
+			erc20Hex := erc20.GetAddress().Hex()
+
+			reverseDenom, exists := k.GetCosmosOriginatedDenom(ctx, *erc20)
+			if !exists {
+				broken = append(broken, fmt.Sprintf(
+					"DenomToERC20 entry %s->%s has no reverse ERC20ToDenom entry",
+					denom, erc20Hex,
+				))
+				return false
+			}
+			if reverseDenom != denom {
+				broken = append(broken, fmt.Sprintf(
+					"DenomToERC20 entry %s->%s has mismatched reverse ERC20ToDenom pointing to denom %s",
+					denom, erc20Hex, reverseDenom,
+				))
+			}
+
+			if prevDenom, seen := seenErc20s[erc20Hex]; seen {
+				broken = append(broken, fmt.Sprintf(
+					"ERC20 %s maps to both %s and %s in DenomToERC20 (duplicate)",
+					erc20Hex, prevDenom, denom,
+				))
+			} else {
+				seenErc20s[erc20Hex] = denom
+			}
+			return false
+		})
+
+		if len(broken) > 0 {
+			return fmt.Sprintf("mapping-one-to-one invariant broken: %v", broken), true
+		}
+
+		// 2. For every erc20->denom in ERC20ToDenomKey, check the forward entry.
+		k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
+			erc20Hex := erc20ToDenom.Erc20
+			denom := erc20ToDenom.Denom
+
+			ethAddr, err := types.NewEthAddress(erc20Hex)
+			if err != nil {
+				broken = append(broken, fmt.Sprintf(
+					"ERC20ToDenom entry has invalid ERC20 address %s: %v",
+					erc20Hex, err,
+				))
+				return false
+			}
+
+			forwardErc20, exists := k.GetCosmosOriginatedERC20(ctx, denom)
+			if !exists {
+				broken = append(broken, fmt.Sprintf(
+					"ERC20ToDenom entry %s->%s has no forward DenomToERC20 entry",
+					erc20Hex, denom,
+				))
+				return false
+			}
+			if forwardErc20.GetAddress() != ethAddr.GetAddress() {
+				broken = append(broken, fmt.Sprintf(
+					"ERC20ToDenom entry %s->%s has mismatched forward DenomToERC20 pointing to ERC20 %s",
+					erc20Hex, denom, forwardErc20.GetAddress().Hex(),
+				))
+			}
+			return false
+		})
+
+		if len(broken) > 0 {
+			return fmt.Sprintf("mapping-one-to-one invariant broken: %v", broken), true
+		}
+
+		return "", false
+	}
+}
+
+// NoGravityPrefixInCosmosOriginatedInvariant asserts that no denom stored in the
+// cosmos-originated DenomToERC20 index parses successfully as a gravity- or gravity2-
+// prefixed Ethereum-originated denom. Such an entry would confuse the routing logic.
+func NoGravityPrefixInCosmosOriginatedInvariant(k Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (string, bool) {
+		var broken []string
+
+		k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) bool {
+			denom := string(key)
+			if _, err := types.GravityDenomToERC20(denom); err == nil {
+				broken = append(broken, fmt.Sprintf(
+					"cosmos-originated denom %s matches gravity-prefix pattern",
+					denom,
+				))
+			}
+			if _, err := types.Gravity2DenomToERC20(denom); err == nil {
+				broken = append(broken, fmt.Sprintf(
+					"cosmos-originated denom %s matches gravity2-prefix pattern",
+					denom,
+				))
+			}
+			return false
+		})
+
+		if len(broken) > 0 {
+			return fmt.Sprintf("no-gravity-prefix-in-cosmos-originated invariant broken: %v", broken), true
+		}
+		return "", false
+	}
 }

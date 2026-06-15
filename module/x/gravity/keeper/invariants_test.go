@@ -209,3 +209,118 @@ func checkImbalancedModule(t *testing.T, ctx sdk.Context, gravityKeeper Keeper, 
 	// Rebalance the module
 	require.NoError(t, bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, coins))
 }
+
+// TestMappingOneToOneInvariant verifies that the invariant detects broken forward/reverse index
+// consistency in the DenomToERC20 / ERC20ToDenom double-index.
+func TestMappingOneToOneInvariant(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+	k := input.GravityKeeper
+
+	erc20A, err := types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")
+	require.NoError(t, err)
+	erc20B, err := types.NewEthAddress("0xF815240800ddf3E0be80e0d848B13ecaa504BF37")
+	require.NoError(t, err)
+	denomA := "footoken"
+	denomB := "bartoken"
+
+	// Empty state → passes
+	res, broken := MappingOneToOneInvariant(k)(ctx)
+	require.False(t, broken, res)
+
+	// Valid two-way mapping → passes
+	k.setCosmosOriginatedDenomToERC20(ctx, denomA, *erc20A)
+	res, broken = MappingOneToOneInvariant(k)(ctx)
+	require.False(t, broken, res)
+
+	// --- forward entry present, reverse entry deleted → invariant fires ---
+	store := ctx.KVStore(k.storeKey)
+	store.Delete(types.GetERC20ToDenomKey(*erc20A))
+	res, broken = MappingOneToOneInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "no reverse")
+
+	// Restore both entries cleanly
+	k.setCosmosOriginatedDenomToERC20(ctx, denomA, *erc20A)
+
+	// --- reverse entry present, forward entry deleted → invariant fires ---
+	store.Delete(types.GetDenomToERC20Key(denomA))
+	res, broken = MappingOneToOneInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "no forward")
+
+	// Restore
+	k.setCosmosOriginatedDenomToERC20(ctx, denomA, *erc20A)
+
+	// --- reverse entry points to a different denom → invariant fires ---
+	// Overwrite the reverse entry so it disagrees with the forward entry
+	store.Set(types.GetERC20ToDenomKey(*erc20A), []byte(denomB))
+	res, broken = MappingOneToOneInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "mismatched")
+
+	// Restore
+	k.setCosmosOriginatedDenomToERC20(ctx, denomA, *erc20A)
+
+	// --- forward entry points to a different ERC20 → invariant fires ---
+	// Write erc20A → denomA in reverse, but denomA → erc20B in forward; erc20B has no reverse.
+	store.Set(types.GetDenomToERC20Key(denomA), erc20B.GetAddress().Bytes())
+	res, broken = MappingOneToOneInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "no reverse") // erc20B has no reverse entry
+
+	// Restore
+	k.setCosmosOriginatedDenomToERC20(ctx, denomA, *erc20A)
+
+	// Valid with two independent mappings → passes
+	k.setCosmosOriginatedDenomToERC20(ctx, denomB, *erc20B)
+	res, broken = MappingOneToOneInvariant(k)(ctx)
+	require.False(t, broken, res)
+}
+
+// TestNoGravityPrefixInCosmosOriginatedInvariant verifies that the invariant detects
+// gravity- or gravity2-prefixed denoms stored in the cosmos-originated index.
+func TestNoGravityPrefixInCosmosOriginatedInvariant(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+	k := input.GravityKeeper
+
+	erc20A, err := types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")
+	require.NoError(t, err)
+	erc20B, err := types.NewEthAddress("0xF815240800ddf3E0be80e0d848B13ecaa504BF37")
+	require.NoError(t, err)
+
+	// Empty state → passes
+	res, broken := NoGravityPrefixInCosmosOriginatedInvariant(k)(ctx)
+	require.False(t, broken, res)
+
+	// Normal cosmos denom → passes
+	k.setCosmosOriginatedDenomToERC20(ctx, "footoken", *erc20A)
+	res, broken = NoGravityPrefixInCosmosOriginatedInvariant(k)(ctx)
+	require.False(t, broken, res)
+
+	// --- gravity-prefixed denom written directly into DenomToERC20Key → invariant fires ---
+	gravityDenom := types.GravityDenom(*erc20B) // e.g. "gravity0xF815240800..."
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.GetDenomToERC20Key(gravityDenom), erc20B.GetAddress().Bytes())
+	res, broken = NoGravityPrefixInCosmosOriginatedInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "gravity-prefix")
+
+	// Clean up the corrupted entry
+	store.Delete(types.GetDenomToERC20Key(gravityDenom))
+
+	// --- gravity2-prefixed denom written directly into DenomToERC20Key → invariant fires ---
+	gravity2Denom := types.Gravity2Denom(*erc20B) // e.g. "gravity20xF815240800..."
+	store.Set(types.GetDenomToERC20Key(gravity2Denom), erc20B.GetAddress().Bytes())
+	res, broken = NoGravityPrefixInCosmosOriginatedInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "gravity2-prefix")
+
+	// Clean up
+	store.Delete(types.GetDenomToERC20Key(gravity2Denom))
+
+	// Back to clean state → passes
+	res, broken = NoGravityPrefixInCosmosOriginatedInvariant(k)(ctx)
+	require.False(t, broken, res)
+}
