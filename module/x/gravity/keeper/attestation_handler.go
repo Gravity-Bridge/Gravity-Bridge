@@ -255,6 +255,10 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 			types.ErrInvalid,
 			fmt.Sprintf("ERC20 %s already exists for denom %s", existingERC20.GetAddress().Hex(), claim.CosmosDenom))
 	}
+	// Disallow a token with an existing ERC20 representation (Ethereum originated) from being registered as a Cosmos-originated token
+	if existingDenom, exists := a.keeper.GetCosmosOriginatedDenom(ctx, *tokenAddress); exists {
+		return errorsmod.Wrapf(types.ErrInvalid, "ERC20 %s already mapped to denom %s", claim.TokenContract, existingDenom)
+	}
 
 	// Check if denom metadata has been accepted by governance
 	metadata, ok := a.keeper.bankKeeper.GetDenomMetaData(ctx, claim.CosmosDenom)
