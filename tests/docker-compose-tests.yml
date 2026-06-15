@@ -1,0 +1,297 @@
+version: '3.9'
+
+# YAML anchor defining common test service configuration.
+# Each service runs a fully self-contained test environment
+# (cosmos validators, ethereum node, and test runner) inside a
+# single container, so no shared network is required.
+x-test-service: &test-service
+  image: gravity-base
+  cap_add:
+    - NET_ADMIN
+  tty: true
+
+services:
+  test-happy_path:
+    <<: *test-service
+    container_name: gravity-test-happy_path
+    environment:
+      - TEST_TYPE=HAPPY_PATH
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 HAPPY_PATH
+
+  test-validator_out:
+    <<: *test-service
+    container_name: gravity-test-validator_out
+    environment:
+      - TEST_TYPE=VALIDATOR_OUT
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 VALIDATOR_OUT
+
+  test-valset_stress:
+    <<: *test-service
+    container_name: gravity-test-valset_stress
+    environment:
+      - TEST_TYPE=VALSET_STRESS
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 VALSET_STRESS
+
+  test-batch_stress:
+    <<: *test-service
+    container_name: gravity-test-batch_stress
+    environment:
+      - TEST_TYPE=BATCH_STRESS
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 BATCH_STRESS
+
+  test-happy_path_v2:
+    <<: *test-service
+    container_name: gravity-test-happy_path_v2
+    environment:
+      - TEST_TYPE=HAPPY_PATH_V2
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 HAPPY_PATH_V2
+
+  test-orchestrator_keys:
+    <<: *test-service
+    container_name: gravity-test-orchestrator_keys
+    environment:
+      - TEST_TYPE=ORCHESTRATOR_KEYS
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 ORCHESTRATOR_KEYS
+
+  test-valset_rewards:
+    <<: *test-service
+    container_name: gravity-test-valset_rewards
+    environment:
+      - TEST_TYPE=VALSET_REWARDS
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 VALSET_REWARDS
+
+  test-evidence:
+    <<: *test-service
+    container_name: gravity-test-evidence
+    environment:
+      - TEST_TYPE=EVIDENCE
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 EVIDENCE
+
+  test-txcancel:
+    <<: *test-service
+    container_name: gravity-test-txcancel
+    environment:
+      - TEST_TYPE=TXCANCEL
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 TXCANCEL
+
+  test-invalid_events:
+    <<: *test-service
+    container_name: gravity-test-invalid_events
+    environment:
+      - TEST_TYPE=INVALID_EVENTS
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 INVALID_EVENTS
+
+  test-unhalt_bridge:
+    <<: *test-service
+    container_name: gravity-test-unhalt_bridge
+    environment:
+      - TEST_TYPE=UNHALT_BRIDGE
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 UNHALT_BRIDGE
+
+  test-pause_bridge:
+    <<: *test-service
+    container_name: gravity-test-pause_bridge
+    environment:
+      - TEST_TYPE=PAUSE_BRIDGE
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 PAUSE_BRIDGE
+
+  test-deposit_overflow:
+    <<: *test-service
+    container_name: gravity-test-deposit_overflow
+    environment:
+      - TEST_TYPE=DEPOSIT_OVERFLOW
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 DEPOSIT_OVERFLOW
+
+  test-ethereum_blacklist:
+    <<: *test-service
+    container_name: gravity-test-ethereum_blacklist
+    environment:
+      - TEST_TYPE=ETHEREUM_BLACKLIST
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 ETHEREUM_BLACKLIST
+
+  test-airdrop_proposal:
+    <<: *test-service
+    container_name: gravity-test-airdrop_proposal
+    environment:
+      - TEST_TYPE=AIRDROP_PROPOSAL
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 AIRDROP_PROPOSAL
+
+  test-signature_slashing:
+    <<: *test-service
+    container_name: gravity-test-signature_slashing
+    environment:
+      - TEST_TYPE=SIGNATURE_SLASHING
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 SIGNATURE_SLASHING
+
+  test-slashing_delegation:
+    <<: *test-service
+    container_name: gravity-test-slashing_delegation
+    environment:
+      - TEST_TYPE=SLASHING_DELEGATION
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 SLASHING_DELEGATION
+
+  test-ibc_metadata:
+    <<: *test-service
+    container_name: gravity-test-ibc_metadata
+    environment:
+      - TEST_TYPE=IBC_METADATA
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 IBC_METADATA
+
+  test-erc721_happy_path:
+    <<: *test-service
+    container_name: gravity-test-erc721_happy_path
+    environment:
+      - TEST_TYPE=ERC721_HAPPY_PATH
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 ERC721_HAPPY_PATH
+
+  test-ibc_auto_forward:
+    <<: *test-service
+    container_name: gravity-test-ibc_auto_forward
+    environment:
+      - TEST_TYPE=IBC_AUTO_FORWARD
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 IBC_AUTO_FORWARD
+
+  test-ethereum_keys:
+    <<: *test-service
+    container_name: gravity-test-ethereum_keys
+    environment:
+      - TEST_TYPE=ETHEREUM_KEYS
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 ETHEREUM_KEYS
+
+  test-batch_timeout:
+    <<: *test-service
+    container_name: gravity-test-batch_timeout
+    environment:
+      - TEST_TYPE=BATCH_TIMEOUT
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 BATCH_TIMEOUT
+
+  test-vesting:
+    <<: *test-service
+    container_name: gravity-test-vesting
+    environment:
+      - TEST_TYPE=VESTING
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 VESTING
+
+  test-send_to_eth_fees:
+    <<: *test-service
+    container_name: gravity-test-send_to_eth_fees
+    environment:
+      - TEST_TYPE=SEND_TO_ETH_FEES
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 SEND_TO_ETH_FEES
+
+  test-v2_happy_path_native:
+    <<: *test-service
+    container_name: gravity-test-v2_happy_path_native
+    environment:
+      - TEST_TYPE=V2_HAPPY_PATH_NATIVE
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 V2_HAPPY_PATH_NATIVE
+
+  test-ica_host_happy_path:
+    <<: *test-service
+    container_name: gravity-test-ica_host_happy_path
+    environment:
+      - TEST_TYPE=ICA_HOST_HAPPY_PATH
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 ICA_HOST_HAPPY_PATH
+
+  test-inflation_knockdown:
+    <<: *test-service
+    container_name: gravity-test-inflation_knockdown
+    environment:
+      - TEST_TYPE=INFLATION_KNOCKDOWN
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 INFLATION_KNOCKDOWN
+
+  test-eip712:
+    <<: *test-service
+    container_name: gravity-test-eip712
+    environment:
+      - TEST_TYPE=EIP712
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 EIP712
+
+  test-auction_static:
+    <<: *test-service
+    container_name: gravity-test-auction_static
+    environment:
+      - TEST_TYPE=AUCTION_STATIC
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 AUCTION_STATIC
+
+  test-auction_random:
+    <<: *test-service
+    container_name: gravity-test-auction_random
+    environment:
+      - TEST_TYPE=AUCTION_RANDOM
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 AUCTION_RANDOM
+
+  test-auction_invalid_params:
+    <<: *test-service
+    container_name: gravity-test-auction_invalid_params
+    environment:
+      - TEST_TYPE=AUCTION_INVALID_PARAMS
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 AUCTION_INVALID_PARAMS
+
+  test-auction_disable:
+    <<: *test-service
+    container_name: gravity-test-auction_disable
+    environment:
+      - TEST_TYPE=AUCTION_DISABLE
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 AUCTION_DISABLE
+
+  test-feegrant:
+    <<: *test-service
+    container_name: gravity-test-feegrant
+    environment:
+      - TEST_TYPE=FEEGRANT
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 FEEGRANT
+
+  test-param_change_paranoia:
+    <<: *test-service
+    container_name: gravity-test-param_change_paranoia
+    environment:
+      - TEST_TYPE=PARAM_CHANGE_PARANOIA
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 PARAM_CHANGE_PARANOIA
+
+  test-attestation_claim_voting:
+    <<: *test-service
+    container_name: gravity-test-attestation_claim_voting
+    environment:
+      - TEST_TYPE=ATTESTATION_CLAIM_VOTING
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 ATTESTATION_CLAIM_VOTING
+
+  test-attestation_hash_integrity:
+    <<: *test-service
+    container_name: gravity-test-attestation_hash_integrity
+    environment:
+      - TEST_TYPE=ATTESTATION_HASH_INTEGRITY
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 ATTESTATION_HASH_INTEGRITY
+
+  test-denom_validation:
+    <<: *test-service
+    container_name: gravity-test-denom_validation
+    environment:
+      - TEST_TYPE=DENOM_VALIDATION
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 DENOM_VALIDATION
+
+  test-cosmos_bridgeable_tokens:
+    <<: *test-service
+    container_name: gravity-test-cosmos_bridgeable_tokens
+    environment:
+      - TEST_TYPE=COSMOS_BRIDGEABLE_TOKENS
+    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 COSMOS_BRIDGEABLE_TOKENS
+
+  # Alchemy-dependent tests: only started when --profile alchemy is passed
+  test-relay_market:
+    <<: *test-service
+    container_name: gravity-test-relay_market
+    profiles: ["alchemy"]
+    environment:
+      - TEST_TYPE=RELAY_MARKET
+      - ALCHEMY_ID=${ALCHEMY_ID:-}
+    command: ["/bin/bash", "-c", "/gravity/tests/container-scripts/all-up-test-internal.sh 4 RELAY_MARKET $ALCHEMY_ID"]
+
+  test-arbitrary_logic:
+    <<: *test-service
+    container_name: gravity-test-arbitrary_logic
+    profiles: ["alchemy"]
+    environment:
+      - TEST_TYPE=ARBITRARY_LOGIC
+      - ALCHEMY_ID=${ALCHEMY_ID:-}
+    command: ["/bin/bash", "-c", "/gravity/tests/container-scripts/all-up-test-internal.sh 4 ARBITRARY_LOGIC $ALCHEMY_ID"]
