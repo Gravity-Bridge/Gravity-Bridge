@@ -267,24 +267,8 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	}
 
 	// Check if this denom is permitted by the CosmosBridgeableTokens allowlist.
-	params, err := a.keeper.GetParams(ctx)
-	if err != nil {
-		return errorsmod.Wrap(err, "failed to get params")
-	}
-
-	allowed := false
-	for _, allowedDenom := range params.CosmosBridgeableTokens {
-		if allowedDenom == claim.CosmosDenom {
-			allowed = true
-			break
-		}
-	}
-	if !allowed {
-		return errorsmod.Wrapf(
-			types.ErrInvalid,
-			"cosmos-originated denom %s is not on the CosmosBridgeableTokens allowlist",
-			claim.CosmosDenom,
-		)
+	if err := a.keeper.EnsureCosmosBridgeable(ctx, claim.CosmosDenom); err != nil {
+		return err
 	}
 
 	// Check if attributes of ERC20 match Cosmos denom

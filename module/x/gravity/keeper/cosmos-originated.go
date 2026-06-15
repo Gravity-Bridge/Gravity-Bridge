@@ -177,6 +177,29 @@ func (k Keeper) DeleteCosmosOriginatedDenomToERC20(ctx sdk.Context, tokenContrac
 	store.Delete(types.GetERC20ToDenomKey(tokenContract))
 }
 
+// EnsureCosmosBridgeable checks CosmosBridgeableTokens allowlist in one place
+// making the logic more testable.
+func (k Keeper) EnsureCosmosBridgeable(ctx sdk.Context, denom string) error {
+	_, isCosmosOriginated := k.GetCosmosOriginatedERC20(ctx, denom)
+	if !isCosmosOriginated {
+		return nil
+	}
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "could not get params")
+	}
+	for _, bridgeable := range params.CosmosBridgeableTokens {
+		if bridgeable == denom {
+			return nil
+		}
+	}
+	return errorsmod.Wrapf(
+		types.ErrInvalid,
+		"cosmos-originated token %s is not on the CosmosBridgeableTokens allowlist",
+		denom,
+	)
+}
+
 // IterateERC20ToDenom iterates over erc20 to denom relations
 func (k Keeper) IterateERC20ToDenom(ctx sdk.Context, cb func([]byte, *types.ERC20ToDenom) bool) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ERC20ToDenomKey)

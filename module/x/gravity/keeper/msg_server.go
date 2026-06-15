@@ -155,30 +155,13 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, errorsmod.Wrap(err, "invalid eth dest")
 	}
 
-	isCosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
+	_, erc20, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid denom")
 	}
 
-	if isCosmosOriginated {
-		params, err := k.Keeper.GetParams(ctx)
-		if err != nil {
-			return nil, errorsmod.Wrap(err, "could not get params")
-		}
-		allowed := false
-		for _, bridgeable := range params.CosmosBridgeableTokens {
-			if bridgeable == msg.Amount.Denom {
-				allowed = true
-				break
-			}
-		}
-		if !allowed {
-			return nil, errorsmod.Wrapf(
-				types.ErrInvalid,
-				"cosmos-originated token %s is not on the CosmosBridgeableTokens allowlist",
-				msg.Amount.Denom,
-			)
-		}
+	if err := k.EnsureCosmosBridgeable(ctx, msg.Amount.Denom); err != nil {
+		return nil, err
 	}
 
 	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
@@ -292,6 +275,10 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 	_, tokenContract, err := k.DenomToERC20Lookup(ctx, msg.Denom)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not look up erc 20 denominator")
+	}
+
+	if err := k.EnsureCosmosBridgeable(ctx, msg.Denom); err != nil {
+		return nil, err
 	}
 
 	batch, err := k.BuildOutgoingTXBatch(ctx, *tokenContract, OutgoingTxBatchSize)

@@ -290,6 +290,118 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 	_ = ethTokenContractAddr
 }
 
+// TestRequestBatchCosmosBridgeableTokensAllowlist verifies that RequestBatch enforces the
+// CosmosBridgeableTokens allowlist for Cosmos-originated assets.
+// nolint: exhaustruct
+func TestRequestBatchCosmosBridgeableTokensAllowlist(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+	sender := AccAddrs[0]
+
+	// Register a cosmos-originated denom <-> ERC20 mapping
+	cosmosTokenDenom := "uatom"
+	cosmosTokenContract := "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	gk.setCosmosOriginatedDenomToERC20(ctx, cosmosTokenDenom, *cosmosTokenContractAddr)
+
+	// Ensure the allowlist is empty
+	params, err := gk.GetParams(ctx)
+	require.NoError(t, err)
+	params.CosmosBridgeableTokens = []string{}
+	require.NoError(t, gk.SetParams(ctx, params))
+
+	// RequestBatch for a cosmos-originated token not on the allowlist must be rejected
+	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
+		Sender: sender.String(),
+		Denom:  cosmosTokenDenom,
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "CosmosBridgeableTokens allowlist")
+
+	// Add to allowlist — now it should pass the allowlist check
+	// (will fail later due to no txs in pool, but that's fine — we're testing the gate)
+	params.CosmosBridgeableTokens = []string{cosmosTokenDenom}
+	require.NoError(t, gk.SetParams(ctx, params))
+
+	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
+		Sender: sender.String(),
+		Denom:  cosmosTokenDenom,
+	})
+	// Should no longer fail with allowlist error (may fail with "no txs in pool" or similar)
+	if err != nil {
+		require.NotContains(t, err.Error(), "CosmosBridgeableTokens allowlist")
+	}
+}
+
+// TestEnsureCosmosBridgeable tests Keeper.EnsureCosmosBridgeable
+//  1. Ethereum-originated denoms (not in cosmos-originated index) always pass.
+//  2. Cosmos-originated denoms NOT on the allowlist are rejected.
+//  3. Cosmos-originated denoms ON the allowlist are permitted.
+//
+// nolint: exhaustruct
+func TestEnsureCosmosBridgeable(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	gk := input.GravityKeeper
+
+	// Register a cosmos-originated denom
+	cosmosDenom := "uatom"
+	cosmosContract, err := types.NewEthAddress("0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e")
+	require.NoError(t, err)
+	gk.setCosmosOriginatedDenomToERC20(ctx, cosmosDenom, *cosmosContract)
+
+	// Start with an empty allowlist
+	params, err := gk.GetParams(ctx)
+	require.NoError(t, err)
+	params.CosmosBridgeableTokens = []string{}
+	require.NoError(t, gk.SetParams(ctx, params))
+
+	// ── Case 1: Ethereum-originated denom (not in cosmos index) always passes ────
+	ethDenom := "gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+	err = gk.EnsureCosmosBridgeable(ctx, ethDenom)
+	require.NoError(t, err, "ethereum-originated denom must pass regardless of allowlist")
+
+	// ── Case 2: Unknown denom (neither gravity-prefixed nor registered) passes ───
+	unknownDenom := "ufoo"
+	err = gk.EnsureCosmosBridgeable(ctx, unknownDenom)
+	require.NoError(t, err, "unregistered denom is not cosmos-originated, must pass")
+
+	// ── Case 3: Cosmos-originated denom NOT on allowlist is rejected ─────────────
+	err = gk.EnsureCosmosBridgeable(ctx, cosmosDenom)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "CosmosBridgeableTokens allowlist")
+	require.Contains(t, err.Error(), cosmosDenom)
+
+	// ── Case 4: Cosmos-originated denom ON allowlist is permitted ─────────────────
+	params.CosmosBridgeableTokens = []string{cosmosDenom}
+	require.NoError(t, gk.SetParams(ctx, params))
+
+	err = gk.EnsureCosmosBridgeable(ctx, cosmosDenom)
+	require.NoError(t, err, "cosmos-originated denom on allowlist must pass")
+
+	// ── Case 5: Second cosmos-originated denom not on partial allowlist ───────────
+	cosmosDenom2 := "uosmo"
+	cosmosContract2, err := types.NewEthAddress("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984")
+	require.NoError(t, err)
+	gk.setCosmosOriginatedDenomToERC20(ctx, cosmosDenom2, *cosmosContract2)
+
+	err = gk.EnsureCosmosBridgeable(ctx, cosmosDenom2)
+	require.Error(t, err, "second cosmos denom not on allowlist must be rejected")
+	require.Contains(t, err.Error(), cosmosDenom2)
+
+	// ── Case 6: Both on allowlist, both pass ─────────────────────────────────────
+	params.CosmosBridgeableTokens = []string{cosmosDenom, cosmosDenom2}
+	require.NoError(t, gk.SetParams(ctx, params))
+
+	require.NoError(t, gk.EnsureCosmosBridgeable(ctx, cosmosDenom))
+	require.NoError(t, gk.EnsureCosmosBridgeable(ctx, cosmosDenom2))
+}
+
 // TestUpdateParamsProposalCosmosBridgeableTokens verifies that MsgUpdateParamsProposal
 // correctly updates, validates, and rejects invalid values for CosmosBridgeableTokens.
 // nolint: exhaustruct
