@@ -244,6 +244,15 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 		return errorsmod.Wrap(err, "invalid cosmos denom in ERC20 deployed attestation")
 	}
 
+	// Reject Ethereum-originated gravity0x... and gravity20x... denoms from being registered
+	// as cosmos-originated. These are voucher denoms for tokens that already exist on Ethereum
+	if _, err := types.GravityDenomToERC20(claim.CosmosDenom); err == nil {
+		return errorsmod.Wrapf(types.ErrInvalid, "cannot register Ethereum-originated gravity denom %s as cosmos-originated", claim.CosmosDenom)
+	}
+	if _, err := types.Gravity2DenomToERC20(claim.CosmosDenom); err == nil {
+		return errorsmod.Wrapf(types.ErrInvalid, "cannot register remapped gravity2 denom %s as cosmos-originated", claim.CosmosDenom)
+	}
+
 	tokenAddress, err := types.NewEthAddress(claim.TokenContract)
 	if err != nil {
 		return errorsmod.Wrap(err, "invalid token contract on claim")
@@ -266,9 +275,24 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 		return errorsmod.Wrap(types.ErrUnknown, fmt.Sprintf("denom not found %s", claim.CosmosDenom))
 	}
 
-	// Check if this denom is permitted by the CosmosBridgeableTokens allowlist.
-	if err := a.keeper.EnsureCosmosBridgeable(ctx, claim.CosmosDenom); err != nil {
-		return err
+	// require the denom to be on the CosmosBridgeableTokens allowlist.
+	// Note: we check the params directly because EnsureCosmosBridgeable relies on the
+	// cosmos-originated index which has not been written yet at this point.
+	params, err := a.keeper.GetParams(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "could not get params for allowlist check")
+	}
+	found := false
+	for _, d := range params.CosmosBridgeableTokens {
+		if d == claim.CosmosDenom {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errorsmod.Wrapf(types.ErrInvalid,
+			"denom %s is not on the CosmosBridgeableTokens allowlist; add it via governance before deploying an ERC20 representation",
+			claim.CosmosDenom)
 	}
 
 	// Check if attributes of ERC20 match Cosmos denom

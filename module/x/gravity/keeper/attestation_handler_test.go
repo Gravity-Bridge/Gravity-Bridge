@@ -5,6 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -190,4 +191,122 @@ func TestHandleErc20Deployed_DuplicateDenom(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrInvalid)
 	require.Contains(t, err.Error(), "already exists for denom")
+}
+
+// TestHandleErc20Deployed_GravityDenom verifies that gravity0x... and gravity20x... denoms
+// cannot be registered as cosmos-originated. These are Ethereum-originated voucher denoms and
+// must never enter the cosmos-originated mapping.
+func TestHandleErc20Deployed_GravityDenom(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	attHandler := input.GravityKeeper.AttestationHandler
+
+	// gravity0x... denom (standard Ethereum-originated voucher)
+	claim := types.MsgERC20DeployedClaim{
+		CosmosDenom:    "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		Name:           "test",
+		Symbol:         "TST",
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	err := attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalid)
+	require.Contains(t, err.Error(), "cannot register Ethereum-originated gravity denom")
+
+	// gravity20x... denom (remapped Ethereum-originated voucher)
+	claim2 := types.MsgERC20DeployedClaim{
+		CosmosDenom:    "gravity20x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		EventNonce:     2,
+		EthBlockHeight: 1,
+		Name:           "test",
+		Symbol:         "TST",
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim2)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalid)
+	require.Contains(t, err.Error(), "cannot register remapped gravity2 denom")
+}
+
+// TestHandleErc20Deployed_AllowlistEnforcement verifies that handleErc20Deployed rejects
+// claims for denoms that have bank metadata but are NOT on the CosmosBridgeableTokens
+// allowlist.
+func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	attHandler := input.GravityKeeper.AttestationHandler
+
+	// Set up bank metadata for "footoken" (simulating a governance proposal accepted it)
+	input.BankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
+		Base:        "footoken",
+		Display:     "FOO",
+		Name:        "Foo Token",
+		Symbol:      "FOO",
+		Description: "A test token",
+		DenomUnits: []*banktypes.DenomUnit{
+			{Denom: "footoken", Exponent: 0},
+			{Denom: "FOO", Exponent: 6},
+		},
+	})
+
+	// Ensure the allowlist is empty (default)
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
+	require.Empty(t, params.CosmosBridgeableTokens)
+
+	// Attempt to deploy ERC20 for "footoken" — should fail because not on allowlist
+	claim := types.MsgERC20DeployedClaim{
+		CosmosDenom:    "footoken",
+		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		Name:           "Foo Token",
+		Symbol:         "FOO",
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalid)
+	require.Contains(t, err.Error(), "CosmosBridgeableTokens allowlist")
+
+	// Now add "footoken" to the allowlist
+	params.CosmosBridgeableTokens = []string{"footoken"}
+	require.NoError(t, input.GravityKeeper.SetParams(ctx, params))
+
+	// Retry — should now pass the allowlist check (will succeed if metadata matches)
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.NoError(t, err)
+
+	// Verify the mapping was created
+	erc20, exists := input.GravityKeeper.GetCosmosOriginatedERC20(ctx, "footoken")
+	require.True(t, exists)
+	require.Equal(t, "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255", erc20.GetAddress().Hex())
 }

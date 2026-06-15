@@ -400,6 +400,20 @@ func TestEnsureCosmosBridgeable(t *testing.T) {
 
 	require.NoError(t, gk.EnsureCosmosBridgeable(ctx, cosmosDenom))
 	require.NoError(t, gk.EnsureCosmosBridgeable(ctx, cosmosDenom2))
+
+	// ── Case 7: Remapped (gravity2) denom passes — it is Ethereum-originated ────
+	remappedDenom := "gravity20x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+	err = gk.EnsureCosmosBridgeable(ctx, remappedDenom)
+	require.NoError(t, err, "gravity2 (remapped) denom is ethereum-originated, must pass")
+
+	// ── Case 8: Deleted cosmos-originated mapping → no longer subject to allowlist
+	gk.DeleteCosmosOriginatedDenomToERC20(ctx, *cosmosContract2, cosmosDenom2)
+	// Remove cosmosDenom2 from allowlist so it would fail if still cosmos-originated
+	params.CosmosBridgeableTokens = []string{cosmosDenom}
+	require.NoError(t, gk.SetParams(ctx, params))
+
+	err = gk.EnsureCosmosBridgeable(ctx, cosmosDenom2)
+	require.NoError(t, err, "deleted cosmos mapping means denom is no longer cosmos-originated, must pass")
 }
 
 // TestUpdateParamsProposalCosmosBridgeableTokens verifies that MsgUpdateParamsProposal
