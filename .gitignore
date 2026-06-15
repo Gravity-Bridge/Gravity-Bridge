@@ -7,6 +7,8 @@ solidity/dist
 orchestrator/bins
 oldgravity
 module/app/testdata
+module/build
+llm-examples/
 
 # IDE files
 .idea/
