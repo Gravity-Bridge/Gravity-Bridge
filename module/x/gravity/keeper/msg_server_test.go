@@ -494,3 +494,161 @@ func TestUpdateParamsProposalCosmosBridgeableTokens(t *testing.T) {
 	})
 	require.Error(t, err, "duplicate denoms must be rejected by ValidateBasic")
 }
+
+// TestRemappedTokenRoundTrip verifies the behavior of a remapped ERC20:
+//
+//  1. An Ethereum-originated token's gravity0x denom is usable for SendToEth
+//
+//  2. After SetRemappedERC20, ERC20ToDenomLookup returns the gravity2 denom.
+//
+//  3. DenomToERC20Lookup for the old gravity0x denom returns an error.
+//
+//  4. DenomToERC20Lookup for the new gravity20x denom succeeds.
+//
+//  5. EnsureCosmosBridgeable passes for both gravity0x and gravity20x (both are Ethereum-originated).
+//
+//  6. SendToEth with the old gravity0x denom fails (remapped error).
+//
+//  7. SendToEth with the new gravity20x denom succeeds.
+//
+//     This is primarily useful for upgrade logic testing since that is theo nly time tokens should be remapped
+//     but it also touches the behavior for remapped tokens and verifies it.
+//
+// nolint: exhaustruct
+func TestRemappedTokenRoundTrip(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	// We skip the deferred invariant assertion because the remap intentionally creates a state
+	// where old gravity0x tokens remain in user wallets but are no longer bridgeable — the module
+	// balance invariant would flag the discrepancy between denom lookup (now gravity2) and what's
+	// physically held (gravity0x). The real recovery handler calls CancelAllOutgoingTxsForContract
+	// before remapping; here we test the lookup/send logic in isolation.
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+	sender := AccAddrs[0]
+	ethDest := "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
+
+	// The ERC20 contract on Ethereum we'll remap
+	tokenContract := "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+	tokenAddr, err := types.NewEthAddress(tokenContract)
+	require.NoError(t, err)
+
+	oldDenom := types.GravityDenom(*tokenAddr)  // gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5
+	newDenom := types.Gravity2Denom(*tokenAddr) // gravity20x429881672B9AE42b8EbA0E26cD9C73711b891Ca5
+
+	// ── Pre-remap: mint and fund user with old-style gravity0x voucher ──────────
+	oldVouchers := sdk.NewCoins(sdk.NewInt64Coin(oldDenom, 10000))
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, oldVouchers))
+	input.AccountKeeper.NewAccountWithAddress(ctx, sender)
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, oldVouchers))
+
+	// ── Pre-remap: ERC20ToDenomLookup returns gravity0x ──────────────────────────
+	isCosmosOriginated, denom := gk.ERC20ToDenomLookup(ctx, *tokenAddr)
+	require.False(t, isCosmosOriginated)
+	require.Equal(t, oldDenom, denom)
+
+	// ── Pre-remap: DenomToERC20Lookup for gravity0x works ────────────────────────
+	isCosmos, erc20, err := gk.DenomToERC20Lookup(ctx, oldDenom)
+	require.NoError(t, err)
+	require.False(t, isCosmos)
+	require.Equal(t, tokenAddr.GetAddress(), erc20.GetAddress())
+
+	// ── Pre-remap: SendToEth with gravity0x succeeds ─────────────────────────────
+	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
+		Sender:    sender.String(),
+		EthDest:   ethDest,
+		Amount:    sdk.NewInt64Coin(oldDenom, 100),
+		BridgeFee: sdk.NewInt64Coin(oldDenom, 1),
+		ChainFee:  sdk.NewCoin(oldDenom, sdkmath.ZeroInt()),
+	})
+	require.NoError(t, err, "pre-remap SendToEth with gravity0x must succeed")
+
+	// ── Cancel the outgoing tx before remapping (like recovery handler) ──────────
+	require.NoError(t, gk.CancelAllOutgoingTxsForContract(ctx, *tokenAddr))
+
+	// ══════════════════════════════════════════════════════════════════════════════
+	// REMAP the token
+	// ══════════════════════════════════════════════════════════════════════════════
+	gk.SetRemappedERC20(ctx, *tokenAddr)
+
+	// ── Post-remap: ERC20ToDenomLookup returns gravity2 denom ────────────────────
+	isCosmosOriginated, denom = gk.ERC20ToDenomLookup(ctx, *tokenAddr)
+	require.False(t, isCosmosOriginated)
+	require.Equal(t, newDenom, denom, "after remap, ERC20ToDenomLookup must return gravity2 denom")
+
+	// ── Post-remap: DenomToERC20Lookup for old gravity0x fails ───────────────────
+	_, _, err = gk.DenomToERC20Lookup(ctx, oldDenom)
+	require.Error(t, err, "after remap, old gravity0x denom must be rejected")
+	require.Contains(t, err.Error(), "was remapped")
+
+	// ── Post-remap: DenomToERC20Lookup for new gravity20x succeeds ───────────────
+	isCosmos, erc20, err = gk.DenomToERC20Lookup(ctx, newDenom)
+	require.NoError(t, err, "after remap, gravity20x denom must resolve")
+	require.False(t, isCosmos)
+	require.Equal(t, tokenAddr.GetAddress(), erc20.GetAddress())
+
+	// ── Post-remap: EnsureCosmosBridgeable passes for both (neither is cosmos-originated)
+	require.NoError(t, gk.EnsureCosmosBridgeable(ctx, oldDenom))
+	require.NoError(t, gk.EnsureCosmosBridgeable(ctx, newDenom))
+
+	// ── Post-remap: SendToEth with old gravity0x fails ───────────────────────────
+	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
+		Sender:    sender.String(),
+		EthDest:   ethDest,
+		Amount:    sdk.NewInt64Coin(oldDenom, 100),
+		BridgeFee: sdk.NewInt64Coin(oldDenom, 1),
+		ChainFee:  sdk.NewCoin(oldDenom, sdkmath.ZeroInt()),
+	})
+	require.Error(t, err, "post-remap SendToEth with old gravity0x must fail")
+	require.Contains(t, err.Error(), "remapped")
+
+	// ── Post-remap: SendToEth with new gravity20x succeeds ───────────────────────
+	// Fund the user with gravity2 vouchers (simulating a new deposit after remap)
+	newVouchers := sdk.NewCoins(sdk.NewInt64Coin(newDenom, 10000))
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, newVouchers))
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, newVouchers))
+
+	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
+		Sender:    sender.String(),
+		EthDest:   ethDest,
+		Amount:    sdk.NewInt64Coin(newDenom, 100),
+		BridgeFee: sdk.NewInt64Coin(newDenom, 1),
+		ChainFee:  sdk.NewCoin(newDenom, sdkmath.ZeroInt()),
+	})
+	require.NoError(t, err, "post-remap SendToEth with new gravity20x must succeed")
+
+	// ── Post-remap: IsRemappedERC20 is queryable ─────────────────────────────────
+	require.True(t, gk.IsRemappedERC20(ctx, *tokenAddr))
+
+	// ── A different non-remapped token is unaffected ─────────────────────────────
+	otherContract := "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+	otherAddr, err := types.NewEthAddress(otherContract)
+	require.NoError(t, err)
+	require.False(t, gk.IsRemappedERC20(ctx, *otherAddr))
+
+	isCosmosOriginated, otherDenom := gk.ERC20ToDenomLookup(ctx, *otherAddr)
+	require.False(t, isCosmosOriginated)
+	require.Equal(t, types.GravityDenom(*otherAddr), otherDenom, "non-remapped token should still use gravity0x")
+}
+
+// TestDenomToERC20Lookup_Gravity2NotRemapped verifies that a gravity2 denom for a token
+// that has NOT been remapped is rejected with a clear error.
+// nolint: exhaustruct
+func TestDenomToERC20Lookup_Gravity2NotRemapped(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	gk := input.GravityKeeper
+
+	// Token NOT marked as remapped
+	tokenContract := "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+	tokenAddr, err := types.NewEthAddress(tokenContract)
+	require.NoError(t, err)
+	require.False(t, gk.IsRemappedERC20(ctx, *tokenAddr))
+
+	// Trying to use gravity2 denom for a non-remapped token must fail
+	gravity2Denom := types.Gravity2Denom(*tokenAddr)
+	_, _, err = gk.DenomToERC20Lookup(ctx, gravity2Denom)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "does not correspond to a remapped ERC20")
+}

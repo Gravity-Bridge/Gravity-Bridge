@@ -194,8 +194,7 @@ func TestHandleErc20Deployed_DuplicateDenom(t *testing.T) {
 }
 
 // TestHandleErc20Deployed_GravityDenom verifies that gravity0x... and gravity20x... denoms
-// cannot be registered as cosmos-originated. These are Ethereum-originated voucher denoms and
-// must never enter the cosmos-originated mapping.
+// cannot be registered as cosmos-originated. These are Ethereum-originated.
 func TestHandleErc20Deployed_GravityDenom(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
