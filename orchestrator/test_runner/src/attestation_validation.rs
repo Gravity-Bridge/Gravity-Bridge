@@ -606,7 +606,13 @@ pub async fn attestation_hash_integrity_test(
     .await;
 }
 
-/// ERC20DeployedClaim hash collision validation
+/// ERC20DeployedClaim claim disagreement test.
+///
+/// Verifies that:
+/// 1. A denom containing AttestationSeparator is rejected by ValidateStrictDenom
+/// 2. A claim disagreement claim creates its own attestation (1 vote)
+/// 3. other validators' claims form a separate attestation that reaches quorum
+/// 4. The disagreed attestation never reaches quorum
 #[allow(clippy::too_many_arguments)]
 async fn erc20_deployed_claim_hash_collision(
     web30: &Web3,
@@ -827,43 +833,79 @@ async fn erc20_deployed_claim_hash_collision(
          new_erc20_addr={new_erc20_addr}, event_nonce={event_nonce}, block={eth_block_height}"
     );
 
+    // ── Phase 2.5: verify AttestationSeparator is blocked by denom validation ─
+    //
+    // The Go-side ClaimHash() uses AttestationSeparator (non-ASCII combining
+    // marks) as the field delimiter.  If a denom containing the separator were
+    // accepted, an attacker could shift field boundaries to engineer a hash
+    // collision.  ValidateStrictDenom blocks this via its isASCII check.
+    let separator_denom = format!("test{ATTESTATION_SEPARATOR}denom");
+    let separator_event = Erc20DeployedEvent {
+        cosmos_denom: separator_denom.clone(),
+        erc20_address: new_erc20_addr,
+        name: ibc_token_name.clone(),
+        symbol: ibc_token_symbol.clone(),
+        decimals: event_decimals,
+        event_nonce,
+        block_height: eth_block_height,
+    };
+    let sep_result = send_ethereum_claims(
+        contact,
+        keys[0].orch_key,
+        vec![],
+        vec![],
+        vec![separator_event],
+        vec![],
+        vec![],
+        get_fee(None),
+    )
+    .await;
+    match sep_result {
+        Err(e) => {
+            info!(
+                "Phase 2.5: separator-denom claim correctly rejected at transport level: {e}"
+            );
+        }
+        Ok(tx) => {
+            assert_ne!(
+                tx.code(),
+                0,
+                "Phase 2.5: claim with AttestationSeparator in denom must be rejected, \
+                 but got code=0. raw_log: {}",
+                tx.raw_log()
+            );
+            let log = tx.raw_log().to_lowercase();
+            assert!(
+                log.contains("non-ascii") || log.contains("invalid"),
+                "Phase 2.5: separator-denom rejected with unexpected error: {}",
+                tx.raw_log()
+            );
+            info!(
+                "Phase 2.5: separator-denom claim correctly rejected with code={}: {}",
+                tx.code(),
+                tx.raw_log()
+            );
+        }
+    }
+
     // ── Phase 3: submit all claims manually (forged first, honest second) ─────
-
-    // Build forged_cosmos_denom: absorbs the ibc_denom + new_erc20_addr + the
-    // path prefix of the honest Name, pushing bartokenAddr into the TokenContract slot.
-    let forged_cosmos_denom =
-        format!("{ibc_denom}/{new_erc20_addr}/transfer/{gravity_channel_id}/attack");
-
-    // Verify the collision holds on the Rust side before submitting anything.
-    // The Sprintf format used by Go's ClaimHash() is:
-    //   "{nonce}/{block}/{CosmosDenom}/{TokenContract}/{Name}/{Symbol}/{Decimals}"
-    // Both claims must produce the same string when their fields are substituted.
-    let honest_path = format!(
-        "{event_nonce}/{eth_block_height}/{ibc_denom}/{new_erc20_addr}/{ibc_token_name}/{ibc_token_symbol}/{event_decimals}"
-    );
-    let forged_path = format!(
-        "{event_nonce}/{eth_block_height}/{forged_cosmos_denom}/{BARTOKEN_ADDR}/tok IBC token/{ibc_token_symbol}/{event_decimals}"
-    );
-    let honest_hash = tmhash(honest_path.as_bytes());
-    let forged_hash = tmhash(forged_path.as_bytes());
-    assert_eq!(
-        honest_hash, forged_hash,
-        "collision construction failed — check MALICIOUS_DENOM and channel IDs"
-    );
-    info!(
-        "Phase 3: collision verified, ClaimHash = {}",
-        honest_hash
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect::<String>()
-    );
+    //
+    // With AttestationSeparator as the ClaimHash field delimiter (non-ASCII
+    // combining marks), hash collisions through field-boundary shifting are
+    // impossible for ASCII-only denoms.  The forged and honest claims will
+    // produce DIFFERENT ClaimHashes on-chain, creating separate attestations.
+    //
+    // This phase tests claim *disagreement*: the malicious validator submits a
+    // claim with fabricated field values.  Honest validators submit the real
+    // values.  The honest attestation reaches quorum; the forged one does not.
+    let forged_cosmos_denom = "forged-attack-denom".to_string();
 
     let bartoken_eth_addr: EthAddress = BARTOKEN_ADDR.parse().unwrap();
     let forged_event = Erc20DeployedEvent {
         cosmos_denom: forged_cosmos_denom.clone(),
         erc20_address: bartoken_eth_addr,
-        name: "tok IBC token".to_string(),
-        symbol: ibc_token_symbol.clone(),
+        name: "forged-token-name".to_string(),
+        symbol: "FORGED".to_string(),
         decimals: event_decimals,
         event_nonce,
         block_height: eth_block_height,
@@ -894,8 +936,10 @@ async fn erc20_deployed_claim_hash_collision(
     );
 
     // Submit honest claims from all remaining validators manually, before
-    // orchestrators loop.  Each honest claim shares the same ClaimHash (proven above)
-    // but has different field values; the field-level equality patch must reject them.
+    // orchestrators loop.  Because the separator change makes hash collisions
+    // impossible, these claims have a DIFFERENT ClaimHash from the forged one
+    // and create their own separate attestation.  They should all be accepted.
+    let new_erc20_addr_str = new_erc20_addr.to_string();
     for honest_key in &keys[1..] {
         let orch_addr = honest_key
             .orch_key
@@ -922,50 +966,25 @@ async fn erc20_deployed_claim_hash_collision(
         )
         .await;
 
-        // The honest claim has the same ClaimHash as the forged one (collision),
-        // so Attest() finds the existing attestation and its field-level equality
-        // guard fires: incoming fields ≠ stored forged fields → ErrInvalidClaim.
-        // This rejection may surface either as a non-zero TxResponse code (most
-        // common) or as a gRPC-level Err when the node wraps the module error in
-        // an Unknown status.  Both outcomes confirm the patch is working.
-        match send_result {
-            Err(e) => {
-                let msg = e.to_string().to_lowercase();
-                assert!(
-                    msg.contains("invalid claim") || msg.contains("do not match"),
-                    "{}",
-                    "Phase 3: honest claim from {orch_addr} was rejected at the \
-                     transport level with an unexpected error (expected ErrInvalidClaim): {e}"
-                );
-                info!(
-                    "Phase 3: honest claim from {orch_addr} correctly rejected \
-                     at transport level with ErrInvalidClaim"
-                );
-            }
-            Ok(tx) => {
-                let log = tx.raw_log().to_lowercase();
-                assert_ne!(
-                    tx.code(),
-                    0,
-                    "Phase 3: honest claim from {orch_addr} was accepted \
-                     (code=0) — the field-level equality patch in Attest() is not working. \
-                     raw_log: {}",
-                    tx.raw_log()
-                );
-                assert!(
-                    log.contains("invalid claim") || log.contains("do not match"),
-                    "Phase 3: honest claim from {orch_addr} was rejected (code={}) \
-                     but with an unexpected error message: {}",
-                    tx.code(),
-                    tx.raw_log()
-                );
-                info!(
-                    "Phase 3: honest claim from {orch_addr} correctly rejected \
-                     with code={} — ErrInvalidClaim confirmed",
-                    tx.code()
-                );
-            }
-        }
+        // Honest claims create a separate attestation (different ClaimHash from
+        // the forged one) and should be accepted.
+        let tx = send_result.unwrap_or_else(|e| {
+            panic!(
+                "Phase 3: honest claim from {} failed at transport level: {}", orch_addr, e
+            )
+        });
+        assert_eq!(
+            tx.code(),
+            0,
+            "Phase 3: honest claim from {orch_addr} should be accepted (code=0), \
+             but got code={}: {}",
+            tx.code(),
+            tx.raw_log()
+        );
+        info!(
+            "Phase 3: honest claim from {orch_addr} accepted — \
+             joined honest attestation for TokenContract={new_erc20_addr_str}"
+        );
     }
 
     // ── Phase 4 / 5: wait, then assert ───────────────────────────────────────
@@ -976,9 +995,7 @@ async fn erc20_deployed_claim_hash_collision(
         .await
         .expect("Phase 5: failed to query attestations");
 
-    // The forged and honest attestations share the same store key (same ClaimHash),
-    // so there is exactly one attestation for this event.  Its stored claim fields
-    // are the forged ones (it was created first).
+    // ── Forged attestation: must exist with exactly 1 vote, NOT observed ──────
     let forged_att = all_atts.iter().find(|a| {
         if a.claim_type != ClaimType::Erc20Deployed as i32 {
             return false;
@@ -997,18 +1014,15 @@ async fn erc20_deployed_claim_hash_collision(
          the forged claim was rejected before creating an attestation",
     );
 
-    // REGRESSION GUARD: if someone removes the gogoproto.Equal patch in Attest(),
-    // honest votes will silently join the forged attestation and this assert fires.
     assert_eq!(
         forged_att.votes.len(),
         1,
-        "REGRESSION: {} validator(s) added honest votes to the forged attestation — \
-         the field-level equality patch in Attest() may be missing. Votes: {:?}",
-        forged_att.votes.len().saturating_sub(1),
+        "Phase 5: forged attestation should have exactly 1 vote (the malicious validator), \
+         but has {}. Votes: {:?}",
+        forged_att.votes.len(),
         forged_att.votes,
     );
 
-    // REGRESSION GUARD: the forged attestation must never reach the 2/3 threshold.
     assert!(
         !forged_att.observed,
         "REGRESSION: forged attestation was marked observed (2/3 threshold reached). \
@@ -1016,9 +1030,46 @@ async fn erc20_deployed_claim_hash_collision(
          denom→ERC20 mapping is corrupted."
     );
 
+    // ── Honest attestation: must exist with 3 votes, observed ─────────────────
+    let honest_att = all_atts.iter().find(|a| {
+        if a.claim_type != ClaimType::Erc20Deployed as i32 {
+            return false;
+        }
+        let Some(ref any_att) = a.claim else {
+            return false;
+        };
+        MsgErc20DeployedClaim::decode(any_att.value.as_slice())
+            .ok()
+            .map(|c| c.token_contract == new_erc20_addr_str)
+            .unwrap_or(false)
+    });
+
+    let honest_att = honest_att.expect(
+        "Phase 5: honest attestation was never created — \
+         honest claims were rejected before creating an attestation",
+    );
+
+    assert!(
+        honest_att.votes.len() >= 3,
+        "Phase 5: honest attestation should have at least 3 votes, \
+         but has {}. Votes: {:?}",
+        honest_att.votes.len(),
+        honest_att.votes,
+    );
+
+    assert!(
+        honest_att.observed,
+        "Phase 5: honest attestation should be observed (quorum reached with 3/4 validators), \
+         but it was not. Votes: {:?}",
+        honest_att.votes,
+    );
+
     info!(
-        "ERC20DeployedClaim hash collision PATCHED: forged attestation stuck at 1 vote, never observed. \
-         All honest claims correctly rejected by field-level equality guard in Attest()."
+        "ERC20DeployedClaim claim disagreement VERIFIED: forged attestation stuck at {} vote(s), \
+         honest attestation observed with {} vote(s). \
+         AttestationSeparator prevents hash collisions; honest majority wins.",
+        forged_att.votes.len(),
+        honest_att.votes.len(),
     );
 }
 

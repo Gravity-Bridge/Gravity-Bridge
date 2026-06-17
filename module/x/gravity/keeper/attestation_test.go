@@ -392,8 +392,28 @@ func TestAttestDuplicateClaimMatchingComponents(t *testing.T) {
 	require.Equal(t, 2, len(att.Votes)) // both votes
 }
 
-// TestAttestMismatchingComponents verifies that Attest rejects a claim when the
-// stored ClaimHashComponents have been tampered with (simulating data corruption).
+// TestAttestMismatchingComponents verifies protection (2) against separator-injection attacks
+// for MsgBatchSendToEthClaim: Attest rejects a second vote when the stored ClaimHashComponents
+// have been tampered with (simulating data corruption or a deliberate collision attempt).
+//
+// There are three independent layers of protection against separator-injection attacks on ERC20
+// deployed claims. Each layer is tested separately so that a future change to one does not
+// silently rely on another:
+//
+//	Protection (1) — non-ASCII rejection [exercised in TestERC20DeployedClaimHashCollision]:
+//	  ValidateStrictDenom rejects any CosmosDenom that contains the non-ASCII AttestationSeparator,
+//	  making it impossible to embed the separator in that field at submit time.
+//
+//	Protection (2) — direct field comparison [exercised HERE and in
+//	  TestAttestMismatchingERC20DeployedComponents]:
+//	  ClaimHashes are used only as storage keys. When a second vote arrives for the same nonce,
+//	  Attest re-hashes the stored ClaimHashComponents and compares fields directly against the
+//	  incoming claim, so a hash collision would be caught and rejected before any vote is counted.
+//
+//	Protection (3) — field length limits [exercised in TestAttestHandlerRejectsOversizedFields]:
+//	  ValidateClaimFieldLengths in AttestationHandler.Handle bounds every string field. A
+//	  collision-generating CosmosDenom would need to be longer than the honest denom plus the
+//	  separator plus a contract address, which exceeds MaxDenomLength (256 bytes).
 func TestAttestMismatchingComponents(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Skipping invariants check due to intentional state tampering") }()
@@ -505,20 +525,48 @@ func TestERC20DeployedClaimHashCollision(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
-	// Attempt to create a collision with a forged claim (must be submitted by a validator)
-	forgedCosmosDenom := ibcDenom + "/" + newERC20Addr + "/" + gravityDestPort + "/" + gravityDestChannel
-	forgedName := denomSuffix + " IBC token"
+	// Attempt a separator-injection collision: embed the actual AttestationSeparator inside the
+	// CosmosDenom, hoping to shift field boundaries so the forged claim produces the same hash as
+	// the honest one.  The honest hash input is:
+	//   ibcDenom + SEP + newERC20Addr + SEP + ibcTokenName + SEP + ibcTokenSymbol + SEP + "0"
+	// The forged hash input would be:
+	//   (ibcDenom + SEP + newERC20Addr) + SEP + footokenAddr + SEP + ibcTokenName + SEP + ibcTokenSymbol + SEP + "0"
+	// which equals:
+	//   ibcDenom + SEP + newERC20Addr + SEP + footokenAddr + SEP + ibcTokenName + SEP + ibcTokenSymbol + SEP + "0"
+	//
+	// There are three independent layers of protection against separator-injection attacks on ERC20
+	// deployed claims. Each layer is tested separately so that a future change to one does not
+	// silently rely on another:
+	//
+	//   Protection (1) — non-ASCII rejection [exercised HERE]:
+	//     The AttestationSeparator is a non-ASCII byte sequence. ValidateStrictDenom (called by
+	//     both MsgERC20DeployedClaim.ValidateBasic and msgServer.ERC20DeployedClaim) rejects any
+	//     CosmosDenom that contains a non-ASCII character, making it impossible to embed the
+	//     separator in that field.
+	//
+	//   Protection (2) — direct field comparison [exercised in TestAttestMismatchingComponents
+	//     and TestAttestMismatchingERC20DeployedComponents]:
+	//     ClaimHashes are used only as storage keys. When a second vote arrives for the same nonce,
+	//     Attest re-hashes the stored ClaimHashComponents and compares fields directly against the
+	//     incoming claim, so a hash collision would be caught and rejected before any vote is counted.
+	//
+	//   Protection (3) — field length limits [exercised in TestAttestHandlerRejectsOversizedFields]:
+	//     ValidateClaimFieldLengths in AttestationHandler.Handle bounds every string field. A
+	//     collision-generating CosmosDenom would need to be longer than the honest denom plus the
+	//     separator plus a contract address, which exceeds MaxDenomLength (256 bytes).
+	forgedCosmosDenom := ibcDenom + types.AttestationSeparator + newERC20Addr
 	forgedClaim := types.MsgERC20DeployedClaim{
 		EventNonce:     eventNonce,
 		EthBlockHeight: 1,
 		CosmosDenom:    forgedCosmosDenom,
 		TokenContract:  footokenAddr,
-		Name:           forgedName,
+		Name:           ibcTokenName,
 		Symbol:         ibcTokenSymbol,
 		Decimals:       0,
 		Orchestrator:   OrchAddrs[1].String(),
 	}
-	// Confirm the collision is PREVENTED by AttestationSeparator
+	// Confirm the collision is impossible by construction: the forged hash input contains an extra
+	// field (footokenAddr) between the contract and name positions, so the hash must differ.
 	honestHash, err := honestClaim.ClaimHash()
 	require.NoError(t, err)
 	forgedHash, err := forgedClaim.ClaimHash()
@@ -526,13 +574,24 @@ func TestERC20DeployedClaimHashCollision(t *testing.T) {
 	t.Logf("honest ClaimHash = %x", honestHash)
 	t.Logf("forged ClaimHash = %x", forgedHash)
 	require.NotEqual(t, honestHash, forgedHash,
-		"AttestationSeparator prevents the hash collision - hashes must differ")
+		"separator-injection attack produces a strictly longer hash input and cannot collide")
 	require.NotEqual(t, honestClaim.CosmosDenom, forgedClaim.CosmosDenom)
 	require.NotEqual(t, honestClaim.TokenContract, forgedClaim.TokenContract)
 
-	// Confirm ValidateBasic rejects the invalid claim
+	// Confirm ValidateBasic also rejects the forged claim independently:
+	// ValidateStrictDenom blocks the non-ASCII AttestationSeparator in CosmosDenom.
 	err = forgedClaim.ValidateBasic()
 	require.Error(t, err)
+	require.Contains(t, err.Error(), "non-ASCII")
+
+	// Exercise the production code path: msgServer.ERC20DeployedClaim calls ValidateStrictDenom
+	// explicitly before any keeper state changes. This is the actual runtime gate, distinct from
+	// the type-level ValidateBasic check above.
+	msgServer := NewMsgServerImpl(k)
+	_, err = msgServer.ERC20DeployedClaim(ctx, &forgedClaim)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "non-ASCII",
+		"msg server ValidateStrictDenom gate must reject the forged cosmos denom")
 
 	// Confirm honest claim is accepted by the chain
 	honestAny, err := codectypes.NewAnyWithValue(&honestClaim)
@@ -549,4 +608,173 @@ func TestERC20DeployedClaimHashCollision(t *testing.T) {
 	require.NotNil(t, honestComp)
 	require.Equal(t, newERC20Addr, honestComp.TokenContract)
 	require.Equal(t, 1, len(honestAtt.Votes))
+}
+
+// TestAttestMismatchingERC20DeployedComponents verifies protection (2) against separator-injection
+// attacks for MsgERC20DeployedClaim: Attest rejects a second vote when the stored
+// ClaimHashComponents have been tampered with. MsgERC20DeployedClaim carries five string fields
+// (CosmosDenom, TokenContract, Name, Symbol, Decimals) vs. two for batch claims, making it the
+// higher-value target for field-level tampering.
+//
+// There are three independent layers of protection against separator-injection attacks on ERC20
+// deployed claims. Each layer is tested separately so that a future change to one does not
+// silently rely on another:
+//
+//	Protection (1) — non-ASCII rejection [exercised in TestERC20DeployedClaimHashCollision]:
+//	  ValidateStrictDenom rejects any CosmosDenom that contains the non-ASCII AttestationSeparator,
+//	  making it impossible to embed the separator in that field at submit time.
+//
+//	Protection (2) — direct field comparison [exercised HERE and in TestAttestMismatchingComponents]:
+//	  ClaimHashes are used only as storage keys. When a second vote arrives for the same nonce,
+//	  Attest re-hashes the stored ClaimHashComponents and compares fields directly against the
+//	  incoming claim, so a hash collision would be caught and rejected before any vote is counted.
+//
+//	Protection (3) — field length limits [exercised in TestAttestHandlerRejectsOversizedFields]:
+//	  ValidateClaimFieldLengths in AttestationHandler.Handle bounds every string field. A
+//	  collision-generating CosmosDenom would need to be longer than the honest denom plus the
+//	  separator plus a contract address, which exceeds MaxDenomLength (256 bytes).
+func TestAttestMismatchingERC20DeployedComponents(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Skipping invariants check due to intentional state tampering") }()
+	k := input.GravityKeeper
+
+	lastNonce := k.GetLastObservedEventNonce(ctx)
+	const contract = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	const altContract = "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+	claim := types.MsgERC20DeployedClaim{
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: 1,
+		CosmosDenom:    "ugravity",
+		TokenContract:  contract,
+		Name:           "Gravity",
+		Symbol:         "GRAV",
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+	claimAny, err := codectypes.NewAnyWithValue(&claim)
+	require.NoError(t, err)
+
+	_, err = k.Attest(ctx, &claim, claimAny)
+	require.NoError(t, err)
+
+	hash, err := claim.ClaimHash()
+	require.NoError(t, err)
+	att := k.GetAttestation(ctx, claim.GetEventNonce(), hash)
+	require.NotNil(t, att)
+	require.NotNil(t, att.ClaimComponents)
+
+	// Tamper: swap TokenContract in stored components to a different address.
+	att.ClaimComponents.GetErc20Deployed().TokenContract = altContract
+	k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
+
+	// A second orchestrator attests to the original (unmodified) claim.
+	claim2 := types.MsgERC20DeployedClaim{
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: 1,
+		CosmosDenom:    "ugravity",
+		TokenContract:  contract,
+		Name:           "Gravity",
+		Symbol:         "GRAV",
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[1].String(),
+	}
+	claim2Any, err := codectypes.NewAnyWithValue(&claim2)
+	require.NoError(t, err)
+
+	_, err = k.Attest(ctx, &claim2, claim2Any)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "incoming claim does not match stored attestation components")
+}
+
+// TestAttestHandlerRejectsOversizedFields verifies protection (3) against separator-injection
+// attacks: ValidateClaimFieldLengths in AttestationHandler.Handle rejects claims whose Name or
+// Symbol fields exceed their maximum lengths. These fields are not checked by ValidateBasic or by
+// the msg server's ValidateStrictDenom call (which only covers CosmosDenom), so the Handle-level
+// check is the sole length gate for them. The test calls Handle directly, mirroring the production
+// call site in TryAttestation.
+//
+// There are three independent layers of protection against separator-injection attacks on ERC20
+// deployed claims. Each layer is tested separately so that a future change to one does not
+// silently rely on another:
+//
+//	Protection (1) — non-ASCII rejection [exercised in TestERC20DeployedClaimHashCollision]:
+//	  ValidateStrictDenom rejects any CosmosDenom that contains the non-ASCII AttestationSeparator,
+//	  making it impossible to embed the separator in that field at submit time.
+//
+//	Protection (2) — direct field comparison [exercised in TestAttestMismatchingComponents and
+//	  TestAttestMismatchingERC20DeployedComponents]:
+//	  ClaimHashes are used only as storage keys. When a second vote arrives for the same nonce,
+//	  Attest re-hashes the stored ClaimHashComponents and compares fields directly against the
+//	  incoming claim, so a hash collision would be caught and rejected before any vote is counted.
+//
+//	Protection (3) — field length limits [exercised HERE]:
+//	  ValidateClaimFieldLengths in AttestationHandler.Handle bounds every string field. A
+//	  collision-generating CosmosDenom would need to be longer than the honest denom plus the
+//	  separator plus a contract address, which exceeds MaxDenomLength (256 bytes). Name and Symbol
+//	  are similarly bounded, and their limits are not enforced anywhere earlier in the pipeline.
+func TestAttestHandlerRejectsOversizedFields(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	k := input.GravityKeeper
+
+	lastNonce := k.GetLastObservedEventNonce(ctx)
+	const contract = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+
+	// Name exceeds MaxTokenNameLength (256) but is valid ASCII — ValidateBasic does not
+	// check its length, so this claim can pass all submit-time gates and reach Handle.
+	longName := strings.Repeat("a", types.MaxTokenNameLength+1)
+	claim := types.MsgERC20DeployedClaim{
+		EventNonce:     lastNonce + 1,
+		EthBlockHeight: 1,
+		CosmosDenom:    "ugravity",
+		TokenContract:  contract,
+		Name:           longName,
+		Symbol:         "GRAV",
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+	claimAny, err := codectypes.NewAnyWithValue(&claim)
+	require.NoError(t, err)
+
+	// Confirm that the claim passes the submit-time gates so the test is meaningful.
+	require.NoError(t, claim.ValidateBasic(), "ValidateBasic must not block oversized Name")
+
+	att := types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+		Claim:    claimAny,
+	}
+
+	err = k.AttestationHandler.Handle(ctx, att, &claim)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "too long",
+		"Handle must reject oversized Name via ValidateClaimFieldLengths")
+
+	// Repeat for Symbol exceeding MaxTokenSymbolLength (64).
+	longSymbol := strings.Repeat("b", types.MaxTokenSymbolLength+1)
+	claim2 := types.MsgERC20DeployedClaim{
+		EventNonce:     lastNonce + 2,
+		EthBlockHeight: 1,
+		CosmosDenom:    "ugravity",
+		TokenContract:  contract,
+		Name:           "Gravity",
+		Symbol:         longSymbol,
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+	claimAny2, err := codectypes.NewAnyWithValue(&claim2)
+	require.NoError(t, err)
+	require.NoError(t, claim2.ValidateBasic(), "ValidateBasic must not block oversized Symbol")
+
+	att2 := types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+		Claim:    claimAny2,
+	}
+	err = k.AttestationHandler.Handle(ctx, att2, &claim2)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "too long",
+		"Handle must reject oversized Symbol via ValidateClaimFieldLengths")
 }
