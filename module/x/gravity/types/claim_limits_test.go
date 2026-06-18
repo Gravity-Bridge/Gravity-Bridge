@@ -43,6 +43,22 @@ func TestValidateClaimFieldLengths_ERC20Deployed_OversizedDenom(t *testing.T) {
 	require.ErrorIs(t, ValidateClaimFieldLengths(&claim), ErrInvalidClaim)
 }
 
+func TestValidateClaimFieldLengths_ERC20Deployed_InvalidDenomStructure(t *testing.T) {
+	// A structurally invalid IBC denom (wrong length) should be caught by
+	// ValidateStrictDenom inside ValidateClaimFieldLengths.
+	claim := validERC20DeployedClaim()
+	claim.CosmosDenom = "ibc/notahash" // wrong IBC format (length != 68)
+	require.ErrorIs(t, ValidateClaimFieldLengths(&claim), ErrInvalidClaim)
+}
+
+func TestValidateClaimFieldLengths_ERC20Deployed_MalformedGravityDenom(t *testing.T) {
+	// A gravity-prefixed denom that is too short should be caught by
+	// ValidateStrictDenom's delegation to GravityDenomToERC20.
+	claim := validERC20DeployedClaim()
+	claim.CosmosDenom = "gravity0xbadaddr" // too short for gravity denom
+	require.ErrorIs(t, ValidateClaimFieldLengths(&claim), ErrInvalidClaim)
+}
+
 func TestValidateClaimFieldLengths_ERC20Deployed_OversizedName(t *testing.T) {
 	claim := validERC20DeployedClaim()
 	claim.Name = strings.Repeat("a", MaxTokenNameLength+1)

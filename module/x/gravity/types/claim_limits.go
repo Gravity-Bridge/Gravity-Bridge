@@ -27,8 +27,10 @@ func ValidateClaimFieldLengths(claim EthereumClaim) error {
 		if err := validateERC20AddressField(c.TokenContract, "token contract"); err != nil {
 			return err
 		}
-		if len(c.CosmosDenom) > MaxDenomLength {
-			return errorsmod.Wrapf(ErrInvalidClaim, "cosmos denom too long: %d > %d", len(c.CosmosDenom), MaxDenomLength)
+		// Use ValidateStrictDenom for the full structural check (length, ASCII, separator,
+		// IBC format, gravity prefix) rather than duplicating the length check here.
+		if err := ValidateStrictDenom(c.CosmosDenom); err != nil {
+			return errorsmod.Wrapf(ErrInvalidClaim, "invalid cosmos denom: %s", err)
 		}
 		if len(c.Name) > MaxTokenNameLength {
 			return errorsmod.Wrapf(ErrInvalidClaim, "token name too long: %d > %d", len(c.Name), MaxTokenNameLength)

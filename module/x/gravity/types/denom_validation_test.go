@@ -36,22 +36,45 @@ func TestValidateStrictDenom(t *testing.T) {
 
 		// Slash / IBC tests
 		{"valid ibc hash - pass", "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2", false},
-		{"ibc with extra slash - fail", "ibc/27394FB092D2/ECCD56123C", true},
 		{"ibc too short (just prefix) - fail", "ibc/", true},
+		{"ibc hash too short (63 chars) - fail", "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5E", true},
+		{"ibc hash too long (65 chars) - fail", "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB22", true},
+		{"ibc with extra slash - fail", "ibc/27394FB092D2/ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2", true},
+		{"ibc lowercase hex - fail", "ibc/27394fb092d2eccd56123c74f36e4c1f926001ceada9ca97ea622b25f41e5eb2", true},
+		{"ibc mixed-case hex - fail", "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5Eb2", true},
 		{"uppercase IBC prefix - fail", "IBC/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2", true},
 		{"uppercase Ibc prefix - fail", "Ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2", true},
 		{"non-IBC with slash - fail", "gravity/0xabc", true},
 		{"non-IBC no slash - pass", "ugravity", false},
 
-		// Forbidden substring tests (IBC)
-		{"ibc with gravity - fail", "ibc/gravity0xabc123", true},
-		{"ibc with graviton - fail", "ibc/graviton0xabc123", true},
-		{"ibc with 0x - fail", "ibc/evil0xdead", true},
+		// These denoms contain forbidden substrings but are actually rejected by the
+		// length/format check before reaching the substring filter (which is now vestigial
+		// for IBC denoms since the uppercase-hex constraint makes those substrings impossible).
+		{"ibc wrong length with gravity - fail", "ibc/gravity0xabc123", true},
+		{"ibc wrong length with graviton - fail", "ibc/graviton0xabc123", true},
+		{"ibc wrong length with 0x - fail", "ibc/evil0xdead", true},
 
-		// Allowed substrings (non-IBC)
-		{"gravity prefix non-IBC - pass", "gravity0xabc123", false},
-		{"graviton prefix non-IBC - pass", "graviton0xabc123", false},
+		// Allowed substrings (non-IBC, non-gravity-prefixed)
 		{"0x in non-IBC - pass", "mytoken0xabc", false},
+		{"ugraviton native denom - pass", "ugraviton", false},
+		// "graviton" does NOT start with "gravity" (differs at position 6: 'o' vs 'y'),
+		// so it is not caught by the gravity prefix catch-all.
+		{"graviton bare - pass", "graviton", false},
+		{"graviton with suffix - pass", "graviton0xabc123", false},
+
+		// Any denom starting with "gravity" that isn't a valid bridge denom is rejected
+		{"gravity prefix without 0x - fail", "gravitytoken", true},
+
+		// gravity-prefixed bridge denom tests (gravity + 0x + 40 hex = 49 bytes)
+		{"valid gravity denom - pass", "gravity0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", false},
+		{"gravity denom too short - fail", "gravity0xabc123", true},
+		{"gravity denom wrong address - fail", "gravity0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", true},
+
+		// gravity2-prefixed bridge denom tests (gravity2 + 0x + 40 hex = 50 bytes)
+		{"valid gravity2 denom - pass", "gravity20x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", false},
+		{"gravity2 denom too short - fail", "gravity20xabc123", true},
+		{"gravity2 prefix only - fail", "gravity2", true},
+		{"gravity2 wrong address - fail", "gravity20xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", true},
 	}
 
 	for _, tt := range tests {
