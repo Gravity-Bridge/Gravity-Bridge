@@ -433,10 +433,10 @@ pub enum GovSubcommand {
 
 #[derive(Parser)]
 pub enum GovSubmitSubcommand {
-    IbcMetadata(IbcMetadataProposalOpts),
     Airdrop(AirdropProposalOpts),
     EmergencyBridgeHalt(EmergencyBridgeHaltProposalOpts),
     OracleUnhalt(OracleUnhaltProposalOpts),
+    CosmosBridgeableTokens(CosmosBridgeableTokensProposalOpts),
 }
 
 #[derive(Parser)]
@@ -456,29 +456,6 @@ pub struct AirdropQueryOpts {
     /// (Optional) display full recipients list for airdrops over 100 members
     #[clap(short, long)]
     pub full_list: bool,
-}
-
-/// An IBC metadata proposal is a Governance proposal which allows setting denom metadata
-/// for an IBC token. This is an essential first setup in taking IBC tokens to Ethereum.
-/// The provided denom metadata will be used to set the name, symbol, description, and decimals
-/// for the resulting ERC20
-#[derive(Parser)]
-pub struct IbcMetadataProposalOpts {
-    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
-    #[clap(long, default_value = DEFAULT_GRPC_ADDRESS)]
-    pub cosmos_grpc: String,
-    /// The phrase for an address containing enough funds to submit the proposal.
-    #[clap(short, long, parse(try_from_str))]
-    pub cosmos_phrase: CosmosPrivateKey,
-    /// Path to the proposal.json
-    #[clap(short, long, parse(try_from_str))]
-    pub json: PathBuf,
-    /// The Cosmos Denom and amount to pay the governance proposal deposit
-    #[clap(short, long, parse(try_from_str))]
-    pub deposit: Coin,
-    /// The Cosmos Denom and amount to pay Cosmos chain fees
-    #[clap(short, long, parse(try_from_str))]
-    pub fees: Coin,
 }
 
 /// An Airdrop Proposal allows the community to create, vote on, and execute
@@ -531,6 +508,29 @@ pub struct EmergencyBridgeHaltProposalOpts {
 /// will reset the oracle and allow the bridge to progress normally
 #[derive(Parser)]
 pub struct OracleUnhaltProposalOpts {
+    /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
+    #[clap(long, default_value = DEFAULT_GRPC_ADDRESS)]
+    pub cosmos_grpc: String,
+    /// The phrase for an address containing enough funds to submit the proposal.
+    #[clap(short, long, parse(try_from_str))]
+    pub cosmos_phrase: CosmosPrivateKey,
+    /// Path to the proposal.json
+    #[clap(short, long, parse(try_from_str))]
+    pub json: PathBuf,
+    /// The Cosmos Denom and amount to pay the governance proposal deposit
+    #[clap(short, long, parse(try_from_str))]
+    pub deposit: Coin,
+    /// The Cosmos Denom and amount to pay Cosmos chain fees
+    #[clap(short, long, parse(try_from_str))]
+    pub fees: Coin,
+}
+
+/// A CosmosBridgeableTokens Proposal either SETs (adds/overwrites) or REMOVEs entries in the
+/// CosmosBridgeableTokens allowlist store. This allowlist controls which Cosmos-originated
+/// denoms may be sent to Ethereum via SendToEth. On SET, the bank module's denom metadata for
+/// each listed denom is unconditionally overwritten with the metadata provided in the proposal.
+#[derive(Parser)]
+pub struct CosmosBridgeableTokensProposalOpts {
     /// (Optional) The Cosmos gRPC server that will be used to submit the transaction
     #[clap(long, default_value = DEFAULT_GRPC_ADDRESS)]
     pub cosmos_grpc: String,

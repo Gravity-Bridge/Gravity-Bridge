@@ -13,6 +13,7 @@ import (
 	bech32ibctypes "github.com/Gravity-Bridge/Gravity-Bridge/module/x/bech32ibc/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -281,16 +282,19 @@ func TestCosmosBridgeableTokensGenesisRoundTrip(t *testing.T) {
 	ctx := input.Context
 	gk := input.GravityKeeper
 
-	// Set params with a non-empty allowlist
-	params, err := gk.GetParams(ctx)
-	require.NoError(t, err)
-	params.CosmosBridgeableTokens = []string{"uatom", "uosmo", "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"}
-	require.NoError(t, gk.SetParams(ctx, params))
+	// Set a non-empty allowlist
+	entries := []banktypes.Metadata{
+		minMeta("uatom"),
+		minMeta("uosmo"),
+		minMeta("ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"),
+	}
+	for _, m := range entries {
+		gk.SetCosmosBridgeableToken(ctx, m)
+	}
 
 	// Export genesis
 	genesisState := ExportGenesis(ctx, gk)
-	require.NotNil(t, genesisState.Params)
-	require.Equal(t, params.CosmosBridgeableTokens, genesisState.Params.CosmosBridgeableTokens)
+	require.ElementsMatch(t, entries, genesisState.CosmosBridgeableTokens)
 
 	// Re-import into a fresh chain
 	newInput := CreateTestEnv(t)
@@ -300,8 +304,6 @@ func TestCosmosBridgeableTokensGenesisRoundTrip(t *testing.T) {
 	newInput.BankKeeper.InitGenesis(newInput.Context, bankGenesis)
 	InitGenesis(newInput.Context, newInput.GravityKeeper, genesisState)
 
-	// Verify the param survived the round-trip
-	restoredParams, err := newInput.GravityKeeper.GetParams(newInput.Context)
-	require.NoError(t, err)
-	require.Equal(t, params.CosmosBridgeableTokens, restoredParams.CosmosBridgeableTokens)
+	// Verify the entries survived the round-trip
+	require.ElementsMatch(t, entries, newInput.GravityKeeper.GetAllCosmosBridgeableTokens(newInput.Context))
 }

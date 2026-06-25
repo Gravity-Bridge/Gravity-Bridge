@@ -93,7 +93,7 @@ pub async fn deploy_and_bridge_cosmos_token(
 ) {
     let mut grpc_client = grpc_client;
     // Allow this cosmos-originated token to cross the bridge before deploying its ERC20
-    set_cosmos_bridgeable_tokens(contact, &keys, vec![ibc_metadata.base.clone()]).await;
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![ibc_metadata.clone()]).await;
     let erc20_contract = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,

@@ -1418,861 +1418,6 @@ func (x *fastReflection_MsgUpdateParamsProposalResponse) ProtoMethods() *protoif
 }
 
 var (
-	md_MsgIBCMetadataProposal           protoreflect.MessageDescriptor
-	fd_MsgIBCMetadataProposal_authority protoreflect.FieldDescriptor
-	fd_MsgIBCMetadataProposal_proposal  protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_gravity_v2_msgs_proto_init()
-	md_MsgIBCMetadataProposal = File_gravity_v2_msgs_proto.Messages().ByName("MsgIBCMetadataProposal")
-	fd_MsgIBCMetadataProposal_authority = md_MsgIBCMetadataProposal.Fields().ByName("authority")
-	fd_MsgIBCMetadataProposal_proposal = md_MsgIBCMetadataProposal.Fields().ByName("proposal")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgIBCMetadataProposal)(nil)
-
-type fastReflection_MsgIBCMetadataProposal MsgIBCMetadataProposal
-
-func (x *MsgIBCMetadataProposal) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgIBCMetadataProposal)(x)
-}
-
-func (x *MsgIBCMetadataProposal) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v2_msgs_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgIBCMetadataProposal_messageType fastReflection_MsgIBCMetadataProposal_messageType
-var _ protoreflect.MessageType = fastReflection_MsgIBCMetadataProposal_messageType{}
-
-type fastReflection_MsgIBCMetadataProposal_messageType struct{}
-
-func (x fastReflection_MsgIBCMetadataProposal_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgIBCMetadataProposal)(nil)
-}
-func (x fastReflection_MsgIBCMetadataProposal_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgIBCMetadataProposal)
-}
-func (x fastReflection_MsgIBCMetadataProposal_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgIBCMetadataProposal
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgIBCMetadataProposal) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgIBCMetadataProposal
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgIBCMetadataProposal) Type() protoreflect.MessageType {
-	return _fastReflection_MsgIBCMetadataProposal_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgIBCMetadataProposal) New() protoreflect.Message {
-	return new(fastReflection_MsgIBCMetadataProposal)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgIBCMetadataProposal) Interface() protoreflect.ProtoMessage {
-	return (*MsgIBCMetadataProposal)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgIBCMetadataProposal) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Authority != "" {
-		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgIBCMetadataProposal_authority, value) {
-			return
-		}
-	}
-	if x.Proposal != nil {
-		value := protoreflect.ValueOfMessage(x.Proposal.ProtoReflect())
-		if !f(fd_MsgIBCMetadataProposal_proposal, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgIBCMetadataProposal) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "gravity.v2.MsgIBCMetadataProposal.authority":
-		return x.Authority != ""
-	case "gravity.v2.MsgIBCMetadataProposal.proposal":
-		return x.Proposal != nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposal"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposal does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgIBCMetadataProposal) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "gravity.v2.MsgIBCMetadataProposal.authority":
-		x.Authority = ""
-	case "gravity.v2.MsgIBCMetadataProposal.proposal":
-		x.Proposal = nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposal"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposal does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgIBCMetadataProposal) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "gravity.v2.MsgIBCMetadataProposal.authority":
-		value := x.Authority
-		return protoreflect.ValueOfString(value)
-	case "gravity.v2.MsgIBCMetadataProposal.proposal":
-		value := x.Proposal
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposal"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposal does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgIBCMetadataProposal) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "gravity.v2.MsgIBCMetadataProposal.authority":
-		x.Authority = value.Interface().(string)
-	case "gravity.v2.MsgIBCMetadataProposal.proposal":
-		x.Proposal = value.Message().Interface().(*v1.IBCMetadataProposal)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposal"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposal does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgIBCMetadataProposal) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "gravity.v2.MsgIBCMetadataProposal.proposal":
-		if x.Proposal == nil {
-			x.Proposal = new(v1.IBCMetadataProposal)
-		}
-		return protoreflect.ValueOfMessage(x.Proposal.ProtoReflect())
-	case "gravity.v2.MsgIBCMetadataProposal.authority":
-		panic(fmt.Errorf("field authority of message gravity.v2.MsgIBCMetadataProposal is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposal"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposal does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgIBCMetadataProposal) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "gravity.v2.MsgIBCMetadataProposal.authority":
-		return protoreflect.ValueOfString("")
-	case "gravity.v2.MsgIBCMetadataProposal.proposal":
-		m := new(v1.IBCMetadataProposal)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposal"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposal does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgIBCMetadataProposal) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in gravity.v2.MsgIBCMetadataProposal", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgIBCMetadataProposal) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgIBCMetadataProposal) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgIBCMetadataProposal) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgIBCMetadataProposal) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgIBCMetadataProposal)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.Authority)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.Proposal != nil {
-			l = options.Size(x.Proposal)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgIBCMetadataProposal)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.Proposal != nil {
-			encoded, err := options.Marshal(x.Proposal)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Authority) > 0 {
-			i -= len(x.Authority)
-			copy(dAtA[i:], x.Authority)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgIBCMetadataProposal)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgIBCMetadataProposal: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgIBCMetadataProposal: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Authority = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Proposal", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if x.Proposal == nil {
-					x.Proposal = &v1.IBCMetadataProposal{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Proposal); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_MsgIBCMetadataProposalResponse protoreflect.MessageDescriptor
-)
-
-func init() {
-	file_gravity_v2_msgs_proto_init()
-	md_MsgIBCMetadataProposalResponse = File_gravity_v2_msgs_proto.Messages().ByName("MsgIBCMetadataProposalResponse")
-}
-
-var _ protoreflect.Message = (*fastReflection_MsgIBCMetadataProposalResponse)(nil)
-
-type fastReflection_MsgIBCMetadataProposalResponse MsgIBCMetadataProposalResponse
-
-func (x *MsgIBCMetadataProposalResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgIBCMetadataProposalResponse)(x)
-}
-
-func (x *MsgIBCMetadataProposalResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v2_msgs_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_MsgIBCMetadataProposalResponse_messageType fastReflection_MsgIBCMetadataProposalResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgIBCMetadataProposalResponse_messageType{}
-
-type fastReflection_MsgIBCMetadataProposalResponse_messageType struct{}
-
-func (x fastReflection_MsgIBCMetadataProposalResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgIBCMetadataProposalResponse)(nil)
-}
-func (x fastReflection_MsgIBCMetadataProposalResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgIBCMetadataProposalResponse)
-}
-func (x fastReflection_MsgIBCMetadataProposalResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgIBCMetadataProposalResponse
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgIBCMetadataProposalResponse
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgIBCMetadataProposalResponse_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgIBCMetadataProposalResponse)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgIBCMetadataProposalResponse)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposalResponse"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposalResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposalResponse"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposalResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposalResponse"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposalResponse does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposalResponse"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposalResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposalResponse"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposalResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgIBCMetadataProposalResponse"))
-		}
-		panic(fmt.Errorf("message gravity.v2.MsgIBCMetadataProposalResponse does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in gravity.v2.MsgIBCMetadataProposalResponse", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgIBCMetadataProposalResponse) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgIBCMetadataProposalResponse)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgIBCMetadataProposalResponse)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgIBCMetadataProposalResponse)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgIBCMetadataProposalResponse: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgIBCMetadataProposalResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
 	md_MsgAirdropProposal           protoreflect.MessageDescriptor
 	fd_MsgAirdropProposal_authority protoreflect.FieldDescriptor
 	fd_MsgAirdropProposal_proposal  protoreflect.FieldDescriptor
@@ -2294,7 +1439,7 @@ func (x *MsgAirdropProposal) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgAirdropProposal) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v2_msgs_proto_msgTypes[5]
+	mi := &file_gravity_v2_msgs_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2789,7 +1934,7 @@ func (x *MsgAirdropProposalResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgAirdropProposalResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v2_msgs_proto_msgTypes[6]
+	mi := &file_gravity_v2_msgs_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3149,7 +2294,7 @@ func (x *MsgUnhaltBridgeProposal) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgUnhaltBridgeProposal) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v2_msgs_proto_msgTypes[7]
+	mi := &file_gravity_v2_msgs_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3644,7 +2789,7 @@ func (x *MsgUnhaltBridgeProposalResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgUnhaltBridgeProposalResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v2_msgs_proto_msgTypes[8]
+	mi := &file_gravity_v2_msgs_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3982,6 +3127,861 @@ func (x *fastReflection_MsgUnhaltBridgeProposalResponse) ProtoMethods() *protoif
 	}
 }
 
+var (
+	md_MsgCosmosBridgeableTokensProposal           protoreflect.MessageDescriptor
+	fd_MsgCosmosBridgeableTokensProposal_authority protoreflect.FieldDescriptor
+	fd_MsgCosmosBridgeableTokensProposal_proposal  protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_gravity_v2_msgs_proto_init()
+	md_MsgCosmosBridgeableTokensProposal = File_gravity_v2_msgs_proto.Messages().ByName("MsgCosmosBridgeableTokensProposal")
+	fd_MsgCosmosBridgeableTokensProposal_authority = md_MsgCosmosBridgeableTokensProposal.Fields().ByName("authority")
+	fd_MsgCosmosBridgeableTokensProposal_proposal = md_MsgCosmosBridgeableTokensProposal.Fields().ByName("proposal")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgCosmosBridgeableTokensProposal)(nil)
+
+type fastReflection_MsgCosmosBridgeableTokensProposal MsgCosmosBridgeableTokensProposal
+
+func (x *MsgCosmosBridgeableTokensProposal) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCosmosBridgeableTokensProposal)(x)
+}
+
+func (x *MsgCosmosBridgeableTokensProposal) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v2_msgs_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgCosmosBridgeableTokensProposal_messageType fastReflection_MsgCosmosBridgeableTokensProposal_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCosmosBridgeableTokensProposal_messageType{}
+
+type fastReflection_MsgCosmosBridgeableTokensProposal_messageType struct{}
+
+func (x fastReflection_MsgCosmosBridgeableTokensProposal_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCosmosBridgeableTokensProposal)(nil)
+}
+func (x fastReflection_MsgCosmosBridgeableTokensProposal_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCosmosBridgeableTokensProposal)
+}
+func (x fastReflection_MsgCosmosBridgeableTokensProposal_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCosmosBridgeableTokensProposal
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCosmosBridgeableTokensProposal
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCosmosBridgeableTokensProposal_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) New() protoreflect.Message {
+	return new(fastReflection_MsgCosmosBridgeableTokensProposal)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Interface() protoreflect.ProtoMessage {
+	return (*MsgCosmosBridgeableTokensProposal)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Authority != "" {
+		value := protoreflect.ValueOfString(x.Authority)
+		if !f(fd_MsgCosmosBridgeableTokensProposal_authority, value) {
+			return
+		}
+	}
+	if x.Proposal != nil {
+		value := protoreflect.ValueOfMessage(x.Proposal.ProtoReflect())
+		if !f(fd_MsgCosmosBridgeableTokensProposal_proposal, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.authority":
+		return x.Authority != ""
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.proposal":
+		return x.Proposal != nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.authority":
+		x.Authority = ""
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.proposal":
+		x.Proposal = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.authority":
+		value := x.Authority
+		return protoreflect.ValueOfString(value)
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.proposal":
+		value := x.Proposal
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposal does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.authority":
+		x.Authority = value.Interface().(string)
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.proposal":
+		x.Proposal = value.Message().Interface().(*v1.CosmosBridgeableTokensProposal)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.proposal":
+		if x.Proposal == nil {
+			x.Proposal = new(v1.CosmosBridgeableTokensProposal)
+		}
+		return protoreflect.ValueOfMessage(x.Proposal.ProtoReflect())
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.authority":
+		panic(fmt.Errorf("field authority of message gravity.v2.MsgCosmosBridgeableTokensProposal is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.authority":
+		return protoreflect.ValueOfString("")
+	case "gravity.v2.MsgCosmosBridgeableTokensProposal.proposal":
+		m := new(v1.CosmosBridgeableTokensProposal)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v2.MsgCosmosBridgeableTokensProposal", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposal) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgCosmosBridgeableTokensProposal)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Authority)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.Proposal != nil {
+			l = options.Size(x.Proposal)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgCosmosBridgeableTokensProposal)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Proposal != nil {
+			encoded, err := options.Marshal(x.Proposal)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Authority) > 0 {
+			i -= len(x.Authority)
+			copy(dAtA[i:], x.Authority)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgCosmosBridgeableTokensProposal)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCosmosBridgeableTokensProposal: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCosmosBridgeableTokensProposal: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Authority = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Proposal", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Proposal == nil {
+					x.Proposal = &v1.CosmosBridgeableTokensProposal{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Proposal); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgCosmosBridgeableTokensProposalResponse protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_gravity_v2_msgs_proto_init()
+	md_MsgCosmosBridgeableTokensProposalResponse = File_gravity_v2_msgs_proto.Messages().ByName("MsgCosmosBridgeableTokensProposalResponse")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgCosmosBridgeableTokensProposalResponse)(nil)
+
+type fastReflection_MsgCosmosBridgeableTokensProposalResponse MsgCosmosBridgeableTokensProposalResponse
+
+func (x *MsgCosmosBridgeableTokensProposalResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCosmosBridgeableTokensProposalResponse)(x)
+}
+
+func (x *MsgCosmosBridgeableTokensProposalResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v2_msgs_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgCosmosBridgeableTokensProposalResponse_messageType fastReflection_MsgCosmosBridgeableTokensProposalResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCosmosBridgeableTokensProposalResponse_messageType{}
+
+type fastReflection_MsgCosmosBridgeableTokensProposalResponse_messageType struct{}
+
+func (x fastReflection_MsgCosmosBridgeableTokensProposalResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCosmosBridgeableTokensProposalResponse)(nil)
+}
+func (x fastReflection_MsgCosmosBridgeableTokensProposalResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCosmosBridgeableTokensProposalResponse)
+}
+func (x fastReflection_MsgCosmosBridgeableTokensProposalResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCosmosBridgeableTokensProposalResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCosmosBridgeableTokensProposalResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCosmosBridgeableTokensProposalResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgCosmosBridgeableTokensProposalResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgCosmosBridgeableTokensProposalResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposalResponse"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposalResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposalResponse"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposalResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposalResponse"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposalResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposalResponse"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposalResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposalResponse"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposalResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v2.MsgCosmosBridgeableTokensProposalResponse"))
+		}
+		panic(fmt.Errorf("message gravity.v2.MsgCosmosBridgeableTokensProposalResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v2.MsgCosmosBridgeableTokensProposalResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgCosmosBridgeableTokensProposalResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgCosmosBridgeableTokensProposalResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgCosmosBridgeableTokensProposalResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgCosmosBridgeableTokensProposalResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCosmosBridgeableTokensProposalResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCosmosBridgeableTokensProposalResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -4111,82 +4111,6 @@ func (*MsgUpdateParamsProposalResponse) Descriptor() ([]byte, []int) {
 	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{2}
 }
 
-// MsgIBCMetadataProposal
-// This message is used by the new x/gov v1 proposal system, it contains an authority
-// and the previous type used for proposals
-// AUTHORITY
-// A string containing the address of the sender, only valid if it is the gov module address
-// PROPOSAL
-// This is the previous proposal type, which contains everything needed for the proposal's execution
-type MsgIBCMetadataProposal struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Authority string                  `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Proposal  *v1.IBCMetadataProposal `protobuf:"bytes,2,opt,name=proposal,proto3" json:"proposal,omitempty"`
-}
-
-func (x *MsgIBCMetadataProposal) Reset() {
-	*x = MsgIBCMetadataProposal{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v2_msgs_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgIBCMetadataProposal) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgIBCMetadataProposal) ProtoMessage() {}
-
-// Deprecated: Use MsgIBCMetadataProposal.ProtoReflect.Descriptor instead.
-func (*MsgIBCMetadataProposal) Descriptor() ([]byte, []int) {
-	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *MsgIBCMetadataProposal) GetAuthority() string {
-	if x != nil {
-		return x.Authority
-	}
-	return ""
-}
-
-func (x *MsgIBCMetadataProposal) GetProposal() *v1.IBCMetadataProposal {
-	if x != nil {
-		return x.Proposal
-	}
-	return nil
-}
-
-type MsgIBCMetadataProposalResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MsgIBCMetadataProposalResponse) Reset() {
-	*x = MsgIBCMetadataProposalResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v2_msgs_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MsgIBCMetadataProposalResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgIBCMetadataProposalResponse) ProtoMessage() {}
-
-// Deprecated: Use MsgIBCMetadataProposalResponse.ProtoReflect.Descriptor instead.
-func (*MsgIBCMetadataProposalResponse) Descriptor() ([]byte, []int) {
-	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{4}
-}
-
 // MsgAirdropProposal
 // This message is used by the new x/gov v1 proposal system, it contains an authority
 // and the previous type used for proposals
@@ -4206,7 +4130,7 @@ type MsgAirdropProposal struct {
 func (x *MsgAirdropProposal) Reset() {
 	*x = MsgAirdropProposal{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v2_msgs_proto_msgTypes[5]
+		mi := &file_gravity_v2_msgs_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4220,7 +4144,7 @@ func (*MsgAirdropProposal) ProtoMessage() {}
 
 // Deprecated: Use MsgAirdropProposal.ProtoReflect.Descriptor instead.
 func (*MsgAirdropProposal) Descriptor() ([]byte, []int) {
-	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{5}
+	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MsgAirdropProposal) GetAuthority() string {
@@ -4246,7 +4170,7 @@ type MsgAirdropProposalResponse struct {
 func (x *MsgAirdropProposalResponse) Reset() {
 	*x = MsgAirdropProposalResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v2_msgs_proto_msgTypes[6]
+		mi := &file_gravity_v2_msgs_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4260,7 +4184,7 @@ func (*MsgAirdropProposalResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgAirdropProposalResponse.ProtoReflect.Descriptor instead.
 func (*MsgAirdropProposalResponse) Descriptor() ([]byte, []int) {
-	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{6}
+	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{4}
 }
 
 // MsgUnhaltBridgeProposal
@@ -4282,7 +4206,7 @@ type MsgUnhaltBridgeProposal struct {
 func (x *MsgUnhaltBridgeProposal) Reset() {
 	*x = MsgUnhaltBridgeProposal{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v2_msgs_proto_msgTypes[7]
+		mi := &file_gravity_v2_msgs_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4296,7 +4220,7 @@ func (*MsgUnhaltBridgeProposal) ProtoMessage() {}
 
 // Deprecated: Use MsgUnhaltBridgeProposal.ProtoReflect.Descriptor instead.
 func (*MsgUnhaltBridgeProposal) Descriptor() ([]byte, []int) {
-	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{7}
+	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MsgUnhaltBridgeProposal) GetAuthority() string {
@@ -4322,7 +4246,7 @@ type MsgUnhaltBridgeProposalResponse struct {
 func (x *MsgUnhaltBridgeProposalResponse) Reset() {
 	*x = MsgUnhaltBridgeProposalResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v2_msgs_proto_msgTypes[8]
+		mi := &file_gravity_v2_msgs_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4336,6 +4260,82 @@ func (*MsgUnhaltBridgeProposalResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgUnhaltBridgeProposalResponse.ProtoReflect.Descriptor instead.
 func (*MsgUnhaltBridgeProposalResponse) Descriptor() ([]byte, []int) {
+	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{6}
+}
+
+// MsgCosmosBridgeableTokensProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and the previous type used for proposals
+// AUTHORITY
+// A string containing the address of the sender, only valid if it is the gov module address
+// PROPOSAL
+// This is the previous proposal type, which contains everything needed for the proposal's execution
+type MsgCosmosBridgeableTokensProposal struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Authority string                             `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Proposal  *v1.CosmosBridgeableTokensProposal `protobuf:"bytes,2,opt,name=proposal,proto3" json:"proposal,omitempty"`
+}
+
+func (x *MsgCosmosBridgeableTokensProposal) Reset() {
+	*x = MsgCosmosBridgeableTokensProposal{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v2_msgs_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgCosmosBridgeableTokensProposal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgCosmosBridgeableTokensProposal) ProtoMessage() {}
+
+// Deprecated: Use MsgCosmosBridgeableTokensProposal.ProtoReflect.Descriptor instead.
+func (*MsgCosmosBridgeableTokensProposal) Descriptor() ([]byte, []int) {
+	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *MsgCosmosBridgeableTokensProposal) GetAuthority() string {
+	if x != nil {
+		return x.Authority
+	}
+	return ""
+}
+
+func (x *MsgCosmosBridgeableTokensProposal) GetProposal() *v1.CosmosBridgeableTokensProposal {
+	if x != nil {
+		return x.Proposal
+	}
+	return nil
+}
+
+type MsgCosmosBridgeableTokensProposalResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MsgCosmosBridgeableTokensProposalResponse) Reset() {
+	*x = MsgCosmosBridgeableTokensProposalResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v2_msgs_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgCosmosBridgeableTokensProposalResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgCosmosBridgeableTokensProposalResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgCosmosBridgeableTokensProposalResponse.ProtoReflect.Descriptor instead.
+func (*MsgCosmosBridgeableTokensProposalResponse) Descriptor() ([]byte, []int) {
 	return file_gravity_v2_msgs_proto_rawDescGZIP(), []int{8}
 }
 
@@ -4369,74 +4369,78 @@ var file_gravity_v2_msgs_proto_rawDesc = []byte{
 	0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
 	0x22, 0x21, 0x0a, 0x1f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72,
 	0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x83, 0x01, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x49, 0x42, 0x43, 0x4d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x1c,
-	0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x3b, 0x0a, 0x08,
-	0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f,
-	0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x42, 0x43, 0x4d,
-	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52,
-	0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09,
-	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x22, 0x20, 0x0a, 0x1e, 0x4d, 0x73, 0x67,
-	0x49, 0x42, 0x43, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x50, 0x72, 0x6f, 0x70, 0x6f,
-	0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x7b, 0x0a, 0x12, 0x4d,
-	0x73, 0x67, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f, 0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
-	0x6c, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12,
-	0x37, 0x0a, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x1b, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x41,
-	0x69, 0x72, 0x64, 0x72, 0x6f, 0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x08,
-	0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61,
-	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x22, 0x1c, 0x0a, 0x1a, 0x4d, 0x73, 0x67, 0x41,
-	0x69, 0x72, 0x64, 0x72, 0x6f, 0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x85, 0x01, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55, 0x6e,
-	0x68, 0x61, 0x6c, 0x74, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73,
-	0x61, 0x6c, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
-	0x12, 0x3c, 0x0a, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x20, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e,
-	0x55, 0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x70,
-	0x6f, 0x73, 0x61, 0x6c, 0x52, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x3a, 0x0e,
-	0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x22, 0x21,
-	0x0a, 0x1f, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42, 0x72, 0x69, 0x64, 0x67,
-	0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x32, 0xaa, 0x03, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x6a, 0x0a, 0x14, 0x55, 0x70, 0x64,
-	0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
-	0x6c, 0x12, 0x23, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d,
-	0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x50, 0x72,
-	0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x1a, 0x2b, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79,
-	0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x13, 0x49, 0x42, 0x43, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x22, 0x2e, 0x67,
-	0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73, 0x67, 0x49, 0x42, 0x43,
-	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c,
-	0x1a, 0x2a, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73,
-	0x67, 0x49, 0x42, 0x43, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x50, 0x72, 0x6f, 0x70,
-	0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5b,
-	0x0a, 0x0f, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f, 0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
-	0x6c, 0x12, 0x1e, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d,
-	0x73, 0x67, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f, 0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
-	0x6c, 0x1a, 0x26, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d,
-	0x73, 0x67, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f, 0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
-	0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6a, 0x0a, 0x14, 0x55,
-	0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f,
-	0x73, 0x61, 0x6c, 0x12, 0x23, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32,
-	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65,
-	0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x1a, 0x2b, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69,
-	0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42,
-	0x72, 0x69, 0x64, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0x8b,
-	0x01, 0x0a, 0x0e, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76,
-	0x32, 0x42, 0x09, 0x4d, 0x73, 0x67, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69,
-	0x2f, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2f, 0x76, 0x32, 0x3b, 0x67, 0x72, 0x61, 0x76,
-	0x69, 0x74, 0x79, 0x76, 0x32, 0xa2, 0x02, 0x03, 0x47, 0x58, 0x58, 0xaa, 0x02, 0x0a, 0x47, 0x72,
-	0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x56, 0x32, 0xca, 0x02, 0x0a, 0x47, 0x72, 0x61, 0x76, 0x69,
-	0x74, 0x79, 0x5c, 0x56, 0x32, 0xe2, 0x02, 0x16, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x5c,
-	0x56, 0x32, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
-	0x0b, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x3a, 0x3a, 0x56, 0x32, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x73, 0x65, 0x22, 0x7b, 0x0a, 0x12, 0x4d, 0x73, 0x67, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f,
+	0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x75, 0x74,
+	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x61, 0x75,
+	0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x37, 0x0a, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f,
+	0x73, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x67, 0x72, 0x61, 0x76,
+	0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f, 0x70, 0x50, 0x72,
+	0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c,
+	0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
+	0x22, 0x1c, 0x0a, 0x1a, 0x4d, 0x73, 0x67, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f, 0x70, 0x50, 0x72,
+	0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x85,
+	0x01, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42, 0x72, 0x69, 0x64,
+	0x67, 0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x75,
+	0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x61,
+	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x3c, 0x0a, 0x08, 0x70, 0x72, 0x6f, 0x70,
+	0x6f, 0x73, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x67, 0x72, 0x61,
+	0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42, 0x72,
+	0x69, 0x64, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x08, 0x70, 0x72,
+	0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74,
+	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x22, 0x21, 0x0a, 0x1f, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x68,
+	0x61, 0x6c, 0x74, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
+	0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x99, 0x01, 0x0a, 0x21, 0x4d, 0x73,
+	0x67, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x61, 0x62, 0x6c,
+	0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12,
+	0x1c, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x46, 0x0a,
+	0x08, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x2a, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x61, 0x62, 0x6c, 0x65, 0x54, 0x6f, 0x6b,
+	0x65, 0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x08, 0x70, 0x72, 0x6f,
+	0x70, 0x6f, 0x73, 0x61, 0x6c, 0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68,
+	0x6f, 0x72, 0x69, 0x74, 0x79, 0x22, 0x2b, 0x0a, 0x29, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x61, 0x62, 0x6c, 0x65, 0x54, 0x6f, 0x6b, 0x65,
+	0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x32, 0xcc, 0x03, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x6a, 0x0a, 0x14, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73,
+	0x61, 0x6c, 0x12, 0x23, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e,
+	0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x50,
+	0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x1a, 0x2b, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74,
+	0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5b, 0x0a, 0x0f, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f,
+	0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x1e, 0x2e, 0x67, 0x72, 0x61, 0x76,
+	0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73, 0x67, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f,
+	0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x1a, 0x26, 0x2e, 0x67, 0x72, 0x61, 0x76,
+	0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73, 0x67, 0x41, 0x69, 0x72, 0x64, 0x72, 0x6f,
+	0x70, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x6a, 0x0a, 0x14, 0x55, 0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42, 0x72, 0x69,
+	0x64, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x23, 0x2e, 0x67, 0x72,
+	0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x68, 0x61,
+	0x6c, 0x74, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c,
+	0x1a, 0x2b, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x73,
+	0x67, 0x55, 0x6e, 0x68, 0x61, 0x6c, 0x74, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x50, 0x72, 0x6f,
+	0x70, 0x6f, 0x73, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
+	0x88, 0x01, 0x0a, 0x1e, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65,
+	0x61, 0x62, 0x6c, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73,
+	0x61, 0x6c, 0x12, 0x2d, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e,
+	0x4d, 0x73, 0x67, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x61,
+	0x62, 0x6c, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
+	0x6c, 0x1a, 0x35, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x32, 0x2e, 0x4d,
+	0x73, 0x67, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x61, 0x62,
+	0x6c, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a,
+	0x01, 0x42, 0x8b, 0x01, 0x0a, 0x0e, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74,
+	0x79, 0x2e, 0x76, 0x32, 0x42, 0x09, 0x4d, 0x73, 0x67, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
+	0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2f, 0x76, 0x32, 0x3b, 0x67,
+	0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x76, 0x32, 0xa2, 0x02, 0x03, 0x47, 0x58, 0x58, 0xaa, 0x02,
+	0x0a, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x56, 0x32, 0xca, 0x02, 0x0a, 0x47, 0x72,
+	0x61, 0x76, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x32, 0xe2, 0x02, 0x16, 0x47, 0x72, 0x61, 0x76, 0x69,
+	0x74, 0x79, 0x5c, 0x56, 0x32, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0xea, 0x02, 0x0b, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x3a, 0x3a, 0x56, 0x32, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -4453,32 +4457,32 @@ func file_gravity_v2_msgs_proto_rawDescGZIP() []byte {
 
 var file_gravity_v2_msgs_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_gravity_v2_msgs_proto_goTypes = []interface{}{
-	(*MsgUpdateParamsProposal)(nil),         // 0: gravity.v2.MsgUpdateParamsProposal
-	(*Param)(nil),                           // 1: gravity.v2.Param
-	(*MsgUpdateParamsProposalResponse)(nil), // 2: gravity.v2.MsgUpdateParamsProposalResponse
-	(*MsgIBCMetadataProposal)(nil),          // 3: gravity.v2.MsgIBCMetadataProposal
-	(*MsgIBCMetadataProposalResponse)(nil),  // 4: gravity.v2.MsgIBCMetadataProposalResponse
-	(*MsgAirdropProposal)(nil),              // 5: gravity.v2.MsgAirdropProposal
-	(*MsgAirdropProposalResponse)(nil),      // 6: gravity.v2.MsgAirdropProposalResponse
-	(*MsgUnhaltBridgeProposal)(nil),         // 7: gravity.v2.MsgUnhaltBridgeProposal
-	(*MsgUnhaltBridgeProposalResponse)(nil), // 8: gravity.v2.MsgUnhaltBridgeProposalResponse
-	(*v1.IBCMetadataProposal)(nil),          // 9: gravity.v1.IBCMetadataProposal
-	(*v1.AirdropProposal)(nil),              // 10: gravity.v1.AirdropProposal
-	(*v1.UnhaltBridgeProposal)(nil),         // 11: gravity.v1.UnhaltBridgeProposal
+	(*MsgUpdateParamsProposal)(nil),                   // 0: gravity.v2.MsgUpdateParamsProposal
+	(*Param)(nil),                                     // 1: gravity.v2.Param
+	(*MsgUpdateParamsProposalResponse)(nil),           // 2: gravity.v2.MsgUpdateParamsProposalResponse
+	(*MsgAirdropProposal)(nil),                        // 3: gravity.v2.MsgAirdropProposal
+	(*MsgAirdropProposalResponse)(nil),                // 4: gravity.v2.MsgAirdropProposalResponse
+	(*MsgUnhaltBridgeProposal)(nil),                   // 5: gravity.v2.MsgUnhaltBridgeProposal
+	(*MsgUnhaltBridgeProposalResponse)(nil),           // 6: gravity.v2.MsgUnhaltBridgeProposalResponse
+	(*MsgCosmosBridgeableTokensProposal)(nil),         // 7: gravity.v2.MsgCosmosBridgeableTokensProposal
+	(*MsgCosmosBridgeableTokensProposalResponse)(nil), // 8: gravity.v2.MsgCosmosBridgeableTokensProposalResponse
+	(*v1.AirdropProposal)(nil),                        // 9: gravity.v1.AirdropProposal
+	(*v1.UnhaltBridgeProposal)(nil),                   // 10: gravity.v1.UnhaltBridgeProposal
+	(*v1.CosmosBridgeableTokensProposal)(nil),         // 11: gravity.v1.CosmosBridgeableTokensProposal
 }
 var file_gravity_v2_msgs_proto_depIdxs = []int32{
 	1,  // 0: gravity.v2.MsgUpdateParamsProposal.param_updates:type_name -> gravity.v2.Param
-	9,  // 1: gravity.v2.MsgIBCMetadataProposal.proposal:type_name -> gravity.v1.IBCMetadataProposal
-	10, // 2: gravity.v2.MsgAirdropProposal.proposal:type_name -> gravity.v1.AirdropProposal
-	11, // 3: gravity.v2.MsgUnhaltBridgeProposal.proposal:type_name -> gravity.v1.UnhaltBridgeProposal
+	9,  // 1: gravity.v2.MsgAirdropProposal.proposal:type_name -> gravity.v1.AirdropProposal
+	10, // 2: gravity.v2.MsgUnhaltBridgeProposal.proposal:type_name -> gravity.v1.UnhaltBridgeProposal
+	11, // 3: gravity.v2.MsgCosmosBridgeableTokensProposal.proposal:type_name -> gravity.v1.CosmosBridgeableTokensProposal
 	0,  // 4: gravity.v2.Msg.UpdateParamsProposal:input_type -> gravity.v2.MsgUpdateParamsProposal
-	3,  // 5: gravity.v2.Msg.IBCMetadataProposal:input_type -> gravity.v2.MsgIBCMetadataProposal
-	5,  // 6: gravity.v2.Msg.AirdropProposal:input_type -> gravity.v2.MsgAirdropProposal
-	7,  // 7: gravity.v2.Msg.UnhaltBridgeProposal:input_type -> gravity.v2.MsgUnhaltBridgeProposal
+	3,  // 5: gravity.v2.Msg.AirdropProposal:input_type -> gravity.v2.MsgAirdropProposal
+	5,  // 6: gravity.v2.Msg.UnhaltBridgeProposal:input_type -> gravity.v2.MsgUnhaltBridgeProposal
+	7,  // 7: gravity.v2.Msg.CosmosBridgeableTokensProposal:input_type -> gravity.v2.MsgCosmosBridgeableTokensProposal
 	2,  // 8: gravity.v2.Msg.UpdateParamsProposal:output_type -> gravity.v2.MsgUpdateParamsProposalResponse
-	4,  // 9: gravity.v2.Msg.IBCMetadataProposal:output_type -> gravity.v2.MsgIBCMetadataProposalResponse
-	6,  // 10: gravity.v2.Msg.AirdropProposal:output_type -> gravity.v2.MsgAirdropProposalResponse
-	8,  // 11: gravity.v2.Msg.UnhaltBridgeProposal:output_type -> gravity.v2.MsgUnhaltBridgeProposalResponse
+	4,  // 9: gravity.v2.Msg.AirdropProposal:output_type -> gravity.v2.MsgAirdropProposalResponse
+	6,  // 10: gravity.v2.Msg.UnhaltBridgeProposal:output_type -> gravity.v2.MsgUnhaltBridgeProposalResponse
+	8,  // 11: gravity.v2.Msg.CosmosBridgeableTokensProposal:output_type -> gravity.v2.MsgCosmosBridgeableTokensProposalResponse
 	8,  // [8:12] is the sub-list for method output_type
 	4,  // [4:8] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
@@ -4529,30 +4533,6 @@ func file_gravity_v2_msgs_proto_init() {
 			}
 		}
 		file_gravity_v2_msgs_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgIBCMetadataProposal); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_gravity_v2_msgs_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgIBCMetadataProposalResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_gravity_v2_msgs_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgAirdropProposal); i {
 			case 0:
 				return &v.state
@@ -4564,7 +4544,7 @@ func file_gravity_v2_msgs_proto_init() {
 				return nil
 			}
 		}
-		file_gravity_v2_msgs_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_gravity_v2_msgs_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgAirdropProposalResponse); i {
 			case 0:
 				return &v.state
@@ -4576,7 +4556,7 @@ func file_gravity_v2_msgs_proto_init() {
 				return nil
 			}
 		}
-		file_gravity_v2_msgs_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_gravity_v2_msgs_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgUnhaltBridgeProposal); i {
 			case 0:
 				return &v.state
@@ -4588,8 +4568,32 @@ func file_gravity_v2_msgs_proto_init() {
 				return nil
 			}
 		}
-		file_gravity_v2_msgs_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_gravity_v2_msgs_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgUnhaltBridgeProposalResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v2_msgs_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgCosmosBridgeableTokensProposal); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v2_msgs_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgCosmosBridgeableTokensProposalResponse); i {
 			case 0:
 				return &v.state
 			case 1:

@@ -166,6 +166,11 @@ var (
 	// ParamsKey indexes the module params
 	// [0x8585aab8398d6c73ace6c099f0664647]
 	ParamsKey = HashString("ParamsKey")
+
+	// CosmosBridgeableTokensKey indexes the CosmosBridgeableTokens allowlist, a list of
+	// Cosmos-originated token denoms permitted to be sent from Gravity Bridge to Ethereum,
+	// maintained via CosmosBridgeableTokensProposal governance proposals.
+	CosmosBridgeableTokensKey = HashString("CosmosBridgeableTokens")
 )
 
 // GetOrchestratorAddressKey returns the following key format
@@ -340,4 +345,11 @@ func convertByteArrToString(value []byte) string {
 // [0x0][0 0 0 0 0 0 0 1]
 func GetPendingIbcAutoForwardKey(eventNonce uint64) []byte {
 	return AppendBytes(PendingIbcAutoForwards, UInt64Bytes(eventNonce))
+}
+
+// GetCosmosBridgeableTokenKey returns the following key format
+// prefix    denom
+// [0x0][footoken]
+func GetCosmosBridgeableTokenKey(denom string) []byte {
+	return AppendBytes(CosmosBridgeableTokensKey, []byte(denom))
 }

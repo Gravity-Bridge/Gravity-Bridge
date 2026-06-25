@@ -1,4 +1,3 @@
-use crate::ibc_metadata::submit_and_pass_ibc_metadata_proposal;
 use crate::{happy_path_test, happy_path_test_v2, utils::*, ADDRESS_PREFIX, OPERATION_TIMEOUT};
 use clarity::Address as EthAddress;
 use deep_space::client::type_urls::MSG_SEND_TYPE_URL;
@@ -55,13 +54,6 @@ pub async fn upgrade_part_1(
 ) {
     info!("Starting upgrade test part 1");
     let metadata = footoken_metadata(gravity_contact).await;
-    submit_and_pass_ibc_metadata_proposal(
-        metadata.name.clone(),
-        metadata.clone(),
-        gravity_contact,
-        &keys,
-    )
-    .await;
     run_all_recoverable_tests(
         web30,
         gravity_contact,
@@ -136,13 +128,6 @@ pub async fn upgrade_part_2(
     }
     let metadata = metadata.unwrap();
 
-    submit_and_pass_ibc_metadata_proposal(
-        metadata.name.clone(),
-        metadata.clone(),
-        gravity_contact,
-        &keys,
-    )
-    .await;
     run_all_recoverable_tests(
         web30,
         gravity_contact,

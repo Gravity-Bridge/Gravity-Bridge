@@ -7,6 +7,7 @@ use deep_space::Contact;
 use gravity_proto::auction::query_client::QueryClient as AuctionQueryClient;
 use gravity_proto::auction::Params as AuctionParams;
 use gravity_proto::auction::QueryParamsRequest as QueryAuctionParamsRequest;
+use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 
 use gravity_proto::gravity::v1::Params;
@@ -33,6 +34,7 @@ use gravity_proto::gravity::v1::QueryPendingSendToEthResponse;
 use gravity_proto::gravity::v1::QueryValsetConfirmsByNonceRequest;
 use gravity_proto::gravity::v1::QueryValsetRequestRequest;
 use gravity_proto::gravity::v1::{Attestation, PendingIbcAutoForward, QueryPendingIbcAutoForwards};
+use gravity_proto::gravity::v1::QueryCosmosBridgeableTokensRequest;
 use gravity_proto::gravity::v2::query_client::QueryClient as GravityQueryClientV2;
 use gravity_proto::gravity::v2::QueryOutgoingTxBatchesByAddrRequest;
 use gravity_proto::gravity::v2::QueryOutgoingTxBatchesByAddrResponse;
@@ -50,6 +52,17 @@ pub async fn get_gravity_params(
 ) -> Result<Params, GravityError> {
     let request = client.params(QueryParamsRequest {}).await?.into_inner();
     Ok(request.params.unwrap())
+}
+
+/// Gets the current CosmosBridgeableTokens allowlist entries from the Gravity module
+pub async fn get_cosmos_bridgeable_tokens(
+    client: &mut GravityQueryClient<Channel>,
+) -> Result<Vec<Metadata>, GravityError> {
+    let request = client
+        .cosmos_bridgeable_tokens(QueryCosmosBridgeableTokensRequest {})
+        .await?
+        .into_inner();
+    Ok(request.cosmos_bridgeable_tokens)
 }
 
 /// get the valset for a given nonce (block) height

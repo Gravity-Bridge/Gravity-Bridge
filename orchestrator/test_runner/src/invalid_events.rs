@@ -111,7 +111,7 @@ pub async fn invalid_events(
     // footoken must be on the CosmosBridgeableTokens allowlist or the attestation
     // handler will reject the ERC20 deployment even though the metadata is valid
     let footoken = footoken_metadata(contact).await;
-    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.base.clone()]).await;
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
 
     // make sure this actual deployment works after all the bad ones
     let _ = deploy_cosmos_representing_erc20_and_check_adoption(

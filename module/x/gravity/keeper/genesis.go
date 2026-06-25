@@ -182,12 +182,21 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	}
 
 	// populate state with remapped ERC20 addresses (set by the recovery upgrade)
-	for i, hexAddr := range data.RemappedErc20s {
+	for i, hexAddr := range data.RemappedErc20S {
 		addr, err := types.NewEthAddress(hexAddr)
 		if err != nil {
 			panic(fmt.Errorf("invalid remapped ERC20 address in genesis for item %d: %s: %v", i, hexAddr, err))
 		}
 		k.SetRemappedERC20(ctx, *addr)
+	}
+
+	// populate state with the CosmosBridgeableTokens allowlist
+	for _, metadata := range data.CosmosBridgeableTokens {
+		if err := metadata.Validate(); err != nil {
+			panic(errorsmod.Wrapf(err, "invalid CosmosBridgeableTokens metadata in genesis state for denom %q", metadata.Base))
+		}
+		k.bankKeeper.SetDenomMetaData(ctx, metadata)
+		k.SetCosmosBridgeableToken(ctx, metadata)
 	}
 
 	// now that we have the denom-erc20 mapping we need to validate
@@ -295,6 +304,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		return false
 	})
 
+	// export the CosmosBridgeableTokens allowlist
+	cosmosBridgeableTokens := k.GetAllCosmosBridgeableTokens(ctx)
+
 	unbatchedTxs := make([]types.OutgoingTransferTx, len(unbatchedTransfers))
 	for i, v := range unbatchedTransfers {
 		unbatchedTxs[i] = v.ToExternal()
@@ -322,6 +334,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		Erc20ToDenoms:          erc20ToDenoms,
 		UnbatchedTransfers:     unbatchedTxs,
 		PendingIbcAutoForwards: forwards,
-		RemappedErc20s:         remappedERC20s,
+		RemappedErc20S:         remappedERC20s,
+		CosmosBridgeableTokens: cosmosBridgeableTokens,
 	}
 }

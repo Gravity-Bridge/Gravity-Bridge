@@ -267,9 +267,7 @@ func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
 	})
 
 	// Ensure the allowlist is empty (default)
-	params, err := input.GravityKeeper.GetParams(ctx)
-	require.NoError(t, err)
-	require.Empty(t, params.CosmosBridgeableTokens)
+	require.Empty(t, input.GravityKeeper.GetAllCosmosBridgeableTokens(ctx))
 
 	// Attempt to deploy ERC20 for "footoken" — should fail because not on allowlist
 	claim := types.MsgERC20DeployedClaim{
@@ -283,7 +281,8 @@ func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
-	err = attHandler.Handle(ctx, types.Attestation{
+	//nolint: exhaustruct
+	err := attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
 		Height:   uint64(ctx.BlockHeight()),
@@ -293,8 +292,7 @@ func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
 	require.Contains(t, err.Error(), "CosmosBridgeableTokens allowlist")
 
 	// Now add "footoken" to the allowlist
-	params.CosmosBridgeableTokens = []string{"footoken"}
-	require.NoError(t, input.GravityKeeper.SetParams(ctx, params))
+	input.GravityKeeper.SetCosmosBridgeableToken(ctx, fooMeta)
 
 	// Retry — should now pass the allowlist check (will succeed if metadata matches)
 	err = attHandler.Handle(ctx, types.Attestation{
@@ -305,7 +303,65 @@ func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify the mapping was created
-	erc20, exists := input.GravityKeeper.GetCosmosOriginatedERC20(ctx, "footoken")
-	require.True(t, exists)
-	require.Equal(t, "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255", erc20.GetAddress().Hex())
+	footokenOrigin, err := input.GravityKeeper.ClassifyDenom(ctx, "footoken")
+	require.NoError(t, err)
+	require.True(t, footokenOrigin.IsCosmosOriginated)
+	require.Equal(t, "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255", footokenOrigin.ERC20.GetAddress().Hex())
+}
+
+// TestHandleErc20Deployed_MetadataDrift verifies that handleErc20Deployed rejects a claim
+// for a denom whose bank module metadata has drifted from the governance-approved
+// CosmosBridgeableTokens entry (the "SECURITY VIOLATION" branch in assertMetadataWhitelisted).
+func TestHandleErc20Deployed_MetadataDrift(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	attHandler := input.GravityKeeper.AttestationHandler
+
+	// Set up bank metadata for "tokyo" and whitelist that exact metadata
+	//nolint: exhaustruct
+	driftMeta := banktypes.Metadata{
+		Base:        "tokyo",
+		Display:     "TOKYO",
+		Name:        "TOKYO Token",
+		Symbol:      "TOKYO",
+		Description: "A test token",
+		DenomUnits: []*banktypes.DenomUnit{
+			{Denom: "tokyo", Exponent: 0},
+			{Denom: "TOKYO", Exponent: 6},
+		},
+	}
+	input.BankKeeper.SetDenomMetaData(ctx, driftMeta)
+
+	input.GravityKeeper.SetCosmosBridgeableToken(ctx, driftMeta)
+
+	// Now mutate the bank module's stored metadata out from under the allowlist entry,
+	// simulating drift between the two sources of truth.
+	driftedMeta := driftMeta
+	driftedMeta.Name = "DRIFT"
+	driftedMeta.Symbol = "DRIFT"
+	driftedMeta.Display = "DRIFT"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	//nolint: exhaustruct
+	claim := types.MsgERC20DeployedClaim{
+		CosmosDenom:    "tokyo",
+		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		Name:           "DRIFT",
+		Symbol:         "DRIFT",
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	//nolint: exhaustruct
+	err := attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalid)
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
 }

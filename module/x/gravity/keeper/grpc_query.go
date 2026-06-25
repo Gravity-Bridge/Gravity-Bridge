@@ -336,6 +336,17 @@ func (k Keeper) ERC20ToDenom(
 	return &ret, nil
 }
 
+// CosmosBridgeableTokens queries the current CosmosBridgeableTokens allowlist
+func (k Keeper) CosmosBridgeableTokens(
+	c context.Context,
+	req *types.QueryCosmosBridgeableTokensRequest,
+) (*types.QueryCosmosBridgeableTokensResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	return &types.QueryCosmosBridgeableTokensResponse{
+		CosmosBridgeableTokens: k.GetAllCosmosBridgeableTokens(ctx),
+	}, nil
+}
+
 // GetLastObservedEthBlock queries the LastObservedEthereumBlockHeight
 func (k Keeper) GetLastObservedEthBlock(
 	c context.Context,

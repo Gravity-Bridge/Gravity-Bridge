@@ -16,10 +16,11 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
 use gravity_proto::gravity::v1::AirdropProposal;
-use gravity_proto::gravity::v1::IbcMetadataProposal;
+use gravity_proto::gravity::v1::CosmosBridgeableTokensOperation;
+use gravity_proto::gravity::v1::CosmosBridgeableTokensProposal;
 use gravity_proto::gravity::v1::UnhaltBridgeProposal;
 use gravity_proto::gravity::v2::MsgAirdropProposal;
-use gravity_proto::gravity::v2::MsgIbcMetadataProposal;
+use gravity_proto::gravity::v2::MsgCosmosBridgeableTokensProposal;
 use gravity_proto::gravity::v2::MsgUnhaltBridgeProposal;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
@@ -29,7 +30,8 @@ use std::time::Duration;
 // gravity proposals
 pub const MSG_AIRDROP_PROPOSAL_TYPE_URL: &str = "/gravity.v2.MsgAirdropProposal";
 pub const MSG_UNHALT_BRIDGE_PROPOSAL_TYPE_URL: &str = "/gravity.v2.MsgUnhaltBridgeProposal";
-pub const MSG_IBC_METADATA_PROPOSAL_TYPE_URL: &str = "/gravity.v2.MsgIBCMetadataProposal";
+pub const MSG_COSMOS_BRIDGEABLE_TOKENS_PROPOSAL_TYPE_URL: &str =
+    "/gravity.v2.MsgCosmosBridgeableTokensProposal";
 pub const AUCTION_MSG_UPDATE_PARAMS_PROPOSAL: &str = "/auction.v1.MsgUpdateParamsProposal";
 
 // cosmos-sdk proposals
@@ -180,6 +182,127 @@ pub async fn submit_unhalt_bridge_proposal(
         .await
 }
 
+/// Encodes and submits a CosmosBridgeableTokensProposal, which either SETs (adds/overwrites)
+/// or REMOVEs entries from the CosmosBridgeableTokens allowlist store. On SET, the bank
+/// module's denom metadata for each listed denom is unconditionally overwritten with the
+/// proposal's metadata.
+pub async fn submit_cosmos_bridgeable_tokens_proposal(
+    title: String,
+    description: String,
+    metadatas: Vec<Metadata>,
+    operation: CosmosBridgeableTokensOperation,
+    deposit: Coin,
+    fee: Coin,
+    contact: &Contact,
+    key: impl PrivateKey,
+    wait_timeout: Option<Duration>,
+) -> Result<TransactionResponse, CosmosGrpcError> {
+    let proposal_content = CosmosBridgeableTokensProposal {
+        title: title.clone(),
+        description,
+        metadatas,
+        operation: operation as i32,
+    };
+
+    let msg_proposal = MsgCosmosBridgeableTokensProposal {
+        authority: gov_module_address()
+            .expect("Unable to get gov module address")
+            .to_string(),
+        proposal: Some(proposal_content),
+    };
+
+    let any = encode_any(
+        msg_proposal,
+        MSG_COSMOS_BRIDGEABLE_TOKENS_PROPOSAL_TYPE_URL.to_string(),
+    );
+    let summary = "CosmosBridgeableTokens proposal summary".to_string();
+    contact
+        .create_gov_proposal(
+            title,
+            summary,
+            vec![any],
+            String::new(),
+            deposit,
+            fee,
+            key,
+            wait_timeout,
+        )
+        .await
+}
+
+/// The proposal.json representation for a single denom's metadata, since the prost-generated
+/// `Metadata` type does not implement Serialize/Deserialize
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MetadataJson {
+    #[serde(default)]
+    pub description: String,
+    pub denom_units: Vec<DenomUnitJson>,
+    pub base: String,
+    #[serde(default)]
+    pub display: String,
+    pub name: String,
+    pub symbol: String,
+    #[serde(default)]
+    pub uri: String,
+    #[serde(default)]
+    pub uri_hash: String,
+}
+impl From<MetadataJson> for Metadata {
+    fn from(v: MetadataJson) -> Self {
+        Metadata {
+            description: v.description,
+            denom_units: v.denom_units.into_iter().map(|d| d.into()).collect(),
+            base: v.base,
+            display: v.display,
+            name: v.name,
+            symbol: v.symbol,
+            uri: v.uri,
+            uri_hash: v.uri_hash,
+        }
+    }
+}
+
+/// The proposal.json representation for a single denom unit
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DenomUnitJson {
+    pub denom: String,
+    pub exponent: u32,
+    #[serde(default)]
+    pub aliases: Vec<String>,
+}
+impl From<DenomUnitJson> for DenomUnit {
+    fn from(v: DenomUnitJson) -> Self {
+        DenomUnit {
+            denom: v.denom,
+            exponent: v.exponent,
+            aliases: v.aliases,
+        }
+    }
+}
+
+/// The proposal.json representation for the CosmosBridgeableTokens proposal. `operation` must
+/// be one of "Set" or "Remove" (case-insensitive).
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CosmosBridgeableTokensProposalJson {
+    pub title: String,
+    pub description: String,
+    pub metadatas: Vec<MetadataJson>,
+    pub operation: String,
+}
+impl CosmosBridgeableTokensProposalJson {
+    /// Parses the `operation` field into a `CosmosBridgeableTokensOperation`, returning an error
+    /// message suitable for display if the value is not recognized.
+    pub fn parse_operation(&self) -> Result<CosmosBridgeableTokensOperation, String> {
+        match self.operation.to_lowercase().as_str() {
+            "set" => Ok(CosmosBridgeableTokensOperation::Set),
+            "remove" => Ok(CosmosBridgeableTokensOperation::Remove),
+            other => Err(format!(
+                "Invalid CosmosBridgeableTokens operation '{other}', expected 'SET' or 'REMOVE'"
+            )),
+        }
+    }
+}
+
 /// The proposal.json representation for pausing/unpausing the bridge easily
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PauseBridgeProposalJson {
@@ -270,96 +393,6 @@ pub async fn submit_legacy_upgrade_proposal(
         .create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
         .await
 }
-// local types for which we can implement serialize/deserialize
-// for json work
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct IbcMetadataProposalJson {
-    title: String,
-    description: String,
-    metadata: MetadataJson,
-    ibc_denom: String,
-}
-impl From<IbcMetadataProposalJson> for IbcMetadataProposal {
-    fn from(v: IbcMetadataProposalJson) -> Self {
-        IbcMetadataProposal {
-            title: v.title,
-            description: v.description,
-            ibc_denom: v.ibc_denom,
-            metadata: Some(v.metadata.into()),
-        }
-    }
-}
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct MetadataJson {
-    pub description: String,
-    pub denom_units: Vec<DenomUnitJson>,
-    pub base: String,
-    pub display: String,
-    pub name: String,
-    pub symbol: String,
-}
-impl From<MetadataJson> for Metadata {
-    fn from(v: MetadataJson) -> Self {
-        Metadata {
-            description: v.description,
-            denom_units: v.denom_units.into_iter().map(|a| a.into()).collect(),
-            base: v.base,
-            display: v.display,
-            name: v.name,
-            symbol: v.symbol,
-            uri: String::new(),
-            uri_hash: String::new(),
-        }
-    }
-}
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct DenomUnitJson {
-    pub denom: String,
-    pub exponent: u32,
-    pub aliases: Vec<String>,
-}
-impl From<DenomUnitJson> for DenomUnit {
-    fn from(v: DenomUnitJson) -> Self {
-        DenomUnit {
-            denom: v.denom,
-            exponent: v.exponent,
-            aliases: v.aliases,
-        }
-    }
-}
-
-pub async fn submit_ibc_metadata_proposal(
-    proposal: IbcMetadataProposal,
-    deposit: Coin,
-    fee: Coin,
-    contact: &Contact,
-    key: impl PrivateKey,
-    wait_timeout: Option<Duration>,
-) -> Result<TransactionResponse, CosmosGrpcError> {
-    let msg_proposal = MsgIbcMetadataProposal {
-        authority: gov_module_address()
-            .expect("Unable to get gov module address")
-            .to_string(),
-        proposal: Some(proposal),
-    };
-
-    let any = encode_any(msg_proposal, MSG_IBC_METADATA_PROPOSAL_TYPE_URL.to_string());
-    let title = "IBC Metadata proposal title".to_string();
-    let summary = "IBC Metadata proposal summary".to_string();
-    contact
-        .create_gov_proposal(
-            title,
-            summary,
-            vec![any],
-            String::new(),
-            deposit,
-            fee,
-            key,
-            wait_timeout,
-        )
-        .await
-}
-
 /// The proposal.json representation for setting the MinChainFeeBasisPoints parameter
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SendToEthFeesProposalJson {

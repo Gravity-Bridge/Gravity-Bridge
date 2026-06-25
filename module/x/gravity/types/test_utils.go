@@ -9,6 +9,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 // Creates a random nonzero uint64 test value
@@ -56,4 +57,18 @@ func NonzeroSdkInt() (ret sdkmath.Int) {
 	}
 	ret = sdkmath.NewIntFromBigInt(amount)
 	return
+}
+
+// minMeta builds a minimal valid banktypes.Metadata for a given denom.
+// Useful across types-package tests that need to populate CosmosBridgeableTokens.
+func minMeta(denom string) banktypes.Metadata {
+	// nolint: exhaustruct
+	return banktypes.Metadata{
+		Name:    denom,
+		Symbol:  denom,
+		Base:    denom,
+		Display: denom,
+		// nolint: exhaustruct
+		DenomUnits: []*banktypes.DenomUnit{{Denom: denom, Exponent: 0}},
+	}
 }

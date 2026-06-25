@@ -42,7 +42,7 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.3.2
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/evmos/ethermint v0.22.3
-	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0

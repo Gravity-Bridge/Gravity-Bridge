@@ -24,7 +24,7 @@ pub async fn valset_rewards_test(
     gravity_address: EthAddress,
 ) {
     let mut grpc_client = grpc_client;
-    let token_to_send_to_eth = footoken_metadata(contact).await.base;
+    let token_to_send_to_eth = footoken_metadata(contact).await;
 
     // Allow the cosmos-originated footoken to cross the bridge before deploying its ERC20
     set_cosmos_bridgeable_tokens(contact, &keys, vec![token_to_send_to_eth.clone()]).await;
@@ -42,7 +42,7 @@ pub async fn valset_rewards_test(
 
     // reward of 1 mfootoken
     let valset_reward = Coin {
-        denom: token_to_send_to_eth,
+        denom: token_to_send_to_eth.base,
         amount: 1_000_000u64.into(),
     };
 

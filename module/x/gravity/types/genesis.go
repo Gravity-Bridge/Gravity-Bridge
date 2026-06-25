@@ -11,6 +11,7 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -97,10 +98,6 @@ var (
 	// the ChainFee will go to stakers
 	ParamStoreChainFeeAuctionPoolFraction = []byte("ChainFeeAuctionPoolFraction")
 
-	// ParamStoreCosmosBridgeableTokens stores the list of Cosmos-originated token denoms
-	// permitted to be sent from Gravity Bridge to Ethereum
-	ParamStoreCosmosBridgeableTokens = []byte("CosmosBridgeableTokens")
-
 	// Ensure that params implements the proper interface
 	_ paramtypes.ParamSet = &Params{
 		GravityId:                    "",
@@ -126,7 +123,6 @@ var (
 		EthereumBlacklist:           []string{},
 		MinChainFeeBasisPoints:      0,
 		ChainFeeAuctionPoolFraction: sdkmath.LegacyDec{},
-		CosmosBridgeableTokens:      []string{},
 	}
 )
 
@@ -135,6 +131,9 @@ var (
 func (s GenesisState) ValidateBasic() error {
 	if err := s.Params.ValidateBasic(); err != nil {
 		return errorsmod.Wrap(err, "params")
+	}
+	if err := validateGenesisCosmosBridgeableTokens(s.CosmosBridgeableTokens); err != nil {
+		return errorsmod.Wrap(err, "cosmos bridgeable tokens")
 	}
 	return nil
 }
@@ -156,6 +155,7 @@ func DefaultGenesisState() *GenesisState {
 		Erc20ToDenoms:          []ERC20ToDenom{},
 		UnbatchedTransfers:     []OutgoingTransferTx{},
 		PendingIbcAutoForwards: []PendingIbcAutoForward{},
+		CosmosBridgeableTokens: []banktypes.Metadata{},
 	}
 }
 
@@ -182,7 +182,6 @@ func DefaultParams() *Params {
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       2,
 		ChainFeeAuctionPoolFraction:  sdkmath.LegacyNewDecWithPrec(50, 2), // 50%, the prec parameter moves the decimal to the left that many places
-		CosmosBridgeableTokens:       []string{},
 	}
 }
 
@@ -207,7 +206,6 @@ const (
 	ParamEthereumBlacklist            = "EthereumBlacklist"
 	ParamMinChainFeeBasisPoints       = "MinChainFeeBasisPoints"
 	ParamChainFeeAuctionPoolFraction  = "ChainFeeAuctionPoolFraction"
-	ParamCosmosBridgeableTokens       = "CosmosBridgeableTokens"
 )
 
 // ValidateBasic checks that the parameters have valid values.
@@ -272,9 +270,6 @@ func (p Params) ValidateBasic() error {
 	if err := validateChainFeeAuctionPoolFraction(p.ChainFeeAuctionPoolFraction); err != nil {
 		return errorsmod.Wrap(err, "chain fee auction pool fraction parameter")
 	}
-	if err := validateCosmosBridgeableTokens(p.CosmosBridgeableTokens); err != nil {
-		return errorsmod.Wrap(err, "cosmos bridgeable tokens parameter")
-	}
 	return nil
 }
 
@@ -301,7 +296,6 @@ func ParamKeyTable() paramtypes.KeyTable {
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,
 		ChainFeeAuctionPoolFraction:  sdkmath.LegacyDec{},
-		CosmosBridgeableTokens:       []string{},
 	})
 }
 
@@ -328,7 +322,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreEthereumBlacklist, &p.EthereumBlacklist, validateEthereumBlacklistAddresses),
 		paramtypes.NewParamSetPair(ParamStoreMinChainFeeBasisPoints, &p.MinChainFeeBasisPoints, validateMinChainFeeBasisPoints),
 		paramtypes.NewParamSetPair(ParamStoreChainFeeAuctionPoolFraction, &p.ChainFeeAuctionPoolFraction, validateChainFeeAuctionPoolFraction),
-		paramtypes.NewParamSetPair(ParamStoreCosmosBridgeableTokens, &p.CosmosBridgeableTokens, validateCosmosBridgeableTokens),
 	}
 }
 
@@ -544,26 +537,28 @@ func validateChainFeeAuctionPoolFraction(i interface{}) error {
 	return nil
 }
 
-func validateCosmosBridgeableTokens(i interface{}) error {
-	denoms, ok := i.([]string)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-	seen := make(map[string]struct{}, len(denoms))
-	for _, denom := range denoms {
-		if err := sdk.ValidateDenom(denom); err != nil {
-			return errorsmod.Wrapf(err, "invalid denom in CosmosBridgeableTokens: %s", denom)
+// validateGenesisCosmosBridgeableTokens validates the CosmosBridgeableTokens list carried in
+// GenesisState, ensuring each entry has valid metadata, a valid non-gravity-prefixed base denom,
+// and that there are no duplicate base denoms in the list.
+func validateGenesisCosmosBridgeableTokens(entries []banktypes.Metadata) error {
+	seen := make(map[string]struct{}, len(entries))
+	for _, m := range entries {
+		if err := m.Validate(); err != nil {
+			return errorsmod.Wrapf(err, "invalid metadata for denom %s", m.Base)
 		}
-		if err := ValidateStrictDenom(denom); err != nil {
-			return errorsmod.Wrapf(err, "invalid denom in CosmosBridgeableTokens: %s", denom)
+		if err := ValidateStrictDenom(m.Base); err != nil {
+			return errorsmod.Wrapf(err, "invalid base denom in CosmosBridgeableTokens: %s", m.Base)
 		}
-		if strings.HasPrefix(denom, GravityDenomPrefix) {
-			return fmt.Errorf("CosmosBridgeableTokens must not contain ethereum-originated (gravity-prefixed) denoms: %s", denom)
+		if strings.HasPrefix(m.Base, GravityDenomPrefix) {
+			return fmt.Errorf(
+				"CosmosBridgeableTokens must not contain ethereum-originated (gravity-prefixed) denoms: %s",
+				m.Base,
+			)
 		}
-		if _, dup := seen[denom]; dup {
-			return fmt.Errorf("duplicate denom in CosmosBridgeableTokens: %s", denom)
+		if _, dup := seen[m.Base]; dup {
+			return fmt.Errorf("duplicate base denom in CosmosBridgeableTokens: %s", m.Base)
 		}
-		seen[denom] = struct{}{}
+		seen[m.Base] = struct{}{}
 	}
 	return nil
 }

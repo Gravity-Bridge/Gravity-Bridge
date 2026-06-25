@@ -80,23 +80,36 @@ message AirdropProposal {
   repeated uint64 amounts = 5;
 }
 
-// IBCMetadataProposal defines a custom governance proposal type that allows
-// governance to set the metadata for an IBC token, this will allow Gravity to
-// deploy an ERC20 representing this token on Ethereum Name: the token name
-// Symbol: the token symbol
-// Description: the token description, not sent to ETH at all, only used on
-// Cosmos Display: the token display name (only used on Cosmos to decide ERC20
-// Decimals) Deicmals: the decimals for the display unit ibc_denom is the denom
-// of the token in question on this chain
-message IBCMetadataProposal {
+// CosmosBridgeableTokensOperation indicates how the CosmosBridgeableTokens
+// list should be updated by a CosmosBridgeableTokensProposal.
+// SET will add or update the provided entries. REMOVE will remove them, if they exist.
+enum CosmosBridgeableTokensOperation {
+  COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED = 0;
+  COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET = 1;
+  COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE = 2;
+}
+
+// CosmosBridgeableTokensProposal defines a custom governance proposal type
+// that allows governance to add or remove entries from the
+// CosmosBridgeableTokens allowlist. This allows governance to control which
+// Cosmos tokens are allowed to cross the bridge to Ethereum.
+// Tokens not on this list will be blocked from SendToEth and acceptance in ERC20 deploy claims.
+//
+// When operation is SET, the bank module's denom metadata for each listed
+// denom is unconditionally overwritten with the proposal's metadata, and the
+// same value is mirrored into the CosmosBridgeableTokens store. When
+// operation is REMOVE, matching entries are removed from the
+// CosmosBridgeableTokens store only (bank metadata is left untouched).
+message CosmosBridgeableTokensProposal {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
   option (gogoproto.goproto_stringer) = false;
 
   string title = 1;
   string description = 2;
-  cosmos.bank.v1beta1.Metadata metadata = 3 [ (gogoproto.nullable) = false ];
-  string ibc_denom = 4;
+  repeated cosmos.bank.v1beta1.Metadata metadatas = 3
+      [ (gogoproto.nullable) = false ];
+  CosmosBridgeableTokensOperation operation = 4;
 }
 
 // PendingIbcAutoForward represents a SendToCosmos transaction with a foreign

@@ -189,7 +189,7 @@ func (k Keeper) EnsureCosmosBridgeable(ctx sdk.Context, denom string) error {
 		return errorsmod.Wrap(err, "could not get params")
 	}
 	for _, bridgeable := range params.CosmosBridgeableTokens {
-		if bridgeable == denom {
+		if bridgeable.Base == denom {
 			return nil
 		}
 	}

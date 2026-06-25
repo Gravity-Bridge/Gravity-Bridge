@@ -531,7 +531,7 @@ pub async fn setup(
     set_cosmos_bridgeable_tokens(
         contact,
         &keys,
-        vec![footoken.base.clone(), footoken2.base.clone()],
+        vec![footoken.clone(), footoken2.clone()],
     )
     .await;
     if grpc_client
@@ -572,13 +572,16 @@ pub async fn setup(
     }
     info!("Send validators 1000 x 10^18 of an eth native erc20");
     // Send the validators generated address 100 units of each erc20 from ethereum to cosmos
+    let deposit_amount = one_eth() * 1_000u64.into();
+    let deposit_denom = format!("gravity{erc20_address}");
     for v in &keys {
         let receiver = v.validator_key.to_address(&ADDRESS_PREFIX).unwrap();
         info!("Sending to {receiver:?}");
+        let start_balance = get_balance_amount(contact, receiver, &deposit_denom).await;
         let tx_id = send_to_cosmos(
             erc20_address,
             gravity_address,
-            one_eth() * 1_000u64.into(),
+            deposit_amount,
             receiver,
             *MINER_PRIVATE_KEY,
             None,
@@ -592,6 +595,19 @@ pub async fn setup(
             .wait_for_transaction(tx_id, OPERATION_TIMEOUT, None)
             .await
             .expect("Send to cosmos not included in chain");
+        // Being included on Ethereum only means the orchestrators can now observe the
+        // event - the deposit still needs to be attested to and relayed onto Cosmos
+        // before the validator's balance actually reflects it. Without waiting here,
+        // seed_pool_multi below can run against a stale (zero) balance and fail with
+        // "insufficient funds" while the deposit is still in flight.
+        wait_for_balance_delta(
+            contact,
+            receiver,
+            &deposit_denom,
+            start_balance,
+            deposit_amount,
+        )
+        .await;
     }
 
     seed_pool_multi(contact, &keys, erc20_address).await;
@@ -1043,4 +1059,40 @@ async fn get_auction(grpc_url: String, auction_id: u64) -> Result<Auction, Cosmo
     auction.ok_or(CosmosGrpcError::BadResponse(
         "No such auction returned".to_string(),
     ))
+}
+
+async fn get_balance_amount(contact: &Contact, addr: CosmosAddress, denom: &str) -> Uint256 {
+    contact
+        .get_balance(addr, denom.to_string())
+        .await
+        .expect("failed querying balance")
+        .map(|c| c.amount)
+        .unwrap_or_else(|| 0u8.into())
+}
+
+// Waits for `addr`'s balance of `denom` to increase by `expected_delta` from `start`.
+// This is required after a send_to_cosmos deposit: being included in an Ethereum block
+// only means the orchestrators can observe the event, the deposit still needs to be
+// attested to and relayed onto Cosmos before the balance actually updates.
+async fn wait_for_balance_delta(
+    contact: &Contact,
+    addr: CosmosAddress,
+    denom: &str,
+    start: Uint256,
+    expected_delta: Uint256,
+) {
+    let deadline = Instant::now() + TOTAL_TIMEOUT;
+    loop {
+        let current = get_balance_amount(contact, addr, denom).await;
+        if current == start + expected_delta {
+            return;
+        }
+        if Instant::now() >= deadline {
+            panic!(
+                "timeout waiting for balance delta; start={} expected_delta={} denom={}",
+                start, expected_delta, denom
+            );
+        }
+        sleep(Duration::from_secs(3)).await;
+    }
 }

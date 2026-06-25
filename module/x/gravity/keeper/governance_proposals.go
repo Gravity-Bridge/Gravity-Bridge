@@ -24,10 +24,6 @@ func RegisterProposalTypes() {
 	// For some reason the cli code is run during app.go startup, but of course app.go is not
 	// run during operation of one off tx commands, so we need to run this 'twice'
 	prefix := "gravity/"
-	metadata := "gravity/IBCMetadata"
-	if !govv1beta1.IsValidProposalType(strings.TrimPrefix(metadata, prefix)) {
-		govv1beta1.RegisterProposalType(types.ProposalTypeIBCMetadata)
-	}
 	unhalt := "gravity/UnhaltBridge"
 	if !govv1beta1.IsValidProposalType(strings.TrimPrefix(unhalt, prefix)) {
 		govv1beta1.RegisterProposalType(types.ProposalTypeUnhaltBridge)
@@ -35,6 +31,10 @@ func RegisterProposalTypes() {
 	airdrop := "gravity/Airdrop"
 	if !govv1beta1.IsValidProposalType(strings.TrimPrefix(airdrop, prefix)) {
 		govv1beta1.RegisterProposalType(types.ProposalTypeAirdrop)
+	}
+	cosmosBridgeableTokens := "gravity/CosmosBridgeableTokens"
+	if !govv1beta1.IsValidProposalType(strings.TrimPrefix(cosmosBridgeableTokens, prefix)) {
+		govv1beta1.RegisterProposalType(types.ProposalTypeCosmosBridgeableTokens)
 	}
 }
 
@@ -45,8 +45,8 @@ func NewGravityProposalHandler(k Keeper) govv1beta1.Handler {
 			return k.HandleUnhaltBridgeProposal(ctx, c)
 		case *types.AirdropProposal:
 			return k.HandleAirdropProposal(ctx, c)
-		case *types.IBCMetadataProposal:
-			return k.HandleIBCMetadataProposal(ctx, c)
+		case *types.CosmosBridgeableTokensProposal:
+			return k.HandleCosmosBridgeableTokensProposal(ctx, c)
 
 		default:
 			return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
@@ -225,52 +225,54 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	return nil
 }
 
-// handles a governance proposal for setting the metadata of an IBC token, this takes the normal
-// metadata struct with one key difference, the base unit must be set as the ibc path string in order
-// for setting the denom metadata to work.
-// NOTE: This is not very useful after IBC v8 started setting metadata for IBC tokens automatically
-func (k Keeper) HandleIBCMetadataProposal(ctx sdk.Context, p *types.IBCMetadataProposal) error {
-	ctx.Logger().Info("Gov vote passed: Setting IBC Metadata", "denom", p.IbcDenom)
+// Handles updates to the CosmosBridgeableTokens allowlist, either adding/overwriting entries (SET) or removing entries (REMOVE).
+//
+// On SET, after validation, the bank metadata for each token is overwritten
+// On REMOVE only the CosmosBridgeableTokens list is modified, bank is not changed
+func (k Keeper) HandleCosmosBridgeableTokensProposal(ctx sdk.Context, p *types.CosmosBridgeableTokensProposal) error {
+	ctx.Logger().Info("Gov vote passed: Updating CosmosBridgeableTokens", "operation", p.Operation, "count", len(p.Metadatas))
 
-	// Perform additional validation on the denom
-	if err := types.ValidateStrictDenom(p.IbcDenom); err != nil {
-		ctx.Logger().Info("invalid denom for metadata proposal", "denom", p.IbcDenom)
-		return errorsmod.Wrap(err, "invalid IBC metadata denom")
+	// Reject duplicate base denoms within the proposal itself (defense in depth beyond ValidateBasic)
+	seen := make(map[string]struct{}, len(p.Metadatas))
+	for _, metadata := range p.Metadatas {
+		if _, dup := seen[metadata.Base]; dup {
+			return errorsmod.Wrapf(types.ErrDuplicate, "CosmosBridgeableTokensProposal contains duplicate base denom: %s", metadata.Base)
+		}
+		seen[metadata.Base] = struct{}{}
 	}
 
-	// checks if the provided token denom is a proper IBC token, not a native token.
-	if !strings.HasPrefix(p.IbcDenom, "ibc/") {
-		ctx.Logger().Info("invalid denom for metadata proposal", "denom", p.IbcDenom)
-		return errorsmod.Wrap(types.ErrInvalid, "Target denom is not an IBC token")
+	switch p.Operation {
+	case types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET:
+		for _, metadata := range p.Metadatas {
+			if err := metadata.Validate(); err != nil {
+				return errorsmod.Wrapf(err, "invalid metadata in CosmosBridgeableTokensProposal: %s", metadata.Base)
+			}
+			if err := types.ValidateStrictDenom(metadata.Base); err != nil {
+				return errorsmod.Wrapf(err, "invalid denom in CosmosBridgeableTokensProposal: %s", metadata.Base)
+			}
+			if strings.HasPrefix(metadata.Base, types.GravityDenomPrefix) {
+				return errorsmod.Wrapf(types.ErrInvalid,
+					"CosmosBridgeableTokens must not contain ethereum-originated (gravity-prefixed) denoms: %s", metadata.Base)
+			}
+
+			// Overwrite the bank metadata in case proposer needs the token info to change on chain
+			k.bankKeeper.SetDenomMetaData(ctx, metadata)
+			k.SetCosmosBridgeableToken(ctx, metadata)
+		}
+	case types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE:
+		for _, metadata := range p.Metadatas {
+			existing, found := k.GetCosmosBridgeableToken(ctx, metadata.Base)
+			if !found {
+				return errorsmod.Wrapf(types.ErrInvalid, "CosmosBridgeableTokens remove denom not found in current list: %s", metadata.Base)
+			}
+			if !metadataEqual(metadata, existing) {
+				return errorsmod.Wrapf(types.ErrInvalid, "CosmosBridgeableTokens remove metadata does not match existing metadata for denom: %s", metadata.Base)
+			}
+			k.DeleteCosmosBridgeableToken(ctx, metadata.Base)
+		}
+	default:
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "CosmosBridgeableTokensProposal requires an explicit operation (SET or REMOVE)")
 	}
-
-	// check that our base unit is the IBC token name on this chain. This makes setting/loading denom
-	// metadata work out, as SetDenomMetadata uses the base denom as an index
-	if p.Metadata.Base != p.IbcDenom {
-		ctx.Logger().Info("invalid metadata for metadata proposal must be the same as IBCDenom", "base", p.Metadata.Base)
-		return errorsmod.Wrap(types.ErrInvalid, "Metadata base must be the same as the IBC denom!")
-	}
-
-	// outsource validating this to the bank validation function
-	metadataErr := p.Metadata.Validate()
-	if metadataErr != nil {
-		ctx.Logger().Info("invalid metadata for metadata proposal", "validation error", metadataErr)
-		return errorsmod.Wrap(metadataErr, "Invalid metadata")
-
-	}
-
-	// if metadata already exists then changing it is only a good idea if we have not already deployed an ERC20
-	// for this denom if we have we can't change it
-	_, metadataExists := k.bankKeeper.GetDenomMetaData(ctx, p.IbcDenom)
-	_, erc20RepresentationExists := k.GetCosmosOriginatedERC20(ctx, p.IbcDenom)
-	if metadataExists && erc20RepresentationExists {
-		ctx.Logger().Info("invalid trying to set metadata when ERC20 has already been deployed")
-		return errorsmod.Wrap(types.ErrInvalid, "Metadata can only be changed before ERC20 is created")
-
-	}
-
-	// write out metadata, this will update existing metadata if no erc20 has been deployed
-	k.bankKeeper.SetDenomMetaData(ctx, p.Metadata)
 
 	return nil
 }

@@ -19,10 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Msg_UpdateParamsProposal_FullMethodName = "/gravity.v2.Msg/UpdateParamsProposal"
-	Msg_IBCMetadataProposal_FullMethodName  = "/gravity.v2.Msg/IBCMetadataProposal"
-	Msg_AirdropProposal_FullMethodName      = "/gravity.v2.Msg/AirdropProposal"
-	Msg_UnhaltBridgeProposal_FullMethodName = "/gravity.v2.Msg/UnhaltBridgeProposal"
+	Msg_UpdateParamsProposal_FullMethodName           = "/gravity.v2.Msg/UpdateParamsProposal"
+	Msg_AirdropProposal_FullMethodName                = "/gravity.v2.Msg/AirdropProposal"
+	Msg_UnhaltBridgeProposal_FullMethodName           = "/gravity.v2.Msg/UnhaltBridgeProposal"
+	Msg_CosmosBridgeableTokensProposal_FullMethodName = "/gravity.v2.Msg/CosmosBridgeableTokensProposal"
 )
 
 // MsgClient is the client API for Msg service.
@@ -30,9 +30,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MsgClient interface {
 	UpdateParamsProposal(ctx context.Context, in *MsgUpdateParamsProposal, opts ...grpc.CallOption) (*MsgUpdateParamsProposalResponse, error)
-	IBCMetadataProposal(ctx context.Context, in *MsgIBCMetadataProposal, opts ...grpc.CallOption) (*MsgIBCMetadataProposalResponse, error)
 	AirdropProposal(ctx context.Context, in *MsgAirdropProposal, opts ...grpc.CallOption) (*MsgAirdropProposalResponse, error)
 	UnhaltBridgeProposal(ctx context.Context, in *MsgUnhaltBridgeProposal, opts ...grpc.CallOption) (*MsgUnhaltBridgeProposalResponse, error)
+	CosmosBridgeableTokensProposal(ctx context.Context, in *MsgCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgCosmosBridgeableTokensProposalResponse, error)
 }
 
 type msgClient struct {
@@ -46,15 +46,6 @@ func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 func (c *msgClient) UpdateParamsProposal(ctx context.Context, in *MsgUpdateParamsProposal, opts ...grpc.CallOption) (*MsgUpdateParamsProposalResponse, error) {
 	out := new(MsgUpdateParamsProposalResponse)
 	err := c.cc.Invoke(ctx, Msg_UpdateParamsProposal_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) IBCMetadataProposal(ctx context.Context, in *MsgIBCMetadataProposal, opts ...grpc.CallOption) (*MsgIBCMetadataProposalResponse, error) {
-	out := new(MsgIBCMetadataProposalResponse)
-	err := c.cc.Invoke(ctx, Msg_IBCMetadataProposal_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -79,14 +70,23 @@ func (c *msgClient) UnhaltBridgeProposal(ctx context.Context, in *MsgUnhaltBridg
 	return out, nil
 }
 
+func (c *msgClient) CosmosBridgeableTokensProposal(ctx context.Context, in *MsgCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgCosmosBridgeableTokensProposalResponse, error) {
+	out := new(MsgCosmosBridgeableTokensProposalResponse)
+	err := c.cc.Invoke(ctx, Msg_CosmosBridgeableTokensProposal_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
 type MsgServer interface {
 	UpdateParamsProposal(context.Context, *MsgUpdateParamsProposal) (*MsgUpdateParamsProposalResponse, error)
-	IBCMetadataProposal(context.Context, *MsgIBCMetadataProposal) (*MsgIBCMetadataProposalResponse, error)
 	AirdropProposal(context.Context, *MsgAirdropProposal) (*MsgAirdropProposalResponse, error)
 	UnhaltBridgeProposal(context.Context, *MsgUnhaltBridgeProposal) (*MsgUnhaltBridgeProposalResponse, error)
+	CosmosBridgeableTokensProposal(context.Context, *MsgCosmosBridgeableTokensProposal) (*MsgCosmosBridgeableTokensProposalResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -97,14 +97,14 @@ type UnimplementedMsgServer struct {
 func (UnimplementedMsgServer) UpdateParamsProposal(context.Context, *MsgUpdateParamsProposal) (*MsgUpdateParamsProposalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParamsProposal not implemented")
 }
-func (UnimplementedMsgServer) IBCMetadataProposal(context.Context, *MsgIBCMetadataProposal) (*MsgIBCMetadataProposalResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IBCMetadataProposal not implemented")
-}
 func (UnimplementedMsgServer) AirdropProposal(context.Context, *MsgAirdropProposal) (*MsgAirdropProposalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AirdropProposal not implemented")
 }
 func (UnimplementedMsgServer) UnhaltBridgeProposal(context.Context, *MsgUnhaltBridgeProposal) (*MsgUnhaltBridgeProposalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnhaltBridgeProposal not implemented")
+}
+func (UnimplementedMsgServer) CosmosBridgeableTokensProposal(context.Context, *MsgCosmosBridgeableTokensProposal) (*MsgCosmosBridgeableTokensProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CosmosBridgeableTokensProposal not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -133,24 +133,6 @@ func _Msg_UpdateParamsProposal_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).UpdateParamsProposal(ctx, req.(*MsgUpdateParamsProposal))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_IBCMetadataProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgIBCMetadataProposal)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).IBCMetadataProposal(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_IBCMetadataProposal_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).IBCMetadataProposal(ctx, req.(*MsgIBCMetadataProposal))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -191,6 +173,24 @@ func _Msg_UnhaltBridgeProposal_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CosmosBridgeableTokensProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCosmosBridgeableTokensProposal)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CosmosBridgeableTokensProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CosmosBridgeableTokensProposal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CosmosBridgeableTokensProposal(ctx, req.(*MsgCosmosBridgeableTokensProposal))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -203,16 +203,16 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_UpdateParamsProposal_Handler,
 		},
 		{
-			MethodName: "IBCMetadataProposal",
-			Handler:    _Msg_IBCMetadataProposal_Handler,
-		},
-		{
 			MethodName: "AirdropProposal",
 			Handler:    _Msg_AirdropProposal_Handler,
 		},
 		{
 			MethodName: "UnhaltBridgeProposal",
 			Handler:    _Msg_UnhaltBridgeProposal_Handler,
+		},
+		{
+			MethodName: "CosmosBridgeableTokensProposal",
+			Handler:    _Msg_CosmosBridgeableTokensProposal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

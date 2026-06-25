@@ -935,65 +935,48 @@ async fn erc20_deployed_claim_hash_collision(
          TokenContract={BARTOKEN_ADDR}"
     );
 
-    // Submit honest claims from all remaining validators manually, before
-    // orchestrators loop.  Because the separator change makes hash collisions
-    // impossible, these claims have a DIFFERENT ClaimHash from the forged one
-    // and create their own separate attestation.  They should all be accepted.
+    // Do NOT also submit the remaining validators' claims manually here. Their
+    // orchestrators are already running live (started via `start_orchestrators`
+    // earlier in the test) and independently watch Ethereum for exactly this
+    // kind of event, so they will observe the real ERC20Deployed event and
+    // submit the correct claim on their own — this is their normal operation.
+    //
+    // A manual submission for the same validator key racing its own live
+    // orchestrator thread is unsafe: whichever loses the race hits a stale
+    // account sequence number or an already-advanced event nonce, surfacing as
+    // "account sequence mismatch" or "non contiguous event nonce" errors (this
+    // was the cause of a prior CI panic here). Instead, just wait for the
+    // honest attestation to reach quorum via the live orchestrators.
     let new_erc20_addr_str = new_erc20_addr.to_string();
-    for honest_key in &keys[1..] {
-        let orch_addr = honest_key
-            .orch_key
-            .to_address(&contact.get_prefix())
-            .unwrap();
-        let honest_event = Erc20DeployedEvent {
-            cosmos_denom: ibc_denom.clone(),
-            erc20_address: new_erc20_addr,
-            name: ibc_token_name.clone(),
-            symbol: ibc_token_symbol.clone(),
-            decimals: event_decimals,
-            event_nonce,
-            block_height: eth_block_height,
-        };
-        let send_result = send_ethereum_claims(
-            contact,
-            honest_key.orch_key,
-            vec![],
-            vec![],
-            vec![honest_event],
-            vec![],
-            vec![],
-            get_fee(None),
-        )
-        .await;
+    info!(
+        "Phase 3: waiting for the remaining {} validators' live orchestrators to \
+         observe the real ERC20Deployed event and submit the correct claim for \
+         TokenContract={new_erc20_addr_str}",
+        keys.len() - 1
+    );
 
-        // Honest claims create a separate attestation (different ClaimHash from
-        // the forged one) and should be accepted.
-        let tx = send_result.unwrap_or_else(|e| {
-            panic!(
-                "Phase 3: honest claim from {} failed at transport level: {}", orch_addr, e
-            )
+    // ── Phase 4 / 5: poll for quorum, then assert ─────────────────────────────
+    let deadline = Instant::now() + TOTAL_TIMEOUT;
+    let all_atts = loop {
+        let atts = get_attestations(grpc_client, Some(1000))
+            .await
+            .expect("Phase 5: failed to query attestations");
+        let honest_quorum_reached = atts.iter().any(|a| {
+            a.claim_type == ClaimType::Erc20Deployed as i32
+                && a.observed
+                && a.claim
+                    .as_ref()
+                    .and_then(|any_att| {
+                        MsgErc20DeployedClaim::decode(any_att.value.as_slice()).ok()
+                    })
+                    .map(|c| c.token_contract == new_erc20_addr_str)
+                    .unwrap_or(false)
         });
-        assert_eq!(
-            tx.code(),
-            0,
-            "Phase 3: honest claim from {orch_addr} should be accepted (code=0), \
-             but got code={}: {}",
-            tx.code(),
-            tx.raw_log()
-        );
-        info!(
-            "Phase 3: honest claim from {orch_addr} accepted — \
-             joined honest attestation for TokenContract={new_erc20_addr_str}"
-        );
-    }
-
-    // ── Phase 4 / 5: wait, then assert ───────────────────────────────────────
-    // Allow 3 full orchestrator loop cycles (10s each) for any background submissions.
-    sleep(Duration::from_secs(30)).await;
-
-    let all_atts = get_attestations(grpc_client, Some(1000))
-        .await
-        .expect("Phase 5: failed to query attestations");
+        if honest_quorum_reached || Instant::now() >= deadline {
+            break atts;
+        }
+        sleep(Duration::from_secs(3)).await;
+    };
 
     // ── Forged attestation: must exist with exactly 1 vote, NOT observed ──────
     let forged_att = all_atts.iter().find(|a| {

@@ -202,7 +202,7 @@ pub async fn setup(
     let ibc_metadata = footoken_metadata(contact).await;
 
     // Allow the cosmos-originated footoken to cross the bridge before deploying its ERC20
-    set_cosmos_bridgeable_tokens(contact, &keys, vec![ibc_metadata.base.clone()]).await;
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![ibc_metadata.clone()]).await;
     let _ = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,

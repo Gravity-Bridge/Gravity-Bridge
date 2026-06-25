@@ -3,7 +3,6 @@ package keeper
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
-	"encoding/json"
 	"math/rand"
 	"strings"
 	"testing"
@@ -14,6 +13,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -239,9 +239,7 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, cosmosVouchers))
 
 	// Ensure the allowlist is empty (default from TestingGravityParams)
-	params, err := gk.GetParams(ctx)
-	require.NoError(t, err)
-	require.Empty(t, params.CosmosBridgeableTokens)
+	require.Empty(t, gk.GetAllCosmosBridgeableTokens(ctx))
 
 	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
 		Sender:    sender.String(),
@@ -251,11 +249,8 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 		ChainFee:  sdk.NewCoin(cosmosTokenDenom, sdkmath.ZeroInt()),
 	})
 	require.Error(t, err, "cosmos-originated token not on allowlist must be rejected")
-	require.Contains(t, err.Error(), "CosmosBridgeableTokens allowlist")
-
-	// ── Cosmos-originated token, ON allowlist ────────────────────────────────────
-	params.CosmosBridgeableTokens = []string{cosmosTokenDenom}
-	require.NoError(t, gk.SetParams(ctx, params))
+	require.Contains(t, err.Error(), "CosmosBridgeableTokens whitelist")
+	gk.SetCosmosBridgeableToken(ctx, minMeta(cosmosTokenDenom))
 
 	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
 		Sender:    sender.String(),
@@ -284,10 +279,66 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 		ChainFee:  sdk.NewCoin(cosmosToken2Denom, sdkmath.ZeroInt()),
 	})
 	require.Error(t, err, "cosmos-originated token not on allowlist must be rejected even when other tokens are allowed")
-	require.Contains(t, err.Error(), "CosmosBridgeableTokens allowlist")
+	require.Contains(t, err.Error(), "CosmosBridgeableTokens whitelist")
 
 	// Suppress unused variable warning
 	_ = ethTokenContractAddr
+}
+
+// TestSendToEthMetadataDriftRejected verifies that SendToEth rejects a cosmos-originated
+// denom whose bank module metadata has drifted from the governance-approved
+// CosmosBridgeableTokens entry (the "SECURITY VIOLATION" branch in assertMetadataWhitelisted).
+// nolint: exhaustruct
+func TestSendToEthMetadataDriftRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	sender := AccAddrs[0]
+	ethDest := "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
+
+	cosmosTokenDenom := "udrift"
+	cosmosTokenContract := "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	cosmosVouchers := sdk.NewCoins(sdk.NewInt64Coin(cosmosTokenDenom, 10000))
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, cosmosVouchers))
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, cosmosVouchers))
+
+	// Whitelist the denom with metadata that (for now) matches what's stored in the bank module
+	originalMeta := minMeta(cosmosTokenDenom)
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+	gk.SetCosmosBridgeableToken(ctx, originalMeta)
+
+	// Sanity check: SendToEth succeeds while the bank metadata still matches the allowlist entry
+	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
+		Sender:    sender.String(),
+		EthDest:   ethDest,
+		Amount:    sdk.NewInt64Coin(cosmosTokenDenom, 100),
+		BridgeFee: sdk.NewInt64Coin(cosmosTokenDenom, 1),
+		ChainFee:  sdk.NewCoin(cosmosTokenDenom, sdkmath.ZeroInt()),
+	})
+	require.NoError(t, err)
+
+	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
+	// simulating drift between the two sources of truth.
+	driftedMeta := originalMeta
+	driftedMeta.Name = "Drifted Name"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
+		Sender:    sender.String(),
+		EthDest:   ethDest,
+		Amount:    sdk.NewInt64Coin(cosmosTokenDenom, 100),
+		BridgeFee: sdk.NewInt64Coin(cosmosTokenDenom, 1),
+		ChainFee:  sdk.NewCoin(cosmosTokenDenom, sdkmath.ZeroInt()),
+	})
+	require.Error(t, err, "SendToEth must reject a denom whose bank metadata has drifted from the allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
 }
 
 // TestRequestBatchCosmosBridgeableTokensAllowlist verifies that RequestBatch enforces the
@@ -309,10 +360,7 @@ func TestRequestBatchCosmosBridgeableTokensAllowlist(t *testing.T) {
 	gk.setCosmosOriginatedDenomToERC20(ctx, cosmosTokenDenom, *cosmosTokenContractAddr)
 
 	// Ensure the allowlist is empty
-	params, err := gk.GetParams(ctx)
-	require.NoError(t, err)
-	params.CosmosBridgeableTokens = []string{}
-	require.NoError(t, gk.SetParams(ctx, params))
+	require.Empty(t, gk.GetAllCosmosBridgeableTokens(ctx))
 
 	// RequestBatch for a cosmos-originated token not on the allowlist must be rejected
 	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
@@ -324,8 +372,7 @@ func TestRequestBatchCosmosBridgeableTokensAllowlist(t *testing.T) {
 
 	// Add to allowlist — now it should pass the allowlist check
 	// (will fail later due to no txs in pool, but that's fine — we're testing the gate)
-	params.CosmosBridgeableTokens = []string{cosmosTokenDenom}
-	require.NoError(t, gk.SetParams(ctx, params))
+	gk.SetCosmosBridgeableToken(ctx, minMeta(cosmosTokenDenom))
 
 	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
 		Sender: sender.String(),
@@ -337,162 +384,114 @@ func TestRequestBatchCosmosBridgeableTokensAllowlist(t *testing.T) {
 	}
 }
 
-// TestEnsureCosmosBridgeable tests Keeper.EnsureCosmosBridgeable
-//  1. Ethereum-originated denoms (not in cosmos-originated index) always pass.
-//  2. Cosmos-originated denoms NOT on the allowlist are rejected.
-//  3. Cosmos-originated denoms ON the allowlist are permitted.
-//
+// TestCosmosBridgeableTokensProposal verifies that MsgCosmosBridgeableTokensProposal
+// correctly sets, removes, validates, and rejects invalid CosmosBridgeableTokens entries.
 // nolint: exhaustruct
-func TestEnsureCosmosBridgeable(t *testing.T) {
-	input, ctx := SetupFiveValChain(t)
-	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
-
-	gk := input.GravityKeeper
-
-	// Register a cosmos-originated denom
-	cosmosDenom := "uatom"
-	cosmosContract, err := types.NewEthAddress("0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e")
-	require.NoError(t, err)
-	gk.setCosmosOriginatedDenomToERC20(ctx, cosmosDenom, *cosmosContract)
-
-	// Start with an empty allowlist
-	params, err := gk.GetParams(ctx)
-	require.NoError(t, err)
-	params.CosmosBridgeableTokens = []string{}
-	require.NoError(t, gk.SetParams(ctx, params))
-
-	// ── Case 1: Ethereum-originated denom (not in cosmos index) always passes ────
-	ethDenom := "gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
-	err = gk.EnsureCosmosBridgeable(ctx, ethDenom)
-	require.NoError(t, err, "ethereum-originated denom must pass regardless of allowlist")
-
-	// ── Case 2: Unknown denom (neither gravity-prefixed nor registered) passes ───
-	unknownDenom := "ufoo"
-	err = gk.EnsureCosmosBridgeable(ctx, unknownDenom)
-	require.NoError(t, err, "unregistered denom is not cosmos-originated, must pass")
-
-	// ── Case 3: Cosmos-originated denom NOT on allowlist is rejected ─────────────
-	err = gk.EnsureCosmosBridgeable(ctx, cosmosDenom)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "CosmosBridgeableTokens allowlist")
-	require.Contains(t, err.Error(), cosmosDenom)
-
-	// ── Case 4: Cosmos-originated denom ON allowlist is permitted ─────────────────
-	params.CosmosBridgeableTokens = []string{cosmosDenom}
-	require.NoError(t, gk.SetParams(ctx, params))
-
-	err = gk.EnsureCosmosBridgeable(ctx, cosmosDenom)
-	require.NoError(t, err, "cosmos-originated denom on allowlist must pass")
-
-	// ── Case 5: Second cosmos-originated denom not on partial allowlist ───────────
-	cosmosDenom2 := "uosmo"
-	cosmosContract2, err := types.NewEthAddress("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984")
-	require.NoError(t, err)
-	gk.setCosmosOriginatedDenomToERC20(ctx, cosmosDenom2, *cosmosContract2)
-
-	err = gk.EnsureCosmosBridgeable(ctx, cosmosDenom2)
-	require.Error(t, err, "second cosmos denom not on allowlist must be rejected")
-	require.Contains(t, err.Error(), cosmosDenom2)
-
-	// ── Case 6: Both on allowlist, both pass ─────────────────────────────────────
-	params.CosmosBridgeableTokens = []string{cosmosDenom, cosmosDenom2}
-	require.NoError(t, gk.SetParams(ctx, params))
-
-	require.NoError(t, gk.EnsureCosmosBridgeable(ctx, cosmosDenom))
-	require.NoError(t, gk.EnsureCosmosBridgeable(ctx, cosmosDenom2))
-
-	// ── Case 7: Remapped (gravity2) denom passes — it is Ethereum-originated ────
-	remappedDenom := "gravity20x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
-	err = gk.EnsureCosmosBridgeable(ctx, remappedDenom)
-	require.NoError(t, err, "gravity2 (remapped) denom is ethereum-originated, must pass")
-
-	// ── Case 8: Deleted cosmos-originated mapping → no longer subject to allowlist
-	gk.DeleteCosmosOriginatedDenomToERC20(ctx, *cosmosContract2, cosmosDenom2)
-	// Remove cosmosDenom2 from allowlist so it would fail if still cosmos-originated
-	params.CosmosBridgeableTokens = []string{cosmosDenom}
-	require.NoError(t, gk.SetParams(ctx, params))
-
-	err = gk.EnsureCosmosBridgeable(ctx, cosmosDenom2)
-	require.NoError(t, err, "deleted cosmos mapping means denom is no longer cosmos-originated, must pass")
-}
-
-// TestUpdateParamsProposalCosmosBridgeableTokens verifies that MsgUpdateParamsProposal
-// correctly updates, validates, and rejects invalid values for CosmosBridgeableTokens.
-// nolint: exhaustruct
-func TestUpdateParamsProposalCosmosBridgeableTokens(t *testing.T) {
+func TestCosmosBridgeableTokensProposal(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	sv := msgServer{input.GravityKeeper}
 	govAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	// ── Valid update: set a non-empty allowlist ───────────────────────────────────
-	denoms := []string{"uatom", "uosmo"}
-	denomsJSON, err := json.Marshal(denoms)
-	require.NoError(t, err)
+	// ── Valid SET: add two new entries ─────────────────────────────────────────────
+	setEntries := []banktypes.Metadata{minMeta("uatom"), minMeta("uosmo")}
 
-	_, err = sv.UpdateParamsProposal(ctx, &typesv2.MsgUpdateParamsProposal{
+	_, err := sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		ParamUpdates: []*typesv2.Param{
-			{Key: types.ParamCosmosBridgeableTokens, Value: string(denomsJSON)},
+		Proposal: &types.CosmosBridgeableTokensProposal{
+			Title:       "Add uatom and uosmo",
+			Description: "test",
+			Metadatas:   setEntries,
+			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.NoError(t, err)
 
-	params, err := input.GravityKeeper.GetParams(ctx)
-	require.NoError(t, err)
-	require.Equal(t, denoms, params.CosmosBridgeableTokens)
+	require.ElementsMatch(t, setEntries, input.GravityKeeper.GetAllCosmosBridgeableTokens(ctx))
 
-	// ── Valid update: clear the allowlist ────────────────────────────────────────
-	emptyJSON, err := json.Marshal([]string{})
-	require.NoError(t, err)
+	// SET must also have overwritten the bank keeper's metadata for each denom
+	for _, m := range setEntries {
+		bankMeta, found := input.BankKeeper.GetDenomMetaData(ctx, m.Base)
+		require.True(t, found)
+		require.True(t, metadataEqual(m, bankMeta))
+	}
 
-	_, err = sv.UpdateParamsProposal(ctx, &typesv2.MsgUpdateParamsProposal{
+	// ── Valid REMOVE: remove one entry ────────────────────────────────────────────
+	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		ParamUpdates: []*typesv2.Param{
-			{Key: types.ParamCosmosBridgeableTokens, Value: string(emptyJSON)},
+		Proposal: &types.CosmosBridgeableTokensProposal{
+			Title:       "Remove uatom",
+			Description: "test",
+			Metadatas:   []banktypes.Metadata{minMeta("uatom")},
+			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE,
 		},
 	})
 	require.NoError(t, err)
 
-	params, err = input.GravityKeeper.GetParams(ctx)
-	require.NoError(t, err)
-	require.Empty(t, params.CosmosBridgeableTokens)
+	require.Equal(t, []banktypes.Metadata{minMeta("uosmo")}, input.GravityKeeper.GetAllCosmosBridgeableTokens(ctx))
 
-	// ── Invalid update: malformed JSON ────────────────────────────────────────────
-	_, err = sv.UpdateParamsProposal(ctx, &typesv2.MsgUpdateParamsProposal{
+	// ── Invalid REMOVE: denom not present ─────────────────────────────────────────
+	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		ParamUpdates: []*typesv2.Param{
-			{Key: types.ParamCosmosBridgeableTokens, Value: "not-valid-json"},
+		Proposal: &types.CosmosBridgeableTokensProposal{
+			Title:       "Remove uatom again",
+			Description: "test",
+			Metadatas:   []banktypes.Metadata{minMeta("uatom")},
+			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE,
 		},
 	})
-	require.Error(t, err)
+	require.Error(t, err, "removing a denom not on the allowlist must be rejected")
 
-	// ── Invalid update: gravity-prefixed denom (rejected by ValidateBasic) ────────
-	badDenoms := []string{"gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"}
-	badDenomsJSON, err := json.Marshal(badDenoms)
-	require.NoError(t, err)
-
-	_, err = sv.UpdateParamsProposal(ctx, &typesv2.MsgUpdateParamsProposal{
+	// ── Invalid: UNSPECIFIED operation ────────────────────────────────────────────
+	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		ParamUpdates: []*typesv2.Param{
-			{Key: types.ParamCosmosBridgeableTokens, Value: string(badDenomsJSON)},
+		Proposal: &types.CosmosBridgeableTokensProposal{
+			Title:       "Invalid",
+			Description: "test",
+			Metadatas:   setEntries,
+			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED,
 		},
 	})
-	require.Error(t, err, "gravity-prefixed denom must be rejected by ValidateBasic")
+	require.Error(t, err, "UNSPECIFIED operation must be rejected")
 
-	// ── Invalid update: duplicate denoms (rejected by ValidateBasic) ──────────────
-	dupDenoms := []string{"uatom", "uatom"}
-	dupDenomsJSON, err := json.Marshal(dupDenoms)
-	require.NoError(t, err)
-
-	_, err = sv.UpdateParamsProposal(ctx, &typesv2.MsgUpdateParamsProposal{
+	// ── Invalid SET: gravity-prefixed denom ───────────────────────────────────────
+	badEntries := []banktypes.Metadata{minMeta("gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")}
+	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		ParamUpdates: []*typesv2.Param{
-			{Key: types.ParamCosmosBridgeableTokens, Value: string(dupDenomsJSON)},
+		Proposal: &types.CosmosBridgeableTokensProposal{
+			Title:       "Invalid",
+			Description: "test",
+			Metadatas:   badEntries,
+			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
-	require.Error(t, err, "duplicate denoms must be rejected by ValidateBasic")
+	require.Error(t, err, "gravity-prefixed denom must be rejected")
+
+	// ── Invalid SET: duplicate base denoms ────────────────────────────────────────
+	dupEntries := []banktypes.Metadata{minMeta("uperson"), minMeta("uperson")}
+	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+		Authority: govAddr,
+		Proposal: &types.CosmosBridgeableTokensProposal{
+			Title:       "Invalid",
+			Description: "test",
+			Metadatas:   dupEntries,
+			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
+		},
+	})
+	require.Error(t, err, "duplicate base denoms must be rejected")
+
+	// ── Invalid: wrong authority ───────────────────────────────────────────────────
+	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+		Authority: AccAddrs[0].String(),
+		Proposal: &types.CosmosBridgeableTokensProposal{
+			Title:       "Invalid authority",
+			Description: "test",
+			Metadatas:   setEntries,
+			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
+		},
+	})
+	require.Error(t, err, "non-gov authority must be rejected")
 }
 
 // TestRemappedTokenRoundTrip verifies the behavior of a remapped ERC20:
@@ -564,7 +563,23 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	require.NoError(t, err, "pre-remap SendToEth with gravity0x must succeed")
 
 	// ── Cancel the outgoing tx before remapping (like recovery handler) ──────────
-	require.NoError(t, gk.CancelAllOutgoingTxsForContract(ctx, *tokenAddr))
+	// recovery.CancelAllOutgoingTxsForContract can't be imported here (it depends on this
+	// keeper package, which would create an import cycle), so replicate its logic directly
+	// against the public Keeper API instead.
+	var batchNonces []uint64
+	gk.IterateOutgoingTxBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+		if batch.TokenContract.GetAddress() == tokenAddr.GetAddress() {
+			batchNonces = append(batchNonces, batch.BatchNonce)
+		}
+		return false
+	})
+	for _, nonce := range batchNonces {
+		require.NoError(t, gk.CancelOutgoingTXBatch(ctx, *tokenAddr, nonce))
+	}
+	gk.IterateUnbatchedTransactionsByContract(ctx, *tokenAddr, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
+		require.NoError(t, gk.RemoveFromOutgoingPoolAndRefund(ctx, tx.Id, tx.Sender))
+		return false
+	})
 
 	// ══════════════════════════════════════════════════════════════════════════════
 	// REMAP the token

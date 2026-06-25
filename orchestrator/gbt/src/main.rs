@@ -19,7 +19,8 @@ use client::spot_relay::spot_relay;
 use config::{get_home_dir, load_config};
 use env_logger::Env;
 use gov::proposals::{
-    submit_airdrop, submit_emergency_bridge_halt, submit_ibc_metadata, submit_oracle_unhalt,
+    submit_airdrop, submit_cosmos_bridgeable_tokens, submit_emergency_bridge_halt,
+    submit_oracle_unhalt,
 };
 use gov::queries::query_airdrops;
 use keys::register_orchestrator_address::register_orchestrator_address;
@@ -114,15 +115,15 @@ async fn main() {
         SubCommand::Init(init_opts) => init_config(init_opts, home_dir),
         SubCommand::Gov(gov_opts) => match gov_opts.subcmd {
             GovSubcommand::Submit(submit_opts) => match submit_opts {
-                GovSubmitSubcommand::IbcMetadata(opts) => {
-                    submit_ibc_metadata(opts, address_prefix).await
-                }
                 GovSubmitSubcommand::Airdrop(opts) => submit_airdrop(opts, address_prefix).await,
                 GovSubmitSubcommand::EmergencyBridgeHalt(opts) => {
                     submit_emergency_bridge_halt(opts, address_prefix).await
                 }
                 GovSubmitSubcommand::OracleUnhalt(opts) => {
                     submit_oracle_unhalt(opts, address_prefix).await
+                }
+                GovSubmitSubcommand::CosmosBridgeableTokens(opts) => {
+                    submit_cosmos_bridgeable_tokens(opts, address_prefix).await
                 }
             },
             GovSubcommand::Query(query_opts) => match query_opts {

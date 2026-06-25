@@ -178,101 +178,6 @@ func (m *MsgUpdateParamsProposalResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgUpdateParamsProposalResponse proto.InternalMessageInfo
 
-// MsgIBCMetadataProposal
-// This message is used by the new x/gov v1 proposal system, it contains an authority
-// and the previous type used for proposals
-// AUTHORITY
-// A string containing the address of the sender, only valid if it is the gov module address
-// PROPOSAL
-// This is the previous proposal type, which contains everything needed for the proposal's execution
-type MsgIBCMetadataProposal struct {
-	Authority string                     `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Proposal  *types.IBCMetadataProposal `protobuf:"bytes,2,opt,name=proposal,proto3" json:"proposal,omitempty"`
-}
-
-func (m *MsgIBCMetadataProposal) Reset()         { *m = MsgIBCMetadataProposal{} }
-func (m *MsgIBCMetadataProposal) String() string { return proto.CompactTextString(m) }
-func (*MsgIBCMetadataProposal) ProtoMessage()    {}
-func (*MsgIBCMetadataProposal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_480c6bb410a9b91f, []int{3}
-}
-func (m *MsgIBCMetadataProposal) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgIBCMetadataProposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgIBCMetadataProposal.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgIBCMetadataProposal) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgIBCMetadataProposal.Merge(m, src)
-}
-func (m *MsgIBCMetadataProposal) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgIBCMetadataProposal) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgIBCMetadataProposal.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgIBCMetadataProposal proto.InternalMessageInfo
-
-func (m *MsgIBCMetadataProposal) GetAuthority() string {
-	if m != nil {
-		return m.Authority
-	}
-	return ""
-}
-
-func (m *MsgIBCMetadataProposal) GetProposal() *types.IBCMetadataProposal {
-	if m != nil {
-		return m.Proposal
-	}
-	return nil
-}
-
-type MsgIBCMetadataProposalResponse struct {
-}
-
-func (m *MsgIBCMetadataProposalResponse) Reset()         { *m = MsgIBCMetadataProposalResponse{} }
-func (m *MsgIBCMetadataProposalResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgIBCMetadataProposalResponse) ProtoMessage()    {}
-func (*MsgIBCMetadataProposalResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_480c6bb410a9b91f, []int{4}
-}
-func (m *MsgIBCMetadataProposalResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgIBCMetadataProposalResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgIBCMetadataProposalResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgIBCMetadataProposalResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgIBCMetadataProposalResponse.Merge(m, src)
-}
-func (m *MsgIBCMetadataProposalResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgIBCMetadataProposalResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgIBCMetadataProposalResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgIBCMetadataProposalResponse proto.InternalMessageInfo
-
 // MsgAirdropProposal
 // This message is used by the new x/gov v1 proposal system, it contains an authority
 // and the previous type used for proposals
@@ -289,7 +194,7 @@ func (m *MsgAirdropProposal) Reset()         { *m = MsgAirdropProposal{} }
 func (m *MsgAirdropProposal) String() string { return proto.CompactTextString(m) }
 func (*MsgAirdropProposal) ProtoMessage()    {}
 func (*MsgAirdropProposal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_480c6bb410a9b91f, []int{5}
+	return fileDescriptor_480c6bb410a9b91f, []int{3}
 }
 func (m *MsgAirdropProposal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -339,7 +244,7 @@ func (m *MsgAirdropProposalResponse) Reset()         { *m = MsgAirdropProposalRe
 func (m *MsgAirdropProposalResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgAirdropProposalResponse) ProtoMessage()    {}
 func (*MsgAirdropProposalResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_480c6bb410a9b91f, []int{6}
+	return fileDescriptor_480c6bb410a9b91f, []int{4}
 }
 func (m *MsgAirdropProposalResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -384,7 +289,7 @@ func (m *MsgUnhaltBridgeProposal) Reset()         { *m = MsgUnhaltBridgeProposal
 func (m *MsgUnhaltBridgeProposal) String() string { return proto.CompactTextString(m) }
 func (*MsgUnhaltBridgeProposal) ProtoMessage()    {}
 func (*MsgUnhaltBridgeProposal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_480c6bb410a9b91f, []int{7}
+	return fileDescriptor_480c6bb410a9b91f, []int{5}
 }
 func (m *MsgUnhaltBridgeProposal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -434,7 +339,7 @@ func (m *MsgUnhaltBridgeProposalResponse) Reset()         { *m = MsgUnhaltBridge
 func (m *MsgUnhaltBridgeProposalResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgUnhaltBridgeProposalResponse) ProtoMessage()    {}
 func (*MsgUnhaltBridgeProposalResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_480c6bb410a9b91f, []int{8}
+	return fileDescriptor_480c6bb410a9b91f, []int{6}
 }
 func (m *MsgUnhaltBridgeProposalResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -463,58 +368,157 @@ func (m *MsgUnhaltBridgeProposalResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgUnhaltBridgeProposalResponse proto.InternalMessageInfo
 
+// MsgCosmosBridgeableTokensProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and the previous type used for proposals
+// AUTHORITY
+// A string containing the address of the sender, only valid if it is the gov module address
+// PROPOSAL
+// This is the previous proposal type, which contains everything needed for the proposal's execution
+type MsgCosmosBridgeableTokensProposal struct {
+	Authority string                                `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Proposal  *types.CosmosBridgeableTokensProposal `protobuf:"bytes,2,opt,name=proposal,proto3" json:"proposal,omitempty"`
+}
+
+func (m *MsgCosmosBridgeableTokensProposal) Reset()         { *m = MsgCosmosBridgeableTokensProposal{} }
+func (m *MsgCosmosBridgeableTokensProposal) String() string { return proto.CompactTextString(m) }
+func (*MsgCosmosBridgeableTokensProposal) ProtoMessage()    {}
+func (*MsgCosmosBridgeableTokensProposal) Descriptor() ([]byte, []int) {
+	return fileDescriptor_480c6bb410a9b91f, []int{7}
+}
+func (m *MsgCosmosBridgeableTokensProposal) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCosmosBridgeableTokensProposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCosmosBridgeableTokensProposal.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCosmosBridgeableTokensProposal) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCosmosBridgeableTokensProposal.Merge(m, src)
+}
+func (m *MsgCosmosBridgeableTokensProposal) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCosmosBridgeableTokensProposal) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCosmosBridgeableTokensProposal.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCosmosBridgeableTokensProposal proto.InternalMessageInfo
+
+func (m *MsgCosmosBridgeableTokensProposal) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgCosmosBridgeableTokensProposal) GetProposal() *types.CosmosBridgeableTokensProposal {
+	if m != nil {
+		return m.Proposal
+	}
+	return nil
+}
+
+type MsgCosmosBridgeableTokensProposalResponse struct {
+}
+
+func (m *MsgCosmosBridgeableTokensProposalResponse) Reset() {
+	*m = MsgCosmosBridgeableTokensProposalResponse{}
+}
+func (m *MsgCosmosBridgeableTokensProposalResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*MsgCosmosBridgeableTokensProposalResponse) ProtoMessage() {}
+func (*MsgCosmosBridgeableTokensProposalResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_480c6bb410a9b91f, []int{8}
+}
+func (m *MsgCosmosBridgeableTokensProposalResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCosmosBridgeableTokensProposalResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCosmosBridgeableTokensProposalResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCosmosBridgeableTokensProposalResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCosmosBridgeableTokensProposalResponse.Merge(m, src)
+}
+func (m *MsgCosmosBridgeableTokensProposalResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCosmosBridgeableTokensProposalResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCosmosBridgeableTokensProposalResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCosmosBridgeableTokensProposalResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgUpdateParamsProposal)(nil), "gravity.v2.MsgUpdateParamsProposal")
 	proto.RegisterType((*Param)(nil), "gravity.v2.Param")
 	proto.RegisterType((*MsgUpdateParamsProposalResponse)(nil), "gravity.v2.MsgUpdateParamsProposalResponse")
-	proto.RegisterType((*MsgIBCMetadataProposal)(nil), "gravity.v2.MsgIBCMetadataProposal")
-	proto.RegisterType((*MsgIBCMetadataProposalResponse)(nil), "gravity.v2.MsgIBCMetadataProposalResponse")
 	proto.RegisterType((*MsgAirdropProposal)(nil), "gravity.v2.MsgAirdropProposal")
 	proto.RegisterType((*MsgAirdropProposalResponse)(nil), "gravity.v2.MsgAirdropProposalResponse")
 	proto.RegisterType((*MsgUnhaltBridgeProposal)(nil), "gravity.v2.MsgUnhaltBridgeProposal")
 	proto.RegisterType((*MsgUnhaltBridgeProposalResponse)(nil), "gravity.v2.MsgUnhaltBridgeProposalResponse")
+	proto.RegisterType((*MsgCosmosBridgeableTokensProposal)(nil), "gravity.v2.MsgCosmosBridgeableTokensProposal")
+	proto.RegisterType((*MsgCosmosBridgeableTokensProposalResponse)(nil), "gravity.v2.MsgCosmosBridgeableTokensProposalResponse")
 }
 
 func init() { proto.RegisterFile("gravity/v2/msgs.proto", fileDescriptor_480c6bb410a9b91f) }
 
 var fileDescriptor_480c6bb410a9b91f = []byte{
-	// 562 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xcf, 0x8b, 0xd3, 0x40,
-	0x14, 0x6e, 0xb6, 0xac, 0xb8, 0xb3, 0xfe, 0x8c, 0x75, 0xb7, 0xc6, 0x92, 0xad, 0x11, 0x64, 0xa9,
-	0x98, 0xa1, 0x11, 0x14, 0xd4, 0x8b, 0xf5, 0x20, 0x1e, 0x02, 0x4b, 0xc1, 0x8b, 0x0a, 0xcb, 0xa4,
-	0x19, 0xa7, 0xd1, 0x24, 0x13, 0x32, 0x93, 0x60, 0xf1, 0xa0, 0x28, 0xde, 0xfd, 0x3b, 0x3c, 0xed,
-	0x9f, 0xe1, 0x71, 0x8f, 0x1e, 0xa5, 0x3d, 0xec, 0xbf, 0x21, 0x99, 0x49, 0xd3, 0x90, 0x64, 0x6b,
-	0x4f, 0xc9, 0x7b, 0xef, 0x7b, 0xdf, 0xf7, 0xcd, 0x9b, 0xc7, 0x80, 0x9b, 0x24, 0x46, 0xa9, 0xc7,
-	0x67, 0x30, 0xb5, 0x60, 0xc0, 0x08, 0x33, 0xa3, 0x98, 0x72, 0xaa, 0x82, 0x3c, 0x6d, 0xa6, 0x96,
-	0xa6, 0x4f, 0x28, 0x0b, 0x28, 0x83, 0x0e, 0x62, 0x18, 0xa6, 0x43, 0x07, 0x73, 0x34, 0x84, 0x13,
-	0xea, 0x85, 0x12, 0xab, 0xed, 0xe7, 0xf5, 0x80, 0x11, 0x98, 0x0e, 0xb3, 0x4f, 0x5e, 0xe8, 0x10,
-	0x4a, 0xa8, 0xf8, 0x85, 0xd9, 0x5f, 0x9e, 0xed, 0x11, 0x4a, 0x89, 0x8f, 0x21, 0x8a, 0x3c, 0x88,
-	0xc2, 0x90, 0x72, 0xc4, 0x3d, 0x1a, 0xe6, 0xc2, 0xda, 0x5e, 0xe1, 0x67, 0x08, 0xf9, 0x2c, 0xc2,
-	0xcb, 0xfc, 0xad, 0xbc, 0x4b, 0x44, 0x4e, 0xf2, 0x1e, 0xa2, 0x70, 0xb6, 0x2c, 0x49, 0xfd, 0x63,
-	0xa9, 0x24, 0x03, 0x59, 0x32, 0xbe, 0x80, 0x7d, 0x9b, 0x91, 0xd7, 0x91, 0x8b, 0x38, 0x3e, 0x42,
-	0x31, 0x0a, 0xd8, 0x51, 0x4c, 0x23, 0xca, 0x90, 0xaf, 0xf6, 0xc0, 0x0e, 0x4a, 0xf8, 0x94, 0xc6,
-	0x1e, 0x9f, 0x75, 0x95, 0xbe, 0x72, 0xb8, 0x33, 0x5e, 0x25, 0xd4, 0x47, 0xe0, 0x72, 0x94, 0xe1,
-	0x8f, 0x13, 0xd1, 0xcb, 0xba, 0x5b, 0xfd, 0xf6, 0xe1, 0xae, 0x75, 0xdd, 0x5c, 0xcd, 0xc5, 0x14,
-	0x84, 0xe3, 0x4b, 0x02, 0x27, 0x25, 0xd8, 0x93, 0x2b, 0xdf, 0xce, 0x4e, 0x06, 0x2b, 0x1e, 0x03,
-	0x82, 0x6d, 0x01, 0x53, 0xaf, 0x81, 0xf6, 0x47, 0xbc, 0x14, 0xca, 0x7e, 0xd5, 0x0e, 0xd8, 0x4e,
-	0x91, 0x9f, 0xe0, 0xee, 0x96, 0xc8, 0xc9, 0xc0, 0xb8, 0x03, 0x0e, 0xce, 0x71, 0x3c, 0xc6, 0x2c,
-	0xa2, 0x21, 0xc3, 0xc6, 0x77, 0x05, 0xec, 0xd9, 0x8c, 0xbc, 0x1a, 0xbd, 0xb0, 0x31, 0x47, 0x2e,
-	0xe2, 0x68, 0xc3, 0x43, 0x3d, 0x05, 0x17, 0xa3, 0x1c, 0x29, 0x44, 0x77, 0xad, 0x83, 0xd5, 0x79,
-	0x86, 0x66, 0x03, 0xe1, 0xb8, 0x68, 0xa8, 0x9d, 0xac, 0x0f, 0xf4, 0x66, 0x13, 0x85, 0xcf, 0xcf,
-	0x40, 0xb5, 0x19, 0x79, 0xee, 0xc5, 0x6e, 0x4c, 0xa3, 0x0d, 0x2d, 0x3e, 0xae, 0x59, 0xbc, 0x5d,
-	0xb6, 0x58, 0x21, 0x5b, 0x63, 0xaf, 0x07, 0xb4, 0xba, 0x78, 0x61, 0xed, 0x87, 0x22, 0x17, 0x23,
-	0x9c, 0x22, 0x9f, 0x8f, 0x62, 0xcf, 0x25, 0x78, 0x43, 0x83, 0xcf, 0x6a, 0x06, 0xfb, 0x65, 0x83,
-	0x4d, 0x8c, 0x6b, 0x5c, 0xe6, 0xb7, 0xdd, 0xd4, 0x94, 0x5b, 0xb5, 0x7e, 0xb5, 0x41, 0xdb, 0x66,
-	0x44, 0xfd, 0x00, 0x3a, 0x8d, 0x7b, 0x7c, 0xb7, 0xbc, 0x92, 0xe7, 0xac, 0x8e, 0x76, 0x7f, 0x03,
-	0x50, 0x31, 0x9c, 0x96, 0x4a, 0xc0, 0x8d, 0xa6, 0xed, 0x32, 0x2a, 0x2c, 0x0d, 0x18, 0x6d, 0xf0,
-	0x7f, 0x4c, 0x49, 0xe8, 0x2d, 0xb8, 0x5a, 0xdd, 0x0f, 0xbd, 0x42, 0x50, 0xa9, 0x6b, 0xf7, 0xd6,
-	0xd7, 0x4b, 0xe4, 0xd9, 0xc4, 0x9a, 0x2e, 0xb8, 0x36, 0xb1, 0x06, 0x50, 0x7d, 0x62, 0x6b, 0xee,
-	0xc8, 0x68, 0x69, 0xdb, 0x5f, 0xcf, 0x4e, 0x06, 0xca, 0xe8, 0xdd, 0xef, 0xb9, 0xae, 0x9c, 0xce,
-	0x75, 0xe5, 0xef, 0x5c, 0x57, 0x7e, 0x2e, 0xf4, 0xd6, 0xe9, 0x42, 0x6f, 0xfd, 0x59, 0xe8, 0xad,
-	0x37, 0x23, 0xe2, 0xf1, 0x69, 0xe2, 0x98, 0x13, 0x1a, 0xc0, 0x97, 0x92, 0xf9, 0x81, 0x64, 0xab,
-	0x86, 0x01, 0x75, 0x13, 0x1f, 0xc3, 0x4f, 0x70, 0xf9, 0x12, 0x8a, 0x67, 0x10, 0xa6, 0x96, 0x73,
-	0x41, 0x3c, 0x6a, 0x0f, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0x26, 0xcd, 0xa3, 0xa4, 0xb4, 0x05,
-	0x00, 0x00,
+	// 569 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xcf, 0x8b, 0xd3, 0x40,
+	0x18, 0x6d, 0xb6, 0x54, 0xdc, 0x59, 0x7f, 0x86, 0xea, 0xd6, 0x58, 0x62, 0xb7, 0x82, 0xac, 0x5d,
+	0x36, 0x43, 0x23, 0x2a, 0x88, 0x17, 0x2b, 0xe8, 0xa9, 0xb0, 0x14, 0xbd, 0xa8, 0xb0, 0x4c, 0xda,
+	0x71, 0x1a, 0x37, 0xc9, 0x84, 0xcc, 0x24, 0x58, 0x3c, 0x28, 0x82, 0xe0, 0xd1, 0xab, 0xff, 0xc5,
+	0xfe, 0x19, 0x1e, 0x3c, 0xec, 0xd1, 0xa3, 0xb4, 0x87, 0xfd, 0x37, 0x24, 0x33, 0x49, 0x53, 0x92,
+	0x6c, 0xb6, 0x9e, 0x92, 0xf9, 0xbe, 0x37, 0xef, 0xbd, 0xef, 0xe3, 0x31, 0xe0, 0x06, 0x09, 0x50,
+	0x64, 0xf3, 0x19, 0x8c, 0x4c, 0xe8, 0x32, 0xc2, 0x0c, 0x3f, 0xa0, 0x9c, 0xaa, 0x20, 0x29, 0x1b,
+	0x91, 0xa9, 0xe9, 0x63, 0xca, 0x5c, 0xca, 0xa0, 0x85, 0x18, 0x86, 0x51, 0xdf, 0xc2, 0x1c, 0xf5,
+	0xe1, 0x98, 0xda, 0x9e, 0xc4, 0x6a, 0xdb, 0x49, 0xdf, 0x65, 0x04, 0x46, 0xfd, 0xf8, 0x93, 0x34,
+	0x9a, 0x84, 0x12, 0x2a, 0x7e, 0x61, 0xfc, 0x97, 0x54, 0xdb, 0x84, 0x52, 0xe2, 0x60, 0x88, 0x7c,
+	0x1b, 0x22, 0xcf, 0xa3, 0x1c, 0x71, 0x9b, 0x7a, 0x89, 0xb0, 0x76, 0x73, 0xe9, 0xa7, 0x0f, 0xf9,
+	0xcc, 0xc7, 0x69, 0xfd, 0x56, 0x72, 0x4b, 0x9c, 0xac, 0xf0, 0x3d, 0x44, 0xde, 0x2c, 0x6d, 0x49,
+	0xfd, 0x43, 0xa9, 0x24, 0x0f, 0xb2, 0xd5, 0xfd, 0x0c, 0xb6, 0x87, 0x8c, 0xbc, 0xf6, 0x27, 0x88,
+	0xe3, 0x03, 0x14, 0x20, 0x97, 0x1d, 0x04, 0xd4, 0xa7, 0x0c, 0x39, 0x6a, 0x1b, 0x6c, 0xa2, 0x90,
+	0x4f, 0x69, 0x60, 0xf3, 0x59, 0x4b, 0xe9, 0x28, 0xbb, 0x9b, 0xa3, 0xac, 0xa0, 0x3e, 0x02, 0x97,
+	0xfd, 0x18, 0x7f, 0x18, 0x8a, 0xbb, 0xac, 0xb5, 0xd1, 0xa9, 0xef, 0x6e, 0x99, 0xd7, 0x8d, 0x6c,
+	0x2f, 0x86, 0x20, 0x1c, 0x5d, 0x12, 0x38, 0x29, 0xc1, 0x9e, 0x5c, 0xf9, 0x7a, 0x7a, 0xdc, 0xcb,
+	0x78, 0xba, 0x10, 0x34, 0x04, 0x4c, 0xbd, 0x06, 0xea, 0x47, 0x38, 0x15, 0x8a, 0x7f, 0xd5, 0x26,
+	0x68, 0x44, 0xc8, 0x09, 0x71, 0x6b, 0x43, 0xd4, 0xe4, 0xa1, 0xbb, 0x03, 0xee, 0x9c, 0xe1, 0x78,
+	0x84, 0x99, 0x4f, 0x3d, 0x86, 0xbb, 0x9f, 0x80, 0x3a, 0x64, 0xe4, 0x99, 0x1d, 0x4c, 0x02, 0xea,
+	0xaf, 0x39, 0xcf, 0x63, 0x70, 0xd1, 0x4f, 0x90, 0x42, 0x6f, 0xcb, 0xbc, 0x9d, 0x8d, 0xd2, 0x37,
+	0x72, 0x64, 0xa3, 0x25, 0xb8, 0x30, 0x50, 0x1b, 0x68, 0x45, 0xf1, 0xa5, 0xb5, 0x6f, 0x8a, 0x5c,
+	0xb8, 0x37, 0x45, 0x0e, 0x1f, 0x04, 0xf6, 0x84, 0xe0, 0x35, 0x0d, 0x3e, 0x2d, 0x18, 0xec, 0xac,
+	0x1a, 0x2c, 0x63, 0xac, 0x70, 0x99, 0x6c, 0xb1, 0xec, 0x52, 0x6a, 0xf5, 0xa7, 0x02, 0x76, 0x86,
+	0x8c, 0x3c, 0x17, 0x71, 0x91, 0x18, 0x64, 0x39, 0xf8, 0x15, 0x3d, 0xc2, 0xde, 0xba, 0x29, 0x79,
+	0x51, 0x30, 0xdd, 0x5b, 0x35, 0x5d, 0xcd, 0x5d, 0x61, 0x7f, 0x0f, 0xdc, 0x3f, 0xd7, 0x5a, 0x3a,
+	0x88, 0xf9, 0xbb, 0x0e, 0xea, 0x43, 0x46, 0xd4, 0x0f, 0xa0, 0x59, 0x1a, 0xf4, 0xbb, 0xab, 0x99,
+	0x3d, 0x23, 0x5b, 0xda, 0xde, 0x1a, 0xa0, 0xe5, 0xea, 0x6a, 0xea, 0x5b, 0x70, 0x35, 0x9f, 0x3f,
+	0x3d, 0xc7, 0x90, 0xeb, 0x6b, 0xf7, 0xaa, 0xfb, 0x2b, 0xe4, 0xf1, 0x20, 0x65, 0x01, 0x2a, 0x0c,
+	0x52, 0x02, 0x2a, 0x0e, 0x52, 0x95, 0x81, 0x9a, 0xfa, 0x5d, 0x01, 0xfa, 0x39, 0x11, 0xd8, 0xcf,
+	0x31, 0x56, 0xc3, 0xb5, 0x87, 0xff, 0x05, 0xcf, 0xac, 0x68, 0x8d, 0x2f, 0xa7, 0xc7, 0x3d, 0x65,
+	0xf0, 0xee, 0xd7, 0x5c, 0x57, 0x4e, 0xe6, 0xba, 0xf2, 0x77, 0xae, 0x2b, 0x3f, 0x16, 0x7a, 0xed,
+	0x64, 0xa1, 0xd7, 0xfe, 0x2c, 0xf4, 0xda, 0x9b, 0x01, 0xb1, 0xf9, 0x34, 0xb4, 0x8c, 0x31, 0x75,
+	0xe1, 0x4b, 0xa9, 0xb1, 0x2f, 0x79, 0xf3, 0x47, 0x97, 0x4e, 0x42, 0x07, 0xc3, 0x8f, 0x30, 0x7d,
+	0x4c, 0xc5, 0x4b, 0x0a, 0x23, 0xd3, 0xba, 0x20, 0xde, 0xc5, 0x07, 0xff, 0x02, 0x00, 0x00, 0xff,
+	0xff, 0xc2, 0xb5, 0x78, 0x7d, 0xf7, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -530,9 +534,9 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
 	UpdateParamsProposal(ctx context.Context, in *MsgUpdateParamsProposal, opts ...grpc.CallOption) (*MsgUpdateParamsProposalResponse, error)
-	IBCMetadataProposal(ctx context.Context, in *MsgIBCMetadataProposal, opts ...grpc.CallOption) (*MsgIBCMetadataProposalResponse, error)
 	AirdropProposal(ctx context.Context, in *MsgAirdropProposal, opts ...grpc.CallOption) (*MsgAirdropProposalResponse, error)
 	UnhaltBridgeProposal(ctx context.Context, in *MsgUnhaltBridgeProposal, opts ...grpc.CallOption) (*MsgUnhaltBridgeProposalResponse, error)
+	CosmosBridgeableTokensProposal(ctx context.Context, in *MsgCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgCosmosBridgeableTokensProposalResponse, error)
 }
 
 type msgClient struct {
@@ -546,15 +550,6 @@ func NewMsgClient(cc grpc1.ClientConn) MsgClient {
 func (c *msgClient) UpdateParamsProposal(ctx context.Context, in *MsgUpdateParamsProposal, opts ...grpc.CallOption) (*MsgUpdateParamsProposalResponse, error) {
 	out := new(MsgUpdateParamsProposalResponse)
 	err := c.cc.Invoke(ctx, "/gravity.v2.Msg/UpdateParamsProposal", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) IBCMetadataProposal(ctx context.Context, in *MsgIBCMetadataProposal, opts ...grpc.CallOption) (*MsgIBCMetadataProposalResponse, error) {
-	out := new(MsgIBCMetadataProposalResponse)
-	err := c.cc.Invoke(ctx, "/gravity.v2.Msg/IBCMetadataProposal", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -579,12 +574,21 @@ func (c *msgClient) UnhaltBridgeProposal(ctx context.Context, in *MsgUnhaltBridg
 	return out, nil
 }
 
+func (c *msgClient) CosmosBridgeableTokensProposal(ctx context.Context, in *MsgCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgCosmosBridgeableTokensProposalResponse, error) {
+	out := new(MsgCosmosBridgeableTokensProposalResponse)
+	err := c.cc.Invoke(ctx, "/gravity.v2.Msg/CosmosBridgeableTokensProposal", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	UpdateParamsProposal(context.Context, *MsgUpdateParamsProposal) (*MsgUpdateParamsProposalResponse, error)
-	IBCMetadataProposal(context.Context, *MsgIBCMetadataProposal) (*MsgIBCMetadataProposalResponse, error)
 	AirdropProposal(context.Context, *MsgAirdropProposal) (*MsgAirdropProposalResponse, error)
 	UnhaltBridgeProposal(context.Context, *MsgUnhaltBridgeProposal) (*MsgUnhaltBridgeProposalResponse, error)
+	CosmosBridgeableTokensProposal(context.Context, *MsgCosmosBridgeableTokensProposal) (*MsgCosmosBridgeableTokensProposalResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -594,14 +598,14 @@ type UnimplementedMsgServer struct {
 func (*UnimplementedMsgServer) UpdateParamsProposal(ctx context.Context, req *MsgUpdateParamsProposal) (*MsgUpdateParamsProposalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParamsProposal not implemented")
 }
-func (*UnimplementedMsgServer) IBCMetadataProposal(ctx context.Context, req *MsgIBCMetadataProposal) (*MsgIBCMetadataProposalResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IBCMetadataProposal not implemented")
-}
 func (*UnimplementedMsgServer) AirdropProposal(ctx context.Context, req *MsgAirdropProposal) (*MsgAirdropProposalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AirdropProposal not implemented")
 }
 func (*UnimplementedMsgServer) UnhaltBridgeProposal(ctx context.Context, req *MsgUnhaltBridgeProposal) (*MsgUnhaltBridgeProposalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnhaltBridgeProposal not implemented")
+}
+func (*UnimplementedMsgServer) CosmosBridgeableTokensProposal(ctx context.Context, req *MsgCosmosBridgeableTokensProposal) (*MsgCosmosBridgeableTokensProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CosmosBridgeableTokensProposal not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -622,24 +626,6 @@ func _Msg_UpdateParamsProposal_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).UpdateParamsProposal(ctx, req.(*MsgUpdateParamsProposal))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_IBCMetadataProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgIBCMetadataProposal)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).IBCMetadataProposal(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gravity.v2.Msg/IBCMetadataProposal",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).IBCMetadataProposal(ctx, req.(*MsgIBCMetadataProposal))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -680,6 +666,24 @@ func _Msg_UnhaltBridgeProposal_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CosmosBridgeableTokensProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCosmosBridgeableTokensProposal)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CosmosBridgeableTokensProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gravity.v2.Msg/CosmosBridgeableTokensProposal",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CosmosBridgeableTokensProposal(ctx, req.(*MsgCosmosBridgeableTokensProposal))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gravity.v2.Msg",
 	HandlerType: (*MsgServer)(nil),
@@ -689,16 +693,16 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_UpdateParamsProposal_Handler,
 		},
 		{
-			MethodName: "IBCMetadataProposal",
-			Handler:    _Msg_IBCMetadataProposal_Handler,
-		},
-		{
 			MethodName: "AirdropProposal",
 			Handler:    _Msg_AirdropProposal_Handler,
 		},
 		{
 			MethodName: "UnhaltBridgeProposal",
 			Handler:    _Msg_UnhaltBridgeProposal_Handler,
+		},
+		{
+			MethodName: "CosmosBridgeableTokensProposal",
+			Handler:    _Msg_CosmosBridgeableTokensProposal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -802,71 +806,6 @@ func (m *MsgUpdateParamsProposalResponse) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *MsgUpdateParamsProposalResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgIBCMetadataProposal) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgIBCMetadataProposal) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgIBCMetadataProposal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Proposal != nil {
-		{
-			size, err := m.Proposal.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintMsgs(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Authority) > 0 {
-		i -= len(m.Authority)
-		copy(dAtA[i:], m.Authority)
-		i = encodeVarintMsgs(dAtA, i, uint64(len(m.Authority)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgIBCMetadataProposalResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgIBCMetadataProposalResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgIBCMetadataProposalResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1004,6 +943,71 @@ func (m *MsgUnhaltBridgeProposalResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgCosmosBridgeableTokensProposal) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCosmosBridgeableTokensProposal) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCosmosBridgeableTokensProposal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Proposal != nil {
+		{
+			size, err := m.Proposal.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMsgs(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintMsgs(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgCosmosBridgeableTokensProposalResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCosmosBridgeableTokensProposalResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCosmosBridgeableTokensProposalResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintMsgs(dAtA []byte, offset int, v uint64) int {
 	offset -= sovMsgs(v)
 	base := offset
@@ -1060,32 +1064,6 @@ func (m *MsgUpdateParamsProposalResponse) Size() (n int) {
 	return n
 }
 
-func (m *MsgIBCMetadataProposal) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Authority)
-	if l > 0 {
-		n += 1 + l + sovMsgs(uint64(l))
-	}
-	if m.Proposal != nil {
-		l = m.Proposal.Size()
-		n += 1 + l + sovMsgs(uint64(l))
-	}
-	return n
-}
-
-func (m *MsgIBCMetadataProposalResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
 func (m *MsgAirdropProposal) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1130,6 +1108,32 @@ func (m *MsgUnhaltBridgeProposal) Size() (n int) {
 }
 
 func (m *MsgUnhaltBridgeProposalResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgCosmosBridgeableTokensProposal) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovMsgs(uint64(l))
+	}
+	if m.Proposal != nil {
+		l = m.Proposal.Size()
+		n += 1 + l + sovMsgs(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgCosmosBridgeableTokensProposalResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1401,174 +1405,6 @@ func (m *MsgUpdateParamsProposalResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MsgUpdateParamsProposalResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipMsgs(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthMsgs
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgIBCMetadataProposal) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowMsgs
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgIBCMetadataProposal: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgIBCMetadataProposal: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMsgs
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthMsgs
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthMsgs
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Authority = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Proposal", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMsgs
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthMsgs
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthMsgs
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Proposal == nil {
-				m.Proposal = &types.IBCMetadataProposal{}
-			}
-			if err := m.Proposal.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipMsgs(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthMsgs
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgIBCMetadataProposalResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowMsgs
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgIBCMetadataProposalResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgIBCMetadataProposalResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -1905,6 +1741,174 @@ func (m *MsgUnhaltBridgeProposalResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MsgUnhaltBridgeProposalResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMsgs(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMsgs
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCosmosBridgeableTokensProposal) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMsgs
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCosmosBridgeableTokensProposal: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCosmosBridgeableTokensProposal: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMsgs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMsgs
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMsgs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Proposal", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMsgs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMsgs
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMsgs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Proposal == nil {
+				m.Proposal = &types.CosmosBridgeableTokensProposal{}
+			}
+			if err := m.Proposal.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMsgs(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMsgs
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCosmosBridgeableTokensProposalResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMsgs
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCosmosBridgeableTokensProposalResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCosmosBridgeableTokensProposalResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

@@ -23,7 +23,6 @@ use crate::ethereum_keys::ethereum_keys_test;
 use crate::feegrant::feegrant_test;
 use crate::happy_path::happy_path_test;
 use crate::ibc_auto_forward::ibc_auto_forward_test;
-use crate::ibc_metadata::ibc_metadata_proposal_test;
 use crate::ica_host::ica_host_happy_path;
 use crate::inflation_knockdown::inflation_knockdown_test;
 use crate::invalid_events::invalid_events;
@@ -76,7 +75,6 @@ mod feegrant;
 mod happy_path;
 mod happy_path_v2;
 mod ibc_auto_forward;
-mod ibc_metadata;
 mod ica_host;
 mod inflation_knockdown;
 mod invalid_events;
@@ -304,7 +302,6 @@ pub async fn main() {
     // AIRDROP_PROPOSAL tests the airdrop proposal by creating and executing an airdrop
     // SIGNATURE_SLASHING tests that validators are not improperly slashed when submitting ethereum signatures
     // SLASHING_DELEGATION tests delegating and claiming rewards from a validator that has been slashed by gravity
-    // IBC_METADATA tests the creation of an IBC Metadata proposal to allow the deployment of an ERC20 representation
     // ERC721_HAPPY_PATH tests ERC721 extension for Gravity.sol, solidity only
     // UPGRADE_PART_1 handles creating a chain upgrade proposal and passing it
     // UPGRADE_PART_2 upgrades the chain binaries and starts the upgraded chain after being halted in part 1
@@ -509,17 +506,6 @@ pub async fn main() {
             info!("Starting Slashing Delegation test");
             slashing_delegation_test(&web30, grpc_client, &gravity_contact, keys, gravity_address)
                 .await;
-            return;
-        } else if test_type == "IBC_METADATA" {
-            info!("Starting IBC metadata proposal test");
-            ibc_metadata_proposal_test(
-                gravity_address,
-                keys,
-                grpc_client,
-                &gravity_contact,
-                &web30,
-            )
-            .await;
             return;
         } else if test_type == "DENOM_VALIDATION" {
             info!("Starting denom validation integration test");

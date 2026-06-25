@@ -25,6 +25,8 @@ const args = commandLineArgs([
   { name: "contractERC20A", type: String },
   { name: "contractERC20B", type: String },
   { name: "contractERC20C", type: String },
+  // test ERC721 token contract, only deployed if test mode is true
+  { name: "contractERC721A", type: String },
   // test mode, if enabled this script deploys three ERC20 contracts for testing
   { name: "test-mode", type: String },
   // if true, the deployer will use the old REST methods to get the valset and gravity ID
@@ -164,6 +166,19 @@ async function deploy() {
     await testERC202.deployed();
     const erc20TestAddress2 = testERC202.address;
     console.log("ERC20 deployed at Address - ", erc20TestAddress2);
+
+    var erc721_a_path: string = args["contractERC721A"]
+    if (!fs.existsSync(erc721_a_path)) {
+      console.log("Test mode was enabled but the ERC721 test contract can't be found!")
+      exit(1)
+    }
+
+    const { abi: abiERC721A, bytecode: bytecodeERC721A } = getContractArtifacts(erc721_a_path);
+    const erc721FactoryA = new ethers.ContractFactory(abiERC721A, bytecodeERC721A, wallet);
+    const testERC721 = (await erc721FactoryA.deploy(overrides)) as TestERC721A;
+    await testERC721.deployed();
+    const erc721TestAddress = testERC721.address;
+    console.log("ERC721 deployed at Address - ", erc721TestAddress);
   }
   var gravityIdString: string;
   if (args["use-old-rest-methods"] == "True" || args["use-old-rest-methods"] == "true") {

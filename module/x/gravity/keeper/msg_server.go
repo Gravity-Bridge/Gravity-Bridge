@@ -145,6 +145,16 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, errorsmod.Wrap(err, "invalid chain fee denom")
 	}
 
+	isCosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "invalid denom")
+	}
+	if isCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, msg.Amount.Denom)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToEth")
+		}
+	}
 	sender, err := sdk.AccAddressFromBech32(msg.Sender)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid sender")
@@ -160,8 +170,11 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, errorsmod.Wrap(err, "invalid denom")
 	}
 
-	if err := k.EnsureCosmosBridgeable(ctx, msg.Amount.Denom); err != nil {
-		return nil, err
+	if isCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, msg.Amount.Denom)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToEth")
+		}
 	}
 
 	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
@@ -272,13 +285,16 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 
 	// Check if the denom is a gravity coin, if not, check if there is a deployed ERC20 representing it.
 	// If not, error out
-	_, tokenContract, err := k.DenomToERC20Lookup(ctx, msg.Denom)
+	isCosmosOriginated, tokenContract, err := k.DenomToERC20Lookup(ctx, msg.Denom)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not look up erc 20 denominator")
 	}
 
-	if err := k.EnsureCosmosBridgeable(ctx, msg.Denom); err != nil {
-		return nil, err
+	if isCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, msg.Denom)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "token not whitelisted for RequestBatch")
+		}
 	}
 
 	batch, err := k.BuildOutgoingTXBatch(ctx, *tokenContract, OutgoingTxBatchSize)
@@ -305,6 +321,14 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 	contract, err := types.NewEthAddress(msg.TokenContract)
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
+	}
+
+	isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
+	if isCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, denom)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "token not whitelisted for ConfirmBatch")
+		}
 	}
 
 	// fetch the outgoing batch given the nonce
@@ -482,6 +506,19 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not check orchstrator validator inset")
 	}
+
+	contract, err := types.NewEthAddress(msg.TokenContract)
+	if err != nil {
+		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
+	}
+	isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
+	if isCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, denom)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToCosmos")
+		}
+	}
+
 	any, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not check Any value")
@@ -528,6 +565,17 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 	*/
 	additionalPatchChecks(ctx, k, msg)
 
+	contract, err := types.NewEthAddress(msg.TokenContract)
+	if err != nil {
+		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
+	}
+	isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
+	if isCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, denom)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToEth")
+		}
+	}
 	msgAny, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
 		panic(errorsmod.Wrap(err, "Could not check Any value"))
@@ -574,6 +622,19 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not check orchestrator validator in set")
 	}
+
+	contract, err := types.NewEthAddress(msg.TokenContract)
+	if err != nil {
+		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
+	}
+	isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
+	if isCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, denom)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "token not whitelisted for DeployErc20")
+		}
+	}
+
 	any, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not check Any value")
@@ -791,19 +852,6 @@ func (k msgServer) UpdateParamsProposal(c context.Context, msg *typesv2.MsgUpdat
 				return nil, errorsmod.Wrapf(sdkerrors.ErrJSONUnmarshal, "invalid EthereumBlacklist: %s", err.Error())
 			}
 			updatedParams.EthereumBlacklist = blacklist
-		case types.ParamCosmosBridgeableTokens:
-			bridgeableTokens := []string{}
-			err := json.Unmarshal([]byte(param.Value), &bridgeableTokens)
-			if err != nil {
-				k.Logger(ctx).Error("invalid CosmosBridgeableTokens", "error", err, "value", param.Value)
-				return nil, errorsmod.Wrapf(sdkerrors.ErrJSONUnmarshal, "invalid CosmosBridgeableTokens: %s", err.Error())
-			}
-			for _, token := range bridgeableTokens {
-				if err := types.ValidateStrictDenom(token); err != nil {
-					return nil, errorsmod.Wrapf(err, "invalid cosmos denom in CosmosBridgeableTokens: %s", token)
-				}
-			}
-			updatedParams.CosmosBridgeableTokens = bridgeableTokens
 		case types.ParamMinChainFeeBasisPoints:
 			minChainFeeBasisPoints, err := strconv.ParseUint(param.Value, 10, 64)
 			if err != nil {
@@ -846,22 +894,6 @@ func (k msgServer) AirdropProposal(c context.Context, msg *typesv2.MsgAirdropPro
 	return &typesv2.MsgAirdropProposalResponse{}, nil
 }
 
-// IBCMetadataProposal executes an ibc metadata proposal using the x/gov v1 proposal interface
-func (k msgServer) IBCMetadataProposal(c context.Context, msg *typesv2.MsgIBCMetadataProposal) (*typesv2.MsgIBCMetadataProposalResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	if k.GetAuthority() != msg.Authority {
-		return nil, errorsmod.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
-	}
-
-	err := k.HandleIBCMetadataProposal(ctx, msg.Proposal)
-	if err != nil {
-		return nil, err
-	}
-
-	return &typesv2.MsgIBCMetadataProposalResponse{}, nil
-
-}
-
 // UnhaltBridgeProposal executes an unhalt bridge proposal using the x/gov v1 proposal interface
 func (k msgServer) UnhaltBridgeProposal(c context.Context, msg *typesv2.MsgUnhaltBridgeProposal) (*typesv2.MsgUnhaltBridgeProposalResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -876,4 +908,19 @@ func (k msgServer) UnhaltBridgeProposal(c context.Context, msg *typesv2.MsgUnhal
 
 	return &typesv2.MsgUnhaltBridgeProposalResponse{}, nil
 
+}
+
+// CosmosBridgeableTokensProposal executes a cosmos bridgeable tokens proposal using the x/gov v1 proposal interface
+func (k msgServer) CosmosBridgeableTokensProposal(c context.Context, msg *typesv2.MsgCosmosBridgeableTokensProposal) (*typesv2.MsgCosmosBridgeableTokensProposalResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	if k.GetAuthority() != msg.Authority {
+		return nil, errorsmod.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+	}
+
+	err := k.HandleCosmosBridgeableTokensProposal(ctx, msg.Proposal)
+	if err != nil {
+		return nil, err
+	}
+
+	return &typesv2.MsgCosmosBridgeableTokensProposalResponse{}, nil
 }

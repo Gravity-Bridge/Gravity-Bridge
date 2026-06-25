@@ -11,6 +11,7 @@ use crate::{MINER_ADDRESS, OPERATION_TIMEOUT};
 use actix::System;
 use clarity::PrivateKey as EthPrivateKey;
 use clarity::{Address as EthAddress, Uint256};
+use cosmos_gravity::proposals::submit_cosmos_bridgeable_tokens_proposal;
 use cosmos_gravity::proposals::submit_legacy_upgrade_proposal;
 use cosmos_gravity::proposals::submit_parameter_change_proposal;
 use cosmos_gravity::query::get_gravity_params;
@@ -36,6 +37,7 @@ use gravity_proto::cosmos_sdk_proto::cosmos::staking::v1beta1::{
 };
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::{Plan, SoftwareUpgradeProposal};
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_proto::gravity::v1::CosmosBridgeableTokensOperation;
 use gravity_proto::gravity::v1::MsgSendToCosmosClaim;
 use gravity_proto::gravity::v2::MsgUpdateParamsProposal as GravityMsgUpdateParamsProposal;
 use gravity_proto::gravity::v2::Param as GravityParam;
@@ -575,7 +577,6 @@ const PARAM_BRIDGE_ACTIVE: &str = "BridgeActive";
 const PARAM_ETHEREUM_BLACKLIST: &str = "EthereumBlacklist";
 const PARAM_MIN_CHAIN_FEE_BASIS_POINTS: &str = "MinChainFeeBasisPoints";
 const PARAM_CHAIN_FEE_AUCTION_POOL_FRACTION: &str = "ChainFeeAuctionPoolFraction";
-const PARAM_COSMOS_BRIDGEABLE_TOKENS: &str = "CosmosBridgeableTokens";
 
 #[derive(Debug, Default, Clone)]
 pub struct GravityProposalParams {
@@ -599,7 +600,6 @@ pub struct GravityProposalParams {
     pub ethereum_blacklist: Option<Vec<String>>,
     pub min_chain_fee_basis_points: Option<String>,
     pub chain_fee_auction_pool_fraction: Option<String>,
-    pub cosmos_bridgeable_tokens: Option<Vec<String>>,
 }
 
 pub async fn create_gravity_params_proposal(
@@ -628,7 +628,6 @@ pub async fn create_gravity_params_proposal(
         ethereum_blacklist,
         min_chain_fee_basis_points,
         chain_fee_auction_pool_fraction,
-        cosmos_bridgeable_tokens,
     }: GravityProposalParams,
 ) {
     let mut param_updates = vec![];
@@ -753,12 +752,6 @@ pub async fn create_gravity_params_proposal(
             value: cfapf,
         });
     }
-    if let Some(cbt) = cosmos_bridgeable_tokens {
-        param_updates.push(GravityParam {
-            key: PARAM_COSMOS_BRIDGEABLE_TOKENS.to_string(),
-            value: serde_json::to_string(&cbt).unwrap(),
-        });
-    }
 
     let proposal = GravityMsgUpdateParamsProposal {
         authority: deep_space::address::get_module_account_address("gov", Some(&*ADDRESS_PREFIX))
@@ -782,21 +775,46 @@ pub async fn create_gravity_params_proposal(
         .await;
 }
 
-/// Sets the CosmosBridgeableTokens gravity param via governance and waits for the proposal to execute.
+/// Submits a CosmosBridgeableTokensProposal to SET (add/overwrite) the given metadatas in the
+/// CosmosBridgeableTokens allowlist, then votes yes with all validators and waits for execution.
 pub async fn set_cosmos_bridgeable_tokens(
     contact: &Contact,
     keys: &[ValidatorKeys],
-    denoms: Vec<String>,
+    metadatas: Vec<Metadata>,
 ) {
-    create_gravity_params_proposal(
-        contact,
-        keys[0].validator_key,
+    let _ = submit_cosmos_bridgeable_tokens_proposal(
+        "Set CosmosBridgeableTokens".to_string(),
+        "Set CosmosBridgeableTokens".to_string(),
+        metadatas,
+        CosmosBridgeableTokensOperation::Set,
         get_deposit(None),
         get_fee(None),
-        GravityProposalParams {
-            cosmos_bridgeable_tokens: Some(denoms),
-            ..Default::default()
-        },
+        contact,
+        keys[0].validator_key,
+        Some(OPERATION_TIMEOUT),
+    )
+    .await;
+    vote_yes_on_proposals(contact, keys, None).await;
+    wait_for_proposals_to_execute(contact).await;
+}
+
+/// Submits a CosmosBridgeableTokensProposal to REMOVE the given metadatas from the
+/// CosmosBridgeableTokens allowlist, then votes yes with all validators and waits for execution.
+pub async fn remove_cosmos_bridgeable_tokens(
+    contact: &Contact,
+    keys: &[ValidatorKeys],
+    metadatas: Vec<Metadata>,
+) {
+    let _ = submit_cosmos_bridgeable_tokens_proposal(
+        "Remove CosmosBridgeableTokens".to_string(),
+        "Remove CosmosBridgeableTokens".to_string(),
+        metadatas,
+        CosmosBridgeableTokensOperation::Remove,
+        get_deposit(None),
+        get_fee(None),
+        contact,
+        keys[0].validator_key,
+        Some(OPERATION_TIMEOUT),
     )
     .await;
     vote_yes_on_proposals(contact, keys, None).await;

@@ -45,6 +45,7 @@ const (
 	Query_GetDelegateKeyByOrchestrator_FullMethodName   = "/gravity.v1.Query/GetDelegateKeyByOrchestrator"
 	Query_GetPendingSendToEth_FullMethodName            = "/gravity.v1.Query/GetPendingSendToEth"
 	Query_GetPendingIbcAutoForwards_FullMethodName      = "/gravity.v1.Query/GetPendingIbcAutoForwards"
+	Query_CosmosBridgeableTokens_FullMethodName         = "/gravity.v1.Query/CosmosBridgeableTokens"
 )
 
 // QueryClient is the client API for Query service.
@@ -78,6 +79,7 @@ type QueryClient interface {
 	GetDelegateKeyByOrchestrator(ctx context.Context, in *QueryDelegateKeysByOrchestratorAddress, opts ...grpc.CallOption) (*QueryDelegateKeysByOrchestratorAddressResponse, error)
 	GetPendingSendToEth(ctx context.Context, in *QueryPendingSendToEth, opts ...grpc.CallOption) (*QueryPendingSendToEthResponse, error)
 	GetPendingIbcAutoForwards(ctx context.Context, in *QueryPendingIbcAutoForwards, opts ...grpc.CallOption) (*QueryPendingIbcAutoForwardsResponse, error)
+	CosmosBridgeableTokens(ctx context.Context, in *QueryCosmosBridgeableTokensRequest, opts ...grpc.CallOption) (*QueryCosmosBridgeableTokensResponse, error)
 }
 
 type queryClient struct {
@@ -322,6 +324,15 @@ func (c *queryClient) GetPendingIbcAutoForwards(ctx context.Context, in *QueryPe
 	return out, nil
 }
 
+func (c *queryClient) CosmosBridgeableTokens(ctx context.Context, in *QueryCosmosBridgeableTokensRequest, opts ...grpc.CallOption) (*QueryCosmosBridgeableTokensResponse, error) {
+	out := new(QueryCosmosBridgeableTokensResponse)
+	err := c.cc.Invoke(ctx, Query_CosmosBridgeableTokens_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
@@ -353,6 +364,7 @@ type QueryServer interface {
 	GetDelegateKeyByOrchestrator(context.Context, *QueryDelegateKeysByOrchestratorAddress) (*QueryDelegateKeysByOrchestratorAddressResponse, error)
 	GetPendingSendToEth(context.Context, *QueryPendingSendToEth) (*QueryPendingSendToEthResponse, error)
 	GetPendingIbcAutoForwards(context.Context, *QueryPendingIbcAutoForwards) (*QueryPendingIbcAutoForwardsResponse, error)
+	CosmosBridgeableTokens(context.Context, *QueryCosmosBridgeableTokensRequest) (*QueryCosmosBridgeableTokensResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -437,6 +449,9 @@ func (UnimplementedQueryServer) GetPendingSendToEth(context.Context, *QueryPendi
 }
 func (UnimplementedQueryServer) GetPendingIbcAutoForwards(context.Context, *QueryPendingIbcAutoForwards) (*QueryPendingIbcAutoForwardsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPendingIbcAutoForwards not implemented")
+}
+func (UnimplementedQueryServer) CosmosBridgeableTokens(context.Context, *QueryCosmosBridgeableTokensRequest) (*QueryCosmosBridgeableTokensResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CosmosBridgeableTokens not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -919,6 +934,24 @@ func _Query_GetPendingIbcAutoForwards_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_CosmosBridgeableTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryCosmosBridgeableTokensRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).CosmosBridgeableTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_CosmosBridgeableTokens_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).CosmosBridgeableTokens(ctx, req.(*QueryCosmosBridgeableTokensRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1029,6 +1062,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPendingIbcAutoForwards",
 			Handler:    _Query_GetPendingIbcAutoForwards_Handler,
+		},
+		{
+			MethodName: "CosmosBridgeableTokens",
+			Handler:    _Query_CosmosBridgeableTokens_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

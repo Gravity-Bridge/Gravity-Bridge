@@ -7,6 +7,7 @@ import "gravity/v1/msgs.proto";
 import "gravity/v1/batch.proto";
 import "gravity/v1/attestation.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/bank/v1beta1/bank.proto";
 
 option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types";
 
@@ -117,6 +118,14 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 // Specifies what fraction of the SendToEth `chain_fee` amount should go to the
 // auction pool. e.g. "0.5" gives a 50% auction pool / staker split while "0.9"
 // would cause 90% of the fee to go to the pool
+//
+// cosmos_bridgeable_tokens
+//
+// A whitelist of Cosmos-originated token denoms that are permitted to be
+// sent from Cosmos to Ethereum. This list does not affect Ethereum-originated assets
+// (with the "gravity" prefix), which are permitted regardless.
+// Tokens not on this list will be blocked from SendToEth and acceptance in
+// ERC20 deploy claims.
 message Params {
   option (gogoproto.stringer) = false;
 
@@ -157,13 +166,6 @@ message Params {
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
-  // cosmos_bridgeable_tokens
-  //
-  // A whitelist of Cosmos-originated token denoms that are permitted to be
-  // sent from the Gravity Bridge chain to Ethereum. Ethereum-originated assets
-  // (with the "gravity" prefix) are permitted regardless of this list
-  // Tokens not on this list will be blocked from SendToEth and acceptance in ERC20 deploy claims
-  repeated string cosmos_bridgeable_tokens = 22;
 }
 
 // GenesisState struct, containing all persistant data required by the Gravity
@@ -192,6 +194,8 @@ message GenesisState {
   // exchangeable for their original ethereum assets, and only the new gravity2
   // vouchers will be redeemable for ethereum tokens.
   repeated string remapped_erc20s = 14;
+  repeated cosmos.bank.v1beta1.Metadata cosmos_bridgeable_tokens = 15
+      [ (gogoproto.nullable) = false ];
 }
 
 // GravityCounters contains the many noces and counters required to maintain the

@@ -7,6 +7,7 @@ import "gravity/v1/msgs.proto";
 import "gravity/v1/pool.proto";
 import "gravity/v1/batch.proto";
 import "gravity/v1/attestation.proto";
+import "cosmos/bank/v1beta1/bank.proto";
 import "google/api/annotations.proto";
 import "gogoproto/gogo.proto";
 
@@ -126,6 +127,11 @@ service Query {
       returns (QueryPendingIbcAutoForwardsResponse) {
     option (google.api.http).get =
         "/gravity/v1beta/query_pending_ibc_auto_forwards";
+  }
+  rpc CosmosBridgeableTokens(QueryCosmosBridgeableTokensRequest)
+      returns (QueryCosmosBridgeableTokensResponse) {
+    option (google.api.http).get =
+        "/gravity/v1beta/cosmos_bridgeable_tokens";
   }
 }
 
@@ -320,4 +326,13 @@ message QueryPendingIbcAutoForwards {
 
 message QueryPendingIbcAutoForwardsResponse {
   repeated PendingIbcAutoForward pending_ibc_auto_forwards = 1;
+}
+
+// QueryCosmosBridgeableTokensRequest requests the full list of the current
+// CosmosBridgeableTokens allowlist entries.
+message QueryCosmosBridgeableTokensRequest {}
+
+message QueryCosmosBridgeableTokensResponse {
+  repeated cosmos.bank.v1beta1.Metadata cosmos_bridgeable_tokens = 1
+      [ (gogoproto.nullable) = false ];
 }

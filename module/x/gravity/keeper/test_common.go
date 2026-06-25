@@ -254,7 +254,6 @@ var (
 		EthereumBlacklist:            []string{},
 		MinChainFeeBasisPoints:       0,
 		ChainFeeAuctionPoolFraction:  sdkmath.LegacyNewDecWithPrec(50, 2), // 50%
-		CosmosBridgeableTokens:       []string{},
 	}
 )
 
@@ -824,4 +823,18 @@ func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey ccrypto.PubKey, am
 func NewTestMsgUnDelegateValidator(address sdk.ValAddress, amt sdkmath.Int) *stakingtypes.MsgUndelegate {
 	msg := stakingtypes.NewMsgUndelegate(sdk.AccAddress(address).String(), address.String(), sdk.NewCoin("stake", amt))
 	return msg
+}
+
+// minMeta builds a minimal valid banktypes.Metadata for a given denom.
+// Useful across keeper tests that need to populate CosmosBridgeableTokens.
+func minMeta(denom string) banktypes.Metadata {
+	// nolint: exhaustruct
+	return banktypes.Metadata{
+		Name:    denom,
+		Symbol:  denom,
+		Base:    denom,
+		Display: denom,
+		// nolint: exhaustruct
+		DenomUnits: []*banktypes.DenomUnit{{Denom: denom, Exponent: 0}},
+	}
 }

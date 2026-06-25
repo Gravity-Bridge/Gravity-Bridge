@@ -126,7 +126,7 @@ pub async fn ica_host_happy_path(
 
     let footoken = footoken_metadata(gravity_contact).await;
     // Allow the cosmos-originated footoken to cross the bridge before deploying its ERC20
-    set_cosmos_bridgeable_tokens(gravity_contact, &keys, vec![footoken.base.clone()]).await;
+    set_cosmos_bridgeable_tokens(gravity_contact, &keys, vec![footoken.clone()]).await;
     let footoken_deployed = grpc_client
         .denom_to_erc20(QueryDenomToErc20Request {
             denom: footoken.base.clone(),

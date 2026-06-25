@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	gogoproto "github.com/gogo/protobuf/proto"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/log"
@@ -13,6 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
@@ -31,6 +33,7 @@ import (
 var _ types.StakingKeeper = (*stakingkeeper.Keeper)(nil)
 var _ types.SlashingKeeper = (*slashingkeeper.Keeper)(nil)
 var _ types.DistributionKeeper = (*distrkeeper.Keeper)(nil)
+var _ types.BankKeeper = (*bankkeeper.BaseKeeper)(nil)
 
 // Keeper maintains the link to storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
@@ -123,6 +126,37 @@ func NewKeeper(
 ////////////////////////
 /////// HELPERS ////////
 ////////////////////////
+
+// metadataEqual returns true if a and b are proto-equal.
+func metadataEqual(a, b banktypes.Metadata) bool {
+	return gogoproto.Equal(&a, &b)
+}
+
+// assertMetadataWhitelisted checks the metadata for the given denom and ensures it is in the CosmosBridgeableTokens whitelist
+// AND that it has not deviated from the bank DenomMetaData.
+// Returns the metadata if it is whitelisted and valid, or an error if not.
+func (k Keeper) assertMetadataWhitelisted(ctx sdk.Context, denom string) (banktypes.Metadata, error) {
+	metadata, allowed := k.GetCosmosBridgeableToken(ctx, denom)
+	if !allowed {
+		return banktypes.Metadata{}, errorsmod.Wrapf(
+			types.ErrInvalid,
+			"denom is not in the CosmosBridgeableTokens whitelist",
+		)
+	}
+
+	// Check the approved metadata against the bank module's version in case it has changed out from under us
+	// It's unclear what the problem could be in this situation, but it is anomalous and therefore we do not allow it
+	bankMetadata, bankFound := k.bankKeeper.GetDenomMetaData(ctx, denom)
+	if bankFound && !metadataEqual(metadata, bankMetadata) {
+		return banktypes.Metadata{}, errorsmod.Wrapf(
+			types.ErrInvalid,
+			"SECURITY VIOLATION: bank metadata for %s does not match governance-approved CosmosBridgeableTokens entry",
+			denom,
+		)
+	}
+
+	return metadata, nil
+}
 
 // SendToCommunityPool handles incorrect SendToCosmos calls to the community pool, since the calls
 // have already been made on Ethereum there's nothing we can do to reverse them, and we should at least

@@ -146,50 +146,55 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
     // deployments more straightforward.
 
     // both files are just in the PWD
-    const A: [&str; 6] = [
+    const A: [&str; 7] = [
         "contract-deployer",
         "Gravity.json",
         "GravityERC721.json",
         "TestERC20A.json",
         "TestERC20B.json",
         "TestERC20C.json",
+        "TestERC721A.json",
     ];
     // files are placed in a root /solidity/ folder
-    const B: [&str; 6] = [
+    const B: [&str; 7] = [
         "/solidity/contract-deployer",
         "/solidity/Gravity.json",
         "/solidity/GravityERC721.json",
         "/solidity/TestERC20A.json",
         "/solidity/TestERC20B.json",
         "/solidity/TestERC20C.json",
+        "/solidity/TestERC721A.json",
     ];
     // the default unmoved locations for the Gravity repo
-    const C: [&str; 7] = [
+    const C: [&str; 8] = [
         "/gravity/solidity/contract-deployer.ts",
         "/gravity/solidity/artifacts/contracts/Gravity.sol/Gravity.json",
         "/gravity/solidity/artifacts/contracts/GravityERC721.sol/GravityERC721.json",
         "/gravity/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json",
         "/gravity/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json",
         "/gravity/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
+        "/gravity/solidity/artifacts/contracts/TestERC721A.sol/TestERC721A.json",
         "/gravity/solidity/",
     ];
     // github actions locations
-    const D: [&str; 7] = [
+    const D: [&str; 8] = [
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/contract-deployer.ts",
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/Gravity.sol/Gravity.json",
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/GravityERC721.sol/GravityERC721.json",
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json",
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json",
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
+        "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/artifacts/contracts/TestERC721A.sol/TestERC721A.json",
         "/home/runner/work/Gravity-Bridge/Gravity-Bridge/solidity/",
     ];
-    const E: [&str; 7] = [
+    const E: [&str; 8] = [
         "/home/runner/work/gravity-private/gravity-private/solidity/contract-deployer.ts",
         "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/Gravity.sol/Gravity.json",
         "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/GravityERC721.sol/GravityERC721.json",
         "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC20A.sol/TestERC20A.json",
         "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC20B.sol/TestERC20B.json",
         "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC20C.sol/TestERC20C.json",
+        "/home/runner/work/gravity-private/gravity-private/solidity/artifacts/contracts/TestERC721A.sol/TestERC721A.json",
         "/home/runner/work/gravity-private/gravity-private/solidity/",
     ];
     if upgrade_testing {
@@ -207,6 +212,7 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
                 &format!("--contractERC20A={}", paths[3]),
                 &format!("--contractERC20B={}", paths[4]),
                 &format!("--contractERC20C={}", paths[5]),
+                &format!("--contractERC721A={}", paths[6]),
                 "--test-mode=true",
                 "--use-old-rest-methods=false",
             ])
@@ -225,10 +231,11 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
                 &format!("--contractERC20A={}", C[3]),
                 &format!("--contractERC20B={}", C[4]),
                 &format!("--contractERC20C={}", C[5]),
+                &format!("--contractERC721A={}", C[6]),
                 "--test-mode=true",
                 "--use-old-rest-methods=false",
             ])
-            .current_dir(C[6])
+            .current_dir(C[7])
             .output()
             .expect("Failed to deploy contracts!")
     } else if all_paths_exist(&D) {
@@ -244,10 +251,11 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
                 &format!("--contractERC20A={}", D[3]),
                 &format!("--contractERC20B={}", D[4]),
                 &format!("--contractERC20C={}", D[5]),
+                &format!("--contractERC721A={}", D[6]),
                 "--test-mode=true",
                 "--use-old-rest-methods=false",
             ])
-            .current_dir(D[6])
+            .current_dir(D[7])
             .output()
             .expect("Failed to deploy contracts!")
     } else if all_paths_exist(&E) {
@@ -263,10 +271,11 @@ pub async fn deploy_contracts(contact: &Contact, upgrade_testing: bool) {
                 &format!("--contractERC20A={}", E[3]),
                 &format!("--contractERC20B={}", E[4]),
                 &format!("--contractERC20C={}", E[5]),
+                &format!("--contractERC721A={}", E[6]),
                 "--test-mode=true",
                 "--use-old-rest-methods=false",
             ])
-            .current_dir(E[6])
+            .current_dir(E[7])
             .output()
             .expect("Failed to deploy contracts!")
     } else {
@@ -336,7 +345,7 @@ fn all_paths_exist(input: &[&str]) -> bool {
     true
 }
 
-fn return_existing<'a>(a: [&'a str; 6], b: [&'a str; 6]) -> [&'a str; 6] {
+fn return_existing<'a>(a: [&'a str; 7], b: [&'a str; 7]) -> [&'a str; 7] {
     if all_paths_exist(&a) {
         a
     } else if all_paths_exist(&b) {

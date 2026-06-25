@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
+	errorsmod "cosmossdk.io/errors"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -45,7 +46,7 @@ func GetRecoveryUpgradeHandler(
 		}
 
 		ctx.Logger().Info("Recovery upgrade: registering cosmos-originated tokens as CosmosBridgeableTokens")
-		if err := registerCosmosBridgeableTokens(ctx, gravityKeeper); err != nil {
+		if err := registerCosmosBridgeableTokens(ctx, gravityKeeper, bankKeeper); err != nil {
 			return out, err
 		}
 
@@ -117,9 +118,9 @@ func migrateRemappedERC20s(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkee
 		// cancel and refund all in-flight outgoing transactions
 		// Must happen BEFORE deleting the cosmos-originated mapping and setting the
 		// remapped flag
-		if err := k.CancelAllOutgoingTxsForContract(ctx, e.erc20); err != nil {
-			return fmt.Errorf("recovery: failed to cancel outgoing txs for %s: %w",
-				e.erc20.GetAddress().Hex(), err)
+		if err := CancelAllOutgoingTxsForContract(ctx, k, e.erc20); err != nil {
+			panic(fmt.Sprintf("recovery: failed to cancel outgoing txs for %s: %v",
+				e.erc20.GetAddress().Hex(), err))
 		}
 
 		// delete the problem cosmos-originated denom ERC20 mapping
@@ -185,49 +186,107 @@ func buildGravity2Metadata(
 }
 
 // registerCosmosBridgeableTokens adds all cosmos-originated ERC20 tokens that remain after
-// remapping (i.e. the non-problem tokens) to the CosmosBridgeableTokens allowlist in params.
+// remapping (i.e. the non-problem tokens) to the CosmosBridgeableTokens allowlist in the keeper.
 // This must be called after migrateRemappedERC20s, which deletes remapped entries from the store,
 // so only legitimate tokens are seen here.
-func registerCosmosBridgeableTokens(ctx sdk.Context, k *gravitykeeper.Keeper) error {
-	params, err := k.GetParams(ctx)
-	if err != nil {
-		return fmt.Errorf("recovery: failed to get params for CosmosBridgeableTokens update: %w", err)
+func registerCosmosBridgeableTokens(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkeeper.BaseKeeper) error {
+	// Ensure that no CosmosBridgeableTokens exist yet
+	for _, d := range k.GetAllCosmosBridgeableTokens(ctx) {
+		panic(fmt.Sprintf("Recovery upgrade: CosmosBridgeableTokens already exist in keeper? (%s)", d.Base))
 	}
 
-	// Build a set of already-registered denoms to avoid duplicates
-	existing := make(map[string]struct{}, len(params.CosmosBridgeableTokens))
-	for _, d := range params.CosmosBridgeableTokens {
-		existing[d] = struct{}{}
-	}
-
-	var newDenoms []string
+	var newEntries []banktypes.Metadata
 	k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, _ *types.EthAddress) (stop bool) {
 		denom := string(key)
-		if _, alreadyPresent := existing[denom]; !alreadyPresent {
-			newDenoms = append(newDenoms, denom)
+		if _, alreadyPresent := existing[denom]; alreadyPresent {
+			return false
 		}
+		meta, found := bk.GetDenomMetaData(ctx, denom)
+		if !found || meta.Base == "" {
+			panic(fmt.Sprintf(
+				"recovery: cosmos-originated ERC20 denom %q has no bank metadata",
+				denom,
+			))
+		}
+		newEntries = append(newEntries, meta)
 		return false
 	})
 
-	if len(newDenoms) == 0 {
+	if len(newEntries) == 0 {
 		ctx.Logger().Info("Recovery upgrade: no new cosmos-originated tokens to add to CosmosBridgeableTokens")
 		return nil
 	}
 
-	for _, denom := range newDenoms {
+	for _, m := range newEntries {
 		ctx.Logger().Info("Recovery upgrade: registering cosmos-originated token as CosmosBridgeableToken",
-			"denom", denom,
+			"denom", m.Base,
 		)
-	}
-
-	params.CosmosBridgeableTokens = append(params.CosmosBridgeableTokens, newDenoms...)
-	if err := k.SetParams(ctx, params); err != nil {
-		return fmt.Errorf("recovery: failed to set params after CosmosBridgeableTokens update: %w", err)
+		k.SetCosmosBridgeableToken(ctx, m)
 	}
 
 	ctx.Logger().Info(fmt.Sprintf(
 		"Recovery upgrade: registered %d cosmos-originated token(s) as CosmosBridgeableTokens",
-		len(newDenoms),
+		len(newEntries),
 	))
+	return nil
+}
+func setBridgeActive(ctx sdk.Context, k *gravitykeeper.Keeper, v bool) {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get params: %v", err))
+	}
+
+	params.BridgeActive = v
+
+	if err := k.SetParams(ctx, params); err != nil {
+		panic(fmt.Sprintf("failed to set params: %v", err))
+	}
+}
+
+// CancelAllOutgoingTxsForContract cancels and refunds all pending outgoing bridge
+// transactions (both unconfirmed batches and unbatched pool entries) for the given
+// ERC20 contract address.
+//
+// This must be called while the contract's cosmos-originated denom mapping is still
+// intact (before DeleteCosmosOriginatedDenomToERC20 and SetRemappedERC20) so that
+// ERC20ToDenomLookup returns the old gravity0x denom and RemoveFromOutgoingPoolAndRefund
+// refunds users in the correct pre-remap denom.
+//
+// Note on fees: the chain fee (MsgSendToEth.ChainFee) is paid to stakers/auction before
+// the transaction ever enters the pool and is therefore not returned.  Only the send
+// amount and bridge fee are escrowed in the module account and will be refunded.
+func CancelAllOutgoingTxsForContract(ctx sdk.Context, k *gravitykeeper.Keeper, tokenContract types.EthAddress) error {
+	// Cancel all unconfirmed batches for this contract.
+	// CancelOutgoingTXBatch moves each batch's transactions back into the unbatched pool.
+	var batchNonces []uint64
+	k.IterateOutgoingTxBatches(ctx, func(_ []byte, batch types.InternalOutgoingTxBatch) bool {
+		if batch.TokenContract.GetAddress() == tokenContract.GetAddress() {
+			batchNonces = append(batchNonces, batch.BatchNonce)
+		}
+		return false
+	})
+	for _, nonce := range batchNonces {
+		if err := k.CancelOutgoingTXBatch(ctx, tokenContract, nonce); err != nil {
+			return errorsmod.Wrapf(err, "recovery: failed to cancel batch with nonce %d for contract %s",
+				nonce, tokenContract.GetAddress().Hex())
+		}
+	}
+
+	// Refund all unbatched pool entries for this contract.
+	type txEntry struct {
+		id     uint64
+		sender sdk.AccAddress
+	}
+	var pending []txEntry
+	k.IterateUnbatchedTransactionsByContract(ctx, tokenContract, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
+		pending = append(pending, txEntry{id: tx.Id, sender: tx.Sender})
+		return false
+	})
+	for _, entry := range pending {
+		if err := k.RemoveFromOutgoingPoolAndRefund(ctx, entry.id, entry.sender); err != nil {
+			return errorsmod.Wrapf(err, "recovery: failed to refund tx %d for contract %s",
+				entry.id, tokenContract.GetAddress().Hex())
+		}
+	}
 	return nil
 }

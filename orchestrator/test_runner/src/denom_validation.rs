@@ -12,14 +12,11 @@ use crate::utils::{
 };
 use crate::{get_deposit, get_fee, ADDRESS_PREFIX, TOTAL_TIMEOUT};
 use clarity::Address as EthAddress;
-use cosmos_gravity::proposals::{
-    submit_airdrop_proposal, submit_ibc_metadata_proposal, AirdropProposalJson,
-};
+use cosmos_gravity::proposals::{submit_airdrop_proposal, AirdropProposalJson};
 use cosmos_gravity::send::{send_request_batch, send_to_eth, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::{Address as CosmosAddress, Coin, Contact, Msg, PrivateKey};
-use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::Metadata;
 use gravity_proto::gravity::v1::{
-    query_client::QueryClient as GravityQueryClient, IbcMetadataProposal,
+    query_client::QueryClient as GravityQueryClient,
     MsgSendToEth as ProtoMsgSendToEth, QueryDenomToErc20Request,
 };
 use gravity_utils::num_conversion::one_atom;
@@ -92,8 +89,6 @@ pub async fn denom_validation_test(
     // ------------------------------------------------------
     info!("\n--- Part C: Governance proposal validations ---");
     test_airdrop_proposal_rejected(contact, &keys, BAD_IBC_DENOM).await;
-    test_ibc_metadata_uppercase_rejected(contact, &keys).await;
-    test_ibc_metadata_forbidden_substring_rejected(contact, &keys).await;
 
     // ------------------------------------------------------
     // Part D: Control test — normal tokens still work
@@ -332,146 +327,4 @@ async fn test_airdrop_proposal_rejected(
             );
         }
     }
-}
-
-/// An IBCMetadataProposal using uppercase "IBC/" must be rejected.
-///
-/// `HandleIBCMetadataProposal` calls `ValidateStrictDenom` during governance execution.
-/// If submission itself is rejected, the error must contain strict-denom markers.
-/// The primary assertion is the state invariant: bad metadata must not be stored.
-async fn test_ibc_metadata_uppercase_rejected(contact: &Contact, keys: &[ValidatorKeys]) {
-    let bad_denom = "IBC/nometadatatoken".to_string();
-
-    let metadata = Metadata {
-        description: "test".to_string(),
-        denom_units: vec![],
-        base: bad_denom.clone(),
-        display: "test".to_string(),
-        name: "test".to_string(),
-        symbol: "TST".to_string(),
-        uri: String::new(),
-        uri_hash: String::new(),
-    };
-
-    let proposal = IbcMetadataProposal {
-        title: "Uppercase IBC prefix".to_string(),
-        description: "Should fail".to_string(),
-        ibc_denom: bad_denom.clone(),
-        metadata: Some(metadata),
-    };
-
-    let submission_result = submit_ibc_metadata_proposal(
-        proposal,
-        get_deposit(None),
-        get_fee(None),
-        contact,
-        keys[0].validator_key,
-        Some(TOTAL_TIMEOUT),
-    )
-    .await;
-
-    match submission_result {
-        Err(e) => {
-            // Submission-time rejection: verify strict-denom markers are present.
-            assert_strict_denom_rejection(
-                &e,
-                "IBC metadata proposal (uppercase IBC/) submission",
-                &bad_denom,
-            );
-            info!("IBC metadata uppercase proposal correctly rejected at submission: {e}");
-            return;
-        }
-        Ok(_) => {
-            vote_yes_on_proposals(contact, keys, None).await;
-            wait_for_proposals_to_execute(contact).await;
-        }
-    }
-
-    // Primary assertion: governance execution must have rejected the bad metadata.
-    // ValidateStrictDenom in HandleIBCMetadataProposal rejects denoms with uppercase IBC prefix.
-    // Reverting that check would allow the metadata to be stored, failing this assertion.
-    let all_meta = contact.get_all_denoms_metadata().await.unwrap();
-    for m in &all_meta {
-        assert_ne!(
-            m.base, "IBC/nometadatatoken",
-            "Uppercase IBC/ prefix metadata was stored — \
-             strict-denom execution rejection failed (reverting ValidateStrictDenom causes this)"
-        );
-    }
-    info!(
-        "IBC metadata uppercase proposal: correctly rejected \
-         (metadata not stored, strict-denom rejection verified via state invariant)"
-    );
-}
-
-/// An IBCMetadataProposal with an `ibc/` denom containing a forbidden substring must be rejected.
-///
-/// `HandleIBCMetadataProposal` calls `ValidateStrictDenom` during governance execution.
-/// If submission itself is rejected, the error must contain strict-denom markers.
-/// The primary assertion is the state invariant: bad metadata must not be stored.
-async fn test_ibc_metadata_forbidden_substring_rejected(contact: &Contact, keys: &[ValidatorKeys]) {
-    let bad_denom = "ibc/gravity0xbad".to_string();
-
-    let metadata = Metadata {
-        description: "test".to_string(),
-        denom_units: vec![],
-        base: bad_denom.clone(),
-        display: "test".to_string(),
-        name: "test".to_string(),
-        symbol: "TST".to_string(),
-        uri: String::new(),
-        uri_hash: String::new(),
-    };
-
-    let proposal = IbcMetadataProposal {
-        title: "Forbidden substring".to_string(),
-        description: "Should fail".to_string(),
-        ibc_denom: bad_denom.clone(),
-        metadata: Some(metadata),
-    };
-
-    let submission_result = submit_ibc_metadata_proposal(
-        proposal,
-        get_deposit(None),
-        get_fee(None),
-        contact,
-        keys[0].validator_key,
-        Some(TOTAL_TIMEOUT),
-    )
-    .await;
-
-    match submission_result {
-        Err(e) => {
-            // Submission-time rejection: verify strict-denom markers are present.
-            assert_strict_denom_rejection(
-                &e,
-                "IBC metadata proposal (forbidden substring) submission",
-                &bad_denom,
-            );
-            info!(
-                "IBC metadata forbidden-substring proposal correctly rejected at submission: {e}"
-            );
-            return;
-        }
-        Ok(_) => {
-            vote_yes_on_proposals(contact, keys, None).await;
-            wait_for_proposals_to_execute(contact).await;
-        }
-    }
-
-    // Primary assertion: governance execution must have rejected the bad metadata.
-    // ValidateStrictDenom in HandleIBCMetadataProposal rejects IBC denoms whose hash portion
-    // contains 'gravity' or '0x'.  Reverting that check allows metadata storage, failing this.
-    let all_meta = contact.get_all_denoms_metadata().await.unwrap();
-    for m in &all_meta {
-        assert_ne!(
-            m.base, "ibc/gravity0xbad",
-            "Forbidden-substring IBC denom metadata was stored — \
-             strict-denom execution rejection failed (reverting ValidateStrictDenom causes this)"
-        );
-    }
-    info!(
-        "IBC metadata forbidden-substring proposal: correctly rejected \
-         (metadata not stored, strict-denom rejection verified via state invariant)"
-    );
 }

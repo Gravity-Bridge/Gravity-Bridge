@@ -6,6 +6,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -119,25 +120,26 @@ func TestStringToByteArray(t *testing.T) {
 	}
 }
 
-func TestValidateCosmosBridgeableTokens(t *testing.T) {
+func TestValidateGenesisCosmosBridgeableTokens(t *testing.T) {
 	specs := map[string]struct {
-		denoms []string
-		expErr bool
+		metadata []banktypes.Metadata
+		expErr   bool
 	}{
-		"empty list is valid":              {denoms: []string{}, expErr: false},
-		"nil list is valid":               {denoms: nil, expErr: false},
-		"single valid denom":              {denoms: []string{"uatom"}, expErr: false},
-		"multiple valid denoms":           {denoms: []string{"uatom", "uosmo", "stake"}, expErr: false},
-		"ibc denom is valid":              {denoms: []string{"ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"}, expErr: false},
-		"duplicate denom rejected":        {denoms: []string{"uatom", "uatom"}, expErr: true},
-		"gravity-prefixed denom rejected": {denoms: []string{"gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"}, expErr: true},
-		"invalid denom rejected":          {denoms: []string{"INVALID DENOM WITH SPACES"}, expErr: true},
+		"empty list is valid":             {metadata: []banktypes.Metadata{}, expErr: false},
+		"nil list is valid":               {metadata: nil, expErr: false},
+		"single valid denom":              {metadata: []banktypes.Metadata{minMeta("uatom")}, expErr: false},
+		"multiple valid denoms":           {metadata: []banktypes.Metadata{minMeta("uatom"), minMeta("uosmo"), minMeta("stake")}, expErr: false},
+		"ibc denom is valid":              {metadata: []banktypes.Metadata{minMeta("ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2")}, expErr: false},
+		"duplicate denom rejected":        {metadata: []banktypes.Metadata{minMeta("uatom"), minMeta("uatom")}, expErr: true},
+		"gravity-prefixed denom rejected": {metadata: []banktypes.Metadata{minMeta("gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")}, expErr: true},
+		// An invalid base denom causes Metadata.Validate() to return an error.
+		"invalid denom rejected": {metadata: []banktypes.Metadata{{Base: "INVALID DENOM WITH SPACES"}}, expErr: true},
 	}
 
 	for msg, spec := range specs {
 		spec := spec
 		t.Run(msg, func(t *testing.T) {
-			err := validateCosmosBridgeableTokens(spec.denoms)
+			err := validateGenesisCosmosBridgeableTokens(spec.metadata)
 			if spec.expErr {
 				require.Error(t, err)
 				return
@@ -147,22 +149,30 @@ func TestValidateCosmosBridgeableTokens(t *testing.T) {
 	}
 }
 
-func TestParamsValidateBasicCosmosBridgeableTokens(t *testing.T) {
+func TestGenesisStateValidateBasicCosmosBridgeableTokens(t *testing.T) {
 	base := DefaultParams()
 
 	// valid: non-empty allowlist
-	p := *base
-	p.CosmosBridgeableTokens = []string{"uatom", "uosmo"}
-	require.NoError(t, p.ValidateBasic())
+	//nolint: exhaustruct
+	state := GenesisState{
+		Params:                 base,
+		CosmosBridgeableTokens: []banktypes.Metadata{minMeta("uatom"), minMeta("uosmo")},
+	}
+	require.NoError(t, state.ValidateBasic())
 
 	// invalid: duplicate entry
-	p2 := *base
-	p2.CosmosBridgeableTokens = []string{"uatom", "uatom"}
-	require.Error(t, p2.ValidateBasic())
+	//nolint: exhaustruct
+	state2 := GenesisState{
+		Params:                 base,
+		CosmosBridgeableTokens: []banktypes.Metadata{minMeta("uatom"), minMeta("uatom")},
+	}
+	require.Error(t, state2.ValidateBasic())
 
 	// invalid: gravity-prefixed entry
-	p3 := *base
-	p3.CosmosBridgeableTokens = []string{"gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"}
-	require.Error(t, p3.ValidateBasic())
+	//nolint: exhaustruct
+	state3 := GenesisState{
+		Params:                 base,
+		CosmosBridgeableTokens: []banktypes.Metadata{minMeta("gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")},
+	}
+	require.Error(t, state3.ValidateBasic())
 }
-

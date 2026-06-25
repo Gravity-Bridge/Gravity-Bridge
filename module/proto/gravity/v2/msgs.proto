@@ -12,11 +12,11 @@ option go_package = "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/t
 // Msg defines the state transitions possible within gravity
 service Msg {
   option (cosmos.msg.v1.service) = true;
-  
+
   rpc UpdateParamsProposal(MsgUpdateParamsProposal) returns (MsgUpdateParamsProposalResponse) {}
-  rpc IBCMetadataProposal(MsgIBCMetadataProposal) returns (MsgIBCMetadataProposalResponse) {}
   rpc AirdropProposal(MsgAirdropProposal) returns (MsgAirdropProposalResponse) {}
   rpc UnhaltBridgeProposal(MsgUnhaltBridgeProposal) returns (MsgUnhaltBridgeProposalResponse) {}
+  rpc CosmosBridgeableTokensProposal(MsgCosmosBridgeableTokensProposal) returns (MsgCosmosBridgeableTokensProposalResponse) {}
 }
 
 // MsgUpdateParamsProposal
@@ -36,22 +36,6 @@ message Param {
 }
 
 message MsgUpdateParamsProposalResponse {}
-
-// MsgIBCMetadataProposal
-// This message is used by the new x/gov v1 proposal system, it contains an authority
-// and the previous type used for proposals
-// AUTHORITY
-// A string containing the address of the sender, only valid if it is the gov module address
-// PROPOSAL
-// This is the previous proposal type, which contains everything needed for the proposal's execution
-message MsgIBCMetadataProposal {
-  option (cosmos.msg.v1.signer) = "authority";
-  string authority = 1;
-
-  gravity.v1.IBCMetadataProposal proposal = 2;
-}
-
-message MsgIBCMetadataProposalResponse {}
 
 // MsgAirdropProposal
 // This message is used by the new x/gov v1 proposal system, it contains an authority
@@ -84,4 +68,20 @@ message MsgUnhaltBridgeProposal {
 }
 
 message MsgUnhaltBridgeProposalResponse {}
+
+// MsgCosmosBridgeableTokensProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and the previous type used for proposals
+// AUTHORITY
+// A string containing the address of the sender, only valid if it is the gov module address
+// PROPOSAL
+// This is the previous proposal type, which contains everything needed for the proposal's execution
+message MsgCosmosBridgeableTokensProposal {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1;
+
+  gravity.v1.CosmosBridgeableTokensProposal proposal = 2;
+}
+
+message MsgCosmosBridgeableTokensProposalResponse {}
 

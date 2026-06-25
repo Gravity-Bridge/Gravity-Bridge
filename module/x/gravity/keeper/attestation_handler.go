@@ -139,6 +139,13 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		return errorsmod.Wrap(err, "invalid derived denom from ERC20 lookup")
 	}
 
+	if isCosmosOriginated {
+		_, err := a.keeper.assertMetadataWhitelisted(ctx, denom)
+		if err != nil {
+			return errorsmod.Wrap(err, "token not whitelisted for SendToCosmos")
+		}
+	}
+
 	coin := sdk.NewCoin(denom, claim.Amount)
 	coins := sdk.Coins{coin}
 
@@ -221,11 +228,18 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 		return errorsmod.Wrap(err, "invalid token contract on batch")
 	}
 
-	_, denom := a.keeper.ERC20ToDenomLookup(ctx, *contract)
+	isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *contract)
 
 	// Perform more strict validation on the denom
 	if err := types.ValidateStrictDenom(denom); err != nil {
 		return errorsmod.Wrap(err, "invalid derived denom for batch")
+	}
+
+	if isCosmosOriginated {
+		_, err := a.keeper.assertMetadataWhitelisted(ctx, denom)
+		if err != nil {
+			return errorsmod.Wrap(err, "token not whitelisted for BatchSendToEth")
+		}
 	}
 
 	a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim)
@@ -273,42 +287,22 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	}
 
 	// Check if denom metadata has been accepted by governance
-	metadata, ok := a.keeper.bankKeeper.GetDenomMetaData(ctx, claim.CosmosDenom)
-	if !ok || metadata.Base == "" {
-		return errorsmod.Wrap(types.ErrUnknown, fmt.Sprintf("denom not found %s", claim.CosmosDenom))
-	}
-
-	// require the denom to be on the CosmosBridgeableTokens allowlist.
-	// Note: we check the params directly because EnsureCosmosBridgeable relies on the
-	// cosmos-originated index which has not been written yet at this point.
-	params, err := a.keeper.GetParams(ctx)
+	metadata, err := a.keeper.assertMetadataWhitelisted(ctx, claim.CosmosDenom)
 	if err != nil {
-		return errorsmod.Wrap(err, "could not get params for allowlist check")
-	}
-	found := false
-	for _, d := range params.CosmosBridgeableTokens {
-		if d == claim.CosmosDenom {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return errorsmod.Wrapf(types.ErrInvalid,
-			"denom %s is not on the CosmosBridgeableTokens allowlist; add it via governance before deploying an ERC20 representation",
-			claim.CosmosDenom)
+		return errorsmod.Wrap(err, "ERC20 deployment blocked because of invalid metadata")
 	}
 
 	// Check if attributes of ERC20 match Cosmos denom
 	if claim.Name != metadata.Name {
 		return errorsmod.Wrap(
 			types.ErrInvalid,
-			fmt.Sprintf("ERC20 name %s does not match denom name %s", claim.Name, metadata.Description))
+			fmt.Sprintf("ERC20 name %s does not match denom name %s", claim.Name, metadata.Name))
 	}
 
 	if claim.Symbol != metadata.Symbol {
 		return errorsmod.Wrap(
 			types.ErrInvalid,
-			fmt.Sprintf("ERC20 symbol %s does not match denom symbol %s", claim.Symbol, metadata.Display))
+			fmt.Sprintf("ERC20 symbol %s does not match denom symbol %s", claim.Symbol, metadata.Symbol))
 	}
 
 	// ERC20 tokens use a very simple mechanism to tell you where to display the decimal point.

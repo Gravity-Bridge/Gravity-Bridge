@@ -50,6 +50,7 @@ func GetQueryCmd() *cobra.Command {
 		CmdGetLastEventNonceByAddr(),
 		CmdDenomToERC20(),
 		CmdERC20ToDenom(),
+		CmdCosmosBridgeableTokens(),
 		CmdGetLastObservedEthBlock(),
 		CmdGetLastObservedEthNonce(),
 		CmdGetAttestations(),
@@ -588,6 +589,34 @@ func CmdERC20ToDenom() *cobra.Command {
 			}
 
 			res, err := queryClient.ERC20ToDenom(cmd.Context(), req)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdCosmosBridgeableTokens fetches the current CosmosBridgeableTokens allowlist
+func CmdCosmosBridgeableTokens() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "cosmos-bridgeable-tokens",
+		Short: "Query the current CosmosBridgeableTokens allowlist",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			req := &types.QueryCosmosBridgeableTokensRequest{}
+
+			res, err := queryClient.CosmosBridgeableTokens(cmd.Context(), req)
 			if err != nil {
 				return err
 			}

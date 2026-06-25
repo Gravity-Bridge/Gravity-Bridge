@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	ProposalTypeUnhaltBridge = "UnhaltBridge"
-	ProposalTypeAirdrop      = "Airdrop"
-	ProposalTypeIBCMetadata  = "IBCMetadata"
+	ProposalTypeUnhaltBridge           = "UnhaltBridge"
+	ProposalTypeAirdrop                = "Airdrop"
+	ProposalTypeCosmosBridgeableTokens = "CosmosBridgeableTokens"
 )
 
 func (p *UnhaltBridgeProposal) GetTitle() string { return p.Title }
@@ -87,42 +87,48 @@ func (p AirdropProposal) String() string {
 	return b.String()
 }
 
-func (p *IBCMetadataProposal) GetTitle() string { return p.Title }
+func (p *CosmosBridgeableTokensProposal) GetTitle() string { return p.Title }
 
-func (p *IBCMetadataProposal) GetDescription() string { return p.Description }
+func (p *CosmosBridgeableTokensProposal) GetDescription() string { return p.Description }
 
-func (p *IBCMetadataProposal) ProposalRoute() string { return RouterKey }
+func (p *CosmosBridgeableTokensProposal) ProposalRoute() string { return RouterKey }
 
-func (p *IBCMetadataProposal) ProposalType() string {
-	return ProposalTypeIBCMetadata
+func (p *CosmosBridgeableTokensProposal) ProposalType() string {
+	return ProposalTypeCosmosBridgeableTokens
 }
 
-func (p *IBCMetadataProposal) ValidateBasic() error {
-	err := govv1beta1.ValidateAbstract(p)
-	if err != nil {
+func (p *CosmosBridgeableTokensProposal) ValidateBasic() error {
+	if err := govv1beta1.ValidateAbstract(p); err != nil {
 		return err
+	}
+	if len(p.Metadatas) == 0 {
+		return fmt.Errorf("CosmosBridgeableTokensProposal must contain at least one metadata entry")
+	}
+	if p.Operation == CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED {
+		return fmt.Errorf("CosmosBridgeableTokensProposal requires an explicit operation (SET or REMOVE)")
+	}
+	seen := make(map[string]struct{}, len(p.Metadatas))
+	for _, m := range p.Metadatas {
+		if err := m.Validate(); err != nil {
+			return fmt.Errorf("invalid metadata for denom %s: %w", m.Base, err)
+		}
+		if _, dup := seen[m.Base]; dup {
+			return fmt.Errorf("duplicate base denom in CosmosBridgeableTokensProposal: %s", m.Base)
+		}
+		seen[m.Base] = struct{}{}
 	}
 	return nil
 }
 
-func (p IBCMetadataProposal) String() string {
-	decimals := uint32(0)
-	for _, denomUnit := range p.Metadata.DenomUnits {
-		if denomUnit.Denom == p.Metadata.Display {
-			decimals = denomUnit.Exponent
-			break
-		}
-	}
-
+func (p CosmosBridgeableTokensProposal) String() string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf(`IBC Metadata setting proposal:
-  Title:             %s
-  Description:       %s
-  Token Name:        %s
-  Token Symbol:      %s
-  Token Display:     %s
-  Token Decimals:    %d
-  Token Description: %s
-`, p.Title, p.Description, p.Metadata.Name, p.Metadata.Symbol, p.Metadata.Display, decimals, p.Metadata.Description))
+	b.WriteString(fmt.Sprintf(`Cosmos Bridgeable Tokens Proposal:
+  Title:          %s
+  Description:    %s
+  Operation:      %s
+`, p.Title, p.Description, p.Operation))
+	for _, m := range p.Metadatas {
+		b.WriteString(fmt.Sprintf("  Denom: %s Name: %s Symbol: %s\n", m.Base, m.Name, m.Symbol))
+	}
 	return b.String()
 }

@@ -89,10 +89,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	}
 
 	// Case 1: allowlist has footoken — footoken ERC20 is registered
-	params, err := input.GravityKeeper.GetParams(ctx)
-	require.NoError(t, err)
-	params.CosmosBridgeableTokens = []string{"footoken"}
-	require.NoError(t, input.GravityKeeper.SetParams(ctx, params))
+	input.GravityKeeper.SetCosmosBridgeableToken(ctx, fooMetadata)
 
 	submitERC20Claim(1, "footoken", "0x1111111111111111111111111111111111111111", "Foo Token", "FOO", 6)
 	isCosmosOriginated, _, err := input.GravityKeeper.DenomToERC20Lookup(ctx, "footoken")
@@ -100,8 +97,8 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	require.True(t, isCosmosOriginated, "footoken ERC20 should be registered when footoken is on the allowlist")
 
 	// Case 2: allowlist has bartoken — bartoken ERC20 is registered
-	params.CosmosBridgeableTokens = []string{"bartoken"}
-	require.NoError(t, input.GravityKeeper.SetParams(ctx, params))
+	input.GravityKeeper.DeleteCosmosBridgeableToken(ctx, fooMetadata.Base)
+	input.GravityKeeper.SetCosmosBridgeableToken(ctx, barMetadata)
 
 	submitERC20Claim(2, "bartoken", "0x2222222222222222222222222222222222222222", "Bar Token", "BAR", 6)
 	isCosmosOriginated, _, err = input.GravityKeeper.DenomToERC20Lookup(ctx, "bartoken")
@@ -109,7 +106,8 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	require.True(t, isCosmosOriginated, "bartoken ERC20 should be registered when bartoken is on the allowlist")
 
 	// Case 3: allowlist has bartoken only — unlisted denom (baztoken) is rejected
-	// params.CosmosBridgeableTokens still contains only "bartoken"
+	// the allowlist still contains only "bartoken"
+	//nolint: exhaustruct
 	bazMetadata := banktypes.Metadata{
 		Description: "Baz Token",
 		DenomUnits:  []*banktypes.DenomUnit{{Denom: "baztoken", Exponent: 0}, {Denom: "baz", Exponent: 6}},
@@ -127,8 +125,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	require.Error(t, err, "baztoken ERC20 should NOT be registered when baztoken is not on the allowlist")
 
 	// Case 4: empty allowlist — all cosmos-originated denoms are blocked
-	params.CosmosBridgeableTokens = []string{}
-	require.NoError(t, input.GravityKeeper.SetParams(ctx, params))
+	input.GravityKeeper.DeleteCosmosBridgeableToken(ctx, barMetadata.Base)
 
 	quxMetadata := banktypes.Metadata{
 		Description: "Qux Token",
@@ -169,7 +166,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 }
 
 func addDenomToERC20Relation(tv *testingVars) {
-	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, banktypes.Metadata{
+	ugravitonMeta := banktypes.Metadata{
 		Description: "The native staking token of the Cosmos Gravity Bridge",
 		DenomUnits:  []*banktypes.DenomUnit{{Denom: "ugraviton", Exponent: uint32(0), Aliases: []string{"micrograviton"}}, {Denom: "mgraviton", Exponent: uint32(3), Aliases: []string{"milligraviton"}}, {Denom: "graviton", Exponent: uint32(6), Aliases: []string{}}},
 		Base:        "ugraviton",
@@ -178,13 +175,11 @@ func addDenomToERC20Relation(tv *testingVars) {
 		Symbol:      "GRAV",
 		URI:         "",
 		URIHash:     "",
-	})
+	}
+	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, ugravitonMeta)
 
 	// Add ugraviton to the allowlist so the ERC20 deployed handler accepts it
-	params, err := tv.input.GravityKeeper.GetParams(tv.ctx)
-	require.NoError(tv.t, err)
-	params.CosmosBridgeableTokens = []string{tv.denom}
-	require.NoError(tv.t, tv.input.GravityKeeper.SetParams(tv.ctx, params))
+	tv.input.GravityKeeper.SetCosmosBridgeableToken(tv.ctx, ugravitonMeta)
 
 	var (
 		myNonce = uint64(1)
@@ -243,10 +238,9 @@ func lockCoinsInModule(tv *testingVars) {
 	assert.Nil(tv.t, err)
 
 	// Add ugraviton to the CosmosBridgeableTokens allowlist so SendToEth accepts it
-	params, err := tv.input.GravityKeeper.GetParams(tv.ctx)
-	require.NoError(tv.t, err)
-	params.CosmosBridgeableTokens = []string{denom}
-	require.NoError(tv.t, tv.input.GravityKeeper.SetParams(tv.ctx, params))
+	ugravitonMeta, found := tv.input.BankKeeper.GetDenomMetaData(tv.ctx, denom)
+	require.True(tv.t, found, "expected ugraviton bank metadata to be set")
+	tv.input.GravityKeeper.SetCosmosBridgeableToken(tv.ctx, ugravitonMeta)
 
 	// we start by depositing some funds into the users balance to send
 	require.NoError(tv.t, tv.input.BankKeeper.MintCoins(tv.ctx, types.ModuleName, startingCoins))
@@ -347,10 +341,7 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	tv.input.BankKeeper.SetDenomMetaData(tv.ctx, metadata)
 
 	// Add ibcDenom to the allowlist so the ERC20 deployed handler accepts it
-	ibcParams, err := tv.input.GravityKeeper.GetParams(tv.ctx)
-	require.NoError(tv.t, err)
-	ibcParams.CosmosBridgeableTokens = append(ibcParams.CosmosBridgeableTokens, ibcDenom)
-	require.NoError(tv.t, tv.input.GravityKeeper.SetParams(tv.ctx, ibcParams))
+	tv.input.GravityKeeper.SetCosmosBridgeableToken(tv.ctx, metadata)
 
 	var (
 		myNonce = uint64(2)

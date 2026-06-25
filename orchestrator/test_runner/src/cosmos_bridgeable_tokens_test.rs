@@ -7,14 +7,13 @@
 //! - MsgUpdateParamsProposal is rejected when authority is not the gov module
 
 use clarity::Address as EthAddress;
-use cosmos_gravity::query::{get_gravity_params, get_pending_send_to_eth};
+use cosmos_gravity::query::{get_cosmos_bridgeable_tokens, get_pending_send_to_eth};
 use cosmos_gravity::send::{send_to_eth, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::coin::Coin;
 use deep_space::{Contact, Msg, PrivateKey};
+use gravity_proto::gravity::v1::{CosmosBridgeableTokensOperation, CosmosBridgeableTokensProposal};
 use gravity_proto::gravity::v1::{query_client::QueryClient as GravityQueryClient, MsgSendToEth};
-use gravity_proto::gravity::v2::{
-    MsgUpdateParamsProposal as GravityMsgUpdateParamsProposal, Param as GravityParam,
-};
+use gravity_proto::gravity::v2::MsgCosmosBridgeableTokensProposal;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -22,8 +21,8 @@ use crate::happy_path::test_erc20_deposit_panic;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::create_default_test_config;
 use crate::utils::{
-    footoken2_metadata, footoken_metadata, get_user_key, send_one_eth,
-    set_cosmos_bridgeable_tokens, start_orchestrators, ValidatorKeys,
+    footoken2_metadata, footoken_metadata, get_user_key, remove_cosmos_bridgeable_tokens,
+    send_one_eth, set_cosmos_bridgeable_tokens, start_orchestrators, ValidatorKeys,
 };
 use crate::{get_fee, one_eth, ADDRESS_PREFIX, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
 
@@ -52,7 +51,7 @@ pub async fn cosmos_bridgeable_tokens_test(
     set_cosmos_bridgeable_tokens(
         contact,
         &keys,
-        vec![footoken.base.clone(), footoken2.base.clone()],
+        vec![footoken.clone(), footoken2.clone()],
     )
     .await;
 
@@ -77,7 +76,7 @@ pub async fn cosmos_bridgeable_tokens_test(
     .await;
 
     // Clear the allowlist so Step 2 can verify SendToEth is blocked.
-    set_cosmos_bridgeable_tokens(contact, &keys, vec![]).await;
+    remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone(), footoken2.clone()]).await;
 
     // Set up a test user funded with footoken, footoken2, and some ETH
     let user = get_user_key(None);
@@ -172,17 +171,17 @@ pub async fn cosmos_bridgeable_tokens_test(
     // Step 3: Add footoken to the allowlist via governance.
     // ------------------------------------------------------------------
     info!("Step 3: Add footoken to allowlist via governance");
-    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.base.clone()]).await;
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
 
-    let params = get_gravity_params(&mut grpc_client).await.unwrap();
+    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client).await.unwrap();
     assert_eq!(
-        params.cosmos_bridgeable_tokens,
-        vec![footoken.base.clone()],
+        bridgeable_tokens,
+        vec![footoken.clone()],
         "Expected cosmos_bridgeable_tokens to contain only footoken"
     );
     info!(
         "Confirmed: cosmos_bridgeable_tokens = {:?}",
-        params.cosmos_bridgeable_tokens
+        bridgeable_tokens
     );
 
     // ------------------------------------------------------------------
@@ -301,11 +300,11 @@ pub async fn cosmos_bridgeable_tokens_test(
     // Step 7: Clear the allowlist and verify footoken is blocked again.
     // ------------------------------------------------------------------
     info!("Step 7: Clear allowlist and verify footoken is blocked again");
-    set_cosmos_bridgeable_tokens(contact, &keys, vec![]).await;
+    remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
 
-    let params = get_gravity_params(&mut grpc_client).await.unwrap();
+    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client).await.unwrap();
     assert!(
-        params.cosmos_bridgeable_tokens.is_empty(),
+        bridgeable_tokens.is_empty(),
         "Expected cosmos_bridgeable_tokens to be empty after clearing"
     );
 
@@ -351,22 +350,27 @@ pub async fn cosmos_bridgeable_tokens_test(
 
     // ------------------------------------------------------------------
     // Step 8: Assert governance is the only authority.
-    // Send MsgUpdateParamsProposal directly (not via gov) with a non-gov sender.
+    // Send MsgCosmosBridgeableTokensProposal directly (not via gov) with a non-gov sender.
     // ------------------------------------------------------------------
-    info!("Step 8: Verify MsgUpdateParamsProposal is rejected for non-gov authority");
+    info!("Step 8: Verify MsgCosmosBridgeableTokensProposal is rejected for non-gov authority");
     let user_address = keys[0]
         .validator_key
         .to_address(ADDRESS_PREFIX.as_str())
         .unwrap()
         .to_string();
-    let msg_update_params = GravityMsgUpdateParamsProposal {
+    let msg_update_tokens = MsgCosmosBridgeableTokensProposal {
         authority: user_address.clone(),
-        param_updates: vec![GravityParam {
-            key: "CosmosBridgeableTokens".to_string(),
-            value: serde_json::to_string(&vec!["footoken"]).unwrap(),
-        }],
+        proposal: Some(CosmosBridgeableTokensProposal {
+            title: "Malicious CosmosBridgeableTokens proposal".to_string(),
+            description: "should be rejected".to_string(),
+            metadatas: vec![footoken.clone()],
+            operation: CosmosBridgeableTokensOperation::Set as i32,
+        }),
     };
-    let msg_gov = Msg::new("/gravity.v2.MsgUpdateParamsProposal", msg_update_params);
+    let msg_gov = Msg::new(
+        "/gravity.v2.MsgCosmosBridgeableTokensProposal",
+        msg_update_tokens,
+    );
     let res = contact
         .send_message(
             &[msg_gov],
@@ -379,10 +383,10 @@ pub async fn cosmos_bridgeable_tokens_test(
         .await;
     assert!(
         res.is_err(),
-        "MsgUpdateParamsProposal with non-gov authority should be rejected but succeeded: {:?}",
+        "MsgCosmosBridgeableTokensProposal with non-gov authority should be rejected but succeeded: {:?}",
         res
     );
-    info!("Confirmed: MsgUpdateParamsProposal correctly rejected for non-gov sender");
+    info!("Confirmed: MsgCosmosBridgeableTokensProposal correctly rejected for non-gov sender");
 
     info!("CosmosBridgeableTokens test passed!");
 }
