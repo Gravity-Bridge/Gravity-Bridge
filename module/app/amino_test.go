@@ -74,7 +74,7 @@ func TestAminoJSON_Equivalence(t *testing.T) {
 		GenType(&gravityv1types.MsgSubmitBadSignatureEvidence{}, &gravityv1api.MsgSubmitBadSignatureEvidence{}, GenOpts.WithDisallowNil()),
 		GenType(&gravityv1types.MsgValsetConfirm{}, &gravityv1api.MsgValsetConfirm{}, GenOpts.WithDisallowNil()),
 		GenType(&gravityv1types.MsgValsetUpdatedClaim{}, &gravityv1api.MsgValsetUpdatedClaim{}, GenOpts.WithDisallowNil()),
-		// The gravity v2 messages do not have legacy amino configuration, so we do not chack them
+		// The gravity v2 messages do not have legacy amino configuration, so we do not check them
 		// GenType(&gravityv2types.MsgAirdropProposal{}, &gravityv2api.MsgAirdropProposal{}, GenOpts.WithDisallowNil()),
 		// GenType(&gravityv2types.MsgIBCMetadataProposal{}, &gravityv2api.MsgIBCMetadataProposal{}, GenOpts.WithDisallowNil()),
 		// GenType(&gravityv2types.MsgUnhaltBridgeProposal{}, &gravityv2api.MsgUnhaltBridgeProposal{}, GenOpts.WithDisallowNil()),

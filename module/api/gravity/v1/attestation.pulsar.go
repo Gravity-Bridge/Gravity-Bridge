@@ -9543,7 +9543,7 @@ func (ClaimType) EnumDescriptor() ([]byte, []int) {
 	return file_gravity_v1_attestation_proto_rawDescGZIP(), []int{0}
 }
 
-// Components used in MsgSendToCosmosClaim.ClaimHash()
+// Components used in MsgSendToCosmosClaim's ClaimHash()
 type SendToCosmosClaimComponents struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9619,7 +9619,7 @@ func (x *SendToCosmosClaimComponents) GetCosmosReceiver() string {
 	return ""
 }
 
-// Components used in MsgBatchSendToEthClaim.ClaimHash()
+// Components used in MsgBatchSendToEthClaim's ClaimHash()
 type BatchSendToEthClaimComponents struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9679,7 +9679,7 @@ func (x *BatchSendToEthClaimComponents) GetTokenContract() string {
 	return ""
 }
 
-// Components used in MsgERC20DeployedClaim.ClaimHash()
+// Components used in MsgERC20DeployedClaim's ClaimHash()
 type ERC20DeployedClaimComponents struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9763,7 +9763,7 @@ func (x *ERC20DeployedClaimComponents) GetDecimals() uint64 {
 	return 0
 }
 
-// Components used in MsgLogicCallExecutedClaim.ClaimHash()
+// Components used in MsgLogicCallExecutedClaim's ClaimHash()
 type LogicCallExecutedClaimComponents struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9823,8 +9823,8 @@ func (x *LogicCallExecutedClaimComponents) GetInvalidationNonce() uint64 {
 	return 0
 }
 
-// Components used in MsgValsetUpdatedClaim.ClaimHash()
-// Note: members MUST be sorted before hashing, mirroring the existing claim logic.
+// Components used in MsgValsetUpdatedClaim's ClaimHash()
+// NOTE: MUST SORT valset members before hashing
 type ValsetUpdatedClaimComponents struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9900,12 +9900,14 @@ func (x *ValsetUpdatedClaimComponents) GetRewardToken() string {
 	return ""
 }
 
-// A discriminated union holding exactly the components for one claim type
+// Holds the components used in a Claim's ClaimHash() function, used as an additional security measure against tampering
 type ClaimHashComponents struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The actual components used in ClaimHash()
+	//
 	// Types that are assignable to Components:
 	//
 	//	*ClaimHashComponents_SendToCosmos

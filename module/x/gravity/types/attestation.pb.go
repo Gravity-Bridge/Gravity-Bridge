@@ -70,7 +70,7 @@ func (ClaimType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e3205613bbab7525, []int{0}
 }
 
-// Components used in MsgSendToCosmosClaim.ClaimHash()
+// Components used in MsgSendToCosmosClaim's ClaimHash()
 type SendToCosmosClaimComponents struct {
 	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
 	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
@@ -155,7 +155,7 @@ func (m *SendToCosmosClaimComponents) GetCosmosReceiver() string {
 	return ""
 }
 
-// Components used in MsgBatchSendToEthClaim.ClaimHash()
+// Components used in MsgBatchSendToEthClaim's ClaimHash()
 type BatchSendToEthClaimComponents struct {
 	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
 	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
@@ -224,7 +224,7 @@ func (m *BatchSendToEthClaimComponents) GetTokenContract() string {
 	return ""
 }
 
-// Components used in MsgERC20DeployedClaim.ClaimHash()
+// Components used in MsgERC20DeployedClaim's ClaimHash()
 type ERC20DeployedClaimComponents struct {
 	EventNonce     uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
 	EthBlockHeight uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
@@ -317,7 +317,7 @@ func (m *ERC20DeployedClaimComponents) GetDecimals() uint64 {
 	return 0
 }
 
-// Components used in MsgLogicCallExecutedClaim.ClaimHash()
+// Components used in MsgLogicCallExecutedClaim's ClaimHash()
 type LogicCallExecutedClaimComponents struct {
 	EventNonce        uint64 `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
 	EthBlockHeight    uint64 `protobuf:"varint,2,opt,name=eth_block_height,json=ethBlockHeight,proto3" json:"eth_block_height,omitempty"`
@@ -386,8 +386,8 @@ func (m *LogicCallExecutedClaimComponents) GetInvalidationNonce() uint64 {
 	return 0
 }
 
-// Components used in MsgValsetUpdatedClaim.ClaimHash()
-// Note: members MUST be sorted before hashing, mirroring the existing claim logic.
+// Components used in MsgValsetUpdatedClaim's ClaimHash()
+// NOTE: MUST SORT valset members before hashing
 type ValsetUpdatedClaimComponents struct {
 	EventNonce     uint64            `protobuf:"varint,1,opt,name=event_nonce,json=eventNonce,proto3" json:"event_nonce,omitempty"`
 	ValsetNonce    uint64            `protobuf:"varint,2,opt,name=valset_nonce,json=valsetNonce,proto3" json:"valset_nonce,omitempty"`
@@ -472,8 +472,10 @@ func (m *ValsetUpdatedClaimComponents) GetRewardToken() string {
 	return ""
 }
 
-// A discriminated union holding exactly the components for one claim type
+// Holds the components used in a Claim's ClaimHash() function, used as an additional security measure against tampering
 type ClaimHashComponents struct {
+	// The actual components used in ClaimHash()
+	//
 	// Types that are valid to be assigned to Components:
 	//
 	//	*ClaimHashComponents_SendToCosmos
