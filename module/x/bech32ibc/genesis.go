@@ -26,6 +26,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 		panic(err)
 	}
 
+	//nolint: exhaustruct
 	return &types.GenesisState{
 		NativeHRP:     nativeHrp,
 		HrpIBCRecords: hrpIbcRecords,

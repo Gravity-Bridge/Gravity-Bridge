@@ -131,26 +131,26 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		invalidAddress = true
 	}
 
-	// Check if coin is Cosmos-originated asset and get denom
-	isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *tokenAddress)
+	// Classify the token as cosmos-originated or eth-originated
+	tokenOrigin := a.keeper.ClassifyERC20(ctx, *tokenAddress)
 
 	// Perform more strict validation on the denom
-	if err := types.ValidateStrictDenom(denom); err != nil {
-		return errorsmod.Wrap(err, "invalid derived denom from ERC20 lookup")
+	if err := types.ValidateStrictDenom(tokenOrigin.Denom); err != nil {
+		return errorsmod.Wrap(err, "invalid derived denom from ERC20 classification")
 	}
 
-	if isCosmosOriginated {
-		_, err := a.keeper.assertMetadataWhitelisted(ctx, denom)
+	if tokenOrigin.IsCosmosOriginated {
+		_, err := a.keeper.assertMetadataWhitelisted(ctx, tokenOrigin.Denom)
 		if err != nil {
 			return errorsmod.Wrap(err, "token not whitelisted for SendToCosmos")
 		}
 	}
 
-	coin := sdk.NewCoin(denom, claim.Amount)
+	coin := sdk.NewCoin(tokenOrigin.Denom, claim.Amount)
 	coins := sdk.Coins{coin}
 
 	moduleAddr := a.keeper.accountKeeper.GetModuleAddress(types.ModuleName)
-	if !isCosmosOriginated { // We need to mint eth-originated coins (aka vouchers)
+	if tokenOrigin.IsEthOriginated { // We need to mint eth-originated coins (aka vouchers)
 		if err := a.mintEthereumOriginatedVouchers(ctx, moduleAddr, claim, coin); err != nil {
 			// TODO: Evaluate closely, if we can't mint an ethereum voucher, what should we do?
 			return err
@@ -158,15 +158,15 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	}
 
 	if !invalidAddress { // address appears valid, attempt to send minted/locked coins to receiver
-		preSendBalance := a.keeper.bankKeeper.GetBalance(ctx, moduleAddr, denom)
+		preSendBalance := a.keeper.bankKeeper.GetBalance(ctx, moduleAddr, tokenOrigin.Denom)
 		// Failure to send will result in funds transfer to community pool
 		ibcForwardQueued, err := a.sendCoinToCosmosAccount(ctx, claim, receiverAddress, coin)
 
 		// Perform module balance assertions
 		if err != nil || ibcForwardQueued { // ibc forward enqueue and errors should not send tokens to anyone
-			a.assertNothingSent(ctx, moduleAddr, preSendBalance, denom)
+			a.assertNothingSent(ctx, moduleAddr, preSendBalance, tokenOrigin.Denom)
 		} else { // No error, local send -> assert send had right amount
-			a.assertSentAmount(ctx, moduleAddr, preSendBalance, denom, claim.Amount)
+			a.assertSentAmount(ctx, moduleAddr, preSendBalance, tokenOrigin.Denom, claim.Amount)
 		}
 
 		if err != nil { // trigger send to community pool
@@ -228,15 +228,15 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 		return errorsmod.Wrap(err, "invalid token contract on batch")
 	}
 
-	isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *contract)
+	contractOrigin := a.keeper.ClassifyERC20(ctx, *contract)
 
 	// Perform more strict validation on the denom
-	if err := types.ValidateStrictDenom(denom); err != nil {
+	if err := types.ValidateStrictDenom(contractOrigin.Denom); err != nil {
 		return errorsmod.Wrap(err, "invalid derived denom for batch")
 	}
 
-	if isCosmosOriginated {
-		_, err := a.keeper.assertMetadataWhitelisted(ctx, denom)
+	if contractOrigin.IsCosmosOriginated {
+		_, err := a.keeper.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
 			return errorsmod.Wrap(err, "token not whitelisted for BatchSendToEth")
 		}
@@ -275,14 +275,15 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 		return errorsmod.Wrap(err, "invalid token contract on claim")
 	}
 	// Disallow re-registration when a token already has a canonical representation
-	existingERC20, exists := a.keeper.GetCosmosOriginatedERC20(ctx, claim.CosmosDenom)
+	existingERC20, exists := a.keeper.getCosmosOriginatedERC20ForDenom(ctx, claim.CosmosDenom)
 	if exists {
 		return errorsmod.Wrap(
 			types.ErrInvalid,
 			fmt.Sprintf("ERC20 %s already exists for denom %s", existingERC20.GetAddress().Hex(), claim.CosmosDenom))
 	}
+	existingDenom, exists := a.keeper.getCosmosOriginatedDenomForERC20(ctx, *tokenAddress)
 	// Disallow a token with an existing ERC20 representation (Ethereum originated) from being registered as a Cosmos-originated token
-	if existingDenom, exists := a.keeper.GetCosmosOriginatedDenom(ctx, *tokenAddress); exists {
+	if exists {
 		return errorsmod.Wrapf(types.ErrInvalid, "ERC20 %s already mapped to denom %s", claim.TokenContract, existingDenom)
 	}
 
@@ -333,7 +334,9 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	}
 
 	// Add to denom-erc20 mapping
-	a.keeper.setCosmosOriginatedDenomToERC20(ctx, claim.CosmosDenom, *tokenAddress)
+	if err := a.keeper.setCosmosOriginatedMapping(ctx, claim.CosmosDenom, *tokenAddress); err != nil {
+		return errorsmod.Wrap(err, "failed to register cosmos-originated ERC20 mapping")
+	}
 
 	err = ctx.EventManager().EmitTypedEvent(
 		&types.EventERC20DeployedClaim{
@@ -385,15 +388,15 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 	// and we need to either add to the total tokens for a Cosmos native
 	// token, or burn non cosmos native tokens
 	if claim.RewardAmount.GT(sdkmath.ZeroInt()) && claim.RewardToken != types.ZeroAddressString {
-		// Check if coin is Cosmos-originated asset and get denom
-		isCosmosOriginated, denom := a.keeper.ERC20ToDenomLookup(ctx, *rewardAddress)
+		// Classify the reward token
+		rewardOrigin := a.keeper.ClassifyERC20(ctx, *rewardAddress)
 
 		// Perform more strict validation on the denom
-		if err := types.ValidateStrictDenom(denom); err != nil {
+		if err := types.ValidateStrictDenom(rewardOrigin.Denom); err != nil {
 			return errorsmod.Wrap(err, "invalid derived reward denom")
 		}
 
-		if isCosmosOriginated {
+		if rewardOrigin.IsCosmosOriginated {
 			// If it is cosmos originated, mint some coins to account
 			// for coins that now exist on Ethereum and may eventually come
 			// back to Cosmos.
@@ -408,7 +411,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 			//
 			// Note we are minting based on the claim! This is important as the reward value
 			// could change between when this event occurred and the present
-			coins := sdk.Coins{sdk.NewCoin(denom, claim.RewardAmount)}
+			coins := sdk.Coins{sdk.NewCoin(rewardOrigin.Denom, claim.RewardAmount)}
 			if err := a.keeper.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
 				if err := ctx.EventManager().EmitTypedEvent(
 					&types.EventValsetUpdatedClaim{

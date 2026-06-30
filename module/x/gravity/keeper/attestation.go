@@ -62,6 +62,7 @@ func (k Keeper) Attest(
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "unable to extract claim hash components")
 		}
+		//nolint: exhaustruct
 		att = &types.Attestation{
 			Observed:        false,
 			Votes:           []string{},
@@ -299,10 +300,12 @@ func (k Keeper) IterateAttestations(ctx sdk.Context, reverse bool, cb func(key [
 	}(iter)
 
 	for ; iter.Valid(); iter.Next() {
+		//nolint: exhaustruct
 		att := types.Attestation{
-			Observed:        false,
-			Votes:           []string{},
-			Height:          0,
+			Observed: false,
+			Votes:    []string{},
+			Height:   0,
+			//nolint: exhaustruct
 			Claim:           &codectypes.Any{},
 			ClaimType:       0,
 			ClaimComponents: nil,

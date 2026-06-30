@@ -141,6 +141,7 @@ func TestMsgSendToCosmosClaimHash(t *testing.T) {
 // Ensures that ClaimHash changes when members of MsgBatchSendToEth change
 // The only field which MUST NOT affect ClaimHash is Orchestrator
 func TestMsgBatchSendToEthClaimHash(t *testing.T) {
+	//nolint: exhaustruct
 	base := MsgBatchSendToEthClaim{
 		EventNonce:     0,
 		EthBlockHeight: 0,
@@ -174,6 +175,7 @@ func TestMsgBatchSendToEthClaimHash(t *testing.T) {
 // Ensures that ClaimHash changes when members of MsgERC20DeployedClaim change
 // The only field which MUST NOT affect ClaimHash is Orchestrator
 func TestMsgERC20DeployedClaimHash(t *testing.T) {
+	//nolint: exhaustruct
 	base := MsgERC20DeployedClaim{
 		EventNonce:     0,
 		EthBlockHeight: 0,
@@ -327,12 +329,14 @@ func TestMsgRequestBatch_ValidateBasic_Denom(t *testing.T) {
 }
 
 func TestMsgERC20DeployedClaim_ValidateBasic_Denom(t *testing.T) {
+	//nolint: exhaustruct
 	valid := MsgERC20DeployedClaim{
 		Orchestrator:  sdk.AccAddress([]byte{1, 2, 3}).String(),
 		CosmosDenom:   "ugraviton",
 		TokenContract: "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
 		EventNonce:    1,
 	}
+	//nolint: exhaustruct
 	invalid := MsgERC20DeployedClaim{
 		Orchestrator:  sdk.AccAddress([]byte{1, 2, 3}).String(),
 		CosmosDenom:   "ibc/gravity0xbad",
@@ -390,6 +394,7 @@ func TestMsgSendToCosmosClaimReconstruction(t *testing.T) {
 }
 
 func TestMsgBatchSendToEthClaimReconstruction(t *testing.T) {
+	//nolint: exhaustruct
 	original := MsgBatchSendToEthClaim{
 		EventNonce:     NonzeroUint64(),
 		EthBlockHeight: NonzeroUint64(),
@@ -413,6 +418,7 @@ func TestMsgBatchSendToEthClaimReconstruction(t *testing.T) {
 }
 
 func TestMsgERC20DeployedClaimReconstruction(t *testing.T) {
+	//nolint: exhaustruct
 	original := MsgERC20DeployedClaim{
 		EventNonce:     NonzeroUint64(),
 		EthBlockHeight: NonzeroUint64(),
@@ -462,6 +468,7 @@ func TestMsgLogicCallExecutedClaimReconstruction(t *testing.T) {
 }
 
 func TestMsgValsetUpdatedClaimReconstructionSorted(t *testing.T) {
+	//nolint: exhaustruct
 	original := MsgValsetUpdatedClaim{
 		EventNonce:     NonzeroUint64(),
 		ValsetNonce:    NonzeroUint64(),
@@ -504,6 +511,7 @@ func TestMsgValsetUpdatedClaimReconstructionSorted(t *testing.T) {
 // VerifyClaimHash verifies that the hash computed from the stored Any claim matches
 // the hash computed from the individually stored claim components.
 func TestVerifyClaimHash(t *testing.T) {
+	//nolint: exhaustruct
 	original := MsgBatchSendToEthClaim{
 		EventNonce:     NonzeroUint64(),
 		EthBlockHeight: NonzeroUint64(),
@@ -517,6 +525,7 @@ func TestVerifyClaimHash(t *testing.T) {
 	anyClaim, err := codectypes.NewAnyWithValue(&original)
 	require.NoError(t, err)
 
+	//nolint: exhaustruct
 	att := Attestation{
 		Claim:           anyClaim,
 		ClaimType:       CLAIM_TYPE_BATCH_SEND_TO_ETH,
@@ -534,6 +543,7 @@ func TestVerifyClaimHash(t *testing.T) {
 // Compatibility: legacy attestation without ClaimComponents should be accepted
 // by genesis import (handled in genesis.go), and VerifyClaimHash should fail gracefully.
 func TestVerifyClaimHashLegacyNilComponents(t *testing.T) {
+	//nolint: exhaustruct
 	original := MsgBatchSendToEthClaim{
 		EventNonce:     NonzeroUint64(),
 		EthBlockHeight: NonzeroUint64(),
@@ -544,6 +554,7 @@ func TestVerifyClaimHashLegacyNilComponents(t *testing.T) {
 	anyClaim, err := codectypes.NewAnyWithValue(&original)
 	require.NoError(t, err)
 
+	//nolint: exhaustruct
 	att := Attestation{
 		Claim:     anyClaim,
 		ClaimType: CLAIM_TYPE_BATCH_SEND_TO_ETH,

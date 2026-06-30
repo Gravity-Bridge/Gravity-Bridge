@@ -71,6 +71,7 @@ func TestProcessNextPendingIbcAutoForward_BadDenom(t *testing.T) {
 	store.Set(key, input.GravityKeeper.cdc.MustMarshal(&fwd))
 
 	require.Panics(t, func() {
-		_, _ = input.GravityKeeper.ProcessNextPendingIbcAutoForward(ctx)
+		_, err = input.GravityKeeper.ProcessNextPendingIbcAutoForward(ctx)
+		require.Error(t, err)
 	})
 }

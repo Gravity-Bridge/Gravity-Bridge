@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -19,14 +20,24 @@ var badErc20 = func() *types.EthAddress {
 	return addr
 }()
 
+// setCosmosOriginatedMappingUnchecked writes a bidirectional denom<->ERC20 mapping directly to
+// the store without any validation. Only use this in tests or recovery code where you are
+// deliberately simulating corrupted or pre-validation state.
+func setCosmosOriginatedMappingUnchecked(ctx sdk.Context, k Keeper, denom string, tokenContract types.EthAddress) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.GetDenomToERC20Key(denom), tokenContract.GetAddress().Bytes())
+	store.Set(types.GetERC20ToDenomKey(tokenContract), []byte(denom))
+}
+
 func TestHandleSendToCosmos_BadDenom(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	// Intentionally plant a bad ERC20 -> Denom mapping in state to test handler rejection.
 	// Invariant assertion is skipped because the corrupted mapping would trigger it.
 
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, "ibc/gravity0xbad", *badErc20)
+	setCosmosOriginatedMappingUnchecked(ctx, input.GravityKeeper, "ibc/gravity0xbad", *badErc20)
 
 	attHandler := input.GravityKeeper.AttestationHandler
+	//nolint: exhaustruct
 	claim := types.MsgSendToCosmosClaim{
 		EventNonce:     1,
 		EthBlockHeight: 1,
@@ -37,6 +48,7 @@ func TestHandleSendToCosmos_BadDenom(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
+	//nolint: exhaustruct
 	err := attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
@@ -51,9 +63,10 @@ func TestHandleBatchSendToEth_BadDenom(t *testing.T) {
 	// Intentionally plant a bad ERC20 -> Denom mapping in state to test handler rejection.
 	// Invariant assertion is skipped because the corrupted mapping would trigger it.
 
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, "ibc/gravity0xbad", *badErc20)
+	setCosmosOriginatedMappingUnchecked(ctx, input.GravityKeeper, "ibc/gravity0xbad", *badErc20)
 
 	attHandler := input.GravityKeeper.AttestationHandler
+	//nolint: exhaustruct
 	claim := types.MsgBatchSendToEthClaim{
 		TokenContract:  badErc20.GetAddress().Hex(),
 		BatchNonce:     1,
@@ -62,6 +75,7 @@ func TestHandleBatchSendToEth_BadDenom(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
+	//nolint: exhaustruct
 	err := attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
@@ -76,6 +90,7 @@ func TestHandleErc20Deployed_BadDenom(t *testing.T) {
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	attHandler := input.GravityKeeper.AttestationHandler
+	//nolint: exhaustruct
 	claim := types.MsgERC20DeployedClaim{
 		CosmosDenom:    "ibc/gravity0xbad",
 		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
@@ -87,13 +102,14 @@ func TestHandleErc20Deployed_BadDenom(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
+	//nolint: exhaustruct
 	err := attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
 		Height:   uint64(ctx.BlockHeight()),
 	}, &claim)
 	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrInvalidDenom)
+	require.True(t, strings.Contains(err.Error(), "invalid cosmos denom"))
 }
 
 func TestHandleValsetUpdated_BadRewardDenom(t *testing.T) {
@@ -101,9 +117,10 @@ func TestHandleValsetUpdated_BadRewardDenom(t *testing.T) {
 	// Intentionally plant a bad ERC20 -> Denom mapping in state to test handler rejection.
 	// Invariant assertion is skipped because the corrupted mapping would trigger it.
 
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, "ibc/gravity0xbad", *badErc20)
+	setCosmosOriginatedMappingUnchecked(ctx, input.GravityKeeper, "ibc/gravity0xbad", *badErc20)
 
 	attHandler := input.GravityKeeper.AttestationHandler
+	//nolint: exhaustruct
 	claim := types.MsgValsetUpdatedClaim{
 		RewardToken:    badErc20.GetAddress().Hex(),
 		RewardAmount:   math.NewInt(1),
@@ -114,6 +131,7 @@ func TestHandleValsetUpdated_BadRewardDenom(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
+	//nolint: exhaustruct
 	err := attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
@@ -134,9 +152,11 @@ func TestHandleErc20Deployed_ReverseMapping(t *testing.T) {
 	// Set up: "footoken" is already mapped to the target ERC20 contract
 	existingERC20, err := types.NewEthAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
 	require.NoError(t, err)
-	k.setCosmosOriginatedDenomToERC20(ctx, "footoken", *existingERC20)
+	err = k.setCosmosOriginatedMapping(ctx, "footoken", *existingERC20)
+	require.NoError(t, err)
 
 	// Now try to register the SAME ERC20 address for a different denom ("bartoken")
+	//nolint: exhaustruct
 	claim := types.MsgERC20DeployedClaim{
 		CosmosDenom:    "bartoken",
 		TokenContract:  existingERC20.GetAddress().Hex(),
@@ -148,6 +168,7 @@ func TestHandleErc20Deployed_ReverseMapping(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
+	//nolint: exhaustruct
 	err = attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
@@ -169,9 +190,11 @@ func TestHandleErc20Deployed_DuplicateDenom(t *testing.T) {
 	// Set up: "footoken" already has an ERC20 representation
 	existingERC20, err := types.NewEthAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
 	require.NoError(t, err)
-	k.setCosmosOriginatedDenomToERC20(ctx, "footoken", *existingERC20)
+	err = k.setCosmosOriginatedMapping(ctx, "footoken", *existingERC20)
+	require.NoError(t, err)
 
 	// Now try to register a DIFFERENT ERC20 address for the same denom ("footoken")
+	//nolint: exhaustruct
 	claim := types.MsgERC20DeployedClaim{
 		CosmosDenom:    "footoken",
 		TokenContract:  "0xdAC17F958D2ee523a2206206994597C13D831ec7",
@@ -183,6 +206,7 @@ func TestHandleErc20Deployed_DuplicateDenom(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
+	//nolint: exhaustruct
 	err = attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
@@ -202,6 +226,7 @@ func TestHandleErc20Deployed_GravityDenom(t *testing.T) {
 	attHandler := input.GravityKeeper.AttestationHandler
 
 	// gravity0x... denom (standard Ethereum-originated voucher)
+	//nolint: exhaustruct
 	claim := types.MsgERC20DeployedClaim{
 		CosmosDenom:    "gravity0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
 		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
@@ -213,6 +238,7 @@ func TestHandleErc20Deployed_GravityDenom(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
+	//nolint: exhaustruct
 	err := attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
@@ -223,6 +249,7 @@ func TestHandleErc20Deployed_GravityDenom(t *testing.T) {
 	require.Contains(t, err.Error(), "cannot register Ethereum-originated gravity denom")
 
 	// gravity20x... denom (remapped Ethereum-originated voucher)
+	//nolint: exhaustruct
 	claim2 := types.MsgERC20DeployedClaim{
 		CosmosDenom:    "gravity20x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
 		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
@@ -234,6 +261,7 @@ func TestHandleErc20Deployed_GravityDenom(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
+	//nolint: exhaustruct
 	err = attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},
@@ -254,7 +282,8 @@ func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
 	attHandler := input.GravityKeeper.AttestationHandler
 
 	// Set up bank metadata for "footoken" (simulating a governance proposal accepted it)
-	input.BankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
+	//nolint: exhaustruct
+	fooMeta := banktypes.Metadata{
 		Base:        "footoken",
 		Display:     "FOO",
 		Name:        "Foo Token",
@@ -264,12 +293,14 @@ func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
 			{Denom: "footoken", Exponent: 0},
 			{Denom: "FOO", Exponent: 6},
 		},
-	})
+	}
+	input.BankKeeper.SetDenomMetaData(ctx, fooMeta)
 
 	// Ensure the allowlist is empty (default)
 	require.Empty(t, input.GravityKeeper.GetAllCosmosBridgeableTokens(ctx))
 
 	// Attempt to deploy ERC20 for "footoken" — should fail because not on allowlist
+	//nolint: exhaustruct
 	claim := types.MsgERC20DeployedClaim{
 		CosmosDenom:    "footoken",
 		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
@@ -289,12 +320,13 @@ func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
 	}, &claim)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrInvalid)
-	require.Contains(t, err.Error(), "CosmosBridgeableTokens allowlist")
+	require.Contains(t, err.Error(), "CosmosBridgeableTokens whitelist")
 
 	// Now add "footoken" to the allowlist
 	input.GravityKeeper.SetCosmosBridgeableToken(ctx, fooMeta)
 
 	// Retry — should now pass the allowlist check (will succeed if metadata matches)
+	//nolint: exhaustruct
 	err = attHandler.Handle(ctx, types.Attestation{
 		Observed: false,
 		Votes:    []string{},

@@ -134,6 +134,7 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 
 	for i := 0; i < length; i++ {
 		nonce := uint64(1 + i)
+		//nolint: exhaustruct
 		msg := types.MsgSendToCosmosClaim{
 			EventNonce:     nonce,
 			EthBlockHeight: 1,
@@ -147,6 +148,7 @@ func createAttestations(t *testing.T, k keeper.Keeper, ctx sdk.Context, length i
 		any, err := codectypes.NewAnyWithValue(&msg)
 		require.NoError(t, err)
 
+		//nolint: exhaustruct
 		att := &types.Attestation{
 			Observed: false,
 			Votes:    []string{},

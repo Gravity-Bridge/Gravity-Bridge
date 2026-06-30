@@ -244,82 +244,102 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 
 	ctx := input.Context
 
+	//nolint: exhaustruct
 	gravityId := typesv2.Param{
 		Key:   "GravityId",
 		Value: "1",
 	}
+	//nolint: exhaustruct
 	contractSourceHash := typesv2.Param{
 		Key:   "ContractSourceHash",
 		Value: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 	}
+	//nolint: exhaustruct
 	bridgeEthereumAddress := typesv2.Param{
 		Key:   "BridgeEthereumAddress",
 		Value: "0x0000000000000000000000000000000000000000",
 	}
+	//nolint: exhaustruct
 	bridgeChainId := typesv2.Param{
 		Key:   "BridgeChainId",
 		Value: "1",
 	}
+	//nolint: exhaustruct
 	signedValsetsWindow := typesv2.Param{
 		Key:   "SignedValsetsWindow",
 		Value: "100",
 	}
+	//nolint: exhaustruct
 	signedBatchesWindow := typesv2.Param{
 		Key:   "SignedBatchesWindow",
 		Value: "100",
 	}
+	//nolint: exhaustruct
 	signedLogicCallsWindow := typesv2.Param{
 		Key:   "SignedLogicCallsWindow",
 		Value: "100",
 	}
+	//nolint: exhaustruct
 	targetBatchTimeout := typesv2.Param{
 		Key:   "TargetBatchTimeout",
 		Value: "1000000",
 	}
+	//nolint: exhaustruct
 	averageBlockTime := typesv2.Param{
 		Key:   "AverageBlockTime",
 		Value: "1000",
 	}
+	//nolint: exhaustruct
 	averageEthereumBlockTime := typesv2.Param{
 		Key:   "AverageEthereumBlockTime",
 		Value: "25000",
 	}
+	//nolint: exhaustruct
 	slashFractionValset := typesv2.Param{
 		Key:   "SlashFractionValset",
 		Value: "0.020000000000000000",
 	}
+	//nolint: exhaustruct
 	slashFractionBatch := typesv2.Param{
 		Key:   "SlashFractionBatch",
 		Value: "0.020000000000000000",
 	}
+	//nolint: exhaustruct
 	slashFractionLogicCall := typesv2.Param{
 		Key:   "SlashFractionLogicCall",
 		Value: "0.010000000000000000",
 	}
+	//nolint: exhaustruct
 	unbondSlashingValsetsWindow := typesv2.Param{
 		Key:   "UnbondSlashingValsetsWindow",
 		Value: "100",
 	}
+	//nolint: exhaustruct
 	slashFractionBadEthSignature := typesv2.Param{
 		Key:   "SlashFractionBadEthSignature",
 		Value: "0.020000000000000000",
 	}
+	//nolint: exhaustruct
 	valsetReward := typesv2.Param{
 		Key:   "ValsetReward",
 		Value: "10ugraviton",
 	}
+	//nolint: exhaustruct
 	bridgeActive := typesv2.Param{
 		Key:   "BridgeActive",
 		Value: "false",
 	}
+	//nolint: exhaustruct
 	ethereumBlacklist := typesv2.Param{
 		Key:   "EthereumBlacklist",
 		Value: "[\"0x0000000000000000000000000000000000000000\"]",
 	}
+	//nolint: exhaustruct
 	minChainFeeBasisPoints := typesv2.Param{
 		Key:   "MinChainFeeBasisPoints",
 		Value: "100",
 	}
+	//nolint: exhaustruct
 	chainFeeAuctionPoolFraction := typesv2.Param{
 		Key:   "ChainFeeAuctionPoolFraction",
 		Value: "0.100000000000000000",
@@ -335,6 +355,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "All fields set",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&gravityId, &contractSourceHash, &bridgeEthereumAddress, &bridgeChainId,
 					&signedValsetsWindow, &signedBatchesWindow, &signedLogicCallsWindow,
@@ -375,6 +396,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only GravityId",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&gravityId,
 				},
@@ -391,6 +413,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only ContractSourceHash",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&contractSourceHash,
 				},
@@ -407,6 +430,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only BridgeEthereumAddress",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&bridgeEthereumAddress,
 				},
@@ -423,6 +447,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only BridgeChainId",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&bridgeChainId,
 				},
@@ -439,6 +464,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only SignedValsetsWindow",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&signedValsetsWindow,
 				},
@@ -455,6 +481,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only SignedBatchesWindow",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&signedBatchesWindow,
 				},
@@ -471,6 +498,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only SignedLogicCallsWindow",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&signedLogicCallsWindow,
 				},
@@ -487,6 +515,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only TargetBatchTimeout",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&targetBatchTimeout,
 				},
@@ -503,6 +532,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only AverageBlockTime",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&averageBlockTime,
 				},
@@ -519,6 +549,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only AverageEthereumBlockTime",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&averageEthereumBlockTime,
 				},
@@ -535,6 +566,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only SlashFractionValset",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&slashFractionValset,
 				},
@@ -551,6 +583,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only SlashFractionBatch",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&slashFractionBatch,
 				},
@@ -567,6 +600,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only SlashFractionLogicCall",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&slashFractionLogicCall,
 				},
@@ -583,6 +617,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only UnbondSlashingValsetsWindow",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&unbondSlashingValsetsWindow,
 				},
@@ -599,6 +634,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only SlashFractionBadEthSignature",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&slashFractionBadEthSignature,
 				},
@@ -615,6 +651,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only ValsetReward",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&valsetReward,
 				},
@@ -631,6 +668,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only BridgeActive",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&bridgeActive,
 				},
@@ -647,6 +685,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only EthereumBlacklist",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&ethereumBlacklist,
 				},
@@ -663,6 +702,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only MinChainFeeBasisPoints",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&minChainFeeBasisPoints,
 				},
@@ -679,6 +719,7 @@ func TestMsgUpdateParamsProposal(t *testing.T) {
 			name: "Update only ChainFeeAuctionPoolFraction",
 			msg: typesv2.MsgUpdateParamsProposal{
 				Authority: govAddress.String(),
+				//nolint: exhaustruct
 				ParamUpdates: []*typesv2.Param{
 					&chainFeeAuctionPoolFraction,
 				},

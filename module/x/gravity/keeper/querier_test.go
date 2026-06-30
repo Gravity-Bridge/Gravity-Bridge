@@ -997,7 +997,8 @@ func TestQueryERC20ToDenom(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := input.Context
 	k := input.GravityKeeper
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
+	err = input.GravityKeeper.setCosmosOriginatedMapping(sdkCtx, denom, *erc20)
+	require.NoError(t, err)
 
 	queriedDenom, err := k.ERC20ToDenom(ctx, &types.QueryERC20ToDenomRequest{Erc20: erc20.GetAddress().Hex()})
 	require.NoError(t, err)
@@ -1022,7 +1023,8 @@ func TestQueryDenomToERC20(t *testing.T) {
 	sdkCtx := input.Context
 	ctx := input.Context
 	k := input.GravityKeeper
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(sdkCtx, denom, *erc20)
+	err = input.GravityKeeper.setCosmosOriginatedMapping(sdkCtx, denom, *erc20)
+	require.NoError(t, err)
 
 	queriedERC20, err := k.DenomToERC20(ctx, &types.QueryDenomToERC20Request{Denom: denom})
 	require.NoError(t, err)

@@ -12,135 +12,261 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-func (k Keeper) GetCosmosOriginatedDenom(ctx sdk.Context, tokenContract types.EthAddress) (string, bool) {
+// getCosmosOriginatedDenomForERC20 returns the cosmos-originated denom registered for the
+// given ERC20 address, and whether such a mapping exists.
+func (k Keeper) getCosmosOriginatedDenomForERC20(ctx sdk.Context, tokenContract types.EthAddress) (string, bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetERC20ToDenomKey(tokenContract))
-
 	if bz != nil {
 		return string(bz), true
 	}
 	return "", false
 }
 
-func (k Keeper) GetCosmosOriginatedERC20(ctx sdk.Context, denom string) (*types.EthAddress, bool) {
+// getCosmosOriginatedERC20ForDenom returns the ERC20 address registered for the given
+// cosmos-originated denom, and whether such a mapping exists.
+func (k Keeper) getCosmosOriginatedERC20ForDenom(ctx sdk.Context, denom string) (*types.EthAddress, bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetDenomToERC20Key(denom))
 	if bz != nil {
 		ethAddr, err := types.NewEthAddressFromBytes(bz)
 		if err != nil {
-			panic(fmt.Errorf("discovered invalid ERC20 address under key %v", string(bz)))
+			panic(fmt.Errorf("discovered invalid ERC20 address under cosmos-originated denom key %q: %v", denom, err))
 		}
-
 		return ethAddr, true
 	}
 	return nil, false
 }
 
-// IterateCosmosOriginatedERC20s iterates through every erc20 under DenomToERC20Key, passing it to the given callback.
-// cb should return true to stop iteration, false to continue
-func (k Keeper) IterateCosmosOriginatedERC20s(ctx sdk.Context, cb func(key []byte, erc20 *types.EthAddress) (stop bool)) {
+// setCosmosOriginatedMapping registers a bidirectional denom<->ERC20 mapping in the
+// cosmos-originated index after enforcing the following security constraints:
+//   - denom must not contain an embedded Ethereum address
+//   - denom must not collide with an eth-originated gravity or gravity2 denom
+//   - the ERC20 must not already be in the remapped eth-originated set
+//   - duplicate prevention: neither denom nor ERC20 may already be registered
+func (k Keeper) setCosmosOriginatedMapping(ctx sdk.Context, denom string, tokenContract types.EthAddress) error {
+	// reject denoms containing an embedded Ethereum address
+	if types.ContainsEthAddress(denom) {
+		return errorsmod.Wrapf(types.ErrInvalid,
+			"cosmos-originated denom %q contains an embedded Ethereum address and would collide with an eth-originated asset", denom)
+	}
+	// reject denoms that would parse as a gravity or gravity2 eth-originated denom
+	if _, err := types.GravityDenomToERC20(denom); err == nil {
+		return errorsmod.Wrapf(types.ErrInvalid,
+			"cosmos-originated denom %q collides with an eth-originated gravity denom", denom)
+	}
+	if _, err := types.Gravity2DenomToERC20(denom); err == nil {
+		return errorsmod.Wrapf(types.ErrInvalid,
+			"cosmos-originated denom %q collides with an eth-originated gravity2 denom", denom)
+	}
+	// reject ERC20s already in the remapped (eth-originated) set
+	if k.IsRemappedERC20(ctx, tokenContract) {
+		return errorsmod.Wrapf(types.ErrInvalid,
+			"ERC20 %s is already in the remapped eth-originated set and cannot be registered as cosmos-originated",
+			tokenContract.GetAddress().Hex())
+	}
+	// Prevent silent overwrites in either direction
+	if existing, exists := k.getCosmosOriginatedERC20ForDenom(ctx, denom); exists {
+		return errorsmod.Wrapf(types.ErrDuplicate,
+			"denom %q is already mapped to cosmos-originated ERC20 %s", denom, existing.GetAddress().Hex())
+	}
+	if existingDenom, exists := k.getCosmosOriginatedDenomForERC20(ctx, tokenContract); exists {
+		return errorsmod.Wrapf(types.ErrDuplicate,
+			"ERC20 %s is already mapped to cosmos-originated denom %q", tokenContract.GetAddress().Hex(), existingDenom)
+	}
+
+	// Write the entries to the store
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.GetDenomToERC20Key(denom), tokenContract.GetAddress().Bytes())
+	store.Set(types.GetERC20ToDenomKey(tokenContract), []byte(denom))
+	return nil
+}
+
+// DeleteCosmosOriginatedMapping removes both directions of the cosmos-originated denom<->ERC20
+// mapping from the store.
+func (k Keeper) DeleteCosmosOriginatedMapping(ctx sdk.Context, tokenContract types.EthAddress, denom string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Delete(types.GetDenomToERC20Key(denom))
+	store.Delete(types.GetERC20ToDenomKey(tokenContract))
+}
+
+// IterateCosmosOriginatedMappings calls cb for every entry in the cosmos-originated denom<->ERC20
+// index, providing the denom string and the corresponding EthAddress.
+// cb should return true to stop iteration early.
+func (k Keeper) IterateCosmosOriginatedMappings(ctx sdk.Context, cb func(denom string, erc20 *types.EthAddress) bool) {
 	store := ctx.KVStore(k.storeKey)
 	prefixStore := prefix.NewStore(store, types.DenomToERC20Key)
 	iter := prefixStore.Iterator(nil, nil)
-
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
+		denom := string(iter.Key())
 		erc20, err := types.NewEthAddressFromBytes(iter.Value())
 		if err != nil {
-			panic(fmt.Sprintf("Discovered invalid eth address under key %v in IterateCosmosOriginatedERC20s: %v", iter.Key(), err))
+			panic(fmt.Sprintf("discovered invalid EthAddress under cosmos-originated mapping key %q: %v", denom, err))
 		}
-		// cb returns true to stop early
-		if cb(iter.Key(), erc20) {
+		if cb(denom, erc20) {
 			break
 		}
 	}
 }
 
-func (k Keeper) setCosmosOriginatedDenomToERC20(ctx sdk.Context, denom string, tokenContract types.EthAddress) {
-	store := ctx.KVStore(k.storeKey)
-	store.Set(types.GetDenomToERC20Key(denom), tokenContract.GetAddress().Bytes())
-	store.Set(types.GetERC20ToDenomKey(tokenContract), []byte(denom))
+// ClassifyERC20 determines the origin of an ERC20 address (Cosmos or Ethereum) and returns a fully populated AssetOrigin.
+//
+// This function will panic if any of these checks fail:
+//   - Eth-originated: the derived denom must round-trip back to the same ERC20 address
+//   - The denom fails ValidateStrictDenom()
+func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) types.AssetOrigin {
+	// Check cosmos-originated index first
+	if denom, exists := k.getCosmosOriginatedDenomForERC20(ctx, tokenContract); exists {
+		// Note: denom validation (ValidateStrictDenom) is intentionally left to the caller.
+		// Panicking here would prevent the attestation handler from returning a proper error
+		// when a corrupted or pre-validation entry exists in the store.
+		origin := types.AssetOrigin{
+			IsCosmosOriginated: true,
+			IsEthOriginated:    false,
+			IsRemapped:         false,
+			Denom:              denom,
+			ERC20:              &tokenContract,
+		}
+		origin.AssertValid()
+		return origin
+	}
+
+	// Eth-originated path
+	isRemapped := k.IsRemappedERC20(ctx, tokenContract)
+	var denom string
+	if isRemapped {
+		denom = types.Gravity2Denom(tokenContract)
+	} else {
+		denom = types.GravityDenom(tokenContract)
+	}
+
+	// Eth address round-trip check — the derived denom must lead back to the same ERC20 address
+	var reparsed *types.EthAddress
+	var parseErr error
+	if isRemapped {
+		reparsed, parseErr = types.Gravity2DenomToERC20(denom)
+	} else {
+		reparsed, parseErr = types.GravityDenomToERC20(denom)
+	}
+	if parseErr != nil || reparsed.GetAddress() != tokenContract.GetAddress() {
+		panic(fmt.Sprintf(
+			"ClassifyERC20: eth-originated denom %q failed round-trip validation for ERC20 %s",
+			denom, tokenContract.GetAddress().Hex()))
+	}
+
+	if err := types.ValidateStrictDenom(denom); err != nil {
+		panic(fmt.Sprintf("ClassifyERC20: the denom %s for eth-originated ERC20 %s is invalid: %v",
+			denom, tokenContract.GetAddress().Hex(), err))
+	}
+	origin := types.AssetOrigin{
+		IsCosmosOriginated: false,
+		IsEthOriginated:    true,
+		IsRemapped:         isRemapped,
+		Denom:              denom,
+		ERC20:              &tokenContract,
+	}
+	origin.AssertValid()
+	return origin
 }
 
-// DenomToERC20Lookup returns (bool isCosmosOriginated, EthAddress ERC20, err)
-// Using this information, you can see if an asset is native to Cosmos or Ethereum,
-// and get its corresponding ERC20 address.
-// This will return an error if it cant parse the denom as a gravity denom, and then also can't find the denom
-// in an index of ERC20 contracts deployed on Ethereum to serve as synthetic Cosmos assets.
-func (k Keeper) DenomToERC20Lookup(ctx sdk.Context, denom string) (bool, *types.EthAddress, error) {
-	// first, prefer gravity2 prefixes for Ethereum-originated assets
-	if tc1, err := types.Gravity2DenomToERC20(denom); err == nil {
-		if k.IsRemappedERC20(ctx, *tc1) {
-			return false, tc1, nil
+// ClassifyDenom determines the origin of an ERC20 address (Cosmos or Ethereum) and returns a fully populated AssetOrigin.
+//
+// Returns an error if the denom is not recognised as any known asset.
+// For cosmos-originated assets, also verifies bidirectional store consistency.
+// This function will panic if any of these checks fail:
+//   - Unrecognized denom
+//   - Eth-originated: the derived denom must round-trip back to the same ERC20 address
+//   - The denom fails ValidateStrictDenom()
+func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) types.AssetOrigin {
+	// gravity2 prefix -> eth-originated remapped erc20
+	if tc, err := types.Gravity2DenomToERC20(denom); err == nil {
+		if !k.IsRemappedERC20(ctx, *tc) {
+			panic(fmt.Sprintf("ClassifyDenom: gravity2 denom %s does not correspond to a remapped ERC20", denom))
 		}
-		return false, nil, errorsmod.Wrapf(types.ErrInvalid,
-			"gravity2 denom %s does not correspond to a remapped ERC20", denom)
-	}
-
-	// next, try to look up the regular gravity prefix
-	tc2, err := types.GravityDenomToERC20(denom)
-	if err != nil {
-		// finally, check if this is a cosmos originated denom
-		tc3, exists := k.GetCosmosOriginatedERC20(ctx, denom)
-		if !exists {
-			return false, nil,
-				errorsmod.Wrap(types.ErrInvalid, fmt.Sprintf("denom not a gravity voucher coin: %s, and also not in cosmos-originated ERC20 index", err))
+		if err := types.ValidateStrictDenom(denom); err != nil {
+			panic(fmt.Sprintf("ClassifyDenom: the denom %s for remapped ERC20 %s is invalid: %v",
+				denom, tc.GetAddress().Hex(), err))
 		}
-		return true, tc3, nil
+		origin := types.AssetOrigin{
+			IsCosmosOriginated: false,
+			IsEthOriginated:    true,
+			IsRemapped:         true,
+			Denom:              denom,
+			ERC20:              tc,
+		}
+		origin.AssertValid()
+		return origin
 	}
 
-	if k.IsRemappedERC20(ctx, *tc2) {
-		return false, nil, errorsmod.Wrapf(types.ErrInvalid,
-			"ERC20 %s was remapped, new deposits use %s.",
-			tc2.GetAddress().Hex(), types.Gravity2Denom(*tc2))
+	// gravity prefix -> eth-originated erc20
+	if tc, err := types.GravityDenomToERC20(denom); err == nil {
+		if k.IsRemappedERC20(ctx, *tc) {
+			panic(fmt.Sprintf("ERC20 %s was remapped; new deposits use %s", tc.GetAddress().Hex(), types.Gravity2Denom(*tc)))
+		}
+
+		if err := types.ValidateStrictDenom(denom); err != nil {
+			panic(fmt.Sprintf("ClassifyDenom: the denom %s for eth-originated ERC20 %s is invalid: %v",
+				denom, tc.GetAddress().Hex(), err))
+		}
+		origin := types.AssetOrigin{
+			IsCosmosOriginated: false,
+			IsEthOriginated:    true,
+			IsRemapped:         false,
+			Denom:              denom,
+			ERC20:              tc,
+		}
+		origin.AssertValid()
+		return origin
 	}
 
-	// This is an ethereum-originated asset
-	return false, tc2, nil
+	// cosmos-originated token
+	if tc, exists := k.getCosmosOriginatedERC20ForDenom(ctx, denom); exists {
+		if err := types.ValidateStrictDenom(denom); err != nil {
+			panic(fmt.Sprintf("ClassifyDenom: the denom %s for cosmos-originated ERC20 %s is invalid: %v",
+				denom, tc.GetAddress().Hex(), err))
+		}
+		// Check the reverse mapping is consistent
+		if reverseDenom, ok := k.getCosmosOriginatedDenomForERC20(ctx, *tc); !ok || reverseDenom != denom {
+			panic(fmt.Sprintf("ClassifyDenom: cosmos-originated mapping for denom %q is not bidirectionally consistent (reverse lookup returned %q)",
+				denom, reverseDenom))
+		}
+
+		origin := types.AssetOrigin{
+			IsCosmosOriginated: true,
+			IsEthOriginated:    false,
+			IsRemapped:         false,
+			Denom:              denom,
+			ERC20:              tc,
+		}
+		origin.AssertValid()
+		return origin
+	}
+
+	// Denom is not registered as any known asset. Return a zero AssetOrigin (both flags false).
+	// Callers that require a known asset (e.g. RewardToERC20Lookup) must check the returned flags.
+	//nolint: exhaustruct
+	return types.AssetOrigin{}
 }
 
-// RewardToERC20Lookup is a specialized function wrapping DenomToERC20Lookup designed to validate
-// the validator set reward any time we generate a validator set
+// RewardToERC20Lookup validates a valset reward coin and returns its ERC20 address and amount.
+// Panics if the coin is invalid or the denom is not a known bridged asset (operator error).
 func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (*types.EthAddress, math.Int) {
 	if !coin.IsValid() || coin.IsZero() {
 		panic("Bad validator set relaying reward!")
-	} else {
-		// reward case, pass to DenomToERC20Lookup
-		_, address, err := k.DenomToERC20Lookup(ctx, coin.Denom)
-		if err != nil {
-			// This can only ever happen if governance sets a value for the reward
-			// which is not a valid ERC20 that as been bridged before (either from or to Cosmos)
-			// We'll classify that as operator error and just panic
-			panic("Invalid Valset reward! Correct or remove the paramater value")
-		}
-		return address, coin.Amount
 	}
-}
-
-// ERC20ToDenom returns (bool isCosmosOriginated, string denom, err)
-// Using this information, you can see if an ERC20 address representing an asset is native to Cosmos or Ethereum,
-// and get its corresponding denom
-func (k Keeper) ERC20ToDenomLookup(ctx sdk.Context, tokenContract types.EthAddress) (bool, string) {
-	// First try looking up tokenContract in index
-	dn1, exists := k.GetCosmosOriginatedDenom(ctx, tokenContract)
-	if exists {
-		// It is a cosmos originated asset
-		return true, dn1
+	origin := k.ClassifyDenom(ctx, coin.Denom)
+	if !origin.IsCosmosOriginated && !origin.IsEthOriginated {
+		// This can only happen if governance sets a reward denom that has never been bridged.
+		panic(fmt.Sprintf("Invalid Valset reward! Denom %q is not a known bridged asset. Correct or remove the parameter value", coin.Denom))
 	}
-
-	// if this is a remapped token, make sure to return the gravity2 denom
-	if k.IsRemappedERC20(ctx, tokenContract) {
-		return false, types.Gravity2Denom(tokenContract)
-	}
-
-	// If it is not a cosmos originated token and not a remapped token, turn the ERC20 into a gravity denom
-	return false, types.GravityDenom(tokenContract)
+	return origin.ERC20, coin.Amount
 }
 
 // SetRemappedERC20 marks an Ethereum ERC20 address as having been remapped.
-// Once set, ERC20ToDenomLookup returns the gravity2 denom
-// for new deposits and DenomToERC20Lookup rejects the old gravity-prefixed denom.
+// Once set, ClassifyERC20 returns the gravity2 denom for new deposits and
+// ClassifyDenom rejects the old gravity-prefixed denom.
 func (k Keeper) SetRemappedERC20(ctx sdk.Context, tokenContract types.EthAddress) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetRemappedERC20Key(tokenContract), []byte{0x01})
@@ -175,29 +301,6 @@ func (k Keeper) DeleteCosmosOriginatedDenomToERC20(ctx sdk.Context, tokenContrac
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(types.GetDenomToERC20Key(denom))
 	store.Delete(types.GetERC20ToDenomKey(tokenContract))
-}
-
-// EnsureCosmosBridgeable checks CosmosBridgeableTokens allowlist in one place
-// making the logic more testable.
-func (k Keeper) EnsureCosmosBridgeable(ctx sdk.Context, denom string) error {
-	_, isCosmosOriginated := k.GetCosmosOriginatedERC20(ctx, denom)
-	if !isCosmosOriginated {
-		return nil
-	}
-	params, err := k.GetParams(ctx)
-	if err != nil {
-		return errorsmod.Wrap(err, "could not get params")
-	}
-	for _, bridgeable := range params.CosmosBridgeableTokens {
-		if bridgeable.Base == denom {
-			return nil
-		}
-	}
-	return errorsmod.Wrapf(
-		types.ErrInvalid,
-		"cosmos-originated token %s is not on the CosmosBridgeableTokens allowlist",
-		denom,
-	)
 }
 
 // IterateERC20ToDenom iterates over erc20 to denom relations

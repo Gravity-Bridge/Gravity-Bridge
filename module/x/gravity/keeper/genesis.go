@@ -55,6 +55,7 @@ func initBridgeDataFromGenesis(ctx sdk.Context, k Keeper, data types.GenesisStat
 }
 
 // InitGenesis starts a chain from a genesis state
+// nolint: gocyclo
 func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 	err := k.SetParams(ctx, *data.Params)
 	if err != nil {
@@ -178,7 +179,9 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err := types.ValidateStrictDenom(item.Denom); err != nil {
 			panic(errorsmod.Wrapf(err, "invalid denom in genesis state: %s", item.Denom))
 		}
-		k.setCosmosOriginatedDenomToERC20(ctx, item.Denom, *ethAddr)
+		if err := k.setCosmosOriginatedMapping(ctx, item.Denom, *ethAddr); err != nil {
+			panic(errorsmod.Wrapf(err, "invalid cosmos-originated mapping in genesis state for denom %q", item.Denom))
+		}
 	}
 
 	// populate state with remapped ERC20 addresses (set by the recovery upgrade)
@@ -211,7 +214,7 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err := types.ValidateStrictDenom(valsetReward.Denom); err != nil {
 			panic(errorsmod.Wrapf(err, "invalid valset reward denom in genesis state"))
 		}
-		_, exists := k.GetCosmosOriginatedERC20(ctx, valsetReward.Denom)
+		_, exists := k.getCosmosOriginatedERC20ForDenom(ctx, valsetReward.Denom)
 		if !exists {
 			panic("Invalid Cosmos originated denom for valset reward")
 		}
@@ -292,8 +295,8 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 	}
 
 	// export erc20 to denom relations
-	k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
-		erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
+	k.IterateCosmosOriginatedMappings(ctx, func(denom string, erc20 *types.EthAddress) bool {
+		erc20ToDenoms = append(erc20ToDenoms, types.ERC20ToDenom{Erc20: erc20.GetAddress().Hex(), Denom: denom})
 		return false
 	})
 
@@ -312,6 +315,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) types.GenesisState {
 		unbatchedTxs[i] = v.ToExternal()
 	}
 
+	//nolint: exhaustruct
 	return types.GenesisState{
 		Params: &p,
 		GravityNonces: types.GravityNonces{

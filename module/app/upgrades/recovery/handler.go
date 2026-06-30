@@ -75,8 +75,7 @@ type remapEntry struct {
 func migrateRemappedERC20s(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkeeper.BaseKeeper) error {
 	var remapped []remapEntry
 
-	k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) (stop bool) {
-		denom := string(key) // prefix store strips DenomToERC20Key
+	k.IterateCosmosOriginatedMappings(ctx, func(denom string, erc20 *types.EthAddress) bool {
 
 		// denom must embed an eip-55 address
 		if !embeddedEthAddrRegex.MatchString(denom) {
@@ -124,7 +123,7 @@ func migrateRemappedERC20s(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkee
 		}
 
 		// delete the problem cosmos-originated denom ERC20 mapping
-		k.DeleteCosmosOriginatedDenomToERC20(ctx, e.erc20, e.problemDenom)
+		k.DeleteCosmosOriginatedMapping(ctx, e.erc20, e.problemDenom)
 
 		// set the remapped flag
 		k.SetRemappedERC20(ctx, e.erc20)
@@ -196,8 +195,7 @@ func registerCosmosBridgeableTokens(ctx sdk.Context, k *gravitykeeper.Keeper, bk
 	}
 
 	var newEntries []banktypes.Metadata
-	k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, _ *types.EthAddress) (stop bool) {
-		denom := string(key)
+	k.IterateCosmosOriginatedMappings(ctx, func(denom string, _ *types.EthAddress) bool {
 		if _, alreadyPresent := existing[denom]; alreadyPresent {
 			return false
 		}

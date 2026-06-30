@@ -26,6 +26,7 @@ func TestGravity2Denom(t *testing.T) {
 }
 
 // TestGravity2DenomToERC20 verifies parsing of gravity2 denoms, both valid and invalid.
+// nolint: exhaustruct
 func TestGravity2DenomToERC20(t *testing.T) {
 	tests := []struct {
 		name    string

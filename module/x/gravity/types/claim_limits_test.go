@@ -10,6 +10,7 @@ import (
 )
 
 func validERC20DeployedClaim() MsgERC20DeployedClaim {
+	//nolint: exhaustruct
 	return MsgERC20DeployedClaim{
 		EventNonce:    1,
 		CosmosDenom:   "uatom",
@@ -22,6 +23,7 @@ func validERC20DeployedClaim() MsgERC20DeployedClaim {
 }
 
 func validSendToCosmosClaim() MsgSendToCosmosClaim {
+	//nolint: exhaustruct
 	return MsgSendToCosmosClaim{
 		EventNonce:     1,
 		TokenContract:  NonemptyEthAddress(),
@@ -101,6 +103,7 @@ func TestValidateClaimFieldLengths_SendToCosmos_OversizedEthereumSender(t *testi
 }
 
 func TestValidateClaimFieldLengths_BatchSendToEth_Valid(t *testing.T) {
+	//nolint: exhaustruct
 	claim := MsgBatchSendToEthClaim{
 		EventNonce:    1,
 		TokenContract: NonemptyEthAddress(),
@@ -110,6 +113,7 @@ func TestValidateClaimFieldLengths_BatchSendToEth_Valid(t *testing.T) {
 }
 
 func TestValidateClaimFieldLengths_BatchSendToEth_OversizedTokenContract(t *testing.T) {
+	//nolint: exhaustruct
 	claim := MsgBatchSendToEthClaim{
 		EventNonce:    1,
 		TokenContract: "0x" + strings.Repeat("a", ETHContractAddressLen),
@@ -119,30 +123,33 @@ func TestValidateClaimFieldLengths_BatchSendToEth_OversizedTokenContract(t *test
 }
 
 func TestValidateClaimFieldLengths_ValsetUpdated_Valid(t *testing.T) {
+	//nolint: exhaustruct
 	claim := MsgValsetUpdatedClaim{
-		EventNonce:  1,
-		ValsetNonce: 1,
-		RewardToken: NonemptyEthAddress(),
+		EventNonce:   1,
+		ValsetNonce:  1,
+		RewardToken:  NonemptyEthAddress(),
 		Orchestrator: NonemptySdkAccAddress().String(),
 	}
 	require.NoError(t, ValidateClaimFieldLengths(&claim))
 }
 
 func TestValidateClaimFieldLengths_ValsetUpdated_OversizedRewardToken(t *testing.T) {
+	//nolint: exhaustruct
 	claim := MsgValsetUpdatedClaim{
-		EventNonce:  1,
-		ValsetNonce: 1,
-		RewardToken: "0x" + strings.Repeat("a", ETHContractAddressLen),
+		EventNonce:   1,
+		ValsetNonce:  1,
+		RewardToken:  "0x" + strings.Repeat("a", ETHContractAddressLen),
 		Orchestrator: NonemptySdkAccAddress().String(),
 	}
 	require.ErrorIs(t, ValidateClaimFieldLengths(&claim), ErrInvalidClaim)
 }
 
 func TestValidateClaimFieldLengths_ValsetUpdated_BadHexRewardToken(t *testing.T) {
+	//nolint: exhaustruct
 	claim := MsgValsetUpdatedClaim{
-		EventNonce:  1,
-		ValsetNonce: 1,
-		RewardToken: "0x" + strings.Repeat("zz", 20), // 42 chars but invalid hex
+		EventNonce:   1,
+		ValsetNonce:  1,
+		RewardToken:  "0x" + strings.Repeat("zz", 20), // 42 chars but invalid hex
 		Orchestrator: NonemptySdkAccAddress().String(),
 	}
 	require.ErrorIs(t, ValidateClaimFieldLengths(&claim), ErrInvalidClaim)

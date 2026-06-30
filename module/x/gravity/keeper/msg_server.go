@@ -144,12 +144,12 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 	if err := types.ValidateStrictDenom(msg.ChainFee.Denom); err != nil {
 		return nil, errorsmod.Wrap(err, "invalid chain fee denom")
 	}
-
-	isCosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
-	if err != nil {
-		return nil, errorsmod.Wrap(err, "invalid denom")
+	if msg.Amount.Denom != msg.BridgeFee.Denom || msg.Amount.Denom != msg.ChainFee.Denom {
+		return nil, errorsmod.Wrap(types.ErrInvalid, "amount, bridge fee, and chain fee must all be the same denom")
 	}
-	if isCosmosOriginated {
+
+	amountOrigin := k.ClassifyDenom(ctx, msg.Amount.Denom)
+	if amountOrigin.IsCosmosOriginated {
 		_, err := k.assertMetadataWhitelisted(ctx, msg.Amount.Denom)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToEth")
@@ -165,19 +165,7 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, errorsmod.Wrap(err, "invalid eth dest")
 	}
 
-	_, erc20, err := k.DenomToERC20Lookup(ctx, msg.Amount.Denom)
-	if err != nil {
-		return nil, errorsmod.Wrap(err, "invalid denom")
-	}
-
-	if isCosmosOriginated {
-		_, err := k.assertMetadataWhitelisted(ctx, msg.Amount.Denom)
-		if err != nil {
-			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToEth")
-		}
-	}
-
-	if k.InvalidSendToEthAddress(ctx, *dest, *erc20) {
+	if k.InvalidSendToEthAddress(ctx, *dest, *amountOrigin.ERC20) {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "destination address is invalid or blacklisted")
 	}
 
@@ -285,19 +273,16 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 
 	// Check if the denom is a gravity coin, if not, check if there is a deployed ERC20 representing it.
 	// If not, error out
-	isCosmosOriginated, tokenContract, err := k.DenomToERC20Lookup(ctx, msg.Denom)
-	if err != nil {
-		return nil, errorsmod.Wrap(err, "Could not look up erc 20 denominator")
-	}
+	batchOrigin := k.ClassifyDenom(ctx, msg.Denom)
 
-	if isCosmosOriginated {
+	if batchOrigin.IsCosmosOriginated {
 		_, err := k.assertMetadataWhitelisted(ctx, msg.Denom)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for RequestBatch")
 		}
 	}
 
-	batch, err := k.BuildOutgoingTXBatch(ctx, *tokenContract, OutgoingTxBatchSize)
+	batch, err := k.BuildOutgoingTXBatch(ctx, *batchOrigin.ERC20, OutgoingTxBatchSize)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not build outgoing tx batch")
 	}
@@ -323,9 +308,9 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
 
-	isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
-	if isCosmosOriginated {
-		_, err := k.assertMetadataWhitelisted(ctx, denom)
+	contractOrigin := k.ClassifyERC20(ctx, *contract)
+	if contractOrigin.IsCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for ConfirmBatch")
 		}
@@ -511,9 +496,9 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
-	isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
-	if isCosmosOriginated {
-		_, err := k.assertMetadataWhitelisted(ctx, denom)
+	contractOrigin := k.ClassifyERC20(ctx, *contract)
+	if contractOrigin.IsCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToCosmos")
 		}
@@ -569,9 +554,9 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
-	isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
-	if isCosmosOriginated {
-		_, err := k.assertMetadataWhitelisted(ctx, denom)
+	contractOrigin := k.ClassifyERC20(ctx, *contract)
+	if contractOrigin.IsCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToEth")
 		}
@@ -627,9 +612,9 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
-	isCosmosOriginated, denom := k.ERC20ToDenomLookup(ctx, *contract)
-	if isCosmosOriginated {
-		_, err := k.assertMetadataWhitelisted(ctx, denom)
+	contractOrigin := k.ClassifyERC20(ctx, *contract)
+	if contractOrigin.IsCosmosOriginated {
+		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for DeployErc20")
 		}

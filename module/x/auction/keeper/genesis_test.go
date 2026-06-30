@@ -15,6 +15,7 @@ func (suite *KeeperTestSuite) TestGenesis() {
 	ak := suite.App.AuctionKeeper
 	// Test import and export
 
+	//nolint: exhaustruct
 	genesis := types.GenesisState{
 		Params: types.DefaultParams(),
 		ActivePeriod: &types.AuctionPeriod{
@@ -44,6 +45,7 @@ func (suite *KeeperTestSuite) TestInvalidGenesis() {
 	nonAuctionable := TestDenom1
 	nonAuctionableCoin := sdk.NewCoin(nonAuctionable, sdkmath.NewInt(100))
 
+	//nolint: exhaustruct
 	genesis := types.GenesisState{
 		Params: types.DefaultParams(),
 		ActivePeriod: &types.AuctionPeriod{

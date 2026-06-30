@@ -67,13 +67,16 @@ func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
+	// Set both directions in old format so that after migration the bidirectional mapping is complete.
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldGetDenomToERC20Key(denom)), []byte(tokenContract))
+	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldGetERC20ToDenomKey(tokenContract)), []byte(denom))
 
 	err := v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	addr, found := input.GravityKeeper.GetCosmosOriginatedERC20(input.Context, denom)
-	assert.True(t, found)
+	origin := input.GravityKeeper.ClassifyDenom(input.Context, denom)
+	assert.True(t, origin.IsCosmosOriginated)
+	addr := origin.ERC20
 	// Triple check that the migration worked
 	assert.Equal(t, tokenContract, strings.ToLower(addr.GetAddress().Hex()))
 	assert.Equal(t, gethcommon.HexToAddress(tokenContract), addr.GetAddress())
@@ -84,7 +87,9 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	input := keeper.CreateTestEnv(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
+	// Set both directions in old format so that after migration the bidirectional mapping is complete.
 	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldGetERC20ToDenomKey(tokenContract)), []byte(denom))
+	input.Context.KVStore(input.GravityStoreKey).Set([]byte(oldGetDenomToERC20Key(denom)), []byte(tokenContract))
 
 	err := v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
@@ -92,13 +97,15 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	tokenAddr, err := types.NewEthAddress(tokenContract)
 	assert.NoError(t, err)
 
-	storedDenom, found := input.GravityKeeper.GetCosmosOriginatedDenom(input.Context, *tokenAddr)
+	storedDenomOrigin := input.GravityKeeper.ClassifyERC20(input.Context, *tokenAddr)
+	storedDenom := storedDenomOrigin.Denom
+	found := storedDenomOrigin.IsCosmosOriginated
 	assert.True(t, found)
 	assert.Equal(t, denom, storedDenom)
 
-	var erc20ToDenoms = []types.ERC20ToDenom{}
-	input.GravityKeeper.IterateERC20ToDenom(input.Context, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
-		erc20ToDenoms = append(erc20ToDenoms, *erc20ToDenom)
+	var erc20ToDenoms []types.ERC20ToDenom
+	input.GravityKeeper.IterateCosmosOriginatedMappings(input.Context, func(d string, erc20 *types.EthAddress) bool {
+		erc20ToDenoms = append(erc20ToDenoms, types.ERC20ToDenom{Erc20: erc20.GetAddress().Hex(), Denom: d})
 		return false
 	})
 	fromStoreTokenAddr, err := types.NewEthAddress(erc20ToDenoms[0].Erc20)
@@ -585,6 +592,7 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 	// additinal data for creating Attestation
 	nonce := uint64(1)
 
+	//nolint: exhaustruct
 	msg := types.MsgSendToCosmosClaim{
 		EventNonce:     nonce,
 		EthBlockHeight: 1,
@@ -600,6 +608,7 @@ func TestMigrateStoreKeysFromValues(t *testing.T) {
 	hash, err := msg.ClaimHash()
 	require.NoError(t, err)
 
+	//nolint: exhaustruct
 	dummyAttestation := &types.Attestation{
 		Observed: false,
 		Votes:    []string{},

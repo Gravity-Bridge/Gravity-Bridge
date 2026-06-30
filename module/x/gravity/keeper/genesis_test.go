@@ -251,6 +251,7 @@ func TestInitGenesis_BadErc20ToDenom(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
 
+	//nolint: exhaustruct
 	state := types.GenesisState{Params: types.DefaultParams()}
 	state.Erc20ToDenoms = []types.ERC20ToDenom{
 		{Erc20: "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255", Denom: "ibc/gravity0xbad"},
@@ -265,6 +266,7 @@ func TestInitGenesis_BadValsetRewardDenom(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
 
+	//nolint: exhaustruct
 	state := types.GenesisState{Params: types.DefaultParams()}
 	state.Params.ValsetReward = sdk.NewCoin("ibc/gravity0xbad", sdkmath.NewInt(1))
 

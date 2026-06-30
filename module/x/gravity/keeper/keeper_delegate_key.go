@@ -41,6 +41,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 		// nolint: exhaustruct
 		return stakingtypes.Validator{
 			OperatorAddress: "",
+			//nolint: exhaustruct
 			ConsensusPubkey: &codectypes.Any{
 				TypeUrl:              "",
 				Value:                []byte{},
@@ -77,6 +78,7 @@ func (k Keeper) GetOrchestratorValidator(ctx sdk.Context, orch sdk.AccAddress) (
 		// nolint: exhaustruct
 		return stakingtypes.Validator{
 			OperatorAddress: "",
+			//nolint: exhaustruct
 			ConsensusPubkey: &codectypes.Any{
 				TypeUrl:              "",
 				Value:                []byte{},
@@ -169,6 +171,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 		// nolint: exhaustruct
 		return stakingtypes.Validator{
 			OperatorAddress: "",
+			//nolint: exhaustruct
 			ConsensusPubkey: &codectypes.Any{
 				TypeUrl:              "",
 				Value:                []byte{},
@@ -205,6 +208,7 @@ func (k Keeper) GetValidatorByEthAddress(ctx sdk.Context, ethAddr types.EthAddre
 		// nolint: exhaustruct
 		return stakingtypes.Validator{
 			OperatorAddress: "",
+			//nolint: exhaustruct
 			ConsensusPubkey: &codectypes.Any{
 				TypeUrl:              "",
 				Value:                []byte{},

@@ -110,6 +110,7 @@ func TestAttestationIterator(t *testing.T) {
 	ctx := input.Context
 	// add some attestations to the store
 
+	//nolint: exhaustruct
 	claim1 := &types.MsgSendToCosmosClaim{
 		EventNonce:     1,
 		TokenContract:  TokenContractAddrs[0],
@@ -120,12 +121,14 @@ func TestAttestationIterator(t *testing.T) {
 	}
 	ne1, err := codecTypes.NewAnyWithValue(claim1)
 	require.NoError(t, err)
+	//nolint: exhaustruct
 	att1 := &types.Attestation{
 		Claim:    ne1,
 		Observed: true,
 		Votes:    []string{ValAddrs[0].String()},
 	}
 
+	//nolint: exhaustruct
 	claim2 := &types.MsgSendToCosmosClaim{
 		EventNonce:     2,
 		TokenContract:  TokenContractAddrs[0],
@@ -136,6 +139,7 @@ func TestAttestationIterator(t *testing.T) {
 	}
 	ne2, err := codecTypes.NewAnyWithValue(claim2)
 	require.NoError(t, err)
+	//nolint: exhaustruct
 	att2 := &types.Attestation{
 		Claim:    ne2,
 		Observed: true,

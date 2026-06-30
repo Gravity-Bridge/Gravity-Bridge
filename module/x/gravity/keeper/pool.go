@@ -36,10 +36,7 @@ func (k Keeper) AddToOutgoingPool(
 	// If the coin is a gravity voucher, burn the coins. If not, check if there is a deployed ERC20 contract representing it.
 	// If there is, lock the coins.
 
-	_, tokenContract, err := k.DenomToERC20Lookup(ctx, totalAmount.Denom)
-	if err != nil {
-		return 0, err
-	}
+	poolOrigin := k.ClassifyDenom(ctx, totalAmount.Denom)
 
 	// lock coins in module
 	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, sender, types.ModuleName, totalInVouchers); err != nil {
@@ -49,15 +46,15 @@ func (k Keeper) AddToOutgoingPool(
 	// get next tx id from keeper
 	nextID := k.autoIncrementID(ctx, types.KeyLastTXPoolID)
 
-	erc20Fee, err := types.NewInternalERC20Token(fee.Amount, tokenContract.GetAddress().Hex())
+	erc20Fee, err := types.NewInternalERC20Token(fee.Amount, poolOrigin.ERC20.GetAddress().Hex())
 	if err != nil {
 		return 0, errorsmod.Wrapf(err, "invalid Erc20Fee from amount %d and contract %v",
-			fee.Amount, tokenContract)
+			fee.Amount, poolOrigin.ERC20)
 	}
-	erc20Token, err := types.NewInternalERC20Token(amount.Amount, tokenContract.GetAddress().Hex())
+	erc20Token, err := types.NewInternalERC20Token(amount.Amount, poolOrigin.ERC20.GetAddress().Hex())
 	if err != nil {
 		return 0, errorsmod.Wrapf(err, "invalid ERC20Token from amount %d and contract %v",
-			amount.Amount, tokenContract)
+			amount.Amount, poolOrigin.ERC20)
 	}
 	// construct outgoing tx, as part of this process we represent
 	// the token as an ERC20 token since it is preparing to go to ETH
@@ -130,8 +127,8 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 	}
 
 	// Calculate refund
-	_, denom := k.ERC20ToDenomLookup(ctx, tx.Erc20Token.Contract)
-	totalToRefund := sdk.NewCoin(denom, tx.Erc20Token.Amount)
+	refundOrigin := k.ClassifyERC20(ctx, tx.Erc20Token.Contract)
+	totalToRefund := sdk.NewCoin(refundOrigin.Denom, tx.Erc20Token.Amount)
 	totalToRefund.Amount = totalToRefund.Amount.Add(tx.Erc20Fee.Amount)
 	totalToRefundCoins := sdk.NewCoins(totalToRefund)
 

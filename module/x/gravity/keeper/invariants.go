@@ -30,14 +30,6 @@ func AllInvariants(k Keeper) sdk.Invariant {
 		if stop {
 			return res, stop
 		}
-		res, stop = MappingOneToOneInvariant(k)(ctx)
-		if stop {
-			return res, stop
-		}
-		res, stop = NoGravityPrefixInCosmosOriginatedInvariant(k)(ctx)
-		if stop {
-			return res, stop
-		}
 		return ModuleBalanceInvariant(k)(ctx)
 	}
 }
@@ -60,18 +52,13 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 		// Compare actual vs expected balances
 		for _, actual := range actualBals {
 			denom := actual.GetDenom()
-			cosmosOriginated, _, err := k.DenomToERC20Lookup(ctx, denom)
-			if err != nil {
-				// Here we do not return because a user could halt the chain by gifting gravity a cosmos asset with no erc20 repr
-				ctx.Logger().Error("Unexpected gravity module balance of cosmos-originated asset with no erc20 representation", "asset", denom)
-				continue
-			}
+			origin := k.ClassifyDenom(ctx, denom)
 			expected, ok := expectedBals[denom]
 			if !ok {
 				return fmt.Sprint("Could not find expected balance for actual module balance of ", actual), true
 			}
 
-			if cosmosOriginated { // Cosmos originated mismatched balance
+			if origin.IsCosmosOriginated { // Cosmos originated mismatched balance
 				// We cannot make any assertions about cosmosOriginated assets because we do not have enough information.
 				// There is no index of denom => amount bridged, which would force us to parse all logs in existence
 			} else if !actual.Amount.Equal(*expected) { // Eth originated mismatched balance
@@ -94,15 +81,15 @@ func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals m
 			batchTotal = newTotal
 		}
 		contract := batch.TokenContract
-		_, denom := k.ERC20ToDenomLookup(ctx, contract)
+		batchOrigin := k.ClassifyERC20(ctx, contract)
 		// Add the batch total to the contract counter
-		_, ok := expectedBals[denom]
+		_, ok := expectedBals[batchOrigin.Denom]
 		if !ok {
 			zero := math.ZeroInt()
-			expectedBals[denom] = &zero
+			expectedBals[batchOrigin.Denom] = &zero
 		}
 
-		*expectedBals[denom] = expectedBals[denom].Add(batchTotal)
+		*expectedBals[batchOrigin.Denom] = expectedBals[batchOrigin.Denom].Add(batchTotal)
 
 		return false // continue iterating
 	})
@@ -115,16 +102,16 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[st
 	// It is also given the balance of all unbatched txs in the pool
 	k.IterateUnbatchedTransactions(ctx, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		contract := tx.Erc20Token.Contract
-		_, denom := k.ERC20ToDenomLookup(ctx, contract)
+		txOrigin := k.ClassifyERC20(ctx, contract)
 
 		// Collect the send amount + fee amount for each tx
 		txTotal := tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount)
-		_, ok := expectedBals[denom]
+		_, ok := expectedBals[txOrigin.Denom]
 		if !ok {
 			zero := math.ZeroInt()
-			expectedBals[denom] = &zero
+			expectedBals[txOrigin.Denom] = &zero
 		}
-		*expectedBals[denom] = expectedBals[denom].Add(txTotal)
+		*expectedBals[txOrigin.Denom] = expectedBals[txOrigin.Denom].Add(txTotal)
 
 		return false // continue iterating
 	})
@@ -401,10 +388,11 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	if err != nil {
 		return err
 	}
-	// DenomToERC20Key
-	k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) (stop bool) {
-		if err = erc20.ValidateBasic(); err != nil {
-			err = fmt.Errorf("Discovered invalid cosmos originated erc20 %v under key %v: %v", erc20, key, err)
+	// DenomToERC20Key and ERC20ToDenomKey — validate all cosmos-originated mappings
+	k.IterateCosmosOriginatedMappings(ctx, func(denom string, erc20 *types.EthAddress) (stop bool) {
+		erc20ToDenom := types.ERC20ToDenom{Erc20: erc20.GetAddress().Hex(), Denom: denom}
+		if err = erc20ToDenom.ValidateBasic(); err != nil {
+			err = fmt.Errorf("Discovered invalid cosmos-originated mapping denom=%q: %v", denom, err)
 			return true
 		}
 		return false
@@ -412,15 +400,8 @@ func ValidateStore(ctx sdk.Context, k Keeper) error {
 	if err != nil {
 		return err
 	}
-	// ERC20ToDenomKey
-	k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) (stop bool) {
-		if err = erc20ToDenom.ValidateBasic(); err != nil {
-			err = fmt.Errorf("Discovered invalid ERC20ToDenom %v under key %v: %v", erc20ToDenom, key, err)
-			return true
-		}
-		return false
-	})
-	if err != nil {
+	// Cross-list integrity: security checks across cosmos-originated and eth-originated asset lists
+	if err = ValidateCrossListIntegrity(ctx, k); err != nil {
 		return err
 	}
 	// LastSlashedValsetNonce (type is checked when fetching)
@@ -639,115 +620,90 @@ func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 	return nil
 }
 
-// MappingOneToOneInvariant asserts that the DenomToERC20 and ERC20ToDenom indexes are
-// mutually consistent: every forward entry has an exact matching reverse entry and vice
-// versa, and no ERC20 contract address appears as the target of more than one denom.
-func MappingOneToOneInvariant(k Keeper) sdk.Invariant {
-	return func(ctx sdk.Context) (string, bool) {
-		var broken []string
+// ValidateCrossListIntegrity iterates all cosmos-originated mappings and enforces that:
+//   - No cosmos-originated denom is an IBC denom (1B)
+//   - No cosmos-originated denom contains an embedded Ethereum address (4)
+//   - No cosmos-originated denom collides with an eth-originated gravity or gravity2 denom (3)
+//   - No cosmos-originated ERC20 is also in the remapped eth-originated set (3)
+//   - The denom->ERC20 and ERC20->denom directions are mutually consistent (bidirectional)
+//   - No duplicate denoms or ERC20 addresses appear in the cosmos-originated index
+func ValidateCrossListIntegrity(ctx sdk.Context, k Keeper) error {
+	seenDenoms := make(map[string]bool)
+	seenERC20s := make(map[string]bool)
+	var errs []string
 
-		// 1. For every denom->erc20 in DenomToERC20Key, check the reverse entry.
-		seenErc20s := make(map[string]string) // erc20 hex -> denom, to detect duplicates
-		k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) bool {
-			denom := string(key)
-			erc20Hex := erc20.GetAddress().Hex()
+	k.IterateCosmosOriginatedMappings(ctx, func(denom string, erc20 *types.EthAddress) bool {
+		hexAddr := erc20.GetAddress().Hex()
 
-			reverseDenom, exists := k.GetCosmosOriginatedDenom(ctx, *erc20)
-			if !exists {
-				broken = append(broken, fmt.Sprintf(
-					"DenomToERC20 entry %s->%s has no reverse ERC20ToDenom entry",
-					denom, erc20Hex,
-				))
-				return false
-			}
-			if reverseDenom != denom {
-				broken = append(broken, fmt.Sprintf(
-					"DenomToERC20 entry %s->%s has mismatched reverse ERC20ToDenom pointing to denom %s",
-					denom, erc20Hex, reverseDenom,
-				))
-			}
+		// Duplicate denom check
+		if seenDenoms[denom] {
+			errs = append(errs, fmt.Sprintf("duplicate cosmos-originated denom %q", denom))
+		}
+		seenDenoms[denom] = true
 
-			if prevDenom, seen := seenErc20s[erc20Hex]; seen {
-				broken = append(broken, fmt.Sprintf(
-					"ERC20 %s maps to both %s and %s in DenomToERC20 (duplicate)",
-					erc20Hex, prevDenom, denom,
-				))
-			} else {
-				seenErc20s[erc20Hex] = denom
-			}
-			return false
-		})
+		// Duplicate ERC20 check
+		if seenERC20s[hexAddr] {
+			errs = append(errs, fmt.Sprintf("duplicate cosmos-originated ERC20 %s", hexAddr))
+		}
+		seenERC20s[hexAddr] = true
 
-		if len(broken) > 0 {
-			return fmt.Sprintf("mapping-one-to-one invariant broken: %v", broken), true
+		// No embedded Ethereum addresses
+		if types.ContainsEthAddress(denom) {
+			errs = append(errs, fmt.Sprintf("cosmos-originated denom %q contains an embedded Ethereum address", denom))
 		}
 
-		// 2. For every erc20->denom in ERC20ToDenomKey, check the forward entry.
-		k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
-			erc20Hex := erc20ToDenom.Erc20
-			denom := erc20ToDenom.Denom
-
-			ethAddr, err := types.NewEthAddress(erc20Hex)
-			if err != nil {
-				broken = append(broken, fmt.Sprintf(
-					"ERC20ToDenom entry has invalid ERC20 address %s: %v",
-					erc20Hex, err,
-				))
-				return false
-			}
-
-			forwardErc20, exists := k.GetCosmosOriginatedERC20(ctx, denom)
-			if !exists {
-				broken = append(broken, fmt.Sprintf(
-					"ERC20ToDenom entry %s->%s has no forward DenomToERC20 entry",
-					erc20Hex, denom,
-				))
-				return false
-			}
-			if forwardErc20.GetAddress() != ethAddr.GetAddress() {
-				broken = append(broken, fmt.Sprintf(
-					"ERC20ToDenom entry %s->%s has mismatched forward DenomToERC20 pointing to ERC20 %s",
-					erc20Hex, denom, forwardErc20.GetAddress().Hex(),
-				))
-			}
-			return false
-		})
-
-		if len(broken) > 0 {
-			return fmt.Sprintf("mapping-one-to-one invariant broken: %v", broken), true
+		// denom must not parse as a gravity or gravity2 denom
+		if _, err := types.GravityDenomToERC20(denom); err == nil {
+			errs = append(errs, fmt.Sprintf("cosmos-originated denom %q collides with an eth-originated gravity denom", denom))
+		}
+		if _, err := types.Gravity2DenomToERC20(denom); err == nil {
+			errs = append(errs, fmt.Sprintf("cosmos-originated denom %q collides with an eth-originated gravity2 denom", denom))
 		}
 
-		return "", false
+		// ERC20 must not be in the remapped eth-originated set
+		if k.IsRemappedERC20(ctx, *erc20) {
+			errs = append(errs, fmt.Sprintf("cosmos-originated ERC20 %s is also in the remapped eth-originated set", hexAddr))
+		}
+
+		// Bidirectional consistency: ERC20->denom reverse lookup must agree
+		if reverseDenom, ok := k.getCosmosOriginatedDenomForERC20(ctx, *erc20); !ok || reverseDenom != denom {
+			errs = append(errs, fmt.Sprintf(
+				"cosmos-originated mapping denom=%q erc20=%s is not bidirectionally consistent (reverse denom=%q)",
+				denom, hexAddr, reverseDenom))
+		}
+
+		return false // continue iterating
+	})
+
+	// Reverse check: every ERC20ToDenom entry must have a matching forward DenomToERC20
+	// entry. This catches orphaned reverse-only entries that IterateCosmosOriginatedMappings
+	// (which only walks the forward index) can never detect.
+	k.IterateERC20ToDenom(ctx, func(key []byte, erc20ToDenom *types.ERC20ToDenom) bool {
+		erc20Hex := erc20ToDenom.Erc20
+		denom := erc20ToDenom.Denom
+
+		ethAddr, err := types.NewEthAddress(erc20Hex)
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("ERC20ToDenom entry has invalid ERC20 address %s: %v", erc20Hex, err))
+			return false
+		}
+
+		forwardErc20, ok := k.getCosmosOriginatedERC20ForDenom(ctx, denom)
+		if !ok {
+			errs = append(errs, fmt.Sprintf("ERC20ToDenom entry %s->%s has no forward DenomToERC20 entry", erc20Hex, denom))
+			return false
+		}
+		if forwardErc20.GetAddress() != ethAddr.GetAddress() {
+			errs = append(errs, fmt.Sprintf(
+				"ERC20ToDenom entry %s->%s has mismatched forward DenomToERC20 pointing to ERC20 %s",
+				erc20Hex, denom, forwardErc20.GetAddress().Hex()))
+		}
+
+		return false // continue iterating
+	})
+
+	if len(errs) > 0 {
+		return fmt.Errorf("cross-list integrity violations: %s", strings.Join(errs, "; "))
 	}
-}
-
-// NoGravityPrefixInCosmosOriginatedInvariant asserts that no denom stored in the
-// cosmos-originated DenomToERC20 index parses successfully as a gravity- or gravity2-
-// prefixed Ethereum-originated denom. Such an entry would confuse the routing logic.
-func NoGravityPrefixInCosmosOriginatedInvariant(k Keeper) sdk.Invariant {
-	return func(ctx sdk.Context) (string, bool) {
-		var broken []string
-
-		k.IterateCosmosOriginatedERC20s(ctx, func(key []byte, erc20 *types.EthAddress) bool {
-			denom := string(key)
-			if _, err := types.GravityDenomToERC20(denom); err == nil {
-				broken = append(broken, fmt.Sprintf(
-					"cosmos-originated denom %s matches gravity-prefix pattern",
-					denom,
-				))
-			}
-			if _, err := types.Gravity2DenomToERC20(denom); err == nil {
-				broken = append(broken, fmt.Sprintf(
-					"cosmos-originated denom %s matches gravity2-prefix pattern",
-					denom,
-				))
-			}
-			return false
-		})
-
-		if len(broken) > 0 {
-			return fmt.Sprintf("no-gravity-prefix-in-cosmos-originated invariant broken: %v", broken), true
-		}
-		return "", false
-	}
+	return nil
 }

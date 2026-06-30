@@ -47,6 +47,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	msgServer := keeper.NewMsgServerImpl(input.GravityKeeper)
 
 	// denom metadata for two test tokens
+	//nolint: exhaustruct
 	fooMetadata := banktypes.Metadata{
 		Description: "Foo Token",
 		DenomUnits:  []*banktypes.DenomUnit{{Denom: "footoken", Exponent: 0}, {Denom: "foo", Exponent: 6}},
@@ -57,6 +58,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 		URI:         "",
 		URIHash:     "",
 	}
+	//nolint: exhaustruct
 	barMetadata := banktypes.Metadata{
 		Description: "Bar Token",
 		DenomUnits:  []*banktypes.DenomUnit{{Denom: "bartoken", Exponent: 0}, {Denom: "bar", Exponent: 6}},
@@ -72,6 +74,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 
 	submitERC20Claim := func(nonce uint64, cosmosDenom, tokenContract, name, symbol string, decimals uint64) {
 		for _, orchAddr := range keeper.OrchAddrs {
+			//nolint: exhaustruct
 			claim := types.MsgERC20DeployedClaim{
 				EventNonce:     nonce,
 				EthBlockHeight: 0,
@@ -92,18 +95,16 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	input.GravityKeeper.SetCosmosBridgeableToken(ctx, fooMetadata)
 
 	submitERC20Claim(1, "footoken", "0x1111111111111111111111111111111111111111", "Foo Token", "FOO", 6)
-	isCosmosOriginated, _, err := input.GravityKeeper.DenomToERC20Lookup(ctx, "footoken")
-	require.NoError(t, err)
-	require.True(t, isCosmosOriginated, "footoken ERC20 should be registered when footoken is on the allowlist")
+	origin := input.GravityKeeper.ClassifyDenom(ctx, "footoken")
+	require.True(t, origin.IsCosmosOriginated, "footoken ERC20 should be registered when footoken is on the allowlist")
 
 	// Case 2: allowlist has bartoken — bartoken ERC20 is registered
 	input.GravityKeeper.DeleteCosmosBridgeableToken(ctx, fooMetadata.Base)
 	input.GravityKeeper.SetCosmosBridgeableToken(ctx, barMetadata)
 
 	submitERC20Claim(2, "bartoken", "0x2222222222222222222222222222222222222222", "Bar Token", "BAR", 6)
-	isCosmosOriginated, _, err = input.GravityKeeper.DenomToERC20Lookup(ctx, "bartoken")
-	require.NoError(t, err)
-	require.True(t, isCosmosOriginated, "bartoken ERC20 should be registered when bartoken is on the allowlist")
+	origin = input.GravityKeeper.ClassifyDenom(ctx, "bartoken")
+	require.True(t, origin.IsCosmosOriginated, "bartoken ERC20 should be registered when bartoken is on the allowlist")
 
 	// Case 3: allowlist has bartoken only — unlisted denom (baztoken) is rejected
 	// the allowlist still contains only "bartoken"
@@ -121,12 +122,13 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	input.BankKeeper.SetDenomMetaData(ctx, bazMetadata)
 
 	submitERC20Claim(3, "baztoken", "0x3333333333333333333333333333333333333333", "Baz Token", "BAZ", 6)
-	_, _, err = input.GravityKeeper.DenomToERC20Lookup(ctx, "baztoken")
-	require.Error(t, err, "baztoken ERC20 should NOT be registered when baztoken is not on the allowlist")
+	origin = input.GravityKeeper.ClassifyDenom(ctx, "baztoken")
+	require.False(t, origin.IsCosmosOriginated, "baztoken ERC20 should NOT be registered when baztoken is not on the allowlist")
 
 	// Case 4: empty allowlist — all cosmos-originated denoms are blocked
 	input.GravityKeeper.DeleteCosmosBridgeableToken(ctx, barMetadata.Base)
 
+	//nolint: exhaustruct
 	quxMetadata := banktypes.Metadata{
 		Description: "Qux Token",
 		DenomUnits:  []*banktypes.DenomUnit{{Denom: "quxtoken", Exponent: 0}, {Denom: "qux", Exponent: 6}},
@@ -138,8 +140,8 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	input.BankKeeper.SetDenomMetaData(ctx, quxMetadata)
 
 	submitERC20Claim(4, "quxtoken", "0x4444444444444444444444444444444444444444", "Qux Token", "QUX", 6)
-	_, _, err = input.GravityKeeper.DenomToERC20Lookup(ctx, "quxtoken")
-	require.Error(t, err, "quxtoken ERC20 should NOT be registered when the allowlist is empty")
+	origin = input.GravityKeeper.ClassifyDenom(ctx, "quxtoken")
+	require.False(t, origin.IsCosmosOriginated, "quxtoken ERC20 should NOT be registered when the allowlist is empty")
 }
 
 type testingVars struct {
@@ -166,6 +168,7 @@ func initializeTestingVars(t *testing.T) *testingVars {
 }
 
 func addDenomToERC20Relation(tv *testingVars) {
+	//nolint: exhaustruct
 	ugravitonMeta := banktypes.Metadata{
 		Description: "The native staking token of the Cosmos Gravity Bridge",
 		DenomUnits:  []*banktypes.DenomUnit{{Denom: "ugraviton", Exponent: uint32(0), Aliases: []string{"micrograviton"}}, {Denom: "mgraviton", Exponent: uint32(3), Aliases: []string{"milligraviton"}}, {Denom: "graviton", Exponent: uint32(6), Aliases: []string{}}},
@@ -187,6 +190,7 @@ func addDenomToERC20Relation(tv *testingVars) {
 
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {
+		//nolint: exhaustruct
 		ethClaim := types.MsgERC20DeployedClaim{
 			EventNonce:     myNonce,
 			EthBlockHeight: 0,
@@ -210,17 +214,16 @@ func addDenomToERC20Relation(tv *testingVars) {
 	EndBlocker(tv.ctx, tv.input.GravityKeeper)
 
 	// check if erc20<>denom relation added to db
-	isCosmosOriginated, gotERC20, err := tv.input.GravityKeeper.DenomToERC20Lookup(tv.ctx, tv.denom)
-	require.NoError(tv.t, err)
-	assert.True(tv.t, isCosmosOriginated)
+	denomOrigin := tv.input.GravityKeeper.ClassifyDenom(tv.ctx, tv.denom)
+	assert.True(tv.t, denomOrigin.IsCosmosOriginated)
 
 	ethAddr, err := types.NewEthAddress(tv.erc20)
 	require.NoError(tv.t, err)
-	isCosmosOriginated, gotDenom := tv.input.GravityKeeper.ERC20ToDenomLookup(tv.ctx, *ethAddr)
-	assert.True(tv.t, isCosmosOriginated)
+	erc20Origin := tv.input.GravityKeeper.ClassifyERC20(tv.ctx, *ethAddr)
+	assert.True(tv.t, erc20Origin.IsCosmosOriginated)
 
-	assert.Equal(tv.t, tv.denom, gotDenom)
-	assert.Equal(tv.t, tv.erc20, gotERC20.GetAddress().Hex())
+	assert.Equal(tv.t, tv.denom, erc20Origin.Denom)
+	assert.Equal(tv.t, tv.erc20, denomOrigin.ERC20.GetAddress().Hex())
 }
 
 func lockCoinsInModule(tv *testingVars) {
@@ -290,6 +293,7 @@ func acceptDepositEvent(tv *testingVars) {
 
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {
+		//nolint: exhaustruct
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     myNonce,
 			EthBlockHeight: 0,
@@ -328,6 +332,7 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 
 	tokenContract := "0xE486cC1a00aA806C3e40224EDAd5FdCA93dDdA62"
 	ibcDenom := "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED"
+	// nolint: exhaustruct
 	metadata := banktypes.Metadata{
 		Description: "Atom",
 		DenomUnits:  []*banktypes.DenomUnit{{Denom: ibcDenom, Exponent: 0}, {Denom: "Atom", Exponent: 6}},
@@ -349,6 +354,7 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 
 	// have all five validators observe this event
 	for _, v := range keeper.OrchAddrs {
+		//nolint: exhaustruct
 		ethClaim := types.MsgERC20DeployedClaim{
 			EventNonce:     myNonce,
 			EthBlockHeight: 0,
@@ -372,15 +378,15 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	EndBlocker(tv.ctx, tv.input.GravityKeeper)
 
 	// check if erc20<>denom relation added to db
-	isCosmosOriginated, gotERC20, err := tv.input.GravityKeeper.DenomToERC20Lookup(tv.ctx, tv.denom)
+	denomOrigin := tv.input.GravityKeeper.ClassifyDenom(tv.ctx, tv.denom)
 	require.NoError(tv.t, err)
-	assert.True(tv.t, isCosmosOriginated)
+	assert.True(tv.t, denomOrigin.IsCosmosOriginated)
 
 	ethAddr, err := types.NewEthAddress(tv.erc20)
 	require.NoError(tv.t, err)
-	isCosmosOriginated, gotDenom := tv.input.GravityKeeper.ERC20ToDenomLookup(tv.ctx, *ethAddr)
-	assert.True(tv.t, isCosmosOriginated)
+	erc20Origin := tv.input.GravityKeeper.ClassifyERC20(tv.ctx, *ethAddr)
+	assert.True(tv.t, erc20Origin.IsCosmosOriginated)
 
-	assert.Equal(tv.t, tv.denom, gotDenom)
-	assert.Equal(tv.t, tv.erc20, gotERC20.GetAddress().Hex())
+	assert.Equal(tv.t, tv.denom, erc20Origin.Denom)
+	assert.Equal(tv.t, tv.erc20, denomOrigin.ERC20.GetAddress().Hex())
 }

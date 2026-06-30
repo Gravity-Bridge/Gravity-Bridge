@@ -133,6 +133,7 @@ func TestValidateGenesisCosmosBridgeableTokens(t *testing.T) {
 		"duplicate denom rejected":        {metadata: []banktypes.Metadata{minMeta("uatom"), minMeta("uatom")}, expErr: true},
 		"gravity-prefixed denom rejected": {metadata: []banktypes.Metadata{minMeta("gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")}, expErr: true},
 		// An invalid base denom causes Metadata.Validate() to return an error.
+		//nolint: exhaustruct
 		"invalid denom rejected": {metadata: []banktypes.Metadata{{Base: "INVALID DENOM WITH SPACES"}}, expErr: true},
 	}
 

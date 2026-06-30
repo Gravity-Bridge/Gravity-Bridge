@@ -307,15 +307,12 @@ func (k Keeper) DenomToERC20(
 		return nil, errorsmod.Wrap(err, "invalid denom in query request")
 	}
 	ctx := sdk.UnwrapSDKContext(c)
-	cosmosOriginated, erc20, err := k.DenomToERC20Lookup(ctx, req.Denom)
-	if err != nil {
-		return nil, errorsmod.Wrapf(err, "invalid denom (%v) queried", req.Denom)
-	}
+	origin := k.ClassifyDenom(ctx, req.Denom)
 	var ret types.QueryDenomToERC20Response
-	ret.Erc20 = erc20.GetAddress().Hex()
-	ret.CosmosOriginated = cosmosOriginated
+	ret.Erc20 = origin.ERC20.GetAddress().Hex()
+	ret.CosmosOriginated = origin.IsCosmosOriginated
 
-	return &ret, err
+	return &ret, nil
 }
 
 // ERC20ToDenom queries the ERC20 contract that maps to an Ethereum ERC20 if any
@@ -328,10 +325,10 @@ func (k Keeper) ERC20ToDenom(
 	if err != nil {
 		return nil, errorsmod.Wrapf(err, "invalid Erc20 in request: %s", req.Erc20)
 	}
-	cosmosOriginated, name := k.ERC20ToDenomLookup(ctx, *ethAddr)
+	erc20Origin := k.ClassifyERC20(ctx, *ethAddr)
 	var ret types.QueryERC20ToDenomResponse
-	ret.Denom = name
-	ret.CosmosOriginated = cosmosOriginated
+	ret.Denom = erc20Origin.Denom
+	ret.CosmosOriginated = erc20Origin.IsCosmosOriginated
 
 	return &ret, nil
 }
@@ -501,10 +498,12 @@ func (k Keeper) IterateOldAttestations(ctx sdk.Context, reverse bool, cb func([]
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
+		//nolint: exhaustruct
 		att := types.Attestation{
-			Observed:        false,
-			Votes:           []string{},
-			Height:          0,
+			Observed: false,
+			Votes:    []string{},
+			Height:   0,
+			//nolint: exhaustruct
 			Claim:           &codectypes.Any{},
 			ClaimType:       0,
 			ClaimComponents: nil,

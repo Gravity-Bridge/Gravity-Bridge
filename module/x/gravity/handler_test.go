@@ -136,6 +136,7 @@ func TestMsgSendToCosmosClaim_MsgServer(t *testing.T) {
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {
+		//nolint: exhaustruct
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     uint64(1),
 			TokenContract:  myErc20.Contract,
@@ -169,6 +170,7 @@ func TestMsgSendToCosmosClaim_MsgServer(t *testing.T) {
 
 	// send attestations from all five validators (skipped nonce)
 	for _, v := range keeper.OrchAddrs {
+		//nolint: exhaustruct
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     uint64(3),
 			TokenContract:  tokenETHAddr,
@@ -188,6 +190,7 @@ func TestMsgSendToCosmosClaim_MsgServer(t *testing.T) {
 
 	// send attestations from all five validators (consecutive nonce)
 	for _, v := range keeper.OrchAddrs {
+		//nolint: exhaustruct
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     uint64(2),
 			Amount:         amountA,
@@ -240,6 +243,7 @@ func TestEthereumBlacklist_MsgServer(t *testing.T) {
 
 	// send attestations from all five validators
 	for _, v := range keeper.OrchAddrs {
+		//nolint: exhaustruct
 		ethClaim := types.MsgSendToCosmosClaim{
 			EventNonce:     uint64(1),
 			TokenContract:  myErc20.Contract,
@@ -306,6 +310,7 @@ func TestMsgSendToCosmosOverflow_MsgServer(t *testing.T) {
 		Amount:   sdkmath.NewInt(101),
 		Contract: tokenETHAddr1,
 	}
+	//nolint: exhaustruct
 	almostTooMuchClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce,
 		EthBlockHeight: 0,
@@ -315,6 +320,7 @@ func TestMsgSendToCosmosOverflow_MsgServer(t *testing.T) {
 		CosmosReceiver: myCosmosAddr.String(),
 		Orchestrator:   "",
 	}
+	//nolint: exhaustruct
 	exactlyTooMuchClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 1,
 		EthBlockHeight: 0,
@@ -328,6 +334,7 @@ func TestMsgSendToCosmosOverflow_MsgServer(t *testing.T) {
 		Amount:   sdkmath.NewIntFromBigInt(biggestBigInt),
 		Contract: tokenETHAddr2,
 	}
+	//nolint: exhaustruct
 	maxSendClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 2,
 		EthBlockHeight: 0,
@@ -411,6 +418,7 @@ func TestMsgSendToCosmosClaimSpreadVotes_MsgServer(t *testing.T) {
 		Contract: tokenETHAddr,
 	}
 
+	//nolint: exhaustruct
 	ethClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce,
 		TokenContract:  myErc20.Contract,
@@ -495,8 +503,10 @@ func TestMsgSendToCosmosForeignPrefixedAddress_MsgServer(t *testing.T) {
 
 	myTokenAddress, err := types.NewEthAddress(myErc20.Contract)
 	require.NoError(t, err)
-	_, erc20Denom := k.ERC20ToDenomLookup(ctx, *myTokenAddress)
+	erc20DenomOrigin := k.ClassifyERC20(ctx, *myTokenAddress)
+	erc20Denom := erc20DenomOrigin.Denom
 
+	//nolint: exhaustruct
 	foreignEthClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 0,
 		EthBlockHeight: 0,
@@ -507,6 +517,7 @@ func TestMsgSendToCosmosForeignPrefixedAddress_MsgServer(t *testing.T) {
 		Orchestrator:   "",
 	}
 
+	//nolint: exhaustruct
 	nativeEthClaim := types.MsgSendToCosmosClaim{
 		EventNonce:     myNonce + 1,
 		EthBlockHeight: 0,

@@ -46,6 +46,7 @@ func TestMigrateAttestation(t *testing.T) {
 
 	nonce := uint64(1)
 
+	//nolint: exhaustruct
 	msg := types.MsgBatchSendToEthClaim{
 		EventNonce:     nonce,
 		EthBlockHeight: 1,
@@ -59,12 +60,14 @@ func TestMigrateAttestation(t *testing.T) {
 	_, err = msg.ClaimHash()
 	require.NoError(t, err)
 
+	//nolint: exhaustruct
 	dummyAttestation := &types.Attestation{
 		Observed: false,
 		Votes:    []string{},
 		Height:   uint64(1),
 		Claim:    msgAny,
 	}
+	//nolint: exhaustruct
 	oldClaimHash, err := v2.MsgBatchSendToEthClaimHash(msg)
 	require.NoError(t, err)
 	newClaimHash, err := msg.ClaimHash()

@@ -485,13 +485,12 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 	require.NoError(t, err)
 
 	// add it to the ERC20 registry
-	input.GravityKeeper.setCosmosOriginatedDenomToERC20(ctx, myTokenDenom, *tokenAddr)
+	require.NoError(t, input.GravityKeeper.setCosmosOriginatedMapping(ctx, myTokenDenom, *tokenAddr))
 
-	isCosmosOriginated, addr, err := input.GravityKeeper.DenomToERC20Lookup(ctx, myTokenDenom)
-	require.True(t, isCosmosOriginated)
-	require.NoError(t, err)
+	origin := input.GravityKeeper.ClassifyDenom(ctx, myTokenDenom)
+	require.True(t, origin.IsCosmosOriginated)
 	require.Equal(t, tokenAddr.GetAddress().Hex(), myTokenContractAddr)
-	require.Equal(t, tokenAddr, addr)
+	require.Equal(t, tokenAddr, origin.ERC20)
 
 	allVouchers := sdk.Coins{sdk.NewCoin(myTokenDenom, sdkmath.NewIntFromUint64(originalBal))}
 	err = input.BankKeeper.MintCoins(ctx, types.ModuleName, allVouchers)

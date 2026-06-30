@@ -158,6 +158,7 @@ func (k Keeper) SetHrpIbcRecords(ctx sdk.Context, hrpIbcRecords []types.HrpIbcRe
 		panic(fmt.Sprintf("native HRP not set: %v", err))
 	}
 
+	//nolint: exhaustruct
 	gs := types.GenesisState{NativeHRP: nativePrefix, HrpIBCRecords: hrpIbcRecords}
 	if err := gs.Validate(); err != nil {
 		panic(fmt.Sprintf("invalid hrp ibc records: %v", err))

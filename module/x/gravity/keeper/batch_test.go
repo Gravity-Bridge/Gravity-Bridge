@@ -260,6 +260,7 @@ func TestBatches(t *testing.T) {
 
 	// Execute the batch
 	fakeBlock := secondBatch.CosmosBlockCreated // A fake ethereum block used for testing only
+	//nolint: exhaustruct
 	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce}
 	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
 
@@ -493,6 +494,7 @@ func TestBatchesFullCoins(t *testing.T) {
 
 	// Execute the batch
 	fakeBlock := secondBatch.CosmosBlockCreated // A fake ethereum block used for testing only
+	//nolint: exhaustruct
 	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce}
 	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
 
@@ -638,6 +640,7 @@ func TestManyBatches(t *testing.T) {
 		// we may have already deleted some of the batches in this list by executing later ones
 		if gotBatch != nil {
 			fakeBlock := batch.CosmosBlockCreated // A fake ethereum block used for testing only
+			//nolint: exhaustruct
 			msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: batch.BatchNonce}
 			input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *contractAddr, msg)
 		}

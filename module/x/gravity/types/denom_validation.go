@@ -19,6 +19,7 @@ const AttestationSeparator = "G\u0304\u0310\u030f\u030d\u0304\u0313\u0303\u0308\
 // MaxDenomLength is the maximum allowed length for a denom string.
 const MaxDenomLength = 256
 
+// nolint: gocritic
 func ValidateStrictDenom(denom string) error {
 	if len(denom) == 0 {
 		return errorsmod.Wrap(ErrInvalidDenom, "denom is empty")

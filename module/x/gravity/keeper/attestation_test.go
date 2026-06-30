@@ -98,6 +98,7 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdk.Context) ([]
 		sender := common.BytesToAddress(bytes.Repeat([]byte{0x2}, 20)).String()
 		orch := sdk.AccAddress(bytes.Repeat([]byte{0x3}, 20)).String()
 		receiver := sdk.AccAddress(bytes.Repeat([]byte{0x4}, 20)).String()
+		//nolint: exhaustruct
 		msg := types.MsgSendToCosmosClaim{
 			EventNonce:     nonce,
 			EthBlockHeight: 1,
@@ -112,6 +113,7 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdk.Context) ([]
 		any, err := codectypes.NewAnyWithValue(&msg)
 		require.NoError(t, err)
 		anys = append(anys, *any)
+		//nolint: exhaustruct
 		att := &types.Attestation{
 			Observed: false,
 			Votes:    []string{},
@@ -251,6 +253,7 @@ func TestInvalidHeight(t *testing.T) {
 	// Submit a bad claim with EthBlockHeight >= timeout
 
 	tokenContract := testTokenContract
+	//nolint: exhaustruct
 	bad := types.MsgBatchSendToEthClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: badHeight,
@@ -281,6 +284,7 @@ func TestInvalidHeight(t *testing.T) {
 	for i, orch := range OrchAddrs[1:] {
 		log.Info("Submitting good eth claim from orchestrators", "orch", orch.String())
 		tokenContract := testTokenContract
+		//nolint: exhaustruct
 		good := types.MsgBatchSendToEthClaim{
 			EventNonce:     lastNonce + 1,
 			EthBlockHeight: goodHeight,
@@ -311,14 +315,14 @@ func TestAttestStoresComponents(t *testing.T) {
 	k := input.GravityKeeper
 
 	lastNonce := k.GetLastObservedEventNonce(ctx)
-	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
 	orch0 := OrchAddrs[0]
 
+	//nolint: exhaustruct
 	claim := types.MsgBatchSendToEthClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: 1,
 		BatchNonce:     1,
-		TokenContract:  tokenContract,
+		TokenContract:  testTokenContract,
 		Orchestrator:   orch0.String(),
 	}
 	claimAny, err := codectypes.NewAnyWithValue(&claim)
@@ -350,10 +354,11 @@ func TestAttestDuplicateClaimMatchingComponents(t *testing.T) {
 	k := input.GravityKeeper
 
 	lastNonce := k.GetLastObservedEventNonce(ctx)
-	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	tokenContract := testTokenContract
 	orch0 := OrchAddrs[0]
 	orch1 := OrchAddrs[1]
 
+	//nolint: exhaustruct
 	claim := types.MsgBatchSendToEthClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: 1,
@@ -374,6 +379,7 @@ func TestAttestDuplicateClaimMatchingComponents(t *testing.T) {
 	require.Equal(t, 1, len(att.Votes)) // first vote
 
 	// Duplicate claim from another orchestrator with the same fields
+	//nolint: exhaustruct
 	claim2 := types.MsgBatchSendToEthClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: 1,
@@ -420,10 +426,11 @@ func TestAttestMismatchingComponents(t *testing.T) {
 	k := input.GravityKeeper
 
 	lastNonce := k.GetLastObservedEventNonce(ctx)
-	tokenContract := "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	tokenContract := testTokenContract
 	orch0 := OrchAddrs[0]
 	orch1 := OrchAddrs[1]
 
+	//nolint: exhaustruct
 	claim := types.MsgBatchSendToEthClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: 1,
@@ -448,6 +455,7 @@ func TestAttestMismatchingComponents(t *testing.T) {
 	k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
 
 	// Second validator attests to the same claim (same fields)
+	//nolint: exhaustruct
 	claim2 := types.MsgBatchSendToEthClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: 1,
@@ -500,6 +508,7 @@ func TestERC20DeployedClaimHashCollision(t *testing.T) {
 	ibcTokenSymbol := strings.ToUpper(baseDenom)
 	t.Logf("bank metadata.Name  : %s", ibcTokenName)
 	t.Logf("bank metadata.Symbol: %s", ibcTokenSymbol)
+	//nolint: exhaustruct
 	metadata := banktypes.Metadata{
 		Description: fmt.Sprintf("IBC token from %s", fullDenomPath),
 		DenomUnits: []*banktypes.DenomUnit{
@@ -514,6 +523,7 @@ func TestERC20DeployedClaimHashCollision(t *testing.T) {
 	t.Logf("bank DenomMetaData stored for %s", ibcDenom)
 
 	// Simulate an erc20 deploy event
+	//nolint: exhaustruct
 	honestClaim := types.MsgERC20DeployedClaim{
 		EventNonce:     eventNonce,
 		EthBlockHeight: 1,
@@ -555,6 +565,7 @@ func TestERC20DeployedClaimHashCollision(t *testing.T) {
 	//     collision-generating CosmosDenom would need to be longer than the honest denom plus the
 	//     separator plus a contract address, which exceeds MaxDenomLength (256 bytes).
 	forgedCosmosDenom := ibcDenom + types.AttestationSeparator + newERC20Addr
+	//nolint: exhaustruct
 	forgedClaim := types.MsgERC20DeployedClaim{
 		EventNonce:     eventNonce,
 		EthBlockHeight: 1,
@@ -639,9 +650,10 @@ func TestAttestMismatchingERC20DeployedComponents(t *testing.T) {
 	k := input.GravityKeeper
 
 	lastNonce := k.GetLastObservedEventNonce(ctx)
-	const contract = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	const contract = testTokenContract
 	const altContract = "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
+	//nolint: exhaustruct
 	claim := types.MsgERC20DeployedClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: 1,
@@ -669,6 +681,7 @@ func TestAttestMismatchingERC20DeployedComponents(t *testing.T) {
 	k.SetAttestation(ctx, claim.GetEventNonce(), hash, att)
 
 	// A second orchestrator attests to the original (unmodified) claim.
+	//nolint: exhaustruct
 	claim2 := types.MsgERC20DeployedClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: 1,
@@ -718,11 +731,12 @@ func TestAttestHandlerRejectsOversizedFields(t *testing.T) {
 	k := input.GravityKeeper
 
 	lastNonce := k.GetLastObservedEventNonce(ctx)
-	const contract = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+	const contract = testTokenContract
 
 	// Name exceeds MaxTokenNameLength (256) but is valid ASCII — ValidateBasic does not
 	// check its length, so this claim can pass all submit-time gates and reach Handle.
 	longName := strings.Repeat("a", types.MaxTokenNameLength+1)
+	//nolint: exhaustruct
 	claim := types.MsgERC20DeployedClaim{
 		EventNonce:     lastNonce + 1,
 		EthBlockHeight: 1,
@@ -739,6 +753,7 @@ func TestAttestHandlerRejectsOversizedFields(t *testing.T) {
 	// Confirm that the claim passes the submit-time gates so the test is meaningful.
 	require.NoError(t, claim.ValidateBasic(), "ValidateBasic must not block oversized Name")
 
+	//nolint: exhaustruct
 	att := types.Attestation{
 		Observed: false,
 		Votes:    []string{},
@@ -753,6 +768,7 @@ func TestAttestHandlerRejectsOversizedFields(t *testing.T) {
 
 	// Repeat for Symbol exceeding MaxTokenSymbolLength (64).
 	longSymbol := strings.Repeat("b", types.MaxTokenSymbolLength+1)
+	//nolint: exhaustruct
 	claim2 := types.MsgERC20DeployedClaim{
 		EventNonce:     lastNonce + 2,
 		EthBlockHeight: 1,
@@ -767,6 +783,7 @@ func TestAttestHandlerRejectsOversizedFields(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, claim2.ValidateBasic(), "ValidateBasic must not block oversized Symbol")
 
+	//nolint: exhaustruct
 	att2 := types.Attestation{
 		Observed: false,
 		Votes:    []string{},
