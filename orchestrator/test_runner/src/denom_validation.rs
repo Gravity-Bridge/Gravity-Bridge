@@ -16,8 +16,8 @@ use cosmos_gravity::proposals::{submit_airdrop_proposal, AirdropProposalJson};
 use cosmos_gravity::send::{send_request_batch, send_to_eth, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::{Address as CosmosAddress, Coin, Contact, Msg, PrivateKey};
 use gravity_proto::gravity::v1::{
-    query_client::QueryClient as GravityQueryClient,
-    MsgSendToEth as ProtoMsgSendToEth, QueryDenomToErc20Request,
+    query_client::QueryClient as GravityQueryClient, MsgSendToEth as ProtoMsgSendToEth,
+    QueryDenomToErc20Request,
 };
 use gravity_utils::num_conversion::one_atom;
 use tonic::transport::Channel;

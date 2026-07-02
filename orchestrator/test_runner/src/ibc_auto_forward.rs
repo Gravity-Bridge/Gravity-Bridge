@@ -813,7 +813,9 @@ pub async fn setup_native_hijack(
             info!("Native hijack proposal was correctly rejected at submission");
         }
         Ok(_) => {
-            panic!("Native hijack proposal should have been rejected but was submitted successfully!");
+            panic!(
+                "Native hijack proposal should have been rejected but was submitted successfully!"
+            );
         }
     }
 }

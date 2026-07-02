@@ -48,12 +48,7 @@ pub async fn cosmos_bridgeable_tokens_test(
     // ------------------------------------------------------------------
     let footoken = footoken_metadata(contact).await;
     let footoken2 = footoken2_metadata(contact).await;
-    set_cosmos_bridgeable_tokens(
-        contact,
-        &keys,
-        vec![footoken.clone(), footoken2.clone()],
-    )
-    .await;
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone(), footoken2.clone()]).await;
 
     let _footoken_erc20 = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
@@ -76,7 +71,8 @@ pub async fn cosmos_bridgeable_tokens_test(
     .await;
 
     // Clear the allowlist so Step 2 can verify SendToEth is blocked.
-    remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone(), footoken2.clone()]).await;
+    remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone(), footoken2.clone()])
+        .await;
 
     // Set up a test user funded with footoken, footoken2, and some ETH
     let user = get_user_key(None);

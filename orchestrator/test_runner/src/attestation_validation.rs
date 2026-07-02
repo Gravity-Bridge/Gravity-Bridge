@@ -862,9 +862,7 @@ async fn erc20_deployed_claim_hash_collision(
     .await;
     match sep_result {
         Err(e) => {
-            info!(
-                "Phase 2.5: separator-denom claim correctly rejected at transport level: {e}"
-            );
+            info!("Phase 2.5: separator-denom claim correctly rejected at transport level: {e}");
         }
         Ok(tx) => {
             assert_ne!(

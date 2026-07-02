@@ -5,6 +5,7 @@ extern crate serde_derive;
 
 use crate::args::{ClientSubcommand, KeysSubcommand, SubCommand};
 use crate::config::init_config;
+use crate::gov::proposals::submit_cosmos_bridgeable_tokens;
 use crate::keys::{recover_funds, show_keys};
 use crate::{jsonrpc_server::jsonrpc_server, orchestrator::orchestrator, relayer::relayer};
 use args::{GovQuerySubcommand, GovSubcommand, GovSubmitSubcommand, Opts};
@@ -18,10 +19,7 @@ use client::request_all_batches::request_all_batches;
 use client::spot_relay::spot_relay;
 use config::{get_home_dir, load_config};
 use env_logger::Env;
-use gov::proposals::{
-    submit_airdrop, submit_cosmos_bridgeable_tokens, submit_emergency_bridge_halt,
-    submit_oracle_unhalt,
-};
+use gov::proposals::{submit_airdrop, submit_emergency_bridge_halt, submit_oracle_unhalt};
 use gov::queries::query_airdrops;
 use keys::register_orchestrator_address::register_orchestrator_address;
 use keys::set_eth_key;

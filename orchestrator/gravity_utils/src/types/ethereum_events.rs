@@ -912,7 +912,8 @@ impl EthereumEvent for Erc20DeployedEvent {
                     let nonce = Uint256::from_be_bytes(&raw[4 * 32..5 * 32]);
                     if nonce > u64::MAX.into() {
                         return Err(GravityError::InvalidEventLogError(
-                            "ERC20 deployed event nonce overflow in fallback extraction".to_string(),
+                            "ERC20 deployed event nonce overflow in fallback extraction"
+                                .to_string(),
                         ));
                     }
                     let event_nonce: u64 = nonce.to_string().parse().unwrap();
