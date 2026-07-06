@@ -3,7 +3,6 @@ package recovery
 import (
 	"context"
 	"fmt"
-	"regexp"
 
 	errorsmod "cosmossdk.io/errors"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
@@ -16,10 +15,6 @@ import (
 	gravitykeeper "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
-
-// embeddedEthAddrRegex matches any eip-55 eth address embedded within an IBC denom, which is not allowed
-// to be sent across the bridge
-var embeddedEthAddrRegex = regexp.MustCompile(`0x[0-9a-fA-F]{40}`)
 
 // GetRecoveryUpgradeHandler returns the upgrade handler for the recovery upgrade.
 func GetRecoveryUpgradeHandler(
@@ -40,15 +35,25 @@ func GetRecoveryUpgradeHandler(
 			return out, err
 		}
 
-		ctx.Logger().Info("Recovery upgrade: scanning for ERC20 tokens to remap")
-		if err := migrateRemappedERC20s(ctx, gravityKeeper, bankKeeper); err != nil {
-			return out, err
-		}
+		ctx.Logger().Info("Recovery upgrade: remapping affected ERC20 tokens")
+
+		migrateRemappedERC20s(ctx, gravityKeeper, bankKeeper)
 
 		ctx.Logger().Info("Recovery upgrade: registering cosmos-originated tokens as CosmosBridgeableTokens")
 		if err := registerCosmosBridgeableTokens(ctx, gravityKeeper, bankKeeper); err != nil {
 			return out, err
 		}
+
+		ctx.Logger().Info("Recovery upgrade: disabling the bridge to Ethereum until governance re-enables it")
+		setBridgeActive(ctx, gravityKeeper, false)
+
+		params, err := gravityKeeper.GetParams(ctx)
+		if err != nil {
+			panic(fmt.Sprintf("Recover upgrade: Unable to get params: %v", err))
+		}
+		bridgeActive := params.GetBridgeActive()
+
+		ctx.Logger().Info("Recovery upgrade: BridgeActive param set to %v", bridgeActive)
 
 		ctx.Logger().Info("Recovery upgrade: asserting invariants")
 		crisisKeeper.AssertInvariants(ctx)
@@ -60,10 +65,9 @@ func GetRecoveryUpgradeHandler(
 
 // remapEntry holds the details of a single remapped ERC20
 type remapEntry struct {
-	erc20           types.EthAddress
-	problemDenom    string // a CosmosOriginated ERC20 denom
-	frozenVoucher   string // gravity0x... - before the remap, not allowed to be bridged out
-	recoveryVoucher string // gravity2...  - after the remap, given on deposits and allowed to be withdrawn
+	erc20            types.EthAddress
+	problemOldDenom  string // a CosmosOriginated ERC20 denom
+	remappedNewDenom string // gravity2...  - after the remap, given on deposits and allowed to be withdrawn
 }
 
 // migrateRemappedERC20s detects every DenomToERC20 entry whose denom contains an embedded
@@ -72,46 +76,34 @@ type remapEntry struct {
 //   - deletes the cosmos-originated mapping,
 //   - sets the RemappedERC20 entry so new deposits use gravity2 and bridge-out of old vouchers is blocked,
 //   - registers bank metadata for the new gravity2 denom.
-func migrateRemappedERC20s(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkeeper.BaseKeeper) error {
+func migrateRemappedERC20s(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkeeper.BaseKeeper) {
 	var remapped []remapEntry
 
-	k.IterateCosmosOriginatedMappings(ctx, func(denom string, erc20 *types.EthAddress) bool {
-
-		// denom must embed an eip-55 address
-		if !embeddedEthAddrRegex.MatchString(denom) {
-			return false
-		}
-
-		// extract the targeted ERC20 address from the denom
-		embeddedAddrStr := embeddedEthAddrRegex.FindString(denom)
-		if embeddedAddrStr == "" {
-			return false
-		}
-		embeddedAddr, err := types.NewEthAddress(embeddedAddrStr)
+	for _, erc20 := range tokensToRemap {
+		ethAddress, err := types.NewEthAddress(erc20)
 		if err != nil {
-			panic("invalid erc20 address embedded in cosmos-originated denom: " + embeddedAddrStr)
+			panic(fmt.Sprintf("invalid erc20 address in tokensToRemap: %s", erc20))
 		}
+		gravityDenom := types.GravityDenom(*ethAddress)
+		gravity2Denom := types.Gravity2Denom(*ethAddress)
 		remapped = append(remapped, remapEntry{
-			erc20:           *embeddedAddr,
-			problemDenom:    denom,
-			frozenVoucher:   types.GravityDenom(*embeddedAddr),
-			recoveryVoucher: types.Gravity2Denom(*embeddedAddr),
+			erc20:            *ethAddress,
+			problemOldDenom:  gravityDenom,
+			remappedNewDenom: gravity2Denom,
 		})
-		return false
-	})
-
-	if len(remapped) == 0 {
-		panic("Recovery upgrade: no ERC20 tokens to remap were discovered")
 	}
 
-	ctx.Logger().Info(fmt.Sprintf("Recovery upgrade: found %d ERC20 token(s) to remap", len(remapped)))
+	if len(remapped) == 0 {
+		panic("Recovery upgrade: no ERC20 tokens to remap?")
+	}
+
+	ctx.Logger().Info(fmt.Sprintf("Recovery upgrade: ERC20 tokens to remap: %d", len(remapped)))
 
 	for _, e := range remapped {
 		ctx.Logger().Info("Recovery upgrade: remapping ERC20",
 			"erc20", e.erc20.GetAddress().Hex(),
-			"problemDenom", e.problemDenom,
-			"frozen_voucher", e.frozenVoucher,
-			"recovery_voucher", e.recoveryVoucher,
+			"problemOldDenom", e.problemOldDenom,
+			"remappedNewDenom", e.remappedNewDenom,
 		)
 
 		// cancel and refund all in-flight outgoing transactions
@@ -123,24 +115,22 @@ func migrateRemappedERC20s(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkee
 		}
 
 		// delete the problem cosmos-originated denom ERC20 mapping
-		k.DeleteCosmosOriginatedMapping(ctx, e.erc20, e.problemDenom)
+		k.DeleteCosmosOriginatedMapping(ctx, e.erc20, e.problemOldDenom)
 
 		// set the remapped flag
 		k.SetRemappedERC20(ctx, e.erc20)
 
-		// register bank metadata for the new gravity2 denom
-		if existing, ok := bk.GetDenomMetaData(ctx, e.recoveryVoucher); !ok || existing.Base == "" {
-			meta := buildGravity2Metadata(ctx, bk, e.erc20, e.recoveryVoucher, e.frozenVoucher)
-			bk.SetDenomMetaData(ctx, meta)
-		} else {
-			ctx.Logger().Info("Recovery upgrade: gravity2 denom metadata already set, skipping",
-				"gravity2_denom", e.recoveryVoucher,
-			)
+		// Check that denom metadata DOES NOT exist for either the old or the new denoms.
+		if _, exists := bk.GetDenomMetaData(ctx, e.problemOldDenom); exists {
+			panic(fmt.Sprintf("Recovery upgrade: denom metadata exists for old gravity denom? (%s)", e.problemOldDenom))
+		}
+		if _, exists := bk.GetDenomMetaData(ctx, e.remappedNewDenom); exists {
+			panic(fmt.Sprintf("Recovery upgrade: denom metadata exists for new gravity2 denom? (%s)", e.remappedNewDenom))
 		}
 
 		ctx.Logger().Info("Recovery upgrade: ERC20 remapped successfully",
 			"erc20", e.erc20.GetAddress().Hex(),
-			"gravity2_denom", e.recoveryVoucher,
+			"gravity2_denom", e.remappedNewDenom,
 		)
 	}
 
@@ -148,40 +138,6 @@ func migrateRemappedERC20s(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkee
 		"Recovery upgrade: remapped %d ERC20 token(s). ",
 		len(remapped),
 	))
-	return nil
-}
-
-// buildGravity2Metadata constructs BankDenomMetadata for a new gravity2 denom.
-// It copies existing metadata from the old gravity denom when available, updating
-// Base, Display, any matching DenomUnit, and the Description.
-// If no prior metadata exists, a minimal fallback entry is produced.
-func buildGravity2Metadata(
-	ctx sdk.Context,
-	bk *bankkeeper.BaseKeeper,
-	addr types.EthAddress,
-	gravity2Denom string,
-	oldGravityDenom string,
-) banktypes.Metadata {
-	if existing, ok := bk.GetDenomMetaData(ctx, oldGravityDenom); ok && existing.Base != "" {
-		meta := existing
-		meta.Base = gravity2Denom
-		meta.Display = gravity2Denom
-		for i := range meta.DenomUnits {
-			if meta.DenomUnits[i].Denom == oldGravityDenom {
-				meta.DenomUnits[i].Denom = gravity2Denom
-			}
-			// Also update any aliases that referenced the old denom (e.g. set by governance
-			// when the token was originally registered).
-			for j, alias := range meta.DenomUnits[i].Aliases {
-				if alias == oldGravityDenom {
-					meta.DenomUnits[i].Aliases[j] = gravity2Denom
-				}
-			}
-		}
-		return meta
-	}
-
-	panic("Recovery upgrade: no existing metadata found for old gravity denom " + oldGravityDenom)
 }
 
 // registerCosmosBridgeableTokens adds all cosmos-originated ERC20 tokens that remain after
@@ -196,9 +152,6 @@ func registerCosmosBridgeableTokens(ctx sdk.Context, k *gravitykeeper.Keeper, bk
 
 	var newEntries []banktypes.Metadata
 	k.IterateCosmosOriginatedMappings(ctx, func(denom string, _ *types.EthAddress) bool {
-		if _, alreadyPresent := existing[denom]; alreadyPresent {
-			return false
-		}
 		meta, found := bk.GetDenomMetaData(ctx, denom)
 		if !found || meta.Base == "" {
 			panic(fmt.Sprintf(
