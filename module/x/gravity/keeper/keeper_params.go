@@ -28,6 +28,18 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params, err error) {
 	return params, nil
 }
 
+// RequireBridgeActive checks if the bridge is active and returns an error if it is not.
+func (k Keeper) RequireBridgeActive(ctx sdk.Context) error {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to get params")
+	}
+	if !params.BridgeActive {
+		return errorsmod.Wrap(types.ErrInvalid, "bridge paused")
+	}
+	return nil
+}
+
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) error {
 	if err := params.ValidateBasic(); err != nil {
 		return err

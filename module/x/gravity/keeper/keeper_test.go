@@ -289,3 +289,30 @@ func TestLastSlashedValsetNonce(t *testing.T) {
 	unslashedValsets = k.GetUnSlashedValsets(ctx, heightDiff-6)
 	assert.Equal(t, len(unslashedValsets), 6)
 }
+
+// nolint: exhaustruct
+func TestRequireBridgeActive(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	k := input.GravityKeeper
+
+	// By default (TestingGravityParams), the bridge is active, so no error should be returned.
+	params, err := k.GetParams(ctx)
+	require.NoError(t, err)
+	require.True(t, params.BridgeActive)
+	require.NoError(t, k.RequireBridgeActive(ctx))
+
+	// Pausing the bridge should cause RequireBridgeActive to return an error.
+	params.BridgeActive = false
+	require.NoError(t, k.SetParams(ctx, params))
+	err = k.RequireBridgeActive(ctx)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalid)
+	require.Contains(t, err.Error(), "bridge paused")
+
+	// Reactivating the bridge should clear the error.
+	params.BridgeActive = true
+	require.NoError(t, k.SetParams(ctx, params))
+	require.NoError(t, k.RequireBridgeActive(ctx))
+}

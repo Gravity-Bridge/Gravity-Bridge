@@ -678,3 +678,184 @@ func TestDenomToERC20Lookup_Gravity2NotRemapped(t *testing.T) {
 		"ClassifyDenom must panic for a gravity2 denom of a non-remapped ERC20",
 	)
 }
+
+// setBridgePaused is a test helper which flips the BridgeActive param to false.
+func setBridgePaused(t *testing.T, ctx sdk.Context, gk Keeper) {
+	params, err := gk.GetParams(ctx)
+	require.NoError(t, err)
+	params.BridgeActive = false
+	require.NoError(t, gk.SetParams(ctx, params))
+}
+
+// requireBridgePausedError asserts that err is non-nil and reflects the "bridge paused"
+// rejection raised by Keeper.RequireBridgeActive.
+func requireBridgePausedError(t *testing.T, err error) {
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalid)
+	require.Contains(t, err.Error(), "bridge paused")
+}
+
+// TestValsetConfirmRejectedWhenBridgePaused verifies that msgServer.ValsetConfirm calls
+// RequireBridgeActive and rejects the message while the bridge is paused.
+// nolint: exhaustruct
+func TestValsetConfirmRejectedWhenBridgePaused(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	setBridgePaused(t, ctx, input.GravityKeeper)
+
+	sv := msgServer{input.GravityKeeper}
+	_, err := sv.ValsetConfirm(ctx, &types.MsgValsetConfirm{
+		Nonce:        0,
+		Orchestrator: OrchAddrs[0].String(),
+		EthAddress:   "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		Signature:    "00",
+	})
+	requireBridgePausedError(t, err)
+}
+
+// TestSendToEthRejectedWhenBridgePaused verifies that msgServer.SendToEth calls
+// RequireBridgeActive and rejects the message while the bridge is paused.
+// nolint: exhaustruct
+func TestSendToEthRejectedWhenBridgePaused(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	setBridgePaused(t, ctx, input.GravityKeeper)
+
+	sv := msgServer{input.GravityKeeper}
+	_, err := sv.SendToEth(ctx, &types.MsgSendToEth{
+		Sender:    AccAddrs[0].String(),
+		EthDest:   "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		Amount:    sdk.NewInt64Coin("ugraviton", 100),
+		BridgeFee: sdk.NewInt64Coin("ugraviton", 1),
+		ChainFee:  sdk.NewCoin("ugraviton", sdkmath.ZeroInt()),
+	})
+	requireBridgePausedError(t, err)
+}
+
+// TestConfirmBatchRejectedWhenBridgePaused verifies that msgServer.ConfirmBatch calls
+// RequireBridgeActive (before any other validation) and rejects the message while the
+// bridge is paused.
+// nolint: exhaustruct
+func TestConfirmBatchRejectedWhenBridgePaused(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	setBridgePaused(t, ctx, input.GravityKeeper)
+
+	sv := msgServer{input.GravityKeeper}
+	_, err := sv.ConfirmBatch(ctx, &types.MsgConfirmBatch{
+		Nonce:         0,
+		TokenContract: "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		EthSigner:     "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		Orchestrator:  OrchAddrs[0].String(),
+		Signature:     "00",
+	})
+	requireBridgePausedError(t, err)
+}
+
+// TestConfirmLogicCallRejectedWhenBridgePaused verifies that msgServer.ConfirmLogicCall calls
+// RequireBridgeActive (before any other validation) and rejects the message while the
+// bridge is paused.
+// nolint: exhaustruct
+func TestConfirmLogicCallRejectedWhenBridgePaused(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	setBridgePaused(t, ctx, input.GravityKeeper)
+
+	sv := msgServer{input.GravityKeeper}
+	_, err := sv.ConfirmLogicCall(ctx, &types.MsgConfirmLogicCall{
+		InvalidationId:    "00",
+		InvalidationNonce: 0,
+		EthSigner:         "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		Orchestrator:      OrchAddrs[0].String(),
+		Signature:         "00",
+	})
+	requireBridgePausedError(t, err)
+}
+
+// TestClaimHandlersRejectedWhenBridgePaused verifies that every claim submission entrypoint
+// (which funnels through claimHandlerCommon) calls RequireBridgeActive and rejects the claim
+// while the bridge is paused. This covers SendToCosmosClaim, BatchSendToEthClaim,
+// ERC20DeployedClaim, LogicCallExecutedClaim, and ValsetUpdateClaim.
+// nolint: exhaustruct
+func TestClaimHandlersRejectedWhenBridgePaused(t *testing.T) {
+	//nolint: goconst
+	tokenContract := "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+
+	testCases := map[string]func(sv msgServer, ctx sdk.Context) error{
+		"SendToCosmosClaim": func(sv msgServer, ctx sdk.Context) error {
+			_, err := sv.SendToCosmosClaim(ctx, &types.MsgSendToCosmosClaim{
+				EventNonce:     1,
+				EthBlockHeight: 1,
+				TokenContract:  tokenContract,
+				Amount:         sdkmath.NewInt(1),
+				EthereumSender: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+				CosmosReceiver: AccAddrs[0].String(),
+				Orchestrator:   OrchAddrs[0].String(),
+			})
+			return err
+		},
+		"BatchSendToEthClaim": func(sv msgServer, ctx sdk.Context) error {
+			_, err := sv.BatchSendToEthClaim(ctx, &types.MsgBatchSendToEthClaim{
+				TokenContract:  tokenContract,
+				BatchNonce:     1,
+				EventNonce:     1,
+				EthBlockHeight: 1,
+				Orchestrator:   OrchAddrs[0].String(),
+			})
+			return err
+		},
+		"ERC20DeployedClaim": func(sv msgServer, ctx sdk.Context) error {
+			_, err := sv.ERC20DeployedClaim(ctx, &types.MsgERC20DeployedClaim{
+				CosmosDenom:    "footoken",
+				TokenContract:  tokenContract,
+				EventNonce:     1,
+				EthBlockHeight: 1,
+				Name:           "Foo Token",
+				Symbol:         "FOO",
+				Decimals:       6,
+				Orchestrator:   OrchAddrs[0].String(),
+			})
+			return err
+		},
+		"LogicCallExecutedClaim": func(sv msgServer, ctx sdk.Context) error {
+			_, err := sv.LogicCallExecutedClaim(ctx, &types.MsgLogicCallExecutedClaim{
+				EventNonce:        1,
+				EthBlockHeight:    1,
+				InvalidationId:    []byte("test-invalidation-id"),
+				InvalidationNonce: 1,
+				Orchestrator:      OrchAddrs[0].String(),
+			})
+			return err
+		},
+		"ValsetUpdateClaim": func(sv msgServer, ctx sdk.Context) error {
+			_, err := sv.ValsetUpdateClaim(ctx, &types.MsgValsetUpdatedClaim{
+				EventNonce:     1,
+				ValsetNonce:    0,
+				EthBlockHeight: 1,
+				Members:        types.BridgeValidators{},
+				RewardAmount:   sdkmath.ZeroInt(),
+				RewardToken:    types.ZeroAddress().GetAddress().Hex(),
+				Orchestrator:   OrchAddrs[0].String(),
+			})
+			return err
+		},
+	}
+
+	for name, invoke := range testCases {
+		name, invoke := name, invoke
+		t.Run(name, func(t *testing.T) {
+			input, ctx := SetupFiveValChain(t)
+			defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+			setBridgePaused(t, ctx, input.GravityKeeper)
+
+			sv := msgServer{input.GravityKeeper}
+			err := invoke(sv, ctx)
+			requireBridgePausedError(t, err)
+		})
+	}
+}

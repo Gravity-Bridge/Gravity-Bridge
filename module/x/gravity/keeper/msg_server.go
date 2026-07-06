@@ -99,6 +99,11 @@ func (k msgServer) SetOrchestratorAddress(c context.Context, msg *types.MsgSetOr
 func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm) (*types.MsgValsetConfirmResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgValsetConfirm", "msg", msg)
+
+	err := k.RequireBridgeActive(ctx)
+	if err != nil {
+		return nil, err
+	}
 	valset := k.GetValset(ctx, msg.Nonce) // A valset request was previously created
 	if valset == nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "couldn't find valset")
@@ -133,6 +138,11 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types.MsgSendToEthResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgSendToEth", "msg", msg)
+
+	err := k.RequireBridgeActive(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// Perform additional validation on the denoms
 	if err := types.ValidateStrictDenom(msg.Amount.Denom); err != nil {
@@ -305,7 +315,11 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (*types.MsgConfirmBatchResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgConfirmBatch", "msg", msg)
-	err := msg.ValidateBasic()
+	err := k.RequireBridgeActive(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = msg.ValidateBasic()
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid MsgConfirmBatch")
 	}
@@ -358,6 +372,10 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 func (k msgServer) ConfirmLogicCall(c context.Context, msg *types.MsgConfirmLogicCall) (*types.MsgConfirmLogicCallResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgConfirmLogicCall", "msg", msg)
+	err := k.RequireBridgeActive(ctx)
+	if err != nil {
+		return nil, err
+	}
 	invalidationIdBytes, err := hex.DecodeString(msg.InvalidationId)
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "invalidation id encoding")
@@ -418,8 +436,13 @@ func (k msgServer) checkOrchestratorValidatorInSet(ctx sdk.Context, orchestrator
 // claimHandlerCommon is an internal function that provides common code for processing claims once they are
 // translated from the message to the Ethereum claim interface
 func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, msg types.EthereumClaim) error {
+	err := k.RequireBridgeActive(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Add the claim to the store
-	_, err := k.Attest(ctx, msg, msgAny)
+	_, err = k.Attest(ctx, msg, msgAny)
 	if err != nil {
 		return errorsmod.Wrap(err, "create attestation")
 	}

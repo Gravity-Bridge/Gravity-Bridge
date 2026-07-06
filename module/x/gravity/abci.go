@@ -114,12 +114,9 @@ func slashing(ctx sdk.Context, k keeper.Keeper) {
 // "Observe" those who have passed the threshold. Break the loop once we see
 // an attestation that has not passed the threshold
 func attestationTally(ctx sdk.Context, k keeper.Keeper) {
-	params, err := k.GetParams(ctx)
-	if err != nil {
-		panic(fmt.Sprintf("failed to get params: %v", err))
-	}
-	// bridge is currently disabled, do not process attestations from Ethereum
-	if !params.BridgeActive {
+	// While the bridge is paused new attestations must not be tallied/observed
+	if err := k.RequireBridgeActive(ctx); err != nil {
+		k.Logger(ctx).Debug("Skipping attestation tally while bridge is paused", "cause", err.Error())
 		return
 	}
 

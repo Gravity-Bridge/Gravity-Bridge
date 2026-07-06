@@ -30,12 +30,9 @@ func (k Keeper) BuildOutgoingTXBatch(
 	if maxElements == 0 {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "max elements value")
 	}
-	params, err := k.GetParams(ctx)
+	err := k.RequireBridgeActive(ctx)
 	if err != nil {
-		return nil, errorsmod.Wrap(err, "failed to get params")
-	}
-	if !params.BridgeActive {
-		return nil, errorsmod.Wrap(types.ErrInvalid, "bridge paused")
+		return nil, err
 	}
 
 	lastBatch := k.GetLastOutgoingBatchByTokenType(ctx, contract)
