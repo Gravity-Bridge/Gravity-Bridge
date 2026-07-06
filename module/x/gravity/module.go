@@ -105,7 +105,7 @@ type AppModule struct {
 }
 
 func (am AppModule) ConsensusVersion() uint64 {
-	return 6
+	return 7
 }
 
 // NewAppModule creates a new AppModule Object
@@ -144,8 +144,8 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	typesv2.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
 	m := keeper.NewMigrator(am.keeper, am.legacyParamSpace)
-	if err := cfg.RegisterMigration(types.ModuleName, 5, m.Migrate5to6); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/gravity from version 5 to 6: %v", err))
+	if err := cfg.RegisterMigration(types.ModuleName, 6, m.Migrate6to7); err != nil {
+		panic(fmt.Sprintf("failed to migrate x/gravity from version 6 to 7: %v", err))
 	}
 }
 
