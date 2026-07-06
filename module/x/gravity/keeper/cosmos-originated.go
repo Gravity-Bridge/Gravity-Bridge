@@ -138,8 +138,18 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 	var denom string
 	if isRemapped {
 		denom = types.Gravity2Denom(tokenContract)
+		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
+		// this should be unnecessary but will make metadata changes extremely obvious
+		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
+			panic(fmt.Sprintf("ClassifyERC20: Eth-originated gravity2 denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
+		}
 	} else {
 		denom = types.GravityDenom(tokenContract)
+		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
+		// this should be unnecessary but will make metadata changes extremely obvious
+		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
+			panic(fmt.Sprintf("ClassifyERC20: Eth-originated gravity denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
+		}
 	}
 
 	// Eth address round-trip check — the derived denom must lead back to the same ERC20 address
@@ -167,6 +177,7 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 		Denom:              denom,
 		ERC20:              &tokenContract,
 	}
+
 	origin.AssertValid()
 	return origin
 }
@@ -197,6 +208,11 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) types.AssetOrigin {
 			ERC20:              tc,
 		}
 		origin.AssertValid()
+		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
+		// this should be unnecessary but will make metadata changes extremely obvious
+		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
+			panic(fmt.Sprintf("ClassifyDenom: Eth-originated gravity2 denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
+		}
 		return origin
 	}
 
@@ -218,6 +234,11 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) types.AssetOrigin {
 			ERC20:              tc,
 		}
 		origin.AssertValid()
+		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
+		// this should be unnecessary but will make metadata changes extremely obvious
+		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
+			panic(fmt.Sprintf("ClassifyDenom: Eth-originated gravity denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
+		}
 		return origin
 	}
 
