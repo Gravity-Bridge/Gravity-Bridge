@@ -516,7 +516,7 @@ func TestBatchTimeout(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, e2           = types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr)
-		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		allVouchers         = sdk.NewCoins(keeper.NewGravityCoin(ctx, pk, *token))
 	)
 	require.NoError(t, e1)
 	require.NoError(t, e2)
@@ -538,10 +538,10 @@ func TestBatchTimeout(t *testing.T) {
 	for i, v := range []uint64{4, 3, 3, 4, 5, 6} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := keeper.NewGravityCoin(ctx, pk, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := keeper.NewGravityCoin(ctx, pk, *feeToken)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)

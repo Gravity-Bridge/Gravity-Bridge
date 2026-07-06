@@ -214,7 +214,7 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 	require.NoError(t, err)
 	ethVoucherToken, err := types.NewInternalERC20Token(sdkmath.NewInt(10000), ethTokenContract)
 	require.NoError(t, err)
-	ethVouchers := sdk.NewCoins(ethVoucherToken.GravityCoin())
+	ethVouchers := sdk.NewCoins(NewGravityCoin(ctx, gk, *ethVoucherToken))
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, ethVouchers))
 	input.AccountKeeper.NewAccountWithAddress(ctx, sender)
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, ethVouchers))
@@ -223,9 +223,9 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
 		Sender:    sender.String(),
 		EthDest:   ethDest,
-		Amount:    sdk.NewCoin(ethVoucherToken.GravityCoin().Denom, sdkmath.NewInt(100)),
-		BridgeFee: sdk.NewCoin(ethVoucherToken.GravityCoin().Denom, sdkmath.NewInt(1)),
-		ChainFee:  sdk.NewCoin(ethVoucherToken.GravityCoin().Denom, sdkmath.ZeroInt()),
+		Amount:    sdk.NewCoin(NewGravityCoin(ctx, gk, *ethVoucherToken).Denom, sdkmath.NewInt(100)),
+		BridgeFee: sdk.NewCoin(NewGravityCoin(ctx, gk, *ethVoucherToken).Denom, sdkmath.NewInt(1)),
+		ChainFee:  sdk.NewCoin(NewGravityCoin(ctx, gk, *ethVoucherToken).Denom, sdkmath.ZeroInt()),
 	})
 	require.NoError(t, err, "ethereum-originated token must be allowed even when allowlist is empty")
 

@@ -176,11 +176,6 @@ func (i *InternalERC20Token) ToExternal() ERC20Token {
 	}
 }
 
-// GravityCoin returns the gravity representation of the ERC20
-func (i *InternalERC20Token) GravityCoin() sdk.Coin {
-	return sdk.NewCoin(GravityDenom(i.Contract), i.Amount)
-}
-
 // GravityDenom converts an EthAddress to a gravity cosmos denom
 func GravityDenom(tokenContract EthAddress) string {
 	return fmt.Sprintf("%s%s%s", GravityDenomPrefix, GravityDenomSeparator, tokenContract.GetAddress().Hex())

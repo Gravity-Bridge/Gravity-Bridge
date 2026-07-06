@@ -122,8 +122,6 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 	}
 	contract := b.TokenContract
 	// Burn tokens if they're Ethereum originated.
-	// NOTE: Here we can't use GravityCoin() because it returns the old gravity-prefixed denom for all tokens, but
-	// with the remapping now we need to consider the gravity2-prefixed tokens as well
 	if contractOrigin := k.ClassifyERC20(ctx, contract); contractOrigin.IsEthOriginated {
 		totalToBurn := sdkmath.NewInt(0)
 		for _, tx := range b.Transactions {

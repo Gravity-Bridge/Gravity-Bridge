@@ -571,7 +571,7 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 	// mint some voucher first
 	token, err := types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr)
 	require.NoError(t, err)
-	allVouchers := sdk.Coins{token.GravityCoin()}
+	allVouchers := sdk.Coins{NewGravityCoin(input.Context, input.GravityKeeper, *token)}
 	err = input.BankKeeper.MintCoins(input.Context, types.ModuleName, allVouchers)
 	require.NoError(t, err)
 
@@ -584,10 +584,10 @@ func createTestBatch(t *testing.T, input TestInput, maxTxElements uint) {
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(input.Context, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(input.Context, input.GravityKeeper, *feeToken)
 		_, err = input.GravityKeeper.AddToOutgoingPool(input.Context, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:
@@ -1046,7 +1046,7 @@ func TestQueryPendingSendToEth(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, err2         = types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr)
-		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		allVouchers         = sdk.NewCoins(NewGravityCoin(ctx, k, *token))
 	)
 	require.NoError(t, err1)
 	require.NoError(t, err2)
@@ -1068,10 +1068,10 @@ func TestQueryPendingSendToEth(t *testing.T) {
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, k, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, k, *feeToken)
 		_, err = input.GravityKeeper.AddToOutgoingPool(sdkCtx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
 		// Should create:

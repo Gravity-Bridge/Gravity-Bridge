@@ -29,7 +29,7 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, e2           = types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr)
-		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		allVouchers         = sdk.NewCoins(NewGravityCoin(ctx, input.GravityKeeper, *token))
 	)
 	require.NoError(t, e1)
 	require.NoError(t, e2)
@@ -50,10 +50,10 @@ func TestSubmitBadSignatureEvidenceBatchExists(t *testing.T) {
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)

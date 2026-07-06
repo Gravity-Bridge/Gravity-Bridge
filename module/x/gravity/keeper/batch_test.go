@@ -27,7 +27,7 @@ func TestBatches(t *testing.T) {
 		myReceiver, e2          = types.NewEthAddress("0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7")
 		myTokenContractAddr, e3 = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5") // Pickle
 		token, e4               = types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr.GetAddress().Hex())
-		allVouchers             = sdk.NewCoins(token.GravityCoin())
+		allVouchers             = sdk.NewCoins(NewGravityCoin(ctx, input.GravityKeeper, *token))
 	)
 	require.NoError(t, e1)
 	require.NoError(t, e2)
@@ -52,10 +52,10 @@ func TestBatches(t *testing.T) {
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amount, fee)
 		require.NoError(t, err)
@@ -177,10 +177,10 @@ func TestBatches(t *testing.T) {
 	for i, v := range []uint64{4, 5} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amount, fee)
 		require.NoError(t, err)
@@ -336,7 +336,7 @@ func TestBatchesFullCoins(t *testing.T) {
 		totalCoins, _       = sdkmath.NewIntFromString("1500000000000000000000") // 1,500 ETH worth
 		oneEth, _           = sdkmath.NewIntFromString("1000000000000000000")
 		token, e3           = types.NewInternalERC20Token(totalCoins, myTokenContractAddr)
-		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		allVouchers         = sdk.NewCoins(NewGravityCoin(ctx, input.GravityKeeper, *token))
 	)
 	require.NoError(t, e1)
 	require.NoError(t, e2)
@@ -358,10 +358,10 @@ func TestBatchesFullCoins(t *testing.T) {
 		vAsSDKInt := sdkmath.NewIntFromUint64(v)
 		amountToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiverAddr, amount, fee)
 		require.NoError(t, err)
@@ -440,10 +440,10 @@ func TestBatchesFullCoins(t *testing.T) {
 		vAsSDKInt := sdkmath.NewIntFromUint64(v)
 		amountToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiverAddr, amount, fee)
 		require.NoError(t, err)
@@ -564,10 +564,10 @@ func TestManyBatches(t *testing.T) {
 		token3, e4         = types.NewInternalERC20Token(totalCoins, tokenContractAddr3)
 		token4, e5         = types.NewInternalERC20Token(totalCoins, tokenContractAddr4)
 		allVouchers        = sdk.NewCoins(
-			token1.GravityCoin(),
-			token2.GravityCoin(),
-			token3.GravityCoin(),
-			token4.GravityCoin(),
+			NewGravityCoin(ctx, input.GravityKeeper, *token1),
+			NewGravityCoin(ctx, input.GravityKeeper, *token2),
+			NewGravityCoin(ctx, input.GravityKeeper, *token3),
+			NewGravityCoin(ctx, input.GravityKeeper, *token4),
 		)
 	)
 	require.NoError(t, e1)
@@ -601,10 +601,10 @@ func TestManyBatches(t *testing.T) {
 			vAsSDKInt := sdkmath.NewIntFromUint64(uint64(v))
 			amountToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), contract)
 			require.NoError(t, err)
-			amount := amountToken.GravityCoin()
+			amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 			feeToken, err := types.NewInternalERC20Token(oneEth.Mul(vAsSDKInt), contract)
 			require.NoError(t, err)
-			fee := feeToken.GravityCoin()
+			fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 			_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 			require.NoError(t, err)
@@ -660,9 +660,9 @@ func TestPoolTxRefund(t *testing.T) {
 		myReceiver          = "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 		myTokenContractAddr = "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5" // Pickle
 		token, e3           = types.NewInternalERC20Token(sdkmath.NewInt(414), myTokenContractAddr)
-		allVouchers         = sdk.NewCoins(token.GravityCoin())
+		allVouchers         = sdk.NewCoins(NewGravityCoin(ctx, input.GravityKeeper, *token))
 		denomToken, e4      = types.NewInternalERC20Token(sdkmath.NewInt(1), myTokenContractAddr)
-		myDenom             = denomToken.GravityCoin().Denom
+		myDenom             = NewGravityCoin(ctx, input.GravityKeeper, *denomToken).Denom
 	)
 	require.NoError(t, e1)
 	require.NoError(t, e2)
@@ -686,10 +686,10 @@ func TestPoolTxRefund(t *testing.T) {
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr)
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr)
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *receiver, amount, fee)
 		require.NoError(t, err)
@@ -745,7 +745,7 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 		myReceiver, e2          = types.NewEthAddress("0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7")
 		myTokenContractAddr, e3 = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5") // Pickle
 		token, e4               = types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr.GetAddress().Hex())
-		allVouchers             = sdk.NewCoins(token.GravityCoin())
+		allVouchers             = sdk.NewCoins(NewGravityCoin(ctx, input.GravityKeeper, *token))
 	)
 	require.NoError(t, e1)
 	require.NoError(t, e2)
@@ -765,10 +765,10 @@ func TestBatchesNotCreatedWhenBridgePaused(t *testing.T) {
 	for i, v := range []uint64{2, 3, 2, 1} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amount, fee)
 		require.NoError(t, err)
@@ -822,7 +822,7 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 		blacklistedReceiver, e3 = types.NewEthAddress("0x4d16b9E4a27c3313440923fEfCd013178149A5bD")
 		myTokenContractAddr, e4 = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5") // Pickle
 		token, e5               = types.NewInternalERC20Token(sdkmath.NewInt(99999), myTokenContractAddr.GetAddress().Hex())
-		allVouchers             = sdk.NewCoins(token.GravityCoin())
+		allVouchers             = sdk.NewCoins(NewGravityCoin(ctx, input.GravityKeeper, *token))
 	)
 	require.NoError(t, e1)
 	require.NoError(t, e2)
@@ -850,10 +850,10 @@ func TestEthereumBlacklistBatches(t *testing.T) {
 	for i, v := range []uint64{2, 3, 2, 1, 5} {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(v), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		// one of the transactions should go to the blacklisted address
 		if i == 4 {
@@ -949,7 +949,7 @@ func TestBatchConfirms(t *testing.T) {
 		myReceiver, e2          = types.NewEthAddress("0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7")
 		myTokenContractAddr, e3 = types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5") // Pickle
 		token, e4               = types.NewInternalERC20Token(sdkmath.NewInt(1000000), myTokenContractAddr.GetAddress().Hex())
-		allVouchers             = sdk.NewCoins(token.GravityCoin())
+		allVouchers             = sdk.NewCoins(NewGravityCoin(ctx, input.GravityKeeper, *token))
 	)
 	require.NoError(t, e1)
 	require.NoError(t, e2)
@@ -969,10 +969,10 @@ func TestBatchConfirms(t *testing.T) {
 	for i := 1; i < 200; i++ {
 		amountToken, err := types.NewInternalERC20Token(sdkmath.NewInt(int64(i+100)), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		amount := amountToken.GravityCoin()
+		amount := NewGravityCoin(ctx, input.GravityKeeper, *amountToken)
 		feeToken, err := types.NewInternalERC20Token(sdkmath.NewIntFromUint64(uint64(i+10)), myTokenContractAddr.GetAddress().Hex())
 		require.NoError(t, err)
-		fee := feeToken.GravityCoin()
+		fee := NewGravityCoin(ctx, input.GravityKeeper, *feeToken)
 
 		// add tx to the pool
 		_, err = input.GravityKeeper.AddToOutgoingPool(ctx, mySender, *myReceiver, amount, fee)
