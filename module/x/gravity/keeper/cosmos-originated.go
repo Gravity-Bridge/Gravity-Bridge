@@ -190,7 +190,7 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 //   - Unrecognized denom
 //   - Eth-originated: the derived denom must round-trip back to the same ERC20 address
 //   - The denom fails ValidateStrictDenom()
-func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) types.AssetOrigin {
+func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (types.AssetOrigin, error) {
 	// gravity2 prefix -> eth-originated remapped erc20
 	if tc, err := types.Gravity2DenomToERC20(denom); err == nil {
 		if !k.IsRemappedERC20(ctx, *tc) {
@@ -213,7 +213,7 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) types.AssetOrigin {
 		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
 			panic(fmt.Sprintf("ClassifyDenom: Eth-originated gravity2 denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
 		}
-		return origin
+		return origin, nil
 	}
 
 	// gravity prefix -> eth-originated erc20
@@ -239,7 +239,7 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) types.AssetOrigin {
 		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
 			panic(fmt.Sprintf("ClassifyDenom: Eth-originated gravity denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
 		}
-		return origin
+		return origin, nil
 	}
 
 	// cosmos-originated token
@@ -262,13 +262,12 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) types.AssetOrigin {
 			ERC20:              tc,
 		}
 		origin.AssertValid()
-		return origin
+		return origin, nil
 	}
 
-	// Denom is not registered as any known asset. Return a zero AssetOrigin (both flags false).
-	// Callers that require a known asset (e.g. RewardToERC20Lookup) must check the returned flags.
+	// Unknown asset, return an error
 	//nolint: exhaustruct
-	return types.AssetOrigin{}
+	return types.AssetOrigin{}, types.ErrInvalidDenom.Wrapf("denom %q is not registered as a known bridged asset", denom)
 }
 
 // RewardToERC20Lookup validates a valset reward coin and returns its ERC20 address and amount.
@@ -277,7 +276,10 @@ func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (*types.EthA
 	if !coin.IsValid() || coin.IsZero() {
 		panic("Bad validator set relaying reward!")
 	}
-	origin := k.ClassifyDenom(ctx, coin.Denom)
+	origin, err := k.ClassifyDenom(ctx, coin.Denom)
+	if err != nil {
+		panic(fmt.Sprintf("Invalid Valset reward! Denom %q is not a known bridged asset. Correct or remove the parameter value", coin.Denom))
+	}
 	if !origin.IsCosmosOriginated && !origin.IsEthOriginated {
 		// This can only happen if governance sets a reward denom that has never been bridged.
 		panic(fmt.Sprintf("Invalid Valset reward! Denom %q is not a known bridged asset. Correct or remove the parameter value", coin.Denom))

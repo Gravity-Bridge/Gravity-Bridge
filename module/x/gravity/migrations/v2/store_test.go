@@ -74,7 +74,8 @@ func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
 	err := v2.MigrateStore(input.Context, input.GravityStoreKey, input.Marshaler)
 	assert.NoError(t, err)
 
-	origin := input.GravityKeeper.ClassifyDenom(input.Context, denom)
+	origin, err := input.GravityKeeper.ClassifyDenom(input.Context, denom)
+	require.NoError(t, err)
 	assert.True(t, origin.IsCosmosOriginated)
 	addr := origin.ERC20
 	// Triple check that the migration worked

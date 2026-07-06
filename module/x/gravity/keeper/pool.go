@@ -36,7 +36,10 @@ func (k Keeper) AddToOutgoingPool(
 	// If the coin is a gravity voucher, burn the coins. If not, check if there is a deployed ERC20 contract representing it.
 	// If there is, lock the coins.
 
-	poolOrigin := k.ClassifyDenom(ctx, totalAmount.Denom)
+	poolOrigin, err := k.ClassifyDenom(ctx, totalAmount.Denom)
+	if err != nil {
+		return 0, errorsmod.Wrap(err, "failed to classify denom")
+	}
 
 	// lock coins in module
 	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, sender, types.ModuleName, totalInVouchers); err != nil {

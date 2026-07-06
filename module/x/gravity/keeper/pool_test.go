@@ -487,7 +487,8 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 	// add it to the ERC20 registry
 	require.NoError(t, input.GravityKeeper.setCosmosOriginatedMapping(ctx, myTokenDenom, *tokenAddr))
 
-	origin := input.GravityKeeper.ClassifyDenom(ctx, myTokenDenom)
+	origin, err := input.GravityKeeper.ClassifyDenom(ctx, myTokenDenom)
+	require.NoError(t, err)
 	require.True(t, origin.IsCosmosOriginated)
 	require.Equal(t, tokenAddr.GetAddress().Hex(), myTokenContractAddr)
 	require.Equal(t, tokenAddr, origin.ERC20)

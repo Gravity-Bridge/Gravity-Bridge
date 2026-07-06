@@ -148,7 +148,10 @@ func (k msgServer) SendToEth(c context.Context, msg *types.MsgSendToEth) (*types
 		return nil, errorsmod.Wrap(types.ErrInvalid, "amount, bridge fee, and chain fee must all be the same denom")
 	}
 
-	amountOrigin := k.ClassifyDenom(ctx, msg.Amount.Denom)
+	amountOrigin, err := k.ClassifyDenom(ctx, msg.Amount.Denom)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to classify amount denom")
+	}
 	if amountOrigin.IsCosmosOriginated {
 		_, err := k.assertMetadataWhitelisted(ctx, msg.Amount.Denom)
 		if err != nil {
@@ -273,7 +276,10 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 
 	// Check if the denom is a gravity coin, if not, check if there is a deployed ERC20 representing it.
 	// If not, error out
-	batchOrigin := k.ClassifyDenom(ctx, msg.Denom)
+	batchOrigin, err := k.ClassifyDenom(ctx, msg.Denom)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to classify denom in request batch")
+	}
 
 	if batchOrigin.IsCosmosOriginated {
 		_, err := k.assertMetadataWhitelisted(ctx, msg.Denom)

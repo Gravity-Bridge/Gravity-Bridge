@@ -307,7 +307,10 @@ func (k Keeper) DenomToERC20(
 		return nil, errorsmod.Wrap(err, "invalid denom in query request")
 	}
 	ctx := sdk.UnwrapSDKContext(c)
-	origin := k.ClassifyDenom(ctx, req.Denom)
+	origin, err := k.ClassifyDenom(ctx, req.Denom)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to classify denom in query request")
+	}
 	var ret types.QueryDenomToERC20Response
 	ret.Erc20 = origin.ERC20.GetAddress().Hex()
 	ret.CosmosOriginated = origin.IsCosmosOriginated

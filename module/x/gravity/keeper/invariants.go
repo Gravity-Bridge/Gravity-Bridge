@@ -52,7 +52,10 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 		// Compare actual vs expected balances
 		for _, actual := range actualBals {
 			denom := actual.GetDenom()
-			origin := k.ClassifyDenom(ctx, denom)
+			origin, err := k.ClassifyDenom(ctx, denom)
+			if err != nil {
+				return fmt.Sprint("Failed to classify denom ", denom, ": ", err), true
+			}
 			expected, ok := expectedBals[denom]
 			if !ok {
 				return fmt.Sprint("Could not find expected balance for actual module balance of ", actual), true

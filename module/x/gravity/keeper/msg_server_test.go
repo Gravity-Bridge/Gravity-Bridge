@@ -552,7 +552,8 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	require.Equal(t, oldDenom, erc20Origin.Denom)
 
 	// ── Pre-remap: DenomToERC20Lookup for gravity0x works ────────────────────────
-	denomOrigin := gk.ClassifyDenom(ctx, oldDenom)
+	denomOrigin, err := gk.ClassifyDenom(ctx, oldDenom)
+	require.NoError(t, err)
 	require.False(t, denomOrigin.IsCosmosOriginated)
 	require.Equal(t, tokenAddr, denomOrigin.ERC20)
 
@@ -603,7 +604,8 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	)
 
 	// ── Post-remap: DenomToERC20Lookup for new gravity20x succeeds ───────────────
-	denomOrigin = gk.ClassifyDenom(ctx, newDenom)
+	denomOrigin, err = gk.ClassifyDenom(ctx, newDenom)
+	require.NoError(t, err)
 	require.False(t, denomOrigin.IsCosmosOriginated)
 	require.Equal(t, tokenAddr, denomOrigin.ERC20)
 
