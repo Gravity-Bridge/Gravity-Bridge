@@ -123,9 +123,22 @@ func TestAttestationIterator(t *testing.T) {
 	require.NoError(t, err)
 	//nolint: exhaustruct
 	att1 := &types.Attestation{
-		Claim:    ne1,
-		Observed: true,
-		Votes:    []string{ValAddrs[0].String()},
+		Claim:     ne1,
+		Observed:  true,
+		Votes:     []string{ValAddrs[0].String()},
+		ClaimType: types.CLAIM_TYPE_SEND_TO_COSMOS,
+		ClaimComponents: &types.ClaimHashComponents{
+			Components: &types.ClaimHashComponents_SendToCosmos{
+				SendToCosmos: &types.SendToCosmosClaimComponents{
+					EventNonce:     claim1.EventNonce,
+					EthBlockHeight: claim1.EthBlockHeight,
+					TokenContract:  claim1.TokenContract,
+					Amount:         claim1.Amount.String(),
+					EthereumSender: claim1.EthereumSender,
+					CosmosReceiver: claim1.CosmosReceiver,
+				},
+			},
+		},
 	}
 
 	//nolint: exhaustruct
@@ -141,9 +154,22 @@ func TestAttestationIterator(t *testing.T) {
 	require.NoError(t, err)
 	//nolint: exhaustruct
 	att2 := &types.Attestation{
-		Claim:    ne2,
-		Observed: true,
-		Votes:    []string{ValAddrs[0].String()},
+		Claim:     ne2,
+		Observed:  true,
+		Votes:     []string{ValAddrs[0].String()},
+		ClaimType: types.CLAIM_TYPE_SEND_TO_COSMOS,
+		ClaimComponents: &types.ClaimHashComponents{
+			Components: &types.ClaimHashComponents_SendToCosmos{
+				SendToCosmos: &types.SendToCosmosClaimComponents{
+					EventNonce:     claim2.EventNonce,
+					EthBlockHeight: claim2.EthBlockHeight,
+					TokenContract:  claim2.TokenContract,
+					Amount:         claim2.Amount.String(),
+					EthereumSender: claim2.EthereumSender,
+					CosmosReceiver: claim2.CosmosReceiver,
+				},
+			},
+		},
 	}
 
 	hash1, err := claim1.ClaimHash()

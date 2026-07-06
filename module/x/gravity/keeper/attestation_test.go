@@ -128,6 +128,20 @@ func createAttestations(t *testing.T, length int, k Keeper, ctx sdk.Context) ([]
 		if err != nil {
 			panic(fmt.Sprintf("Bad claim discovered: %s", err.Error()))
 		}
+		components := types.ClaimHashComponents{
+			Components: &types.ClaimHashComponents_SendToCosmos{
+				SendToCosmos: &types.SendToCosmosClaimComponents{
+					EventNonce:     msg.EventNonce,
+					EthBlockHeight: msg.EthBlockHeight,
+					TokenContract:  msg.TokenContract,
+					Amount:         msg.Amount.String(),
+					EthereumSender: msg.EthereumSender,
+					CosmosReceiver: msg.CosmosReceiver,
+				},
+			},
+		}
+		att.ClaimType = types.CLAIM_TYPE_SEND_TO_COSMOS
+		att.ClaimComponents = &components
 		hash, err := msg.ClaimHash()
 		hashes = append(hashes, hash)
 		require.NoError(t, err)

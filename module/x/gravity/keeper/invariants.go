@@ -172,20 +172,10 @@ func StoreValidityInvariant(k Keeper) sdk.Invariant {
 func AttestationHashIntegrityInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		var broken []string
-		var checked int
-		const maxChecks = 1000
 
 		k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) bool {
-			// Skip legacy attestations that predate the new fields
-			if att.ClaimType == types.CLAIM_TYPE_UNSPECIFIED {
-				return false
-			}
 			if err := att.VerifyClaimHash(k.cdc); err != nil {
 				broken = append(broken, fmt.Sprintf("attestation %x: %v", key, err))
-			}
-			checked++
-			if checked >= maxChecks {
-				return true // stop early
 			}
 			return false
 		})
