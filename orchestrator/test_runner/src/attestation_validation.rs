@@ -1045,6 +1045,18 @@ async fn erc20_deployed_claim_hash_collision(
         honest_att.votes,
     );
 
+    // Ensure the forged and honest attestations produce different ClaimHashes
+    let forged_hash = hash_from_claim_any(forged_att)
+        .expect("Phase 5: failed to compute forged attestation hash");
+    let honest_hash = hash_from_claim_any(honest_att)
+        .expect("Phase 5: failed to compute honest attestation hash");
+    assert_ne!(
+        forged_hash, honest_hash,
+        "REGRESSION: forged and honest attestations produced the same ClaimHash \
+         ({:?}); AttestationSeparator field-boundary protection has broken down",
+        forged_hash
+    );
+
     info!(
         "ERC20DeployedClaim claim disagreement VERIFIED: forged attestation stuck at {} vote(s), \
          honest attestation observed with {} vote(s). \
