@@ -15,10 +15,16 @@ func (k Keeper) HandleUpdateHrpIbcChannelProposal(ctx sdk.Context, p *types.Upda
 		return err
 	}
 
+	// An empty source channel for a token indicates that the record should be deleted.
+	if p.SourceChannel == "" {
+		return k.deleteHrpIbcRecord(ctx, p.Hrp)
+	}
+
 	nativeHrp, err := k.GetNativeHrp(ctx)
 	if err != nil {
 		return err
 	}
+
 	if p.Hrp == nativeHrp {
 		return errorsmod.Wrap(types.ErrInvalidHRP, "cannot map an IBC channel for the native prefix")
 	}

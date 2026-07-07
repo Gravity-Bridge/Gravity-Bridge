@@ -96,21 +96,12 @@ func (k Keeper) GetHrpIbcRecord(ctx sdk.Context, hrp string) (types.HrpIbcRecord
 }
 
 // setHrpIbcRecord sets a new hrp ibc record for a specific denom.
-// WARNING: If SourceChannel is empty, the existing record for the HRP is deleted.
 func (k Keeper) setHrpIbcRecord(ctx sdk.Context, hrpIbcRecord types.HrpIbcRecord) error {
 	store := ctx.KVStore(k.storeKey)
 	prefixStore := prefix.NewStore(store, types.HrpIBCRecordStorePrefix)
 
 	if hrpIbcRecord.SourceChannel == "" {
-		if prefixStore.Has([]byte(hrpIbcRecord.Hrp)) {
-			prefixStore.Delete([]byte(hrpIbcRecord.Hrp))
-			k.Logger(ctx).Info("HRP IBC record deleted", "hrp", hrpIbcRecord.Hrp)
-			ctx.EventManager().EmitEvent(sdk.NewEvent(
-				types.EventTypeHrpIbcRecordDelete,
-				sdk.NewAttribute(types.AttributeKeyHrp, hrpIbcRecord.Hrp),
-			))
-		}
-		return nil
+		return errorsmod.Wrap(types.ErrInvalidIBCData, "cannot set an HRP IBC record with an empty source channel")
 	}
 
 	bz, err := proto.Marshal(&hrpIbcRecord)
@@ -124,6 +115,23 @@ func (k Keeper) setHrpIbcRecord(ctx sdk.Context, hrpIbcRecord types.HrpIbcRecord
 		types.EventTypeHrpIbcRecordSet,
 		sdk.NewAttribute(types.AttributeKeyHrp, hrpIbcRecord.Hrp),
 		sdk.NewAttribute(types.AttributeKeyChannel, hrpIbcRecord.SourceChannel),
+	))
+	return nil
+}
+
+// deleteHrpIbcRecord deletes an existing hrp ibc record for a specific hrp
+// an error is returned if the record does not exist
+func (k Keeper) deleteHrpIbcRecord(ctx sdk.Context, hrp string) error {
+	store := ctx.KVStore(k.storeKey)
+	prefixStore := prefix.NewStore(store, types.HrpIBCRecordStorePrefix)
+	if !prefixStore.Has([]byte(hrp)) {
+		return errorsmod.Wrap(types.ErrRecordNotFound, fmt.Sprintf("hrp record not found for %s", hrp))
+	}
+	prefixStore.Delete([]byte(hrp))
+	k.Logger(ctx).Info("HRP IBC record deleted", "hrp", hrp)
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeHrpIbcRecordDelete,
+		sdk.NewAttribute(types.AttributeKeyHrp, hrp),
 	))
 	return nil
 }
