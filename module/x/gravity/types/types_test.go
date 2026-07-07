@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	mrand "math/rand"
+	"strings"
 	"testing"
 
 	sdkmath "cosmossdk.io/math"
@@ -232,4 +233,103 @@ func shuffled(v InternalBridgeValidators) InternalBridgeValidators {
 		v[i], v[j] = v[j], v[i]
 	})
 	return v
+}
+
+func TestContainsEthAddress(t *testing.T) {
+	specs := map[string]struct {
+		denom string
+		exp   bool
+	}{
+		"empty string": {
+			denom: "",
+			exp:   false,
+		},
+		"plain denom with no 0x": {
+			denom: "uatom",
+			exp:   false,
+		},
+		"exact eth address": {
+			denom: "0xc783df8a850f42e7F7e57013759C285caa701eB6",
+			exp:   true,
+		},
+		"gravity-prefixed denom embedding an eth address": {
+			denom: "gravity0xc783df8a850f42e7F7e57013759C285caa701eB6",
+			exp:   true,
+		},
+		"uppercase 0X prefix": {
+			denom: "gravity0Xc783df8a850f42e7F7e57013759C285caa701eB6",
+			exp:   true,
+		},
+		"eth address followed by more characters": {
+			denom: "gravity0xc783df8a850f42e7F7e57013759C285caa701eB6suffix",
+			exp:   true,
+		},
+		"0x with too few hex characters": {
+			denom: "gravity0xc783df8a850f42e7F7e57013759C285caa701eB",
+			exp:   false,
+		},
+		"0x followed by non-hex characters": {
+			denom: "gravity0xzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+			exp:   false,
+		},
+		"dangling 0x at end of string": {
+			denom: "uatom0x",
+			exp:   false,
+		},
+		"single character 0": {
+			denom: "0",
+			exp:   false,
+		},
+		"invalid address before a valid one later in the string": {
+			denom: "0xshort-gravity0xc783df8a850f42e7F7e57013759C285caa701eB6",
+			exp:   true,
+		},
+		"long string with no eth address": {
+			denom: "gravity" + strings.Repeat("uatomdenomfillerabcdefghijklmnopqrstuvwxyz", 200),
+			exp:   false,
+		},
+		"long string with eth address at the very start": {
+			denom: "0xc783df8a850f42e7F7e57013759C285caa701eB6" + strings.Repeat("filler-text-no-address-here", 500),
+			exp:   true,
+		},
+		"long string with eth address at the very end": {
+			denom: strings.Repeat("filler-text-no-address-here", 500) + "0xc783df8a850f42e7F7e57013759C285caa701eB6",
+			exp:   true,
+		},
+		"long string with eth address buried in the middle": {
+			denom: strings.Repeat("padding0", 300) + "0xc783df8a850f42e7F7e57013759C285caa701eB6" + strings.Repeat("padding1", 300),
+			exp:   true,
+		},
+		"long string with only near-miss 0x sequences": {
+			denom: strings.Repeat("0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ-", 100),
+			exp:   false,
+		},
+		"two eth addresses separated by other text": {
+			denom: "gravity0xc783df8a850f42e7F7e57013759C285caa701eB6-then-0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4",
+			exp:   true,
+		},
+		"two eth addresses immediately adjacent to each other": {
+			denom: "0xc783df8a850f42e7F7e57013759C285caa701eB60xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4",
+			exp:   true,
+		},
+		"three eth addresses spread across a long string": {
+			denom: strings.Repeat("filler", 100) + "0xc783df8a850f42e7F7e57013759C285caa701eB6" + strings.Repeat("filler", 100) +
+				"0xeAD9C93b79Ae7C1591b1FB5323BD777E86e150d4" + strings.Repeat("filler", 100) +
+				"0xE5904695748fe4A84b40b3fc79De2277660BD1D3" + strings.Repeat("filler", 100),
+			exp: true,
+		},
+		"multiple invalid 0x candidates followed by one valid address at the end": {
+			denom: strings.Repeat("0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ-", 50) + "0xc783df8a850f42e7F7e57013759C285caa701eB6",
+			exp:   true,
+		},
+		"repeated identical eth address many times": {
+			denom: strings.Repeat("0xc783df8a850f42e7F7e57013759C285caa701eB6-", 100),
+			exp:   true,
+		},
+	}
+	for msg, spec := range specs {
+		t.Run(msg, func(t *testing.T) {
+			assert.Equal(t, spec.exp, ContainsEthAddress(spec.denom))
+		})
+	}
 }
