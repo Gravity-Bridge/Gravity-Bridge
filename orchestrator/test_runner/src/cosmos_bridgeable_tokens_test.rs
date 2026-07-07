@@ -11,8 +11,8 @@ use cosmos_gravity::query::{get_cosmos_bridgeable_tokens, get_pending_send_to_et
 use cosmos_gravity::send::{send_to_eth, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::coin::Coin;
 use deep_space::{Contact, Msg, PrivateKey};
-use gravity_proto::gravity::v1::{CosmosBridgeableTokensOperation, CosmosBridgeableTokensProposal};
 use gravity_proto::gravity::v1::{query_client::QueryClient as GravityQueryClient, MsgSendToEth};
+use gravity_proto::gravity::v1::{CosmosBridgeableTokensOperation, CosmosBridgeableTokensProposal};
 use gravity_proto::gravity::v2::MsgCosmosBridgeableTokensProposal;
 use tonic::transport::Channel;
 use web30::client::Web3;
@@ -169,7 +169,9 @@ pub async fn cosmos_bridgeable_tokens_test(
     info!("Step 3: Add footoken to allowlist via governance");
     set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
 
-    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client).await.unwrap();
+    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client)
+        .await
+        .unwrap();
     assert_eq!(
         bridgeable_tokens,
         vec![footoken.clone()],
@@ -298,7 +300,9 @@ pub async fn cosmos_bridgeable_tokens_test(
     info!("Step 7: Clear allowlist and verify footoken is blocked again");
     remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
 
-    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client).await.unwrap();
+    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client)
+        .await
+        .unwrap();
     assert!(
         bridgeable_tokens.is_empty(),
         "Expected cosmos_bridgeable_tokens to be empty after clearing"

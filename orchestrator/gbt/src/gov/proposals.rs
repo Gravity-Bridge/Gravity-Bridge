@@ -2,9 +2,9 @@ use crate::args::AirdropProposalOpts;
 use crate::args::CosmosBridgeableTokensProposalOpts;
 use crate::args::EmergencyBridgeHaltProposalOpts;
 use crate::{args::OracleUnhaltProposalOpts, utils::TIMEOUT};
+use cosmos_gravity::proposals::submit_cosmos_bridgeable_tokens_proposal;
 use cosmos_gravity::proposals::AirdropProposalJsonUnparsed;
 use cosmos_gravity::proposals::CosmosBridgeableTokensProposalJson;
-use cosmos_gravity::proposals::submit_cosmos_bridgeable_tokens_proposal;
 use cosmos_gravity::proposals::{
     submit_airdrop_proposal, submit_pause_bridge_proposal, submit_unhalt_bridge_proposal,
     PauseBridgeProposalJson, UnhaltBridgeProposalJson,

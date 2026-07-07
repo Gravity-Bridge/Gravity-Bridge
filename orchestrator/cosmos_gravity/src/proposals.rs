@@ -186,6 +186,7 @@ pub async fn submit_unhalt_bridge_proposal(
 /// or REMOVEs entries from the CosmosBridgeableTokens allowlist store. On SET, the bank
 /// module's denom metadata for each listed denom is unconditionally overwritten with the
 /// proposal's metadata.
+#[allow(clippy::too_many_arguments)]
 pub async fn submit_cosmos_bridgeable_tokens_proposal(
     title: String,
     description: String,

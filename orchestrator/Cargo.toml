@@ -4,7 +4,7 @@ default-members = ["gbt"]
 resolver = "2"
 
 [workspace.dependencies]
-gravity_proto = "0.11"
+gravity_proto = "0.11.1"
 num256 = "0.6"
 clarity = "1.5"
 web30 = "1.12"
