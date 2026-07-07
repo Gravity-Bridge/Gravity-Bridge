@@ -337,7 +337,7 @@ func TestHandleErc20Deployed_AllowlistEnforcement(t *testing.T) {
 	// Verify the mapping was created
 	footokenOrigin, err := input.GravityKeeper.ClassifyDenom(ctx, "footoken")
 	require.NoError(t, err)
-	require.True(t, footokenOrigin.IsCosmosOriginated)
+	require.Equal(t, types.AssetOriginCosmos, footokenOrigin.Origin)
 	require.Equal(t, "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255", footokenOrigin.ERC20.GetAddress().Hex())
 }
 

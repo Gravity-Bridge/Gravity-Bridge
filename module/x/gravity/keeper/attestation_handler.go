@@ -139,7 +139,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		return errorsmod.Wrap(err, "invalid derived denom from ERC20 classification")
 	}
 
-	if tokenOrigin.IsCosmosOriginated {
+	if tokenOrigin.Origin == types.AssetOriginCosmos {
 		_, err := a.keeper.assertMetadataWhitelisted(ctx, tokenOrigin.Denom)
 		if err != nil {
 			return errorsmod.Wrap(err, "token not whitelisted for SendToCosmos")
@@ -150,7 +150,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	coins := sdk.Coins{coin}
 
 	moduleAddr := a.keeper.accountKeeper.GetModuleAddress(types.ModuleName)
-	if tokenOrigin.IsEthOriginated { // We need to mint eth-originated coins (aka vouchers)
+	if tokenOrigin.Origin == types.AssetOriginEthereum { // We need to mint eth-originated coins (aka vouchers)
 		if err := a.mintEthereumOriginatedVouchers(ctx, moduleAddr, claim, coin); err != nil {
 			// TODO: Evaluate closely, if we can't mint an ethereum voucher, what should we do?
 			return err
@@ -235,7 +235,7 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 		return errorsmod.Wrap(err, "invalid derived denom for batch")
 	}
 
-	if contractOrigin.IsCosmosOriginated {
+	if contractOrigin.Origin == types.AssetOriginCosmos {
 		_, err := a.keeper.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
 			return errorsmod.Wrap(err, "token not whitelisted for BatchSendToEth")
@@ -396,7 +396,7 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 			return errorsmod.Wrap(err, "invalid derived reward denom")
 		}
 
-		if rewardOrigin.IsCosmosOriginated {
+		if rewardOrigin.Origin == types.AssetOriginCosmos {
 			// If it is cosmos originated, mint some coins to account
 			// for coins that now exist on Ethereum and may eventually come
 			// back to Cosmos.

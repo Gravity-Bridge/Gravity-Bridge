@@ -119,7 +119,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 	}
 	contract := b.TokenContract
 	// Burn tokens if they're Ethereum originated.
-	if contractOrigin := k.ClassifyERC20(ctx, contract); contractOrigin.IsEthOriginated {
+	if contractOrigin := k.ClassifyERC20(ctx, contract); contractOrigin.Origin == types.AssetOriginEthereum {
 		totalToBurn := sdkmath.NewInt(0)
 		for _, tx := range b.Transactions {
 			totalToBurn = totalToBurn.Add(tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount))

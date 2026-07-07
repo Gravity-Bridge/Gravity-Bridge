@@ -123,11 +123,10 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 		// Panicking here would prevent the attestation handler from returning a proper error
 		// when a corrupted or pre-validation entry exists in the store.
 		origin := types.AssetOrigin{
-			IsCosmosOriginated: true,
-			IsEthOriginated:    false,
-			IsRemapped:         false,
-			Denom:              denom,
-			ERC20:              &tokenContract,
+			Origin:     types.AssetOriginCosmos,
+			IsRemapped: false,
+			Denom:      denom,
+			ERC20:      &tokenContract,
 		}
 		origin.AssertValid()
 		return origin
@@ -171,11 +170,10 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 			denom, tokenContract.GetAddress().Hex(), err))
 	}
 	origin := types.AssetOrigin{
-		IsCosmosOriginated: false,
-		IsEthOriginated:    true,
-		IsRemapped:         isRemapped,
-		Denom:              denom,
-		ERC20:              &tokenContract,
+		Origin:     types.AssetOriginEthereum,
+		IsRemapped: isRemapped,
+		Denom:      denom,
+		ERC20:      &tokenContract,
 	}
 
 	origin.AssertValid()
@@ -201,11 +199,10 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (types.AssetOrigin,
 				denom, tc.GetAddress().Hex(), err))
 		}
 		origin := types.AssetOrigin{
-			IsCosmosOriginated: false,
-			IsEthOriginated:    true,
-			IsRemapped:         true,
-			Denom:              denom,
-			ERC20:              tc,
+			Origin:     types.AssetOriginEthereum,
+			IsRemapped: true,
+			Denom:      denom,
+			ERC20:      tc,
 		}
 		origin.AssertValid()
 		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
@@ -227,11 +224,10 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (types.AssetOrigin,
 				denom, tc.GetAddress().Hex(), err))
 		}
 		origin := types.AssetOrigin{
-			IsCosmosOriginated: false,
-			IsEthOriginated:    true,
-			IsRemapped:         false,
-			Denom:              denom,
-			ERC20:              tc,
+			Origin:     types.AssetOriginEthereum,
+			IsRemapped: false,
+			Denom:      denom,
+			ERC20:      tc,
 		}
 		origin.AssertValid()
 		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
@@ -255,11 +251,10 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (types.AssetOrigin,
 		}
 
 		origin := types.AssetOrigin{
-			IsCosmosOriginated: true,
-			IsEthOriginated:    false,
-			IsRemapped:         false,
-			Denom:              denom,
-			ERC20:              tc,
+			Origin:     types.AssetOriginCosmos,
+			IsRemapped: false,
+			Denom:      denom,
+			ERC20:      tc,
 		}
 		origin.AssertValid()
 		return origin, nil
@@ -280,7 +275,7 @@ func (k Keeper) RewardToERC20Lookup(ctx sdk.Context, coin sdk.Coin) (*types.EthA
 	if err != nil {
 		panic(fmt.Sprintf("Invalid Valset reward! Denom %q is not a known bridged asset. Correct or remove the parameter value", coin.Denom))
 	}
-	if !origin.IsCosmosOriginated && !origin.IsEthOriginated {
+	if origin.Origin != types.AssetOriginCosmos && origin.Origin != types.AssetOriginEthereum {
 		// This can only happen if governance sets a reward denom that has never been bridged.
 		panic(fmt.Sprintf("Invalid Valset reward! Denom %q is not a known bridged asset. Correct or remove the parameter value", coin.Denom))
 	}

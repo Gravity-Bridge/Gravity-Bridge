@@ -61,7 +61,7 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 				return fmt.Sprint("Could not find expected balance for actual module balance of ", actual), true
 			}
 
-			if origin.IsCosmosOriginated { // Cosmos originated mismatched balance
+			if origin.Origin == types.AssetOriginCosmos { // Cosmos originated mismatched balance
 				// We cannot make any assertions about cosmosOriginated assets because we do not have enough information.
 				// There is no index of denom => amount bridged, which would force us to parse all logs in existence
 			} else if !actual.Amount.Equal(*expected) { // Eth originated mismatched balance

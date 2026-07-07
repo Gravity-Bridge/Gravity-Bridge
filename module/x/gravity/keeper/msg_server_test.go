@@ -765,13 +765,13 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 
 	// ── Pre-remap: ERC20ToDenomLookup returns gravity0x ──────────────────────────
 	erc20Origin := gk.ClassifyERC20(ctx, *tokenAddr)
-	require.False(t, erc20Origin.IsCosmosOriginated)
+	require.Equal(t, types.AssetOriginEthereum, erc20Origin.Origin)
 	require.Equal(t, oldDenom, erc20Origin.Denom)
 
 	// ── Pre-remap: DenomToERC20Lookup for gravity0x works ────────────────────────
 	denomOrigin, err := gk.ClassifyDenom(ctx, oldDenom)
 	require.NoError(t, err)
-	require.False(t, denomOrigin.IsCosmosOriginated)
+	require.Equal(t, types.AssetOriginEthereum, denomOrigin.Origin)
 	require.Equal(t, tokenAddr, denomOrigin.ERC20)
 
 	// ── Pre-remap: SendToEth with gravity0x succeeds ─────────────────────────────
@@ -810,7 +810,7 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 
 	// ── Post-remap: ERC20ToDenomLookup returns gravity2 denom ────────────────────
 	erc20Origin = gk.ClassifyERC20(ctx, *tokenAddr)
-	require.False(t, erc20Origin.IsCosmosOriginated)
+	require.Equal(t, types.AssetOriginEthereum, erc20Origin.Origin)
 	require.Equal(t, newDenom, erc20Origin.Denom, "after remap, ERC20ToDenomLookup must return gravity2 denom")
 
 	// ── Post-remap: ClassifyDenom for the old gravity0x denom panics ────────────
@@ -823,7 +823,7 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	// ── Post-remap: DenomToERC20Lookup for new gravity20x succeeds ───────────────
 	denomOrigin, err = gk.ClassifyDenom(ctx, newDenom)
 	require.NoError(t, err)
-	require.False(t, denomOrigin.IsCosmosOriginated)
+	require.Equal(t, types.AssetOriginEthereum, denomOrigin.Origin)
 	require.Equal(t, tokenAddr, denomOrigin.ERC20)
 
 	// ── Post-remap: SendToEth with old gravity0x panics ──────────────────────────
@@ -867,7 +867,7 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	require.False(t, gk.IsRemappedERC20(ctx, *otherAddr))
 
 	otherOrigin := gk.ClassifyERC20(ctx, *otherAddr)
-	require.False(t, otherOrigin.IsCosmosOriginated)
+	require.Equal(t, types.AssetOriginEthereum, otherOrigin.Origin)
 	require.Equal(t, types.GravityDenom(*otherAddr), otherOrigin.Denom, "non-remapped token should still use gravity0x")
 }
 

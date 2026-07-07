@@ -313,7 +313,7 @@ func (k Keeper) DenomToERC20(
 	}
 	var ret types.QueryDenomToERC20Response
 	ret.Erc20 = origin.ERC20.GetAddress().Hex()
-	ret.CosmosOriginated = origin.IsCosmosOriginated
+	ret.CosmosOriginated = origin.Origin == types.AssetOriginCosmos
 
 	return &ret, nil
 }
@@ -331,7 +331,7 @@ func (k Keeper) ERC20ToDenom(
 	erc20Origin := k.ClassifyERC20(ctx, *ethAddr)
 	var ret types.QueryERC20ToDenomResponse
 	ret.Denom = erc20Origin.Denom
-	ret.CosmosOriginated = erc20Origin.IsCosmosOriginated
+	ret.CosmosOriginated = erc20Origin.Origin == types.AssetOriginCosmos
 
 	return &ret, nil
 }

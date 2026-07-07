@@ -97,7 +97,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	submitERC20Claim(1, "footoken", "0x1111111111111111111111111111111111111111", "Foo Token", "FOO", 6)
 	origin, err := input.GravityKeeper.ClassifyDenom(ctx, "footoken")
 	require.NoError(t, err)
-	require.True(t, origin.IsCosmosOriginated, "footoken ERC20 should be registered when footoken is on the allowlist")
+	require.Equal(t, types.AssetOriginCosmos, origin.Origin, "footoken ERC20 should be registered when footoken is on the allowlist")
 
 	// Case 2: allowlist has bartoken — bartoken ERC20 is registered
 	input.GravityKeeper.DeleteCosmosBridgeableToken(ctx, fooMetadata.Base)
@@ -106,7 +106,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	submitERC20Claim(2, "bartoken", "0x2222222222222222222222222222222222222222", "Bar Token", "BAR", 6)
 	origin, err = input.GravityKeeper.ClassifyDenom(ctx, "bartoken")
 	require.NoError(t, err)
-	require.True(t, origin.IsCosmosOriginated, "bartoken ERC20 should be registered when bartoken is on the allowlist")
+	require.Equal(t, types.AssetOriginCosmos, origin.Origin, "bartoken ERC20 should be registered when bartoken is on the allowlist")
 
 	// Case 3: allowlist has bartoken only — unlisted denom (baztoken) is rejected
 	// the allowlist still contains only "bartoken"
@@ -218,12 +218,12 @@ func addDenomToERC20Relation(tv *testingVars) {
 	// check if erc20<>denom relation added to db
 	denomOrigin, err := tv.input.GravityKeeper.ClassifyDenom(tv.ctx, tv.denom)
 	require.NoError(tv.t, err)
-	assert.True(tv.t, denomOrigin.IsCosmosOriginated)
+	assert.Equal(tv.t, types.AssetOriginCosmos, denomOrigin.Origin)
 
 	ethAddr, err := types.NewEthAddress(tv.erc20)
 	require.NoError(tv.t, err)
 	erc20Origin := tv.input.GravityKeeper.ClassifyERC20(tv.ctx, *ethAddr)
-	assert.True(tv.t, erc20Origin.IsCosmosOriginated)
+	assert.Equal(tv.t, types.AssetOriginCosmos, erc20Origin.Origin)
 
 	assert.Equal(tv.t, tv.denom, erc20Origin.Denom)
 	assert.Equal(tv.t, tv.erc20, denomOrigin.ERC20.GetAddress().Hex())
@@ -383,12 +383,12 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 	// check if erc20<>denom relation added to db
 	denomOrigin, err := tv.input.GravityKeeper.ClassifyDenom(tv.ctx, tv.denom)
 	require.NoError(tv.t, err)
-	assert.True(tv.t, denomOrigin.IsCosmosOriginated)
+	assert.Equal(tv.t, types.AssetOriginCosmos, denomOrigin.Origin)
 
 	ethAddr, err := types.NewEthAddress(tv.erc20)
 	require.NoError(tv.t, err)
 	erc20Origin := tv.input.GravityKeeper.ClassifyERC20(tv.ctx, *ethAddr)
-	assert.True(tv.t, erc20Origin.IsCosmosOriginated)
+	assert.Equal(tv.t, types.AssetOriginCosmos, erc20Origin.Origin)
 
 	assert.Equal(tv.t, tv.denom, erc20Origin.Denom)
 	assert.Equal(tv.t, tv.erc20, denomOrigin.ERC20.GetAddress().Hex())

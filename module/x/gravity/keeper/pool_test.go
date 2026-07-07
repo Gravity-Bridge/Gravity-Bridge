@@ -489,7 +489,7 @@ func TestRemoveFromOutgoingPoolAndRefundCosmosOriginated(t *testing.T) {
 
 	origin, err := input.GravityKeeper.ClassifyDenom(ctx, myTokenDenom)
 	require.NoError(t, err)
-	require.True(t, origin.IsCosmosOriginated)
+	require.Equal(t, types.AssetOriginCosmos, origin.Origin)
 	require.Equal(t, tokenAddr.GetAddress().Hex(), myTokenContractAddr)
 	require.Equal(t, tokenAddr, origin.ERC20)
 

@@ -76,7 +76,7 @@ func TestMigrateCosmosOriginatedDenomToERC20(t *testing.T) {
 
 	origin, err := input.GravityKeeper.ClassifyDenom(input.Context, denom)
 	require.NoError(t, err)
-	assert.True(t, origin.IsCosmosOriginated)
+	assert.Equal(t, types.AssetOriginCosmos, origin.Origin)
 	addr := origin.ERC20
 	// Triple check that the migration worked
 	assert.Equal(t, tokenContract, strings.ToLower(addr.GetAddress().Hex()))
@@ -100,7 +100,7 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 
 	storedDenomOrigin := input.GravityKeeper.ClassifyERC20(input.Context, *tokenAddr)
 	storedDenom := storedDenomOrigin.Denom
-	found := storedDenomOrigin.IsCosmosOriginated
+	found := storedDenomOrigin.Origin == types.AssetOriginCosmos
 	assert.True(t, found)
 	assert.Equal(t, denom, storedDenom)
 
