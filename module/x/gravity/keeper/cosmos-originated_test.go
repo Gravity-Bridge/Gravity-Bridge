@@ -17,6 +17,7 @@ import (
 // nolint: exhaustruct
 func TestClassify_EthOriginatedBankMetadataPanics(t *testing.T) {
 	// Non-remapped ERC20: gravity0x denom
+	//nolint: goconst
 	nonRemappedContract := "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
 	nonRemappedAddr, err := types.NewEthAddress(nonRemappedContract)
 	require.NoError(t, err)
@@ -60,7 +61,7 @@ func TestClassify_EthOriginatedBankMetadataPanics(t *testing.T) {
 
 		require.PanicsWithValue(t,
 			fmt.Sprintf("ClassifyDenom: Eth-originated gravity denom %s has bank metadata %s, which is not allowed", gravityDenom, gravityDenom),
-			func() { gk.ClassifyDenom(ctx, gravityDenom) },
+			func() { _, _ = gk.ClassifyDenom(ctx, gravityDenom) },
 			"ClassifyDenom must panic when a gravity denom has bank metadata set",
 		)
 	})
@@ -73,7 +74,7 @@ func TestClassify_EthOriginatedBankMetadataPanics(t *testing.T) {
 
 		require.PanicsWithValue(t,
 			fmt.Sprintf("ClassifyDenom: Eth-originated gravity2 denom %s has bank metadata %s, which is not allowed", gravity2Denom, gravity2Denom),
-			func() { gk.ClassifyDenom(ctx, gravity2Denom) },
+			func() { _, _ = gk.ClassifyDenom(ctx, gravity2Denom) },
 			"ClassifyDenom must panic when a gravity2 denom has bank metadata set",
 		)
 	})

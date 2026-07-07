@@ -369,10 +369,11 @@ func TestHandleErc20Deployed_MetadataDrift(t *testing.T) {
 
 	// Now mutate the bank module's stored metadata out from under the allowlist entry,
 	// simulating drift between the two sources of truth.
+	const driftedName = "DRIFT"
 	driftedMeta := driftMeta
-	driftedMeta.Name = "DRIFT"
-	driftedMeta.Symbol = "DRIFT"
-	driftedMeta.Display = "DRIFT"
+	driftedMeta.Name = driftedName
+	driftedMeta.Symbol = driftedName
+	driftedMeta.Display = driftedName
 	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
 
 	//nolint: exhaustruct
@@ -381,8 +382,8 @@ func TestHandleErc20Deployed_MetadataDrift(t *testing.T) {
 		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
 		EventNonce:     1,
 		EthBlockHeight: 1,
-		Name:           "DRIFT",
-		Symbol:         "DRIFT",
+		Name:           driftedName,
+		Symbol:         driftedName,
 		Decimals:       6,
 		Orchestrator:   OrchAddrs[0].String(),
 	}

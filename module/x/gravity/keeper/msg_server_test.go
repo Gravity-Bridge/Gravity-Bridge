@@ -205,6 +205,7 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 	gk := input.GravityKeeper
 
 	sender := AccAddrs[0]
+	//nolint: goconst
 	ethDest := "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 
 	// ── Ethereum-originated token ────────────────────────────────────────────────
@@ -232,6 +233,7 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 
 	// ── Cosmos-originated token, NOT on allowlist ────────────────────────────────
 	cosmosTokenDenom := "uatom"
+	//nolint: goconst
 	cosmosTokenContract := "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
 	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
 	require.NoError(t, err)
@@ -301,9 +303,11 @@ func TestSendToEthMetadataDriftRejected(t *testing.T) {
 	gk := input.GravityKeeper
 
 	sender := AccAddrs[0]
+	//nolint: goconst
 	ethDest := "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 
 	cosmosTokenDenom := "udrift"
+	//nolint: goconst
 	cosmosTokenContract := "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
 	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
 	require.NoError(t, err)
@@ -358,6 +362,7 @@ func TestRequestBatchCosmosBridgeableTokensAllowlist(t *testing.T) {
 
 	// Register a cosmos-originated denom <-> ERC20 mapping
 	cosmosTokenDenom := "uatom"
+	//nolint: goconst
 	cosmosTokenContract := "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
 	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
 	require.NoError(t, err)
@@ -746,6 +751,7 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	sv := msgServer{input.GravityKeeper}
 	gk := input.GravityKeeper
 	sender := AccAddrs[0]
+	//nolint: goconst
 	ethDest := "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
 
 	// The ERC20 contract on Ethereum we'll remap
@@ -816,7 +822,7 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	// ── Post-remap: ClassifyDenom for the old gravity0x denom panics ────────────
 	require.PanicsWithValue(t,
 		fmt.Sprintf("ERC20 %s was remapped; new deposits use %s", tokenAddr.GetAddress().Hex(), newDenom),
-		func() { gk.ClassifyDenom(ctx, oldDenom) },
+		func() { _, _ = gk.ClassifyDenom(ctx, oldDenom) },
 		"ClassifyDenom must panic for the old gravity0x denom of a remapped ERC20",
 	)
 
