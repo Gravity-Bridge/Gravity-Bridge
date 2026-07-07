@@ -311,6 +311,12 @@ func CmdGovCosmosBridgeableTokensProposal() *cobra.Command {
 				if metadataErr := metadata.Validate(); metadataErr != nil {
 					return errorsmod.Wrapf(metadataErr, "invalid metadata for denom %s in the proposal.json file", metadata.Base)
 				}
+				// Validate the denoms of any tokens being added to the list, but allow removal of any bad denoms that are somehow already there
+				if operation == types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET {
+					if denomErr := types.ValidateStrictDenom(metadata.Base); denomErr != nil {
+						return errorsmod.Wrapf(denomErr, "invalid denom %s in the proposal.json file", metadata.Base)
+					}
+				}
 			}
 
 			// Query the x/bank module for each provided denom's metadata and log any differences
@@ -335,6 +341,15 @@ func CmdGovCosmosBridgeableTokensProposal() *cobra.Command {
 					}
 				} else {
 					cmd.Printf("Confirmed: proposal metadata for denom %q matches the current x/bank module state\n", metadata.Base)
+				}
+
+				// Never allow zero-supply denoms to be added to the allowlist
+				if operation == types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET {
+					supplyRes, supplyErr := bankQueryClient.SupplyOf(cmd.Context(), &banktypes.QuerySupplyOfRequest{Denom: metadata.Base})
+					if supplyErr != nil || supplyRes.Amount.IsZero() {
+						cmd.PrintErrf("MISMATCH: denom %q has zero (or unqueryable) on-chain supply\n", metadata.Base)
+						return errorsmod.Wrapf(types.ErrInvalid, "denom %q has zero (or unqueryable) on-chain supply", metadata.Base)
+					}
 				}
 			}
 

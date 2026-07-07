@@ -201,6 +201,9 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		k.bankKeeper.SetDenomMetaData(ctx, metadata)
 		k.SetCosmosBridgeableToken(ctx, metadata)
 	}
+	if err := k.assertCosmosBridgeableTokensConsistent(ctx); err != nil {
+		panic(errorsmod.Wrap(err, "CosmosBridgeableTokens post-genesis consistency check failed"))
+	}
 
 	// now that we have the denom-erc20 mapping we need to validate
 	// that the valset reward is possible and cosmos originated remove
