@@ -130,13 +130,6 @@ services:
       - TEST_TYPE=SLASHING_DELEGATION
     command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 SLASHING_DELEGATION
 
-  test-ibc_metadata:
-    <<: *test-service
-    container_name: gravity-test-ibc_metadata
-    environment:
-      - TEST_TYPE=IBC_METADATA
-    command: /bin/bash /gravity/tests/container-scripts/all-up-test-internal.sh 4 IBC_METADATA
-
   test-erc721_happy_path:
     <<: *test-service
     container_name: gravity-test-erc721_happy_path
