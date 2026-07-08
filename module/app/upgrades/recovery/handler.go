@@ -79,7 +79,7 @@ type remapEntry struct {
 //   - cancel and refund all in-flight outgoing transactions,
 //   - deletes the cosmos-originated mapping,
 //   - sets the RemappedERC20 entry so new deposits use gravity2 and bridge-out of old vouchers is blocked,
-//   - registers bank metadata for the new gravity2 denom.
+//   - asserts that no bank metadata exists for either the old or new denoms
 func migrateRemappedERC20s(ctx sdk.Context, k *gravitykeeper.Keeper, bk *bankkeeper.BaseKeeper) {
 	var remapped []remapEntry
 
