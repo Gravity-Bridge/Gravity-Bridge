@@ -440,6 +440,9 @@ func (k msgServer) claimHandlerCommon(ctx sdk.Context, msgAny *codectypes.Any, m
 	if err != nil {
 		return err
 	}
+	if err := types.ValidateClaimFieldLengths(msg); err != nil {
+		return err
+	}
 
 	// Add the claim to the store
 	_, err = k.Attest(ctx, msg, msgAny)
