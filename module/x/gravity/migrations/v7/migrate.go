@@ -10,9 +10,8 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
 
-// AttestationMigrationKeeper defines the keeper methods required by
-// MigrateAttestationsToAttestationSeparator. It is satisfied by the gravity module's Keeper type.
-type AttestationMigrationKeeper interface {
+// GravKeeper defines the expected interface needed to perform the v7 migration
+type GravKeeper interface {
 	IterateAttestations(ctx sdk.Context, reverse bool, cb func(key []byte, att types.Attestation) (stop bool))
 	UnpackAttestationClaim(att *types.Attestation) (types.EthereumClaim, error)
 	SetAttestation(ctx sdk.Context, eventNonce uint64, claimHash []byte, att *types.Attestation)
@@ -22,7 +21,7 @@ type AttestationMigrationKeeper interface {
 // MigrateAttestationsToAttestationSeparator migrates all stored attestations from "/" separator to AttestationSeparator in hash keys.
 // It iterates through all existing attestations, extracts the claim, recomputes the hash with the new separator,
 // and stores it under the new key while deleting the old key.
-func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k AttestationMigrationKeeper) error {
+func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k GravKeeper) error {
 	ctx.Logger().Info("Begin attestation migration: updating all claim hashes")
 
 	// Collect all attestations with their old keys and claims
@@ -84,5 +83,59 @@ func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k AttestationMig
 	}
 
 	ctx.Logger().Info(fmt.Sprintf("Attestation migration complete: migrated %d attestations", migratedCount))
+	return nil
+}
+
+// MigrateAttestationsToClaimHashComponents migrates all stored attestations to populate
+// the new ClaimType and ClaimComponents fields from the stored claim.
+func MigrateAttestationsToClaimHashComponents(ctx sdk.Context, k GravKeeper) error {
+	ctx.Logger().Info("Begin attestation migration: populating ClaimType and ClaimComponents")
+
+	var migrated int
+
+	k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) bool {
+		if att.ClaimComponents != nil {
+			panic(fmt.Sprintf("Attestation has already been migrated? %v", att))
+		}
+
+		claim, err := k.UnpackAttestationClaim(&att)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to unpack claim during ClaimHashComponents migration: %v", err))
+		}
+
+		claimType := claim.GetType()
+		components, err := types.ExtractClaimHashComponents(claim)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to extract claim components during migration: %v", err))
+		}
+
+		// Sanity check: the hash computed from the components must match the hash in the store key.
+		computedHash, err := components.ComputeClaimHash(claimType)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to compute claim hash from components during migration: %v", err))
+		}
+
+		keyPrefix := types.OracleAttestationKey
+		hashStart := len(keyPrefix) + 8
+		storedHash := key[hashStart:]
+
+		if !bytes.Equal(storedHash, computedHash) {
+			panic(fmt.Sprintf(
+				"Claim hash mismatch during ClaimHashComponents migration: stored %x, computed %x",
+				storedHash, computedHash,
+			))
+		}
+
+		att.ClaimType = claimType
+		att.ClaimComponents = components
+
+		eventNonce := claim.GetEventNonce()
+		k.SetAttestation(ctx, eventNonce, storedHash, &att)
+
+		migrated++
+		return false
+	})
+
+	ctx.Logger().Info(fmt.Sprintf("ClaimHashComponents migration complete: migrated %d attestations", migrated))
 	return nil
 }

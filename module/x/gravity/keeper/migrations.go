@@ -66,6 +66,10 @@ func (m Migrator) Migrate6to7(ctx sdk.Context) error {
 	if err != nil {
 		return err
 	}
+	err = v7.MigrateAttestationsToClaimHashComponents(ctx, m.keeper)
+	if err != nil {
+		return err
+	}
 
 	ctx.Logger().Info("Gravity v7 migration finished!")
 	return nil
