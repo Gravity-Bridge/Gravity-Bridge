@@ -134,6 +134,7 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 	ir.RegisterRoute(types.ModuleName, "module-balance", keeper.ModuleBalanceInvariant(am.keeper))
 	ir.RegisterRoute(types.ModuleName, "attestation-hash-integrity", keeper.AttestationHashIntegrityInvariant(am.keeper))
 	ir.RegisterRoute(types.ModuleName, "store-validity", keeper.StoreValidityInvariant(am.keeper))
+	ir.RegisterRoute(types.ModuleName, "cosmos-bridgeable-tokens", keeper.CosmosBridgeableTokensInvariant(am.keeper))
 }
 
 // RegisterServices registers module services.

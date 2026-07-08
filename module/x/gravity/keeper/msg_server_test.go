@@ -256,7 +256,9 @@ func TestSendToEthCosmosBridgeableTokensAllowlist(t *testing.T) {
 	})
 	require.Error(t, err, "cosmos-originated token not on allowlist must be rejected")
 	require.Contains(t, err.Error(), "CosmosBridgeableTokens whitelist")
-	gk.SetCosmosBridgeableToken(ctx, minMeta(cosmosTokenDenom))
+	atomMeta := minMeta(cosmosTokenDenom)
+	gk.SetCosmosBridgeableToken(ctx, atomMeta)
+	input.BankKeeper.SetDenomMetaData(ctx, atomMeta)
 
 	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
 		Sender:    sender.String(),
@@ -347,6 +349,9 @@ func TestSendToEthMetadataDriftRejected(t *testing.T) {
 	})
 	require.Error(t, err, "SendToEth must reject a denom whose bank metadata has drifted from the allowlist entry")
 	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
 }
 
 // TestRequestBatchCosmosBridgeableTokensAllowlist verifies that RequestBatch enforces the
@@ -382,7 +387,9 @@ func TestRequestBatchCosmosBridgeableTokensAllowlist(t *testing.T) {
 
 	// Add to allowlist — now it should pass the allowlist check
 	// (will fail later due to no txs in pool, but that's fine — we're testing the gate)
-	gk.SetCosmosBridgeableToken(ctx, minMeta(cosmosTokenDenom))
+	atomMeta := minMeta(cosmosTokenDenom)
+	gk.SetCosmosBridgeableToken(ctx, atomMeta)
+	input.BankKeeper.SetDenomMetaData(ctx, atomMeta)
 
 	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
 		Sender: sender.String(),

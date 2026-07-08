@@ -292,6 +292,7 @@ func TestCosmosBridgeableTokensGenesisRoundTrip(t *testing.T) {
 	}
 	for _, m := range entries {
 		gk.SetCosmosBridgeableToken(ctx, m)
+		input.BankKeeper.SetDenomMetaData(ctx, m)
 	}
 
 	// Export genesis

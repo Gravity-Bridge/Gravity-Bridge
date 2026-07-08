@@ -8,6 +8,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -424,4 +425,79 @@ func TestStoreValidityInvariant(t *testing.T) {
 	res, broken = StoreValidityInvariant(k)(ctx)
 	require.True(t, broken)
 	require.Contains(t, res, "cross-list integrity violations")
+}
+
+// TestCosmosBridgeableTokensInvariant verifies that the CosmosBridgeableTokens invariant
+// passes for clean state and fails for corrupted allowlist entries.
+func TestCosmosBridgeableTokensInvariant(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+	k := input.GravityKeeper
+
+	// Empty state
+	res, broken := CosmosBridgeableTokensInvariant(k)(ctx)
+	require.False(t, broken, res)
+
+	// Valid entry with matching bank metadata
+	validMeta := minMeta("uatom")
+	k.SetCosmosBridgeableToken(ctx, validMeta)
+	input.BankKeeper.SetDenomMetaData(ctx, validMeta)
+	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
+	require.False(t, broken, res)
+
+	store := ctx.KVStore(k.storeKey)
+
+	// Duplicate base denom (fails)
+	dupKey := append(types.CosmosBridgeableTokensKey, []byte("uatom-corrupt")...)
+	store.Set(dupKey, k.cdc.MustMarshal(&validMeta))
+	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "duplicate base denom")
+	require.Contains(t, res, "uatom")
+	store.Delete(dupKey)
+
+	// Remove the original uatom entry and continue with corrupted entries
+	store.Delete(types.GetCosmosBridgeableTokenKey("uatom"))
+
+	// Invalid metadata (fails)
+	invalidMeta := banktypes.Metadata{Base: ""}
+	k.SetCosmosBridgeableToken(ctx, invalidMeta)
+	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "invalid metadata")
+	store.Delete(types.GetCosmosBridgeableTokenKey(""))
+
+	// Invalid base denom (fails)
+	slashMeta := minMeta("bad/denom")
+	k.SetCosmosBridgeableToken(ctx, slashMeta)
+	input.BankKeeper.SetDenomMetaData(ctx, slashMeta)
+	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "invalid base denom")
+	store.Delete(types.GetCosmosBridgeableTokenKey("bad/denom"))
+
+	// Base denom containing an Ethereum address (fails)
+	ethAddrMeta := minMeta("gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")
+	k.SetCosmosBridgeableToken(ctx, ethAddrMeta)
+	input.BankKeeper.SetDenomMetaData(ctx, ethAddrMeta)
+	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "contains an embedded Ethereum address")
+	store.Delete(types.GetCosmosBridgeableTokenKey("gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"))
+
+	// Missing bank metadata (fails)
+	missingBankMeta := minMeta("uosmo")
+	k.SetCosmosBridgeableToken(ctx, missingBankMeta)
+	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "no bank metadata found")
+	input.BankKeeper.SetDenomMetaData(ctx, missingBankMeta)
+
+	// Mismatched bank metadata (fails)
+	mismatchedBankMeta := minMeta("uosmo")
+	mismatchedBankMeta.Symbol = "MISMATCH"
+	input.BankKeeper.SetDenomMetaData(ctx, mismatchedBankMeta)
+	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
+	require.True(t, broken)
+	require.Contains(t, res, "does not match bank metadata")
 }

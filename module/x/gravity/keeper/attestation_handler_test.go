@@ -397,4 +397,7 @@ func TestHandleErc20Deployed_MetadataDrift(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrInvalid)
 	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail
+	input.BankKeeper.SetDenomMetaData(ctx, driftMeta)
 }

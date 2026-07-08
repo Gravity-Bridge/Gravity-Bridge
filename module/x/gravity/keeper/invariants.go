@@ -8,6 +8,7 @@ import (
 	math "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
@@ -27,6 +28,10 @@ func AllInvariants(k Keeper) sdk.Invariant {
 			return res, stop
 		}
 		res, stop = AttestationHashIntegrityInvariant(k)(ctx)
+		if stop {
+			return res, stop
+		}
+		res, stop = CosmosBridgeableTokensInvariant(k)(ctx)
 		if stop {
 			return res, stop
 		}
@@ -69,6 +74,109 @@ func ModuleBalanceInvariant(k Keeper) sdk.Invariant {
 			}
 		}
 		return "", false
+	}
+}
+
+// StoreValidityInvariant checks that the currently stored objects are not corrupted and all pass ValidateBasic checks
+// Note that the returned bool should be true if there is an error, e.g. an unexpected batch was processed
+func StoreValidityInvariant(k Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (string, bool) {
+		err := ValidateStore(ctx, k)
+		if err != nil {
+			return err.Error(), true
+		}
+		// Assert that batch metadata is consistent and expected
+		err = CheckBatches(ctx, k)
+		if err != nil {
+			return err.Error(), true
+		}
+
+		// Assert that valsets have been updated in the expected manner
+		err = CheckValsets(ctx, k)
+		if err != nil {
+			return err.Error(), true
+		}
+
+		// Assert that pending ibc auto-forwards are only outgoing
+		err = CheckPendingIbcAutoForwards(ctx, k)
+		if err != nil {
+			return err.Error(), true
+		}
+
+		// SUCCESS: If execution made it here, everything passes the sanity checks
+		return "", false
+	}
+}
+
+// AttestationHashIntegrityInvariant checks that each attestation's individually stored claim
+// components, when reconstructed into a duplicate claim, produce the same ClaimHash as the
+// stored Any claim. This verifies that the components have not been tampered with.
+func AttestationHashIntegrityInvariant(k Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (string, bool) {
+		var broken []string
+
+		k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) bool {
+			if err := att.VerifyClaimHash(k.cdc); err != nil {
+				broken = append(broken, fmt.Sprintf("attestation %x: %v", key, err))
+			}
+			return false
+		})
+		if len(broken) > 0 {
+			return fmt.Sprintf("broken attestations: %v", broken), true
+		}
+		return "all attestation hashes consistent with stored components", false
+	}
+}
+
+// CosmosBridgeableTokensInvariant checks that every entry in the CosmosBridgeableTokens is valid
+func CosmosBridgeableTokensInvariant(k Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (string, bool) {
+		var broken []string
+		// Go doesn't have a set type so mapping to struct{} is the best we can do
+		seen := make(map[string]struct{})
+
+		k.IterateCosmosBridgeableTokens(ctx, func(metadata banktypes.Metadata) bool {
+			if err := metadata.Validate(); err != nil {
+				broken = append(broken, fmt.Sprintf("invalid metadata for %q: %v", metadata.Base, err))
+				return false
+			}
+
+			if err := types.ValidateStrictDenom(metadata.Base); err != nil {
+				broken = append(broken, fmt.Sprintf("invalid base denom %q: %v", metadata.Base, err))
+				return false
+			}
+
+			// Reject any denom that embeds an Ethereum address
+			if types.ContainsEthAddress(metadata.Base) {
+				broken = append(broken, fmt.Sprintf("base denom %q contains an embedded Ethereum address", metadata.Base))
+				return false
+			}
+
+			// Reject duplicates
+			if _, dup := seen[metadata.Base]; dup {
+				broken = append(broken, fmt.Sprintf("duplicate base denom %q", metadata.Base))
+				return false
+			}
+			seen[metadata.Base] = struct{}{}
+
+			// Ensure the allowlist metadata matches the bank module's metadata
+			bankMetadata, found := k.bankKeeper.GetDenomMetaData(ctx, metadata.Base)
+			if !found {
+				broken = append(broken, fmt.Sprintf("no bank metadata found for allowlisted denom %q", metadata.Base))
+				return false
+			}
+			if !metadataEqual(metadata, bankMetadata) {
+				broken = append(broken, fmt.Sprintf("allowlist metadata for %q does not match bank metadata", metadata.Base))
+				return false
+			}
+
+			return false
+		})
+
+		if len(broken) > 0 {
+			return fmt.Sprintf("CosmosBridgeableTokens invariant broken: %s", strings.Join(broken, "; ")), true
+		}
+		return "all CosmosBridgeableTokens entries are valid and consistent", false
 	}
 }
 
@@ -133,57 +241,6 @@ func sumPendingIbcAutoForwards(ctx sdk.Context, k Keeper, expectedBals map[strin
 	}
 
 	return expectedBals
-}
-
-// StoreValidityInvariant checks that the currently stored objects are not corrupted and all pass ValidateBasic checks
-// Note that the returned bool should be true if there is an error, e.g. an unexpected batch was processed
-func StoreValidityInvariant(k Keeper) sdk.Invariant {
-	return func(ctx sdk.Context) (string, bool) {
-		err := ValidateStore(ctx, k)
-		if err != nil {
-			return err.Error(), true
-		}
-		// Assert that batch metadata is consistent and expected
-		err = CheckBatches(ctx, k)
-		if err != nil {
-			return err.Error(), true
-		}
-
-		// Assert that valsets have been updated in the expected manner
-		err = CheckValsets(ctx, k)
-		if err != nil {
-			return err.Error(), true
-		}
-
-		// Assert that pending ibc auto-forwards are only outgoing
-		err = CheckPendingIbcAutoForwards(ctx, k)
-		if err != nil {
-			return err.Error(), true
-		}
-
-		// SUCCESS: If execution made it here, everything passes the sanity checks
-		return "", false
-	}
-}
-
-// AttestationHashIntegrityInvariant checks that each attestation's individually stored claim
-// components, when reconstructed into a duplicate claim, produce the same ClaimHash as the
-// stored Any claim. This verifies that the components have not been tampered with.
-func AttestationHashIntegrityInvariant(k Keeper) sdk.Invariant {
-	return func(ctx sdk.Context) (string, bool) {
-		var broken []string
-
-		k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) bool {
-			if err := att.VerifyClaimHash(k.cdc); err != nil {
-				broken = append(broken, fmt.Sprintf("attestation %x: %v", key, err))
-			}
-			return false
-		})
-		if len(broken) > 0 {
-			return fmt.Sprintf("broken attestations: %v", broken), true
-		}
-		return "all attestation hashes consistent with stored components", false
-	}
 }
 
 // STORE VALIDITY HELPERS
