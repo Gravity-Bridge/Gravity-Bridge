@@ -6,6 +6,7 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -315,4 +316,109 @@ func TestRequireBridgeActive(t *testing.T) {
 	params.BridgeActive = true
 	require.NoError(t, k.SetParams(ctx, params))
 	require.NoError(t, k.RequireBridgeActive(ctx))
+}
+
+// nolint: exhaustruct
+func TestMetadataEqual(t *testing.T) {
+	baseMetadata := banktypes.Metadata{
+		Description: "a token",
+		DenomUnits: []*banktypes.DenomUnit{
+			{Denom: "utoken", Exponent: 0, Aliases: []string{}},
+			{Denom: "token", Exponent: 6, Aliases: []string{"TOKEN"}},
+		},
+		Base:    "utoken",
+		Display: "token",
+		Name:    "Token",
+		Symbol:  "TOKEN",
+		URI:     "",
+		URIHash: "",
+	}
+
+	cases := map[string]struct {
+		a        banktypes.Metadata
+		b        banktypes.Metadata
+		expEqual bool
+	}{
+		"identical metadata": {
+			a:        baseMetadata,
+			b:        baseMetadata,
+			expEqual: true,
+		},
+		"both empty": {
+			a:        banktypes.Metadata{},
+			b:        banktypes.Metadata{},
+			expEqual: true,
+		},
+		"different description": {
+			a: baseMetadata,
+			b: func() banktypes.Metadata {
+				m := baseMetadata
+				m.Description = "a different token"
+				return m
+			}(),
+			expEqual: false,
+		},
+		"different base": {
+			a: baseMetadata,
+			b: func() banktypes.Metadata {
+				m := baseMetadata
+				m.Base = "udifferent"
+				return m
+			}(),
+			expEqual: false,
+		},
+		"different symbol": {
+			a: baseMetadata,
+			b: func() banktypes.Metadata {
+				m := baseMetadata
+				m.Symbol = "DIFFERENT"
+				return m
+			}(),
+			expEqual: false,
+		},
+		"different number of denom units": {
+			a: baseMetadata,
+			b: func() banktypes.Metadata {
+				m := baseMetadata
+				m.DenomUnits = []*banktypes.DenomUnit{
+					{Denom: "utoken", Exponent: 0, Aliases: []string{}},
+				}
+				return m
+			}(),
+			expEqual: false,
+		},
+		"different denom unit exponent": {
+			a: baseMetadata,
+			b: func() banktypes.Metadata {
+				m := baseMetadata
+				m.DenomUnits = []*banktypes.DenomUnit{
+					{Denom: "utoken", Exponent: 0, Aliases: []string{}},
+					{Denom: "token", Exponent: 18, Aliases: []string{"TOKEN"}},
+				}
+				return m
+			}(),
+			expEqual: false,
+		},
+		"different denom unit aliases": {
+			a: baseMetadata,
+			b: func() banktypes.Metadata {
+				m := baseMetadata
+				m.DenomUnits = []*banktypes.DenomUnit{
+					{Denom: "utoken", Exponent: 0, Aliases: []string{}},
+					{Denom: "token", Exponent: 6, Aliases: []string{"TOKEN", "TKN"}},
+				}
+				return m
+			}(),
+			expEqual: false,
+		},
+	}
+
+	for testName, tc := range cases {
+		tc := tc
+		t.Run(testName, func(t *testing.T) {
+			require.Equal(t, tc.expEqual, metadataEqual(tc.a, tc.b))
+			// metadataEqual must be symmetric
+			require.Equal(t, tc.expEqual, metadataEqual(tc.b, tc.a))
+		})
+	}
 }
