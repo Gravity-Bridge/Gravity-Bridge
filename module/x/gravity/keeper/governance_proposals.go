@@ -325,6 +325,11 @@ func (k Keeper) HandleCosmosBridgeableTokensProposal(ctx sdk.Context, p *types.C
 func (k Keeper) assertCosmosBridgeableTokensConsistent(ctx sdk.Context) error {
 	seen := make(map[string]struct{})
 	for _, metadata := range k.GetAllCosmosBridgeableTokens(ctx) {
+		if types.ContainsEthAddress(metadata.Base) {
+			return errorsmod.Wrapf(types.ErrInvalid,
+				"CosmosBridgeableTokens allowlist contains a denom that embeds an Ethereum address after execution: %s",
+				metadata.Base)
+		}
 		if _, dup := seen[metadata.Base]; dup {
 			return errorsmod.Wrapf(types.ErrDuplicate,
 				"CosmosBridgeableTokens allowlist contains duplicate base denom after execution: %s", metadata.Base)
