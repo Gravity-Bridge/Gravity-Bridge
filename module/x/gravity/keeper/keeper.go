@@ -147,7 +147,14 @@ func (k Keeper) assertMetadataWhitelisted(ctx sdk.Context, denom string) (bankty
 	// Check the approved metadata against the bank module's version in case it has changed out from under us
 	// It's unclear what the problem could be in this situation, but it is anomalous and therefore we do not allow it
 	bankMetadata, bankFound := k.bankKeeper.GetDenomMetaData(ctx, denom)
-	if bankFound && !metadataEqual(metadata, bankMetadata) {
+	if !bankFound {
+		return banktypes.Metadata{}, errorsmod.Wrapf(
+			types.ErrInvalid,
+			"SECURITY VIOLATION: bank metadata for %s not found, but governance-approved CosmosBridgeableTokens entry exists",
+			denom,
+		)
+	}
+	if !metadataEqual(metadata, bankMetadata) {
 		return banktypes.Metadata{}, errorsmod.Wrapf(
 			types.ErrInvalid,
 			"SECURITY VIOLATION: bank metadata for %s does not match governance-approved CosmosBridgeableTokens entry",

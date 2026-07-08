@@ -275,6 +275,7 @@ type TestInput struct {
 	LegacyAmino       *codec.LegacyAmino
 	EncodingConfig    gravityparams.EncodingConfig
 	GravityStoreKey   *storetypes.KVStoreKey
+	BankStoreKey      *storetypes.KVStoreKey
 }
 
 // SetupFiveValChain does all the initialization for a 5 Validator chain using the keys here
@@ -721,6 +722,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 		LegacyAmino:       encodingConfig.Amino,
 		EncodingConfig:    encodingConfig,
 		GravityStoreKey:   gravityKey,
+		BankStoreKey:      keyBank,
 	}
 	// check invariants before starting
 	testInput.Context.Logger().Info("Asserting invariants on new test env")

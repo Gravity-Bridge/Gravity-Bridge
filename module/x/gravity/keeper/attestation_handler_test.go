@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -400,4 +402,286 @@ func TestHandleErc20Deployed_MetadataDrift(t *testing.T) {
 
 	// Restore bank metadata so the deferred invariant assertion does not fail
 	input.BankKeeper.SetDenomMetaData(ctx, driftMeta)
+}
+
+// deleteBankMetadata removes the x/bank denom metadata entry for denom directly from the store.
+// The bank keeper does not expose a delete method, so tests use this to simulate missing metadata.
+func deleteBankMetadata(ctx sdk.Context, bankStoreKey *storetypes.KVStoreKey, denom string) {
+	store := prefix.NewStore(ctx.KVStore(bankStoreKey), banktypes.DenomMetadataPrefix)
+	store.Delete([]byte(denom))
+}
+
+// TestHandleSendToCosmos_MetadataDrift verifies that handleSendToCosmos rejects a
+// cosmos-originated deposit when the bank module metadata has drifted from the
+// governance-approved CosmosBridgeableTokens entry.
+// nolint: exhaustruct
+func TestHandleSendToCosmos_MetadataDrift(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	k := input.GravityKeeper
+	attHandler := k.AttestationHandler
+
+	denom := "sendcosmosdrift"
+	erc20, err := types.NewEthAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+	require.NoError(t, err)
+	err = k.setCosmosOriginatedMapping(ctx, denom, *erc20)
+	require.NoError(t, err)
+
+	meta := minMeta(denom)
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+	k.SetCosmosBridgeableToken(ctx, meta)
+
+	// Fund the gravity module so the sanity-check deposit can send coins.
+	sendCoins := sdk.NewCoins(sdk.NewInt64Coin(denom, 1000))
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, sendCoins))
+
+	claim := types.MsgSendToCosmosClaim{
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		TokenContract:  erc20.GetAddress().Hex(),
+		Amount:         math.NewInt(1),
+		CosmosReceiver: AccAddrs[0].String(),
+		EthereumSender: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	// Sanity check: succeeds while bank metadata matches the allowlist entry.
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.NoError(t, err)
+
+	// Drift the bank metadata out from under the allowlist entry.
+	driftedMeta := meta
+	driftedMeta.Name = "Drifted"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail.
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+}
+
+// TestHandleSendToCosmos_MissingBankMetadata verifies that handleSendToCosmos rejects
+// a cosmos-originated deposit when the bank module metadata has been deleted while the
+// CosmosBridgeableTokens entry still exists.
+// nolint: exhaustruct
+func TestHandleSendToCosmos_MissingBankMetadata(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	k := input.GravityKeeper
+	attHandler := k.AttestationHandler
+
+	denom := "sendcosmosmissing"
+	erc20, err := types.NewEthAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+	require.NoError(t, err)
+	err = k.setCosmosOriginatedMapping(ctx, denom, *erc20)
+	require.NoError(t, err)
+
+	meta := minMeta(denom)
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+	k.SetCosmosBridgeableToken(ctx, meta)
+
+	// Delete the bank metadata entry, leaving the allowlist entry in place.
+	deleteBankMetadata(ctx, input.BankStoreKey, denom)
+
+	claim := types.MsgSendToCosmosClaim{
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		TokenContract:  erc20.GetAddress().Hex(),
+		Amount:         math.NewInt(1),
+		CosmosReceiver: AccAddrs[0].String(),
+		EthereumSender: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "not found")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail.
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+}
+
+// TestHandleBatchSendToEth_MetadataDrift verifies that handleBatchSendToEth rejects a
+// BatchSendToEth claim for a cosmos-originated token when bank metadata has drifted
+// from the governance-approved CosmosBridgeableTokens entry.
+// nolint: exhaustruct
+func TestHandleBatchSendToEth_MetadataDrift(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	k := input.GravityKeeper
+	attHandler := k.AttestationHandler
+
+	denom := "batchdrift"
+	erc20, err := types.NewEthAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+	require.NoError(t, err)
+	err = k.setCosmosOriginatedMapping(ctx, denom, *erc20)
+	require.NoError(t, err)
+
+	meta := minMeta(denom)
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+	k.SetCosmosBridgeableToken(ctx, meta)
+
+	// Store a batch so the sanity-check claim can reach OutgoingTxBatchExecuted.
+	batch := types.InternalOutgoingTxBatch{
+		BatchNonce:         1,
+		BatchTimeout:       100,
+		Transactions:       []*types.InternalOutgoingTransferTx{},
+		TokenContract:      *erc20,
+		CosmosBlockCreated: uint64(ctx.BlockHeight()),
+	}
+	k.StoreBatch(ctx, batch)
+
+	claim := types.MsgBatchSendToEthClaim{
+		TokenContract:  erc20.GetAddress().Hex(),
+		BatchNonce:     1,
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	// Sanity check: succeeds while bank metadata matches the allowlist entry.
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.NoError(t, err)
+
+	// Recreate a fresh batch for the drifted-metadata call
+	k.StoreBatch(ctx, batch)
+
+	// Drift the bank metadata out from under the allowlist entry.
+	driftedMeta := meta
+	driftedMeta.Name = "Drifted"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalid)
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail.
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+}
+
+// TestHandleBatchSendToEth_MissingBankMetadata verifies that handleBatchSendToEth
+// rejects a BatchSendToEth claim when the bank module metadata has been deleted while
+// the CosmosBridgeableTokens entry still exists.
+// nolint: exhaustruct
+func TestHandleBatchSendToEth_MissingBankMetadata(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	k := input.GravityKeeper
+	attHandler := k.AttestationHandler
+
+	denom := "batchmissing"
+	erc20, err := types.NewEthAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+	require.NoError(t, err)
+	err = k.setCosmosOriginatedMapping(ctx, denom, *erc20)
+	require.NoError(t, err)
+
+	meta := minMeta(denom)
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+	k.SetCosmosBridgeableToken(ctx, meta)
+
+	// Store a batch so the test would reach OutgoingTxBatchExecuted if the whitelist
+	// check were accidentally skipped.
+	batch := types.InternalOutgoingTxBatch{
+		BatchNonce:         1,
+		BatchTimeout:       100,
+		Transactions:       []*types.InternalOutgoingTransferTx{},
+		TokenContract:      *erc20,
+		CosmosBlockCreated: uint64(ctx.BlockHeight()),
+	}
+	k.StoreBatch(ctx, batch)
+
+	// Delete the bank metadata entry, leaving the allowlist entry in place.
+	deleteBankMetadata(ctx, input.BankStoreKey, denom)
+
+	claim := types.MsgBatchSendToEthClaim{
+		TokenContract:  erc20.GetAddress().Hex(),
+		BatchNonce:     1,
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	err = attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrInvalid)
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "not found")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail.
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+}
+
+// TestHandleErc20Deployed_MissingBankMetadata verifies that handleErc20Deployed rejects
+// an ERC20 deployment claim when the bank module metadata has been deleted while the
+// CosmosBridgeableTokens entry still exists.
+// nolint: exhaustruct
+func TestHandleErc20Deployed_MissingBankMetadata(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	k := input.GravityKeeper
+	attHandler := k.AttestationHandler
+
+	denom := "deploymissing"
+	meta := minMeta(denom)
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
+	k.SetCosmosBridgeableToken(ctx, meta)
+
+	// Delete the bank metadata entry, leaving the allowlist entry in place.
+	deleteBankMetadata(ctx, input.BankStoreKey, denom)
+
+	claim := types.MsgERC20DeployedClaim{
+		CosmosDenom:    denom,
+		TokenContract:  "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		Name:           meta.Name,
+		Symbol:         meta.Symbol,
+		Decimals:       6,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	err := attHandler.Handle(ctx, types.Attestation{
+		Observed: false,
+		Votes:    []string{},
+		Height:   uint64(ctx.BlockHeight()),
+	}, &claim)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "not found")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail.
+	input.BankKeeper.SetDenomMetaData(ctx, meta)
 }

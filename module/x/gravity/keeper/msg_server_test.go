@@ -354,6 +354,527 @@ func TestSendToEthMetadataDriftRejected(t *testing.T) {
 	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
 }
 
+// TestSendToEthMetadataMissingRejected verifies that SendToEth rejects a cosmos-originated
+// denom that has a governance-approved CosmosBridgeableTokens entry but no corresponding
+// metadata in the bank module (the "bank metadata ... not found" branch in
+// assertMetadataWhitelisted).
+// The deferred invariant assertion is intentionally skipped: a missing bank metadata entry
+// for an allowlisted denom is itself flagged by the CosmosBridgeableTokens invariant, which
+// this test deliberately triggers in order to exercise assertMetadataWhitelisted directly.
+// nolint: exhaustruct
+func TestSendToEthMetadataMissingRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	sender := AccAddrs[0]
+	//nolint: goconst
+	ethDest := "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7"
+
+	cosmosTokenDenom := "umissing"
+	cosmosTokenContract := "0x1234567890abcdef1234567890abcdef12345678"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom in CosmosBridgeableTokens, but never set matching metadata in the
+	// bank module, simulating a bank metadata entry that has gone missing out from under the
+	// allowlist entry.
+	missingMeta := minMeta(cosmosTokenDenom)
+	gk.SetCosmosBridgeableToken(ctx, missingMeta)
+
+	_, found := input.BankKeeper.GetDenomMetaData(ctx, cosmosTokenDenom)
+	require.False(t, found, "test setup requires no bank metadata to exist for the denom")
+
+	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
+		Sender:    sender.String(),
+		EthDest:   ethDest,
+		Amount:    sdk.NewInt64Coin(cosmosTokenDenom, 100),
+		BridgeFee: sdk.NewInt64Coin(cosmosTokenDenom, 1),
+		ChainFee:  sdk.NewCoin(cosmosTokenDenom, sdkmath.ZeroInt()),
+	})
+	require.Error(t, err, "SendToEth must reject a denom whose bank metadata is missing despite an existing allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "bank metadata")
+	require.Contains(t, err.Error(), "not found")
+}
+
+// TestRequestBatchMetadataDriftRejected verifies that RequestBatch rejects a cosmos-originated
+// denom whose bank module metadata has drifted from the governance-approved
+// CosmosBridgeableTokens entry (the "SECURITY VIOLATION" branch in assertMetadataWhitelisted).
+// nolint: exhaustruct
+func TestRequestBatchMetadataDriftRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+	sender := AccAddrs[0]
+
+	cosmosTokenDenom := "udriftbatch"
+	//nolint: goconst
+	cosmosTokenContract := "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom with metadata that (for now) matches what's stored in the bank module
+	originalMeta := minMeta(cosmosTokenDenom)
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+	gk.SetCosmosBridgeableToken(ctx, originalMeta)
+
+	// Sanity check: RequestBatch passes the allowlist gate while the bank metadata still matches
+	// (it may still fail later with "no txs in pool", which is fine — we're only testing the gate)
+	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
+		Sender: sender.String(),
+		Denom:  cosmosTokenDenom,
+	})
+	if err != nil {
+		require.NotContains(t, err.Error(), "SECURITY VIOLATION")
+	}
+
+	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
+	// simulating drift between the two sources of truth.
+	driftedMeta := originalMeta
+	driftedMeta.Name = "Drifted Name"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
+		Sender: sender.String(),
+		Denom:  cosmosTokenDenom,
+	})
+	require.Error(t, err, "RequestBatch must reject a denom whose bank metadata has drifted from the allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+}
+
+// TestRequestBatchMetadataMissingRejected verifies that RequestBatch rejects a cosmos-originated
+// denom that has a governance-approved CosmosBridgeableTokens entry but no corresponding
+// metadata in the bank module (the "bank metadata ... not found" branch in
+// assertMetadataWhitelisted).
+// The deferred invariant assertion is intentionally skipped: a missing bank metadata entry
+// for an allowlisted denom is itself flagged by the CosmosBridgeableTokens invariant, which
+// this test deliberately triggers in order to exercise assertMetadataWhitelisted directly.
+// nolint: exhaustruct
+func TestRequestBatchMetadataMissingRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+	sender := AccAddrs[0]
+
+	cosmosTokenDenom := "umissingbatch"
+	cosmosTokenContract := "0xabcdef1234567890abcdef1234567890abcdef12"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom in CosmosBridgeableTokens, but never set matching metadata in the
+	// bank module, simulating a bank metadata entry that has gone missing out from under the
+	// allowlist entry.
+	missingMeta := minMeta(cosmosTokenDenom)
+	gk.SetCosmosBridgeableToken(ctx, missingMeta)
+
+	_, found := input.BankKeeper.GetDenomMetaData(ctx, cosmosTokenDenom)
+	require.False(t, found, "test setup requires no bank metadata to exist for the denom")
+
+	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
+		Sender: sender.String(),
+		Denom:  cosmosTokenDenom,
+	})
+	require.Error(t, err, "RequestBatch must reject a denom whose bank metadata is missing despite an existing allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "bank metadata")
+	require.Contains(t, err.Error(), "not found")
+}
+
+// TestConfirmBatchMetadataDriftRejected verifies that ConfirmBatch rejects a cosmos-originated
+// denom whose bank module metadata has drifted from the governance-approved
+// CosmosBridgeableTokens entry (the "SECURITY VIOLATION" branch in assertMetadataWhitelisted).
+// nolint: exhaustruct
+func TestConfirmBatchMetadataDriftRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	cosmosTokenDenom := "udriftconfirm"
+	//nolint: goconst
+	cosmosTokenContract := "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom with metadata that (for now) matches what's stored in the bank module
+	originalMeta := minMeta(cosmosTokenDenom)
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+	gk.SetCosmosBridgeableToken(ctx, originalMeta)
+
+	msg := &types.MsgConfirmBatch{
+		Nonce:         0,
+		TokenContract: cosmosTokenContract,
+		EthSigner:     "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+		Orchestrator:  OrchAddrs[0].String(),
+		Signature:     "00",
+	}
+
+	// Sanity check: ConfirmBatch passes the allowlist gate while the bank metadata still matches
+	// While there msg still fails, we ensure it's not for the SECURITY VIOLATION error and
+	// later assert that error is actually detected.
+	_, err = sv.ConfirmBatch(ctx, msg)
+	require.Error(t, err)
+	require.NotContains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "couldn't find batch")
+
+	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
+	// simulating drift between the two sources of truth.
+	driftedMeta := originalMeta
+	driftedMeta.Name = "Drifted Name"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	_, err = sv.ConfirmBatch(ctx, msg)
+	require.Error(t, err, "ConfirmBatch must reject a denom whose bank metadata has drifted from the allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+}
+
+// TestConfirmBatchMetadataMissingRejected verifies that ConfirmBatch rejects a cosmos-originated
+// denom that has a governance-approved CosmosBridgeableTokens entry but no corresponding
+// metadata in the bank module (the "bank metadata ... not found" branch in
+// assertMetadataWhitelisted).
+// The deferred invariant assertion is intentionally skipped: a missing bank metadata entry
+// for an allowlisted denom is itself flagged by the CosmosBridgeableTokens invariant, which
+// this test deliberately triggers in order to exercise assertMetadataWhitelisted directly.
+// nolint: exhaustruct
+func TestConfirmBatchMetadataMissingRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	cosmosTokenDenom := "umissingconfirm"
+	cosmosTokenContract := "0x1122334455667788990011223344556677889900"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom in CosmosBridgeableTokens, but never set matching metadata in the
+	// bank module, simulating a bank metadata entry that has gone missing out from under the
+	// allowlist entry.
+	missingMeta := minMeta(cosmosTokenDenom)
+	gk.SetCosmosBridgeableToken(ctx, missingMeta)
+
+	_, found := input.BankKeeper.GetDenomMetaData(ctx, cosmosTokenDenom)
+	require.False(t, found, "test setup requires no bank metadata to exist for the denom")
+
+	_, err = sv.ConfirmBatch(ctx, &types.MsgConfirmBatch{
+		Nonce:         0,
+		TokenContract: cosmosTokenContract,
+		EthSigner:     "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+		Orchestrator:  OrchAddrs[0].String(),
+		Signature:     "00",
+	})
+	require.Error(t, err, "ConfirmBatch must reject a denom whose bank metadata is missing despite an existing allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "bank metadata")
+	require.Contains(t, err.Error(), "not found")
+}
+
+// TestSendToCosmosClaimMetadataDriftRejected verifies that SendToCosmosClaim rejects a
+// cosmos-originated denom whose bank module metadata has drifted from the governance-approved
+// CosmosBridgeableTokens entry (the "SECURITY VIOLATION" branch in assertMetadataWhitelisted).
+// nolint: exhaustruct
+func TestSendToCosmosClaimMetadataDriftRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	cosmosTokenDenom := "udriftclaim"
+	cosmosTokenContract := "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom with metadata that (for now) matches what's stored in the bank module
+	originalMeta := minMeta(cosmosTokenDenom)
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+	gk.SetCosmosBridgeableToken(ctx, originalMeta)
+
+	// Fund the gravity module so a successful claim has supply to draw from.
+	sendCoins := sdk.NewCoins(sdk.NewInt64Coin(cosmosTokenDenom, 1000))
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, sendCoins))
+
+	claim := &types.MsgSendToCosmosClaim{
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		TokenContract:  cosmosTokenContract,
+		Amount:         sdkmath.NewInt(1),
+		EthereumSender: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+		CosmosReceiver: AccAddrs[0].String(),
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	// Sanity check: SendToCosmosClaim passes the allowlist gate while the bank metadata still
+	// matches (this only records a vote/attestation, it does not execute the deposit).
+	_, err = sv.SendToCosmosClaim(ctx, claim)
+	require.NoError(t, err)
+
+	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
+	// simulating drift between the two sources of truth.
+	driftedMeta := originalMeta
+	driftedMeta.Name = "Drifted Name"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	_, err = sv.SendToCosmosClaim(ctx, claim)
+	require.Error(t, err, "SendToCosmosClaim must reject a denom whose bank metadata has drifted from the allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+}
+
+// TestSendToCosmosClaimMetadataMissingRejected verifies that SendToCosmosClaim rejects a
+// cosmos-originated denom that has a governance-approved CosmosBridgeableTokens entry but no
+// corresponding metadata in the bank module (the "bank metadata ... not found" branch in
+// assertMetadataWhitelisted).
+// The deferred invariant assertion is intentionally skipped: a missing bank metadata entry
+// for an allowlisted denom is itself flagged by the CosmosBridgeableTokens invariant, which
+// this test deliberately triggers in order to exercise assertMetadataWhitelisted directly.
+// nolint: exhaustruct
+func TestSendToCosmosClaimMetadataMissingRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	cosmosTokenDenom := "umissingclaim"
+	cosmosTokenContract := "0x00112233445566778899AaBbCcDdEeFf00112233"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom in CosmosBridgeableTokens, but never set matching metadata in the
+	// bank module, simulating a bank metadata entry that has gone missing out from under the
+	// allowlist entry.
+	missingMeta := minMeta(cosmosTokenDenom)
+	gk.SetCosmosBridgeableToken(ctx, missingMeta)
+
+	_, found := input.BankKeeper.GetDenomMetaData(ctx, cosmosTokenDenom)
+	require.False(t, found, "test setup requires no bank metadata to exist for the denom")
+
+	_, err = sv.SendToCosmosClaim(ctx, &types.MsgSendToCosmosClaim{
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		TokenContract:  cosmosTokenContract,
+		Amount:         sdkmath.NewInt(1),
+		EthereumSender: "0xd041c41EA1bf0F006ADBb6d2c9ef9D425dE5eaD7",
+		CosmosReceiver: AccAddrs[0].String(),
+		Orchestrator:   OrchAddrs[0].String(),
+	})
+	require.Error(t, err, "SendToCosmosClaim must reject a denom whose bank metadata is missing despite an existing allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "bank metadata")
+	require.Contains(t, err.Error(), "not found")
+}
+
+// TestBatchSendToEthClaimMetadataDriftRejected verifies that BatchSendToEthClaim rejects a
+// cosmos-originated denom whose bank module metadata has drifted from the governance-approved
+// CosmosBridgeableTokens entry (the "SECURITY VIOLATION" branch in assertMetadataWhitelisted).
+// nolint: exhaustruct
+func TestBatchSendToEthClaimMetadataDriftRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	cosmosTokenDenom := "udriftpatch"
+	cosmosTokenContract := "0xB1b86991c6218b36c1d19D4a2e9Eb0cE3606eB99"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom with metadata that (for now) matches what's stored in the bank module
+	originalMeta := minMeta(cosmosTokenDenom)
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+	gk.SetCosmosBridgeableToken(ctx, originalMeta)
+
+	claim := &types.MsgBatchSendToEthClaim{
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		BatchNonce:     1,
+		TokenContract:  cosmosTokenContract,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	// Sanity check: BatchSendToEthClaim passes the allowlist gate while the bank metadata still
+	// matches (this only records a vote/attestation since no batch with this nonce exists).
+	_, err = sv.BatchSendToEthClaim(ctx, claim)
+	require.NoError(t, err)
+
+	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
+	// simulating drift between the two sources of truth.
+	driftedMeta := originalMeta
+	driftedMeta.Name = "Drifted Name"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	claim.EventNonce = 2
+	_, err = sv.BatchSendToEthClaim(ctx, claim)
+	require.Error(t, err, "BatchSendToEthClaim must reject a denom whose bank metadata has drifted from the allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+}
+
+// TestBatchSendToEthClaimMetadataMissingRejected verifies that BatchSendToEthClaim rejects a
+// cosmos-originated denom that has a governance-approved CosmosBridgeableTokens entry but no
+// corresponding metadata in the bank module (the "bank metadata ... not found" branch in
+// assertMetadataWhitelisted).
+// The deferred invariant assertion is intentionally skipped: a missing bank metadata entry
+// for an allowlisted denom is itself flagged by the CosmosBridgeableTokens invariant, which
+// this test deliberately triggers in order to exercise assertMetadataWhitelisted directly.
+// nolint: exhaustruct
+func TestBatchSendToEthClaimMetadataMissingRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	cosmosTokenDenom := "umissingpatch"
+	cosmosTokenContract := "0xC2c86991c6218b36c1d19D4a2e9Eb0cE3606eB77"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom in CosmosBridgeableTokens, but never set matching metadata in the
+	// bank module, simulating a bank metadata entry that has gone missing out from under the
+	// allowlist entry.
+	missingMeta := minMeta(cosmosTokenDenom)
+	gk.SetCosmosBridgeableToken(ctx, missingMeta)
+
+	_, found := input.BankKeeper.GetDenomMetaData(ctx, cosmosTokenDenom)
+	require.False(t, found, "test setup requires no bank metadata to exist for the denom")
+
+	_, err = sv.BatchSendToEthClaim(ctx, &types.MsgBatchSendToEthClaim{
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		BatchNonce:     1,
+		TokenContract:  cosmosTokenContract,
+		Orchestrator:   OrchAddrs[0].String(),
+	})
+	require.Error(t, err, "BatchSendToEthClaim must reject a denom whose bank metadata is missing despite an existing allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "bank metadata")
+	require.Contains(t, err.Error(), "not found")
+}
+
+// TestERC20DeployedClaimMetadataDriftRejected verifies that ERC20DeployedClaim rejects a
+// cosmos-originated denom whose bank module metadata has drifted from the governance-approved
+// CosmosBridgeableTokens entry (the "SECURITY VIOLATION" branch in assertMetadataWhitelisted).
+// nolint: exhaustruct
+func TestERC20DeployedClaimMetadataDriftRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	cosmosTokenDenom := "udrifterc20"
+	cosmosTokenContract := "0xD3d86991c6218b36c1d19D4a2e9Eb0cE3606eB55"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom with metadata that (for now) matches what's stored in the bank module
+	originalMeta := minMeta(cosmosTokenDenom)
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+	gk.SetCosmosBridgeableToken(ctx, originalMeta)
+
+	claim := &types.MsgERC20DeployedClaim{
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		CosmosDenom:    cosmosTokenDenom,
+		TokenContract:  cosmosTokenContract,
+		Name:           cosmosTokenDenom,
+		Symbol:         cosmosTokenDenom,
+		Decimals:       0,
+		Orchestrator:   OrchAddrs[0].String(),
+	}
+
+	// Sanity check: ERC20DeployedClaim passes the allowlist gate while the bank metadata still
+	// matches (this only records a vote/attestation).
+	_, err = sv.ERC20DeployedClaim(ctx, claim)
+	require.NoError(t, err)
+
+	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
+	// simulating drift between the two sources of truth.
+	driftedMeta := originalMeta
+	driftedMeta.Name = "Drifted Name"
+	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
+
+	claim.EventNonce = 2
+	_, err = sv.ERC20DeployedClaim(ctx, claim)
+	require.Error(t, err, "ERC20DeployedClaim must reject a denom whose bank metadata has drifted from the allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+
+	// Restore bank metadata so the deferred invariant assertion does not fail
+	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
+}
+
+// TestERC20DeployedClaimMetadataMissingRejected verifies that ERC20DeployedClaim rejects a
+// cosmos-originated denom that has a governance-approved CosmosBridgeableTokens entry but no
+// corresponding metadata in the bank module (the "bank metadata ... not found" branch in
+// assertMetadataWhitelisted).
+// The deferred invariant assertion is intentionally skipped: a missing bank metadata entry
+// for an allowlisted denom is itself flagged by the CosmosBridgeableTokens invariant, which
+// this test deliberately triggers in order to exercise assertMetadataWhitelisted directly.
+// nolint: exhaustruct
+func TestERC20DeployedClaimMetadataMissingRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+
+	sv := msgServer{input.GravityKeeper}
+	gk := input.GravityKeeper
+
+	cosmosTokenDenom := "umissingerc20"
+	cosmosTokenContract := "0xE4e86991c6218b36c1d19D4a2e9Eb0cE3606eB44"
+	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
+	require.NoError(t, err)
+	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
+
+	// Whitelist the denom in CosmosBridgeableTokens, but never set matching metadata in the
+	// bank module, simulating a bank metadata entry that has gone missing out from under the
+	// allowlist entry.
+	missingMeta := minMeta(cosmosTokenDenom)
+	gk.SetCosmosBridgeableToken(ctx, missingMeta)
+
+	_, found := input.BankKeeper.GetDenomMetaData(ctx, cosmosTokenDenom)
+	require.False(t, found, "test setup requires no bank metadata to exist for the denom")
+
+	_, err = sv.ERC20DeployedClaim(ctx, &types.MsgERC20DeployedClaim{
+		EventNonce:     1,
+		EthBlockHeight: 1,
+		CosmosDenom:    cosmosTokenDenom,
+		TokenContract:  cosmosTokenContract,
+		Name:           cosmosTokenDenom,
+		Symbol:         cosmosTokenDenom,
+		Decimals:       0,
+		Orchestrator:   OrchAddrs[0].String(),
+	})
+	require.Error(t, err, "ERC20DeployedClaim must reject a denom whose bank metadata is missing despite an existing allowlist entry")
+	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.Contains(t, err.Error(), "bank metadata")
+	require.Contains(t, err.Error(), "not found")
+}
+
 // TestRequestBatchCosmosBridgeableTokensAllowlist verifies that RequestBatch enforces the
 // CosmosBridgeableTokens allowlist for Cosmos-originated assets.
 // nolint: exhaustruct
