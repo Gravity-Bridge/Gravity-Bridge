@@ -925,23 +925,42 @@ func requireBridgePausedError(t *testing.T, err error) {
 	require.Contains(t, err.Error(), "bridge paused")
 }
 
-// TestValsetConfirmRejectedWhenBridgePaused verifies that msgServer.ValsetConfirm calls
-// RequireBridgeActive and rejects the message while the bridge is paused.
+// TestValsetConfirmAllowedWhenBridgePaused verifies that msgServer.ValsetConfirm does not
+// reject the message while the bridge is paused.
 // nolint: exhaustruct
-func TestValsetConfirmRejectedWhenBridgePaused(t *testing.T) {
+func TestValsetConfirmAllowedWhenBridgePaused(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	setBridgePaused(t, ctx, input.GravityKeeper)
 
+	// Set up a validator
+	privKey, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	ethAddress, err := types.NewEthAddress(crypto.PubkeyToAddress(privKey.PublicKey).String())
+	require.NoError(t, err)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, ValAddrs[0], *ethAddress)
+
+	// Store a valset request with nonce 0
+	valset, err := input.GravityKeeper.GetCurrentValset(ctx)
+	require.NoError(t, err)
+	valset.Nonce = 0
+	input.GravityKeeper.StoreValset(ctx, valset)
+
+	// Sign the valset checkpoint
+	gravityID := input.GravityKeeper.GetGravityID(ctx)
+	checkpoint := valset.GetCheckpoint(gravityID)
+	sig, err := types.NewEthereumSignature(checkpoint, privKey)
+	require.NoError(t, err)
+
 	sv := msgServer{input.GravityKeeper}
-	_, err := sv.ValsetConfirm(ctx, &types.MsgValsetConfirm{
+	_, err = sv.ValsetConfirm(ctx, &types.MsgValsetConfirm{
 		Nonce:        0,
 		Orchestrator: OrchAddrs[0].String(),
-		EthAddress:   "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
-		Signature:    "00",
+		EthAddress:   ethAddress.GetAddress().Hex(),
+		Signature:    hex.EncodeToString(sig),
 	})
-	requireBridgePausedError(t, err)
+	require.NoError(t, err)
 }
 
 // TestSendToEthRejectedWhenBridgePaused verifies that msgServer.SendToEth calls
@@ -964,25 +983,51 @@ func TestSendToEthRejectedWhenBridgePaused(t *testing.T) {
 	requireBridgePausedError(t, err)
 }
 
-// TestConfirmBatchRejectedWhenBridgePaused verifies that msgServer.ConfirmBatch calls
-// RequireBridgeActive (before any other validation) and rejects the message while the
-// bridge is paused.
+// TestConfirmBatchAllowedWhenBridgePaused verifies that msgServer.ConfirmBatch does not
+// reject the message while the bridge is paused.
 // nolint: exhaustruct
-func TestConfirmBatchRejectedWhenBridgePaused(t *testing.T) {
+func TestConfirmBatchAllowedWhenBridgePaused(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
 	setBridgePaused(t, ctx, input.GravityKeeper)
 
+	// Set up a validator
+	privKey, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	ethAddress, err := types.NewEthAddress(crypto.PubkeyToAddress(privKey.PublicKey).String())
+	require.NoError(t, err)
+	input.GravityKeeper.SetEthAddressForValidator(ctx, ValAddrs[0], *ethAddress)
+
+	// Store an outgoing batch with nonce 0 for the token contract
+	//nolint: goconst
+	tokenContract := "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255"
+	contractAddr, err := types.NewEthAddress(tokenContract)
+	require.NoError(t, err)
+	batch := types.InternalOutgoingTxBatch{
+		BatchNonce:         0,
+		BatchTimeout:       100,
+		Transactions:       []*types.InternalOutgoingTransferTx{},
+		TokenContract:      *contractAddr,
+		CosmosBlockCreated: uint64(ctx.BlockHeight()),
+	}
+	input.GravityKeeper.StoreBatch(ctx, batch)
+
+	// Sign the batch checkpoint
+	gravityID := input.GravityKeeper.GetGravityID(ctx)
+	checkpoint := batch.ToExternal().GetCheckpoint(gravityID)
+	sig, err := types.NewEthereumSignature(checkpoint, privKey)
+	require.NoError(t, err)
+
 	sv := msgServer{input.GravityKeeper}
-	_, err := sv.ConfirmBatch(ctx, &types.MsgConfirmBatch{
+	_, err = sv.ConfirmBatch(ctx, &types.MsgConfirmBatch{
 		Nonce:         0,
-		TokenContract: "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
-		EthSigner:     "0xb462864E395d88d6bc7C5dd5F3F5eb4cc2599255",
+		TokenContract: tokenContract,
+		EthSigner:     ethAddress.GetAddress().Hex(),
 		Orchestrator:  OrchAddrs[0].String(),
-		Signature:     "00",
+		Signature:     hex.EncodeToString(sig),
 	})
-	requireBridgePausedError(t, err)
+	require.NoError(t, err)
 }
 
 // TestConfirmLogicCallRejectedWhenBridgePaused verifies that msgServer.ConfirmLogicCall calls

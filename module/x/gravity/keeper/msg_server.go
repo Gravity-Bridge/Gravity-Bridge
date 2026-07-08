@@ -100,10 +100,6 @@ func (k msgServer) ValsetConfirm(c context.Context, msg *types.MsgValsetConfirm)
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgValsetConfirm", "msg", msg)
 
-	err := k.RequireBridgeActive(ctx)
-	if err != nil {
-		return nil, err
-	}
 	valset := k.GetValset(ctx, msg.Nonce) // A valset request was previously created
 	if valset == nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "couldn't find valset")
@@ -315,11 +311,7 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (*types.MsgConfirmBatchResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgConfirmBatch", "msg", msg)
-	err := k.RequireBridgeActive(ctx)
-	if err != nil {
-		return nil, err
-	}
-	err = msg.ValidateBasic()
+	err := msg.ValidateBasic()
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid MsgConfirmBatch")
 	}
