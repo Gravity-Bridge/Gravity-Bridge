@@ -170,7 +170,18 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		k.SetEthAddressForValidator(ctx, val, *ethAddr)
 	}
 
+	// populate state with remapped ERC20 addresses (set by the recovery upgrade)
+	for i, hexAddr := range data.RemappedErc20S {
+		addr, err := types.NewEthAddress(hexAddr)
+		if err != nil {
+			panic(fmt.Errorf("invalid remapped ERC20 address in genesis for item %d: %s: %v", i, hexAddr, err))
+		}
+		k.SetRemappedERC20(ctx, *addr)
+	}
+
 	// populate state with cosmos originated denom-erc20 mapping
+	// Note: This should happen after populating the remapped ERC20s to ensure there are no
+	// collisions during the validation step
 	for i, item := range data.Erc20ToDenoms {
 		ethAddr, err := types.NewEthAddress(item.Erc20)
 		if err != nil {
@@ -182,15 +193,6 @@ func InitGenesis(ctx sdk.Context, k Keeper, data types.GenesisState) {
 		if err := k.setCosmosOriginatedMapping(ctx, item.Denom, *ethAddr); err != nil {
 			panic(errorsmod.Wrapf(err, "invalid cosmos-originated mapping in genesis state for denom %q", item.Denom))
 		}
-	}
-
-	// populate state with remapped ERC20 addresses (set by the recovery upgrade)
-	for i, hexAddr := range data.RemappedErc20S {
-		addr, err := types.NewEthAddress(hexAddr)
-		if err != nil {
-			panic(fmt.Errorf("invalid remapped ERC20 address in genesis for item %d: %s: %v", i, hexAddr, err))
-		}
-		k.SetRemappedERC20(ctx, *addr)
 	}
 
 	// populate state with the CosmosBridgeableTokens allowlist
