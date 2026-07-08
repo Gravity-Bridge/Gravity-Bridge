@@ -11,7 +11,7 @@ use crate::{
 };
 use clarity::Address as EthAddress;
 use clarity::Uint256;
-use cosmos_gravity::query::{get_attestations, get_last_event_nonce_for_validator};
+use cosmos_gravity::query::{get_attestations, get_erc20_to_denom, get_last_event_nonce_for_validator};
 use cosmos_gravity::send::send_ethereum_claims;
 use deep_space::client::type_urls::MSG_TRANSFER_TYPE_URL;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey};
@@ -1009,6 +1009,35 @@ async fn erc20_deployed_claim_hash_collision(
         "REGRESSION: forged attestation was marked observed (2/3 threshold reached). \
          handleErc20Deployed ran with forged_cosmos_denom and bartokenAddr — \
          denom→ERC20 mapping is corrupted."
+    );
+
+    // ── Erc20ToDenom must never register the forged denom for bartoken ───────
+    //
+    // The `observed` flag on the attestation alone is not sufficient proof that
+    // handleErc20Deployed never executed — this queries the actual on-chain
+    // Erc20ToDenom mapping to confirm the forged claim's denom/ERC20 pairing
+    // never made it into the store.
+    let erc20_to_denom_resp = get_erc20_to_denom(grpc_client, bartoken_eth_addr)
+        .await
+        .expect("Phase 5: failed to query Erc20ToDenom for bartoken_eth_addr");
+    assert_ne!(
+        erc20_to_denom_resp.denom, forged_cosmos_denom,
+        "REGRESSION: Erc20ToDenom returned the forged denom '{}' for bartoken ERC20 {} — \
+         handleErc20Deployed executed on the unobserved forged attestation and corrupted \
+         the denomToERC20 mapping.",
+        forged_cosmos_denom, BARTOKEN_ADDR
+    );
+    assert_eq!(
+        erc20_to_denom_resp.denom, bartoken_denom,
+        "Erc20ToDenom for bartoken ERC20 {} should still resolve to its original denom '{}', \
+         got '{}' instead — denomToERC20 mapping was altered by the forged claim.",
+        BARTOKEN_ADDR, bartoken_denom, erc20_to_denom_resp.denom
+    );
+    assert!(
+        !erc20_to_denom_resp.cosmos_originated,
+        "REGRESSION: bartoken ERC20 {} is now reported as cosmos-originated in Erc20ToDenom — \
+         the forged claim's setCosmosOriginatedMapping call must not have executed.",
+        BARTOKEN_ADDR
     );
 
     // ── Honest attestation: must exist with 3 votes, observed ─────────────────
