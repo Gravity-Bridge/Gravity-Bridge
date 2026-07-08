@@ -29,6 +29,7 @@ func GetRecoveryUpgradeHandler(
 	}
 	return func(c context.Context, plan upgradetypes.Plan, vmap module.VersionMap) (module.VersionMap, error) {
 		ctx := sdk.UnwrapSDKContext(c)
+
 		ctx.Logger().Info("Recovery upgrade: running module migrations")
 		out, err := mm.RunMigrations(ctx, *configurator, vmap)
 		if err != nil {
@@ -43,6 +44,9 @@ func GetRecoveryUpgradeHandler(
 		if err := registerCosmosBridgeableTokens(ctx, gravityKeeper, bankKeeper); err != nil {
 			return out, err
 		}
+
+		ctx.Logger().Info("Recovery upgrade: checking for pending IBC Auto Forwards")
+		assertNoPendingRemappedIbcAutoForwards(ctx, gravityKeeper)
 
 		ctx.Logger().Info("Recovery upgrade: disabling the bridge to Ethereum until governance re-enables it")
 		setBridgeActive(ctx, gravityKeeper, false)
@@ -240,4 +244,26 @@ func CancelAllOutgoingTxsForContract(ctx sdk.Context, k *gravitykeeper.Keeper, t
 		}
 	}
 	return nil
+}
+
+// assertNoPendingRemappedIbcAutoForwards asserts that there are no pending IBC Auto Forwards for any of the remapped ERC20s
+func assertNoPendingRemappedIbcAutoForwards(ctx sdk.Context, k *gravitykeeper.Keeper) {
+	forwards := k.PendingIbcAutoForwards(ctx, 0)
+	for _, forward := range forwards {
+		// Try gravity2 denom first - none of these should exist before the upgrade
+		if tc, err := types.Gravity2DenomToERC20(forward.Token.Denom); err == nil {
+			panic(fmt.Sprintf("Recovery upgrade: found pending IBC Auto Forward for remapped ERC20?: %s (%s)",
+				tc.GetAddress().Hex(), forward.Token.Denom))
+		}
+		// Then gravity denom
+		if tc, err := types.GravityDenomToERC20(forward.Token.Denom); err == nil {
+			if k.IsRemappedERC20(ctx, *tc) {
+				panic(fmt.Sprintf("Recovery upgrade: found pending IBC Auto Forward for remapped ERC20: %s (gravity2 denom: %s)",
+					tc.GetAddress().Hex(), forward.Token.Denom))
+			}
+			continue
+		}
+		// Cosmos-originated or unknown - not a remapped ERC20
+	}
+	ctx.Logger().Info("Recovery upgrade: no pending IBC Auto Forwards found")
 }
