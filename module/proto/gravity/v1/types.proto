@@ -52,6 +52,10 @@ message ERC20ToDenom {
 // set disagrees with the rest. Normally this would require a chain halt, manual
 // genesis editing and restar to resolve with this feature a governance proposal
 // can be used instead
+// 
+// Note that this is very different from the BridgeActive flag in the params,
+// which controls whether or not the bridge is currently accepting new events.
+// This proposal is for rolling back state that is blocking the bridge.
 message UnhaltBridgeProposal {
   option (gogoproto.equal) = true;
   option (gogoproto.goproto_getters) = false;

@@ -143,6 +143,8 @@ func CmdGovAirdropProposal() *cobra.Command {
 
 // CmdGovUnhaltBridgeProposal enables users to easily submit json file proposals to set the Gravity module parameters
 // which account for Ethereum forks, "rewinding" state and letting the chain achieve consensus after the fork is settled
+// Note that this is very different from the BridgeActive flag in the params, which controls whether or not the bridge is currently accepting new events.
+// This proposal is for rolling back state that is blocking the bridge.
 func CmdGovUnhaltBridgeProposal() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
