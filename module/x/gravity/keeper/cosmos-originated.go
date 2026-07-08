@@ -313,14 +313,6 @@ func (k Keeper) IterateRemappedERC20s(ctx sdk.Context, cb func(addr types.EthAdd
 	}
 }
 
-// DeleteCosmosOriginatedDenomToERC20 removes both directions of the denom to ERC20 mapping
-// for a cosmos-originated registration.
-func (k Keeper) DeleteCosmosOriginatedDenomToERC20(ctx sdk.Context, tokenContract types.EthAddress, denom string) {
-	store := ctx.KVStore(k.storeKey)
-	store.Delete(types.GetDenomToERC20Key(denom))
-	store.Delete(types.GetERC20ToDenomKey(tokenContract))
-}
-
 // IterateERC20ToDenom iterates over erc20 to denom relations
 func (k Keeper) IterateERC20ToDenom(ctx sdk.Context, cb func([]byte, *types.ERC20ToDenom) bool) {
 	prefixStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.ERC20ToDenomKey)
