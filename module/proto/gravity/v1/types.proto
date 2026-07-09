@@ -84,27 +84,16 @@ message AirdropProposal {
   repeated uint64 amounts = 5;
 }
 
-// CosmosBridgeableTokensOperation indicates how the CosmosBridgeableTokens
-// list should be updated by a CosmosBridgeableTokensProposal.
-// SET will add or update the provided entries. REMOVE will remove them, if they exist.
-enum CosmosBridgeableTokensOperation {
-  COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED = 0;
-  COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET = 1;
-  COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE = 2;
-}
-
-// CosmosBridgeableTokensProposal defines a custom governance proposal type
-// that allows governance to add or remove entries from the
+// SetCosmosBridgeableTokensProposal defines a custom governance proposal type
+// that allows governance to add or update entries in the
 // CosmosBridgeableTokens allowlist. This allows governance to control which
 // Cosmos tokens are allowed to cross the bridge to Ethereum.
-// Tokens not on this list will be blocked from SendToEth and acceptance in ERC20 deploy claims.
+// Tokens not on the list will be blocked from SendToEth and acceptance in ERC20 deploy claims.
 //
-// When operation is SET, the bank module's denom metadata for each listed
-// denom is unconditionally overwritten with the proposal's metadata, and the
-// same value is mirrored into the CosmosBridgeableTokens store. When
-// operation is REMOVE, matching entries are removed from the
-// CosmosBridgeableTokens store only (bank metadata is left untouched).
-message CosmosBridgeableTokensProposal {
+// The bank module's denom metadata for each listed denom is unconditionally
+// overwritten with the proposal's metadata, and the same value is written
+// into the CosmosBridgeableTokens store.
+message SetCosmosBridgeableTokensProposal {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
   option (gogoproto.goproto_stringer) = false;
@@ -113,7 +102,25 @@ message CosmosBridgeableTokensProposal {
   string description = 2;
   repeated cosmos.bank.v1beta1.Metadata metadatas = 3
       [ (gogoproto.nullable) = false ];
-  CosmosBridgeableTokensOperation operation = 4;
+}
+
+// DeleteCosmosBridgeableTokensProposal defines a custom governance proposal
+// type that allows governance to remove entries from the
+// CosmosBridgeableTokens allowlist. This allows governance to control which
+// Cosmos tokens are allowed to cross the bridge to Ethereum.
+// Tokens not on the list will be blocked from SendToEth and acceptance in ERC20 deploy claims.
+//
+// Matching entries are removed from the CosmosBridgeableTokens store only
+// (bank metadata is left untouched).
+message DeleteCosmosBridgeableTokensProposal {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  string title = 1;
+  string description = 2;
+  repeated cosmos.bank.v1beta1.Metadata metadatas = 3
+      [ (gogoproto.nullable) = false ];
 }
 
 // PendingIbcAutoForward represents a SendToCosmos transaction with a foreign

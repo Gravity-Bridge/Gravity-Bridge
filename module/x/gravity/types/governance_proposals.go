@@ -87,25 +87,22 @@ func (p AirdropProposal) String() string {
 	return b.String()
 }
 
-func (p *CosmosBridgeableTokensProposal) GetTitle() string { return p.Title }
+func (p *SetCosmosBridgeableTokensProposal) GetTitle() string { return p.Title }
 
-func (p *CosmosBridgeableTokensProposal) GetDescription() string { return p.Description }
+func (p *SetCosmosBridgeableTokensProposal) GetDescription() string { return p.Description }
 
-func (p *CosmosBridgeableTokensProposal) ProposalRoute() string { return RouterKey }
+func (p *SetCosmosBridgeableTokensProposal) ProposalRoute() string { return RouterKey }
 
-func (p *CosmosBridgeableTokensProposal) ProposalType() string {
+func (p *SetCosmosBridgeableTokensProposal) ProposalType() string {
 	return ProposalTypeCosmosBridgeableTokens
 }
 
-func (p *CosmosBridgeableTokensProposal) ValidateBasic() error {
+func (p *SetCosmosBridgeableTokensProposal) ValidateBasic() error {
 	if err := govv1beta1.ValidateAbstract(p); err != nil {
 		return err
 	}
 	if len(p.Metadatas) == 0 {
-		return fmt.Errorf("CosmosBridgeableTokensProposal must contain at least one metadata entry")
-	}
-	if p.Operation == CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED {
-		return fmt.Errorf("CosmosBridgeableTokensProposal requires an explicit operation (SET or REMOVE)")
+		return fmt.Errorf("SetCosmosBridgeableTokensProposal must contain at least one metadata entry")
 	}
 	seen := make(map[string]struct{}, len(p.Metadatas))
 	for _, m := range p.Metadatas {
@@ -113,20 +110,61 @@ func (p *CosmosBridgeableTokensProposal) ValidateBasic() error {
 			return fmt.Errorf("invalid metadata for denom %s: %w", m.Base, err)
 		}
 		if _, dup := seen[m.Base]; dup {
-			return fmt.Errorf("duplicate base denom in CosmosBridgeableTokensProposal: %s", m.Base)
+			return fmt.Errorf("duplicate base denom in SetCosmosBridgeableTokensProposal: %s", m.Base)
 		}
 		seen[m.Base] = struct{}{}
 	}
 	return nil
 }
 
-func (p CosmosBridgeableTokensProposal) String() string {
+func (p SetCosmosBridgeableTokensProposal) String() string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf(`Cosmos Bridgeable Tokens Proposal:
+	b.WriteString(fmt.Sprintf(`Set Cosmos Bridgeable Tokens Proposal:
   Title:          %s
   Description:    %s
-  Operation:      %s
-`, p.Title, p.Description, p.Operation))
+`, p.Title, p.Description))
+	for _, m := range p.Metadatas {
+		b.WriteString(fmt.Sprintf("  Denom: %s Name: %s Symbol: %s\n", m.Base, m.Name, m.Symbol))
+	}
+	return b.String()
+}
+
+func (p *DeleteCosmosBridgeableTokensProposal) GetTitle() string { return p.Title }
+
+func (p *DeleteCosmosBridgeableTokensProposal) GetDescription() string { return p.Description }
+
+func (p *DeleteCosmosBridgeableTokensProposal) ProposalRoute() string { return RouterKey }
+
+func (p *DeleteCosmosBridgeableTokensProposal) ProposalType() string {
+	return ProposalTypeCosmosBridgeableTokens
+}
+
+func (p *DeleteCosmosBridgeableTokensProposal) ValidateBasic() error {
+	if err := govv1beta1.ValidateAbstract(p); err != nil {
+		return err
+	}
+	if len(p.Metadatas) == 0 {
+		return fmt.Errorf("DeleteCosmosBridgeableTokensProposal must contain at least one metadata entry")
+	}
+	seen := make(map[string]struct{}, len(p.Metadatas))
+	for _, m := range p.Metadatas {
+		if err := m.Validate(); err != nil {
+			return fmt.Errorf("invalid metadata for denom %s: %w", m.Base, err)
+		}
+		if _, dup := seen[m.Base]; dup {
+			return fmt.Errorf("duplicate base denom in DeleteCosmosBridgeableTokensProposal: %s", m.Base)
+		}
+		seen[m.Base] = struct{}{}
+	}
+	return nil
+}
+
+func (p DeleteCosmosBridgeableTokensProposal) String() string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf(`Delete Cosmos Bridgeable Tokens Proposal:
+  Title:          %s
+  Description:    %s
+`, p.Title, p.Description))
 	for _, m := range p.Metadatas {
 		b.WriteString(fmt.Sprintf("  Denom: %s Name: %s Symbol: %s\n", m.Base, m.Name, m.Symbol))
 	}

@@ -919,17 +919,32 @@ func (k msgServer) UnhaltBridgeProposal(c context.Context, msg *typesv2.MsgUnhal
 
 }
 
-// CosmosBridgeableTokensProposal executes a cosmos bridgeable tokens proposal using the x/gov v1 proposal interface
-func (k msgServer) CosmosBridgeableTokensProposal(c context.Context, msg *typesv2.MsgCosmosBridgeableTokensProposal) (*typesv2.MsgCosmosBridgeableTokensProposalResponse, error) {
+// SetCosmosBridgeableTokensProposal executes a set cosmos bridgeable tokens proposal using the x/gov v1 proposal interface
+func (k msgServer) SetCosmosBridgeableTokensProposal(c context.Context, msg *typesv2.MsgSetCosmosBridgeableTokensProposal) (*typesv2.MsgSetCosmosBridgeableTokensProposalResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	if k.GetAuthority() != msg.Authority {
 		return nil, errorsmod.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
 	}
 
-	err := k.HandleCosmosBridgeableTokensProposal(ctx, msg.Proposal)
+	err := k.HandleSetCosmosBridgeableTokensProposal(ctx, msg.Proposal)
 	if err != nil {
 		return nil, err
 	}
 
-	return &typesv2.MsgCosmosBridgeableTokensProposalResponse{}, nil
+	return &typesv2.MsgSetCosmosBridgeableTokensProposalResponse{}, nil
+}
+
+// DeleteCosmosBridgeableTokensProposal executes a delete cosmos bridgeable tokens proposal using the x/gov v1 proposal interface
+func (k msgServer) DeleteCosmosBridgeableTokensProposal(c context.Context, msg *typesv2.MsgDeleteCosmosBridgeableTokensProposal) (*typesv2.MsgDeleteCosmosBridgeableTokensProposalResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	if k.GetAuthority() != msg.Authority {
+		return nil, errorsmod.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+	}
+
+	err := k.HandleDeleteCosmosBridgeableTokensProposal(ctx, msg.Proposal)
+	if err != nil {
+		return nil, err
+	}
+
+	return &typesv2.MsgDeleteCosmosBridgeableTokensProposalResponse{}, nil
 }

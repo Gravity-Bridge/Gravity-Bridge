@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Msg_UpdateParamsProposal_FullMethodName           = "/gravity.v2.Msg/UpdateParamsProposal"
-	Msg_AirdropProposal_FullMethodName                = "/gravity.v2.Msg/AirdropProposal"
-	Msg_UnhaltBridgeProposal_FullMethodName           = "/gravity.v2.Msg/UnhaltBridgeProposal"
-	Msg_CosmosBridgeableTokensProposal_FullMethodName = "/gravity.v2.Msg/CosmosBridgeableTokensProposal"
+	Msg_UpdateParamsProposal_FullMethodName                 = "/gravity.v2.Msg/UpdateParamsProposal"
+	Msg_AirdropProposal_FullMethodName                      = "/gravity.v2.Msg/AirdropProposal"
+	Msg_UnhaltBridgeProposal_FullMethodName                 = "/gravity.v2.Msg/UnhaltBridgeProposal"
+	Msg_SetCosmosBridgeableTokensProposal_FullMethodName    = "/gravity.v2.Msg/SetCosmosBridgeableTokensProposal"
+	Msg_DeleteCosmosBridgeableTokensProposal_FullMethodName = "/gravity.v2.Msg/DeleteCosmosBridgeableTokensProposal"
 )
 
 // MsgClient is the client API for Msg service.
@@ -32,7 +33,8 @@ type MsgClient interface {
 	UpdateParamsProposal(ctx context.Context, in *MsgUpdateParamsProposal, opts ...grpc.CallOption) (*MsgUpdateParamsProposalResponse, error)
 	AirdropProposal(ctx context.Context, in *MsgAirdropProposal, opts ...grpc.CallOption) (*MsgAirdropProposalResponse, error)
 	UnhaltBridgeProposal(ctx context.Context, in *MsgUnhaltBridgeProposal, opts ...grpc.CallOption) (*MsgUnhaltBridgeProposalResponse, error)
-	CosmosBridgeableTokensProposal(ctx context.Context, in *MsgCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgCosmosBridgeableTokensProposalResponse, error)
+	SetCosmosBridgeableTokensProposal(ctx context.Context, in *MsgSetCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgSetCosmosBridgeableTokensProposalResponse, error)
+	DeleteCosmosBridgeableTokensProposal(ctx context.Context, in *MsgDeleteCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgDeleteCosmosBridgeableTokensProposalResponse, error)
 }
 
 type msgClient struct {
@@ -70,9 +72,18 @@ func (c *msgClient) UnhaltBridgeProposal(ctx context.Context, in *MsgUnhaltBridg
 	return out, nil
 }
 
-func (c *msgClient) CosmosBridgeableTokensProposal(ctx context.Context, in *MsgCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgCosmosBridgeableTokensProposalResponse, error) {
-	out := new(MsgCosmosBridgeableTokensProposalResponse)
-	err := c.cc.Invoke(ctx, Msg_CosmosBridgeableTokensProposal_FullMethodName, in, out, opts...)
+func (c *msgClient) SetCosmosBridgeableTokensProposal(ctx context.Context, in *MsgSetCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgSetCosmosBridgeableTokensProposalResponse, error) {
+	out := new(MsgSetCosmosBridgeableTokensProposalResponse)
+	err := c.cc.Invoke(ctx, Msg_SetCosmosBridgeableTokensProposal_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) DeleteCosmosBridgeableTokensProposal(ctx context.Context, in *MsgDeleteCosmosBridgeableTokensProposal, opts ...grpc.CallOption) (*MsgDeleteCosmosBridgeableTokensProposalResponse, error) {
+	out := new(MsgDeleteCosmosBridgeableTokensProposalResponse)
+	err := c.cc.Invoke(ctx, Msg_DeleteCosmosBridgeableTokensProposal_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +97,8 @@ type MsgServer interface {
 	UpdateParamsProposal(context.Context, *MsgUpdateParamsProposal) (*MsgUpdateParamsProposalResponse, error)
 	AirdropProposal(context.Context, *MsgAirdropProposal) (*MsgAirdropProposalResponse, error)
 	UnhaltBridgeProposal(context.Context, *MsgUnhaltBridgeProposal) (*MsgUnhaltBridgeProposalResponse, error)
-	CosmosBridgeableTokensProposal(context.Context, *MsgCosmosBridgeableTokensProposal) (*MsgCosmosBridgeableTokensProposalResponse, error)
+	SetCosmosBridgeableTokensProposal(context.Context, *MsgSetCosmosBridgeableTokensProposal) (*MsgSetCosmosBridgeableTokensProposalResponse, error)
+	DeleteCosmosBridgeableTokensProposal(context.Context, *MsgDeleteCosmosBridgeableTokensProposal) (*MsgDeleteCosmosBridgeableTokensProposalResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -103,8 +115,11 @@ func (UnimplementedMsgServer) AirdropProposal(context.Context, *MsgAirdropPropos
 func (UnimplementedMsgServer) UnhaltBridgeProposal(context.Context, *MsgUnhaltBridgeProposal) (*MsgUnhaltBridgeProposalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnhaltBridgeProposal not implemented")
 }
-func (UnimplementedMsgServer) CosmosBridgeableTokensProposal(context.Context, *MsgCosmosBridgeableTokensProposal) (*MsgCosmosBridgeableTokensProposalResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CosmosBridgeableTokensProposal not implemented")
+func (UnimplementedMsgServer) SetCosmosBridgeableTokensProposal(context.Context, *MsgSetCosmosBridgeableTokensProposal) (*MsgSetCosmosBridgeableTokensProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetCosmosBridgeableTokensProposal not implemented")
+}
+func (UnimplementedMsgServer) DeleteCosmosBridgeableTokensProposal(context.Context, *MsgDeleteCosmosBridgeableTokensProposal) (*MsgDeleteCosmosBridgeableTokensProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteCosmosBridgeableTokensProposal not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -173,20 +188,38 @@ func _Msg_UnhaltBridgeProposal_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CosmosBridgeableTokensProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCosmosBridgeableTokensProposal)
+func _Msg_SetCosmosBridgeableTokensProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetCosmosBridgeableTokensProposal)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CosmosBridgeableTokensProposal(ctx, in)
+		return srv.(MsgServer).SetCosmosBridgeableTokensProposal(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_CosmosBridgeableTokensProposal_FullMethodName,
+		FullMethod: Msg_SetCosmosBridgeableTokensProposal_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CosmosBridgeableTokensProposal(ctx, req.(*MsgCosmosBridgeableTokensProposal))
+		return srv.(MsgServer).SetCosmosBridgeableTokensProposal(ctx, req.(*MsgSetCosmosBridgeableTokensProposal))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_DeleteCosmosBridgeableTokensProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgDeleteCosmosBridgeableTokensProposal)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).DeleteCosmosBridgeableTokensProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_DeleteCosmosBridgeableTokensProposal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).DeleteCosmosBridgeableTokensProposal(ctx, req.(*MsgDeleteCosmosBridgeableTokensProposal))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -211,8 +244,12 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_UnhaltBridgeProposal_Handler,
 		},
 		{
-			MethodName: "CosmosBridgeableTokensProposal",
-			Handler:    _Msg_CosmosBridgeableTokensProposal_Handler,
+			MethodName: "SetCosmosBridgeableTokensProposal",
+			Handler:    _Msg_SetCosmosBridgeableTokensProposal_Handler,
+		},
+		{
+			MethodName: "DeleteCosmosBridgeableTokensProposal",
+			Handler:    _Msg_DeleteCosmosBridgeableTokensProposal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

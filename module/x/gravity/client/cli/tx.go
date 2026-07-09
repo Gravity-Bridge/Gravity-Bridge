@@ -45,7 +45,8 @@ func GetTxCmd(storeKey string) *cobra.Command {
 		CmdSetOrchestratorAddress(),
 		CmdGovAirdropProposal(),
 		CmdGovUnhaltBridgeProposal(),
-		CmdGovCosmosBridgeableTokensProposal(),
+		CmdGovSetCosmosBridgeableTokensProposal(),
+		CmdGovDeleteCosmosBridgeableTokensProposal(),
 		CmdExecutePendingIbcAutoForwards(),
 	}...)
 
@@ -199,14 +200,12 @@ func CmdGovUnhaltBridgeProposal() *cobra.Command {
 	return cmd
 }
 
-// CosmosBridgeableTokensProposalPlain mirrors types.CosmosBridgeableTokensProposal but with a
-// human-readable string Operation field ("SET" or "REMOVE") so that the proposal.json file is
-// easy to author by hand.
+// CosmosBridgeableTokensProposalPlain mirrors the Set/DeleteCosmosBridgeableTokensProposal types
+// so that the proposal.json file is easy to author by hand
 type CosmosBridgeableTokensProposalPlain struct {
 	Title       string
 	Description string
 	Metadatas   []banktypes.Metadata
-	Operation   string
 }
 
 // diffBankMetadata compares a user-provided Metadata entry against the corresponding on-chain
@@ -241,19 +240,83 @@ func diffBankMetadata(provided, onChain banktypes.Metadata) []string {
 	return diffs
 }
 
-// FlagIgnoreBankState allows a user to bypass the CmdGovCosmosBridgeableTokensProposal check
-// that the provided metadatas match the current x/bank module denom metadata. Mismatches are
-// always logged regardless of this flag, it only controls whether a mismatch is fatal.
+// FlagIgnoreBankState allows a user to bypass the CmdGovSetCosmosBridgeableTokensProposal /
+// CmdGovDeleteCosmosBridgeableTokensProposal check that the provided metadatas match the current
+// x/bank module denom metadata. Mismatches are always logged regardless of this flag, it only
+// controls whether a mismatch is fatal.
 const FlagIgnoreBankState = "ignore-bank-state"
 
-// CmdGovCosmosBridgeableTokensProposal enables users to easily submit json file proposals to add or remove entries
-// from the CosmosBridgeableTokens allowlist, i.e. Cosmos-originated token denoms that may be sent from the Gravity
-// Bridge chain to Ethereum
-func CmdGovCosmosBridgeableTokensProposal() *cobra.Command {
+// readCosmosBridgeableTokensProposalPlain reads and validates the shared portions of a
+// proposal.json file (Title, Description, Metadatas) for both the "set" and "delete"
+// CosmosBridgeableTokens governance proposal commands.
+func readCosmosBridgeableTokensProposalPlain(proposalFile string) (*CosmosBridgeableTokensProposalPlain, error) {
+	contents, err := os.ReadFile(proposalFile)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to read proposal json file")
+	}
+
+	plain := &CosmosBridgeableTokensProposalPlain{}
+	if err := json.Unmarshal(contents, plain); err != nil {
+		return nil, errorsmod.Wrap(err, "proposal json file is not valid json")
+	}
+
+	if plain.Title == "" {
+		return nil, errorsmod.Wrap(types.ErrInvalid, "Title field must be set in the proposal.json file")
+	}
+	if plain.Description == "" {
+		return nil, errorsmod.Wrap(types.ErrInvalid, "Description field must be set in the proposal.json file")
+	}
+	if len(plain.Metadatas) == 0 {
+		return nil, errorsmod.Wrap(types.ErrInvalid, "Metadatas field must contain at least one entry in the proposal.json file")
+	}
+
+	return plain, nil
+}
+
+// checkMetadatasAgainstBankState queries the x/bank module for each provided denom's metadata
+// and logs any differences found between the proposal.json values and the current chain state.
+// Unless ignoreBankState is set, any mismatch (including a denom with no bank metadata at all)
+// returns an error before the caller broadcasts the transaction.
+func checkMetadatasAgainstBankState(cmd *cobra.Command, cliCtx client.Context, metadatas []banktypes.Metadata, ignoreBankState bool) error {
+	bankQueryClient := banktypes.NewQueryClient(cliCtx)
+	bankStateMismatch := false
+	for _, metadata := range metadatas {
+		res, queryErr := bankQueryClient.DenomMetadata(cmd.Context(), &banktypes.QueryDenomMetadataRequest{Denom: metadata.Base})
+		if queryErr != nil {
+			bankStateMismatch = true
+			cmd.PrintErrf("MISMATCH: denom %q has no existing x/bank module metadata (query error: %v)\n", metadata.Base, queryErr)
+			continue
+		}
+
+		if diffs := diffBankMetadata(metadata, res.Metadata); len(diffs) > 0 {
+			bankStateMismatch = true
+			cmd.PrintErrf("MISMATCH: proposal metadata for denom %q does not match the current x/bank module state:\n", metadata.Base)
+			for _, d := range diffs {
+				cmd.PrintErrf("  - %s\n", d)
+			}
+		} else {
+			cmd.Printf("Confirmed: proposal metadata for denom %q matches the current x/bank module state\n", metadata.Base)
+		}
+	}
+
+	if bankStateMismatch {
+		if ignoreBankState {
+			cmd.Printf("One or more metadatas do not match the x/bank module state, but --ignore-bank-state was set, proceeding with proposal")
+		} else {
+			return errorsmod.Wrap(types.ErrInvalid, "one or more provided metadatas do not match the current x/bank module state (see log output above); pass --ignore-bank-state to submit anyway")
+		}
+	}
+	return nil
+}
+
+// CmdGovSetCosmosBridgeableTokensProposal enables users to easily submit json file proposals to
+// add or update entries in the CosmosBridgeableTokens allowlist, i.e. Cosmos-originated token
+// denoms that may be sent from the Gravity Bridge chain to Ethereum
+func CmdGovSetCosmosBridgeableTokensProposal() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "gov-cosmos-bridgeable-tokens [path-to-proposal-json] [initial-deposit]",
-		Short: "Creates a governance proposal to add or remove entries from the CosmosBridgeableTokens allowlist",
+		Use:   "gov-set-cosmos-bridgeable-tokens [path-to-proposal-json] [initial-deposit]",
+		Short: "Creates a governance proposal to add or update entries in the CosmosBridgeableTokens allowlist",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
@@ -276,98 +339,112 @@ func CmdGovCosmosBridgeableTokensProposal() *cobra.Command {
 				return fmt.Errorf("unexpected coin amounts, expecting just 1 coin amount for initialDeposit")
 			}
 
-			proposalFile := args[0]
-
-			contents, err := os.ReadFile(proposalFile)
+			plain, err := readCosmosBridgeableTokensProposalPlain(args[0])
 			if err != nil {
-				return errorsmod.Wrap(err, "failed to read proposal json file")
-			}
-
-			plain := &CosmosBridgeableTokensProposalPlain{}
-			err = json.Unmarshal(contents, plain)
-			if err != nil {
-				return errorsmod.Wrap(err, "proposal json file is not valid json")
-			}
-
-			if plain.Title == "" {
-				return errorsmod.Wrap(types.ErrInvalid, "Title field must be set in the proposal.json file")
-			}
-			if plain.Description == "" {
-				return errorsmod.Wrap(types.ErrInvalid, "Description field must be set in the proposal.json file")
-			}
-			if len(plain.Metadatas) == 0 {
-				return errorsmod.Wrap(types.ErrInvalid, "Metadatas field must contain at least one entry in the proposal.json file")
-			}
-
-			var operation types.CosmosBridgeableTokensOperation
-			switch strings.ToUpper(plain.Operation) {
-			case "SET":
-				operation = types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET
-			case "REMOVE":
-				operation = types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE
-			default:
-				return errorsmod.Wrap(types.ErrInvalid, `Operation field must be set to "SET" or "REMOVE" in the proposal.json file`)
+				return err
 			}
 
 			for _, metadata := range plain.Metadatas {
 				if metadataErr := metadata.Validate(); metadataErr != nil {
 					return errorsmod.Wrapf(metadataErr, "invalid metadata for denom %s in the proposal.json file", metadata.Base)
 				}
-				// Validate the denoms of any tokens being added to the list, but allow removal of any bad denoms that are somehow already there
-				if operation == types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET {
-					if denomErr := types.ValidateStrictDenom(metadata.Base); denomErr != nil {
-						return errorsmod.Wrapf(denomErr, "invalid denom %s in the proposal.json file", metadata.Base)
-					}
+				if denomErr := types.ValidateStrictDenom(metadata.Base); denomErr != nil {
+					return errorsmod.Wrapf(denomErr, "invalid denom %s in the proposal.json file", metadata.Base)
 				}
 			}
 
-			// Query the x/bank module for each provided denom's metadata and log any differences
-			// found between the proposal.json values and the current chain state. Unless
-			// --ignore-bank-state is set, any mismatch (including a denom with no bank metadata
-			// at all) aborts submission before broadcasting the transaction.
+			if err := checkMetadatasAgainstBankState(cmd, cliCtx, plain.Metadatas, ignoreBankState); err != nil {
+				return err
+			}
+
+			// Never allow zero-supply denoms to be added to the allowlist
 			bankQueryClient := banktypes.NewQueryClient(cliCtx)
-			bankStateMismatch := false
 			for _, metadata := range plain.Metadatas {
-				res, queryErr := bankQueryClient.DenomMetadata(cmd.Context(), &banktypes.QueryDenomMetadataRequest{Denom: metadata.Base})
-				if queryErr != nil {
-					bankStateMismatch = true
-					cmd.PrintErrf("MISMATCH: denom %q has no existing x/bank module metadata (query error: %v)\n", metadata.Base, queryErr)
-					continue
-				}
-
-				if diffs := diffBankMetadata(metadata, res.Metadata); len(diffs) > 0 {
-					bankStateMismatch = true
-					cmd.PrintErrf("MISMATCH: proposal metadata for denom %q does not match the current x/bank module state:\n", metadata.Base)
-					for _, d := range diffs {
-						cmd.PrintErrf("  - %s\n", d)
-					}
-				} else {
-					cmd.Printf("Confirmed: proposal metadata for denom %q matches the current x/bank module state\n", metadata.Base)
-				}
-
-				// Never allow zero-supply denoms to be added to the allowlist
-				if operation == types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET {
-					supplyRes, supplyErr := bankQueryClient.SupplyOf(cmd.Context(), &banktypes.QuerySupplyOfRequest{Denom: metadata.Base})
-					if supplyErr != nil || supplyRes.Amount.IsZero() {
-						cmd.PrintErrf("MISMATCH: denom %q has zero (or unqueryable) on-chain supply\n", metadata.Base)
-						return errorsmod.Wrapf(types.ErrInvalid, "denom %q has zero (or unqueryable) on-chain supply", metadata.Base)
-					}
+				supplyRes, supplyErr := bankQueryClient.SupplyOf(cmd.Context(), &banktypes.QuerySupplyOfRequest{Denom: metadata.Base})
+				if supplyErr != nil || supplyRes.Amount.IsZero() {
+					cmd.PrintErrf("MISMATCH: denom %q has zero (or unqueryable) on-chain supply\n", metadata.Base)
+					return errorsmod.Wrapf(types.ErrInvalid, "denom %q has zero (or unqueryable) on-chain supply", metadata.Base)
 				}
 			}
 
-			if bankStateMismatch {
-				if ignoreBankState {
-					cmd.Printf("One or more metadatas do not match the x/bank module state, but --ignore-bank-state was set, proceeding with proposal")
-				} else {
-					return errorsmod.Wrap(types.ErrInvalid, "one or more provided metadatas do not match the current x/bank module state (see log output above); pass --ignore-bank-state to submit anyway")
-				}
-			}
-
-			proposal := &types.CosmosBridgeableTokensProposal{
+			proposal := &types.SetCosmosBridgeableTokensProposal{
 				Title:       plain.Title,
 				Description: plain.Description,
 				Metadatas:   plain.Metadatas,
-				Operation:   operation,
+			}
+
+			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			if err != nil {
+				return errorsmod.Wrap(err, "invalid metadata or proposal details!")
+			}
+
+			// Make the message
+			msg := govv1beta1.MsgSubmitProposal{
+				Proposer:       cosmosAddr.String(),
+				InitialDeposit: initialDeposit,
+				Content:        proposalAny,
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
+		},
+	}
+	cmd.Flags().Bool(FlagIgnoreBankState, false, "skip failing when provided metadatas do not match the current x/bank module denom metadata (mismatches are still logged)")
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdGovDeleteCosmosBridgeableTokensProposal enables users to easily submit json file proposals
+// to remove entries from the CosmosBridgeableTokens allowlist, i.e. Cosmos-originated token
+// denoms that may be sent from the Gravity Bridge chain to Ethereum
+func CmdGovDeleteCosmosBridgeableTokensProposal() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "gov-delete-cosmos-bridgeable-tokens [path-to-proposal-json] [initial-deposit]",
+		Short: "Creates a governance proposal to remove entries from the CosmosBridgeableTokens allowlist",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			cosmosAddr := cliCtx.GetFromAddress()
+
+			ignoreBankState, err := cmd.Flags().GetBool(FlagIgnoreBankState)
+			if err != nil {
+				return err
+			}
+
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[1])
+			if err != nil {
+				return errorsmod.Wrap(err, "bad initial deposit amount")
+			}
+
+			if len(initialDeposit) != 1 {
+				return fmt.Errorf("unexpected coin amounts, expecting just 1 coin amount for initialDeposit")
+			}
+
+			plain, err := readCosmosBridgeableTokensProposalPlain(args[0])
+			if err != nil {
+				return err
+			}
+
+			// Validate the metadata shape, but intentionally allow removal of any bad-looking
+			// denoms that are somehow already on the allowlist, so ValidateStrictDenom is not
+			// enforced here.
+			for _, metadata := range plain.Metadatas {
+				if metadataErr := metadata.Validate(); metadataErr != nil {
+					return errorsmod.Wrapf(metadataErr, "invalid metadata for denom %s in the proposal.json file", metadata.Base)
+				}
+			}
+
+			if err := checkMetadatasAgainstBankState(cmd, cliCtx, plain.Metadatas, ignoreBankState); err != nil {
+				return err
+			}
+
+			proposal := &types.DeleteCosmosBridgeableTokensProposal{
+				Title:       plain.Title,
+				Description: plain.Description,
+				Metadatas:   plain.Metadatas,
 			}
 
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)

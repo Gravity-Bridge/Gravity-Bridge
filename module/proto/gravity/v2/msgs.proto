@@ -16,7 +16,8 @@ service Msg {
   rpc UpdateParamsProposal(MsgUpdateParamsProposal) returns (MsgUpdateParamsProposalResponse) {}
   rpc AirdropProposal(MsgAirdropProposal) returns (MsgAirdropProposalResponse) {}
   rpc UnhaltBridgeProposal(MsgUnhaltBridgeProposal) returns (MsgUnhaltBridgeProposalResponse) {}
-  rpc CosmosBridgeableTokensProposal(MsgCosmosBridgeableTokensProposal) returns (MsgCosmosBridgeableTokensProposalResponse) {}
+  rpc SetCosmosBridgeableTokensProposal(MsgSetCosmosBridgeableTokensProposal) returns (MsgSetCosmosBridgeableTokensProposalResponse) {}
+  rpc DeleteCosmosBridgeableTokensProposal(MsgDeleteCosmosBridgeableTokensProposal) returns (MsgDeleteCosmosBridgeableTokensProposalResponse) {}
 }
 
 // MsgUpdateParamsProposal
@@ -69,19 +70,34 @@ message MsgUnhaltBridgeProposal {
 
 message MsgUnhaltBridgeProposalResponse {}
 
-// MsgCosmosBridgeableTokensProposal
+// MsgSetCosmosBridgeableTokensProposal
 // This message is used by the new x/gov v1 proposal system, it contains an authority
 // and the previous type used for proposals
 // AUTHORITY
 // A string containing the address of the sender, only valid if it is the gov module address
 // PROPOSAL
 // This is the previous proposal type, which contains everything needed for the proposal's execution
-message MsgCosmosBridgeableTokensProposal {
+message MsgSetCosmosBridgeableTokensProposal {
   option (cosmos.msg.v1.signer) = "authority";
   string authority = 1;
 
-  gravity.v1.CosmosBridgeableTokensProposal proposal = 2;
+  gravity.v1.SetCosmosBridgeableTokensProposal proposal = 2;
 }
 
-message MsgCosmosBridgeableTokensProposalResponse {}
+message MsgSetCosmosBridgeableTokensProposalResponse {}
+
+// MsgDeleteCosmosBridgeableTokensProposal
+// This message is used by the new x/gov v1 proposal system, it contains an authority
+// and the previous type used for proposals
+// AUTHORITY
+// A string containing the address of the sender, only valid if it is the gov module address
+// PROPOSAL
+// This is the previous proposal type, which contains everything needed for the proposal's execution
+message MsgDeleteCosmosBridgeableTokensProposal {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1;
+
+  gravity.v1.DeleteCosmosBridgeableTokensProposal proposal = 2;
+}
+message MsgDeleteCosmosBridgeableTokensProposalResponse {}
 

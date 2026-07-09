@@ -13,7 +13,8 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgAirdropProposal{},
 		&MsgUnhaltBridgeProposal{},
 		&MsgUpdateParamsProposal{},
-		&MsgCosmosBridgeableTokensProposal{},
+		&MsgSetCosmosBridgeableTokensProposal{},
+		&MsgDeleteCosmosBridgeableTokensProposal{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

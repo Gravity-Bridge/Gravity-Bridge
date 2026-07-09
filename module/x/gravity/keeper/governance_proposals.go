@@ -45,8 +45,10 @@ func NewGravityProposalHandler(k Keeper) govv1beta1.Handler {
 			return k.HandleUnhaltBridgeProposal(ctx, c)
 		case *types.AirdropProposal:
 			return k.HandleAirdropProposal(ctx, c)
-		case *types.CosmosBridgeableTokensProposal:
-			return k.HandleCosmosBridgeableTokensProposal(ctx, c)
+		case *types.SetCosmosBridgeableTokensProposal:
+			return k.HandleSetCosmosBridgeableTokensProposal(ctx, c)
+		case *types.DeleteCosmosBridgeableTokensProposal:
+			return k.HandleDeleteCosmosBridgeableTokensProposal(ctx, c)
 
 		default:
 			return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Gravity proposal content type: %T", c)
@@ -225,91 +227,102 @@ func (k Keeper) HandleAirdropProposal(ctx sdk.Context, p *types.AirdropProposal)
 	return nil
 }
 
-// Handles updates to the CosmosBridgeableTokens allowlist, either adding/overwriting entries (SET) or removing entries (REMOVE).
-//
-// On SET, after validation, the bank metadata for each token is overwritten
-// On REMOVE only the CosmosBridgeableTokens list is modified, bank is not changed
-// Note that if a token already has an ERC20 representation, it should not be possible to modify the
-func (k Keeper) HandleCosmosBridgeableTokensProposal(ctx sdk.Context, p *types.CosmosBridgeableTokensProposal) error {
-	ctx.Logger().Info("Gov vote passed: Updating CosmosBridgeableTokens", "operation", p.Operation, "count", len(p.Metadatas))
+// Handles updates/additions to the CosmosBridgeableTokens allowlist. After validation, the bank metadata for each token is overwritten
+func (k Keeper) HandleSetCosmosBridgeableTokensProposal(ctx sdk.Context, p *types.SetCosmosBridgeableTokensProposal) error {
+	ctx.Logger().Info("Gov vote passed: Updating CosmosBridgeableTokens", "count", len(p.Metadatas))
 
 	// Reject duplicate base denoms within the proposal itself (defense in depth beyond ValidateBasic)
 	seen := make(map[string]struct{}, len(p.Metadatas))
 	for _, metadata := range p.Metadatas {
 		if _, dup := seen[metadata.Base]; dup {
-			return errorsmod.Wrapf(types.ErrDuplicate, "CosmosBridgeableTokensProposal contains duplicate base denom: %s", metadata.Base)
+			return errorsmod.Wrapf(types.ErrDuplicate, "SetCosmosBridgeableTokensProposal contains duplicate base denom: %s", metadata.Base)
 		}
 		seen[metadata.Base] = struct{}{}
 	}
 
-	switch p.Operation {
-	case types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET:
-		for _, metadata := range p.Metadatas {
-			if err := metadata.Validate(); err != nil {
-				return errorsmod.Wrapf(err, "invalid metadata in CosmosBridgeableTokensProposal: %s", metadata.Base)
-			}
-			// Perform strict denom validations on SET operations (not on REMOVE)
-			if err := types.ValidateStrictDenom(metadata.Base); err != nil {
-				return errorsmod.Wrapf(err, "invalid denom in CosmosBridgeableTokensProposal: %s", metadata.Base)
-			}
-			if strings.HasPrefix(metadata.Base, types.GravityDenomPrefix) {
-				return errorsmod.Wrapf(types.ErrInvalid,
-					"CosmosBridgeableTokens must not contain ethereum-originated (gravity-prefixed) denoms: %s", metadata.Base)
-			}
-
-			// Ensure the denom has nonzero supply, as zero supply likely means an error
-			if k.bankKeeper.GetSupply(ctx, metadata.Base).IsZero() {
-				return errorsmod.Wrapf(types.ErrInvalid,
-					"cannot set metadata for %s: denom has zero on-chain supply", metadata.Base)
-			}
-
-			_, existsAlready := k.GetCosmosBridgeableToken(ctx, metadata.Base)
-
-			// Reject any update for denoms that already have an ERC20 representation and are on the list
-			if _, hasERC20 := k.getCosmosOriginatedERC20ForDenom(ctx, metadata.Base); existsAlready && hasERC20 {
-				return errorsmod.Wrapf(types.ErrInvalid,
-					"cannot set metadata for %s: an ERC20 representation already exists for this denom",
-					metadata.Base)
-			}
-
-			// Overwrite the bank metadata in case proposer needs the token info to change on chain
-			k.bankKeeper.SetDenomMetaData(ctx, metadata)
-			k.SetCosmosBridgeableToken(ctx, metadata)
-
-			// Check that the metadata updated correctly in both keepers
-			writtenBank, foundBank := k.bankKeeper.GetDenomMetaData(ctx, metadata.Base)
-			if !foundBank || !metadataEqual(metadata, writtenBank) {
-				return errorsmod.Wrapf(types.ErrInvalid,
-					"bank metadata for %s failed to update?",
-					metadata.Base)
-			}
-			writtenAllowlist, foundAllowlist := k.GetCosmosBridgeableToken(ctx, metadata.Base)
-			if !foundAllowlist || !metadataEqual(metadata, writtenAllowlist) {
-				return errorsmod.Wrapf(types.ErrInvalid,
-					"CosmosBridgeableTokens entry for %s failed to update?",
-					metadata.Base)
-			}
+	for _, metadata := range p.Metadatas {
+		if err := metadata.Validate(); err != nil {
+			return errorsmod.Wrapf(err, "invalid metadata in SetCosmosBridgeableTokensProposal: %s", metadata.Base)
 		}
-	case types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE:
-		for _, metadata := range p.Metadatas {
-			existing, found := k.GetCosmosBridgeableToken(ctx, metadata.Base)
-			if !found {
-				return errorsmod.Wrapf(types.ErrInvalid, "CosmosBridgeableTokens remove denom not found in current list: %s", metadata.Base)
-			}
-			if !metadataEqual(metadata, existing) {
-				return errorsmod.Wrapf(types.ErrInvalid, "CosmosBridgeableTokens remove metadata does not match existing metadata for denom: %s", metadata.Base)
-			}
-			k.DeleteCosmosBridgeableToken(ctx, metadata.Base)
-
-			// Check that the entry is actually gone
-			if _, stillPresent := k.GetCosmosBridgeableToken(ctx, metadata.Base); stillPresent {
-				return errorsmod.Wrapf(types.ErrInvalid,
-					"CosmosBridgeableTokens entry for %s failed to delete?",
-					metadata.Base)
-			}
+		// Perform strict denom validations on SET operations (not on REMOVE)
+		if err := types.ValidateStrictDenom(metadata.Base); err != nil {
+			return errorsmod.Wrapf(err, "invalid denom in SetCosmosBridgeableTokensProposal: %s", metadata.Base)
 		}
-	default:
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "CosmosBridgeableTokensProposal requires an explicit operation (SET or REMOVE)")
+		if strings.HasPrefix(metadata.Base, types.GravityDenomPrefix) {
+			return errorsmod.Wrapf(types.ErrInvalid,
+				"CosmosBridgeableTokens must not contain ethereum-originated (gravity-prefixed) denoms: %s", metadata.Base)
+		}
+
+		// Ensure the denom has nonzero supply, as zero supply likely means an error
+		if k.bankKeeper.GetSupply(ctx, metadata.Base).IsZero() {
+			return errorsmod.Wrapf(types.ErrInvalid,
+				"cannot set metadata for %s: denom has zero on-chain supply", metadata.Base)
+		}
+
+		_, existsAlready := k.GetCosmosBridgeableToken(ctx, metadata.Base)
+
+		// Reject any update for denoms that already have an ERC20 representation and are on the list
+		if _, hasERC20 := k.getCosmosOriginatedERC20ForDenom(ctx, metadata.Base); existsAlready && hasERC20 {
+			return errorsmod.Wrapf(types.ErrInvalid,
+				"cannot set metadata for %s: an ERC20 representation already exists for this denom",
+				metadata.Base)
+		}
+
+		// Overwrite the bank metadata in case proposer needs the token info to change on chain
+		k.bankKeeper.SetDenomMetaData(ctx, metadata)
+		k.SetCosmosBridgeableToken(ctx, metadata)
+
+		// Check that the metadata updated correctly in both keepers
+		writtenBank, foundBank := k.bankKeeper.GetDenomMetaData(ctx, metadata.Base)
+		if !foundBank || !metadataEqual(metadata, writtenBank) {
+			return errorsmod.Wrapf(types.ErrInvalid,
+				"bank metadata for %s failed to update?",
+				metadata.Base)
+		}
+		writtenAllowlist, foundAllowlist := k.GetCosmosBridgeableToken(ctx, metadata.Base)
+		if !foundAllowlist || !metadataEqual(metadata, writtenAllowlist) {
+			return errorsmod.Wrapf(types.ErrInvalid,
+				"CosmosBridgeableTokens entry for %s failed to update?",
+				metadata.Base)
+		}
+	}
+
+	// Check for invalid list state after the update (e.g. duplicates or gravity-prefixed denoms)
+	if err := k.assertCosmosBridgeableTokensConsistent(ctx); err != nil {
+		return errorsmod.Wrap(err, "CosmosBridgeableTokens invalid after proposal?")
+	}
+
+	return nil
+}
+
+func (k Keeper) HandleDeleteCosmosBridgeableTokensProposal(ctx sdk.Context, p *types.DeleteCosmosBridgeableTokensProposal) error {
+	ctx.Logger().Info("Gov vote passed: Removing from CosmosBridgeableTokens", "count", len(p.Metadatas))
+
+	// Reject duplicate base denoms within the proposal itself (defense in depth beyond ValidateBasic)
+	seen := make(map[string]struct{}, len(p.Metadatas))
+	for _, metadata := range p.Metadatas {
+		if _, dup := seen[metadata.Base]; dup {
+			return errorsmod.Wrapf(types.ErrDuplicate, "DeleteCosmosBridgeableTokensProposal contains duplicate base denom: %s", metadata.Base)
+		}
+		seen[metadata.Base] = struct{}{}
+	}
+
+	for _, metadata := range p.Metadatas {
+		existing, found := k.GetCosmosBridgeableToken(ctx, metadata.Base)
+		if !found {
+			return errorsmod.Wrapf(types.ErrInvalid, "CosmosBridgeableTokens remove denom not found in current list: %s", metadata.Base)
+		}
+		if !metadataEqual(metadata, existing) {
+			return errorsmod.Wrapf(types.ErrInvalid, "CosmosBridgeableTokens remove metadata does not match existing metadata for denom: %s", metadata.Base)
+		}
+		k.DeleteCosmosBridgeableToken(ctx, metadata.Base)
+
+		// Check that the entry is actually gone
+		if _, stillPresent := k.GetCosmosBridgeableToken(ctx, metadata.Base); stillPresent {
+			return errorsmod.Wrapf(types.ErrInvalid,
+				"CosmosBridgeableTokens entry for %s failed to delete?",
+				metadata.Base)
+		}
 	}
 
 	// Check for invalid list state after the update (e.g. duplicates or gravity-prefixed denoms)

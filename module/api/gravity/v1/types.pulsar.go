@@ -3463,83 +3463,81 @@ func (x *fastReflection_AirdropProposal) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-var _ protoreflect.List = (*_CosmosBridgeableTokensProposal_3_list)(nil)
+var _ protoreflect.List = (*_SetCosmosBridgeableTokensProposal_3_list)(nil)
 
-type _CosmosBridgeableTokensProposal_3_list struct {
+type _SetCosmosBridgeableTokensProposal_3_list struct {
 	list *[]*v1beta1.Metadata
 }
 
-func (x *_CosmosBridgeableTokensProposal_3_list) Len() int {
+func (x *_SetCosmosBridgeableTokensProposal_3_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_CosmosBridgeableTokensProposal_3_list) Get(i int) protoreflect.Value {
+func (x *_SetCosmosBridgeableTokensProposal_3_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_CosmosBridgeableTokensProposal_3_list) Set(i int, value protoreflect.Value) {
+func (x *_SetCosmosBridgeableTokensProposal_3_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*v1beta1.Metadata)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_CosmosBridgeableTokensProposal_3_list) Append(value protoreflect.Value) {
+func (x *_SetCosmosBridgeableTokensProposal_3_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*v1beta1.Metadata)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_CosmosBridgeableTokensProposal_3_list) AppendMutable() protoreflect.Value {
+func (x *_SetCosmosBridgeableTokensProposal_3_list) AppendMutable() protoreflect.Value {
 	v := new(v1beta1.Metadata)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_CosmosBridgeableTokensProposal_3_list) Truncate(n int) {
+func (x *_SetCosmosBridgeableTokensProposal_3_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_CosmosBridgeableTokensProposal_3_list) NewElement() protoreflect.Value {
+func (x *_SetCosmosBridgeableTokensProposal_3_list) NewElement() protoreflect.Value {
 	v := new(v1beta1.Metadata)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_CosmosBridgeableTokensProposal_3_list) IsValid() bool {
+func (x *_SetCosmosBridgeableTokensProposal_3_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_CosmosBridgeableTokensProposal             protoreflect.MessageDescriptor
-	fd_CosmosBridgeableTokensProposal_title       protoreflect.FieldDescriptor
-	fd_CosmosBridgeableTokensProposal_description protoreflect.FieldDescriptor
-	fd_CosmosBridgeableTokensProposal_metadatas   protoreflect.FieldDescriptor
-	fd_CosmosBridgeableTokensProposal_operation   protoreflect.FieldDescriptor
+	md_SetCosmosBridgeableTokensProposal             protoreflect.MessageDescriptor
+	fd_SetCosmosBridgeableTokensProposal_title       protoreflect.FieldDescriptor
+	fd_SetCosmosBridgeableTokensProposal_description protoreflect.FieldDescriptor
+	fd_SetCosmosBridgeableTokensProposal_metadatas   protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_gravity_v1_types_proto_init()
-	md_CosmosBridgeableTokensProposal = File_gravity_v1_types_proto.Messages().ByName("CosmosBridgeableTokensProposal")
-	fd_CosmosBridgeableTokensProposal_title = md_CosmosBridgeableTokensProposal.Fields().ByName("title")
-	fd_CosmosBridgeableTokensProposal_description = md_CosmosBridgeableTokensProposal.Fields().ByName("description")
-	fd_CosmosBridgeableTokensProposal_metadatas = md_CosmosBridgeableTokensProposal.Fields().ByName("metadatas")
-	fd_CosmosBridgeableTokensProposal_operation = md_CosmosBridgeableTokensProposal.Fields().ByName("operation")
+	md_SetCosmosBridgeableTokensProposal = File_gravity_v1_types_proto.Messages().ByName("SetCosmosBridgeableTokensProposal")
+	fd_SetCosmosBridgeableTokensProposal_title = md_SetCosmosBridgeableTokensProposal.Fields().ByName("title")
+	fd_SetCosmosBridgeableTokensProposal_description = md_SetCosmosBridgeableTokensProposal.Fields().ByName("description")
+	fd_SetCosmosBridgeableTokensProposal_metadatas = md_SetCosmosBridgeableTokensProposal.Fields().ByName("metadatas")
 }
 
-var _ protoreflect.Message = (*fastReflection_CosmosBridgeableTokensProposal)(nil)
+var _ protoreflect.Message = (*fastReflection_SetCosmosBridgeableTokensProposal)(nil)
 
-type fastReflection_CosmosBridgeableTokensProposal CosmosBridgeableTokensProposal
+type fastReflection_SetCosmosBridgeableTokensProposal SetCosmosBridgeableTokensProposal
 
-func (x *CosmosBridgeableTokensProposal) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_CosmosBridgeableTokensProposal)(x)
+func (x *SetCosmosBridgeableTokensProposal) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_SetCosmosBridgeableTokensProposal)(x)
 }
 
-func (x *CosmosBridgeableTokensProposal) slowProtoReflect() protoreflect.Message {
+func (x *SetCosmosBridgeableTokensProposal) slowProtoReflect() protoreflect.Message {
 	mi := &file_gravity_v1_types_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3551,43 +3549,43 @@ func (x *CosmosBridgeableTokensProposal) slowProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_CosmosBridgeableTokensProposal_messageType fastReflection_CosmosBridgeableTokensProposal_messageType
-var _ protoreflect.MessageType = fastReflection_CosmosBridgeableTokensProposal_messageType{}
+var _fastReflection_SetCosmosBridgeableTokensProposal_messageType fastReflection_SetCosmosBridgeableTokensProposal_messageType
+var _ protoreflect.MessageType = fastReflection_SetCosmosBridgeableTokensProposal_messageType{}
 
-type fastReflection_CosmosBridgeableTokensProposal_messageType struct{}
+type fastReflection_SetCosmosBridgeableTokensProposal_messageType struct{}
 
-func (x fastReflection_CosmosBridgeableTokensProposal_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_CosmosBridgeableTokensProposal)(nil)
+func (x fastReflection_SetCosmosBridgeableTokensProposal_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_SetCosmosBridgeableTokensProposal)(nil)
 }
-func (x fastReflection_CosmosBridgeableTokensProposal_messageType) New() protoreflect.Message {
-	return new(fastReflection_CosmosBridgeableTokensProposal)
+func (x fastReflection_SetCosmosBridgeableTokensProposal_messageType) New() protoreflect.Message {
+	return new(fastReflection_SetCosmosBridgeableTokensProposal)
 }
-func (x fastReflection_CosmosBridgeableTokensProposal_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_CosmosBridgeableTokensProposal
+func (x fastReflection_SetCosmosBridgeableTokensProposal_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_SetCosmosBridgeableTokensProposal
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Descriptor() protoreflect.MessageDescriptor {
-	return md_CosmosBridgeableTokensProposal
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Descriptor() protoreflect.MessageDescriptor {
+	return md_SetCosmosBridgeableTokensProposal
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Type() protoreflect.MessageType {
-	return _fastReflection_CosmosBridgeableTokensProposal_messageType
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Type() protoreflect.MessageType {
+	return _fastReflection_SetCosmosBridgeableTokensProposal_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_CosmosBridgeableTokensProposal) New() protoreflect.Message {
-	return new(fastReflection_CosmosBridgeableTokensProposal)
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) New() protoreflect.Message {
+	return new(fastReflection_SetCosmosBridgeableTokensProposal)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Interface() protoreflect.ProtoMessage {
-	return (*CosmosBridgeableTokensProposal)(x)
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Interface() protoreflect.ProtoMessage {
+	return (*SetCosmosBridgeableTokensProposal)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -3595,28 +3593,22 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) Interface() protoreflect
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Title != "" {
 		value := protoreflect.ValueOfString(x.Title)
-		if !f(fd_CosmosBridgeableTokensProposal_title, value) {
+		if !f(fd_SetCosmosBridgeableTokensProposal_title, value) {
 			return
 		}
 	}
 	if x.Description != "" {
 		value := protoreflect.ValueOfString(x.Description)
-		if !f(fd_CosmosBridgeableTokensProposal_description, value) {
+		if !f(fd_SetCosmosBridgeableTokensProposal_description, value) {
 			return
 		}
 	}
 	if len(x.Metadatas) != 0 {
-		value := protoreflect.ValueOfList(&_CosmosBridgeableTokensProposal_3_list{list: &x.Metadatas})
-		if !f(fd_CosmosBridgeableTokensProposal_metadatas, value) {
-			return
-		}
-	}
-	if x.Operation != 0 {
-		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.Operation))
-		if !f(fd_CosmosBridgeableTokensProposal_operation, value) {
+		value := protoreflect.ValueOfList(&_SetCosmosBridgeableTokensProposal_3_list{list: &x.Metadatas})
+		if !f(fd_SetCosmosBridgeableTokensProposal_metadatas, value) {
 			return
 		}
 	}
@@ -3633,21 +3625,19 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) Range(f func(protoreflec
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "gravity.v1.CosmosBridgeableTokensProposal.title":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.title":
 		return x.Title != ""
-	case "gravity.v1.CosmosBridgeableTokensProposal.description":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.description":
 		return x.Description != ""
-	case "gravity.v1.CosmosBridgeableTokensProposal.metadatas":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.metadatas":
 		return len(x.Metadatas) != 0
-	case "gravity.v1.CosmosBridgeableTokensProposal.operation":
-		return x.Operation != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.CosmosBridgeableTokensProposal"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SetCosmosBridgeableTokensProposal"))
 		}
-		panic(fmt.Errorf("message gravity.v1.CosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message gravity.v1.SetCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3657,21 +3647,19 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) Has(fd protoreflect.Fiel
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "gravity.v1.CosmosBridgeableTokensProposal.title":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.title":
 		x.Title = ""
-	case "gravity.v1.CosmosBridgeableTokensProposal.description":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.description":
 		x.Description = ""
-	case "gravity.v1.CosmosBridgeableTokensProposal.metadatas":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.metadatas":
 		x.Metadatas = nil
-	case "gravity.v1.CosmosBridgeableTokensProposal.operation":
-		x.Operation = 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.CosmosBridgeableTokensProposal"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SetCosmosBridgeableTokensProposal"))
 		}
-		panic(fmt.Errorf("message gravity.v1.CosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message gravity.v1.SetCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3681,28 +3669,25 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) Clear(fd protoreflect.Fi
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "gravity.v1.CosmosBridgeableTokensProposal.title":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.title":
 		value := x.Title
 		return protoreflect.ValueOfString(value)
-	case "gravity.v1.CosmosBridgeableTokensProposal.description":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.description":
 		value := x.Description
 		return protoreflect.ValueOfString(value)
-	case "gravity.v1.CosmosBridgeableTokensProposal.metadatas":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.metadatas":
 		if len(x.Metadatas) == 0 {
-			return protoreflect.ValueOfList(&_CosmosBridgeableTokensProposal_3_list{})
+			return protoreflect.ValueOfList(&_SetCosmosBridgeableTokensProposal_3_list{})
 		}
-		listValue := &_CosmosBridgeableTokensProposal_3_list{list: &x.Metadatas}
+		listValue := &_SetCosmosBridgeableTokensProposal_3_list{list: &x.Metadatas}
 		return protoreflect.ValueOfList(listValue)
-	case "gravity.v1.CosmosBridgeableTokensProposal.operation":
-		value := x.Operation
-		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.CosmosBridgeableTokensProposal"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SetCosmosBridgeableTokensProposal"))
 		}
-		panic(fmt.Errorf("message gravity.v1.CosmosBridgeableTokensProposal does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message gravity.v1.SetCosmosBridgeableTokensProposal does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -3716,23 +3701,21 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) Get(descriptor protorefl
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "gravity.v1.CosmosBridgeableTokensProposal.title":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.title":
 		x.Title = value.Interface().(string)
-	case "gravity.v1.CosmosBridgeableTokensProposal.description":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.description":
 		x.Description = value.Interface().(string)
-	case "gravity.v1.CosmosBridgeableTokensProposal.metadatas":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.metadatas":
 		lv := value.List()
-		clv := lv.(*_CosmosBridgeableTokensProposal_3_list)
+		clv := lv.(*_SetCosmosBridgeableTokensProposal_3_list)
 		x.Metadatas = *clv.list
-	case "gravity.v1.CosmosBridgeableTokensProposal.operation":
-		x.Operation = (CosmosBridgeableTokensOperation)(value.Enum())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.CosmosBridgeableTokensProposal"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SetCosmosBridgeableTokensProposal"))
 		}
-		panic(fmt.Errorf("message gravity.v1.CosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message gravity.v1.SetCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3746,57 +3729,53 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) Set(fd protoreflect.Fiel
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_CosmosBridgeableTokensProposal) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "gravity.v1.CosmosBridgeableTokensProposal.metadatas":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.metadatas":
 		if x.Metadatas == nil {
 			x.Metadatas = []*v1beta1.Metadata{}
 		}
-		value := &_CosmosBridgeableTokensProposal_3_list{list: &x.Metadatas}
+		value := &_SetCosmosBridgeableTokensProposal_3_list{list: &x.Metadatas}
 		return protoreflect.ValueOfList(value)
-	case "gravity.v1.CosmosBridgeableTokensProposal.title":
-		panic(fmt.Errorf("field title of message gravity.v1.CosmosBridgeableTokensProposal is not mutable"))
-	case "gravity.v1.CosmosBridgeableTokensProposal.description":
-		panic(fmt.Errorf("field description of message gravity.v1.CosmosBridgeableTokensProposal is not mutable"))
-	case "gravity.v1.CosmosBridgeableTokensProposal.operation":
-		panic(fmt.Errorf("field operation of message gravity.v1.CosmosBridgeableTokensProposal is not mutable"))
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.title":
+		panic(fmt.Errorf("field title of message gravity.v1.SetCosmosBridgeableTokensProposal is not mutable"))
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.description":
+		panic(fmt.Errorf("field description of message gravity.v1.SetCosmosBridgeableTokensProposal is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.CosmosBridgeableTokensProposal"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SetCosmosBridgeableTokensProposal"))
 		}
-		panic(fmt.Errorf("message gravity.v1.CosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message gravity.v1.SetCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_CosmosBridgeableTokensProposal) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "gravity.v1.CosmosBridgeableTokensProposal.title":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.title":
 		return protoreflect.ValueOfString("")
-	case "gravity.v1.CosmosBridgeableTokensProposal.description":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.description":
 		return protoreflect.ValueOfString("")
-	case "gravity.v1.CosmosBridgeableTokensProposal.metadatas":
+	case "gravity.v1.SetCosmosBridgeableTokensProposal.metadatas":
 		list := []*v1beta1.Metadata{}
-		return protoreflect.ValueOfList(&_CosmosBridgeableTokensProposal_3_list{list: &list})
-	case "gravity.v1.CosmosBridgeableTokensProposal.operation":
-		return protoreflect.ValueOfEnum(0)
+		return protoreflect.ValueOfList(&_SetCosmosBridgeableTokensProposal_3_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.CosmosBridgeableTokensProposal"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.SetCosmosBridgeableTokensProposal"))
 		}
-		panic(fmt.Errorf("message gravity.v1.CosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message gravity.v1.SetCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_CosmosBridgeableTokensProposal) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.CosmosBridgeableTokensProposal", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.SetCosmosBridgeableTokensProposal", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -3804,7 +3783,7 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) WhichOneof(d protoreflec
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_CosmosBridgeableTokensProposal) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -3815,7 +3794,7 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) GetUnknown() protoreflec
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_CosmosBridgeableTokensProposal) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -3827,7 +3806,7 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) SetUnknown(fields protor
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_CosmosBridgeableTokensProposal) IsValid() bool {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) IsValid() bool {
 	return x != nil
 }
 
@@ -3837,9 +3816,9 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_CosmosBridgeableTokensProposal) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_SetCosmosBridgeableTokensProposal) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*CosmosBridgeableTokensProposal)
+		x := input.Message.Interface().(*SetCosmosBridgeableTokensProposal)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3865,9 +3844,6 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) ProtoMethods() *protoifa
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if x.Operation != 0 {
-			n += 1 + runtime.Sov(uint64(x.Operation))
-		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -3878,7 +3854,7 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) ProtoMethods() *protoifa
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*CosmosBridgeableTokensProposal)
+		x := input.Message.Interface().(*SetCosmosBridgeableTokensProposal)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3896,11 +3872,6 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) ProtoMethods() *protoifa
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.Operation != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Operation))
-			i--
-			dAtA[i] = 0x20
 		}
 		if len(x.Metadatas) > 0 {
 			for iNdEx := len(x.Metadatas) - 1; iNdEx >= 0; iNdEx-- {
@@ -3943,7 +3914,7 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) ProtoMethods() *protoifa
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*CosmosBridgeableTokensProposal)
+		x := input.Message.Interface().(*SetCosmosBridgeableTokensProposal)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3975,10 +3946,10 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) ProtoMethods() *protoifa
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: CosmosBridgeableTokensProposal: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: SetCosmosBridgeableTokensProposal: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: CosmosBridgeableTokensProposal: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: SetCosmosBridgeableTokensProposal: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -4079,11 +4050,535 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) ProtoMethods() *protoifa
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 4:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Operation", wireType)
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
-				x.Operation = 0
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var _ protoreflect.List = (*_DeleteCosmosBridgeableTokensProposal_3_list)(nil)
+
+type _DeleteCosmosBridgeableTokensProposal_3_list struct {
+	list *[]*v1beta1.Metadata
+}
+
+func (x *_DeleteCosmosBridgeableTokensProposal_3_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_DeleteCosmosBridgeableTokensProposal_3_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_DeleteCosmosBridgeableTokensProposal_3_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*v1beta1.Metadata)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_DeleteCosmosBridgeableTokensProposal_3_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*v1beta1.Metadata)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_DeleteCosmosBridgeableTokensProposal_3_list) AppendMutable() protoreflect.Value {
+	v := new(v1beta1.Metadata)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_DeleteCosmosBridgeableTokensProposal_3_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_DeleteCosmosBridgeableTokensProposal_3_list) NewElement() protoreflect.Value {
+	v := new(v1beta1.Metadata)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_DeleteCosmosBridgeableTokensProposal_3_list) IsValid() bool {
+	return x.list != nil
+}
+
+var (
+	md_DeleteCosmosBridgeableTokensProposal             protoreflect.MessageDescriptor
+	fd_DeleteCosmosBridgeableTokensProposal_title       protoreflect.FieldDescriptor
+	fd_DeleteCosmosBridgeableTokensProposal_description protoreflect.FieldDescriptor
+	fd_DeleteCosmosBridgeableTokensProposal_metadatas   protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_gravity_v1_types_proto_init()
+	md_DeleteCosmosBridgeableTokensProposal = File_gravity_v1_types_proto.Messages().ByName("DeleteCosmosBridgeableTokensProposal")
+	fd_DeleteCosmosBridgeableTokensProposal_title = md_DeleteCosmosBridgeableTokensProposal.Fields().ByName("title")
+	fd_DeleteCosmosBridgeableTokensProposal_description = md_DeleteCosmosBridgeableTokensProposal.Fields().ByName("description")
+	fd_DeleteCosmosBridgeableTokensProposal_metadatas = md_DeleteCosmosBridgeableTokensProposal.Fields().ByName("metadatas")
+}
+
+var _ protoreflect.Message = (*fastReflection_DeleteCosmosBridgeableTokensProposal)(nil)
+
+type fastReflection_DeleteCosmosBridgeableTokensProposal DeleteCosmosBridgeableTokensProposal
+
+func (x *DeleteCosmosBridgeableTokensProposal) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_DeleteCosmosBridgeableTokensProposal)(x)
+}
+
+func (x *DeleteCosmosBridgeableTokensProposal) slowProtoReflect() protoreflect.Message {
+	mi := &file_gravity_v1_types_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_DeleteCosmosBridgeableTokensProposal_messageType fastReflection_DeleteCosmosBridgeableTokensProposal_messageType
+var _ protoreflect.MessageType = fastReflection_DeleteCosmosBridgeableTokensProposal_messageType{}
+
+type fastReflection_DeleteCosmosBridgeableTokensProposal_messageType struct{}
+
+func (x fastReflection_DeleteCosmosBridgeableTokensProposal_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_DeleteCosmosBridgeableTokensProposal)(nil)
+}
+func (x fastReflection_DeleteCosmosBridgeableTokensProposal_messageType) New() protoreflect.Message {
+	return new(fastReflection_DeleteCosmosBridgeableTokensProposal)
+}
+func (x fastReflection_DeleteCosmosBridgeableTokensProposal_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_DeleteCosmosBridgeableTokensProposal
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Descriptor() protoreflect.MessageDescriptor {
+	return md_DeleteCosmosBridgeableTokensProposal
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Type() protoreflect.MessageType {
+	return _fastReflection_DeleteCosmosBridgeableTokensProposal_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) New() protoreflect.Message {
+	return new(fastReflection_DeleteCosmosBridgeableTokensProposal)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Interface() protoreflect.ProtoMessage {
+	return (*DeleteCosmosBridgeableTokensProposal)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Title != "" {
+		value := protoreflect.ValueOfString(x.Title)
+		if !f(fd_DeleteCosmosBridgeableTokensProposal_title, value) {
+			return
+		}
+	}
+	if x.Description != "" {
+		value := protoreflect.ValueOfString(x.Description)
+		if !f(fd_DeleteCosmosBridgeableTokensProposal_description, value) {
+			return
+		}
+	}
+	if len(x.Metadatas) != 0 {
+		value := protoreflect.ValueOfList(&_DeleteCosmosBridgeableTokensProposal_3_list{list: &x.Metadatas})
+		if !f(fd_DeleteCosmosBridgeableTokensProposal_metadatas, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.title":
+		return x.Title != ""
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.description":
+		return x.Description != ""
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.metadatas":
+		return len(x.Metadatas) != 0
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.DeleteCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v1.DeleteCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.title":
+		x.Title = ""
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.description":
+		x.Description = ""
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.metadatas":
+		x.Metadatas = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.DeleteCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v1.DeleteCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.title":
+		value := x.Title
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.description":
+		value := x.Description
+		return protoreflect.ValueOfString(value)
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.metadatas":
+		if len(x.Metadatas) == 0 {
+			return protoreflect.ValueOfList(&_DeleteCosmosBridgeableTokensProposal_3_list{})
+		}
+		listValue := &_DeleteCosmosBridgeableTokensProposal_3_list{list: &x.Metadatas}
+		return protoreflect.ValueOfList(listValue)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.DeleteCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v1.DeleteCosmosBridgeableTokensProposal does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.title":
+		x.Title = value.Interface().(string)
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.description":
+		x.Description = value.Interface().(string)
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.metadatas":
+		lv := value.List()
+		clv := lv.(*_DeleteCosmosBridgeableTokensProposal_3_list)
+		x.Metadatas = *clv.list
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.DeleteCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v1.DeleteCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.metadatas":
+		if x.Metadatas == nil {
+			x.Metadatas = []*v1beta1.Metadata{}
+		}
+		value := &_DeleteCosmosBridgeableTokensProposal_3_list{list: &x.Metadatas}
+		return protoreflect.ValueOfList(value)
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.title":
+		panic(fmt.Errorf("field title of message gravity.v1.DeleteCosmosBridgeableTokensProposal is not mutable"))
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.description":
+		panic(fmt.Errorf("field description of message gravity.v1.DeleteCosmosBridgeableTokensProposal is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.DeleteCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v1.DeleteCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.title":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.description":
+		return protoreflect.ValueOfString("")
+	case "gravity.v1.DeleteCosmosBridgeableTokensProposal.metadatas":
+		list := []*v1beta1.Metadata{}
+		return protoreflect.ValueOfList(&_DeleteCosmosBridgeableTokensProposal_3_list{list: &list})
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: gravity.v1.DeleteCosmosBridgeableTokensProposal"))
+		}
+		panic(fmt.Errorf("message gravity.v1.DeleteCosmosBridgeableTokensProposal does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in gravity.v1.DeleteCosmosBridgeableTokensProposal", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_DeleteCosmosBridgeableTokensProposal) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*DeleteCosmosBridgeableTokensProposal)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Title)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Description)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if len(x.Metadatas) > 0 {
+			for _, e := range x.Metadatas {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*DeleteCosmosBridgeableTokensProposal)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.Metadatas) > 0 {
+			for iNdEx := len(x.Metadatas) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Metadatas[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x1a
+			}
+		}
+		if len(x.Description) > 0 {
+			i -= len(x.Description)
+			copy(dAtA[i:], x.Description)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Description)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Title) > 0 {
+			i -= len(x.Title)
+			copy(dAtA[i:], x.Title)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Title)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*DeleteCosmosBridgeableTokensProposal)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: DeleteCosmosBridgeableTokensProposal: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: DeleteCosmosBridgeableTokensProposal: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
+				}
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -4093,11 +4588,90 @@ func (x *fastReflection_CosmosBridgeableTokensProposal) ProtoMethods() *protoifa
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Operation |= CosmosBridgeableTokensOperation(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Title = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Description = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Metadatas", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Metadatas = append(x.Metadatas, &v1beta1.Metadata{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Metadatas[len(x.Metadatas)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -4159,7 +4733,7 @@ func (x *PendingIbcAutoForward) ProtoReflect() protoreflect.Message {
 }
 
 func (x *PendingIbcAutoForward) slowProtoReflect() protoreflect.Message {
-	mi := &file_gravity_v1_types_proto_msgTypes[7]
+	mi := &file_gravity_v1_types_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4757,57 +5331,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// CosmosBridgeableTokensOperation indicates how the CosmosBridgeableTokens
-// list should be updated by a CosmosBridgeableTokensProposal.
-type CosmosBridgeableTokensOperation int32
-
-const (
-	CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED CosmosBridgeableTokensOperation = 0
-	CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET         CosmosBridgeableTokensOperation = 1
-	CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE      CosmosBridgeableTokensOperation = 2
-)
-
-// Enum value maps for CosmosBridgeableTokensOperation.
-var (
-	CosmosBridgeableTokensOperation_name = map[int32]string{
-		0: "COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED",
-		1: "COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET",
-		2: "COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE",
-	}
-	CosmosBridgeableTokensOperation_value = map[string]int32{
-		"COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED": 0,
-		"COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET":         1,
-		"COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE":      2,
-	}
-)
-
-func (x CosmosBridgeableTokensOperation) Enum() *CosmosBridgeableTokensOperation {
-	p := new(CosmosBridgeableTokensOperation)
-	*p = x
-	return p
-}
-
-func (x CosmosBridgeableTokensOperation) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (CosmosBridgeableTokensOperation) Descriptor() protoreflect.EnumDescriptor {
-	return file_gravity_v1_types_proto_enumTypes[0].Descriptor()
-}
-
-func (CosmosBridgeableTokensOperation) Type() protoreflect.EnumType {
-	return &file_gravity_v1_types_proto_enumTypes[0]
-}
-
-func (x CosmosBridgeableTokensOperation) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use CosmosBridgeableTokensOperation.Descriptor instead.
-func (CosmosBridgeableTokensOperation) EnumDescriptor() ([]byte, []int) {
-	return file_gravity_v1_types_proto_rawDescGZIP(), []int{0}
-}
-
 // BridgeValidator represents a validator's ETH address and its power
 type BridgeValidator struct {
 	state         protoimpl.MessageState
@@ -5025,6 +5548,10 @@ func (x *ERC20ToDenom) GetDenom() string {
 // set disagrees with the rest. Normally this would require a chain halt, manual
 // genesis editing and restar to resolve with this feature a governance proposal
 // can be used instead
+//
+// Note that this is very different from the BridgeActive flag in the params,
+// which controls whether or not the bridge is currently accepting new events.
+// This proposal is for rolling back state that is blocking the bridge.
 type UnhaltBridgeProposal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5149,32 +5676,27 @@ func (x *AirdropProposal) GetAmounts() []uint64 {
 	return nil
 }
 
-// CosmosBridgeableTokensProposal defines a custom governance proposal type
-// that allows governance to add or remove entries from the
-// CosmosBridgeableTokens allowlist, i.e. Cosmos-originated token denoms that
-// are permitted to be sent from the Gravity Bridge chain to Ethereum.
-// Ethereum-originated assets (with the "gravity" prefix) are permitted
-// regardless of this list. Tokens not on this list will be blocked from
-// SendToEth and acceptance in ERC20 deploy claims.
+// SetCosmosBridgeableTokensProposal defines a custom governance proposal type
+// that allows governance to add or update entries in the
+// CosmosBridgeableTokens allowlist. This allows governance to control which
+// Cosmos tokens are allowed to cross the bridge to Ethereum.
+// Tokens not on the list will be blocked from SendToEth and acceptance in ERC20 deploy claims.
 //
-// When operation is SET, the bank module's denom metadata for each listed
-// denom is unconditionally overwritten with the proposal's metadata, and the
-// same value is mirrored into the CosmosBridgeableTokens store. When
-// operation is REMOVE, matching entries are removed from the
-// CosmosBridgeableTokens store only; bank metadata is left untouched.
-type CosmosBridgeableTokensProposal struct {
+// The bank module's denom metadata for each listed denom is unconditionally
+// overwritten with the proposal's metadata, and the same value is written
+// into the CosmosBridgeableTokens store.
+type SetCosmosBridgeableTokensProposal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Title       string                          `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	Description string                          `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Metadatas   []*v1beta1.Metadata             `protobuf:"bytes,3,rep,name=metadatas,proto3" json:"metadatas,omitempty"`
-	Operation   CosmosBridgeableTokensOperation `protobuf:"varint,4,opt,name=operation,proto3,enum=gravity.v1.CosmosBridgeableTokensOperation" json:"operation,omitempty"`
+	Title       string              `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Description string              `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Metadatas   []*v1beta1.Metadata `protobuf:"bytes,3,rep,name=metadatas,proto3" json:"metadatas,omitempty"`
 }
 
-func (x *CosmosBridgeableTokensProposal) Reset() {
-	*x = CosmosBridgeableTokensProposal{}
+func (x *SetCosmosBridgeableTokensProposal) Reset() {
+	*x = SetCosmosBridgeableTokensProposal{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_gravity_v1_types_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -5182,43 +5704,95 @@ func (x *CosmosBridgeableTokensProposal) Reset() {
 	}
 }
 
-func (x *CosmosBridgeableTokensProposal) String() string {
+func (x *SetCosmosBridgeableTokensProposal) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CosmosBridgeableTokensProposal) ProtoMessage() {}
+func (*SetCosmosBridgeableTokensProposal) ProtoMessage() {}
 
-// Deprecated: Use CosmosBridgeableTokensProposal.ProtoReflect.Descriptor instead.
-func (*CosmosBridgeableTokensProposal) Descriptor() ([]byte, []int) {
+// Deprecated: Use SetCosmosBridgeableTokensProposal.ProtoReflect.Descriptor instead.
+func (*SetCosmosBridgeableTokensProposal) Descriptor() ([]byte, []int) {
 	return file_gravity_v1_types_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *CosmosBridgeableTokensProposal) GetTitle() string {
+func (x *SetCosmosBridgeableTokensProposal) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *CosmosBridgeableTokensProposal) GetDescription() string {
+func (x *SetCosmosBridgeableTokensProposal) GetDescription() string {
 	if x != nil {
 		return x.Description
 	}
 	return ""
 }
 
-func (x *CosmosBridgeableTokensProposal) GetMetadatas() []*v1beta1.Metadata {
+func (x *SetCosmosBridgeableTokensProposal) GetMetadatas() []*v1beta1.Metadata {
 	if x != nil {
 		return x.Metadatas
 	}
 	return nil
 }
 
-func (x *CosmosBridgeableTokensProposal) GetOperation() CosmosBridgeableTokensOperation {
-	if x != nil {
-		return x.Operation
+// DeleteCosmosBridgeableTokensProposal defines a custom governance proposal
+// type that allows governance to remove entries from the
+// CosmosBridgeableTokens allowlist. This allows governance to control which
+// Cosmos tokens are allowed to cross the bridge to Ethereum.
+// Tokens not on the list will be blocked from SendToEth and acceptance in ERC20 deploy claims.
+//
+// Matching entries are removed from the CosmosBridgeableTokens store only
+// (bank metadata is left untouched).
+type DeleteCosmosBridgeableTokensProposal struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Title       string              `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Description string              `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Metadatas   []*v1beta1.Metadata `protobuf:"bytes,3,rep,name=metadatas,proto3" json:"metadatas,omitempty"`
+}
+
+func (x *DeleteCosmosBridgeableTokensProposal) Reset() {
+	*x = DeleteCosmosBridgeableTokensProposal{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gravity_v1_types_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
 	}
-	return CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED
+}
+
+func (x *DeleteCosmosBridgeableTokensProposal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteCosmosBridgeableTokensProposal) ProtoMessage() {}
+
+// Deprecated: Use DeleteCosmosBridgeableTokensProposal.ProtoReflect.Descriptor instead.
+func (*DeleteCosmosBridgeableTokensProposal) Descriptor() ([]byte, []int) {
+	return file_gravity_v1_types_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DeleteCosmosBridgeableTokensProposal) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *DeleteCosmosBridgeableTokensProposal) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *DeleteCosmosBridgeableTokensProposal) GetMetadatas() []*v1beta1.Metadata {
+	if x != nil {
+		return x.Metadatas
+	}
+	return nil
 }
 
 // PendingIbcAutoForward represents a SendToCosmos transaction with a foreign
@@ -5241,7 +5815,7 @@ type PendingIbcAutoForward struct {
 func (x *PendingIbcAutoForward) Reset() {
 	*x = PendingIbcAutoForward{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gravity_v1_types_proto_msgTypes[7]
+		mi := &file_gravity_v1_types_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5255,7 +5829,7 @@ func (*PendingIbcAutoForward) ProtoMessage() {}
 
 // Deprecated: Use PendingIbcAutoForward.ProtoReflect.Descriptor instead.
 func (*PendingIbcAutoForward) Descriptor() ([]byte, []int) {
-	return file_gravity_v1_types_proto_rawDescGZIP(), []int{7}
+	return file_gravity_v1_types_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PendingIbcAutoForward) GetForeignReceiver() string {
@@ -5346,55 +5920,50 @@ var file_gravity_v1_types_proto_rawDesc = []byte{
 	0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x72, 0x65, 0x63, 0x69, 0x70, 0x69, 0x65, 0x6e,
 	0x74, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x05, 0x20,
 	0x03, 0x28, 0x04, 0x52, 0x07, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x3a, 0x0c, 0x88, 0xa0,
-	0x1f, 0x00, 0x98, 0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f, 0x01, 0x22, 0xf4, 0x01, 0x0a, 0x1e, 0x43,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x61, 0x62, 0x6c, 0x65, 0x54,
-	0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x12, 0x14, 0x0a,
-	0x05, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x69,
-	0x74, 0x6c, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69,
-	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x41, 0x0a, 0x09, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x62, 0x61, 0x6e, 0x6b, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x4d,
-	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x09, 0x6d,
-	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x73, 0x12, 0x49, 0x0a, 0x09, 0x6f, 0x70, 0x65, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2b, 0x2e, 0x67, 0x72,
-	0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x42,
-	0x72, 0x69, 0x64, 0x67, 0x65, 0x61, 0x62, 0x6c, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x4f,
-	0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x09, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x3a, 0x0c, 0x88, 0xa0, 0x1f, 0x00, 0x98, 0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f,
-	0x00, 0x22, 0xb5, 0x01, 0x0a, 0x15, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x49, 0x62, 0x63,
-	0x41, 0x75, 0x74, 0x6f, 0x46, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x12, 0x29, 0x0a, 0x10, 0x66,
-	0x6f, 0x72, 0x65, 0x69, 0x67, 0x6e, 0x5f, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x66, 0x6f, 0x72, 0x65, 0x69, 0x67, 0x6e, 0x52, 0x65,
-	0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x12, 0x2f, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62,
-	0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e,
-	0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x62, 0x63, 0x5f, 0x63,
-	0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x62,
-	0x63, 0x43, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x12, 0x1f, 0x0a, 0x0b, 0x65, 0x76, 0x65, 0x6e,
-	0x74, 0x5f, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x65,
-	0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x6e, 0x63, 0x65, 0x2a, 0xb0, 0x01, 0x0a, 0x1f, 0x43, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x61, 0x62, 0x6c, 0x65, 0x54, 0x6f,
-	0x6b, 0x65, 0x6e, 0x73, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x32, 0x0a,
-	0x2e, 0x43, 0x4f, 0x53, 0x4d, 0x4f, 0x53, 0x5f, 0x42, 0x52, 0x49, 0x44, 0x47, 0x45, 0x41, 0x42,
-	0x4c, 0x45, 0x5f, 0x54, 0x4f, 0x4b, 0x45, 0x4e, 0x53, 0x5f, 0x4f, 0x50, 0x45, 0x52, 0x41, 0x54,
-	0x49, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10,
-	0x00, 0x12, 0x2a, 0x0a, 0x26, 0x43, 0x4f, 0x53, 0x4d, 0x4f, 0x53, 0x5f, 0x42, 0x52, 0x49, 0x44,
-	0x47, 0x45, 0x41, 0x42, 0x4c, 0x45, 0x5f, 0x54, 0x4f, 0x4b, 0x45, 0x4e, 0x53, 0x5f, 0x4f, 0x50,
-	0x45, 0x52, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x53, 0x45, 0x54, 0x10, 0x01, 0x12, 0x2d, 0x0a,
-	0x29, 0x43, 0x4f, 0x53, 0x4d, 0x4f, 0x53, 0x5f, 0x42, 0x52, 0x49, 0x44, 0x47, 0x45, 0x41, 0x42,
-	0x4c, 0x45, 0x5f, 0x54, 0x4f, 0x4b, 0x45, 0x4e, 0x53, 0x5f, 0x4f, 0x50, 0x45, 0x52, 0x41, 0x54,
-	0x49, 0x4f, 0x4e, 0x5f, 0x52, 0x45, 0x4d, 0x4f, 0x56, 0x45, 0x10, 0x02, 0x42, 0x8c, 0x01, 0x0a,
-	0x0e, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x42,
-	0x0a, 0x54, 0x79, 0x70, 0x65, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f,
-	0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x67, 0x72, 0x61, 0x76, 0x69,
-	0x74, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x47, 0x58, 0x58, 0xaa, 0x02, 0x0a, 0x47, 0x72, 0x61,
-	0x76, 0x69, 0x74, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0a, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74,
-	0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x16, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x5c, 0x56,
-	0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0b,
-	0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x1f, 0x00, 0x98, 0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f, 0x01, 0x22, 0xac, 0x01, 0x0a, 0x21, 0x53,
+	0x65, 0x74, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65, 0x61, 0x62,
+	0x6c, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c,
+	0x12, 0x14, 0x0a, 0x05, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69,
+	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73,
+	0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x41, 0x0a, 0x09, 0x6d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x6e, 0x6b, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
+	0x31, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00,
+	0x52, 0x09, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x73, 0x3a, 0x0c, 0x88, 0xa0, 0x1f,
+	0x00, 0x98, 0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f, 0x00, 0x22, 0xaf, 0x01, 0x0a, 0x24, 0x44, 0x65,
+	0x6c, 0x65, 0x74, 0x65, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x42, 0x72, 0x69, 0x64, 0x67, 0x65,
+	0x61, 0x62, 0x6c, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73,
+	0x61, 0x6c, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63,
+	0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64,
+	0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x41, 0x0a, 0x09, 0x6d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x6e, 0x6b, 0x2e, 0x76, 0x31, 0x62, 0x65,
+	0x74, 0x61, 0x31, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x04, 0xc8, 0xde,
+	0x1f, 0x00, 0x52, 0x09, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x73, 0x3a, 0x0c, 0x88,
+	0xa0, 0x1f, 0x00, 0x98, 0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f, 0x00, 0x22, 0xb5, 0x01, 0x0a, 0x15,
+	0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x49, 0x62, 0x63, 0x41, 0x75, 0x74, 0x6f, 0x46, 0x6f,
+	0x72, 0x77, 0x61, 0x72, 0x64, 0x12, 0x29, 0x0a, 0x10, 0x66, 0x6f, 0x72, 0x65, 0x69, 0x67, 0x6e,
+	0x5f, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0f, 0x66, 0x6f, 0x72, 0x65, 0x69, 0x67, 0x6e, 0x52, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72,
+	0x12, 0x2f, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65,
+	0x6e, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x62, 0x63, 0x5f, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x62, 0x63, 0x43, 0x68, 0x61, 0x6e, 0x6e,
+	0x65, 0x6c, 0x12, 0x1f, 0x0a, 0x0b, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x6e, 0x6f, 0x6e, 0x63,
+	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f,
+	0x6e, 0x63, 0x65, 0x42, 0x8c, 0x01, 0x0a, 0x0e, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x72, 0x61, 0x76,
+	0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x54, 0x79, 0x70, 0x65, 0x73, 0x50, 0x72, 0x6f,
+	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2f, 0x76,
+	0x31, 0x3b, 0x67, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x47, 0x58,
+	0x58, 0xaa, 0x02, 0x0a, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02,
+	0x0a, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x16, 0x47, 0x72,
+	0x61, 0x76, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0b, 0x47, 0x72, 0x61, 0x76, 0x69, 0x74, 0x79, 0x3a, 0x3a,
+	0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -5409,25 +5978,24 @@ func file_gravity_v1_types_proto_rawDescGZIP() []byte {
 	return file_gravity_v1_types_proto_rawDescData
 }
 
-var file_gravity_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_gravity_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_gravity_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_gravity_v1_types_proto_goTypes = []interface{}{
-	(CosmosBridgeableTokensOperation)(0),    // 0: gravity.v1.CosmosBridgeableTokensOperation
-	(*BridgeValidator)(nil),                 // 1: gravity.v1.BridgeValidator
-	(*Valset)(nil),                          // 2: gravity.v1.Valset
-	(*LastObservedEthereumBlockHeight)(nil), // 3: gravity.v1.LastObservedEthereumBlockHeight
-	(*ERC20ToDenom)(nil),                    // 4: gravity.v1.ERC20ToDenom
-	(*UnhaltBridgeProposal)(nil),            // 5: gravity.v1.UnhaltBridgeProposal
-	(*AirdropProposal)(nil),                 // 6: gravity.v1.AirdropProposal
-	(*CosmosBridgeableTokensProposal)(nil),  // 7: gravity.v1.CosmosBridgeableTokensProposal
-	(*PendingIbcAutoForward)(nil),           // 8: gravity.v1.PendingIbcAutoForward
-	(*v1beta1.Metadata)(nil),                // 9: cosmos.bank.v1beta1.Metadata
-	(*v1beta11.Coin)(nil),                   // 10: cosmos.base.v1beta1.Coin
+	(*BridgeValidator)(nil),                      // 0: gravity.v1.BridgeValidator
+	(*Valset)(nil),                               // 1: gravity.v1.Valset
+	(*LastObservedEthereumBlockHeight)(nil),      // 2: gravity.v1.LastObservedEthereumBlockHeight
+	(*ERC20ToDenom)(nil),                         // 3: gravity.v1.ERC20ToDenom
+	(*UnhaltBridgeProposal)(nil),                 // 4: gravity.v1.UnhaltBridgeProposal
+	(*AirdropProposal)(nil),                      // 5: gravity.v1.AirdropProposal
+	(*SetCosmosBridgeableTokensProposal)(nil),    // 6: gravity.v1.SetCosmosBridgeableTokensProposal
+	(*DeleteCosmosBridgeableTokensProposal)(nil), // 7: gravity.v1.DeleteCosmosBridgeableTokensProposal
+	(*PendingIbcAutoForward)(nil),                // 8: gravity.v1.PendingIbcAutoForward
+	(*v1beta1.Metadata)(nil),                     // 9: cosmos.bank.v1beta1.Metadata
+	(*v1beta11.Coin)(nil),                        // 10: cosmos.base.v1beta1.Coin
 }
 var file_gravity_v1_types_proto_depIdxs = []int32{
-	1,  // 0: gravity.v1.Valset.members:type_name -> gravity.v1.BridgeValidator
-	9,  // 1: gravity.v1.CosmosBridgeableTokensProposal.metadatas:type_name -> cosmos.bank.v1beta1.Metadata
-	0,  // 2: gravity.v1.CosmosBridgeableTokensProposal.operation:type_name -> gravity.v1.CosmosBridgeableTokensOperation
+	0,  // 0: gravity.v1.Valset.members:type_name -> gravity.v1.BridgeValidator
+	9,  // 1: gravity.v1.SetCosmosBridgeableTokensProposal.metadatas:type_name -> cosmos.bank.v1beta1.Metadata
+	9,  // 2: gravity.v1.DeleteCosmosBridgeableTokensProposal.metadatas:type_name -> cosmos.bank.v1beta1.Metadata
 	10, // 3: gravity.v1.PendingIbcAutoForward.token:type_name -> cosmos.base.v1beta1.Coin
 	4,  // [4:4] is the sub-list for method output_type
 	4,  // [4:4] is the sub-list for method input_type
@@ -5515,7 +6083,7 @@ func file_gravity_v1_types_proto_init() {
 			}
 		}
 		file_gravity_v1_types_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CosmosBridgeableTokensProposal); i {
+			switch v := v.(*SetCosmosBridgeableTokensProposal); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5527,6 +6095,18 @@ func file_gravity_v1_types_proto_init() {
 			}
 		}
 		file_gravity_v1_types_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteCosmosBridgeableTokensProposal); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gravity_v1_types_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PendingIbcAutoForward); i {
 			case 0:
 				return &v.state
@@ -5544,14 +6124,13 @@ func file_gravity_v1_types_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_gravity_v1_types_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   8,
+			NumEnums:      0,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_gravity_v1_types_proto_goTypes,
 		DependencyIndexes: file_gravity_v1_types_proto_depIdxs,
-		EnumInfos:         file_gravity_v1_types_proto_enumTypes,
 		MessageInfos:      file_gravity_v1_types_proto_msgTypes,
 	}.Build()
 	File_gravity_v1_types_proto = out.File

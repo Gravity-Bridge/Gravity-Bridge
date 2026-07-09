@@ -15,7 +15,9 @@ var (
 	// nolint: exhaustruct
 	_ sdk.Msg = &MsgUpdateParamsProposal{}
 	// nolint: exhaustruct
-	_ sdk.Msg = &MsgCosmosBridgeableTokensProposal{}
+	_ sdk.Msg = &MsgSetCosmosBridgeableTokensProposal{}
+	// nolint: exhaustruct
+	_ sdk.Msg = &MsgDeleteCosmosBridgeableTokensProposal{}
 )
 
 // MsgUpdateParamsProposal defines a message for updating gravity params via x/gov v1
@@ -85,16 +87,16 @@ func (msg *MsgUnhaltBridgeProposal) ValidateBasic() (err error) {
 func (msg MsgUnhaltBridgeProposal) GetSigners() []sdk.AccAddress {
 	acc, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
-		panic("Invalid authority for MsgAirdropProposal: " + err.Error())
+		panic("Invalid authority for MsgUnhaltBridgeProposal: " + err.Error())
 	}
 	return []sdk.AccAddress{acc}
 }
 
-// MsgCosmosBridgeableTokensProposal defines a message for submitting a cosmos bridgeable tokens proposal
+// MsgSetCosmosBridgeableTokensProposal defines a message for submitting a set cosmos bridgeable tokens proposal
 // ======================================================
 
 // ValidateBasic performs stateless checks
-func (msg *MsgCosmosBridgeableTokensProposal) ValidateBasic() (err error) {
+func (msg *MsgSetCosmosBridgeableTokensProposal) ValidateBasic() (err error) {
 	_, err = sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
 		return err
@@ -103,10 +105,31 @@ func (msg *MsgCosmosBridgeableTokensProposal) ValidateBasic() (err error) {
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgCosmosBridgeableTokensProposal) GetSigners() []sdk.AccAddress {
+func (msg MsgSetCosmosBridgeableTokensProposal) GetSigners() []sdk.AccAddress {
 	acc, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
-		panic("Invalid authority for MsgCosmosBridgeableTokensProposal: " + err.Error())
+		panic("Invalid authority for MsgSetCosmosBridgeableTokensProposal: " + err.Error())
+	}
+	return []sdk.AccAddress{acc}
+}
+
+// MsgDeleteCosmosBridgeableTokensProposal defines a message for submitting a delete cosmos bridgeable tokens proposal
+// ======================================================
+
+// ValidateBasic performs stateless checks
+func (msg *MsgDeleteCosmosBridgeableTokensProposal) ValidateBasic() (err error) {
+	_, err = sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		return err
+	}
+	return msg.Proposal.ValidateBasic()
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgDeleteCosmosBridgeableTokensProposal) GetSigners() []sdk.AccAddress {
+	acc, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		panic("Invalid authority for MsgDeleteCosmosBridgeableTokensProposal: " + err.Error())
 	}
 	return []sdk.AccAddress{acc}
 }

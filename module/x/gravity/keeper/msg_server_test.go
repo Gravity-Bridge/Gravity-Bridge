@@ -922,10 +922,10 @@ func TestRequestBatchCosmosBridgeableTokensAllowlist(t *testing.T) {
 	}
 }
 
-// TestCosmosBridgeableTokensProposal verifies that MsgCosmosBridgeableTokensProposal
-// correctly sets, removes, validates, and rejects invalid CosmosBridgeableTokens entries.
+// TestSetCosmosBridgeableTokensProposal verifies that MsgSetCosmosBridgeableTokensProposal
+// correctly sets, validates, and rejects invalid CosmosBridgeableTokens entries.
 // nolint: exhaustruct
-func TestCosmosBridgeableTokensProposal(t *testing.T) {
+func TestSetCosmosBridgeableTokensProposal(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -935,18 +935,17 @@ func TestCosmosBridgeableTokensProposal(t *testing.T) {
 	// ── Valid SET: add two new entries ─────────────────────────────────────────────
 	setEntries := []banktypes.Metadata{minMeta("uatom"), minMeta("uosmo")}
 
-	// mint supply for CosmosBridgeableTokensProposal
+	// mint supply for SetCosmosBridgeableTokensProposal
 	supplyCoins := sdk.NewCoins(sdk.NewInt64Coin("uatom", 1000), sdk.NewInt64Coin("uosmo", 1000))
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, supplyCoins))
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, AccAddrs[0], supplyCoins))
 
-	_, err := sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err := sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "Add uatom and uosmo",
 			Description: "test",
 			Metadatas:   setEntries,
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.NoError(t, err)
@@ -960,87 +959,110 @@ func TestCosmosBridgeableTokensProposal(t *testing.T) {
 		require.True(t, metadataEqual(m, bankMeta))
 	}
 
-	// ── Valid REMOVE: remove one entry ────────────────────────────────────────────
-	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
-		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
-			Title:       "Remove uatom",
-			Description: "test",
-			Metadatas:   []banktypes.Metadata{minMeta("uatom")},
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE,
-		},
-	})
-	require.NoError(t, err)
-
-	require.Equal(t, []banktypes.Metadata{minMeta("uosmo")}, input.GravityKeeper.GetAllCosmosBridgeableTokens(ctx))
-
-	// ── Invalid REMOVE: denom not present ─────────────────────────────────────────
-	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
-		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
-			Title:       "Remove uatom again",
-			Description: "test",
-			Metadatas:   []banktypes.Metadata{minMeta("uatom")},
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE,
-		},
-	})
-	require.Error(t, err, "removing a denom not on the allowlist must be rejected")
-
-	// ── Invalid: UNSPECIFIED operation ────────────────────────────────────────────
-	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
-		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
-			Title:       "Invalid",
-			Description: "test",
-			Metadatas:   setEntries,
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_UNSPECIFIED,
-		},
-	})
-	require.Error(t, err, "UNSPECIFIED operation must be rejected")
-
 	// ── Invalid SET: gravity-prefixed denom ───────────────────────────────────────
 	badEntries := []banktypes.Metadata{minMeta("gravity0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")}
-	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err = sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "Invalid",
 			Description: "test",
 			Metadatas:   badEntries,
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.Error(t, err, "gravity-prefixed denom must be rejected")
 
 	// ── Invalid SET: duplicate base denoms ────────────────────────────────────────
 	dupEntries := []banktypes.Metadata{minMeta("uperson"), minMeta("uperson")}
-	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err = sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "Invalid",
 			Description: "test",
 			Metadatas:   dupEntries,
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.Error(t, err, "duplicate base denoms must be rejected")
 
 	// ── Invalid: wrong authority ───────────────────────────────────────────────────
-	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err = sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 		Authority: AccAddrs[0].String(),
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "Invalid authority",
 			Description: "test",
 			Metadatas:   setEntries,
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.Error(t, err, "non-gov authority must be rejected")
 }
 
-// TestCosmosBridgeableTokensProposal_BadDenom verifies that ValidateStrictDenom is enforced for
-// SET operations, but is intentionally NOT enforced for REMOVE
+// TestDeleteCosmosBridgeableTokensProposal verifies that
+// MsgDeleteCosmosBridgeableTokensProposal correctly removes, validates, and rejects invalid
+// CosmosBridgeableTokens entries.
 // nolint: exhaustruct
-func TestCosmosBridgeableTokensProposal_BadDenom(t *testing.T) {
+func TestDeleteCosmosBridgeableTokensProposal(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	govAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	// ── Setup: add two entries so we have something to remove ────────────────────
+	setEntries := []banktypes.Metadata{minMeta("uatom"), minMeta("uosmo")}
+
+	supplyCoins := sdk.NewCoins(sdk.NewInt64Coin("uatom", 1000), sdk.NewInt64Coin("uosmo", 1000))
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, supplyCoins))
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, AccAddrs[0], supplyCoins))
+
+	_, err := sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
+		Authority: govAddr,
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
+			Title:       "Add uatom and uosmo",
+			Description: "test",
+			Metadatas:   setEntries,
+		},
+	})
+	require.NoError(t, err)
+
+	// ── Valid DELETE: remove one entry ────────────────────────────────────────────
+	_, err = sv.DeleteCosmosBridgeableTokensProposal(ctx, &typesv2.MsgDeleteCosmosBridgeableTokensProposal{
+		Authority: govAddr,
+		Proposal: &types.DeleteCosmosBridgeableTokensProposal{
+			Title:       "Remove uatom",
+			Description: "test",
+			Metadatas:   []banktypes.Metadata{minMeta("uatom")},
+		},
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, []banktypes.Metadata{minMeta("uosmo")}, input.GravityKeeper.GetAllCosmosBridgeableTokens(ctx))
+
+	// ── Invalid DELETE: denom not present ─────────────────────────────────────────
+	_, err = sv.DeleteCosmosBridgeableTokensProposal(ctx, &typesv2.MsgDeleteCosmosBridgeableTokensProposal{
+		Authority: govAddr,
+		Proposal: &types.DeleteCosmosBridgeableTokensProposal{
+			Title:       "Remove uatom again",
+			Description: "test",
+			Metadatas:   []banktypes.Metadata{minMeta("uatom")},
+		},
+	})
+	require.Error(t, err, "removing a denom not on the allowlist must be rejected")
+
+	// ── Invalid: wrong authority ───────────────────────────────────────────────────
+	_, err = sv.DeleteCosmosBridgeableTokensProposal(ctx, &typesv2.MsgDeleteCosmosBridgeableTokensProposal{
+		Authority: AccAddrs[0].String(),
+		Proposal: &types.DeleteCosmosBridgeableTokensProposal{
+			Title:       "Invalid authority",
+			Description: "test",
+			Metadatas:   []banktypes.Metadata{minMeta("uosmo")},
+		},
+	})
+	require.Error(t, err, "non-gov authority must be rejected")
+}
+
+// TestSetCosmosBridgeableTokensProposal_BadDenom verifies that ValidateStrictDenom is enforced
+// for SetCosmosBridgeableTokensProposal.
+// nolint: exhaustruct
+func TestSetCosmosBridgeableTokensProposal_BadDenom(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -1057,40 +1079,49 @@ func TestCosmosBridgeableTokensProposal_BadDenom(t *testing.T) {
 
 	for _, denom := range badDenoms {
 		meta := minMeta(denom)
-		_, err := sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+		_, err := sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 			Authority: govAddr,
-			Proposal: &types.CosmosBridgeableTokensProposal{
+			Proposal: &types.SetCosmosBridgeableTokensProposal{
 				Title:       "Invalid",
 				Description: "test",
 				Metadatas:   []banktypes.Metadata{meta},
-				Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 			},
 		})
 		require.Errorf(t, err, "SET of malformed denom %q must be rejected", denom)
 	}
+}
 
-	// ── REMOVE of an entry with a malformed-looking denom must still succeed ─────────
+// TestDeleteCosmosBridgeableTokensProposal_MalformedDenom verifies that
+// DeleteCosmosBridgeableTokensProposal does NOT enforce ValidateStrictDenom, so a
+// malformed-looking entry that is somehow already on the allowlist can still be removed.
+// nolint: exhaustruct
+func TestDeleteCosmosBridgeableTokensProposal_MalformedDenom(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	govAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
 	malformedButListed := minMeta("bad" + types.AttestationSeparator + "denom")
 	input.GravityKeeper.SetCosmosBridgeableToken(ctx, malformedButListed)
 
-	_, err := sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err := sv.DeleteCosmosBridgeableTokensProposal(ctx, &typesv2.MsgDeleteCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.DeleteCosmosBridgeableTokensProposal{
 			Title:       "Remove malformed entry",
 			Description: "test",
 			Metadatas:   []banktypes.Metadata{malformedButListed},
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_REMOVE,
 		},
 	})
-	require.NoError(t, err, "REMOVE of a malformed-denom entry must succeed regardless of ValidateStrictDenom")
+	require.NoError(t, err, "DELETE of a malformed-denom entry must succeed regardless of ValidateStrictDenom")
 }
 
-// TestCosmosBridgeableTokensProposal_Immutability verifies that once a Cosmos-originated ERC20
-// mapping exists for a denom, SET is rejected outright for that denom, even if the proposed
-// metadata is byte-for-byte identical to what is already stored, mirroring the old
+// TestSetCosmosBridgeableTokensProposal_Immutability verifies that once a Cosmos-originated
+// ERC20 mapping exists for a denom, SET is rejected outright for that denom, even if the
+// proposed metadata is byte-for-byte identical to what is already stored, mirroring the old
 // IBCMetadataProposal's immutability rule.
 // nolint: exhaustruct
-func TestCosmosBridgeableTokensProposal_Immutability(t *testing.T) {
+func TestSetCosmosBridgeableTokensProposal_Immutability(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	// Invariant assertion is skipped: this test deliberately fakes a cosmos-originated ERC20
 	// mapping via setCosmosOriginatedMappingUnchecked, which is not a fully consistent bridge
@@ -1109,13 +1140,12 @@ func TestCosmosBridgeableTokensProposal_Immutability(t *testing.T) {
 	meta := minMeta(denom)
 
 	// ── First-time SET of a brand-new denom succeeds ──────────────────────────────
-	_, err := sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err := sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "Add denom",
 			Description: "test",
 			Metadatas:   []banktypes.Metadata{meta},
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.NoError(t, err)
@@ -1125,13 +1155,12 @@ func TestCosmosBridgeableTokensProposal_Immutability(t *testing.T) {
 
 	// ── SET with identical metadata must now be rejected: once an ERC20 mapping
 	// ── exists, the denom is immutable, even for a no-op resubmission ────────────
-	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err = sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "Re-set identical",
 			Description: "test",
 			Metadatas:   []banktypes.Metadata{meta},
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.Error(t, err, "SET must be rejected for an already-bridged denom, even with identical metadata")
@@ -1140,22 +1169,21 @@ func TestCosmosBridgeableTokensProposal_Immutability(t *testing.T) {
 	changedMeta := meta
 	changedMeta.Name = "Changed Name"
 	changedMeta.Symbol = "CHANGED"
-	_, err = sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err = sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "Change metadata",
 			Description: "test",
 			Metadatas:   []banktypes.Metadata{changedMeta},
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.Error(t, err, "changing metadata for a denom with an existing ERC20 mapping must be rejected")
 }
 
-// TestCosmosBridgeableTokensProposal_ZeroSupply verifies that SET requires non-zero on-chain
+// TestSetCosmosBridgeableTokensProposal_ZeroSupply verifies that SET requires non-zero on-chain
 // supply for the denom (the handler's authoritative, non-bypassable check)
 // nolint: exhaustruct
-func TestCosmosBridgeableTokensProposal_ZeroSupply(t *testing.T) {
+func TestSetCosmosBridgeableTokensProposal_ZeroSupply(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
 
@@ -1166,23 +1194,22 @@ func TestCosmosBridgeableTokensProposal_ZeroSupply(t *testing.T) {
 	meta := minMeta(denom)
 
 	// ── SET of a denom with zero on-chain supply must fail ────────────────────────
-	_, err := sv.CosmosBridgeableTokensProposal(ctx, &typesv2.MsgCosmosBridgeableTokensProposal{
+	_, err := sv.SetCosmosBridgeableTokensProposal(ctx, &typesv2.MsgSetCosmosBridgeableTokensProposal{
 		Authority: govAddr,
-		Proposal: &types.CosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "Add zero-supply denom",
 			Description: "test",
 			Metadatas:   []banktypes.Metadata{meta},
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	})
 	require.Error(t, err, "SET of a denom with zero on-chain supply must be rejected")
 }
 
-// TestMsgCosmosBridgeableTokensProposal_BadAuthority fuzzes the authority check for
-// MsgCosmosBridgeableTokensProposal with a large number of random non-gov addresses, mirroring
-// the historical TestMsgIBCMetadataProposal fuzz coverage (10,000 iterations).
+// TestMsgSetCosmosBridgeableTokensProposal_BadAuthority fuzzes the authority check for
+// MsgSetCosmosBridgeableTokensProposal with a large number of random non-gov addresses,
+// mirroring the historical TestMsgIBCMetadataProposal fuzz coverage (10,000 iterations).
 // nolint: exhaustruct
-func TestMsgCosmosBridgeableTokensProposal_BadAuthority(t *testing.T) {
+func TestMsgSetCosmosBridgeableTokensProposal_BadAuthority(t *testing.T) {
 	numFalseAuthorities := 10000
 
 	input, ctx := SetupFiveValChain(t)
@@ -1197,12 +1224,11 @@ func TestMsgCosmosBridgeableTokensProposal_BadAuthority(t *testing.T) {
 	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, supplyCoins))
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, AccAddrs[0], supplyCoins))
 
-	msgProposal := typesv2.MsgCosmosBridgeableTokensProposal{
-		Proposal: &types.CosmosBridgeableTokensProposal{
+	msgProposal := typesv2.MsgSetCosmosBridgeableTokensProposal{
+		Proposal: &types.SetCosmosBridgeableTokensProposal{
 			Title:       "test",
 			Description: "test",
 			Metadatas:   []banktypes.Metadata{minMeta("ufuzz")},
-			Operation:   types.CosmosBridgeableTokensOperation_COSMOS_BRIDGEABLE_TOKENS_OPERATION_SET,
 		},
 	}
 
@@ -1215,15 +1241,59 @@ func TestMsgCosmosBridgeableTokensProposal_BadAuthority(t *testing.T) {
 		}
 
 		msgProposal.Authority = authority
-		_, err := sv.CosmosBridgeableTokensProposal(ctx, &msgProposal)
+		_, err := sv.SetCosmosBridgeableTokensProposal(ctx, &msgProposal)
 		require.Contains(t, err.Error(), "invalid authority")
 	}
 
 	// Finally, perform a good test with the proper authority
 	msgProposal.Authority = govAddr
-	_, err := sv.CosmosBridgeableTokensProposal(ctx, &msgProposal)
+	_, err := sv.SetCosmosBridgeableTokensProposal(ctx, &msgProposal)
 	require.NoError(t, err)
 }
+
+// TestMsgDeleteCosmosBridgeableTokensProposal_BadAuthority fuzzes the authority check for
+// MsgDeleteCosmosBridgeableTokensProposal with a large number of random non-gov addresses,
+// mirroring the historical TestMsgIBCMetadataProposal fuzz coverage (10,000 iterations).
+// nolint: exhaustruct
+func TestMsgDeleteCosmosBridgeableTokensProposal_BadAuthority(t *testing.T) {
+	numFalseAuthorities := 10000
+
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	sv := msgServer{input.GravityKeeper}
+	govAddr := input.GravityKeeper.GetAuthority()
+
+	// Seed an entry so the eventual valid-authority DELETE at the end of this test succeeds.
+	input.GravityKeeper.SetCosmosBridgeableToken(ctx, minMeta("ufuzz"))
+
+	msgProposal := typesv2.MsgDeleteCosmosBridgeableTokensProposal{
+		Proposal: &types.DeleteCosmosBridgeableTokensProposal{
+			Title:       "test",
+			Description: "test",
+			Metadatas:   []banktypes.Metadata{minMeta("ufuzz")},
+		},
+	}
+
+	for range numFalseAuthorities {
+		privKey := secp256k1.GenPrivKey()
+		address := sdk.AccAddress(privKey.PubKey().Address())
+		authority := address.String()
+		if authority == govAddr {
+			continue
+		}
+
+		msgProposal.Authority = authority
+		_, err := sv.DeleteCosmosBridgeableTokensProposal(ctx, &msgProposal)
+		require.Contains(t, err.Error(), "invalid authority")
+	}
+
+	// Finally, perform a good test with the proper authority
+	msgProposal.Authority = govAddr
+	_, err := sv.DeleteCosmosBridgeableTokensProposal(ctx, &msgProposal)
+	require.NoError(t, err)
+}
+
 
 // TestCosmosBridgeableTokensConsistencyCheck directly unit-tests the internal
 // assertCosmosBridgeableTokensConsistent helper used by HandleCosmosBridgeableTokensProposal's
