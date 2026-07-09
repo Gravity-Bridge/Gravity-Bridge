@@ -16,11 +16,12 @@ use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParamChange;
 use gravity_proto::cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
 use gravity_proto::cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
 use gravity_proto::gravity::v1::AirdropProposal;
-use gravity_proto::gravity::v1::CosmosBridgeableTokensOperation;
-use gravity_proto::gravity::v1::CosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v1::SetCosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v1::DeleteCosmosBridgeableTokensProposal;
 use gravity_proto::gravity::v1::UnhaltBridgeProposal;
 use gravity_proto::gravity::v2::MsgAirdropProposal;
-use gravity_proto::gravity::v2::MsgCosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v2::MsgSetCosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v2::MsgDeleteCosmosBridgeableTokensProposal;
 use gravity_proto::gravity::v2::MsgUnhaltBridgeProposal;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
@@ -30,8 +31,10 @@ use std::time::Duration;
 // gravity proposals
 pub const MSG_AIRDROP_PROPOSAL_TYPE_URL: &str = "/gravity.v2.MsgAirdropProposal";
 pub const MSG_UNHALT_BRIDGE_PROPOSAL_TYPE_URL: &str = "/gravity.v2.MsgUnhaltBridgeProposal";
-pub const MSG_COSMOS_BRIDGEABLE_TOKENS_PROPOSAL_TYPE_URL: &str =
-    "/gravity.v2.MsgCosmosBridgeableTokensProposal";
+pub const MSG_SET_COSMOS_BRIDGEABLE_TOKENS_PROPOSAL_TYPE_URL: &str =
+    "/gravity.v2.MsgSetCosmosBridgeableTokensProposal";
+pub const MSG_DELETE_COSMOS_BRIDGEABLE_TOKENS_PROPOSAL_TYPE_URL: &str =
+    "/gravity.v2.MsgDeleteCosmosBridgeableTokensProposal";
 pub const AUCTION_MSG_UPDATE_PARAMS_PROPOSAL: &str = "/auction.v1.MsgUpdateParamsProposal";
 
 // cosmos-sdk proposals
@@ -182,30 +185,27 @@ pub async fn submit_unhalt_bridge_proposal(
         .await
 }
 
-/// Encodes and submits a CosmosBridgeableTokensProposal, which either SETs (adds/overwrites)
-/// or REMOVEs entries from the CosmosBridgeableTokens allowlist store. On SET, the bank
-/// module's denom metadata for each listed denom is unconditionally overwritten with the
-/// proposal's metadata.
+/// Encodes and submits a SetCosmosBridgeableTokensProposal, which adds or overwrites
+/// entries in the CosmosBridgeableTokens allowlist store. The bank module's denom metadata
+/// for each listed denom is unconditionally overwritten with the proposal's metadata.
 #[allow(clippy::too_many_arguments)]
-pub async fn submit_cosmos_bridgeable_tokens_proposal(
+pub async fn submit_set_cosmos_bridgeable_tokens_proposal(
     title: String,
     description: String,
     metadatas: Vec<Metadata>,
-    operation: CosmosBridgeableTokensOperation,
     deposit: Coin,
     fee: Coin,
     contact: &Contact,
     key: impl PrivateKey,
     wait_timeout: Option<Duration>,
 ) -> Result<TransactionResponse, CosmosGrpcError> {
-    let proposal_content = CosmosBridgeableTokensProposal {
+    let proposal_content = SetCosmosBridgeableTokensProposal {
         title: title.clone(),
         description,
         metadatas,
-        operation: operation as i32,
     };
 
-    let msg_proposal = MsgCosmosBridgeableTokensProposal {
+    let msg_proposal = MsgSetCosmosBridgeableTokensProposal {
         authority: gov_module_address()
             .expect("Unable to get gov module address")
             .to_string(),
@@ -214,7 +214,52 @@ pub async fn submit_cosmos_bridgeable_tokens_proposal(
 
     let any = encode_any(
         msg_proposal,
-        MSG_COSMOS_BRIDGEABLE_TOKENS_PROPOSAL_TYPE_URL.to_string(),
+        MSG_SET_COSMOS_BRIDGEABLE_TOKENS_PROPOSAL_TYPE_URL.to_string(),
+    );
+    let summary = "CosmosBridgeableTokens proposal summary".to_string();
+    contact
+        .create_gov_proposal(
+            title,
+            summary,
+            vec![any],
+            String::new(),
+            deposit,
+            fee,
+            key,
+            wait_timeout,
+        )
+        .await
+}
+
+/// Encodes and submits a DeleteCosmosBridgeableTokensProposal, which removes
+/// entries from the CosmosBridgeableTokens allowlist store.
+#[allow(clippy::too_many_arguments)]
+pub async fn submit_delete_cosmos_bridgeable_tokens_proposal(
+    title: String,
+    description: String,
+    metadatas: Vec<Metadata>,
+    deposit: Coin,
+    fee: Coin,
+    contact: &Contact,
+    key: impl PrivateKey,
+    wait_timeout: Option<Duration>,
+) -> Result<TransactionResponse, CosmosGrpcError> {
+    let proposal_content = DeleteCosmosBridgeableTokensProposal {
+        title: title.clone(),
+        description,
+        metadatas,
+    };
+
+    let msg_proposal = MsgDeleteCosmosBridgeableTokensProposal {
+        authority: gov_module_address()
+            .expect("Unable to get gov module address")
+            .to_string(),
+        proposal: Some(proposal_content),
+    };
+
+    let any = encode_any(
+        msg_proposal,
+        MSG_DELETE_COSMOS_BRIDGEABLE_TOKENS_PROPOSAL_TYPE_URL.to_string(),
     );
     let summary = "CosmosBridgeableTokens proposal summary".to_string();
     contact
@@ -288,22 +333,7 @@ pub struct CosmosBridgeableTokensProposalJson {
     pub title: String,
     pub description: String,
     pub metadatas: Vec<MetadataJson>,
-    pub operation: String,
 }
-impl CosmosBridgeableTokensProposalJson {
-    /// Parses the `operation` field into a `CosmosBridgeableTokensOperation`, returning an error
-    /// message suitable for display if the value is not recognized.
-    pub fn parse_operation(&self) -> Result<CosmosBridgeableTokensOperation, String> {
-        match self.operation.to_lowercase().as_str() {
-            "set" => Ok(CosmosBridgeableTokensOperation::Set),
-            "remove" => Ok(CosmosBridgeableTokensOperation::Remove),
-            other => Err(format!(
-                "Invalid CosmosBridgeableTokens operation '{other}', expected 'SET' or 'REMOVE'"
-            )),
-        }
-    }
-}
-
 /// The proposal.json representation for pausing/unpausing the bridge easily
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PauseBridgeProposalJson {

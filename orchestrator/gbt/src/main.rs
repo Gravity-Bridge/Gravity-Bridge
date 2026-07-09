@@ -5,7 +5,8 @@ extern crate serde_derive;
 
 use crate::args::{ClientSubcommand, KeysSubcommand, SubCommand};
 use crate::config::init_config;
-use crate::gov::proposals::submit_cosmos_bridgeable_tokens;
+use crate::gov::proposals::submit_delete_cosmos_bridgeable_tokens;
+use crate::gov::proposals::submit_set_cosmos_bridgeable_tokens;
 use crate::keys::{recover_funds, show_keys};
 use crate::{jsonrpc_server::jsonrpc_server, orchestrator::orchestrator, relayer::relayer};
 use args::{GovQuerySubcommand, GovSubcommand, GovSubmitSubcommand, Opts};
@@ -120,8 +121,11 @@ async fn main() {
                 GovSubmitSubcommand::OracleUnhalt(opts) => {
                     submit_oracle_unhalt(opts, address_prefix).await
                 }
-                GovSubmitSubcommand::CosmosBridgeableTokens(opts) => {
-                    submit_cosmos_bridgeable_tokens(opts, address_prefix).await
+                GovSubmitSubcommand::SetCosmosBridgeableTokens(opts) => {
+                    submit_set_cosmos_bridgeable_tokens(opts, address_prefix).await
+                }
+                GovSubmitSubcommand::DeleteCosmosBridgeableTokens(opts) => {
+                    submit_delete_cosmos_bridgeable_tokens(opts, address_prefix).await
                 }
             },
             GovSubcommand::Query(query_opts) => match query_opts {

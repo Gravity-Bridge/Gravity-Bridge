@@ -436,7 +436,8 @@ pub enum GovSubmitSubcommand {
     Airdrop(AirdropProposalOpts),
     EmergencyBridgeHalt(EmergencyBridgeHaltProposalOpts),
     OracleUnhalt(OracleUnhaltProposalOpts),
-    CosmosBridgeableTokens(CosmosBridgeableTokensProposalOpts),
+    SetCosmosBridgeableTokens(CosmosBridgeableTokensProposalOpts),
+    DeleteCosmosBridgeableTokens(CosmosBridgeableTokensProposalOpts),
 }
 
 #[derive(Parser)]

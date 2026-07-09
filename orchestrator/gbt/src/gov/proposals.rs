@@ -2,7 +2,8 @@ use crate::args::AirdropProposalOpts;
 use crate::args::CosmosBridgeableTokensProposalOpts;
 use crate::args::EmergencyBridgeHaltProposalOpts;
 use crate::{args::OracleUnhaltProposalOpts, utils::TIMEOUT};
-use cosmos_gravity::proposals::submit_cosmos_bridgeable_tokens_proposal;
+use cosmos_gravity::proposals::submit_delete_cosmos_bridgeable_tokens_proposal;
+use cosmos_gravity::proposals::submit_set_cosmos_bridgeable_tokens_proposal;
 use cosmos_gravity::proposals::AirdropProposalJsonUnparsed;
 use cosmos_gravity::proposals::CosmosBridgeableTokensProposalJson;
 use cosmos_gravity::proposals::{
@@ -134,7 +135,7 @@ pub async fn submit_oracle_unhalt(opts: OracleUnhaltProposalOpts, prefix: String
     }
 }
 
-pub async fn submit_cosmos_bridgeable_tokens(
+pub async fn submit_set_cosmos_bridgeable_tokens(
     opts: CosmosBridgeableTokensProposalOpts,
     prefix: String,
 ) {
@@ -147,14 +148,7 @@ pub async fn submit_cosmos_bridgeable_tokens(
                 serde_json::from_str(&file_contents);
             match proposal {
                 Ok(proposal_json) => {
-                    let operation = match proposal_json.parse_operation() {
-                        Ok(op) => op,
-                        Err(e) => {
-                            error!("Unable to parse proposal operation: {e}");
-                            exit(1);
-                        }
-                    };
-                    let res = submit_cosmos_bridgeable_tokens_proposal(
+                    let res = submit_set_cosmos_bridgeable_tokens_proposal(
                         proposal_json.title,
                         proposal_json.description,
                         proposal_json
@@ -162,7 +156,55 @@ pub async fn submit_cosmos_bridgeable_tokens(
                             .into_iter()
                             .map(|m| m.into())
                             .collect(),
-                        operation,
+                        opts.deposit,
+                        opts.fees,
+                        &contact,
+                        opts.cosmos_phrase,
+                        Some(TIMEOUT),
+                    )
+                    .await;
+                    match res {
+                        Ok(r) => info!("Successfully submitted proposal with txid {}", r.txhash()),
+                        Err(e) => {
+                            error!("Failed to submit proposal with {e:?}");
+                            exit(1);
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!("Failed to deserialize your proposal.json, check the contents! {e:?}");
+                    exit(1);
+                }
+            }
+        }
+        Err(e) => {
+            error!("Failed to read your proposal.json check the file path! {e:?}");
+            exit(1);
+        }
+    }
+}
+
+pub async fn submit_delete_cosmos_bridgeable_tokens(
+    opts: CosmosBridgeableTokensProposalOpts,
+    prefix: String,
+) {
+    let connections = create_rpc_connections(prefix, Some(opts.cosmos_grpc), None, TIMEOUT).await;
+    let contact = connections.contact.unwrap();
+
+    match fs::read_to_string(opts.json) {
+        Ok(file_contents) => {
+            let proposal: Result<CosmosBridgeableTokensProposalJson, _> =
+                serde_json::from_str(&file_contents);
+            match proposal {
+                Ok(proposal_json) => {
+                    let res = submit_delete_cosmos_bridgeable_tokens_proposal(
+                        proposal_json.title,
+                        proposal_json.description,
+                        proposal_json
+                            .metadatas
+                            .into_iter()
+                            .map(|m| m.into())
+                            .collect(),
                         opts.deposit,
                         opts.fees,
                         &contact,

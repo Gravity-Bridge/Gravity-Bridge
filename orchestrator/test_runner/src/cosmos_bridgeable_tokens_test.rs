@@ -4,7 +4,10 @@
 //! - Empty allowlist blocks cosmos-originated tokens from SendToEth
 //! - Allowlisted denoms can be bridged; non-listed ones cannot
 //! - Ethereum-originated tokens are always allowed regardless of the allowlist
-//! - MsgUpdateParamsProposal is rejected when authority is not the gov module
+//! - MsgSetCosmosBridgeableTokensProposal and MsgDeleteCosmosBridgeableTokensProposal are
+//!   rejected when authority is not the gov module
+//! - A valid, gov-executed MsgDeleteCosmosBridgeableTokensProposal actually blocks the
+//!   deleted denom from the bridge afterwards
 
 use clarity::Address as EthAddress;
 use cosmos_gravity::query::{get_cosmos_bridgeable_tokens, get_pending_send_to_eth};
@@ -12,8 +15,10 @@ use cosmos_gravity::send::{send_to_eth, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::coin::Coin;
 use deep_space::{Contact, Msg, PrivateKey};
 use gravity_proto::gravity::v1::{query_client::QueryClient as GravityQueryClient, MsgSendToEth};
-use gravity_proto::gravity::v1::{CosmosBridgeableTokensOperation, CosmosBridgeableTokensProposal};
-use gravity_proto::gravity::v2::MsgCosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v1::DeleteCosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v1::SetCosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v2::MsgDeleteCosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v2::MsgSetCosmosBridgeableTokensProposal;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
@@ -350,25 +355,24 @@ pub async fn cosmos_bridgeable_tokens_test(
 
     // ------------------------------------------------------------------
     // Step 8: Assert governance is the only authority.
-    // Send MsgCosmosBridgeableTokensProposal directly (not via gov) with a non-gov sender.
+    // Send MsgSetCosmosBridgeableTokensProposal directly (not via gov) with a non-gov sender.
     // ------------------------------------------------------------------
-    info!("Step 8: Verify MsgCosmosBridgeableTokensProposal is rejected for non-gov authority");
+    info!("Step 8: Verify MsgSetCosmosBridgeableTokensProposal is rejected for non-gov authority");
     let user_address = keys[0]
         .validator_key
         .to_address(ADDRESS_PREFIX.as_str())
         .unwrap()
         .to_string();
-    let msg_update_tokens = MsgCosmosBridgeableTokensProposal {
+    let msg_update_tokens = MsgSetCosmosBridgeableTokensProposal {
         authority: user_address.clone(),
-        proposal: Some(CosmosBridgeableTokensProposal {
+        proposal: Some(SetCosmosBridgeableTokensProposal {
             title: "Malicious CosmosBridgeableTokens proposal".to_string(),
             description: "should be rejected".to_string(),
             metadatas: vec![footoken.clone()],
-            operation: CosmosBridgeableTokensOperation::Set as i32,
         }),
     };
     let msg_gov = Msg::new(
-        "/gravity.v2.MsgCosmosBridgeableTokensProposal",
+        "/gravity.v2.MsgSetCosmosBridgeableTokensProposal",
         msg_update_tokens,
     );
     let res = contact
@@ -383,10 +387,116 @@ pub async fn cosmos_bridgeable_tokens_test(
         .await;
     assert!(
         res.is_err(),
-        "MsgCosmosBridgeableTokensProposal with non-gov authority should be rejected but succeeded: {:?}",
+        "MsgSetCosmosBridgeableTokensProposal with non-gov authority should be rejected but succeeded: {:?}",
         res
     );
-    info!("Confirmed: MsgCosmosBridgeableTokensProposal correctly rejected for non-gov sender");
+    info!("Confirmed: MsgSetCosmosBridgeableTokensProposal correctly rejected for non-gov sender");
+
+    // ------------------------------------------------------------------
+    // Step 9: Assert governance is the only authority for deletion too.
+    // Send MsgDeleteCosmosBridgeableTokensProposal directly (not via gov) with a non-gov sender.
+    // ------------------------------------------------------------------
+    info!(
+        "Step 9: Verify MsgDeleteCosmosBridgeableTokensProposal is rejected for non-gov authority"
+    );
+    let msg_delete_tokens = MsgDeleteCosmosBridgeableTokensProposal {
+        authority: user_address,
+        proposal: Some(DeleteCosmosBridgeableTokensProposal {
+            title: "Malicious CosmosBridgeableTokens deletion".to_string(),
+            description: "should be rejected".to_string(),
+            metadatas: vec![footoken.clone()],
+        }),
+    };
+    let msg_gov_delete = Msg::new(
+        "/gravity.v2.MsgDeleteCosmosBridgeableTokensProposal",
+        msg_delete_tokens,
+    );
+    let res = contact
+        .send_message(
+            &[msg_gov_delete],
+            None,
+            &[],
+            Some(OPERATION_TIMEOUT),
+            None,
+            keys[0].validator_key,
+        )
+        .await;
+    assert!(
+        res.is_err(),
+        "MsgDeleteCosmosBridgeableTokensProposal with non-gov authority should be rejected but succeeded: {:?}",
+        res
+    );
+    info!("Confirmed: MsgDeleteCosmosBridgeableTokensProposal correctly rejected for non-gov sender");
+
+    // ------------------------------------------------------------------
+    // Step 10: Assert that a *valid* delete proposal (submitted via governance)
+    // actually blocks the token from the bridge afterwards.
+    // First re-add footoken to the allowlist and confirm it can be bridged,
+    // then delete it via governance and confirm it can no longer be bridged.
+    // ------------------------------------------------------------------
+    info!("Step 10: Verify footoken is blocked from the bridge after a valid governance delete proposal");
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
+
+    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client)
+        .await
+        .unwrap();
+    assert_eq!(
+        bridgeable_tokens,
+        vec![footoken.clone()],
+        "Expected cosmos_bridgeable_tokens to contain only footoken after re-adding"
+    );
+
+    let res = send_to_eth(
+        user.cosmos_key,
+        user.eth_address,
+        send_coin.clone(),
+        bridge_fee.clone(),
+        Some(chain_fee.clone()),
+        get_fee(None),
+        contact,
+    )
+    .await;
+    assert!(
+        res.is_ok(),
+        "SendToEth for footoken should succeed while it is allowlisted: {:?}",
+        res
+    );
+    info!("Confirmed: footoken SendToEth accepted while allowlisted");
+
+    remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
+
+    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client)
+        .await
+        .unwrap();
+    assert!(
+        bridgeable_tokens.is_empty(),
+        "Expected cosmos_bridgeable_tokens to be empty after the valid governance delete proposal"
+    );
+
+    let msg_send_to_eth4 = MsgSendToEth {
+        sender: user.cosmos_address.to_string(),
+        eth_dest: user.eth_address.to_string(),
+        amount: Some(send_coin.clone().into()),
+        bridge_fee: Some(bridge_fee.clone().into()),
+        chain_fee: Some(chain_fee.clone().into()),
+    };
+    let msg4 = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth4);
+    let res = contact
+        .send_message(
+            &[msg4],
+            None,
+            &[get_fee(None)],
+            Some(OPERATION_TIMEOUT),
+            None,
+            user.cosmos_key,
+        )
+        .await;
+    assert!(
+        res.is_err(),
+        "SendToEth for footoken should be rejected after the valid governance delete proposal: {:?}",
+        res
+    );
+    info!("Confirmed: footoken correctly blocked from the bridge after the valid governance delete proposal");
 
     info!("CosmosBridgeableTokens test passed!");
 }
