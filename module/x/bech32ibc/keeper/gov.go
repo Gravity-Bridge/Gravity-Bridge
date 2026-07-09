@@ -15,11 +15,6 @@ func (k Keeper) HandleUpdateHrpIbcChannelProposal(ctx sdk.Context, p *types.Upda
 		return err
 	}
 
-	// An empty source channel for a token indicates that the record should be deleted.
-	if p.SourceChannel == "" {
-		return k.deleteHrpIbcRecord(ctx, p.Hrp)
-	}
-
 	nativeHrp, err := k.GetNativeHrp(ctx)
 	if err != nil {
 		return err
@@ -41,4 +36,22 @@ func (k Keeper) HandleUpdateHrpIbcChannelProposal(ctx sdk.Context, p *types.Upda
 		IcsToHeightOffset: p.IcsToHeightOffset,
 		IcsToTimeOffset:   p.IcsToTimeOffset,
 	})
+}
+
+func (k Keeper) HandleDeleteHrpIbcChannelProposal(ctx sdk.Context, p *types.DeleteHrpIbcChannelProposal) error {
+	err := types.ValidateHrp(p.Hrp)
+	if err != nil {
+		return err
+	}
+
+	nativeHrp, err := k.GetNativeHrp(ctx)
+	if err != nil {
+		return err
+	}
+
+	if p.Hrp == nativeHrp {
+		return errorsmod.Wrap(types.ErrInvalidHRP, "cannot delete a record for the native prefix")
+	}
+
+	return k.deleteHrpIbcRecord(ctx, p.Hrp)
 }

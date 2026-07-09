@@ -9,6 +9,7 @@ import (
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	// nolint: exhaustruct
 	cdc.RegisterConcrete(&UpdateHrpIbcChannelProposal{}, "osmosis/UpdateHrpIbcChannelProposal", nil)
+	cdc.RegisterConcrete(&DeleteHrpIbcChannelProposal{}, "osmosis/DeleteHrpIbcChannelProposal", nil)
 }
 
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
@@ -16,6 +17,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		(*govtypes.Content)(nil),
 		// nolint: exhaustruct
 		&UpdateHrpIbcChannelProposal{},
+		&DeleteHrpIbcChannelProposal{},
 	)
 }
 

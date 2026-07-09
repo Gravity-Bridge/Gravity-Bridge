@@ -15,6 +15,8 @@ func NewBech32IBCProposalHandler(k keeper.Keeper) govtypes.Handler {
 		switch c := content.(type) {
 		case *types.UpdateHrpIbcChannelProposal:
 			return handleUpdateHrpIbcChannelProposal(ctx, k, c)
+		case *types.DeleteHrpIbcChannelProposal:
+			return handleDeleteHrpIbcChannelProposal(ctx, k, c)
 
 		default:
 			return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized bech32 ibc proposal content type: %T", c)
@@ -24,4 +26,8 @@ func NewBech32IBCProposalHandler(k keeper.Keeper) govtypes.Handler {
 
 func handleUpdateHrpIbcChannelProposal(ctx sdk.Context, k keeper.Keeper, p *types.UpdateHrpIbcChannelProposal) error {
 	return k.HandleUpdateHrpIbcChannelProposal(ctx, p)
+}
+
+func handleDeleteHrpIbcChannelProposal(ctx sdk.Context, k keeper.Keeper, p *types.DeleteHrpIbcChannelProposal) error {
+	return k.HandleDeleteHrpIbcChannelProposal(ctx, p)
 }

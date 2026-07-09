@@ -10,10 +10,12 @@ import (
 
 const (
 	ProposalTypeUpdateHrpIbcChannel = "UpdateHrpIbcChannel"
+	ProposalTypeDeleteHrpIbcChannel = "DeleteHrpIbcChannel"
 )
 
 func init() {
 	govtypes.RegisterProposalType(ProposalTypeUpdateHrpIbcChannel)
+	govtypes.RegisterProposalType(ProposalTypeDeleteHrpIbcChannel)
 }
 
 // nolint: exhaustruct
@@ -62,5 +64,41 @@ func (p UpdateHrpIbcChannelProposal) String() string {
   HRP:            %s
   Source Channel: %s
 `, p.Title, p.Description, p.Hrp, p.SourceChannel))
+	return b.String()
+}
+
+func NewDeleteHrpIbcChannelProposal(title, description, hrp string) govtypes.Content {
+	return &DeleteHrpIbcChannelProposal{
+		Title:       title,
+		Description: description,
+		Hrp:         hrp,
+	}
+}
+
+func (p *DeleteHrpIbcChannelProposal) GetTitle() string { return p.Title }
+
+func (p *DeleteHrpIbcChannelProposal) GetDescription() string { return p.Description }
+
+func (p *DeleteHrpIbcChannelProposal) ProposalRoute() string { return RouterKey }
+
+func (p *DeleteHrpIbcChannelProposal) ProposalType() string {
+	return ProposalTypeDeleteHrpIbcChannel
+}
+
+func (p *DeleteHrpIbcChannelProposal) ValidateBasic() error {
+	err := govtypes.ValidateAbstract(p)
+	if err != nil {
+		return err
+	}
+	return ValidateHrp(p.Hrp)
+}
+
+func (p DeleteHrpIbcChannelProposal) String() string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf(`Delete HRP IBC Channel Proposal:
+  Title:          %s
+  Description:    %s
+  HRP:            %s
+`, p.Title, p.Description, p.Hrp))
 	return b.String()
 }
