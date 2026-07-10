@@ -30,6 +30,8 @@ type testInitStruct struct {
 	ethAddress string
 }
 
+const driftedMetaName = "Drifted Name"
+
 func TestConfirmHandlerCommon(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
 	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
@@ -337,7 +339,7 @@ func TestSendToEthMetadataDriftRejected(t *testing.T) {
 	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
 	// simulating drift between the two sources of truth.
 	driftedMeta := originalMeta
-	driftedMeta.Name = "Drifted Name"
+	driftedMeta.Name = driftedMetaName
 	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
 
 	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
@@ -437,7 +439,7 @@ func TestRequestBatchMetadataDriftRejected(t *testing.T) {
 	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
 	// simulating drift between the two sources of truth.
 	driftedMeta := originalMeta
-	driftedMeta.Name = "Drifted Name"
+	driftedMeta.Name = driftedMetaName
 	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
 
 	_, err = sv.RequestBatch(ctx, &types.MsgRequestBatch{
@@ -533,7 +535,7 @@ func TestConfirmBatchMetadataDriftRejected(t *testing.T) {
 	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
 	// simulating drift between the two sources of truth.
 	driftedMeta := originalMeta
-	driftedMeta.Name = "Drifted Name"
+	driftedMeta.Name = driftedMetaName
 	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
 
 	_, err = sv.ConfirmBatch(ctx, msg)
@@ -630,7 +632,7 @@ func TestSendToCosmosClaimMetadataDriftRejected(t *testing.T) {
 	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
 	// simulating drift between the two sources of truth.
 	driftedMeta := originalMeta
-	driftedMeta.Name = "Drifted Name"
+	driftedMeta.Name = driftedMetaName
 	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
 
 	_, err = sv.SendToCosmosClaim(ctx, claim)
@@ -723,7 +725,7 @@ func TestBatchSendToEthClaimMetadataDriftRejected(t *testing.T) {
 	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
 	// simulating drift between the two sources of truth.
 	driftedMeta := originalMeta
-	driftedMeta.Name = "Drifted Name"
+	driftedMeta.Name = driftedMetaName
 	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
 
 	claim.EventNonce = 2
@@ -818,7 +820,7 @@ func TestERC20DeployedClaimMetadataDriftRejected(t *testing.T) {
 	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
 	// simulating drift between the two sources of truth.
 	driftedMeta := originalMeta
-	driftedMeta.Name = "Drifted Name"
+	driftedMeta.Name = driftedMetaName
 	input.BankKeeper.SetDenomMetaData(ctx, driftedMeta)
 
 	claim.EventNonce = 2

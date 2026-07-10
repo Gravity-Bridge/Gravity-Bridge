@@ -448,7 +448,8 @@ func TestCosmosBridgeableTokensInvariant(t *testing.T) {
 	store := ctx.KVStore(k.storeKey)
 
 	// Duplicate base denom (fails)
-	dupKey := append(types.CosmosBridgeableTokensKey, []byte("uatom-corrupt")...)
+	dupKey := append([]byte{}, types.CosmosBridgeableTokensKey...)
+	dupKey = append(dupKey, []byte("uatom-corrupt")...)
 	store.Set(dupKey, k.cdc.MustMarshal(&validMeta))
 	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
 	require.True(t, broken)
@@ -460,6 +461,7 @@ func TestCosmosBridgeableTokensInvariant(t *testing.T) {
 	store.Delete(types.GetCosmosBridgeableTokenKey("uatom"))
 
 	// Invalid metadata (fails)
+	// nolint: exhaustruct
 	invalidMeta := banktypes.Metadata{Base: ""}
 	k.SetCosmosBridgeableToken(ctx, invalidMeta)
 	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)

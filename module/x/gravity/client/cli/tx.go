@@ -255,6 +255,7 @@ func readCosmosBridgeableTokensProposalPlain(proposalFile string) (*CosmosBridge
 		return nil, errorsmod.Wrap(err, "failed to read proposal json file")
 	}
 
+	// nolint: exhaustruct
 	plain := &CosmosBridgeableTokensProposalPlain{}
 	if err := json.Unmarshal(contents, plain); err != nil {
 		return nil, errorsmod.Wrap(err, "proposal json file is not valid json")
