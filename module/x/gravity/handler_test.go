@@ -503,7 +503,8 @@ func TestMsgSendToCosmosForeignPrefixedAddress_MsgServer(t *testing.T) {
 
 	myTokenAddress, err := types.NewEthAddress(myErc20.Contract)
 	require.NoError(t, err)
-	erc20DenomOrigin := k.ClassifyERC20(ctx, *myTokenAddress)
+	erc20DenomOrigin, err := k.ClassifyERC20(ctx, *myTokenAddress)
+	require.NoError(t, err)
 	erc20Denom := erc20DenomOrigin.Denom
 
 	//nolint: exhaustruct

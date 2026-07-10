@@ -132,7 +132,10 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	}
 
 	// Classify the token as cosmos-originated or eth-originated
-	tokenOrigin := a.keeper.ClassifyERC20(ctx, *tokenAddress)
+	tokenOrigin, err := a.keeper.ClassifyERC20(ctx, *tokenAddress)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to classify ERC20 token")
+	}
 
 	// Perform more strict validation on the denom
 	if err := types.ValidateStrictDenom(tokenOrigin.Denom); err != nil {
@@ -228,7 +231,10 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 		return errorsmod.Wrap(err, "invalid token contract on batch")
 	}
 
-	contractOrigin := a.keeper.ClassifyERC20(ctx, *contract)
+	contractOrigin, err := a.keeper.ClassifyERC20(ctx, *contract)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to classify ERC20 token")
+	}
 
 	// Perform more strict validation on the denom
 	if err := types.ValidateStrictDenom(contractOrigin.Denom); err != nil {
@@ -389,7 +395,10 @@ func (a AttestationHandler) handleValsetUpdated(ctx sdk.Context, claim types.Msg
 	// token, or burn non cosmos native tokens
 	if claim.RewardAmount.GT(sdkmath.ZeroInt()) && claim.RewardToken != types.ZeroAddressString {
 		// Classify the reward token
-		rewardOrigin := a.keeper.ClassifyERC20(ctx, *rewardAddress)
+		rewardOrigin, err := a.keeper.ClassifyERC20(ctx, *rewardAddress)
+		if err != nil {
+			return errorsmod.Wrap(err, "failed to classify reward ERC20 token")
+		}
 
 		// Perform more strict validation on the denom
 		if err := types.ValidateStrictDenom(rewardOrigin.Denom); err != nil {

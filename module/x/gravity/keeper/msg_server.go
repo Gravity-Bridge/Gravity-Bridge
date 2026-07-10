@@ -320,7 +320,10 @@ func (k msgServer) ConfirmBatch(c context.Context, msg *types.MsgConfirmBatch) (
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
 
-	contractOrigin := k.ClassifyERC20(ctx, *contract)
+	contractOrigin, err := k.ClassifyERC20(ctx, *contract)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to classify ERC20 in ConfirmBatch")
+	}
 	if contractOrigin.Origin == types.AssetOriginCosmos {
 		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
@@ -520,7 +523,10 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
-	contractOrigin := k.ClassifyERC20(ctx, *contract)
+	contractOrigin, err := k.ClassifyERC20(ctx, *contract)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to classify ERC20 in SendToCosmosClaim")
+	}
 	if contractOrigin.Origin == types.AssetOriginCosmos {
 		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
@@ -578,7 +584,10 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
-	contractOrigin := k.ClassifyERC20(ctx, *contract)
+	contractOrigin, err := k.ClassifyERC20(ctx, *contract)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to classify ERC20 in BatchSendToEthClaim")
+	}
 	if contractOrigin.Origin == types.AssetOriginCosmos {
 		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {
@@ -636,7 +645,10 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 	if err != nil {
 		return nil, errorsmod.Wrap(types.ErrInvalid, "eth address invalid")
 	}
-	contractOrigin := k.ClassifyERC20(ctx, *contract)
+	contractOrigin, err := k.ClassifyERC20(ctx, *contract)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to classify ERC20 in ERC20DeployedClaim")
+	}
 	if contractOrigin.Origin == types.AssetOriginCosmos {
 		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
 		if err != nil {

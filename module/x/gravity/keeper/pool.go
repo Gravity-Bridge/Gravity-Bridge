@@ -130,7 +130,10 @@ func (k Keeper) RemoveFromOutgoingPoolAndRefund(ctx sdk.Context, txId uint64, se
 	}
 
 	// Calculate refund
-	refundOrigin := k.ClassifyERC20(ctx, tx.Erc20Token.Contract)
+	refundOrigin, err := k.ClassifyERC20(ctx, tx.Erc20Token.Contract)
+	if err != nil {
+		return errorsmod.Wrap(err, "failed to classify ERC20 for refund")
+	}
 	totalToRefund := sdk.NewCoin(refundOrigin.Denom, tx.Erc20Token.Amount)
 	totalToRefund.Amount = totalToRefund.Amount.Add(tx.Erc20Fee.Amount)
 	totalToRefundCoins := sdk.NewCoins(totalToRefund)

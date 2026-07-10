@@ -192,7 +192,10 @@ func sumUnconfirmedBatchModuleBalances(ctx sdk.Context, k Keeper, expectedBals m
 			batchTotal = newTotal
 		}
 		contract := batch.TokenContract
-		batchOrigin := k.ClassifyERC20(ctx, contract)
+		batchOrigin, err := k.ClassifyERC20(ctx, contract)
+		if err != nil {
+			panic(fmt.Sprintf("failed to classify ERC20 token %s: %v", contract.GetAddress().Hex(), err))
+		}
 		// Add the batch total to the contract counter
 		_, ok := expectedBals[batchOrigin.Denom]
 		if !ok {
@@ -213,7 +216,10 @@ func sumUnbatchedTxModuleBalances(ctx sdk.Context, k Keeper, expectedBals map[st
 	// It is also given the balance of all unbatched txs in the pool
 	k.IterateUnbatchedTransactions(ctx, func(_ []byte, tx *types.InternalOutgoingTransferTx) bool {
 		contract := tx.Erc20Token.Contract
-		txOrigin := k.ClassifyERC20(ctx, contract)
+		txOrigin, err := k.ClassifyERC20(ctx, contract)
+		if err != nil {
+			panic(fmt.Sprintf("failed to classify ERC20 token %s: %v", contract.GetAddress().Hex(), err))
+		}
 
 		// Collect the send amount + fee amount for each tx
 		txTotal := tx.Erc20Token.Amount.Add(tx.Erc20Fee.Amount)

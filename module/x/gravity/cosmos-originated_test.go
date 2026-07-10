@@ -222,7 +222,8 @@ func addDenomToERC20Relation(tv *testingVars) {
 
 	ethAddr, err := types.NewEthAddress(tv.erc20)
 	require.NoError(tv.t, err)
-	erc20Origin := tv.input.GravityKeeper.ClassifyERC20(tv.ctx, *ethAddr)
+	erc20Origin, err := tv.input.GravityKeeper.ClassifyERC20(tv.ctx, *ethAddr)
+	require.NoError(tv.t, err)
 	assert.Equal(tv.t, types.AssetOriginCosmos, erc20Origin.Origin)
 
 	assert.Equal(tv.t, tv.denom, erc20Origin.Denom)
@@ -387,7 +388,8 @@ func addIbcDenomToERC20Relation(tv *testingVars) {
 
 	ethAddr, err := types.NewEthAddress(tv.erc20)
 	require.NoError(tv.t, err)
-	erc20Origin := tv.input.GravityKeeper.ClassifyERC20(tv.ctx, *ethAddr)
+	erc20Origin, err := tv.input.GravityKeeper.ClassifyERC20(tv.ctx, *ethAddr)
+	require.NoError(tv.t, err)
 	assert.Equal(tv.t, types.AssetOriginCosmos, erc20Origin.Origin)
 
 	assert.Equal(tv.t, tv.denom, erc20Origin.Denom)

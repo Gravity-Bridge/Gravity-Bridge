@@ -98,7 +98,8 @@ func TestMigrateCosmosOriginatedERC20ToDenom(t *testing.T) {
 	tokenAddr, err := types.NewEthAddress(tokenContract)
 	assert.NoError(t, err)
 
-	storedDenomOrigin := input.GravityKeeper.ClassifyERC20(input.Context, *tokenAddr)
+	storedDenomOrigin, err := input.GravityKeeper.ClassifyERC20(input.Context, *tokenAddr)
+	require.NoError(t, err)
 	storedDenom := storedDenomOrigin.Denom
 	found := storedDenomOrigin.Origin == types.AssetOriginCosmos
 	assert.True(t, found)

@@ -1294,7 +1294,6 @@ func TestMsgDeleteCosmosBridgeableTokensProposal_BadAuthority(t *testing.T) {
 	require.NoError(t, err)
 }
 
-
 // TestCosmosBridgeableTokensConsistencyCheck directly unit-tests the internal
 // assertCosmosBridgeableTokensConsistent helper used by HandleCosmosBridgeableTokensProposal's
 // post-execution verification (duplicate / ethereum-originated denom detection).
@@ -1368,7 +1367,8 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, sender, oldVouchers))
 
 	// ── Pre-remap: ERC20ToDenomLookup returns gravity0x ──────────────────────────
-	erc20Origin := gk.ClassifyERC20(ctx, *tokenAddr)
+	erc20Origin, err := gk.ClassifyERC20(ctx, *tokenAddr)
+	require.NoError(t, err)
 	require.Equal(t, types.AssetOriginEthereum, erc20Origin.Origin)
 	require.Equal(t, oldDenom, erc20Origin.Denom)
 
@@ -1413,16 +1413,16 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	gk.SetRemappedERC20(ctx, *tokenAddr)
 
 	// ── Post-remap: ERC20ToDenomLookup returns gravity2 denom ────────────────────
-	erc20Origin = gk.ClassifyERC20(ctx, *tokenAddr)
+	erc20Origin, err = gk.ClassifyERC20(ctx, *tokenAddr)
+	require.NoError(t, err)
 	require.Equal(t, types.AssetOriginEthereum, erc20Origin.Origin)
 	require.Equal(t, newDenom, erc20Origin.Denom, "after remap, ERC20ToDenomLookup must return gravity2 denom")
 
-	// ── Post-remap: ClassifyDenom for the old gravity0x denom panics ────────────
-	require.PanicsWithValue(t,
-		fmt.Sprintf("ERC20 %s was remapped; new deposits use %s", tokenAddr.GetAddress().Hex(), newDenom),
-		func() { _, _ = gk.ClassifyDenom(ctx, oldDenom) },
-		"ClassifyDenom must panic for the old gravity0x denom of a remapped ERC20",
-	)
+	// ── Post-remap: ClassifyDenom for the old gravity0x denom errors ────────────
+	_, err = gk.ClassifyDenom(ctx, oldDenom)
+	require.ErrorIs(t, err, types.ErrInvalid, "ClassifyDenom must error for the old gravity0x denom of a remapped ERC20")
+	require.ErrorContains(t, err,
+		fmt.Sprintf("ERC20 %s was remapped; new deposits use %s", tokenAddr.GetAddress().Hex(), newDenom))
 
 	// ── Post-remap: DenomToERC20Lookup for new gravity20x succeeds ───────────────
 	denomOrigin, err = gk.ClassifyDenom(ctx, newDenom)
@@ -1430,21 +1430,17 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	require.Equal(t, types.AssetOriginEthereum, denomOrigin.Origin)
 	require.Equal(t, tokenAddr, denomOrigin.ERC20)
 
-	// ── Post-remap: SendToEth with old gravity0x panics ──────────────────────────
-	require.PanicsWithValue(t,
-		fmt.Sprintf("ERC20 %s was remapped; new deposits use %s", tokenAddr.GetAddress().Hex(), newDenom),
-		func() {
-			_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
-				Sender:    sender.String(),
-				EthDest:   ethDest,
-				Amount:    sdk.NewInt64Coin(oldDenom, 100),
-				BridgeFee: sdk.NewInt64Coin(oldDenom, 1),
-				ChainFee:  sdk.NewCoin(oldDenom, sdkmath.ZeroInt()),
-			})
-			require.Error(t, err)
-		},
-		"SendToEth must panic for the old gravity0x denom of a remapped ERC20",
-	)
+	// ── Post-remap: SendToEth with old gravity0x errors ──────────────────────────
+	_, err = sv.SendToEth(ctx, &types.MsgSendToEth{
+		Sender:    sender.String(),
+		EthDest:   ethDest,
+		Amount:    sdk.NewInt64Coin(oldDenom, 100),
+		BridgeFee: sdk.NewInt64Coin(oldDenom, 1),
+		ChainFee:  sdk.NewCoin(oldDenom, sdkmath.ZeroInt()),
+	})
+	require.ErrorIs(t, err, types.ErrInvalid, "SendToEth must error for the old gravity0x denom of a remapped ERC20")
+	require.ErrorContains(t, err,
+		fmt.Sprintf("ERC20 %s was remapped; new deposits use %s", tokenAddr.GetAddress().Hex(), newDenom))
 
 	// ── Post-remap: SendToEth with new gravity20x succeeds ───────────────────────
 	// Fund the user with gravity2 vouchers (simulating a new deposit after remap)
@@ -1470,7 +1466,8 @@ func TestRemappedTokenRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, gk.IsRemappedERC20(ctx, *otherAddr))
 
-	otherOrigin := gk.ClassifyERC20(ctx, *otherAddr)
+	otherOrigin, err := gk.ClassifyERC20(ctx, *otherAddr)
+	require.NoError(t, err)
 	require.Equal(t, types.AssetOriginEthereum, otherOrigin.Origin)
 	require.Equal(t, types.GravityDenom(*otherAddr), otherOrigin.Denom, "non-remapped token should still use gravity0x")
 }
@@ -1491,13 +1488,12 @@ func TestDenomToERC20Lookup_Gravity2NotRemapped(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, gk.IsRemappedERC20(ctx, *tokenAddr))
 
-	// Trying to use gravity2 denom for a non-remapped token must panic
+	// Trying to use gravity2 denom for a non-remapped token must error
 	gravity2Denom := types.Gravity2Denom(*tokenAddr)
-	require.PanicsWithValue(t,
-		fmt.Sprintf("ClassifyDenom: gravity2 denom %s does not correspond to a remapped ERC20", gravity2Denom),
-		func() { gk.ClassifyDenom(ctx, gravity2Denom) },
-		"ClassifyDenom must panic for a gravity2 denom of a non-remapped ERC20",
-	)
+	_, err = gk.ClassifyDenom(ctx, gravity2Denom)
+	require.ErrorIs(t, err, types.ErrInvalid, "ClassifyDenom must error for a gravity2 denom of a non-remapped ERC20")
+	require.ErrorContains(t, err,
+		fmt.Sprintf("ClassifyDenom: gravity2 denom %s does not correspond to a remapped ERC20", gravity2Denom))
 }
 
 // setBridgePaused is a test helper which flips the BridgeActive param to false.

@@ -113,15 +113,27 @@ func (k Keeper) IterateCosmosOriginatedMappings(ctx sdk.Context, cb func(denom s
 
 // ClassifyERC20 determines the origin of an ERC20 address (Cosmos or Ethereum) and returns a fully populated AssetOrigin.
 //
-// This function will panic if any of these checks fail:
+// Returns an error if any of these checks fail:
+//   - Cosmos-originated: the denom fails ValidateStrictDenom() or the reverse mapping is inconsistent
 //   - Eth-originated: the derived denom must round-trip back to the same ERC20 address
-//   - The denom fails ValidateStrictDenom()
-func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) types.AssetOrigin {
+//   - Eth-originated: the denom fails ValidateStrictDenom()
+//   - Eth-originated: bank metadata unexpectedly exists for the derived denom
+func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) (*types.AssetOrigin, error) {
 	// Check cosmos-originated index first
 	if denom, exists := k.getCosmosOriginatedDenomForERC20(ctx, tokenContract); exists {
-		// Note: denom validation (ValidateStrictDenom) is intentionally left to the caller.
-		// Panicking here would prevent the attestation handler from returning a proper error
-		// when a corrupted or pre-validation entry exists in the store.
+		if err := types.ValidateStrictDenom(denom); err != nil {
+			return nil, errorsmod.Wrapf(types.ErrInvalidDenom, "ClassifyERC20: the denom %s for cosmos-originated ERC20 %s is invalid: %v",
+				denom, tokenContract.GetAddress().Hex(), err)
+		}
+		// Check the reverse mapping is consistent
+		if reverseERC20, ok := k.getCosmosOriginatedERC20ForDenom(ctx, denom); !ok || reverseERC20.GetAddress() != tokenContract.GetAddress() {
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"ClassifyERC20: cosmos-originated mapping for ERC20 %s is not bidirectionally consistent", tokenContract.GetAddress().Hex())
+		}
+		if k.IsRemappedERC20(ctx, tokenContract) {
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"ClassifyERC20: cosmos-originated ERC20 %s is also in the remapped eth-originated set, which is not allowed", tokenContract.GetAddress().Hex())
+		}
 		origin := types.AssetOrigin{
 			Origin:     types.AssetOriginCosmos,
 			IsRemapped: false,
@@ -129,7 +141,7 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 			ERC20:      &tokenContract,
 		}
 		origin.AssertValid()
-		return origin
+		return &origin, nil
 	}
 
 	// Eth-originated path
@@ -140,14 +152,16 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
 		// this should be unnecessary but will make metadata changes extremely obvious
 		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
-			panic(fmt.Sprintf("ClassifyERC20: Eth-originated gravity2 denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"ClassifyERC20: Eth-originated gravity2 denom %s has bank metadata %s, which is not allowed", denom, meta.Name)
 		}
 	} else {
 		denom = types.GravityDenom(tokenContract)
 		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
 		// this should be unnecessary but will make metadata changes extremely obvious
 		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
-			panic(fmt.Sprintf("ClassifyERC20: Eth-originated gravity denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"ClassifyERC20: Eth-originated gravity denom %s has bank metadata %s, which is not allowed", denom, meta.Name)
 		}
 	}
 
@@ -160,14 +174,14 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 		reparsed, parseErr = types.GravityDenomToERC20(denom)
 	}
 	if parseErr != nil || reparsed.GetAddress() != tokenContract.GetAddress() {
-		panic(fmt.Sprintf(
+		return nil, errorsmod.Wrapf(types.ErrInvalid,
 			"ClassifyERC20: eth-originated denom %q failed round-trip validation for ERC20 %s",
-			denom, tokenContract.GetAddress().Hex()))
+			denom, tokenContract.GetAddress().Hex())
 	}
 
 	if err := types.ValidateStrictDenom(denom); err != nil {
-		panic(fmt.Sprintf("ClassifyERC20: the denom %s for eth-originated ERC20 %s is invalid: %v",
-			denom, tokenContract.GetAddress().Hex(), err))
+		return nil, errorsmod.Wrapf(types.ErrInvalidDenom, "ClassifyERC20: the denom %s for eth-originated ERC20 %s is invalid: %v",
+			denom, tokenContract.GetAddress().Hex(), err)
 	}
 	origin := types.AssetOrigin{
 		Origin:     types.AssetOriginEthereum,
@@ -177,26 +191,26 @@ func (k Keeper) ClassifyERC20(ctx sdk.Context, tokenContract types.EthAddress) t
 	}
 
 	origin.AssertValid()
-	return origin
+	return &origin, nil
 }
 
 // ClassifyDenom determines the origin of an ERC20 address (Cosmos or Ethereum) and returns a fully populated AssetOrigin.
 //
-// Returns an error if the denom is not recognised as any known asset.
-// For cosmos-originated assets, also verifies bidirectional store consistency.
-// This function will panic if any of these checks fail:
+// Returns an error if any of these checks fail:
 //   - Unrecognized denom
-//   - Eth-originated: the derived denom must round-trip back to the same ERC20 address
+//   - A gravity/gravity2-prefixed denom whose remapped state doesn't match IsRemappedERC20
 //   - The denom fails ValidateStrictDenom()
-func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (types.AssetOrigin, error) {
+//   - Eth-originated: bank metadata unexpectedly exists for the denom
+//   - Cosmos-originated: the reverse mapping is inconsistent
+func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (*types.AssetOrigin, error) {
 	// gravity2 prefix -> eth-originated remapped erc20
 	if tc, err := types.Gravity2DenomToERC20(denom); err == nil {
 		if !k.IsRemappedERC20(ctx, *tc) {
-			panic(fmt.Sprintf("ClassifyDenom: gravity2 denom %s does not correspond to a remapped ERC20", denom))
+			return nil, errorsmod.Wrapf(types.ErrInvalid, "ClassifyDenom: gravity2 denom %s does not correspond to a remapped ERC20", denom)
 		}
 		if err := types.ValidateStrictDenom(denom); err != nil {
-			panic(fmt.Sprintf("ClassifyDenom: the denom %s for remapped ERC20 %s is invalid: %v",
-				denom, tc.GetAddress().Hex(), err))
+			return nil, errorsmod.Wrapf(types.ErrInvalidDenom, "ClassifyDenom: the denom %s for remapped ERC20 %s is invalid: %v",
+				denom, tc.GetAddress().Hex(), err)
 		}
 		origin := types.AssetOrigin{
 			Origin:     types.AssetOriginEthereum,
@@ -208,20 +222,22 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (types.AssetOrigin,
 		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
 		// this should be unnecessary but will make metadata changes extremely obvious
 		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
-			panic(fmt.Sprintf("ClassifyDenom: Eth-originated gravity2 denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"ClassifyDenom: Eth-originated gravity2 denom %s has bank metadata %s, which is not allowed", denom, meta.Name)
 		}
-		return origin, nil
+		return &origin, nil
 	}
 
 	// gravity prefix -> eth-originated erc20
 	if tc, err := types.GravityDenomToERC20(denom); err == nil {
 		if k.IsRemappedERC20(ctx, *tc) {
-			panic(fmt.Sprintf("ERC20 %s was remapped; new deposits use %s", tc.GetAddress().Hex(), types.Gravity2Denom(*tc)))
+			return nil, errorsmod.Wrapf(types.ErrInvalid, "ERC20 %s was remapped; new deposits use %s",
+				tc.GetAddress().Hex(), types.Gravity2Denom(*tc))
 		}
 
 		if err := types.ValidateStrictDenom(denom); err != nil {
-			panic(fmt.Sprintf("ClassifyDenom: the denom %s for eth-originated ERC20 %s is invalid: %v",
-				denom, tc.GetAddress().Hex(), err))
+			return nil, errorsmod.Wrapf(types.ErrInvalidDenom, "ClassifyDenom: the denom %s for eth-originated ERC20 %s is invalid: %v",
+				denom, tc.GetAddress().Hex(), err)
 		}
 		origin := types.AssetOrigin{
 			Origin:     types.AssetOriginEthereum,
@@ -233,21 +249,23 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (types.AssetOrigin,
 		// This check merely ensures that Eth-originated assets do not have bank metadata because x/gravity does not set it
 		// this should be unnecessary but will make metadata changes extremely obvious
 		if meta, exists := k.bankKeeper.GetDenomMetaData(ctx, denom); exists {
-			panic(fmt.Sprintf("ClassifyDenom: Eth-originated gravity denom %s has bank metadata %s, which is not allowed", denom, meta.Name))
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"ClassifyDenom: Eth-originated gravity denom %s has bank metadata %s, which is not allowed", denom, meta.Name)
 		}
-		return origin, nil
+		return &origin, nil
 	}
 
 	// cosmos-originated token
 	if tc, exists := k.getCosmosOriginatedERC20ForDenom(ctx, denom); exists {
 		if err := types.ValidateStrictDenom(denom); err != nil {
-			panic(fmt.Sprintf("ClassifyDenom: the denom %s for cosmos-originated ERC20 %s is invalid: %v",
-				denom, tc.GetAddress().Hex(), err))
+			return nil, errorsmod.Wrapf(types.ErrInvalidDenom, "ClassifyDenom: the denom %s for cosmos-originated ERC20 %s is invalid: %v",
+				denom, tc.GetAddress().Hex(), err)
 		}
 		// Check the reverse mapping is consistent
 		if reverseDenom, ok := k.getCosmosOriginatedDenomForERC20(ctx, *tc); !ok || reverseDenom != denom {
-			panic(fmt.Sprintf("ClassifyDenom: cosmos-originated mapping for denom %q is not bidirectionally consistent (reverse lookup returned %q)",
-				denom, reverseDenom))
+			return nil, errorsmod.Wrapf(types.ErrInvalid,
+				"ClassifyDenom: cosmos-originated mapping for denom %q is not bidirectionally consistent (reverse lookup returned %q)",
+				denom, reverseDenom)
 		}
 
 		origin := types.AssetOrigin{
@@ -257,12 +275,12 @@ func (k Keeper) ClassifyDenom(ctx sdk.Context, denom string) (types.AssetOrigin,
 			ERC20:      tc,
 		}
 		origin.AssertValid()
-		return origin, nil
+		return &origin, nil
 	}
 
 	// Unknown asset, return an error
 	//nolint: exhaustruct
-	return types.AssetOrigin{}, types.ErrInvalidDenom.Wrapf("denom %q is not registered as a known bridged asset", denom)
+	return nil, types.ErrInvalidDenom.Wrapf("denom %q is not registered as a known bridged asset", denom)
 }
 
 // RewardToERC20Lookup validates a valset reward coin and returns its ERC20 address and amount.

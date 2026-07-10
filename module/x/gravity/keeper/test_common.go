@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
 
@@ -845,6 +846,9 @@ func minMeta(denom string) banktypes.Metadata {
 // this uses the ClassifyERC20 function to determine the gravity denom for the given ERC20 token contract address and may panic
 // if invalid state is detected in the store.
 func NewGravityCoin(ctx sdk.Context, k Keeper, token types.InternalERC20Token) sdk.Coin {
-	origin := k.ClassifyERC20(ctx, token.Contract)
+	origin, err := k.ClassifyERC20(ctx, token.Contract)
+	if err != nil {
+		panic(fmt.Sprintf("failed to classify ERC20 token %s: %v", token.Contract.GetAddress().Hex(), err))
+	}
 	return sdk.NewCoin(origin.Denom, token.Amount)
 }

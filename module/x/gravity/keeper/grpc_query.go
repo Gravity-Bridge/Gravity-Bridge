@@ -328,7 +328,10 @@ func (k Keeper) ERC20ToDenom(
 	if err != nil {
 		return nil, errorsmod.Wrapf(err, "invalid Erc20 in request: %s", req.Erc20)
 	}
-	erc20Origin := k.ClassifyERC20(ctx, *ethAddr)
+	erc20Origin, err := k.ClassifyERC20(ctx, *ethAddr)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to classify ERC20 in query request")
+	}
 	var ret types.QueryERC20ToDenomResponse
 	ret.Denom = erc20Origin.Denom
 	ret.CosmosOriginated = erc20Origin.Origin == types.AssetOriginCosmos
