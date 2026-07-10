@@ -3,6 +3,7 @@ package v7
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,12 +39,16 @@ func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k GravKeeper) er
 	k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) bool {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
+			ctx.Logger().Error("Attestation migration: failed to unpack claim",
+				"oldKey", hex.EncodeToString(key), "error", err)
 			panic(fmt.Sprintf("Failed to unpack claim during migration: %v", err))
 		}
 
 		// Compute the new hash using the updated ClaimHash (with AttestationSeparator)
 		newHash, err := claim.ClaimHash()
 		if err != nil {
+			ctx.Logger().Error("Attestation migration: failed to compute new hash",
+				"oldKey", hex.EncodeToString(key), "error", err)
 			panic(fmt.Sprintf("Failed to compute new hash during migration: %v", err))
 		}
 
@@ -64,8 +69,11 @@ func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k GravKeeper) er
 		return false // Continue
 	})
 
+	ctx.Logger().Info(fmt.Sprintf("Attestation migration: collected %d attestations to inspect", len(attestationsToMigrate)))
+
 	// Now migrate all attestations
 	migratedCount := 0
+	unchangedCount := 0
 
 	for _, item := range attestationsToMigrate {
 		// Only migrate if the new hash differs from the old hash (i.e., if the separator changed the hash)
@@ -73,16 +81,27 @@ func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k GravKeeper) er
 		oldHash := item.oldKey[oldHashStart:]
 
 		if !bytes.Equal(oldHash, item.newHash) {
+			ctx.Logger().Debug("Attestation migration: rewriting attestation key",
+				"eventNonce", item.eventNonce,
+				"oldHash", hex.EncodeToString(oldHash),
+				"newHash", hex.EncodeToString(item.newHash),
+			)
+
 			// Delete old entry
 			k.DeleteRawAttestationKey(ctx, item.oldKey)
 
 			// Store under new key with new hash
 			k.SetAttestation(ctx, item.eventNonce, item.newHash, &item.attestation)
+		} else {
+			unchangedCount++
 		}
 		migratedCount++
 	}
 
-	ctx.Logger().Info(fmt.Sprintf("Attestation migration complete: migrated %d attestations", migratedCount))
+	ctx.Logger().Info(fmt.Sprintf(
+		"Attestation migration complete: inspected %d attestations, rewrote %d, left %d unchanged",
+		migratedCount, migratedCount-unchangedCount, unchangedCount,
+	))
 	return nil
 }
 
@@ -92,26 +111,36 @@ func MigrateAttestationsToClaimHashComponents(ctx sdk.Context, k GravKeeper) err
 	ctx.Logger().Info("Begin attestation migration: populating ClaimType and ClaimComponents")
 
 	var migrated int
+	var inspected int
 
 	k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) bool {
+		inspected++
 		if att.ClaimComponents != nil {
+			ctx.Logger().Error("ClaimHashComponents migration: attestation already migrated",
+				"oldKey", hex.EncodeToString(key), "attestation", att)
 			panic(fmt.Sprintf("Attestation has already been migrated? %v", att))
 		}
 
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
+			ctx.Logger().Error("ClaimHashComponents migration: failed to unpack claim",
+				"oldKey", hex.EncodeToString(key), "error", err)
 			panic(fmt.Sprintf("Failed to unpack claim during ClaimHashComponents migration: %v", err))
 		}
 
 		claimType := claim.GetType()
 		components, err := types.ExtractClaimHashComponents(claim)
 		if err != nil {
+			ctx.Logger().Error("ClaimHashComponents migration: failed to extract claim components",
+				"eventNonce", claim.GetEventNonce(), "claimType", claimType, "error", err)
 			panic(fmt.Sprintf("Failed to extract claim components during migration: %v", err))
 		}
 
 		// Sanity check: the hash computed from the components must match the hash in the store key.
 		computedHash, err := components.ComputeClaimHash(claimType)
 		if err != nil {
+			ctx.Logger().Error("ClaimHashComponents migration: failed to compute claim hash from components",
+				"eventNonce", claim.GetEventNonce(), "claimType", claimType, "error", err)
 			panic(fmt.Sprintf("Failed to compute claim hash from components during migration: %v", err))
 		}
 
@@ -120,6 +149,12 @@ func MigrateAttestationsToClaimHashComponents(ctx sdk.Context, k GravKeeper) err
 		storedHash := key[hashStart:]
 
 		if !bytes.Equal(storedHash, computedHash) {
+			ctx.Logger().Error("ClaimHashComponents migration: claim hash mismatch",
+				"eventNonce", claim.GetEventNonce(),
+				"claimType", claimType,
+				"storedHash", hex.EncodeToString(storedHash),
+				"computedHash", hex.EncodeToString(computedHash),
+			)
 			panic(fmt.Sprintf(
 				"Claim hash mismatch during ClaimHashComponents migration: stored %x, computed %x",
 				storedHash, computedHash,
@@ -132,10 +167,19 @@ func MigrateAttestationsToClaimHashComponents(ctx sdk.Context, k GravKeeper) err
 		eventNonce := claim.GetEventNonce()
 		k.SetAttestation(ctx, eventNonce, storedHash, &att)
 
+		ctx.Logger().Debug("ClaimHashComponents migration: attestation migrated",
+			"eventNonce", eventNonce,
+			"claimType", claimType,
+			"hash", hex.EncodeToString(storedHash),
+		)
+
 		migrated++
 		return false
 	})
 
-	ctx.Logger().Info(fmt.Sprintf("ClaimHashComponents migration complete: migrated %d attestations", migrated))
+	ctx.Logger().Info(fmt.Sprintf(
+		"ClaimHashComponents migration complete: inspected %d attestations, migrated %d",
+		inspected, migrated,
+	))
 	return nil
 }
