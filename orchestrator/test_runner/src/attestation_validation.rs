@@ -11,7 +11,9 @@ use crate::{
 };
 use clarity::Address as EthAddress;
 use clarity::Uint256;
-use cosmos_gravity::query::{get_attestations, get_erc20_to_denom, get_last_event_nonce_for_validator};
+use cosmos_gravity::query::{
+    get_attestations, get_erc20_to_denom, get_last_event_nonce_for_validator,
+};
 use cosmos_gravity::send::send_ethereum_claims;
 use deep_space::client::type_urls::MSG_TRANSFER_TYPE_URL;
 use deep_space::private_key::{CosmosPrivateKey, PrivateKey};

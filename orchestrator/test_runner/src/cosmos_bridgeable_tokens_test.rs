@@ -14,9 +14,9 @@ use cosmos_gravity::query::{get_cosmos_bridgeable_tokens, get_pending_send_to_et
 use cosmos_gravity::send::{send_to_eth, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::coin::Coin;
 use deep_space::{Contact, Msg, PrivateKey};
-use gravity_proto::gravity::v1::{query_client::QueryClient as GravityQueryClient, MsgSendToEth};
 use gravity_proto::gravity::v1::DeleteCosmosBridgeableTokensProposal;
 use gravity_proto::gravity::v1::SetCosmosBridgeableTokensProposal;
+use gravity_proto::gravity::v1::{query_client::QueryClient as GravityQueryClient, MsgSendToEth};
 use gravity_proto::gravity::v2::MsgDeleteCosmosBridgeableTokensProposal;
 use gravity_proto::gravity::v2::MsgSetCosmosBridgeableTokensProposal;
 use tonic::transport::Channel;
@@ -426,7 +426,9 @@ pub async fn cosmos_bridgeable_tokens_test(
         "MsgDeleteCosmosBridgeableTokensProposal with non-gov authority should be rejected but succeeded: {:?}",
         res
     );
-    info!("Confirmed: MsgDeleteCosmosBridgeableTokensProposal correctly rejected for non-gov sender");
+    info!(
+        "Confirmed: MsgDeleteCosmosBridgeableTokensProposal correctly rejected for non-gov sender"
+    );
 
     // ------------------------------------------------------------------
     // Step 10: Assert that a *valid* delete proposal (submitted via governance)
