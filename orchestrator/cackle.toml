@@ -186,6 +186,13 @@ allow_unsafe = true
 
 [pkg.serde]
 build.allow_apis = [
+    "fs",
+    "process",
+]
+
+[pkg.serde_core]
+build.allow_apis = [
+    "fs",
     "process",
 ]
 build.allow_build_instructions = [
