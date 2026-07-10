@@ -2,13 +2,16 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	sdkmath "cosmossdk.io/math"
+	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	gogoproto "github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -502,4 +505,253 @@ func TestCosmosBridgeableTokensInvariant(t *testing.T) {
 	res, broken = CosmosBridgeableTokensInvariant(k)(ctx)
 	require.True(t, broken)
 	require.Contains(t, res, "does not match bank metadata")
+}
+
+// allAttestationClaimTypes lists every claim type with a ClaimHashComponents variant, used to
+// exercise the AttestationHashIntegrityInvariant tests across the full set of claim shapes.
+var allAttestationClaimTypes = []types.ClaimType{
+	types.CLAIM_TYPE_SEND_TO_COSMOS,
+	types.CLAIM_TYPE_BATCH_SEND_TO_ETH,
+	types.CLAIM_TYPE_ERC20_DEPLOYED,
+	types.CLAIM_TYPE_LOGIC_CALL_EXECUTED,
+	types.CLAIM_TYPE_VALSET_UPDATED,
+}
+
+// newTestClaimOfType builds a valid, fully populated EthereumClaim of the given type, using
+// eventNonce to keep otherwise-identical claims distinguishable from each other.
+// nolint: exhaustruct
+func newTestClaimOfType(claimType types.ClaimType, eventNonce uint64) types.EthereumClaim {
+	switch claimType {
+	case types.CLAIM_TYPE_SEND_TO_COSMOS:
+		return &types.MsgSendToCosmosClaim{
+			EventNonce:     eventNonce,
+			EthBlockHeight: eventNonce + 1000,
+			TokenContract:  TokenContractAddrs[0],
+			Amount:         sdkmath.NewInt(int64(100 + eventNonce)),
+			EthereumSender: EthAddrs[0].String(),
+			CosmosReceiver: AccAddrs[0].String(),
+			Orchestrator:   AccAddrs[0].String(),
+		}
+	case types.CLAIM_TYPE_BATCH_SEND_TO_ETH:
+		return &types.MsgBatchSendToEthClaim{
+			EventNonce:     eventNonce,
+			EthBlockHeight: eventNonce + 1000,
+			BatchNonce:     eventNonce,
+			TokenContract:  TokenContractAddrs[1],
+			Orchestrator:   AccAddrs[0].String(),
+		}
+	case types.CLAIM_TYPE_ERC20_DEPLOYED:
+		return &types.MsgERC20DeployedClaim{
+			EventNonce:     eventNonce,
+			EthBlockHeight: eventNonce + 1000,
+			CosmosDenom:    "footoken",
+			TokenContract:  TokenContractAddrs[2],
+			Name:           "Foo Token",
+			Symbol:         "FOO",
+			Decimals:       18,
+			Orchestrator:   AccAddrs[0].String(),
+		}
+	case types.CLAIM_TYPE_LOGIC_CALL_EXECUTED:
+		return &types.MsgLogicCallExecutedClaim{
+			EventNonce:        eventNonce,
+			EthBlockHeight:    eventNonce + 1000,
+			InvalidationId:    AccAddrs[0].Bytes(),
+			InvalidationNonce: eventNonce,
+			Orchestrator:      AccAddrs[0].String(),
+		}
+	case types.CLAIM_TYPE_VALSET_UPDATED:
+		return &types.MsgValsetUpdatedClaim{
+			EventNonce:     eventNonce,
+			ValsetNonce:    eventNonce,
+			EthBlockHeight: eventNonce + 1000,
+			Members: []types.BridgeValidator{
+				{Power: 100, EthereumAddress: EthAddrs[0].String()},
+				{Power: 200, EthereumAddress: EthAddrs[1].String()},
+			},
+			RewardAmount: sdkmath.NewInt(int64(100 + eventNonce)),
+			RewardToken:  EthAddrs[2].String(),
+			Orchestrator: AccAddrs[0].String(),
+		}
+	default:
+		panic(fmt.Sprintf("newTestClaimOfType: unsupported claim type %v", claimType))
+	}
+}
+
+// newTestAttestation builds a self-consistent Attestation (and its claim hash) of the given
+// claim type using the real ExtractClaimHashComponents logic, mirroring how the keeper itself
+// populates ClaimComponents in Attest.
+// nolint: exhaustruct
+func newTestAttestation(t *testing.T, claimType types.ClaimType, eventNonce uint64) (*types.Attestation, []byte) {
+	t.Helper()
+	claim := newTestClaimOfType(claimType, eventNonce)
+
+	protoClaim, ok := claim.(gogoproto.Message)
+	require.True(t, ok, "claim of type %v does not implement proto.Message", claimType)
+	anyClaim, err := codecTypes.NewAnyWithValue(protoClaim)
+	require.NoError(t, err)
+	components, err := types.ExtractClaimHashComponents(claim)
+	require.NoError(t, err)
+	hash, err := claim.ClaimHash()
+	require.NoError(t, err)
+
+	att := &types.Attestation{
+		Claim:           anyClaim,
+		Observed:        true,
+		Votes:           []string{ValAddrs[0].String()},
+		ClaimType:       claimType,
+		ClaimComponents: components,
+	}
+	return att, hash
+}
+
+// tamperClaimComponents mutates a single field of the attestation's stored ClaimComponents,
+// selecting the field based on the attestation's claim type. This desynchronizes the stored
+// components from the stored Any claim without touching the claim itself, exactly the kind of
+// tampering AttestationHashIntegrityInvariant is meant to catch.
+func tamperClaimComponents(t *testing.T, att *types.Attestation) {
+	t.Helper()
+	switch att.ClaimType {
+	case types.CLAIM_TYPE_SEND_TO_COSMOS:
+		comp := att.ClaimComponents.GetSendToCosmos()
+		require.NotNil(t, comp)
+		comp.Amount = sdkmath.NewInt(999999).String()
+	case types.CLAIM_TYPE_BATCH_SEND_TO_ETH:
+		comp := att.ClaimComponents.GetBatchSendToEth()
+		require.NotNil(t, comp)
+		comp.BatchNonce++
+	case types.CLAIM_TYPE_ERC20_DEPLOYED:
+		comp := att.ClaimComponents.GetErc20Deployed()
+		require.NotNil(t, comp)
+		comp.Symbol = "TAMPERED"
+	case types.CLAIM_TYPE_LOGIC_CALL_EXECUTED:
+		comp := att.ClaimComponents.GetLogicCallExecuted()
+		require.NotNil(t, comp)
+		comp.InvalidationNonce++
+	case types.CLAIM_TYPE_VALSET_UPDATED:
+		comp := att.ClaimComponents.GetValsetUpdated()
+		require.NotNil(t, comp)
+		comp.RewardAmount = sdkmath.NewInt(1).String()
+	default:
+		t.Fatalf("tamperClaimComponents: unsupported claim type %v", att.ClaimType)
+	}
+}
+
+// TestAttestationHashIntegrityInvariant_Valid verifies that the invariant passes on an empty
+// store and continues to pass as multiple consistent attestations of every claim type are added.
+func TestAttestationHashIntegrityInvariant_Valid(t *testing.T) {
+	input := CreateTestEnv(t)
+	ctx := input.Context
+	k := input.GravityKeeper
+
+	// Empty state → passes
+	res, broken := AttestationHashIntegrityInvariant(k)(ctx)
+	require.False(t, broken, res)
+
+	// Populate the store with several consistent attestations of every claim type, checking the
+	// invariant after each individual addition as well as at the very end with everything present.
+	var nonce uint64
+	for _, claimType := range allAttestationClaimTypes {
+		for i := 0; i < 3; i++ {
+			nonce++
+			att, hash := newTestAttestation(t, claimType, nonce)
+			k.SetAttestation(ctx, nonce, hash, att)
+
+			res, broken := AttestationHashIntegrityInvariant(k)(ctx)
+			require.False(t, broken, res)
+		}
+	}
+
+	res, broken = AttestationHashIntegrityInvariant(k)(ctx)
+	require.False(t, broken, res)
+}
+
+// TestAttestationHashIntegrityInvariant_Tampered verifies that the invariant fires when any
+// single claim type's stored components have been tampered with, and that it continues to
+// detect every tampered attestation when multiple types are corrupted simultaneously alongside
+// a larger set of otherwise-valid attestations.
+func TestAttestationHashIntegrityInvariant_Tampered(t *testing.T) {
+	// Individual check per claim type: a lone tampered attestation of that type is caught.
+	for i, claimType := range allAttestationClaimTypes {
+		claimType := claimType
+		eventNonce := uint64(i + 1)
+		t.Run(claimType.String(), func(t *testing.T) {
+			input := CreateTestEnv(t)
+			ctx := input.Context
+			k := input.GravityKeeper
+
+			atts := make(map[uint64]*types.Attestation, len(allAttestationClaimTypes)*2)
+			hashes := make(map[uint64][]byte, len(allAttestationClaimTypes)*2)
+			var nonce uint64
+			for _, claimType := range allAttestationClaimTypes {
+				for i := 0; i < 2; i++ {
+					nonce++
+					att, hash := newTestAttestation(t, claimType, nonce)
+					k.SetAttestation(ctx, nonce, hash, att)
+					atts[nonce] = att
+					hashes[nonce] = hash
+				}
+			}
+
+			att, hash := newTestAttestation(t, claimType, eventNonce)
+			k.SetAttestation(ctx, eventNonce, hash, att)
+
+			// Sanity check: passes before tampering
+			res, broken := AttestationHashIntegrityInvariant(k)(ctx)
+			require.False(t, broken, res)
+
+			// Tamper with the stored components without touching the stored Any claim, then
+			// overwrite the same key so the attestation is no longer internally consistent.
+			tamperClaimComponents(t, att)
+			k.SetAttestation(ctx, eventNonce, hash, att)
+
+			res, broken = AttestationHashIntegrityInvariant(k)(ctx)
+			require.True(t, broken)
+			require.Contains(t, res, "broken attestations")
+		})
+	}
+
+	// Combined check: populate the store with multiple valid attestations of every claim type,
+	// then tamper a subset spanning several different types, and verify the invariant still
+	// finds exactly those broken attestations amongst all the untouched, still-valid ones.
+	t.Run("multiple tampered attestations across types", func(t *testing.T) {
+		input := CreateTestEnv(t)
+		ctx := input.Context
+		k := input.GravityKeeper
+
+		atts := make(map[uint64]*types.Attestation, len(allAttestationClaimTypes)*2)
+		hashes := make(map[uint64][]byte, len(allAttestationClaimTypes)*2)
+		var nonce uint64
+		for _, claimType := range allAttestationClaimTypes {
+			for i := 0; i < 2; i++ {
+				nonce++
+				att, hash := newTestAttestation(t, claimType, nonce)
+				k.SetAttestation(ctx, nonce, hash, att)
+				atts[nonce] = att
+				hashes[nonce] = hash
+			}
+		}
+
+		// Sanity check: the fully-populated, untampered store passes
+		res, broken := AttestationHashIntegrityInvariant(k)(ctx)
+		require.False(t, broken, res)
+
+		// Tamper with one attestation from three different claim types:
+		// nonce 1 -> CLAIM_TYPE_SEND_TO_COSMOS, nonce 4 -> CLAIM_TYPE_BATCH_SEND_TO_ETH,
+		// nonce 9 -> CLAIM_TYPE_VALSET_UPDATED (2 attestations per type, in the order of
+		// allAttestationClaimTypes).
+		tamperedNonces := []uint64{1, 4, 9}
+		for _, n := range tamperedNonces {
+			att := atts[n]
+			tamperClaimComponents(t, att)
+			k.SetAttestation(ctx, n, hashes[n], att)
+		}
+
+		res, broken = AttestationHashIntegrityInvariant(k)(ctx)
+		require.True(t, broken)
+		require.Contains(t, res, "broken attestations")
+		// Every tampered attestation, and only those, should be reported as broken; the
+		// remaining untouched attestations of every type must not show up as failures.
+		require.Equal(t, len(tamperedNonces),
+			strings.Count(res, "claim hash from components does not match hash from stored claim"))
+	})
 }
