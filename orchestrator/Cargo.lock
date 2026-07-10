@@ -1202,9 +1202,9 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
 name = "deep_space"
-version = "2.33.0"
+version = "2.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cc0919d4c560e01f3d72c7424f35fb4abe2026cc5468d9c396c55e86f199394"
+checksum = "131638c5fc925fb5630aedc6413157983e9970524d77228f3f974300c60f3cf4"
 dependencies = [
  "base64 0.22.1",
  "bech32",
