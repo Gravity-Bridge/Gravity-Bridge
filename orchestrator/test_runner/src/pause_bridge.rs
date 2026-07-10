@@ -109,7 +109,8 @@ pub async fn pause_bridge_test(
         info!("Bridge pause successfully stopped deposit");
     }
 
-    // Try to create a batch and send tokens to Ethereum
+    // Try to create a batch and send tokens to Ethereum while the bridge is still paused. Both
+    // MsgSendToEth and batch creation call RequireBridgeActive and must be rejected.
     let coin = contact
         .get_balance(user_keys.cosmos_address, format!("gravity{erc20_address}"))
         .await
@@ -130,7 +131,7 @@ pub async fn pause_bridge_test(
         amount: chain_fee,
         denom: token_name.clone(),
     };
-    send_to_eth(
+    let res = send_to_eth(
         user_keys.cosmos_key,
         user_keys.eth_address,
         Coin {
@@ -138,12 +139,15 @@ pub async fn pause_bridge_test(
             amount,
         },
         bridge_denom_fee.clone(),
-        Some(chain_fee_coin),
+        Some(chain_fee_coin.clone()),
         bridge_denom_fee.clone(),
         contact,
     )
-    .await
-    .unwrap();
+    .await;
+    assert!(
+        res.is_err(),
+        "SendToEth must be rejected while the bridge is paused"
+    );
     let res = send_request_batch(
         keys[0].orch_key,
         token_name.clone(),
@@ -167,7 +171,7 @@ pub async fn pause_bridge_test(
             .unwrap()
             == 0u8.into()
     );
-    info!("Batch creation was blocked by bridge pause!");
+    info!("SendToEth and batch creation were both blocked by bridge pause!");
 
     // crate a governance proposal to resume the bridge
     create_gravity_params_proposal(
@@ -188,6 +192,49 @@ pub async fn pause_bridge_test(
     wait_for_proposals_to_execute(contact).await;
     let params = get_gravity_params(&mut grpc_client).await.unwrap();
     assert!(params.bridge_active);
+
+    // The deposit we attempted while the bridge was paused was rejected before any attestation
+    // vote was ever recorded (RequireBridgeActive is checked at the very start of
+    // claimHandlerCommon, before the claim is added to the attestation store), so the
+    // orchestrators still need to resubmit that claim and reach the 2/3 attestation threshold
+    // now that the bridge is active again. Wait for that deposit to actually be credited before
+    // computing the final expected balance below, otherwise this check races the orchestrators.
+    let start = Instant::now();
+    loop {
+        let balance = contact
+            .get_balance(user_keys.cosmos_address, token_name.clone())
+            .await
+            .unwrap()
+            .map(|c| c.amount)
+            .unwrap_or_else(|| 0u8.into());
+        if balance >= 200u8.into() {
+            break;
+        }
+        info!(
+            "Waiting for the second deposit to be credited now that the bridge is unpaused, balance is currently {balance}"
+        );
+        if Instant::now() - start > TOTAL_TIMEOUT {
+            panic!("Second deposit was never credited after the bridge was unpaused!");
+        }
+        sleep(Duration::from_secs(4)).await;
+    }
+
+    // now that the bridge is active again, SendToEth should succeed. This was blocked earlier
+    // while the bridge was paused, so we perform it here instead.
+    send_to_eth(
+        user_keys.cosmos_key,
+        user_keys.eth_address,
+        Coin {
+            denom: token_name.clone(),
+            amount,
+        },
+        bridge_denom_fee.clone(),
+        Some(chain_fee_coin),
+        bridge_denom_fee.clone(),
+        contact,
+    )
+    .await
+    .unwrap();
 
     // finally we check that our batch executes and our new withdraw processes
     let res = contact
