@@ -677,12 +677,15 @@ func CheckPendingIbcAutoForwards(ctx sdk.Context, k Keeper) error {
 }
 
 // ValidateCrossListIntegrity iterates all cosmos-originated mappings and enforces that:
-//   - No cosmos-originated denom is an IBC denom (1B)
 //   - No cosmos-originated denom contains an embedded Ethereum address (4)
 //   - No cosmos-originated denom collides with an eth-originated gravity or gravity2 denom (3)
 //   - No cosmos-originated ERC20 is also in the remapped eth-originated set (3)
 //   - The denom->ERC20 and ERC20->denom directions are mutually consistent (bidirectional)
 //   - No duplicate denoms or ERC20 addresses appear in the cosmos-originated index
+//
+// Note: IBC denoms are intentionally NOT rejected here. Bridging an IBC-originated asset
+// (e.g. an IBC'd ATOM) to Ethereum registers its ibc/... denom as cosmos-originated, which is a
+// supported flow exercised by TestCosmosOriginated.
 func ValidateCrossListIntegrity(ctx sdk.Context, k Keeper) error {
 	seenDenoms := make(map[string]bool)
 	seenERC20s := make(map[string]bool)
@@ -703,22 +706,10 @@ func ValidateCrossListIntegrity(ctx sdk.Context, k Keeper) error {
 		}
 		seenERC20s[hexAddr] = true
 
-		// No embedded Ethereum addresses
-		if types.ContainsEthAddress(denom) {
-			errs = append(errs, fmt.Sprintf("cosmos-originated denom %q contains an embedded Ethereum address", denom))
-		}
-
-		// denom must not parse as a gravity or gravity2 denom
-		if _, err := types.GravityDenomToERC20(denom); err == nil {
-			errs = append(errs, fmt.Sprintf("cosmos-originated denom %q collides with an eth-originated gravity denom", denom))
-		}
-		if _, err := types.Gravity2DenomToERC20(denom); err == nil {
-			errs = append(errs, fmt.Sprintf("cosmos-originated denom %q collides with an eth-originated gravity2 denom", denom))
-		}
-
-		// ERC20 must not be in the remapped eth-originated set
-		if k.IsRemappedERC20(ctx, *erc20) {
-			errs = append(errs, fmt.Sprintf("cosmos-originated ERC20 %s is also in the remapped eth-originated set", hexAddr))
+		// Structural rules shared with the write path and attestation handler: no embedded
+		// Ethereum address, no gravity/gravity2 collision, and the ERC20 must not be remapped.
+		if err := k.validateCosmosOriginatedMapping(ctx, denom, *erc20); err != nil {
+			errs = append(errs, err.Error())
 		}
 
 		// Bidirectional consistency: ERC20->denom reverse lookup must agree

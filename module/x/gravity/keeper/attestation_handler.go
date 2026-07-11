@@ -267,20 +267,25 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 		return errorsmod.Wrap(err, "invalid cosmos denom in ERC20 deployed attestation")
 	}
 
-	// Reject Ethereum-originated gravity0x... and gravity20x... denoms from being registered
-	// as cosmos-originated. These are voucher denoms for tokens that already exist on Ethereum
-	if _, err := types.GravityDenomToERC20(claim.CosmosDenom); err == nil {
-		return errorsmod.Wrapf(types.ErrInvalid, "cannot register Ethereum-originated gravity denom %s as cosmos-originated", claim.CosmosDenom)
-	}
-	if _, err := types.Gravity2DenomToERC20(claim.CosmosDenom); err == nil {
-		return errorsmod.Wrapf(types.ErrInvalid, "cannot register remapped gravity2 denom %s as cosmos-originated", claim.CosmosDenom)
-	}
-
 	tokenAddress, err := types.NewEthAddress(claim.TokenContract)
 	if err != nil {
 		return errorsmod.Wrap(err, "invalid token contract on claim")
 	}
-	// Disallow re-registration when a token already has a canonical representation
+
+	// Enforce the rules for a cosmos-originated mapping: reject denoms with an
+	// embedded Ethereum address, denoms that parse as eth-originated gravity/gravity2 vouchers, and
+	// ERC20s already in the remapped set.
+	//
+	// NOTE: this is intentionally redundant with setCosmosOriginatedMapping (called below), which
+	// re-runs validateCosmosOriginatedMapping and the duplicate checks. We reject here so a bad
+	// mapping fails before the governance/metadata checks rather than after.
+	// correctness does not depend on this early call.
+	if err := a.keeper.validateCosmosOriginatedMapping(ctx, claim.CosmosDenom, *tokenAddress); err != nil {
+		return err
+	}
+
+	// Disallow re-registration when a token already has a canonical representation, checking both directions
+	// Also redundant with setCosmosOriginatedMapping's duplicate detection, performed here to exit early
 	existingERC20, exists := a.keeper.getCosmosOriginatedERC20ForDenom(ctx, claim.CosmosDenom)
 	if exists {
 		return errorsmod.Wrap(

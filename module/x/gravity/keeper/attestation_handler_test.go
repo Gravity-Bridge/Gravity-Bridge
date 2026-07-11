@@ -248,7 +248,7 @@ func TestHandleErc20Deployed_GravityDenom(t *testing.T) {
 	}, &claim)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrInvalid)
-	require.Contains(t, err.Error(), "cannot register Ethereum-originated gravity denom")
+	require.Contains(t, err.Error(), "collides with an eth-originated gravity denom")
 
 	// gravity20x... denom (remapped Ethereum-originated voucher)
 	//nolint: exhaustruct
@@ -271,7 +271,7 @@ func TestHandleErc20Deployed_GravityDenom(t *testing.T) {
 	}, &claim2)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrInvalid)
-	require.Contains(t, err.Error(), "cannot register remapped gravity2 denom")
+	require.Contains(t, err.Error(), "collides with an eth-originated gravity2 denom")
 }
 
 // TestHandleErc20Deployed_AllowlistEnforcement verifies that handleErc20Deployed rejects
