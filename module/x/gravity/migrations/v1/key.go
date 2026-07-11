@@ -246,7 +246,7 @@ func GetAttestationKey(eventNonce uint64, claimHash []byte) string {
 	return ConvertByteArrToString(key)
 }
 
-// GetValsetKey returns
+// GetValsetPrefix returns
 // prefix
 // [0x0]
 func GetValsetPrefix() string {
