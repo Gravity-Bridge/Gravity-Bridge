@@ -1572,6 +1572,24 @@ func TestSendToEthRejectedWhenBridgePaused(t *testing.T) {
 	requireBridgePausedError(t, err)
 }
 
+// TestRequestBatchRejectedWhenBridgePaused verifies that msgServer.RequestBatch calls
+// RequireBridgeActive (before any other validation) and rejects the message while the
+// bridge is paused.
+// nolint: exhaustruct
+func TestRequestBatchRejectedWhenBridgePaused(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+
+	setBridgePaused(t, ctx, input.GravityKeeper)
+
+	sv := msgServer{input.GravityKeeper}
+	_, err := sv.RequestBatch(ctx, &types.MsgRequestBatch{
+		Sender: AccAddrs[0].String(),
+		Denom:  "ugraviton",
+	})
+	requireBridgePausedError(t, err)
+}
+
 // TestConfirmBatchAllowedWhenBridgePaused verifies that msgServer.ConfirmBatch does not
 // reject the message while the bridge is paused.
 // nolint: exhaustruct

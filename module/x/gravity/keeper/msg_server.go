@@ -276,6 +276,11 @@ func (k msgServer) RequestBatch(c context.Context, msg *types.MsgRequestBatch) (
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgRequestBatch", "msg", msg)
 
+	// While the bridge is paused new batches must not be created, reject before any other logic runs
+	if err := k.RequireBridgeActive(ctx); err != nil {
+		return nil, err
+	}
+
 	if err := types.ValidateStrictDenom(msg.Denom); err != nil {
 		return nil, errorsmod.Wrap(err, "invalid denom in request batch")
 	}
@@ -514,6 +519,11 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgSendToCosmosClaim", "msg", msg)
 
+	// While the bridge is paused oracle events must not be submitted, reject before any other logic runs
+	if err := k.RequireBridgeActive(ctx); err != nil {
+		return nil, err
+	}
+
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not check orchstrator validator inset")
@@ -569,6 +579,11 @@ func (k msgServer) ExecuteIbcAutoForwards(c context.Context, msg *types.MsgExecu
 func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSendToEthClaim) (*types.MsgBatchSendToEthClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgBatchSendToEthClaim", "msg", msg)
+
+	// While the bridge is paused oracle events must not be submitted, reject before any other logic runs
+	if err := k.RequireBridgeActive(ctx); err != nil {
+		return nil, err
+	}
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
@@ -632,6 +647,11 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgERC20DeployedClaim", "msg", msg)
 
+	// While the bridge is paused oracle events must not be submitted, reject before any other logic runs
+	if err := k.RequireBridgeActive(ctx); err != nil {
+		return nil, err
+	}
+
 	if err := types.ValidateStrictDenom(msg.CosmosDenom); err != nil {
 		return nil, errorsmod.Wrap(err, "invalid cosmos denom in ERC20 deployed claim")
 	}
@@ -673,6 +693,11 @@ func (k msgServer) LogicCallExecutedClaim(c context.Context, msg *types.MsgLogic
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgLogicCallExecutedClaim", "msg", msg)
 
+	// While the bridge is paused oracle events must not be submitted, reject before any other logic runs
+	if err := k.RequireBridgeActive(ctx); err != nil {
+		return nil, err
+	}
+
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "Could not check orchestrator validator in set")
@@ -693,6 +718,11 @@ func (k msgServer) LogicCallExecutedClaim(c context.Context, msg *types.MsgLogic
 func (k msgServer) ValsetUpdateClaim(c context.Context, msg *types.MsgValsetUpdatedClaim) (*types.MsgValsetUpdatedClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	k.Logger(ctx).Debug("MsgValsetUpdatedClaim", "msg", msg)
+
+	// While the bridge is paused oracle events must not be submitted, reject before any other logic runs
+	if err := k.RequireBridgeActive(ctx); err != nil {
+		return nil, err
+	}
 
 	err := k.checkOrchestratorValidatorInSet(ctx, msg.Orchestrator)
 	if err != nil {
