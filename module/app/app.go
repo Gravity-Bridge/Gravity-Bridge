@@ -1375,7 +1375,7 @@ func (app *Gravity) GetStoreKeys() []storetypes.StoreKey {
 // binary; once consensus is reached on recoveryUpgradeHeight, every node applies the upgrade.
 const (
 	recoveryUpgradeChainID = "gravity-bridge-3"
-	recoveryUpgradeHeight  = int64(22707647)
+	recoveryUpgradeHeight  = int64(22709470)
 )
 
 // applyRecoveryUpgradeIfDue applies the recovery upgrade exactly at recoveryUpgradeHeight on the
