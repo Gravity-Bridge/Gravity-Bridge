@@ -84,8 +84,11 @@ func cleanupOrphanedBatchConfirms(ctx sdk.Context, k *gravitykeeper.Keeper) {
 
 		// Orphaned: delete every confirm for this (contract, nonce).
 		k.DeleteBatchConfirms(ctx, types.InternalOutgoingTxBatch{
-			BatchNonce:    p.nonce,
-			TokenContract: *ethAddr,
+			BatchNonce:         p.nonce,
+			BatchTimeout:       0,
+			Transactions:       nil,
+			TokenContract:      *ethAddr,
+			CosmosBlockCreated: 0,
 		})
 		orphanedPairs++
 		totalDeleted += counts[p]

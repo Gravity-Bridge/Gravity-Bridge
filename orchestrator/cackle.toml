@@ -903,3 +903,18 @@ allow_unsafe = true
 allow_apis = [
     "net",
 ]
+
+[pkg.fs_extra]
+from.build.allow_apis = [
+    "fs",
+]
+
+[pkg.gravity_proto]
+allow_apis = [
+    "net",
+]
+
+[pkg.cosmos-sdk-proto-althea]
+allow_apis = [
+    "net",
+]

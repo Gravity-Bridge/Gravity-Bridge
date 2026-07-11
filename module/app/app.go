@@ -1398,5 +1398,7 @@ func applyRecoveryUpgradeIfDue(app *Gravity, ctx sdk.Context) {
 	}
 	ctx.Logger().Info("Applying automatic recovery upgrade",
 		"chainID", ctx.ChainID(), "height", ctx.BlockHeight(), "plan", plan.Name)
-	app.UpgradeKeeper.ApplyUpgrade(ctx, plan)
+	if err := app.UpgradeKeeper.ApplyUpgrade(ctx, plan); err != nil {
+		panic(fmt.Sprintf("failed to apply automatic recovery upgrade: %v", err))
+	}
 }

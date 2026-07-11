@@ -59,7 +59,7 @@ func logPendingBatches(ctx sdk.Context, k *gravitykeeper.Keeper, stage string) {
 		token := batch.TokenContract.GetAddress().Hex()
 		a := byToken[token]
 		if a == nil {
-			a = &agg{escrow: sdkmath.ZeroInt()}
+			a = &agg{batchCount: 0, txCount: 0, nonces: nil, escrow: sdkmath.ZeroInt()}
 			byToken[token] = a
 		}
 		a.batchCount++
@@ -99,7 +99,7 @@ func logUnbatchedPool(ctx sdk.Context, k *gravitykeeper.Keeper, stage string) {
 		token := tx.Erc20Token.Contract.GetAddress().Hex()
 		a := byToken[token]
 		if a == nil {
-			a = &agg{escrow: sdkmath.ZeroInt()}
+			a = &agg{count: 0, escrow: sdkmath.ZeroInt()}
 			byToken[token] = a
 		}
 		a.count++
@@ -215,7 +215,6 @@ func logPendingIbcAutoForwards(ctx sdk.Context, k *gravitykeeper.Keeper, stage s
 
 		if tc, err := types.Gravity2DenomToERC20(denom); err == nil {
 			remapped++
-			category = "remapped-gravity2"
 			ctx.Logger().Error("Recovery upgrade: pending IBC Auto Forward for remapped gravity2 denom (UNEXPECTED)",
 				"stage", stage, "erc20", tc.GetAddress().Hex(), "denom", denom,
 				"amount", forward.Token.Amount.String(), "ibcChannel", forward.IbcChannel,
@@ -226,7 +225,6 @@ func logPendingIbcAutoForwards(ctx sdk.Context, k *gravitykeeper.Keeper, stage s
 		if tc, err := types.GravityDenomToERC20(denom); err == nil {
 			if k.IsRemappedERC20(ctx, *tc) {
 				remapped++
-				category = "remapped-gravity1"
 				ctx.Logger().Error("Recovery upgrade: pending IBC Auto Forward for a remapped ERC20's old denom (UNEXPECTED)",
 					"stage", stage, "erc20", tc.GetAddress().Hex(), "denom", denom,
 					"amount", forward.Token.Amount.String(), "ibcChannel", forward.IbcChannel,
