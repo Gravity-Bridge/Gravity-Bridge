@@ -198,8 +198,7 @@ docker exec -it gravity_test_instance /bin/bash
 
 ### Notes for Mac users
 
-Due to a bug in Geth's mining feature it will typically eat up all CPU cores when running in a Mac VM, please set the environmental variable `HARDHAT` in order to use the lower CPU power Hardhat backend
-hardhat can not execute tests that depend on transaction queues so keep in mind this isn't a perfect solution.
+Geth is run in developer mode (`--dev`), which uses a lightweight single-signer sealer instead of proof-of-work mining, so it no longer eats up all CPU cores in a Mac VM. If you still prefer the Hardhat backend, set the environmental variable `HARDHAT`; note that hardhat can not execute tests that depend on transaction queues so keep in mind this isn't a perfect solution.
 
 ```
 

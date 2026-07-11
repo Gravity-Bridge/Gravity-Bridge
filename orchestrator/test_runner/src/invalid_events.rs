@@ -172,9 +172,9 @@ fn get_erc20_test_values() -> Vec<Erc20Params> {
     // A series of test strings designed to torture our implementation.
     let mut test_strings = Vec::new();
 
-    // the maximum size I could get OpenEthereum ERC20 to accept
-    // maybe higher in the future
-    const MAX_SIZE: usize = 5_000;
+    // Upper bound on the ERC20 name/symbol/denom byte length we test with.
+    // Geth dev mode has a block gas limit of ~11.5M, so we need to keep the size
+    const MAX_SIZE: usize = 2_000;
 
     // start with normal utf-8 and odd decimals values
     let bad = "bad".to_string().as_bytes().to_vec();

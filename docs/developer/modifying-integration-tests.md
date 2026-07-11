@@ -15,7 +15,7 @@ the Orchestrators and relayers.
 
 The Ethereum backend for this test changes depending on which flow is being run.
 
-A local Geth instance, with it's version defined in the [dockerfile](/tests/dockerfile/Dockerfile) and it's parameters defined in the [ETHGenesis.json](/tests/assets/ETHGenesis.json)
+A local Geth instance, with it's version defined in the [dockerfile](/tests/dockerfile/Dockerfile) and it's parameters defined in [run-eth.sh](/tests/container-scripts/run-eth.sh). Geth is launched in developer mode (`--dev --dev.period 1`) rather than as a proof-of-work miner: PoW mining pins a full CPU core continuously, which limits how many test chains can run in parallel, whereas dev mode only seals a block per second and is otherwise idle. Dev mode uses chain id 1337 and pre-funds the hardcoded test-runner address as its developer/sealer account.
 
 Or a HardHat instance that is actually launched from the Solidity tools folder and configured with the [hardhat.config.ts](/solidity/hardhat.config.ts).
 

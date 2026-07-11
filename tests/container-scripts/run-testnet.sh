@@ -127,11 +127,12 @@ elif [[ ! -z "$HARDHAT" ]]; then
     npm run evm &
     popd
 # This starts the Geth backed testnet with no pre-seeded in state.
-# Geth is what we run in CI and in general, but developers frequently
-# perfer a faster experience provided by HardHat, also Mac's do not
-# work correctly with the Geth backend, there is some issue where the Docker VM on Mac platforms can't get
-# the right number of cpu cores and Geth goes crazy consuming all the processing power, on the other hand
-# hardhat doesn't work for some tests that depend on transactions waiting for blocks, so Geth is the default
+# Geth is what we run in CI and in general. It runs in developer mode
+# (see run-eth.sh) which uses a lightweight single-signer sealer instead of
+# proof-of-work mining, so it no longer pegs all CPU cores the way the old PoW
+# setup did (a problem that was especially bad in the Docker VM on Mac). Some
+# developers still prefer HardHat for speed, but hardhat doesn't work for some
+# tests that depend on transactions waiting for blocks, so Geth is the default.
 else
     if [[ -z "$(ps -e | grep geth)" ]]; then # Only run-eth if it's not running, which it would be with upgrade tests
       bash ${FOLDER_PATH}/tests/container-scripts/run-eth.sh &

@@ -33,7 +33,7 @@ COMPOSE_PROJECT="gravity-local-tests"
 # Each test container runs its own full chain stack (cosmos + geth + orchestrator),
 # so running too many at once exhausts RAM/CPU quickly. Override with MAX_PARALLEL=N.
 set +u
-MAX_PARALLEL="${MAX_PARALLEL:-16}"
+MAX_PARALLEL="${MAX_PARALLEL:-4}"
 set -u
 
 # Define all standard test types; must stay in sync with docker-compose-tests.yml

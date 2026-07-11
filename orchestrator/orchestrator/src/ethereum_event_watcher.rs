@@ -292,9 +292,10 @@ pub async fn get_latest_safe_block(web3: &Web3) -> Uint256 {
         // Mainline Ethereum, Ethereum classic, or the Ropsten, Kotti, Mordor testnets
         // all Ethereum proof of stake Chains
         1 | 3 | 6 | 7 => get_finalized_block_with_retry(web3).await,
-        // Dev, our own Gravity Ethereum testnet, and Hardhat respectively
-        // all single signer chains with no chance of any reorgs
-        2018 | 15 | 31337 => block_number,
+        // Dev (geth --dev, chain id 1337), our own Gravity Ethereum testnet (15),
+        // and Hardhat (31337) respectively. All single signer chains with no chance
+        // of any reorgs, so we can use the chain tip directly with no confirmation delay.
+        2018 | 1337 | 15 | 31337 => block_number,
         // Rinkeby and Goerli use Clique (POA) Consensus, finality takes
         // up to num validators blocks. Number is higher than Ethereum based
         // on experience with operational issues

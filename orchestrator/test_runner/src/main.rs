@@ -140,9 +140,10 @@ pub const STAKE_SUPPLY_PER_VALIDATOR: u128 = 1000000000;
 pub const STARTING_STAKE_PER_VALIDATOR: u128 = STAKE_SUPPLY_PER_VALIDATOR / 2;
 
 lazy_static! {
-    // this key is the private key for the public key defined in tests/assets/ETHGenesis.json
-    // where the full node / miner sends its rewards. Therefore it's always going
-    // to have a lot of ETH to pay for things like contract deployments
+    // this key is the private key for the geth developer-mode account set up in
+    // tests/container-scripts/run-eth.sh, which developer mode pre-funds with a
+    // huge ETH balance. Therefore it's always going to have a lot of ETH to pay
+    // for things like contract deployments
     static ref MINER_PRIVATE_KEY: EthPrivateKey =
         "0xb1bab011e03a9862664706fc3bbaa1b16651528e5f0e7fbfcbfdd8be302a13e7"
             .parse()
