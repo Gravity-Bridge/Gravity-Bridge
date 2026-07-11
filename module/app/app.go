@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
@@ -147,6 +148,7 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/apollo"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/aurora"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/neutrino"
+	"github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/recovery"
 	v2 "github.com/Gravity-Bridge/Gravity-Bridge/module/app/upgrades/v2"
 	gravityconfig "github.com/Gravity-Bridge/Gravity-Bridge/module/config"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/auction"
@@ -1048,6 +1050,10 @@ func (app *Gravity) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*
 
 // BeginBlocker application updates every begin block
 func (app *Gravity) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
+	// Apply the emergency recovery upgrade automatically at the fixed height on the production
+	// chain, before app.ModuleManager.BeginBlock and before any transactions are delivered.
+	applyRecoveryUpgradeIfDue(app, ctx)
+
 	out, err := app.ModuleManager.BeginBlock(ctx)
 	if err != nil {
 		// nolint: exhaustruct
@@ -1360,4 +1366,37 @@ func (app *Gravity) GetStoreKeys() []storetypes.StoreKey {
 	}
 
 	return keys
+}
+
+// Recovery upgrade forced-application parameters.
+//
+// The recovery upgrade is an emergency remediation upgrade that is applied automatically, without a
+// governance proposal, at a fixed height on the production chain. Validators simply deploy this
+// binary; once consensus is reached on recoveryUpgradeHeight, every node applies the upgrade.
+const (
+	recoveryUpgradeChainID = "gravity-bridge-3"
+	recoveryUpgradeHeight  = int64(22707647)
+)
+
+// applyRecoveryUpgradeIfDue applies the recovery upgrade exactly at recoveryUpgradeHeight on the
+// recoveryUpgradeChainID chain.
+//
+// It is called at the very top of BeginBlocker, before app.ModuleManager.BeginBlock and before any
+// transactions in the block are executed. Therefore there is no chance of a tx running against unpatched
+// state.
+func applyRecoveryUpgradeIfDue(app *Gravity, ctx sdk.Context) {
+	if ctx.ChainID() != recoveryUpgradeChainID || ctx.BlockHeight() != recoveryUpgradeHeight {
+		return
+	}
+
+	plan := upgradetypes.Plan{
+		Name:                recovery.AuroraToRecoveryPlanName,
+		Time:                time.Time{},
+		Height:              recoveryUpgradeHeight,
+		Info:                "Automatic recovery upgrade",
+		UpgradedClientState: nil,
+	}
+	ctx.Logger().Info("Applying automatic recovery upgrade",
+		"chainID", ctx.ChainID(), "height", ctx.BlockHeight(), "plan", plan.Name)
+	app.UpgradeKeeper.ApplyUpgrade(ctx, plan)
 }

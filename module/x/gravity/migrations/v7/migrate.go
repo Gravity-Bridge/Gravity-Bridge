@@ -36,6 +36,13 @@ func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k GravKeeper) er
 
 	var attestationsToMigrate []attestationToMigrate
 
+	// Diagnostic tallies so a local upgrade replay can confirm that every in-progress attestation
+	// (partial votes, not yet observed) as well as every observed attestation was accounted for.
+	claimTypeCounts := map[types.ClaimType]int{}
+	totalVotes := 0
+	observedCount := 0
+	unobservedCount := 0
+
 	k.IterateAttestations(ctx, false, func(key []byte, att types.Attestation) bool {
 		claim, err := k.UnpackAttestationClaim(&att)
 		if err != nil {
@@ -58,6 +65,14 @@ func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k GravKeeper) er
 		eventNonceBytes := key[len(keyPrefix) : len(keyPrefix)+8]
 		eventNonce := binary.BigEndian.Uint64(eventNonceBytes)
 
+		claimTypeCounts[claim.GetType()]++
+		totalVotes += len(att.Votes)
+		if att.Observed {
+			observedCount++
+		} else {
+			unobservedCount++
+		}
+
 		attestationsToMigrate = append(attestationsToMigrate, attestationToMigrate{
 			oldKey:      key,
 			eventNonce:  eventNonce,
@@ -70,6 +85,13 @@ func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k GravKeeper) er
 	})
 
 	ctx.Logger().Info(fmt.Sprintf("Attestation migration: collected %d attestations to inspect", len(attestationsToMigrate)))
+	ctx.Logger().Info("Attestation migration: pre-migration attestation breakdown",
+		"total", len(attestationsToMigrate),
+		"observed", observedCount,
+		"unobserved(inProgress)", unobservedCount,
+		"totalVotes", totalVotes,
+		"claimTypeCounts", fmt.Sprintf("%v", claimTypeCounts),
+	)
 
 	// Now migrate all attestations
 	migratedCount := 0
@@ -102,6 +124,29 @@ func MigrateAttestationsToAttestationSeparator(ctx sdk.Context, k GravKeeper) er
 		"Attestation migration complete: inspected %d attestations, rewrote %d, left %d unchanged",
 		migratedCount, migratedCount-unchangedCount, unchangedCount,
 	))
+
+	// Integrity check: re-key must be one-to-one. If two distinct old keys collided onto the same
+	// new (eventNonce, hash) key, the second SetAttestation would have overwritten the first and we
+	// would have fewer attestations than we collected — silently losing votes for an in-progress
+	// attestation. Re-count and compare so a local replay surfaces any loss immediately.
+	postCount := 0
+	postVotes := 0
+	k.IterateAttestations(ctx, false, func(_ []byte, att types.Attestation) bool {
+		postCount++
+		postVotes += len(att.Votes)
+		return false
+	})
+	if postCount != len(attestationsToMigrate) || postVotes != totalVotes {
+		ctx.Logger().Error("Attestation migration: INTEGRITY MISMATCH after re-keying attestations",
+			"attestationsBefore", len(attestationsToMigrate), "attestationsAfter", postCount,
+			"votesBefore", totalVotes, "votesAfter", postVotes)
+		panic(fmt.Sprintf(
+			"Attestation migration integrity failure: attestations before=%d after=%d, votes before=%d after=%d",
+			len(attestationsToMigrate), postCount, totalVotes, postVotes,
+		))
+	}
+	ctx.Logger().Info("Attestation migration: integrity check passed (attestation and vote counts preserved)",
+		"attestations", postCount, "totalVotes", postVotes)
 	return nil
 }
 

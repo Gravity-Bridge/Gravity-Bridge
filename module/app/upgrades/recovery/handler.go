@@ -137,6 +137,11 @@ func GetRecoveryUpgradeHandler(
 		}
 		ctx.Logger().Info("Recovery upgrade: module migrations complete", "outgoingVersionMap", out)
 
+		// Snapshot the raw production state we are upgrading from, BEFORE any remap/cancel logic
+		// runs. This captures the pending batches, unbatched pool, confirms, valsets, and IBC
+		// auto-forwards exactly as they existed on the live chain.
+		logResumeStateSnapshot(ctx, gravityKeeper, "pre-remap")
+
 		ctx.Logger().Info("Recovery upgrade: remapping affected ERC20 tokens")
 
 		migrateRemappedERC20s(ctx, gravityKeeper, bankKeeper)
@@ -149,6 +154,12 @@ func GetRecoveryUpgradeHandler(
 
 		ctx.Logger().Info("Recovery upgrade: checking for pending IBC Auto Forwards")
 		assertNoPendingRemappedIbcAutoForwards(ctx, gravityKeeper)
+
+		ctx.Logger().Info("Recovery upgrade: cleaning up orphaned valset confirms")
+		cleanupOrphanedValsetConfirms(ctx, gravityKeeper)
+
+		ctx.Logger().Info("Recovery upgrade: cleaning up orphaned batch confirms")
+		cleanupOrphanedBatchConfirms(ctx, gravityKeeper)
 
 		ctx.Logger().Info("Recovery upgrade: disabling the bridge to Ethereum until governance re-enables it")
 		setBridgeActive(ctx, gravityKeeper, false)
@@ -180,6 +191,10 @@ func GetRecoveryUpgradeHandler(
 		if unclassifiable > 0 {
 			panic(fmt.Sprintf("Recovery upgrade FAILURE: %d unclassifiable gravity module balance denoms found", unclassifiable))
 		}
+
+		// Snapshot the final state consensus will resume with (bridge paused). Operators should
+		// diff this against the "pre-remap" snapshot to confirm exactly what survived the upgrade.
+		logResumeStateSnapshot(ctx, gravityKeeper, "resume")
 
 		ctx.Logger().Info("Recovery upgrade: SUCCESS")
 		return out, nil
