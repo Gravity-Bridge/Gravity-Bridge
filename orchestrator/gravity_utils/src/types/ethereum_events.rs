@@ -29,13 +29,46 @@ pub const MSG_ERC20_DEPLOYED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgERC20Deploye
 pub const MSG_LOGIC_CALL_EXECUTED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgLogicCallExecutedClaim";
 pub const MSG_VALSET_UPDATED_CLAIM_TYPE_URL: &str = "/gravity.v1.MsgValsetUpdatedClaim";
 
-/// Used to limit the length of variable length user provided inputs like
-/// ERC20 names and deposit destination strings
-const ONE_MEGABYTE: usize = 1000usize.pow(3);
-
 /// Maximum byte length the Cosmos module accepts for a cosmos denom
 /// (mirrors MaxDenomLength in module/x/gravity/types/denom_validation.go)
 const MAX_COSMOS_DENOM_LEN: usize = 256;
+
+/// Maximum byte length the Cosmos module accepts for an ERC20 name
+/// (mirrors MaxTokenNameLength in module/x/gravity/types/claim_limits.go)
+const MAX_TOKEN_NAME_LEN: usize = 256;
+
+/// Maximum byte length the Cosmos module accepts for an ERC20 symbol
+/// (mirrors MaxTokenSymbolLength in module/x/gravity/types/claim_limits.go)
+const MAX_TOKEN_SYMBOL_LEN: usize = 64;
+
+/// Maximum byte length accepted for a SendToCosmos destination. No bech32 address comes
+/// close to this; an oversized destination is undeliverable and goes to the community pool.
+const MAX_COSMOS_RECEIVER_LEN: usize = 256;
+
+/// Reserved string separating fields in the ClaimHash preimage, which claim fields must
+/// never contain or they could forge a field boundary
+/// (mirrors AttestationSeparator in module/x/gravity/types/denom_validation.go)
+const ATTESTATION_SEPARATOR: &str = "G\u{0304}\u{0310}\u{030f}\u{030d}\u{0304}\u{0313}\u{0303}\u{0308}\u{030e}\u{0322}\u{0308}\u{030e}\u{0322}\u{0300}\u{0308}\u{030e}\u{0322}\u{0301}\u{0352}\u{0357}\u{0320}\u{0300}\u{0357}\u{0340}\u{0309}\u{0321}\u{0357}\u{0330}\u{0350}\u{0308}\u{0301}";
+
+/// Rejects a claim string field which exceeds the bound the Cosmos module applies or which
+/// embeds the ClaimHash field separator, so the orchestrator never attests to a claim the
+/// chain would refuse.
+fn validate_claim_field(value: &str, field: &str, max_len: usize) -> Result<(), GravityError> {
+    if value.len() > max_len {
+        warn!("Deployed ERC20 {field} exceeds the maximum length, will not be adopted");
+        return Err(GravityError::InvalidEventLogError(format!(
+            "{field} exceeds maximum length of {max_len}"
+        )));
+    }
+    if value.contains(ATTESTATION_SEPARATOR) {
+        warn!("Deployed ERC20 {field} contains the attestation separator, will not be adopted");
+        return Err(GravityError::InvalidEventLogError(format!(
+            "{field} contains the reserved attestation separator"
+        )));
+    }
+    Ok(())
+}
+
 /// A type of event which must be sent to Gravity by Orchestrators in a claim, parsed from the
 /// ethereum logs
 pub trait EthereumEvent
@@ -511,7 +544,7 @@ impl SendToCosmosEvent {
         // whitespace can not be a valid part of a bech32 address, so we can safely trim it
         let dest = dest.unwrap().trim().to_string();
 
-        if dest.len() > ONE_MEGABYTE {
+        if dest.len() > MAX_COSMOS_RECEIVER_LEN {
             warn!("Event nonce {event_nonce} sends tokens to a destination that exceeds the length limit, these funds will be allocated to the community pool");
             Ok(SendToCosmosEventData {
                 destination: String::new(),
@@ -711,6 +744,13 @@ impl Erc20DeployedEvent {
         let denom_len: usize = denom_len.to_string().parse().unwrap();
         let index_start = 6 * 32;
         let index_end = index_start + denom_len;
+
+        if data.len() < index_end {
+            return Err(GravityError::InvalidEventLogError(
+                "Erc20DeployedEvent dynamic data too short".to_string(),
+            ));
+        }
+
         let denom = String::from_utf8(data[index_start..index_end].to_vec());
         trace!("Denom {denom:?}");
         if denom.is_err() {
@@ -726,24 +766,17 @@ impl Erc20DeployedEvent {
                 "denom is empty".to_string(),
             ));
         }
-        if denom.len() > MAX_COSMOS_DENOM_LEN {
-            warn!(
-                "Deployed ERC20 has cosmos_denom exceeding the maximum length, will not be adopted"
-            );
-            return Err(GravityError::InvalidEventLogError(
-                "denom exceeds maximum length".to_string(),
-            ));
-        }
+        validate_claim_field(&denom, "denom", MAX_COSMOS_DENOM_LEN)?;
         if !denom.is_ascii() {
             warn!("Deployed ERC20 has non-ASCII cosmos_denom, will not be adopted");
             return Err(GravityError::InvalidEventLogError(
                 "denom has non-ASCII characters".to_string(),
             ));
         }
-        if denom.len() > ONE_MEGABYTE {
-            warn!("Deployed ERC20 is too large! will not be adopted");
+        if denom.contains('\\') {
+            warn!("Deployed ERC20 has a backslash in cosmos_denom, will not be adopted");
             return Err(GravityError::InvalidEventLogError(
-                "denom exceeds maximum size".to_string(),
+                "denom contains forbidden backslash".to_string(),
             ));
         }
 
@@ -788,19 +821,7 @@ impl Erc20DeployedEvent {
         }
         trace!("ERC20 Name {erc20_name:?}");
         let erc20_name = erc20_name.unwrap();
-        if erc20_name.len() > ONE_MEGABYTE {
-            warn!("Deployed ERC20 is too large! will not be adopted");
-            return Err(GravityError::InvalidEventLogError(
-                "ERC20 Name exceeds maximum size".to_string(),
-            ));
-        }
-        trace!("ERC20 Name {erc20_name:?}");
-        if erc20_name.len() > ONE_MEGABYTE {
-            warn!("Deployed ERC20 is too large! will not be adopted");
-            return Err(GravityError::InvalidEventLogError(
-                "ERC20 Name exceeds maximum size".to_string(),
-            ));
-        }
+        validate_claim_field(&erc20_name, "name", MAX_TOKEN_NAME_LEN)?;
 
         let index_start = index_end.div_ceil(32) * 32;
         let index_end = index_start + 32;
@@ -837,14 +858,7 @@ impl Erc20DeployedEvent {
             ));
         }
         let symbol = symbol.unwrap();
-        if symbol.len() > ONE_MEGABYTE {
-            warn!("Deployed ERC20 is too large! will not be adopted");
-            // we must return a dummy event in order to finish processing
-            // otherwise we halt the oracle
-            return Err(GravityError::InvalidEventLogError(
-                "ERC20 Symbol exceeds maximum size".to_string(),
-            ));
-        }
+        validate_claim_field(&symbol, "symbol", MAX_TOKEN_SYMBOL_LEN)?;
 
         Ok(Erc20DeployedEventData {
             cosmos_denom: denom,
@@ -918,7 +932,8 @@ impl EthereumEvent for Erc20DeployedEvent {
                     }
                     let event_nonce: u64 = nonce.to_string().parse().unwrap();
                     // Use the token contract address as a structurally valid denom so the
-                    // claim passes ValidateBasic. The attestation handler will reject it
+                    // claim passes ValidateBasic. Note it's important this be in the ETH originaged
+                    // format as it makes it obviously invalid. The attestation handler will reject it
                     // gracefully (no governance-approved metadata for this denom) and still
                     // mark the event as observed, advancing the oracle nonce.
                     let fallback_denom = format!("gravity{erc20}");
