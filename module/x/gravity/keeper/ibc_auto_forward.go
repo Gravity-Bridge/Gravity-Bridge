@@ -12,6 +12,7 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	errorsmod "cosmossdk.io/errors"
@@ -228,13 +229,50 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context) (stop bool, er
 	timeoutTime := thirtyDaysInFuture(ctx) // Set the ibc transfer to expire ~one month from now
 
 	msgTransfer := createIbcMsgTransfer(portId, *forward, fallback.String(), uint64(timeoutTime.UnixNano()))
+	// snapshot balances before attempting the IBC transfer, we use this to assert the rollback success in case of failure
+	// and that we don't end up double-crediting. This should be impossible, but if ibc-go behavior changes in the future
+	// this provides a safeguard.
+	escrowAddress := ibctransfertypes.GetEscrowAddress(portId, forward.IbcChannel)
+	fallbackBefore := k.bankKeeper.GetBalance(ctx, fallback, forward.Token.Denom)
+	escrowBefore := k.bankKeeper.GetBalance(ctx, escrowAddress, forward.Token.Denom)
+	supplyBefore := k.bankKeeper.GetSupply(ctx, forward.Token.Denom)
 
-	// Make the ibc-transfer attempt
-	_, recoverableErr := k.ibcTransferKeeper.Transfer(ctx, &msgTransfer)
-	ctx = sdk.UnwrapSDKContext(ctx)
+	// The Gravity account above already has the funds. IBC either locks them in its escrow account
+	// or burns returning IBC vouchers on send. Both happen before sending the packet can fail due to say an expired
+	// client or other issue. Like we do elsewhere in the repo, we only commit the transfer if it succeeds. So either
+	// the IBC transfer succeeds, or it fails and the funds remain in the fallback account.
+	// A successful send still uses normal IBC refunds if it later times out or receives an error acknowledgement.
+	transferCtx, commitTransfer := ctx.CacheContext()
+	_, recoverableErr := k.ibcTransferKeeper.Transfer(transferCtx, &msgTransfer)
 
 	// Log + emit event
+	expectedFallback, expectedEscrow, expectedSupply := fallbackBefore, escrowBefore, supplyBefore
 	if recoverableErr == nil {
+		// check and update expected balances based on IBC transfer success, also handle a very weird case
+		// where someone tries to do a deposit to the ibc escrow address.
+		fullDenomPath := forward.Token.Denom
+		if strings.HasPrefix(fullDenomPath, ibctransfertypes.DenomPrefix+"/") {
+			fullDenomPath, err = k.ibcTransferKeeper.DenomPathFromHash(ctx, fullDenomPath)
+			if err != nil {
+				panic(fmt.Sprintf("IBC auto-forward succeeded without a denomination trace for nonce %d: %s", forward.EventNonce, err))
+			}
+		}
+		expectedFallback = fallbackBefore.Sub(*forward.Token)
+		if ibctransfertypes.SenderChainIsSource(portId, forward.IbcChannel, fullDenomPath) {
+			if fallback.Equals(escrowAddress) {
+				expectedFallback = fallbackBefore
+			} else {
+				expectedEscrow = escrowBefore.Add(*forward.Token)
+			}
+		} else {
+			expectedSupply = supplyBefore.Sub(*forward.Token)
+		}
+		if fallback.Equals(escrowAddress) {
+			expectedEscrow = expectedFallback
+		}
+
+		// commit and finalize
+		commitTransfer()
 		k.logEmitIbcForwardSuccessEvent(ctx, *forward, msgTransfer)
 	} else {
 		// Funds have already been sent to the fallback user, emit a failure log
@@ -255,6 +293,15 @@ func (k Keeper) ProcessNextPendingIbcAutoForward(ctx sdk.Context) (stop bool, er
 		*/
 		k.logEmitIbcForwardFailureEvent(ctx, *forward, recoverableErr)
 	}
+	// Require exact balances and supply for rollback, escrow, or burn.
+	fallbackAfter := k.bankKeeper.GetBalance(ctx, fallback, forward.Token.Denom)
+	escrowAfter := k.bankKeeper.GetBalance(ctx, escrowAddress, forward.Token.Denom)
+	supplyAfter := k.bankKeeper.GetSupply(ctx, forward.Token.Denom)
+	if !fallbackAfter.Equal(expectedFallback) || !escrowAfter.Equal(expectedEscrow) || !supplyAfter.Equal(expectedSupply) {
+		panic(fmt.Sprintf("IBC auto-forward balance invariant violated for nonce %d: local %s (expected %s), escrow %s (expected %s), supply %s (expected %s)",
+			forward.EventNonce, fallbackAfter, expectedFallback, escrowAfter, expectedEscrow, supplyAfter, expectedSupply))
+	}
+
 	return false, nil // Error case has been handled, funds are in receiver's control locally or on IBC chain
 }
 

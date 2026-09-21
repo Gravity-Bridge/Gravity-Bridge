@@ -269,6 +269,8 @@ type TestInput struct {
 	GovKeeper         govkeeper.Keeper
 	IbcKeeper         ibckeeper.Keeper
 	IbcTransferKeeper ibctransferkeeper.Keeper
+	IbcScope          capabilitykeeper.ScopedKeeper
+	TransferScope     capabilitykeeper.ScopedKeeper
 	MintKeeper        mintkeeper.Keeper
 	AuctionKeeper     auctionkeeper.Keeper
 	Context           sdk.Context
@@ -429,6 +431,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	keyGov := storetypes.NewKVStoreKey(govtypes.StoreKey)
 	keySlashing := storetypes.NewKVStoreKey(slashingtypes.StoreKey)
 	keyCapability := storetypes.NewKVStoreKey(capabilitytypes.StoreKey)
+	memKeys := storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 	keyUpgrade := storetypes.NewKVStoreKey(upgradetypes.StoreKey)
 	keyIbc := storetypes.NewKVStoreKey(ibcexported.StoreKey)
 	keyIbcTransfer := storetypes.NewKVStoreKey(ibctransfertypes.StoreKey)
@@ -450,6 +453,7 @@ func CreateTestEnv(t *testing.T) TestInput {
 	ms.MountStoreWithDB(keyGov, storetypes.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keySlashing, storetypes.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyCapability, storetypes.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(memKeys[capabilitytypes.MemStoreKey], storetypes.StoreTypeMemory, nil)
 	ms.MountStoreWithDB(keyUpgrade, storetypes.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIbc, storetypes.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIbcTransfer, storetypes.StoreTypeIAVL, db)
@@ -640,7 +644,6 @@ func CreateTestEnv(t *testing.T) TestInput {
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-	memKeys := storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 	capabilityKeeper := *capabilitykeeper.NewKeeper(
 		appCodec,
 		keyCapability,
@@ -716,6 +719,8 @@ func CreateTestEnv(t *testing.T) TestInput {
 		GovKeeper:         *govKeeper,
 		IbcKeeper:         ibcKeeper,
 		IbcTransferKeeper: ibcTransferKeeper,
+		IbcScope:          scopedIbcKeeper,
+		TransferScope:     scopedTransferKeeper,
 		MintKeeper:        mintKeeper,
 		AuctionKeeper:     auctionKeeper,
 		Context:           ctx,
