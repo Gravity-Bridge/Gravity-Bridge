@@ -23,6 +23,141 @@ const (
 	testTokenContract = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
 )
 
+func TestLegacyAttestationVotesObservationAndDeletion(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer input.AssertInvariants()
+	gravityKeeper := input.GravityKeeper
+	claim := &types.MsgSendToCosmosClaim{
+		EventNonce: 1, EthBlockHeight: 2, TokenContract: testTokenContract,
+		Amount: sdkmath.NewInt(3), EthereumSender: EthAddrs[0].String(),
+		CosmosReceiver: AccAddrs[0].String(), Orchestrator: OrchAddrs[0].String(),
+	}
+	legacyHash := sha256.Sum256([]byte(strings.Join([]string{
+		"1", "2", testTokenContract, "3", claim.EthereumSender, claim.CosmosReceiver,
+	}, types.AttestationSeparator)))
+	claimAny, err := codectypes.NewAnyWithValue(claim)
+	require.NoError(t, err)
+	components, err := types.ExtractClaimHashComponents(claim)
+	require.NoError(t, err)
+	att := &types.Attestation{
+		Height: uint64(ctx.BlockHeight()), Claim: claimAny, ClaimType: claim.GetType(), ClaimComponents: components,
+		Votes: []string{ValAddrs[0].String(), ValAddrs[1].String()},
+	}
+	gravityKeeper.SetAttestation(ctx, claim.EventNonce, legacyHash[:], att)
+	for _, validator := range ValAddrs[:2] {
+		gravityKeeper.SetLastEventNonceByValidator(ctx, validator, claim.EventNonce)
+	}
+	for _, orchestrator := range OrchAddrs[2:] {
+		claim.Orchestrator = orchestrator.String()
+		claimAny, err = codectypes.NewAnyWithValue(claim)
+		require.NoError(t, err)
+		att, err = gravityKeeper.Attest(ctx, claim, claimAny)
+		require.NoError(t, err)
+	}
+	require.Len(t, att.Votes, len(OrchAddrs))
+	require.Len(t, gravityKeeper.GetMostRecentAttestations(ctx, 10), 1)
+	require.False(t, gravityKeeper.GetAttestation(ctx, claim.EventNonce, legacyHash[:]).Observed)
+
+	gravityKeeper.TryAttestation(ctx, att)
+	stored := gravityKeeper.GetAttestation(ctx, claim.EventNonce, legacyHash[:])
+	require.NotNil(t, stored)
+	require.True(t, stored.Observed)
+	require.Equal(t, claim.EventNonce, gravityKeeper.GetLastObservedEventNonce(ctx))
+	require.Len(t, gravityKeeper.GetMostRecentAttestations(ctx, 10), 1)
+	contract, err := types.NewEthAddress(testTokenContract)
+	require.NoError(t, err)
+	require.Equal(t, claim.Amount, input.BankKeeper.GetBalance(ctx, AccAddrs[0], types.GravityDenom(*contract)).Amount)
+	gravityKeeper.DeleteAttestation(ctx, *stored)
+	require.Nil(t, gravityKeeper.GetAttestation(ctx, claim.EventNonce, legacyHash[:]))
+	require.Empty(t, gravityKeeper.GetMostRecentAttestations(ctx, 10))
+}
+
+func TestDeleteHistoricalSeparatorAttestation(t *testing.T) {
+	input := CreateTestEnv(t)
+	gravityKeeper, ctx := input.GravityKeeper, input.Context
+	claim := &types.MsgSendToCosmosClaim{
+		EventNonce: 1, EthBlockHeight: 2, TokenContract: testTokenContract,
+		Amount: sdkmath.NewInt(3), EthereumSender: EthAddrs[0].String(),
+		CosmosReceiver: types.AttestationSeparator, Orchestrator: OrchAddrs[0].String(),
+	}
+	legacyHash := sha256.Sum256([]byte(strings.Join([]string{
+		"1", "2", testTokenContract, "3", claim.EthereumSender, claim.CosmosReceiver,
+	}, types.AttestationSeparator)))
+	claimAny, err := codectypes.NewAnyWithValue(claim)
+	require.NoError(t, err)
+	components, err := types.ExtractClaimHashComponents(claim)
+	require.NoError(t, err)
+	att := &types.Attestation{
+		Observed: true, Votes: []string{ValAddrs[0].String()}, Height: uint64(ctx.BlockHeight()),
+		Claim: claimAny, ClaimType: claim.GetType(), ClaimComponents: components,
+	}
+	gravityKeeper.SetAttestation(ctx, claim.EventNonce, legacyHash[:], att)
+	require.NoError(t, att.VerifyClaimHash(gravityKeeper.cdc))
+	require.ErrorContains(t, types.ValidateClaimFieldLengths(claim), "cosmos receiver contains forbidden separator")
+	require.NotPanics(t, func() { gravityKeeper.DeleteAttestation(ctx, *att) })
+	require.Empty(t, gravityKeeper.GetMostRecentAttestations(ctx, 10))
+}
+
+func TestERC20DeployedNameSymbolSeparatorInjectionRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer input.AssertInvariants()
+	gravityKeeper := input.GravityKeeper
+	server := msgServer{gravityKeeper}
+	honest := &types.MsgERC20DeployedClaim{
+		EventNonce: 1, EthBlockHeight: 1, CosmosDenom: "ugravity", TokenContract: testTokenContract,
+		Name: "A" + types.AttestationSeparator, Symbol: "C", Decimals: 6, Orchestrator: OrchAddrs[0].String(),
+	}
+	forged := *honest
+	forged.Name = "A"
+	forged.Symbol = types.AttestationSeparator + "C"
+	forged.Orchestrator = OrchAddrs[1].String()
+	require.NotEqual(t, honest.Name, forged.Name)
+	require.NotEqual(t, honest.Symbol, forged.Symbol)
+	honestHash, err := honest.ClaimHash()
+	require.NoError(t, err)
+	forgedHash, err := forged.ClaimHash()
+	require.NoError(t, err)
+	require.Equal(t, honestHash, forgedHash)
+	require.Equal(t, types.MaxTokenSymbolLength, len(forged.Symbol))
+
+	for _, test := range []struct {
+		name  string
+		claim *types.MsgERC20DeployedClaim
+	}{
+		{"symbol", &forged},
+		{"name", honest},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			require.NoError(t, test.claim.ValidateBasic())
+			require.LessOrEqual(t, len(test.claim.Name), types.MaxTokenNameLength)
+			require.LessOrEqual(t, len(test.claim.Symbol), types.MaxTokenSymbolLength)
+			claimAny, err := codectypes.NewAnyWithValue(test.claim)
+			require.NoError(t, err)
+			err = server.claimHandlerCommon(ctx, claimAny, test.claim)
+			require.ErrorIs(t, err, types.ErrInvalidClaim)
+			require.ErrorContains(t, err, "token "+test.name+" contains forbidden separator")
+			require.Nil(t, gravityKeeper.GetAttestation(ctx, test.claim.EventNonce, honestHash))
+			require.Empty(t, gravityKeeper.GetMostRecentAttestations(ctx, 10))
+			for _, validator := range ValAddrs {
+				require.Equal(t, uint64(0), gravityKeeper.GetLastEventNonceByValidator(ctx, validator))
+			}
+			require.Equal(t, uint64(0), gravityKeeper.GetLastObservedEventNonce(ctx))
+		})
+	}
+
+	valid := *honest
+	valid.Name = "A"
+	claimAny, err := codectypes.NewAnyWithValue(&valid)
+	require.NoError(t, err)
+	require.NoError(t, server.claimHandlerCommon(ctx, claimAny, &valid))
+	validHash, err := valid.ClaimHash()
+	require.NoError(t, err)
+	att := gravityKeeper.GetAttestation(ctx, valid.EventNonce, validHash)
+	require.NotNil(t, att)
+	require.Equal(t, []string{ValAddrs[0].String()}, att.Votes)
+	require.Equal(t, uint64(1), gravityKeeper.GetLastEventNonceByValidator(ctx, ValAddrs[0]))
+}
+
 func TestGetAndDeleteAttestation(t *testing.T) {
 	input := CreateTestEnv(t)
 	k := input.GravityKeeper

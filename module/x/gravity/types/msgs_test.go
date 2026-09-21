@@ -2,7 +2,9 @@ package types
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -16,6 +18,103 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 )
+
+func TestClaimHashLegacyEncoding(t *testing.T) {
+	const contract = "0x1111111111111111111111111111111111111111"
+	const sender = "0x2222222222222222222222222222222222222222"
+	members := []BridgeValidator{
+		{Power: 10, EthereumAddress: sender},
+		{Power: 20, EthereumAddress: contract},
+	}
+	sortedMembers := []BridgeValidator{members[1], members[0]}
+	cases := []struct {
+		name   string
+		claim  EthereumClaim
+		fields []string
+		digest string
+	}{
+		{"deposit", &MsgSendToCosmosClaim{EventNonce: 1, EthBlockHeight: 2, TokenContract: contract,
+			Amount: math.NewInt(3), EthereumSender: sender, CosmosReceiver: "receiver"},
+			[]string{"1", "2", contract, "3", sender, "receiver"},
+			"5dbb381c520d10d6494da6b3fb92c2fd1e673f40f71a652f3f3a926cef14185d"},
+		{"batch", &MsgBatchSendToEthClaim{EventNonce: 1, EthBlockHeight: 2, BatchNonce: 3, TokenContract: contract},
+			[]string{"1", "2", "3", contract},
+			"0a4d440dd4ea6c3ff0fba05187a425177f0832a9f6f2b2910435cfc5e7af4038"},
+		{"deployment", &MsgERC20DeployedClaim{EventNonce: 1, EthBlockHeight: 2, CosmosDenom: "uatom",
+			TokenContract: contract, Name: "Atom", Symbol: "ATOM", Decimals: 6},
+			[]string{"1", "2", "uatom", contract, "Atom", "ATOM", "6"},
+			"5162fbd0dade38e05fa37bf235393883311c548123f4a593b46233f57e633dba"},
+		{"logic", &MsgLogicCallExecutedClaim{EventNonce: 1, EthBlockHeight: 2, InvalidationId: []byte{0, 255, 47}, InvalidationNonce: 3},
+			[]string{"1", "2", string([]byte{0, 255, 47}), "3"},
+			"48e9dabe2fcf5a98e8152e3abe5b8585d5c2aecf6ba59615ad960bfafffe0202"},
+		{"valset", &MsgValsetUpdatedClaim{EventNonce: 1, ValsetNonce: 3, EthBlockHeight: 2,
+			Members: members, RewardAmount: math.NewInt(4), RewardToken: contract},
+			[]string{"1", "3", "2", fmt.Sprintf("%x", sortedMembers), "4", contract},
+			"6444dbc90cdd59bb89cc7d90e87de8fcb1c6fb2c3b91f9c349c5f5b4d8362c1a"},
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			preimage := []byte(strings.Join(test.fields, AttestationSeparator))
+			expected := sha256.Sum256(preimage)
+			require.Equal(t, test.digest, fmt.Sprintf("%x", expected))
+			components, err := ExtractClaimHashComponents(test.claim)
+			require.NoError(t, err)
+			hash, err := test.claim.ClaimHash()
+			require.NoError(t, err)
+			require.Equal(t, expected[:], hash)
+			componentHash, err := components.ComputeClaimHash(test.claim.GetType())
+			require.NoError(t, err)
+			require.Equal(t, expected[:], componentHash)
+		})
+	}
+	require.Equal(t, sortedMembers[1], members[0])
+	require.Equal(t, sortedMembers[0], members[1])
+}
+
+func TestClaimComponentAmountNormalization(t *testing.T) {
+	for _, claim := range []EthereumClaim{
+		&MsgSendToCosmosClaim{Amount: math.NewInt(3)},
+		&MsgValsetUpdatedClaim{RewardAmount: math.NewInt(3)},
+	} {
+		expected, err := claim.ClaimHash()
+		require.NoError(t, err)
+		components, err := ExtractClaimHashComponents(claim)
+		require.NoError(t, err)
+		switch component := components.Components.(type) {
+		case *ClaimHashComponents_SendToCosmos:
+			component.SendToCosmos.Amount = "+03"
+		case *ClaimHashComponents_ValsetUpdated:
+			component.ValsetUpdated.RewardAmount = "+03"
+		}
+		actual, err := components.ComputeClaimHash(claim.GetType())
+		require.NoError(t, err)
+		require.Equal(t, expected, actual)
+	}
+}
+
+func TestHistoricalClaimSeparatorHashing(t *testing.T) {
+	const contract = "0x1111111111111111111111111111111111111111"
+	claims := []EthereumClaim{
+		&MsgSendToCosmosClaim{TokenContract: contract, EthereumSender: contract,
+			Amount: math.NewInt(1), CosmosReceiver: AttestationSeparator},
+		&MsgBatchSendToEthClaim{TokenContract: AttestationSeparator},
+		&MsgERC20DeployedClaim{CosmosDenom: "uatom", TokenContract: contract, Name: AttestationSeparator},
+		&MsgLogicCallExecutedClaim{InvalidationId: []byte(AttestationSeparator)},
+		&MsgValsetUpdatedClaim{RewardAmount: math.ZeroInt(), RewardToken: AttestationSeparator},
+	}
+	for _, claim := range claims {
+		t.Run(claim.GetType().String(), func(t *testing.T) {
+			require.ErrorIs(t, ValidateClaimFieldLengths(claim), ErrInvalidClaim)
+			hash, err := claim.ClaimHash()
+			require.NoError(t, err)
+			components, err := ExtractClaimHashComponents(claim)
+			require.NoError(t, err)
+			componentHash, err := components.ComputeClaimHash(claim.GetType())
+			require.NoError(t, err)
+			require.Equal(t, hash, componentHash)
+		})
+	}
+}
 
 func TestValidateMsgSetOrchestratorAddress(t *testing.T) {
 	var (
@@ -203,13 +302,13 @@ func TestMsgERC20DeployedClaimHash(t *testing.T) {
 	mDecim := base
 	mDecim.Decimals = NonzeroUint64()
 
-	hashes := getClaimHashStrings(t, &base, &mNonce, &mBlock, &mDenom, &mName, &mSymb, &mDecim)
+	hashes := getClaimHashStrings(t, &base, &mNonce, &mBlock, &mDenom, &mCtr, &mName, &mSymb, &mDecim)
 	baseH := hashes[0]
 	rest := hashes[1:]
 	// Assert that the base claim hash differs from all the rest
 	require.False(t, slices.Contains(rest, baseH))
 
-	newClaims := setOrchestratorOnClaims(orchestrator, &base, &mNonce, &mBlock, &mDenom, &mName, &mSymb, &mDecim)
+	newClaims := setOrchestratorOnClaims(orchestrator, &base, &mNonce, &mBlock, &mDenom, &mCtr, &mName, &mSymb, &mDecim)
 	newHashes := getClaimHashStrings(t, newClaims...)
 	// Assert that the claims with orchestrator set do not change the hashes
 	require.Equal(t, hashes, newHashes)
