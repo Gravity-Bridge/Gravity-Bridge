@@ -1,6 +1,8 @@
 package types
 
 import (
+	"strings"
+
 	errorsmod "cosmossdk.io/errors"
 )
 
@@ -9,6 +11,13 @@ const (
 	MaxTokenNameLength = 256
 	// MaxTokenSymbolLength is the maximum length of a token symbol in ERC20 deployment claims.
 	MaxTokenSymbolLength = 64
+	// MaxCosmosReceiverLength is the maximum length of a SendToCosmos receiver. The
+	// orchestrator applies the same bound and substitutes an empty receiver when it is
+	// exceeded, so an oversized destination reaches the community pool rather than making the
+	// claim impossible to submit and halting the oracle.
+	MaxCosmosReceiverLength = 256
+	// MaxInvalidationIdLength is the maximum length of a logic call invalidation id in Ethereum claims.
+	MaxInvalidationIdLength = 32
 )
 
 // ValidateClaimFieldLengths enforces maximum lengths on oracle claim string fields
@@ -22,6 +31,9 @@ func ValidateClaimFieldLengths(claim EthereumClaim) error {
 		if err := validateERC20AddressField(c.EthereumSender, "ethereum sender"); err != nil {
 			return err
 		}
+		if err := validateClaimTextField(c.CosmosReceiver, "cosmos receiver", MaxCosmosReceiverLength); err != nil {
+			return err
+		}
 
 	case *MsgERC20DeployedClaim:
 		if err := validateERC20AddressField(c.TokenContract, "token contract"); err != nil {
@@ -32,11 +44,11 @@ func ValidateClaimFieldLengths(claim EthereumClaim) error {
 		if err := ValidateStrictDenom(c.CosmosDenom); err != nil {
 			return errorsmod.Wrapf(ErrInvalidClaim, "invalid cosmos denom: %s", err)
 		}
-		if len(c.Name) > MaxTokenNameLength {
-			return errorsmod.Wrapf(ErrInvalidClaim, "token name too long: %d > %d", len(c.Name), MaxTokenNameLength)
+		if err := validateClaimTextField(c.Name, "token name", MaxTokenNameLength); err != nil {
+			return err
 		}
-		if len(c.Symbol) > MaxTokenSymbolLength {
-			return errorsmod.Wrapf(ErrInvalidClaim, "token symbol too long: %d > %d", len(c.Symbol), MaxTokenSymbolLength)
+		if err := validateClaimTextField(c.Symbol, "token symbol", MaxTokenSymbolLength); err != nil {
+			return err
 		}
 
 	case *MsgBatchSendToEthClaim:
@@ -48,6 +60,26 @@ func ValidateClaimFieldLengths(claim EthereumClaim) error {
 		if err := validateERC20AddressField(c.RewardToken, "reward token"); err != nil {
 			return err
 		}
+
+	case *MsgLogicCallExecutedClaim:
+		if len(c.InvalidationId) > MaxInvalidationIdLength {
+			return errorsmod.Wrapf(ErrInvalidClaim, "invalidation id too long: %d > %d", len(c.InvalidationId), MaxInvalidationIdLength)
+		}
+
+	default:
+		return errorsmod.Wrapf(ErrInvalidClaim, "unrecognized claim type %T", claim)
+	}
+	return nil
+}
+
+// validateClaimTextField bounds a free-form claim string and rejects the AttestationSeparator,
+// which would otherwise let the field forge a boundary in the ClaimHash pre-image.
+func validateClaimTextField(value, fieldName string, maxLen int) error {
+	if len(value) > maxLen {
+		return errorsmod.Wrapf(ErrInvalidClaim, "%s too long: %d > %d", fieldName, len(value), maxLen)
+	}
+	if strings.Contains(value, AttestationSeparator) {
+		return errorsmod.Wrapf(ErrInvalidClaim, "%s contains forbidden separator", fieldName)
 	}
 	return nil
 }

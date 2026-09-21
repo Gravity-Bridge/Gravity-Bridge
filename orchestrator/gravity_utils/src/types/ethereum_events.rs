@@ -544,8 +544,10 @@ impl SendToCosmosEvent {
         // whitespace can not be a valid part of a bech32 address, so we can safely trim it
         let dest = dest.unwrap().trim().to_string();
 
-        if dest.len() > MAX_COSMOS_RECEIVER_LEN {
-            warn!("Event nonce {event_nonce} sends tokens to a destination that exceeds the length limit, these funds will be allocated to the community pool");
+        // Anything the chain's validateClaimTextField would refuse has to be emptied here, or
+        // the claim becomes unsubmittable for every validator and the oracle stalls.
+        if dest.len() > MAX_COSMOS_RECEIVER_LEN || dest.contains(ATTESTATION_SEPARATOR) {
+            warn!("Event nonce {event_nonce} sends tokens to a destination the chain will not accept, these funds will be allocated to the community pool");
             Ok(SendToCosmosEventData {
                 destination: String::new(),
                 event_nonce,
