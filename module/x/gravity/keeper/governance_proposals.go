@@ -315,6 +315,15 @@ func (k Keeper) HandleDeleteCosmosBridgeableTokensProposal(ctx sdk.Context, p *t
 		if !metadataEqual(metadata, existing) {
 			return errorsmod.Wrapf(types.ErrInvalid, "CosmosBridgeableTokens remove metadata does not match existing metadata for denom: %s", metadata.Base)
 		}
+
+		// Removing approval leaves bank metadata, the ERC20 representation, and in-flight events intact.
+		// Retain the approval required to service that representation.
+		if _, hasERC20 := k.getCosmosOriginatedERC20ForDenom(ctx, metadata.Base); hasERC20 {
+			return errorsmod.Wrapf(types.ErrInvalid,
+				"cannot remove metadata for %s: an ERC20 representation already exists for this denom",
+				metadata.Base)
+		}
+
 		k.DeleteCosmosBridgeableToken(ctx, metadata.Base)
 
 		// Check that the entry is actually gone
