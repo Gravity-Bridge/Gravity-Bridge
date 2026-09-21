@@ -63,7 +63,7 @@ func TestHandleSendToCosmos_CommunityPoolFailureRollsBack(t *testing.T) {
 		EthereumSender: EthAddrs[0].String(), Orchestrator: OrchAddrs[0].String(),
 	}
 	eventsBefore := len(ctx.EventManager().Events())
-	gravityKeeper.processAttestation(ctx, &types.Attestation{}, claim)
+	gravityKeeper.processAttestation(ctx, new(types.Attestation), claim)
 
 	requireBridgePaused(t, ctx, gravityKeeper)
 	require.Equal(t, coins[0], input.BankKeeper.GetBalance(ctx, moduleAddr, denom))
@@ -89,7 +89,7 @@ func TestHandleSendToCosmos_MintFailureRollsBack(t *testing.T) {
 		EthereumSender: EthAddrs[0].String(), Orchestrator: OrchAddrs[0].String(),
 	}
 	eventsBefore := len(ctx.EventManager().Events())
-	gravityKeeper.processAttestation(ctx, &types.Attestation{}, claim)
+	gravityKeeper.processAttestation(ctx, new(types.Attestation), claim)
 
 	require.True(t, mintAttempted)
 	requireBridgePaused(t, ctx, gravityKeeper)

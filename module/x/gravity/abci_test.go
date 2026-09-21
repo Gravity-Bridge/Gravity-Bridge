@@ -37,6 +37,7 @@ func TestAttestationTallyStopsOnPause(t *testing.T) {
 			EventNonce: firstNonce + uint64(index), EthBlockHeight: uint64(10 + index),
 			TokenContract: contract.GetAddress().Hex(), Amount: sdkmath.NewInt(1),
 			CosmosReceiver: keeper.AccAddrs[0].String(), EthereumSender: keeper.EthAddrs[0].String(),
+			Orchestrator: "",
 		}
 		for _, orchestrator := range keeper.OrchAddrs {
 			claim.Orchestrator = orchestrator.String()
@@ -50,7 +51,10 @@ func TestAttestationTallyStopsOnPause(t *testing.T) {
 		claims = append(claims, claim)
 		hashes = append(hashes, hash)
 	}
-	input.BankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{Base: types.GravityDenom(*contracts[0])})
+	input.BankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{
+		Base: types.GravityDenom(*contracts[0]), Description: "", DenomUnits: nil,
+		Display: "", Name: "", Symbol: "", URI: "", URIHash: "",
+	})
 
 	attestationTally(ctx, gravityKeeper)
 

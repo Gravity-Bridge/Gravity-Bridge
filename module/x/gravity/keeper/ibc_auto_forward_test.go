@@ -28,7 +28,9 @@ import (
 // atomicity of transfers, ensuring that funds are either successfully sent via IBC or remain in the fallback account
 // in case of failure. It covers both escrow and burn transfer kinds and checks behavior for both active and expired clients.
 func TestProcessNextPendingIbcAutoForward_TransferAtomicity(t *testing.T) {
-	for _, transferKind := range []string{"escrow", "burn", "ibc-escrow", "missing-trace"} {
+	const burn = "burn"
+	const missingTrace = "missing-trace"
+	for _, transferKind := range []string{"escrow", burn, "ibc-escrow", missingTrace} {
 		for _, status := range []exported.Status{exported.Expired, exported.Active} {
 			t.Run(transferKind+"/"+string(status), func(t *testing.T) {
 				input, ctx := SetupFiveValChain(t)
@@ -56,8 +58,9 @@ func TestProcessNextPendingIbcAutoForward_TransferAtomicity(t *testing.T) {
 				input.IbcKeeper.ClientKeeper.SetClientConsensusState(ctx, clientID, height,
 					tendermint.NewConsensusState(consensusTime, commitmenttypes.NewMerkleRoot([]byte("root")), make([]byte, 32)))
 				require.Equal(t, status, input.IbcKeeper.ClientKeeper.GetClientStatus(ctx, clientState, clientID))
+				var counterparty connectiontypes.Counterparty
 				input.IbcKeeper.ConnectionKeeper.SetConnection(ctx, connectionID, connectiontypes.NewConnectionEnd(
-					connectiontypes.OPEN, clientID, connectiontypes.Counterparty{}, connectiontypes.GetCompatibleVersions(), 0))
+					connectiontypes.OPEN, clientID, counterparty, connectiontypes.GetCompatibleVersions(), 0))
 				input.IbcKeeper.ChannelKeeper.SetChannel(ctx, transfertypes.PortID, channel, channeltypes.NewChannel(
 					channeltypes.OPEN, channeltypes.UNORDERED, channeltypes.NewCounterparty(transfertypes.PortID, "channel-0"),
 					[]string{connectionID}, transfertypes.Version))
@@ -69,7 +72,7 @@ func TestProcessNextPendingIbcAutoForward_TransferAtomicity(t *testing.T) {
 				input.IbcTransferKeeper.SetPort(ctx, transfertypes.PortID)
 				input.IbcTransferKeeper.SetParams(ctx, transfertypes.DefaultParams())
 				gravityKeeper.bech32IbcKeeper.SetHrpIbcRecords(ctx, []bech32ibctypes.HrpIbcRecord{
-					{Hrp: "canto", SourceChannel: channel, IcsToHeightOffset: 5000},
+					{Hrp: "canto", SourceChannel: channel, IcsToHeightOffset: 5000, IcsToTimeOffset: 0},
 				})
 				gravityKeeper.setLastObservedEventNonce(ctx, nonce)
 
@@ -81,7 +84,7 @@ func TestProcessNextPendingIbcAutoForward_TransferAtomicity(t *testing.T) {
 						traceChannel = "channel-99"
 					}
 					trace := transfertypes.ParseDenomTrace("transfer/" + traceChannel + "/acanto")
-					if transferKind != "missing-trace" {
+					if transferKind != missingTrace {
 						input.IbcTransferKeeper.SetDenomTrace(ctx, trace)
 					}
 					denom = trace.IBCDenom()
@@ -106,19 +109,19 @@ func TestProcessNextPendingIbcAutoForward_TransferAtomicity(t *testing.T) {
 				}
 				require.NoError(t, gravityKeeper.addPendingIbcAutoForward(ctx, forward, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"))
 
-				success := status == exported.Active && transferKind != "missing-trace"
+				success := status == exported.Active && transferKind != missingTrace
 				t.Run("escrow-address-receiver", func(t *testing.T) {
-					testIbcAutoForwardEscrowReceiver(t, input, ctx, forward, success, transferKind == "burn")
+					testIbcAutoForwardEscrowReceiver(t, input, ctx, forward, success, transferKind == burn)
 				})
 				if success {
 					faults := []string{"duplicated-credit", "unexpected-supply"}
-					if transferKind != "burn" {
+					if transferKind != burn {
 						faults = append(faults, "misdirected-escrow")
 					}
 					for _, fault := range faults {
 						t.Run("reject-"+fault, func(t *testing.T) {
 							expectedEscrow, expectedSupply := escrowBefore.Add(coin), supplyBefore
-							if transferKind == "burn" {
+							if transferKind == burn {
 								expectedEscrow, expectedSupply = escrowBefore, supplyBefore.Sub(coin)
 							}
 							actualFallback, actualEscrow, actualSupply := fallbackBefore, expectedEscrow, expectedSupply
@@ -148,10 +151,13 @@ func TestProcessNextPendingIbcAutoForward_TransferAtomicity(t *testing.T) {
 							require.PanicsWithValue(t,
 								fmt.Sprintf("IBC auto-forward balance invariant violated for nonce %d: local %s (expected %s), escrow %s (expected %s), supply %s (expected %s)",
 									nonce, actualFallback, fallbackBefore, actualEscrow, expectedEscrow, actualSupply, expectedSupply),
-								func() { _, _ = gravityKeeper.ProcessNextPendingIbcAutoForward(probeCtx) })
+								func() {
+									_, err := gravityKeeper.ProcessNextPendingIbcAutoForward(probeCtx)
+									require.NoError(t, err)
+								})
 						})
 					}
-				} else if transferKind != "missing-trace" {
+				} else if transferKind != missingTrace {
 					t.Run("reject-failed-rollback", func(t *testing.T) {
 						probeCtx, _ := ctx.CacheContext()
 						injected := false
@@ -164,13 +170,16 @@ func TestProcessNextPendingIbcAutoForward_TransferAtomicity(t *testing.T) {
 						})
 						t.Cleanup(input.BankKeeper.ClearSendRestriction)
 						actualEscrow := escrowBefore.Add(coin)
-						if transferKind == "burn" {
+						if transferKind == burn {
 							actualEscrow = escrowBefore
 						}
 						require.PanicsWithValue(t,
 							fmt.Sprintf("IBC auto-forward balance invariant violated for nonce %d: local %s (expected %s), escrow %s (expected %s), supply %s (expected %s)",
 								nonce, fallbackBefore, fallbackBefore.Add(coin), actualEscrow, escrowBefore, supplyBefore, supplyBefore),
-							func() { _, _ = gravityKeeper.ProcessNextPendingIbcAutoForward(probeCtx) })
+							func() {
+								_, err := gravityKeeper.ProcessNextPendingIbcAutoForward(probeCtx)
+								require.NoError(t, err)
+							})
 					})
 				}
 
@@ -189,16 +198,16 @@ func TestProcessNextPendingIbcAutoForward_TransferAtomicity(t *testing.T) {
 					// A successful send must keep both the token movement and exactly one packet's events.
 					expectedSequence = 2
 					expectedTransfers, expectedLocal = 1, 0
-					if transferKind != "burn" {
+					if transferKind != burn {
 						expectedEscrow = escrowBefore.Add(coin)
 					} else {
 						expectedSupply = supplyBefore.Sub(coin)
 						expectedBurns = 1
 					}
 				}
-				localEvent, err := sdk.TypedEventToEvent(&types.EventSendToCosmosLocal{})
+				localEvent, err := sdk.TypedEventToEvent(new(types.EventSendToCosmosLocal))
 				require.NoError(t, err)
-				successEvent, err := sdk.TypedEventToEvent(&types.EventSendToCosmosExecutedIbcAutoForward{})
+				successEvent, err := sdk.TypedEventToEvent(new(types.EventSendToCosmosExecutedIbcAutoForward))
 				require.NoError(t, err)
 				assertOutcome := func() {
 					t.Helper()

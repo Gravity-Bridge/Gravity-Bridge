@@ -34,21 +34,21 @@ func TestClaimHashLegacyEncoding(t *testing.T) {
 		digest string
 	}{
 		{"deposit", &MsgSendToCosmosClaim{EventNonce: 1, EthBlockHeight: 2, TokenContract: contract,
-			Amount: math.NewInt(3), EthereumSender: sender, CosmosReceiver: "receiver"},
+			Amount: math.NewInt(3), EthereumSender: sender, CosmosReceiver: "receiver", Orchestrator: ""},
 			[]string{"1", "2", contract, "3", sender, "receiver"},
 			"5dbb381c520d10d6494da6b3fb92c2fd1e673f40f71a652f3f3a926cef14185d"},
-		{"batch", &MsgBatchSendToEthClaim{EventNonce: 1, EthBlockHeight: 2, BatchNonce: 3, TokenContract: contract},
+		{"batch", &MsgBatchSendToEthClaim{EventNonce: 1, EthBlockHeight: 2, BatchNonce: 3, TokenContract: contract, Orchestrator: ""},
 			[]string{"1", "2", "3", contract},
 			"0a4d440dd4ea6c3ff0fba05187a425177f0832a9f6f2b2910435cfc5e7af4038"},
 		{"deployment", &MsgERC20DeployedClaim{EventNonce: 1, EthBlockHeight: 2, CosmosDenom: "uatom",
-			TokenContract: contract, Name: "Atom", Symbol: "ATOM", Decimals: 6},
+			TokenContract: contract, Name: "Atom", Symbol: "ATOM", Decimals: 6, Orchestrator: ""},
 			[]string{"1", "2", "uatom", contract, "Atom", "ATOM", "6"},
 			"5162fbd0dade38e05fa37bf235393883311c548123f4a593b46233f57e633dba"},
-		{"logic", &MsgLogicCallExecutedClaim{EventNonce: 1, EthBlockHeight: 2, InvalidationId: []byte{0, 255, 47}, InvalidationNonce: 3},
+		{"logic", &MsgLogicCallExecutedClaim{EventNonce: 1, EthBlockHeight: 2, InvalidationId: []byte{0, 255, 47}, InvalidationNonce: 3, Orchestrator: ""},
 			[]string{"1", "2", string([]byte{0, 255, 47}), "3"},
 			"48e9dabe2fcf5a98e8152e3abe5b8585d5c2aecf6ba59615ad960bfafffe0202"},
 		{"valset", &MsgValsetUpdatedClaim{EventNonce: 1, ValsetNonce: 3, EthBlockHeight: 2,
-			Members: members, RewardAmount: math.NewInt(4), RewardToken: contract},
+			Members: members, RewardAmount: math.NewInt(4), RewardToken: contract, Orchestrator: ""},
 			[]string{"1", "3", "2", fmt.Sprintf("%x", sortedMembers), "4", contract},
 			"6444dbc90cdd59bb89cc7d90e87de8fcb1c6fb2c3b91f9c349c5f5b4d8362c1a"},
 	}
@@ -73,8 +73,10 @@ func TestClaimHashLegacyEncoding(t *testing.T) {
 
 func TestClaimComponentAmountNormalization(t *testing.T) {
 	for _, claim := range []EthereumClaim{
-		&MsgSendToCosmosClaim{Amount: math.NewInt(3)},
-		&MsgValsetUpdatedClaim{RewardAmount: math.NewInt(3)},
+		&MsgSendToCosmosClaim{EventNonce: 0, EthBlockHeight: 0, TokenContract: "", Amount: math.NewInt(3),
+			EthereumSender: "", CosmosReceiver: "", Orchestrator: ""},
+		&MsgValsetUpdatedClaim{EventNonce: 0, ValsetNonce: 0, EthBlockHeight: 0, Members: nil,
+			RewardAmount: math.NewInt(3), RewardToken: "", Orchestrator: ""},
 	} {
 		expected, err := claim.ClaimHash()
 		require.NoError(t, err)
@@ -95,12 +97,14 @@ func TestClaimComponentAmountNormalization(t *testing.T) {
 func TestHistoricalClaimSeparatorHashing(t *testing.T) {
 	const contract = "0x1111111111111111111111111111111111111111"
 	claims := []EthereumClaim{
-		&MsgSendToCosmosClaim{TokenContract: contract, EthereumSender: contract,
-			Amount: math.NewInt(1), CosmosReceiver: AttestationSeparator},
-		&MsgBatchSendToEthClaim{TokenContract: AttestationSeparator},
-		&MsgERC20DeployedClaim{CosmosDenom: "uatom", TokenContract: contract, Name: AttestationSeparator},
-		&MsgLogicCallExecutedClaim{InvalidationId: []byte(AttestationSeparator)},
-		&MsgValsetUpdatedClaim{RewardAmount: math.ZeroInt(), RewardToken: AttestationSeparator},
+		&MsgSendToCosmosClaim{EventNonce: 0, EthBlockHeight: 0, TokenContract: contract, EthereumSender: contract,
+			Amount: math.NewInt(1), CosmosReceiver: AttestationSeparator, Orchestrator: ""},
+		&MsgBatchSendToEthClaim{EventNonce: 0, EthBlockHeight: 0, BatchNonce: 0, TokenContract: AttestationSeparator, Orchestrator: ""},
+		&MsgERC20DeployedClaim{EventNonce: 0, EthBlockHeight: 0, CosmosDenom: "uatom", TokenContract: contract,
+			Name: AttestationSeparator, Symbol: "", Decimals: 0, Orchestrator: ""},
+		&MsgLogicCallExecutedClaim{EventNonce: 0, EthBlockHeight: 0, InvalidationId: []byte(AttestationSeparator), InvalidationNonce: 0, Orchestrator: ""},
+		&MsgValsetUpdatedClaim{EventNonce: 0, ValsetNonce: 0, EthBlockHeight: 0, Members: nil,
+			RewardAmount: math.ZeroInt(), RewardToken: AttestationSeparator, Orchestrator: ""},
 	}
 	for _, claim := range claims {
 		t.Run(claim.GetType().String(), func(t *testing.T) {

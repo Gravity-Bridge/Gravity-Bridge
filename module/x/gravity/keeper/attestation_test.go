@@ -41,7 +41,7 @@ func TestLegacyAttestationVotesObservationAndDeletion(t *testing.T) {
 	require.NoError(t, err)
 	att := &types.Attestation{
 		Height: uint64(ctx.BlockHeight()), Claim: claimAny, ClaimType: claim.GetType(), ClaimComponents: components,
-		Votes: []string{ValAddrs[0].String(), ValAddrs[1].String()},
+		Votes: []string{ValAddrs[0].String(), ValAddrs[1].String()}, Observed: false,
 	}
 	gravityKeeper.SetAttestation(ctx, claim.EventNonce, legacyHash[:], att)
 	for _, validator := range ValAddrs[:2] {
