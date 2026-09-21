@@ -15,7 +15,7 @@ use cosmos_gravity::proposals::submit_delete_cosmos_bridgeable_tokens_proposal;
 use cosmos_gravity::proposals::submit_legacy_upgrade_proposal;
 use cosmos_gravity::proposals::submit_parameter_change_proposal;
 use cosmos_gravity::proposals::submit_set_cosmos_bridgeable_tokens_proposal;
-use cosmos_gravity::query::get_gravity_params;
+use cosmos_gravity::query::{get_cosmos_bridgeable_tokens, get_gravity_params};
 use deep_space::address::Address as CosmosAddress;
 use deep_space::client::ChainStatus;
 use deep_space::coin::Coin;
@@ -782,19 +782,32 @@ pub async fn set_cosmos_bridgeable_tokens(
     keys: &[ValidatorKeys],
     metadatas: Vec<Metadata>,
 ) {
-    let _ = submit_set_cosmos_bridgeable_tokens_proposal(
+    let response = submit_set_cosmos_bridgeable_tokens_proposal(
         "Set CosmosBridgeableTokens".to_string(),
         "Set CosmosBridgeableTokens".to_string(),
-        metadatas,
+        metadatas.clone(),
         get_deposit(None),
         get_fee(None),
         contact,
         keys[0].validator_key,
         Some(OPERATION_TIMEOUT),
     )
-    .await;
+    .await
+    .expect("Failed to submit SetCosmosBridgeableTokens proposal");
+    assert_eq!(response.code(), 0, "{}", response.raw_log());
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
+    let mut client = GravityQueryClient::connect(contact.get_url())
+        .await
+        .unwrap();
+    let actual = get_cosmos_bridgeable_tokens(&mut client).await.unwrap();
+    for expected in metadatas {
+        assert!(
+            actual.contains(&expected),
+            "Allowlist update did not execute: {:?}",
+            expected
+        );
+    }
 }
 
 /// Submits a DeleteCosmosBridgeableTokensProposal to remove the given metadatas from the
@@ -804,19 +817,32 @@ pub async fn remove_cosmos_bridgeable_tokens(
     keys: &[ValidatorKeys],
     metadatas: Vec<Metadata>,
 ) {
-    let _ = submit_delete_cosmos_bridgeable_tokens_proposal(
+    let response = submit_delete_cosmos_bridgeable_tokens_proposal(
         "Remove CosmosBridgeableTokens".to_string(),
         "Remove CosmosBridgeableTokens".to_string(),
-        metadatas,
+        metadatas.clone(),
         get_deposit(None),
         get_fee(None),
         contact,
         keys[0].validator_key,
         Some(OPERATION_TIMEOUT),
     )
-    .await;
+    .await
+    .expect("Failed to submit DeleteCosmosBridgeableTokens proposal");
+    assert_eq!(response.code(), 0, "{}", response.raw_log());
     vote_yes_on_proposals(contact, keys, None).await;
     wait_for_proposals_to_execute(contact).await;
+    let mut client = GravityQueryClient::connect(contact.get_url())
+        .await
+        .unwrap();
+    let actual = get_cosmos_bridgeable_tokens(&mut client).await.unwrap();
+    for removed in metadatas {
+        assert!(
+            actual.iter().all(|metadata| metadata.base != removed.base),
+            "Allowlist removal did not execute for {}",
+            removed.base
+        );
+    }
 }
 
 /// Gets the operator address for a given validator private key
@@ -968,54 +994,24 @@ pub async fn check_cosmos_balances(
     cosmos_account: CosmosAddress,
     expected_cosmos_coins: &[Coin],
 ) {
-    let mut num_found = 0;
-
     let start = Instant::now();
 
     while Instant::now() - start < TOTAL_TIMEOUT {
-        let mut good = true;
         let curr_balances = contact.get_balances(cosmos_account).await.unwrap();
-        // These loops use loop labels, see the documentation on loop labels here for more information
-        // https://doc.rust-lang.org/reference/expressions/loop-expr.html#loop-labels
-        'outer: for bal in curr_balances.iter() {
-            if num_found == expected_cosmos_coins.len() {
-                break 'outer; // done searching entirely
-            }
-            'inner: for j in 0..expected_cosmos_coins.len() {
-                if num_found == expected_cosmos_coins.len() {
-                    break 'outer; // done searching entirely
-                }
-                if expected_cosmos_coins[j].denom != bal.denom {
-                    continue;
-                }
-                let check = expected_cosmos_coins[j].amount == bal.amount;
-                good = check;
-                if !check {
-                    warn!(
-                        "found balance {}! expected {} trying again",
-                        bal, expected_cosmos_coins[j].amount
-                    );
-                }
-                num_found += 1;
-                break 'inner; // done searching for this particular balance
-            }
-        }
-
-        let check = num_found == curr_balances.len();
-        // if it's already false don't set to true
-        good = check || good;
-        if !check {
-            warn!(
-                "did not find the correct balance for each expected coin! found {} of {}, trying again",
-                num_found,
-                curr_balances.len()
-            );
-        }
-        if good {
+        if expected_cosmos_coins.iter().all(|expected| {
+            let actual = curr_balances
+                .iter()
+                .find(|coin| coin.denom == expected.denom)
+                .map(|coin| coin.amount)
+                .unwrap_or_else(|| 0u8.into());
+            actual == expected.amount
+        }) {
             return;
-        } else {
-            sleep(Duration::from_secs(1)).await;
         }
+        warn!(
+            "Balances for {cosmos_account}: {curr_balances:?}, expected {expected_cosmos_coins:?}"
+        );
+        sleep(Duration::from_secs(1)).await;
     }
     panic!("Failed to find correct balances in check_cosmos_balances")
 }

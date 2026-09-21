@@ -988,6 +988,85 @@ func TestERC20DeployedClaimProposedMappingValidation(t *testing.T) {
 	}
 }
 
+func TestERC20DeployedClaimForgedFirstVoteRejected(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer input.AssertInvariants()
+	keeper := input.GravityKeeper
+	server := msgServer{keeper}
+	metadata := minMeta("uquorum")
+	input.BankKeeper.SetDenomMetaData(ctx, metadata)
+	keeper.SetCosmosBridgeableToken(ctx, metadata)
+	deployedContract, err := types.NewEthAddress("0xD3d86991c6218b36c1d19D4a2e9Eb0cE3606eB55")
+	require.NoError(t, err)
+	nativeContract, err := types.NewEthAddress("0x1234567890123456789012345678901234567890")
+	require.NoError(t, err)
+	nativeCoin := sdk.NewInt64Coin(types.GravityDenom(*nativeContract), 100)
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(nativeCoin)))
+	require.NoError(t, input.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, AccAddrs[0], sdk.NewCoins(nativeCoin)))
+	honest := types.MsgERC20DeployedClaim{
+		EventNonce: 1, EthBlockHeight: 1, CosmosDenom: metadata.Base,
+		TokenContract: deployedContract.GetAddress().Hex(), Name: metadata.Name,
+		Symbol: metadata.Symbol, Decimals: 0, Orchestrator: OrchAddrs[1].String(),
+	}
+	forged := honest
+	forged.Orchestrator = OrchAddrs[0].String()
+	forged.CosmosDenom = "uforged"
+	forged.TokenContract = nativeContract.GetAddress().Hex()
+	require.NoError(t, honest.ValidateBasic())
+	require.NoError(t, forged.ValidateBasic())
+	honestHash, err := honest.ClaimHash()
+	require.NoError(t, err)
+	forgedHash, err := forged.ClaimHash()
+	require.NoError(t, err)
+	require.NotEqual(t, honestHash, forgedHash)
+	_, err = server.ERC20DeployedClaim(ctx, &forged)
+	require.ErrorContains(t, err, "CosmosBridgeableTokens whitelist")
+	require.Nil(t, keeper.GetAttestation(ctx, honest.EventNonce, honestHash))
+	require.Nil(t, keeper.GetAttestation(ctx, forged.EventNonce, forgedHash))
+	require.Empty(t, keeper.GetMostRecentAttestations(ctx, 10))
+	for _, validator := range ValAddrs {
+		require.Zero(t, keeper.GetLastEventNonceByValidator(ctx, validator))
+	}
+	require.Zero(t, keeper.GetLastObservedEventNonce(ctx))
+
+	for _, orchestrator := range OrchAddrs {
+		honest.Orchestrator = orchestrator.String()
+		_, err = server.ERC20DeployedClaim(ctx, &honest)
+		require.NoError(t, err)
+	}
+	honestAttestation := keeper.GetAttestation(ctx, honest.EventNonce, honestHash)
+	require.NotNil(t, honestAttestation)
+	require.Len(t, honestAttestation.Votes, len(OrchAddrs))
+	keeper.TryAttestation(ctx, honestAttestation)
+	require.True(t, keeper.GetAttestation(ctx, honest.EventNonce, honestHash).Observed)
+	require.Nil(t, keeper.GetAttestation(ctx, forged.EventNonce, forgedHash))
+	mappedContract, exists := keeper.getCosmosOriginatedERC20ForDenom(ctx, metadata.Base)
+	require.True(t, exists)
+	require.Equal(t, deployedContract, mappedContract)
+	_, exists = keeper.getCosmosOriginatedERC20ForDenom(ctx, forged.CosmosDenom)
+	require.False(t, exists)
+	_, exists = keeper.getCosmosOriginatedDenomForERC20(ctx, *nativeContract)
+	require.False(t, exists)
+	require.Equal(t, nativeCoin, input.BankKeeper.GetBalance(ctx, AccAddrs[0], nativeCoin.Denom))
+
+	deposit := types.MsgSendToCosmosClaim{
+		EventNonce: 2, EthBlockHeight: 2, TokenContract: nativeContract.GetAddress().Hex(),
+		Amount: sdkmath.NewInt(7), EthereumSender: EthAddrs[0].String(),
+		CosmosReceiver: AccAddrs[0].String(), Orchestrator: OrchAddrs[0].String(),
+	}
+	for _, orchestrator := range OrchAddrs {
+		deposit.Orchestrator = orchestrator.String()
+		_, err = server.SendToCosmosClaim(ctx, &deposit)
+		require.NoError(t, err)
+	}
+	depositHash, err := deposit.ClaimHash()
+	require.NoError(t, err)
+	keeper.TryAttestation(ctx, keeper.GetAttestation(ctx, deposit.EventNonce, depositHash))
+	require.Equal(t, deposit.EventNonce, keeper.GetLastObservedEventNonce(ctx))
+	require.Equal(t, nativeCoin.AddAmount(deposit.Amount), input.BankKeeper.GetBalance(ctx, AccAddrs[0], nativeCoin.Denom))
+	require.NoError(t, keeper.RequireBridgeActive(ctx))
+}
+
 // TestRequestBatchCosmosBridgeableTokensAllowlist verifies that RequestBatch enforces the
 // CosmosBridgeableTokens allowlist for Cosmos-originated assets.
 // nolint: exhaustruct

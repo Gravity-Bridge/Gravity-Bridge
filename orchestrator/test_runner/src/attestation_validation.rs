@@ -2,8 +2,8 @@ use crate::get_fee;
 use crate::happy_path::wait_for_nonzero_valset;
 use crate::ibc_auto_forward::{get_channel_id, get_ibc_balance};
 use crate::utils::{
-    create_default_test_config, get_event_nonce_safe, get_user_key, start_orchestrators,
-    ValidatorKeys,
+    create_default_test_config, get_event_nonce_safe, get_metadata, get_user_key,
+    set_cosmos_bridgeable_tokens, start_orchestrators, ValidatorKeys,
 };
 use crate::{
     get_gravity_chain_id, get_ibc_chain_id, ADDRESS_PREFIX, COSMOS_NODE_GRPC, IBC_ADDRESS_PREFIX,
@@ -22,6 +22,7 @@ use deep_space::{Coin as DSCoin, Contact, Msg};
 use ethereum_gravity::deploy_erc20::deploy_erc20;
 use ethereum_gravity::send_to_cosmos::send_to_cosmos;
 use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as BankQueryClient;
+use gravity_proto::cosmos_sdk_proto::cosmos::bank::v1beta1::DenomUnit;
 use gravity_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::transfer::v1::query_client::QueryClient as IbcTransferQueryClient;
 use gravity_proto::cosmos_sdk_proto::ibc::applications::transfer::v1::MsgTransfer;
@@ -435,8 +436,9 @@ pub async fn attestation_hash_integrity_test(
 ) {
     let mut grpc_client = grpc_client;
 
+    assert!(keys.len() >= 4, "Hash isolation requires an honest quorum");
     start_orchestrators(
-        keys.clone(),
+        keys[1..].to_vec(),
         gravity_address,
         false,
         create_default_test_config(),
@@ -608,13 +610,13 @@ pub async fn attestation_hash_integrity_test(
     .await;
 }
 
-/// ERC20DeployedClaim claim disagreement test.
+/// ERC20DeployedClaim admission and hash isolation test.
 ///
 /// Verifies that:
 /// 1. A denom containing AttestationSeparator is rejected by ValidateStrictDenom
-/// 2. A claim disagreement claim creates its own attestation (1 vote)
-/// 3. other validators' claims form a separate attestation that reaches quorum
-/// 4. The disagreed attestation never reaches quorum
+/// 2. A minority forged claim is rejected without an attestation or nonce advancement
+/// 3. The approved real deployment reaches quorum without altering the escrowed token's mapping
+/// 4. The forged claim and the real deployment have different hashes
 #[allow(clippy::too_many_arguments)]
 async fn erc20_deployed_claim_hash_collision(
     web30: &Web3,
@@ -784,6 +786,16 @@ async fn erc20_deployed_claim_hash_collision(
          bank metadata registered automatically by ibc-go OnRecvPacket",
         ibc_balance.amount
     );
+    let mut metadata = get_metadata(contact, &ibc_denom).await;
+    assert_eq!(metadata.name, ibc_token_name);
+    assert_eq!(metadata.symbol, ibc_token_symbol);
+    metadata.display = ibc_denom.clone();
+    metadata.denom_units = vec![DenomUnit {
+        denom: ibc_denom.clone(),
+        exponent: 0,
+        aliases: vec![],
+    }];
+    set_cosmos_bridgeable_tokens(contact, keys, vec![metadata]).await;
 
     // ── Phase 2: deploy the malicious ERC20 on Ethereum ──────────────────────
     let deploy_tx_hash = deploy_erc20(
@@ -864,7 +876,12 @@ async fn erc20_deployed_claim_hash_collision(
     .await;
     match sep_result {
         Err(e) => {
-            info!("Phase 2.5: separator-denom claim correctly rejected at transport level: {e}");
+            assert!(
+                e.to_string().contains("non-ASCII"),
+                "Unexpected separator rejection: {}",
+                e
+            );
+            info!("Phase 2.5: separator-denom claim correctly rejected at admission: {e}");
         }
         Ok(tx) => {
             assert_ne!(
@@ -888,16 +905,7 @@ async fn erc20_deployed_claim_hash_collision(
         }
     }
 
-    // ── Phase 3: submit all claims manually (forged first, honest second) ─────
-    //
-    // With AttestationSeparator as the ClaimHash field delimiter (non-ASCII
-    // combining marks), hash collisions through field-boundary shifting are
-    // impossible for ASCII-only denoms.  The forged and honest claims will
-    // produce DIFFERENT ClaimHashes on-chain, creating separate attestations.
-    //
-    // This phase tests claim *disagreement*: the malicious validator submits a
-    // claim with fabricated field values.  Honest validators submit the real
-    // values.  The honest attestation reaches quorum; the forged one does not.
+    // Phase 3: live orchestrators attest to the real event before the reserved validator votes.
     let forged_cosmos_denom = "forged-attack-denom".to_string();
 
     let bartoken_eth_addr: EthAddress = BARTOKEN_ADDR.parse().unwrap();
@@ -910,46 +918,23 @@ async fn erc20_deployed_claim_hash_collision(
         event_nonce,
         block_height: eth_block_height,
     };
-
-    // keys[0] is the malicious validator — submits the forged claim first.
-    let forged_res = send_ethereum_claims(
-        contact,
-        keys[0].orch_key,
-        vec![],
-        vec![],
-        vec![forged_event],
-        vec![],
-        vec![],
-        get_fee(None),
-    )
-    .await
-    .expect("Phase 3: forged claim submission failed at transport level");
-    assert_eq!(
-        forged_res.code(),
-        0,
-        "Phase 3: forged claim must be accepted as the first vote: {}",
-        forged_res.raw_log()
-    );
-    info!(
-        "Phase 3: forged claim accepted — attestation created with \
-         TokenContract={BARTOKEN_ADDR}"
+    let forged_hash = tmhash(
+        [
+            event_nonce.to_string(),
+            forged_event.get_block_height().to_string(),
+            forged_cosmos_denom.clone(),
+            bartoken_eth_addr.to_string(),
+            forged_event.name.clone(),
+            forged_event.symbol.clone(),
+            event_decimals.to_string(),
+        ]
+        .join(ATTESTATION_SEPARATOR)
+        .as_bytes(),
     );
 
-    // Do NOT also submit the remaining validators' claims manually here. Their
-    // orchestrators are already running live (started via `start_orchestrators`
-    // earlier in the test) and independently watch Ethereum for exactly this
-    // kind of event, so they will observe the real ERC20Deployed event and
-    // submit the correct claim on their own — this is their normal operation.
-    //
-    // A manual submission for the same validator key racing its own live
-    // orchestrator thread is unsafe: whichever loses the race hits a stale
-    // account sequence number or an already-advanced event nonce, surfacing as
-    // "account sequence mismatch" or "non contiguous event nonce" errors (this
-    // was the cause of a prior CI panic here). Instead, just wait for the
-    // honest attestation to reach quorum via the live orchestrators.
     let new_erc20_addr_str = new_erc20_addr.to_string();
     info!(
-        "Phase 3: waiting for the remaining {} validators' live orchestrators to \
+        "Phase 3: waiting for {} validators' live orchestrators to \
          observe the real ERC20Deployed event and submit the correct claim for \
          TokenContract={new_erc20_addr_str}",
         keys.len() - 1
@@ -957,7 +942,7 @@ async fn erc20_deployed_claim_hash_collision(
 
     // ── Phase 4 / 5: poll for quorum, then assert ─────────────────────────────
     let deadline = Instant::now() + TOTAL_TIMEOUT;
-    let all_atts = loop {
+    loop {
         let atts = get_attestations(grpc_client, Some(1000))
             .await
             .expect("Phase 5: failed to query attestations");
@@ -972,13 +957,63 @@ async fn erc20_deployed_claim_hash_collision(
                     .map(|c| c.token_contract == new_erc20_addr_str)
                     .unwrap_or(false)
         });
-        if honest_quorum_reached || Instant::now() >= deadline {
-            break atts;
+        if honest_quorum_reached {
+            break;
         }
+        assert!(
+            Instant::now() < deadline,
+            "Honest deployment did not reach quorum"
+        );
         sleep(Duration::from_secs(3)).await;
-    };
+    }
 
-    // ── Forged attestation: must exist with exactly 1 vote, NOT observed ──────
+    let reserved_orchestrator = keys[0].orch_key.to_address(&contact.get_prefix()).unwrap();
+    let nonce_before = get_last_event_nonce_for_validator(
+        grpc_client,
+        reserved_orchestrator,
+        contact.get_prefix(),
+    )
+    .await
+    .unwrap();
+    let forged_result = send_ethereum_claims(
+        contact,
+        keys[0].orch_key,
+        vec![],
+        vec![],
+        vec![forged_event],
+        vec![],
+        vec![],
+        get_fee(None),
+    )
+    .await;
+    let rejection = match forged_result {
+        Err(error) => error.to_string(),
+        Ok(transaction) => {
+            assert_ne!(transaction.code(), 0, "Forged deployment was admitted");
+            transaction.raw_log()
+        }
+    };
+    assert!(
+        rejection.contains("CosmosBridgeableTokens whitelist"),
+        "Unexpected forged deployment rejection: {}",
+        rejection
+    );
+    assert_eq!(
+        get_last_event_nonce_for_validator(
+            grpc_client,
+            reserved_orchestrator,
+            contact.get_prefix()
+        )
+        .await
+        .unwrap(),
+        nonce_before,
+        "Rejected forged deployment advanced the validator nonce"
+    );
+    let all_atts = get_attestations(grpc_client, Some(1000))
+        .await
+        .expect("Phase 5: failed to query attestations after the rejected vote");
+
+    // The forged claim must never enter the attestation store.
     let forged_att = all_atts.iter().find(|a| {
         if a.claim_type != ClaimType::Erc20Deployed as i32 {
             return false;
@@ -988,35 +1023,18 @@ async fn erc20_deployed_claim_hash_collision(
         };
         MsgErc20DeployedClaim::decode(any_att.value.as_slice())
             .ok()
-            .map(|c| c.token_contract == BARTOKEN_ADDR)
+            .map(|c| c.token_contract == BARTOKEN_ADDR && c.cosmos_denom == forged_cosmos_denom)
             .unwrap_or(false)
     });
 
-    let forged_att = forged_att.expect(
-        "Phase 5: forged attestation was never created — \
-         the forged claim was rejected before creating an attestation",
-    );
-
-    assert_eq!(
-        forged_att.votes.len(),
-        1,
-        "Phase 5: forged attestation should have exactly 1 vote (the malicious validator), \
-         but has {}. Votes: {:?}",
-        forged_att.votes.len(),
-        forged_att.votes,
-    );
-
     assert!(
-        !forged_att.observed,
-        "REGRESSION: forged attestation was marked observed (2/3 threshold reached). \
-         handleErc20Deployed ran with forged_cosmos_denom and bartokenAddr — \
-         denom→ERC20 mapping is corrupted."
+        forged_att.is_none(),
+        "Rejected forged deployment entered the attestation store"
     );
 
     // ── Erc20ToDenom must never register the forged denom for bartoken ───────
     //
-    // The `observed` flag on the attestation alone is not sufficient proof that
-    // handleErc20Deployed never executed — this queries the actual on-chain
+    // Check the actual on-chain
     // Erc20ToDenom mapping to confirm the forged claim's denom/ERC20 pairing
     // never made it into the store.
     let erc20_to_denom_resp = get_erc20_to_denom(grpc_client, bartoken_eth_addr)
@@ -1025,7 +1043,7 @@ async fn erc20_deployed_claim_hash_collision(
     assert_ne!(
         erc20_to_denom_resp.denom, forged_cosmos_denom,
         "REGRESSION: Erc20ToDenom returned the forged denom '{}' for bartoken ERC20 {} — \
-         handleErc20Deployed executed on the unobserved forged attestation and corrupted \
+         handleErc20Deployed executed on the rejected claim and corrupted \
          the denomToERC20 mapping.",
         forged_cosmos_denom, BARTOKEN_ADDR
     );
@@ -1076,9 +1094,13 @@ async fn erc20_deployed_claim_hash_collision(
         honest_att.votes,
     );
 
-    // Ensure the forged and honest attestations produce different ClaimHashes
-    let forged_hash = hash_from_claim_any(forged_att)
-        .expect("Phase 5: failed to compute forged attestation hash");
+    let honest_mapping = get_erc20_to_denom(grpc_client, new_erc20_addr)
+        .await
+        .unwrap();
+    assert!(honest_mapping.cosmos_originated);
+    assert_eq!(honest_mapping.denom, ibc_denom);
+
+    // Compare the rejected claim's hash with the observed honest attestation.
     let honest_hash = hash_from_claim_any(honest_att)
         .expect("Phase 5: failed to compute honest attestation hash");
     assert_ne!(
@@ -1089,10 +1111,8 @@ async fn erc20_deployed_claim_hash_collision(
     );
 
     info!(
-        "ERC20DeployedClaim claim disagreement VERIFIED: forged attestation stuck at {} vote(s), \
-         honest attestation observed with {} vote(s). \
-         AttestationSeparator prevents hash collisions; honest majority wins.",
-        forged_att.votes.len(),
+        "ERC20DeployedClaim admission and hash isolation VERIFIED: forged claim not stored, \
+         honest attestation observed with {} vote(s), escrowed token mapping unchanged.",
         honest_att.votes.len(),
     );
 }

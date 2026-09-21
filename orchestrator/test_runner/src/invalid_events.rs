@@ -1,10 +1,12 @@
 //! This is a test for invalid string based deposits, the goal is to torture test the implementation
 //! with every possible variant of invalid data and ensure that in all cases the community pool deposit
-//! works correctly.
+//! works correctly. Invalid deployments must be rejected before storage and stop oracle progression.
 
+use crate::get_fee;
 use crate::happy_path::test_erc20_deposit_panic;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::one_eth;
+use crate::unhalt_bridge::get_nonces;
 use crate::utils::create_default_test_config;
 use crate::utils::footoken_metadata;
 use crate::utils::get_event_nonce_safe;
@@ -19,9 +21,13 @@ use clarity::abi::encode_call;
 use clarity::abi::AbiToken as Token;
 use clarity::Address as EthAddress;
 use clarity::Address;
+use cosmos_gravity::query::{get_attestations, get_erc20_to_denom};
+use cosmos_gravity::send::send_ethereum_claims;
 use deep_space::Contact;
 use ethereum_gravity::send_to_cosmos::SEND_TO_COSMOS_GAS_LIMIT;
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
+use gravity_utils::types::event_signatures::ERC20_DEPLOYED_EVENT_SIG;
+use gravity_utils::types::{Erc20DeployedEvent, EthereumEvent};
 use rand::distributions::Alphanumeric;
 use rand::thread_rng;
 use rand::Rng;
@@ -58,7 +64,13 @@ pub async fn invalid_events(
     let mut starting_pool_amount = starting_pool_amount.unwrap();
 
     let no_relay_market_config = create_default_test_config();
-    start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
+    start_orchestrators(
+        keys[1..].to_vec(),
+        gravity_address,
+        false,
+        no_relay_market_config,
+    )
+    .await;
 
     for test_value in get_deposit_test_strings() {
         // next we send an invalid string deposit, we use byte encoding here so that we can attempt a totally invalid send
@@ -85,35 +97,26 @@ pub async fn invalid_events(
 
         // finally we check that the deposit has been added to the community pool
         let community_pool_contents = contact.query_community_pool().await.unwrap();
-        for coin in community_pool_contents {
-            if coin.denom == erc20_denom {
-                let expected = starting_pool_amount + one_eth();
-                if coin.amount != expected {
-                    error!(
-                        "Expected {} in the community pool found {}.",
-                        expected, coin.amount
-                    );
-                    error!("This means an invalid deposit has been 'lost' in the bridge, instead of allowing it's funds to be used by the Community pool");
-                    panic!("Lost an invalid deposit!");
-                } else {
-                    starting_pool_amount = expected;
-                }
-            }
-        }
-    }
-    for test_value in get_erc20_test_values() {
-        deploy_invalid_erc20(gravity_address, web30, keys.clone(), test_value).await;
-        web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
+        let actual = community_pool_contents
+            .iter()
+            .find(|coin| coin.denom == erc20_denom)
+            .map(|coin| coin.amount)
+            .unwrap_or_else(|| 0u8.into());
+        starting_pool_amount += one_eth();
+        assert_eq!(
+            actual, starting_pool_amount,
+            "Invalid deposit did not reach the community pool"
+        );
     }
 
     web30.wait_for_next_block(TOTAL_TIMEOUT).await.unwrap();
 
-    // footoken must be on the CosmosBridgeableTokens allowlist or the attestation
-    // handler will reject the ERC20 deployment even though the metadata is valid
+    // footoken must be on the CosmosBridgeableTokens allowlist or admission
+    // will reject the ERC20 deployment even though the metadata is valid
     let footoken = footoken_metadata(contact).await;
     set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
 
-    // make sure this actual deployment works after all the bad ones
+    // Register a valid deployment before exercising rejected mappings.
     let _ = deploy_cosmos_representing_erc20_and_check_adoption(
         gravity_address,
         web30,
@@ -123,6 +126,62 @@ pub async fn invalid_events(
         footoken,
     )
     .await;
+
+    let starting_nonces = get_nonces(&mut grpc_client, &keys, &contact.get_prefix()).await;
+    let starting_attestations = get_attestations(&mut grpc_client, Some(1000))
+        .await
+        .unwrap();
+    let mut rejected_contracts = Vec::new();
+    for test_value in get_erc20_test_values() {
+        let event = deploy_invalid_erc20(gravity_address, web30, keys.clone(), test_value).await;
+        rejected_contracts.push(event.erc20_address);
+        let result = send_ethereum_claims(
+            contact,
+            keys[0].orch_key,
+            vec![],
+            vec![],
+            vec![event],
+            vec![],
+            vec![],
+            get_fee(None),
+        )
+        .await;
+        let rejection = match result {
+            Err(error) => error.to_string(),
+            Ok(transaction) => {
+                assert_ne!(transaction.code(), 0, "Invalid deployment was admitted");
+                transaction.raw_log()
+            }
+        };
+        assert!(
+            rejection.contains("CosmosBridgeableTokens whitelist")
+                || rejection.contains("collides with an eth-originated gravity denom"),
+            "Unexpected invalid deployment rejection: {}",
+            rejection
+        );
+        assert_eq!(
+            get_nonces(&mut grpc_client, &keys, &contact.get_prefix()).await,
+            starting_nonces,
+            "Invalid deployment advanced a validator nonce"
+        );
+    }
+    let attestations = get_attestations(&mut grpc_client, Some(1000))
+        .await
+        .unwrap();
+    assert_eq!(
+        attestations, starting_attestations,
+        "Invalid deployments must not change the attestation store or observation state"
+    );
+    for contract in rejected_contracts {
+        let mapping = get_erc20_to_denom(&mut grpc_client, contract)
+            .await
+            .unwrap();
+        assert!(
+            !mapping.cosmos_originated,
+            "Invalid deployment created a Cosmos mapping"
+        );
+        assert_eq!(mapping.denom, format!("gravity{contract}"));
+    }
 
     info!("Successfully completed the invalid events test")
 }
@@ -191,6 +250,36 @@ fn get_erc20_test_values() -> Vec<Erc20Params> {
         cosmos_denom: bad,
         decimals: 255,
     });
+
+    for denom in [
+        "gravityjunk".to_string(),
+        "gravity2".to_string(),
+        "gravity0x2260fac5e5542a773aa44fbcfedf7c193bc2c599".to_string(),
+        "gravity20x2260fac5e5542a773aa44fbcfedf7c193bc2c599".to_string(),
+        "ibc/bad".to_string(),
+        format!("ibc/{}", "a".repeat(64)),
+        "foo/bar".to_string(),
+        "foo\\bar".to_string(),
+        "x".repeat(257),
+    ] {
+        test_strings.push(Erc20Params {
+            cosmos_denom: denom.into_bytes(),
+            erc20_name: b"invalid".to_vec(),
+            erc20_symbol: b"INVALID".to_vec(),
+            decimals: 0,
+        });
+    }
+    for (name, symbol) in [
+        (vec![b'x'; 257], b"INVALID".to_vec()),
+        (b"invalid".to_vec(), vec![b'x'; 65]),
+    ] {
+        test_strings.push(Erc20Params {
+            cosmos_denom: b"unapproved".to_vec(),
+            erc20_name: name,
+            erc20_symbol: symbol,
+            decimals: 0,
+        });
+    }
 
     let blank = String::new().as_bytes().to_vec();
     test_strings.push(Erc20Params {
@@ -342,12 +431,36 @@ struct Erc20Params {
     decimals: u8,
 }
 
+impl Erc20Params {
+    fn encode(self) -> Vec<u8> {
+        let mut tokens: Vec<Token> =
+            IntoIterator::into_iter([self.cosmos_denom, self.erc20_name, self.erc20_symbol])
+                .map(|value| {
+                    if value.is_empty() {
+                        Token::Dynamic(vec![])
+                    } else {
+                        Token::UnboundedBytes(value)
+                    }
+                })
+                .collect();
+        tokens.push(self.decimals.into());
+        encode_call("deployERC20(string,string,string,uint8)", &tokens).unwrap()
+    }
+}
+
+#[test]
+fn invalid_deployment_fixtures_encode() {
+    for params in get_erc20_test_values() {
+        assert!(params.encode().len() >= 4 + 7 * 32);
+    }
+}
+
 async fn deploy_invalid_erc20(
     gravity_address: EthAddress,
     web30: &Web3,
     keys: Vec<ValidatorKeys>,
     erc20_params: Erc20Params,
-) {
+) -> Erc20DeployedEvent {
     let starting_event_nonce =
         get_event_nonce_safe(gravity_address, web30, keys[0].eth_key.to_address())
             .await
@@ -358,16 +471,7 @@ async fn deploy_invalid_erc20(
             web30
                 .prepare_transaction(
                     gravity_address,
-                    encode_call(
-                        "deployERC20(string,string,string,uint8)",
-                        &[
-                            Token::UnboundedBytes(erc20_params.cosmos_denom),
-                            Token::UnboundedBytes(erc20_params.erc20_name),
-                            Token::UnboundedBytes(erc20_params.erc20_symbol),
-                            erc20_params.decimals.into(),
-                        ],
-                    )
-                    .unwrap(),
+                    erc20_params.encode(),
                     0u32.into(),
                     *MINER_PRIVATE_KEY,
                     vec![SendTxOption::GasPriceMultiplier(2.0)],
@@ -378,7 +482,7 @@ async fn deploy_invalid_erc20(
         .await
         .unwrap();
 
-    web30
+    let transaction = web30
         .wait_for_transaction(tx_hash, TOTAL_TIMEOUT, None)
         .await
         .unwrap();
@@ -389,5 +493,24 @@ async fn deploy_invalid_erc20(
             .unwrap();
 
     assert!(starting_event_nonce != ending_event_nonce);
-    info!("Successfully deployed an invalid ERC20 on Cosmos with event nonce {ending_event_nonce}");
+    let block = transaction.get_block_number().unwrap();
+    let logs = web30
+        .check_for_events(
+            block,
+            Some(block),
+            vec![gravity_address],
+            vec![ERC20_DEPLOYED_EVENT_SIG],
+        )
+        .await
+        .unwrap();
+    let events = Erc20DeployedEvent::from_logs(&logs).unwrap();
+    assert_eq!(
+        events.len(),
+        1,
+        "Expected one deployment in the receipt block"
+    );
+    let event = events.into_iter().next().unwrap();
+    assert!(event.event_nonce > starting_event_nonce);
+    assert!(event.event_nonce <= ending_event_nonce);
+    event
 }

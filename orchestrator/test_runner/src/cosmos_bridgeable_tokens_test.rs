@@ -1,15 +1,15 @@
 //! End-to-end test for the CosmosBridgeableTokens governance-controlled allowlist.
 //!
 //! This test verifies:
-//! - Empty allowlist blocks cosmos-originated tokens from SendToEth
-//! - Allowlisted denoms can be bridged; non-listed ones cannot
+//! - Unregistered tokens cannot be sent to Ethereum
+//! - Approved tokens can be deployed and bridged
 //! - Ethereum-originated tokens are always allowed regardless of the allowlist
 //! - MsgSetCosmosBridgeableTokensProposal and MsgDeleteCosmosBridgeableTokensProposal are
 //!   rejected when authority is not the gov module
-//! - A valid, gov-executed MsgDeleteCosmosBridgeableTokensProposal actually blocks the
-//!   deleted denom from the bridge afterwards
+//! - Governance can delete an unmapped token, but cannot delete a deployed token
 
 use clarity::Address as EthAddress;
+use cosmos_gravity::proposals::submit_delete_cosmos_bridgeable_tokens_proposal;
 use cosmos_gravity::query::{get_cosmos_bridgeable_tokens, get_pending_send_to_eth};
 use cosmos_gravity::send::{send_to_eth, MSG_SEND_TO_ETH_TYPE_URL};
 use deep_space::coin::Coin;
@@ -22,14 +22,16 @@ use gravity_proto::gravity::v2::MsgSetCosmosBridgeableTokensProposal;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
+use crate::airdrop_proposal::wait_for_proposals_to_execute;
 use crate::happy_path::test_erc20_deposit_panic;
 use crate::happy_path_v2::deploy_cosmos_representing_erc20_and_check_adoption;
 use crate::utils::create_default_test_config;
 use crate::utils::{
     footoken2_metadata, footoken_metadata, get_user_key, remove_cosmos_bridgeable_tokens,
-    send_one_eth, set_cosmos_bridgeable_tokens, start_orchestrators, ValidatorKeys,
+    send_one_eth, set_cosmos_bridgeable_tokens, start_orchestrators, vote_yes_on_proposals,
+    ValidatorKeys,
 };
-use crate::{get_fee, one_eth, ADDRESS_PREFIX, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
+use crate::{get_deposit, get_fee, one_eth, ADDRESS_PREFIX, OPERATION_TIMEOUT, TOTAL_TIMEOUT};
 
 pub async fn cosmos_bridgeable_tokens_test(
     web30: &Web3,
@@ -44,40 +46,19 @@ pub async fn cosmos_bridgeable_tokens_test(
     start_orchestrators(keys.clone(), gravity_address, false, no_relay_market_config).await;
 
     // ------------------------------------------------------------------
-    // Step 1: deploy footoken and footoken2 ERC20 representations.
-    // Both denoms must be on the CosmosBridgeableTokens allowlist before
-    // deploying their ERC20s — handleErc20Deployed always enforces the
-    // allowlist, even when the list is otherwise empty.
-    // After deployment we clear the list so that Step 2 can verify
-    // SendToEth is blocked with an empty allowlist.
+    // Step 1: add and remove both tokens before either has an ERC20 mapping.
     // ------------------------------------------------------------------
     let footoken = footoken_metadata(contact).await;
     let footoken2 = footoken2_metadata(contact).await;
     set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone(), footoken2.clone()]).await;
 
-    let _footoken_erc20 = deploy_cosmos_representing_erc20_and_check_adoption(
-        gravity_address,
-        web30,
-        Some(keys.clone()),
-        &mut grpc_client,
-        false,
-        footoken.clone(),
-    )
-    .await;
-
-    let _footoken2_erc20 = deploy_cosmos_representing_erc20_and_check_adoption(
-        gravity_address,
-        web30,
-        Some(keys.clone()),
-        &mut grpc_client,
-        false,
-        footoken2.clone(),
-    )
-    .await;
-
     // Clear the allowlist so Step 2 can verify SendToEth is blocked.
     remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone(), footoken2.clone()])
         .await;
+    assert!(get_cosmos_bridgeable_tokens(&mut grpc_client)
+        .await
+        .unwrap()
+        .is_empty());
 
     // Set up a test user funded with footoken, footoken2, and some ETH
     let user = get_user_key(None);
@@ -125,10 +106,10 @@ pub async fn cosmos_bridgeable_tokens_test(
     .await;
 
     // ------------------------------------------------------------------
-    // Step 2: Assert cosmos-originated token is blocked with empty allowlist.
+    // Step 2: Assert unregistered tokens cannot be bridged with an empty allowlist.
     // Use send_message directly to bypass the client-side balance checks in
     // the send_to_eth wrapper (which would return a BadInput for denom mismatch
-    // but not the on-chain allowlist rejection).
+    // but not the on-chain classification rejection).
     // ------------------------------------------------------------------
     info!("Step 2: Verify SendToEth is blocked for cosmos-originated token with empty allowlist");
     let bridge_fee = Coin {
@@ -186,6 +167,15 @@ pub async fn cosmos_bridgeable_tokens_test(
         "Confirmed: cosmos_bridgeable_tokens = {:?}",
         bridgeable_tokens
     );
+    let footoken_erc20 = deploy_cosmos_representing_erc20_and_check_adoption(
+        gravity_address,
+        web30,
+        None,
+        &mut grpc_client,
+        false,
+        footoken.clone(),
+    )
+    .await;
 
     // ------------------------------------------------------------------
     // Step 4: Assert cosmos-originated footoken is now allowed.
@@ -300,18 +290,52 @@ pub async fn cosmos_bridgeable_tokens_test(
     info!("Confirmed: footoken2 correctly rejected while not on allowlist");
 
     // ------------------------------------------------------------------
-    // Step 7: Clear the allowlist and verify footoken is blocked again.
+    // Step 7: Governance cannot remove metadata for a deployed token.
     // ------------------------------------------------------------------
-    info!("Step 7: Clear allowlist and verify footoken is blocked again");
-    remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
+    info!("Step 7: Verify governance cannot remove deployed footoken");
+    let response = submit_delete_cosmos_bridgeable_tokens_proposal(
+        "Remove deployed footoken".to_string(),
+        "Deletion must fail while an ERC20 representation exists".to_string(),
+        vec![footoken.clone()],
+        get_deposit(None),
+        get_fee(None),
+        contact,
+        keys[0].validator_key,
+        Some(OPERATION_TIMEOUT),
+    )
+    .await
+    .expect("Failed to submit deployed-token removal proposal");
+    assert_eq!(response.code(), 0, "{}", response.raw_log());
+    let voting = contact
+        .get_governance_proposals_in_voting_period()
+        .await
+        .unwrap();
+    assert_eq!(voting.proposals.len(), 1);
+    let proposal_id = voting.proposals[0].proposal_id;
+    vote_yes_on_proposals(contact, &keys, None).await;
+    wait_for_proposals_to_execute(contact).await;
+    let failed = contact.get_failed_governance_proposals().await.unwrap();
+    assert!(
+        failed
+            .proposals
+            .iter()
+            .any(|proposal| proposal.proposal_id == proposal_id),
+        "Deleting a deployed token must fail during proposal execution"
+    );
 
     let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client)
         .await
         .unwrap();
-    assert!(
-        bridgeable_tokens.is_empty(),
-        "Expected cosmos_bridgeable_tokens to be empty after clearing"
+    assert_eq!(
+        bridgeable_tokens,
+        vec![footoken.clone()],
+        "Failed removal must preserve the allowlist"
     );
+    let mapping = cosmos_gravity::query::get_erc20_to_denom(&mut grpc_client, footoken_erc20)
+        .await
+        .unwrap();
+    assert!(mapping.cosmos_originated);
+    assert_eq!(mapping.denom, footoken.base);
 
     // Re-fund the user (previous footoken was sent in steps 2/4)
     contact
@@ -346,12 +370,9 @@ pub async fn cosmos_bridgeable_tokens_test(
             user.cosmos_key,
         )
         .await;
-    assert!(
-        res.is_err(),
-        "SendToEth for footoken should be rejected after allowlist was cleared: {:?}",
-        res
-    );
-    info!("Confirmed: footoken correctly blocked after allowlist cleared");
+    let response = res.expect("SendToEth must remain available after failed removal");
+    assert_eq!(response.code(), 0, "{}", response.raw_log());
+    info!("Confirmed: failed removal preserved footoken metadata, mapping and bridge access");
 
     // ------------------------------------------------------------------
     // Step 8: Assert governance is the only authority.
@@ -431,13 +452,11 @@ pub async fn cosmos_bridgeable_tokens_test(
     );
 
     // ------------------------------------------------------------------
-    // Step 10: Assert that a *valid* delete proposal (submitted via governance)
-    // actually blocks the token from the bridge afterwards.
-    // First re-add footoken to the allowlist and confirm it can be bridged,
-    // then delete it via governance and confirm it can no longer be bridged.
+    // Step 10: Removing an unmapped token preserves the deployed token.
     // ------------------------------------------------------------------
-    info!("Step 10: Verify footoken is blocked from the bridge after a valid governance delete proposal");
-    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
+    info!("Step 10: Remove unmapped footoken2 while preserving deployed footoken");
+    set_cosmos_bridgeable_tokens(contact, &keys, vec![footoken2.clone()]).await;
+    remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken2.clone()]).await;
 
     let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client)
         .await
@@ -445,60 +464,8 @@ pub async fn cosmos_bridgeable_tokens_test(
     assert_eq!(
         bridgeable_tokens,
         vec![footoken.clone()],
-        "Expected cosmos_bridgeable_tokens to contain only footoken after re-adding"
+        "Removing footoken2 must preserve the deployed footoken entry"
     );
-
-    let res = send_to_eth(
-        user.cosmos_key,
-        user.eth_address,
-        send_coin.clone(),
-        bridge_fee.clone(),
-        Some(chain_fee.clone()),
-        get_fee(None),
-        contact,
-    )
-    .await;
-    assert!(
-        res.is_ok(),
-        "SendToEth for footoken should succeed while it is allowlisted: {:?}",
-        res
-    );
-    info!("Confirmed: footoken SendToEth accepted while allowlisted");
-
-    remove_cosmos_bridgeable_tokens(contact, &keys, vec![footoken.clone()]).await;
-
-    let bridgeable_tokens = get_cosmos_bridgeable_tokens(&mut grpc_client)
-        .await
-        .unwrap();
-    assert!(
-        bridgeable_tokens.is_empty(),
-        "Expected cosmos_bridgeable_tokens to be empty after the valid governance delete proposal"
-    );
-
-    let msg_send_to_eth4 = MsgSendToEth {
-        sender: user.cosmos_address.to_string(),
-        eth_dest: user.eth_address.to_string(),
-        amount: Some(send_coin.clone().into()),
-        bridge_fee: Some(bridge_fee.clone().into()),
-        chain_fee: Some(chain_fee.clone().into()),
-    };
-    let msg4 = Msg::new(MSG_SEND_TO_ETH_TYPE_URL, msg_send_to_eth4);
-    let res = contact
-        .send_message(
-            &[msg4],
-            None,
-            &[get_fee(None)],
-            Some(OPERATION_TIMEOUT),
-            None,
-            user.cosmos_key,
-        )
-        .await;
-    assert!(
-        res.is_err(),
-        "SendToEth for footoken should be rejected after the valid governance delete proposal: {:?}",
-        res
-    );
-    info!("Confirmed: footoken correctly blocked from the bridge after the valid governance delete proposal");
 
     info!("CosmosBridgeableTokens test passed!");
 }

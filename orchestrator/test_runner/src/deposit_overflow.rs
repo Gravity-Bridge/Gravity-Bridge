@@ -7,6 +7,7 @@ use crate::utils::{check_cosmos_balances, get_user_key, submit_false_claims, Val
 use crate::OPERATION_TIMEOUT;
 use crate::{get_fee, MINER_ADDRESS};
 use clarity::{Address as EthAddress, Uint256};
+use cosmos_gravity::query::get_gravity_params;
 use deep_space::private_key::CosmosPrivateKey;
 use deep_space::{Coin, Contact, Fee};
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
@@ -16,9 +17,7 @@ use num::Bounded;
 use tonic::transport::Channel;
 use web30::client::Web3;
 
-// Tests end to end bridge function, then asserts a Uint256 max value deposit of overflowing_erc20 succeeds,
-// then asserts that other token deposits are unaffected by this transfer,
-// and future deposits of overflowing_erc20 are blocked
+// A maximum-sized deposit succeeds; subsequent overflows preserve balances and unrelated deposits continue.
 pub async fn deposit_overflow_test(
     web30: &Web3,
     contact: &Contact,
@@ -68,6 +67,27 @@ pub async fn deposit_overflow_test(
     let initial_nonce = get_nonces(&mut grpc_client, &keys, &contact.get_prefix()).await[0];
     let initial_block_height =
         downcast_uint256(web30.eth_get_latest_block().await.unwrap().number).unwrap();
+    assert!(
+        get_gravity_params(&mut grpc_client)
+            .await
+            .unwrap()
+            .bridge_active
+    );
+    submit_false_claims(
+        &orchestrator_keys,
+        initial_nonce + 1,
+        initial_block_height + 1,
+        normal_amount,
+        dest,
+        *MINER_ADDRESS,
+        check_module_erc20,
+        contact,
+        &fee,
+        Some(OPERATION_TIMEOUT),
+    )
+    .await;
+    let initial_nonce = initial_nonce + 1;
+    let initial_block_height = initial_block_height + 1;
     info!("Initial transfer complete, nonce is {initial_nonce}");
 
     // NOTE: the dest user's balance should be 1 * normal_amount of check_module_erc20 token
@@ -128,48 +148,95 @@ pub async fn deposit_overflow_test(
         },
         Coin {
             amount: max_amount,
-            denom: overflowing_denom,
+            denom: overflowing_denom.clone(),
         },
     ];
     check_cosmos_balances(contact, dest, &expected_cosmos_coins).await;
 
-    // Expect this one to fail, there's no supply left of the false_claims_erc20!
-    submit_false_claims(
-        &orchestrator_keys,
-        initial_nonce + 3,
-        initial_block_height + 3,
-        normal_amount,
-        dest,
-        *MINER_ADDRESS,
-        overflowing_erc20,
-        contact,
-        &fee,
-        Some(OPERATION_TIMEOUT),
-    )
-    .await;
-    // NOTE: the dest user's balance should still be 2 * normal_amount of check_module_erc20 token and
-    // still be Uint256 max of false_claims_erc20 token
-    check_cosmos_balances(contact, dest, &expected_cosmos_coins).await;
-
-    // Expect this one to also fail, there's no supply left of the false_claims_erc20, even though account has changed
-    submit_false_claims(
-        &orchestrator_keys,
-        initial_nonce + 4,
-        initial_block_height + 4,
-        normal_amount,
-        dest2,
-        *MINER_ADDRESS,
-        overflowing_erc20,
-        contact,
-        &fee,
-        Some(OPERATION_TIMEOUT),
-    )
-    .await;
+    for (offset, receiver) in [(3, dest), (4, dest2)] {
+        submit_false_claims(
+            &orchestrator_keys,
+            initial_nonce + offset,
+            initial_block_height + offset,
+            normal_amount,
+            receiver,
+            *MINER_ADDRESS,
+            overflowing_erc20,
+            contact,
+            &fee,
+            Some(OPERATION_TIMEOUT),
+        )
+        .await;
+        assert!(
+            get_gravity_params(&mut grpc_client)
+                .await
+                .unwrap()
+                .bridge_active,
+            "A token-local overflow must not pause the bridge"
+        );
+        assert!(
+            get_nonces(&mut grpc_client, &keys, &contact.get_prefix())
+                .await
+                .iter()
+                .all(|nonce| *nonce == initial_nonce + offset),
+            "All validators must be able to advance past the overflow"
+        );
+        check_cosmos_balances(contact, dest, &expected_cosmos_coins).await;
+    }
     let dest2_bals = contact.get_balances(dest2).await.unwrap();
     assert!(
         dest2_bals.is_empty(),
-        "dest2 should have no coins, but they have {:?}",
+        "Overflow must not credit a new receiver: {:?}",
         dest2_bals
     );
-    info!("Successful send of Uint256 max value to cosmos user, unable to overflow the supply!");
+    assert_eq!(
+        contact
+            .query_supply_of(overflowing_denom.clone())
+            .await
+            .unwrap()
+            .expect("Overflow token supply must exist")
+            .amount,
+        max_amount,
+        "Overflow must not change token supply"
+    );
+
+    submit_false_claims(
+        &orchestrator_keys,
+        initial_nonce + 5,
+        initial_block_height + 5,
+        normal_amount,
+        dest2,
+        *MINER_ADDRESS,
+        check_module_erc20,
+        contact,
+        &fee,
+        Some(OPERATION_TIMEOUT),
+    )
+    .await;
+    check_cosmos_balances(
+        contact,
+        dest2,
+        &[Coin {
+            amount: normal_amount,
+            denom: check_module_denom,
+        }],
+    )
+    .await;
+    check_cosmos_balances(contact, dest, &expected_cosmos_coins).await;
+    assert_eq!(
+        contact
+            .query_supply_of(overflowing_denom)
+            .await
+            .unwrap()
+            .expect("Overflow token supply must still exist")
+            .amount,
+        max_amount
+    );
+    assert!(
+        get_gravity_params(&mut grpc_client)
+            .await
+            .unwrap()
+            .bridge_active
+    );
+    info!("Uint256 max deposit succeeded; overflows preserved supply and balances and unrelated deposits continued");
 }
