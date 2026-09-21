@@ -191,7 +191,7 @@ impl ValsetUpdatedEvent {
                 "Powers array len overflow, probably incorrect parsing".to_string(),
             ));
         }
-        let len_powers: usize = len_eth_addresses.to_string().parse().unwrap();
+        let len_powers: usize = len_powers.to_string().parse().unwrap();
         if len_powers != len_eth_addresses {
             return Err(GravityError::InvalidEventLogError(
                 "Array len mismatch, probably incorrect parsing".to_string(),
