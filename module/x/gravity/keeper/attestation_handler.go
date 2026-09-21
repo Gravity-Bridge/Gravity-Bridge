@@ -278,17 +278,10 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 	return nil
 }
 
-// Upon acceptance of sufficient ERC20 Deployed claims, register claim.TokenContract as the canonical ethereum
-// representation of the metadata governance previously voted for
-func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.MsgERC20DeployedClaim) error {
+func (k Keeper) validateERC20DeployedClaim(ctx sdk.Context, claim types.MsgERC20DeployedClaim, tokenAddress types.EthAddress) error {
 	// Perform more strict validation on the cosmos denom
 	if err := types.ValidateStrictDenom(claim.CosmosDenom); err != nil {
 		return errorsmod.Wrap(err, "invalid cosmos denom in ERC20 deployed attestation")
-	}
-
-	tokenAddress, err := types.NewEthAddress(claim.TokenContract)
-	if err != nil {
-		return errorsmod.Wrap(err, "invalid token contract on claim")
 	}
 
 	// Enforce the rules for a cosmos-originated mapping: reject denoms with an
@@ -299,26 +292,26 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	// re-runs validateCosmosOriginatedMapping and the duplicate checks. We reject here so a bad
 	// mapping fails before the governance/metadata checks rather than after.
 	// correctness does not depend on this early call.
-	if err := a.keeper.validateCosmosOriginatedMapping(ctx, claim.CosmosDenom, *tokenAddress); err != nil {
+	if err := k.validateCosmosOriginatedMapping(ctx, claim.CosmosDenom, tokenAddress); err != nil {
 		return err
 	}
 
 	// Disallow re-registration when a token already has a canonical representation, checking both directions
 	// Also redundant with setCosmosOriginatedMapping's duplicate detection, performed here to exit early
-	existingERC20, exists := a.keeper.getCosmosOriginatedERC20ForDenom(ctx, claim.CosmosDenom)
+	existingERC20, exists := k.getCosmosOriginatedERC20ForDenom(ctx, claim.CosmosDenom)
 	if exists {
 		return errorsmod.Wrap(
 			types.ErrInvalid,
 			fmt.Sprintf("ERC20 %s already exists for denom %s", existingERC20.GetAddress().Hex(), claim.CosmosDenom))
 	}
-	existingDenom, exists := a.keeper.getCosmosOriginatedDenomForERC20(ctx, *tokenAddress)
+	existingDenom, exists := k.getCosmosOriginatedDenomForERC20(ctx, tokenAddress)
 	// Disallow a token with an existing ERC20 representation (Ethereum originated) from being registered as a Cosmos-originated token
 	if exists {
 		return errorsmod.Wrapf(types.ErrInvalid, "ERC20 %s already mapped to denom %s", claim.TokenContract, existingDenom)
 	}
 
 	// Check if denom metadata has been accepted by governance
-	metadata, err := a.keeper.assertMetadataWhitelisted(ctx, claim.CosmosDenom)
+	metadata, err := k.assertMetadataWhitelisted(ctx, claim.CosmosDenom)
 	if err != nil {
 		return errorsmod.Wrap(err, "ERC20 deployment blocked because of invalid metadata")
 	}
@@ -361,6 +354,20 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 		return errorsmod.Wrap(
 			types.ErrInvalid,
 			fmt.Sprintf("ERC20 decimals %d does not match denom decimals %d", claim.Decimals, decimals))
+	}
+
+	return nil
+}
+
+// Upon acceptance of sufficient ERC20 Deployed claims, register claim.TokenContract as the canonical ethereum
+// representation of the metadata governance previously voted for
+func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.MsgERC20DeployedClaim) error {
+	tokenAddress, err := types.NewEthAddress(claim.TokenContract)
+	if err != nil {
+		return errorsmod.Wrap(err, "invalid token contract on claim")
+	}
+	if err := a.keeper.validateERC20DeployedClaim(ctx, claim, *tokenAddress); err != nil {
+		return err
 	}
 
 	// Add to denom-erc20 mapping

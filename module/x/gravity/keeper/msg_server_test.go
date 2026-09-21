@@ -686,7 +686,7 @@ func TestOracleClaimsRejectStateFailures(t *testing.T) {
 	}
 }
 
-// TestERC20DeployedClaimMetadataDriftRejected verifies that ERC20DeployedClaim rejects a
+// TestERC20DeployedClaimMetadataDriftRejected verifies that deployment admission rejects a
 // cosmos-originated denom whose bank module metadata has drifted from the governance-approved
 // CosmosBridgeableTokens entry (the "SECURITY VIOLATION" branch in assertMetadataWhitelisted).
 // nolint: exhaustruct
@@ -699,9 +699,6 @@ func TestERC20DeployedClaimMetadataDriftRejected(t *testing.T) {
 
 	cosmosTokenDenom := "udrifterc20"
 	cosmosTokenContract := "0xD3d86991c6218b36c1d19D4a2e9Eb0cE3606eB55"
-	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
-	require.NoError(t, err)
-	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
 
 	// Whitelist the denom with metadata that (for now) matches what's stored in the bank module
 	originalMeta := minMeta(cosmosTokenDenom)
@@ -719,9 +716,8 @@ func TestERC20DeployedClaimMetadataDriftRejected(t *testing.T) {
 		Orchestrator:   OrchAddrs[0].String(),
 	}
 
-	// Sanity check: ERC20DeployedClaim passes the allowlist gate while the bank metadata still
-	// matches (this only records a vote/attestation).
-	_, err = sv.ERC20DeployedClaim(ctx, claim)
+	// Record a vote while the bank metadata matches.
+	_, err := sv.ERC20DeployedClaim(ctx, claim)
 	require.NoError(t, err)
 
 	// Now mutate the bank module's metadata for the denom out from under the allowlist entry,
@@ -732,14 +728,19 @@ func TestERC20DeployedClaimMetadataDriftRejected(t *testing.T) {
 
 	claim.EventNonce = 2
 	_, err = sv.ERC20DeployedClaim(ctx, claim)
-	require.Error(t, err, "ERC20DeployedClaim must reject a denom whose bank metadata has drifted from the allowlist entry")
-	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	require.ErrorContains(t, err, "SECURITY VIOLATION")
+	require.Equal(t, uint64(1), gk.GetLastEventNonceByValidator(ctx, ValAddrs[0]))
+	hash, err := claim.ClaimHash()
+	require.NoError(t, err)
+	require.Nil(t, gk.GetAttestation(ctx, claim.EventNonce, hash))
+	require.Len(t, gk.GetMostRecentAttestations(ctx, 10), 1)
+	require.Zero(t, gk.GetLastObservedEventNonce(ctx))
 
 	// Restore bank metadata so the deferred invariant assertion does not fail
 	input.BankKeeper.SetDenomMetaData(ctx, originalMeta)
 }
 
-// TestERC20DeployedClaimMetadataMissingRejected verifies that ERC20DeployedClaim rejects a
+// TestERC20DeployedClaimMetadataMissingRejected verifies that deployment admission rejects a
 // cosmos-originated denom that has a governance-approved CosmosBridgeableTokens entry but no
 // corresponding metadata in the bank module (the "bank metadata ... not found" branch in
 // assertMetadataWhitelisted).
@@ -755,9 +756,6 @@ func TestERC20DeployedClaimMetadataMissingRejected(t *testing.T) {
 
 	cosmosTokenDenom := "umissingerc20"
 	cosmosTokenContract := "0xE4e86991c6218b36c1d19D4a2e9Eb0cE3606eB44"
-	cosmosTokenContractAddr, err := types.NewEthAddress(cosmosTokenContract)
-	require.NoError(t, err)
-	require.NoError(t, gk.setCosmosOriginatedMapping(ctx, cosmosTokenDenom, *cosmosTokenContractAddr))
 
 	// Whitelist the denom in CosmosBridgeableTokens, but never set matching metadata in the
 	// bank module, simulating a bank metadata entry that has gone missing out from under the
@@ -768,7 +766,7 @@ func TestERC20DeployedClaimMetadataMissingRejected(t *testing.T) {
 	_, found := input.BankKeeper.GetDenomMetaData(ctx, cosmosTokenDenom)
 	require.False(t, found, "test setup requires no bank metadata to exist for the denom")
 
-	_, err = sv.ERC20DeployedClaim(ctx, &types.MsgERC20DeployedClaim{
+	claim := &types.MsgERC20DeployedClaim{
 		EventNonce:     1,
 		EthBlockHeight: 1,
 		CosmosDenom:    cosmosTokenDenom,
@@ -777,11 +775,217 @@ func TestERC20DeployedClaimMetadataMissingRejected(t *testing.T) {
 		Symbol:         cosmosTokenDenom,
 		Decimals:       0,
 		Orchestrator:   OrchAddrs[0].String(),
-	})
-	require.Error(t, err, "ERC20DeployedClaim must reject a denom whose bank metadata is missing despite an existing allowlist entry")
+	}
+	_, err := sv.ERC20DeployedClaim(ctx, claim)
+	require.Error(t, err, "deployment admission must reject missing metadata before recording votes")
 	require.Contains(t, err.Error(), "SECURITY VIOLATION")
 	require.Contains(t, err.Error(), "bank metadata")
 	require.Contains(t, err.Error(), "not found")
+	require.Zero(t, gk.GetLastEventNonceByValidator(ctx, ValAddrs[0]))
+	require.Empty(t, gk.GetMostRecentAttestations(ctx, 10))
+	require.Zero(t, gk.GetLastObservedEventNonce(ctx))
+}
+
+func TestERC20DeployedClaimLateVoteRejected(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		prune bool
+	}{
+		{"retained", false},
+		{"pruned", true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			input, ctx := SetupFiveValChain(t)
+			defer input.AssertInvariants()
+			keeper := input.GravityKeeper
+			server := msgServer{keeper}
+			metadata := minMeta("ucatchup")
+			input.BankKeeper.SetDenomMetaData(ctx, metadata)
+			keeper.SetCosmosBridgeableToken(ctx, metadata)
+			contract, err := types.NewEthAddress("0x1234567890123456789012345678901234567890")
+			require.NoError(t, err)
+			claim := types.MsgERC20DeployedClaim{
+				EventNonce: 1, EthBlockHeight: 1, CosmosDenom: metadata.Base,
+				TokenContract: contract.GetAddress().Hex(), Name: metadata.Name,
+				Symbol: metadata.Symbol, Decimals: 0, Orchestrator: OrchAddrs[0].String(),
+			}
+			hash, err := claim.ClaimHash()
+			require.NoError(t, err)
+
+			for _, orchestrator := range OrchAddrs[:4] {
+				claim.Orchestrator = orchestrator.String()
+				_, err = server.ERC20DeployedClaim(ctx, &claim)
+				require.NoError(t, err)
+			}
+			attestation := keeper.GetAttestation(ctx, claim.EventNonce, hash)
+			require.NotNil(t, attestation)
+			require.False(t, attestation.Observed)
+			keeper.TryAttestation(ctx, attestation)
+			require.True(t, keeper.GetAttestation(ctx, claim.EventNonce, hash).Observed)
+			denom, exists := keeper.getCosmosOriginatedDenomForERC20(ctx, *contract)
+			require.True(t, exists)
+			require.Equal(t, metadata.Base, denom)
+
+			claim.Orchestrator = OrchAddrs[4].String()
+			newDeployment := claim
+			newDeployment.EventNonce = 2
+			newDeployment.Orchestrator = OrchAddrs[0].String()
+			_, err = server.ERC20DeployedClaim(ctx, &newDeployment)
+			require.ErrorContains(t, err, "already exists for denom")
+			require.Equal(t, claim.EventNonce, keeper.GetLastEventNonceByValidator(ctx, ValAddrs[0]))
+			newHash, err := newDeployment.ClaimHash()
+			require.NoError(t, err)
+			require.Nil(t, keeper.GetAttestation(ctx, newDeployment.EventNonce, newHash))
+			require.Len(t, keeper.GetAttestation(ctx, claim.EventNonce, hash).Votes, 4)
+
+			metadata.Name = "Updated token"
+			input.BankKeeper.SetDenomMetaData(ctx, metadata)
+			keeper.SetCosmosBridgeableToken(ctx, metadata)
+			lastObservedNonce := claim.EventNonce
+			if test.prune {
+				keeper.SetLastEventNonceByValidator(ctx, ValAddrs[4], 0)
+				lastObservedNonce = 1002
+				keeper.setLastObservedEventNonce(ctx, lastObservedNonce)
+				keeper.DeleteAttestation(ctx, *attestation)
+				require.Nil(t, keeper.GetAttestation(ctx, claim.EventNonce, hash))
+			}
+
+			_, err = server.ERC20DeployedClaim(ctx, &claim)
+			require.ErrorContains(t, err, "already exists for denom")
+			require.Zero(t, keeper.GetLastEventNonceByValidator(ctx, ValAddrs[4]))
+			attestation = keeper.GetAttestation(ctx, claim.EventNonce, hash)
+			if test.prune {
+				require.Nil(t, attestation)
+			} else {
+				require.NotNil(t, attestation)
+				require.True(t, attestation.Observed)
+				require.Len(t, attestation.Votes, 4)
+				require.NotContains(t, attestation.Votes, ValAddrs[4].String())
+			}
+
+			_, err = server.BatchSendToEthClaim(ctx, &types.MsgBatchSendToEthClaim{
+				EventNonce: 2, EthBlockHeight: 2, BatchNonce: 1,
+				TokenContract: claim.TokenContract, Orchestrator: claim.Orchestrator,
+			})
+			require.Error(t, err)
+			require.Zero(t, keeper.GetLastEventNonceByValidator(ctx, ValAddrs[4]))
+			require.Equal(t, lastObservedNonce, keeper.GetLastObservedEventNonce(ctx))
+		})
+	}
+}
+
+func TestERC20DeployedClaimProposedMappingValidation(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		wantError string
+	}{
+		{"approved", ""},
+		{"unapproved", "CosmosBridgeableTokens whitelist"},
+		{"gravity denom", "collides with an eth-originated gravity denom"},
+		{"gravity2 denom", "collides with an eth-originated gravity2 denom"},
+		{"embedded address", "contains an embedded Ethereum address"},
+		{"remapped", "remapped eth-originated set"},
+		{"duplicate denom", "already exists for denom"},
+		{"duplicate ERC20", "already mapped to denom"},
+		{"name mismatch", "does not match denom name"},
+		{"symbol mismatch", "does not match denom symbol"},
+		{"decimals mismatch", "does not match denom decimals"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			input, ctx := SetupFiveValChain(t)
+			keeper := input.GravityKeeper
+			server := msgServer{keeper}
+			metadata := minMeta("uproposed")
+			input.BankKeeper.SetDenomMetaData(ctx, metadata)
+			keeper.SetCosmosBridgeableToken(ctx, metadata)
+			contract, err := types.NewEthAddress("0xD3d86991c6218b36c1d19D4a2e9Eb0cE3606eB55")
+			require.NoError(t, err)
+			claim := types.MsgERC20DeployedClaim{
+				EventNonce: 1, EthBlockHeight: 1, CosmosDenom: metadata.Base,
+				TokenContract: contract.GetAddress().Hex(), Name: metadata.Name,
+				Symbol: metadata.Symbol, Decimals: 0, Orchestrator: OrchAddrs[0].String(),
+			}
+
+			switch test.name {
+			case "unapproved":
+				keeper.DeleteCosmosBridgeableToken(ctx, metadata.Base)
+			case "gravity denom":
+				claim.CosmosDenom = types.GravityDenom(*contract)
+				claim.Name = ""
+				claim.Symbol = ""
+			case "gravity2 denom":
+				claim.CosmosDenom = types.Gravity2Denom(*contract)
+			case "embedded address":
+				claim.CosmosDenom = "foo" + contract.GetAddress().Hex()
+			case "remapped":
+				keeper.SetRemappedERC20(ctx, *contract)
+			case "duplicate denom":
+				otherContract, err := types.NewEthAddress("0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5")
+				require.NoError(t, err)
+				require.NoError(t, keeper.setCosmosOriginatedMapping(ctx, metadata.Base, *otherContract))
+			case "duplicate ERC20":
+				otherMetadata := minMeta("uother")
+				input.BankKeeper.SetDenomMetaData(ctx, otherMetadata)
+				keeper.SetCosmosBridgeableToken(ctx, otherMetadata)
+				require.NoError(t, keeper.setCosmosOriginatedMapping(ctx, otherMetadata.Base, *contract))
+			case "name mismatch":
+				claim.Name += "different"
+			case "symbol mismatch":
+				claim.Symbol += "different"
+			case "decimals mismatch":
+				claim.Decimals = 1
+			}
+
+			require.NoError(t, claim.ValidateBasic())
+			existingContract, hadContract := keeper.getCosmosOriginatedERC20ForDenom(ctx, claim.CosmosDenom)
+			existingDenom, hadDenom := keeper.getCosmosOriginatedDenomForERC20(ctx, *contract)
+			if test.wantError != "" {
+				executionCtx, _ := ctx.CacheContext()
+				var attestation types.Attestation
+				require.ErrorContains(t, keeper.AttestationHandler.Handle(executionCtx, attestation, &claim), test.wantError)
+			}
+
+			hash, err := claim.ClaimHash()
+			require.NoError(t, err)
+			for validator, orchestrator := range OrchAddrs[:4] {
+				claim.Orchestrator = orchestrator.String()
+				_, err = server.ERC20DeployedClaim(ctx, &claim)
+				if test.wantError != "" {
+					require.ErrorContains(t, err, test.wantError)
+					require.Zero(t, keeper.GetLastEventNonceByValidator(ctx, ValAddrs[validator]))
+				} else {
+					require.NoError(t, err)
+					require.Equal(t, claim.EventNonce, keeper.GetLastEventNonceByValidator(ctx, ValAddrs[validator]))
+				}
+			}
+			attestation := keeper.GetAttestation(ctx, claim.EventNonce, hash)
+			if test.wantError != "" {
+				require.Nil(t, attestation)
+				require.Empty(t, keeper.GetMostRecentAttestations(ctx, 10))
+				require.Zero(t, keeper.GetLastObservedEventNonce(ctx))
+			} else {
+				require.NotNil(t, attestation)
+				require.False(t, attestation.Observed)
+				keeper.TryAttestation(ctx, attestation)
+				require.True(t, keeper.GetAttestation(ctx, claim.EventNonce, hash).Observed)
+				require.Equal(t, claim.EventNonce, keeper.GetLastObservedEventNonce(ctx))
+			}
+			mappedContract, hasContract := keeper.getCosmosOriginatedERC20ForDenom(ctx, claim.CosmosDenom)
+			mappedDenom, hasDenom := keeper.getCosmosOriginatedDenomForERC20(ctx, *contract)
+			if test.wantError != "" {
+				require.Equal(t, hadContract, hasContract)
+				require.Equal(t, existingContract, mappedContract)
+				require.Equal(t, hadDenom, hasDenom)
+				require.Equal(t, existingDenom, mappedDenom)
+			} else {
+				require.True(t, hasContract)
+				require.Equal(t, contract, mappedContract)
+				require.True(t, hasDenom)
+				require.Equal(t, metadata.Base, mappedDenom)
+			}
+			require.NoError(t, keeper.RequireBridgeActive(ctx))
+		})
+	}
 }
 
 // TestRequestBatchCosmosBridgeableTokensAllowlist verifies that RequestBatch enforces the

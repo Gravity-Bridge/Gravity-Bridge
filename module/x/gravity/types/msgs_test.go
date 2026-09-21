@@ -508,6 +508,40 @@ func TestMsgValsetUpdatedClaimReconstructionSorted(t *testing.T) {
 	require.Equal(t, originalHash, reconstructedHash)
 }
 
+// TestReconstructClaimTypeMismatch covers an attestation whose stored ClaimType disagrees with its
+// stored components, which only a hand-written genesis file can produce.
+func TestReconstructClaimTypeMismatch(t *testing.T) {
+	//nolint: exhaustruct
+	claims := []EthereumClaim{
+		&MsgSendToCosmosClaim{Amount: NonzeroSdkInt()},
+		&MsgBatchSendToEthClaim{},
+		&MsgERC20DeployedClaim{},
+		&MsgLogicCallExecutedClaim{},
+		&MsgValsetUpdatedClaim{RewardAmount: NonzeroSdkInt()},
+	}
+
+	for _, claim := range claims {
+		components, err := ExtractClaimHashComponents(claim)
+		require.NoError(t, err)
+
+		reconstructed, err := ReconstructClaim(claim.GetType(), components)
+		require.NoError(t, err)
+		require.Equal(t, claim.GetType(), reconstructed.GetType())
+
+		for _, other := range claims {
+			if other.GetType() == claim.GetType() {
+				continue
+			}
+			_, err := ReconstructClaim(other.GetType(), components)
+			require.ErrorIs(t, err, ErrInvalidAttestation)
+			require.Contains(t, err.Error(), "does not match stored components")
+		}
+
+		_, err = ReconstructClaim(CLAIM_TYPE_UNSPECIFIED, components)
+		require.ErrorIs(t, err, ErrInvalidAttestation)
+	}
+}
+
 // VerifyClaimHash verifies that the hash computed from the stored Any claim matches
 // the hash computed from the individually stored claim components.
 func TestVerifyClaimHash(t *testing.T) {

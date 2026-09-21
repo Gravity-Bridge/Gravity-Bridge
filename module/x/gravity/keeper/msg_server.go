@@ -538,8 +538,7 @@ func (k msgServer) SendToCosmosClaim(c context.Context, msg *types.MsgSendToCosm
 		return nil, errorsmod.Wrap(err, "failed to classify ERC20 in SendToCosmosClaim")
 	}
 	if contractOrigin.Origin == types.AssetOriginCosmos {
-		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
-		if err != nil {
+		if _, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom); err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToCosmos")
 		}
 	}
@@ -604,8 +603,7 @@ func (k msgServer) BatchSendToEthClaim(c context.Context, msg *types.MsgBatchSen
 		return nil, errorsmod.Wrap(err, "failed to classify ERC20 in BatchSendToEthClaim")
 	}
 	if contractOrigin.Origin == types.AssetOriginCosmos {
-		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
-		if err != nil {
+		if _, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom); err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for SendToEth")
 		}
 	}
@@ -670,10 +668,12 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 		return nil, errorsmod.Wrap(err, "failed to classify ERC20 in ERC20DeployedClaim")
 	}
 	if contractOrigin.Origin == types.AssetOriginCosmos {
-		_, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
-		if err != nil {
+		if _, err := k.assertMetadataWhitelisted(ctx, contractOrigin.Denom); err != nil {
 			return nil, errorsmod.Wrap(err, "token not whitelisted for DeployErc20")
 		}
+	}
+	if err := k.validateERC20DeployedClaim(ctx, *msg, *contract); err != nil {
+		return nil, err
 	}
 
 	any, err := codectypes.NewAnyWithValue(msg)

@@ -294,6 +294,30 @@ func TestClassifyCosmosOriginated_CorruptState(t *testing.T) {
 		require.Contains(t, err.Error(), "not bidirectionally consistent")
 	})
 
+	for _, denom := range []string{
+		types.GravityDenom(*erc20),
+		types.Gravity2Denom(*erc20),
+		"foo" + erc20.GetAddress().Hex(),
+	} {
+		t.Run("structurally invalid mapping: "+denom, func(t *testing.T) {
+			input, ctx := SetupFiveValChain(t)
+			keeper := input.GravityKeeper
+			require.NoError(t, types.ValidateStrictDenom(denom))
+			setCosmosOriginatedMappingUnchecked(ctx, keeper, denom, *erc20)
+			require.Error(t, keeper.validateCosmosOriginatedMapping(ctx, denom, *erc20))
+
+			origin, err := keeper.ClassifyERC20(ctx, *erc20)
+			require.Nil(t, origin)
+			require.ErrorIs(t, err, types.ErrInvalid)
+
+			if strings.HasPrefix(denom, "foo") {
+				origin, err = keeper.ClassifyDenom(ctx, denom)
+				require.Nil(t, origin)
+				require.ErrorIs(t, err, types.ErrInvalid)
+			}
+		})
+	}
+
 	t.Run("ClassifyERC20: cosmos-originated ERC20 also in the remapped set", func(t *testing.T) {
 		input, ctx := SetupFiveValChain(t)
 		k := input.GravityKeeper

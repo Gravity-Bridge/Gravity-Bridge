@@ -157,6 +157,7 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 		return nil, errorsmod.Wrap(ErrInvalidAttestation, "nil claim components")
 	}
 
+	var claim EthereumClaim
 	switch c := components.Components.(type) {
 	case *ClaimHashComponents_SendToCosmos:
 		comp := c.SendToCosmos
@@ -167,7 +168,7 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 		if !ok {
 			return nil, errorsmod.Wrapf(ErrInvalidAttestation, "invalid amount %s", comp.Amount)
 		}
-		return &MsgSendToCosmosClaim{
+		claim = &MsgSendToCosmosClaim{
 			EventNonce:     comp.EventNonce,
 			EthBlockHeight: comp.EthBlockHeight,
 			TokenContract:  comp.TokenContract,
@@ -175,27 +176,27 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 			EthereumSender: comp.EthereumSender,
 			CosmosReceiver: comp.CosmosReceiver,
 			Orchestrator:   "",
-		}, nil
+		}
 
 	case *ClaimHashComponents_BatchSendToEth:
 		comp := c.BatchSendToEth
 		if comp == nil {
 			return nil, errorsmod.Wrap(ErrInvalidAttestation, "nil BatchSendToEth components")
 		}
-		return &MsgBatchSendToEthClaim{
+		claim = &MsgBatchSendToEthClaim{
 			EventNonce:     comp.EventNonce,
 			EthBlockHeight: comp.EthBlockHeight,
 			BatchNonce:     comp.BatchNonce,
 			TokenContract:  comp.TokenContract,
 			Orchestrator:   "",
-		}, nil
+		}
 
 	case *ClaimHashComponents_Erc20Deployed:
 		comp := c.Erc20Deployed
 		if comp == nil {
 			return nil, errorsmod.Wrap(ErrInvalidAttestation, "nil ERC20Deployed components")
 		}
-		return &MsgERC20DeployedClaim{
+		claim = &MsgERC20DeployedClaim{
 			EventNonce:     comp.EventNonce,
 			EthBlockHeight: comp.EthBlockHeight,
 			CosmosDenom:    comp.CosmosDenom,
@@ -204,20 +205,20 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 			Symbol:         comp.Symbol,
 			Decimals:       comp.Decimals,
 			Orchestrator:   "",
-		}, nil
+		}
 
 	case *ClaimHashComponents_LogicCallExecuted:
 		comp := c.LogicCallExecuted
 		if comp == nil {
 			return nil, errorsmod.Wrap(ErrInvalidAttestation, "nil LogicCallExecuted components")
 		}
-		return &MsgLogicCallExecutedClaim{
+		claim = &MsgLogicCallExecutedClaim{
 			EventNonce:        comp.EventNonce,
 			EthBlockHeight:    comp.EthBlockHeight,
 			InvalidationId:    comp.InvalidationId,
 			InvalidationNonce: comp.InvalidationNonce,
 			Orchestrator:      "",
-		}, nil
+		}
 
 	case *ClaimHashComponents_ValsetUpdated:
 		comp := c.ValsetUpdated
@@ -228,7 +229,7 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 		if !ok {
 			return nil, errorsmod.Wrapf(ErrInvalidAttestation, "invalid reward_amount %s", comp.RewardAmount)
 		}
-		return &MsgValsetUpdatedClaim{
+		claim = &MsgValsetUpdatedClaim{
 			EventNonce:     comp.EventNonce,
 			ValsetNonce:    comp.ValsetNonce,
 			EthBlockHeight: comp.EthBlockHeight,
@@ -236,11 +237,19 @@ func ReconstructClaim(claimType ClaimType, components *ClaimHashComponents) (Eth
 			RewardAmount:   amount,
 			RewardToken:    comp.RewardToken,
 			Orchestrator:   "",
-		}, nil
+		}
 
 	default:
 		return nil, errorsmod.Wrap(ErrInvalidClaim, fmt.Sprintf("unknown claim components type %T", components.Components))
 	}
+
+	// An attestation stores its type and its components separately, so a genesis file can supply
+	// a pair that no runtime writer could have produced.
+	if claim.GetType() != claimType {
+		return nil, errorsmod.Wrapf(ErrInvalidAttestation,
+			"claim type %s does not match stored components of type %s", claimType, claim.GetType())
+	}
+	return claim, nil
 }
 
 // ComputeClaimHash reconstructs the claim from components and calls ClaimHash() on it.

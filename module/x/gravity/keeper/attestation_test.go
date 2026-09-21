@@ -485,6 +485,65 @@ func TestAttestMismatchingComponents(t *testing.T) {
 	require.Contains(t, err.Error(), "incoming claim does not match stored attestation components")
 }
 
+func TestAttestRejectsEqualHashMismatchedComponents(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	defer input.AssertInvariants()
+	keeper := input.GravityKeeper
+	server := msgServer{keeper}
+	honest := types.MsgERC20DeployedClaim{
+		EventNonce: 1, EthBlockHeight: 1, CosmosDenom: "ugravity",
+		TokenContract: testTokenContract, Name: "A" + types.AttestationSeparator,
+		Symbol: "C", Decimals: 0, Orchestrator: OrchAddrs[1].String(),
+	}
+	forged := honest
+	forged.Name = "A"
+	forged.Symbol = types.AttestationSeparator + "C"
+	forged.Orchestrator = OrchAddrs[0].String()
+	honestHash, err := honest.ClaimHash()
+	require.NoError(t, err)
+	forgedHash, err := forged.ClaimHash()
+	require.NoError(t, err)
+	require.Equal(t, honestHash, forgedHash)
+
+	for _, claim := range []*types.MsgERC20DeployedClaim{&forged, &honest} {
+		claimAny, err := codectypes.NewAnyWithValue(claim)
+		require.NoError(t, err)
+		err = server.claimHandlerCommon(ctx, claimAny, claim)
+		require.ErrorIs(t, err, types.ErrInvalidClaim)
+		require.ErrorContains(t, err, "contains forbidden separator")
+	}
+	require.Empty(t, keeper.GetMostRecentAttestations(ctx, 10))
+	for _, validator := range ValAddrs {
+		require.Zero(t, keeper.GetLastEventNonceByValidator(ctx, validator))
+	}
+	require.Zero(t, keeper.GetLastObservedEventNonce(ctx))
+
+	forgedAny, err := codectypes.NewAnyWithValue(&forged)
+	require.NoError(t, err)
+	_, err = keeper.Attest(ctx, &forged, forgedAny)
+	require.NoError(t, err)
+	stored := keeper.GetAttestation(ctx, forged.EventNonce, forgedHash)
+	require.NotNil(t, stored)
+	storedHash, err := stored.ClaimComponents.ComputeClaimHash(stored.ClaimType)
+	require.NoError(t, err)
+	require.Equal(t, honestHash, storedHash)
+	for index, orchestrator := range OrchAddrs[1:] {
+		honest.Orchestrator = orchestrator.String()
+		honestAny, err := codectypes.NewAnyWithValue(&honest)
+		require.NoError(t, err)
+		_, err = keeper.Attest(ctx, &honest, honestAny)
+		require.ErrorContains(t, err, "incoming claim fields do not match stored attestation components")
+		require.Zero(t, keeper.GetLastEventNonceByValidator(ctx, ValAddrs[index+1]))
+	}
+	stored = keeper.GetAttestation(ctx, forged.EventNonce, forgedHash)
+	require.Equal(t, []string{ValAddrs[0].String()}, stored.Votes)
+	keeper.TryAttestation(ctx, stored)
+	require.False(t, keeper.GetAttestation(ctx, forged.EventNonce, forgedHash).Observed)
+	require.Zero(t, keeper.GetLastObservedEventNonce(ctx))
+	_, exists := keeper.getCosmosOriginatedERC20ForDenom(ctx, forged.CosmosDenom)
+	require.False(t, exists)
+}
+
 // TestERC20DeployedClaimHashCollision attempts to engineer a collision in the ClaimHash of an ERC20DeployedClaim
 // by replicating the IBC Transfer module's behavior of adding bank denom metadata for a malicious IBC token.
 func TestERC20DeployedClaimHashCollision(t *testing.T) {

@@ -34,10 +34,8 @@ func TestCosmosOriginated(t *testing.T) {
 	acceptDepositEvent(tv)
 }
 
-// TestERC20DeployedClaimAllowlist verifies that handleErc20Deployed enforces the
-// CosmosBridgeableTokens allowlist when deciding whether to register an ERC20 for
-// a cosmos-originated denom. An empty allowlist blocks all denoms; a non-empty
-// allowlist restricts registration to only the listed denoms.
+// TestERC20DeployedClaimAllowlist verifies that admission enforces the
+// CosmosBridgeableTokens allowlist before recording votes or advancing nonces.
 func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)
 	defer func() {
@@ -72,8 +70,10 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	input.BankKeeper.SetDenomMetaData(ctx, fooMetadata)
 	input.BankKeeper.SetDenomMetaData(ctx, barMetadata)
 
-	submitERC20Claim := func(nonce uint64, cosmosDenom, tokenContract, name, symbol string, decimals uint64) {
-		for _, orchAddr := range keeper.OrchAddrs {
+	submitERC20Claim := func(nonce uint64, cosmosDenom, tokenContract, name, symbol string, decimals uint64, accepted bool) {
+		lastObservedNonce := input.GravityKeeper.GetLastObservedEventNonce(ctx)
+		var claimHash []byte
+		for validatorIndex, orchAddr := range keeper.OrchAddrs {
 			//nolint: exhaustruct
 			claim := types.MsgERC20DeployedClaim{
 				EventNonce:     nonce,
@@ -85,16 +85,37 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 				Decimals:       decimals,
 				Orchestrator:   orchAddr.String(),
 			}
+			lastValidatorNonce := input.GravityKeeper.GetLastEventNonceByValidator(ctx, keeper.ValAddrs[validatorIndex])
 			_, err := msgServer.ERC20DeployedClaim(ctx, &claim)
+			if accepted {
+				require.NoError(t, err)
+				require.Equal(t, nonce, input.GravityKeeper.GetLastEventNonceByValidator(ctx, keeper.ValAddrs[validatorIndex]))
+			} else {
+				require.ErrorContains(t, err, "denom is not in the CosmosBridgeableTokens whitelist")
+				require.Equal(t, lastValidatorNonce, input.GravityKeeper.GetLastEventNonceByValidator(ctx, keeper.ValAddrs[validatorIndex]))
+			}
+			claimHash, err = claim.ClaimHash()
 			require.NoError(t, err)
+			if !accepted {
+				require.Nil(t, input.GravityKeeper.GetAttestation(ctx, nonce, claimHash))
+			}
 		}
 		EndBlocker(ctx, input.GravityKeeper)
+		if !accepted {
+			require.Equal(t, lastObservedNonce, input.GravityKeeper.GetLastObservedEventNonce(ctx))
+			require.Nil(t, input.GravityKeeper.GetAttestation(ctx, nonce, claimHash))
+			return
+		}
+		require.Equal(t, nonce, input.GravityKeeper.GetLastObservedEventNonce(ctx))
+		attestation := input.GravityKeeper.GetAttestation(ctx, nonce, claimHash)
+		require.NotNil(t, attestation)
+		require.True(t, attestation.Observed)
 	}
 
 	// Case 1: allowlist has footoken — footoken ERC20 is registered
 	input.GravityKeeper.SetCosmosBridgeableToken(ctx, fooMetadata)
 
-	submitERC20Claim(1, "footoken", "0x1111111111111111111111111111111111111111", "Foo Token", "FOO", 6)
+	submitERC20Claim(1, "footoken", "0x1111111111111111111111111111111111111111", "Foo Token", "FOO", 6, true)
 	origin, err := input.GravityKeeper.ClassifyDenom(ctx, "footoken")
 	require.NoError(t, err)
 	require.Equal(t, types.AssetOriginCosmos, origin.Origin, "footoken ERC20 should be registered when footoken is on the allowlist")
@@ -103,7 +124,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	input.GravityKeeper.DeleteCosmosBridgeableToken(ctx, fooMetadata.Base)
 	input.GravityKeeper.SetCosmosBridgeableToken(ctx, barMetadata)
 
-	submitERC20Claim(2, "bartoken", "0x2222222222222222222222222222222222222222", "Bar Token", "BAR", 6)
+	submitERC20Claim(2, "bartoken", "0x2222222222222222222222222222222222222222", "Bar Token", "BAR", 6, true)
 	origin, err = input.GravityKeeper.ClassifyDenom(ctx, "bartoken")
 	require.NoError(t, err)
 	require.Equal(t, types.AssetOriginCosmos, origin.Origin, "bartoken ERC20 should be registered when bartoken is on the allowlist")
@@ -123,7 +144,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	}
 	input.BankKeeper.SetDenomMetaData(ctx, bazMetadata)
 
-	submitERC20Claim(3, "baztoken", "0x3333333333333333333333333333333333333333", "Baz Token", "BAZ", 6)
+	submitERC20Claim(3, "baztoken", "0x3333333333333333333333333333333333333333", "Baz Token", "BAZ", 6, false)
 	_, err = input.GravityKeeper.ClassifyDenom(ctx, "baztoken")
 	require.Error(t, err, "baztoken ERC20 should NOT be registered when baztoken is not on the allowlist")
 
@@ -141,7 +162,7 @@ func TestERC20DeployedClaimAllowlist(t *testing.T) {
 	}
 	input.BankKeeper.SetDenomMetaData(ctx, quxMetadata)
 
-	submitERC20Claim(4, "quxtoken", "0x4444444444444444444444444444444444444444", "Qux Token", "QUX", 6)
+	submitERC20Claim(3, "quxtoken", "0x4444444444444444444444444444444444444444", "Qux Token", "QUX", 6, false)
 	_, err = input.GravityKeeper.ClassifyDenom(ctx, "quxtoken")
 	require.Error(t, err, "quxtoken ERC20 should NOT be registered when the allowlist is empty")
 }

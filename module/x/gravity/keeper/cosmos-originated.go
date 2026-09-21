@@ -137,7 +137,7 @@ func (k Keeper) IterateCosmosOriginatedMappings(ctx sdk.Context, cb func(denom s
 // so failures point back to the entry point. It enforces:
 //   - the denom passes ValidateStrictDenom()
 //   - the denom<->ERC20 mapping is bidirectionally consistent in both index directions
-//   - the ERC20 is not simultaneously in the remapped eth-originated set
+//   - the mapping satisfies validateCosmosOriginatedMapping()
 func (k Keeper) classifyCosmosOriginated(ctx sdk.Context, caller string, denom string, tokenContract types.EthAddress) (*types.AssetOrigin, error) {
 	if err := types.ValidateStrictDenom(denom); err != nil {
 		return nil, errorsmod.Wrapf(types.ErrInvalidDenom, "%s: the denom %s for cosmos-originated ERC20 %s is invalid: %v",
@@ -155,10 +155,8 @@ func (k Keeper) classifyCosmosOriginated(ctx sdk.Context, caller string, denom s
 			"%s: cosmos-originated mapping for denom %q / ERC20 %s is not bidirectionally consistent (reverse lookup returned %q)",
 			caller, denom, tokenContract.GetAddress().Hex(), reverseDenom)
 	}
-	if k.IsRemappedERC20(ctx, tokenContract) {
-		return nil, errorsmod.Wrapf(types.ErrInvalid,
-			"%s: cosmos-originated ERC20 %s is also in the remapped eth-originated set, which is not allowed",
-			caller, tokenContract.GetAddress().Hex())
+	if err := k.validateCosmosOriginatedMapping(ctx, denom, tokenContract); err != nil {
+		return nil, errorsmod.Wrap(err, caller)
 	}
 	origin := types.AssetOrigin{
 		Origin:     types.AssetOriginCosmos,
