@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -19,6 +21,56 @@ import (
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/keeper"
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 )
+
+func TestAttestationTallyStopsOnPause(t *testing.T) {
+	input, ctx := keeper.SetupFiveValChain(t)
+	gravityKeeper := input.GravityKeeper
+	firstNonce := gravityKeeper.GetLastObservedEventNonce(ctx) + 1
+	contracts := []*types.EthAddress{}
+	claims := []*types.MsgSendToCosmosClaim{}
+	hashes := [][]byte{}
+	for index := 0; index < 2; index++ {
+		contract, err := types.NewEthAddress(keeper.EthAddrs[index].String())
+		require.NoError(t, err)
+		contracts = append(contracts, contract)
+		claim := &types.MsgSendToCosmosClaim{
+			EventNonce: firstNonce + uint64(index), EthBlockHeight: uint64(10 + index),
+			TokenContract: contract.GetAddress().Hex(), Amount: sdkmath.NewInt(1),
+			CosmosReceiver: keeper.AccAddrs[0].String(), EthereumSender: keeper.EthAddrs[0].String(),
+		}
+		for _, orchestrator := range keeper.OrchAddrs {
+			claim.Orchestrator = orchestrator.String()
+			claimAny, err := codectypes.NewAnyWithValue(claim)
+			require.NoError(t, err)
+			_, err = gravityKeeper.Attest(ctx, claim, claimAny)
+			require.NoError(t, err)
+		}
+		hash, err := claim.ClaimHash()
+		require.NoError(t, err)
+		claims = append(claims, claim)
+		hashes = append(hashes, hash)
+	}
+	input.BankKeeper.SetDenomMetaData(ctx, banktypes.Metadata{Base: types.GravityDenom(*contracts[0])})
+
+	attestationTally(ctx, gravityKeeper)
+
+	require.Error(t, gravityKeeper.RequireBridgeActive(ctx))
+	require.Equal(t, firstNonce, gravityKeeper.GetLastObservedEventNonce(ctx))
+	require.Equal(t, uint64(10), gravityKeeper.GetLastObservedEthereumBlockHeight(ctx).EthereumBlockHeight)
+	require.True(t, gravityKeeper.GetAttestation(ctx, firstNonce, hashes[0]).Observed)
+	require.False(t, gravityKeeper.GetAttestation(ctx, firstNonce+1, hashes[1]).Observed)
+	require.True(t, input.BankKeeper.GetSupply(ctx, types.GravityDenom(*contracts[1])).IsZero())
+
+	params, err := gravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
+	params.BridgeActive = true
+	require.NoError(t, gravityKeeper.SetParams(ctx, params))
+	attestationTally(ctx, gravityKeeper)
+	require.NoError(t, gravityKeeper.RequireBridgeActive(ctx))
+	require.True(t, gravityKeeper.GetAttestation(ctx, firstNonce+1, hashes[1]).Observed)
+	require.Equal(t, claims[1].Amount, input.BankKeeper.GetBalance(ctx, keeper.AccAddrs[0], types.GravityDenom(*contracts[1])).Amount)
+	require.True(t, input.BankKeeper.GetSupply(ctx, types.GravityDenom(*contracts[0])).IsZero())
+}
 
 func TestValsetCreationIfNotAvailable(t *testing.T) {
 	input, ctx := keeper.SetupFiveValChain(t)

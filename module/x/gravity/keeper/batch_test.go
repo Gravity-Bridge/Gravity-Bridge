@@ -262,7 +262,9 @@ func TestBatches(t *testing.T) {
 	fakeBlock := secondBatch.CosmosBlockCreated // A fake ethereum block used for testing only
 	//nolint: exhaustruct
 	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce}
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
+	secondOrigin, err := input.GravityKeeper.ClassifyERC20(ctx, secondBatch.TokenContract)
+	require.NoError(t, err)
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *secondOrigin, msg)
 
 	// check batch has been deleted
 	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
@@ -496,7 +498,9 @@ func TestBatchesFullCoins(t *testing.T) {
 	fakeBlock := secondBatch.CosmosBlockCreated // A fake ethereum block used for testing only
 	//nolint: exhaustruct
 	msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: secondBatch.BatchNonce}
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, secondBatch.TokenContract, msg)
+	secondOrigin, err := input.GravityKeeper.ClassifyERC20(ctx, secondBatch.TokenContract)
+	require.NoError(t, err)
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *secondOrigin, msg)
 
 	// check batch has been deleted
 	gotSecondBatch := input.GravityKeeper.GetOutgoingTXBatch(ctx, secondBatch.TokenContract, secondBatch.BatchNonce)
@@ -642,7 +646,9 @@ func TestManyBatches(t *testing.T) {
 			fakeBlock := batch.CosmosBlockCreated // A fake ethereum block used for testing only
 			//nolint: exhaustruct
 			msg := types.MsgBatchSendToEthClaim{EthBlockHeight: fakeBlock, BatchNonce: batch.BatchNonce}
-			input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *contractAddr, msg)
+			batchOrigin, err := input.GravityKeeper.ClassifyERC20(ctx, *contractAddr)
+			require.NoError(t, err)
+			input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *batchOrigin, msg)
 		}
 	}
 }

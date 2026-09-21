@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -9,6 +11,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
@@ -29,6 +32,73 @@ func setCosmosOriginatedMappingUnchecked(ctx sdk.Context, k Keeper, denom string
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetDenomToERC20Key(denom), tokenContract.GetAddress().Bytes())
 	store.Set(types.GetERC20ToDenomKey(tokenContract), []byte(denom))
+}
+
+func requireBridgePaused(t *testing.T, ctx sdk.Context, k Keeper) {
+	t.Helper()
+	params, err := k.GetParams(ctx)
+	require.NoError(t, err)
+	require.False(t, params.BridgeActive, "expected the handler to pause the bridge")
+}
+
+func TestHandleSendToCosmos_CommunityPoolFailureRollsBack(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	gravityKeeper := input.GravityKeeper
+	denom := "poolrollback"
+	require.NoError(t, gravityKeeper.setCosmosOriginatedMapping(ctx, denom, *badErc20))
+	coins := sdk.NewCoins(sdk.NewInt64Coin(denom, 1))
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, coins))
+	require.NoError(t, input.DistKeeper.FeePool.Remove(ctx))
+	moduleAddr := input.AccountKeeper.GetModuleAddress(types.ModuleName)
+	distributionAddr := input.AccountKeeper.GetModuleAddress(distrtypes.ModuleName)
+	distributionBalance := input.BankKeeper.GetBalance(ctx, distributionAddr, denom)
+
+	probeCtx, _ := ctx.CacheContext()
+	require.ErrorContains(t, gravityKeeper.SendToCommunityPool(probeCtx, coins), "failed to get fee pool")
+	require.Equal(t, distributionBalance.Add(coins[0]), input.BankKeeper.GetBalance(probeCtx, distributionAddr, denom))
+
+	claim := &types.MsgSendToCosmosClaim{
+		EventNonce: 1, EthBlockHeight: 1, TokenContract: badErc20.GetAddress().Hex(),
+		Amount: math.NewInt(1), CosmosReceiver: AccAddrs[0].String(),
+		EthereumSender: EthAddrs[0].String(), Orchestrator: OrchAddrs[0].String(),
+	}
+	eventsBefore := len(ctx.EventManager().Events())
+	gravityKeeper.processAttestation(ctx, &types.Attestation{}, claim)
+
+	requireBridgePaused(t, ctx, gravityKeeper)
+	require.Equal(t, coins[0], input.BankKeeper.GetBalance(ctx, moduleAddr, denom))
+	require.Equal(t, distributionBalance, input.BankKeeper.GetBalance(ctx, distributionAddr, denom))
+	require.True(t, input.BankKeeper.GetBalance(ctx, AccAddrs[0], denom).IsZero())
+	require.Equal(t, eventsBefore, len(ctx.EventManager().Events()))
+}
+
+func TestHandleSendToCosmos_MintFailureRollsBack(t *testing.T) {
+	input, ctx := SetupFiveValChain(t)
+	gravityKeeper := input.GravityKeeper
+	mintAttempted := false
+	bankKeeper := input.BankKeeper.WithMintCoinsRestriction(func(mintCtx context.Context, coins sdk.Coins) error {
+		mintAttempted = true
+		require.NoError(t, input.BankKeeper.MintCoins(mintCtx, types.ModuleName, coins))
+		return errors.New("injected failure after mint writes")
+	})
+	gravityKeeper.bankKeeper = &bankKeeper
+	gravityKeeper.AttestationHandler = AttestationHandler{keeper: &gravityKeeper}
+	claim := &types.MsgSendToCosmosClaim{
+		EventNonce: 1, EthBlockHeight: 1, TokenContract: badErc20.GetAddress().Hex(),
+		Amount: math.NewInt(1), CosmosReceiver: AccAddrs[0].String(),
+		EthereumSender: EthAddrs[0].String(), Orchestrator: OrchAddrs[0].String(),
+	}
+	eventsBefore := len(ctx.EventManager().Events())
+	gravityKeeper.processAttestation(ctx, &types.Attestation{}, claim)
+
+	require.True(t, mintAttempted)
+	requireBridgePaused(t, ctx, gravityKeeper)
+	denom := types.GravityDenom(*badErc20)
+	require.True(t, input.BankKeeper.GetSupply(ctx, denom).IsZero())
+	require.True(t, input.BankKeeper.GetBalance(ctx, input.AccountKeeper.GetModuleAddress(types.ModuleName), denom).IsZero())
+	require.True(t, input.BankKeeper.GetBalance(ctx, AccAddrs[0], denom).IsZero())
+	require.Equal(t, eventsBefore, len(ctx.EventManager().Events()))
+	input.AssertInvariants()
 }
 
 func TestHandleSendToCosmos_BadDenom(t *testing.T) {
@@ -56,8 +126,10 @@ func TestHandleSendToCosmos_BadDenom(t *testing.T) {
 		Votes:    []string{},
 		Height:   uint64(ctx.BlockHeight()),
 	}, &claim)
-	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrInvalidDenom)
+	// The deposit cannot be classified, so nothing is minted and the bridge stops.
+	require.NoError(t, err)
+	requireBridgePaused(t, ctx, input.GravityKeeper)
+	require.True(t, input.BankKeeper.GetSupply(ctx, "ibc/gravity0xbad").IsZero())
 }
 
 func TestHandleBatchSendToEth_BadDenom(t *testing.T) {
@@ -83,8 +155,9 @@ func TestHandleBatchSendToEth_BadDenom(t *testing.T) {
 		Votes:    []string{},
 		Height:   uint64(ctx.BlockHeight()),
 	}, &claim)
-	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrInvalidDenom)
+	// Vouchers cannot be burned for an unclassifiable token, so the batch is left for governance.
+	require.NoError(t, err)
+	requireBridgePaused(t, ctx, input.GravityKeeper)
 }
 
 func TestHandleErc20Deployed_BadDenom(t *testing.T) {
@@ -411,9 +484,9 @@ func deleteBankMetadata(ctx sdk.Context, bankStoreKey *storetypes.KVStoreKey, de
 	store.Delete([]byte(denom))
 }
 
-// TestHandleSendToCosmos_MetadataDrift verifies that handleSendToCosmos rejects a
-// cosmos-originated deposit when the bank module metadata has drifted from the
-// governance-approved CosmosBridgeableTokens entry.
+// TestHandleSendToCosmos_MetadataDrift verifies that handleSendToCosmos diverts a
+// cosmos-originated deposit and pauses the bridge when the bank module metadata has drifted
+// from the governance-approved CosmosBridgeableTokens entry.
 // nolint: exhaustruct
 func TestHandleSendToCosmos_MetadataDrift(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
@@ -464,16 +537,19 @@ func TestHandleSendToCosmos_MetadataDrift(t *testing.T) {
 		Votes:    []string{},
 		Height:   uint64(ctx.BlockHeight()),
 	}, &claim)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	// The escrowed coins still have to go somewhere, so the deposit is diverted to the community
+	// pool rather than credited, and the bridge stops.
+	require.NoError(t, err)
+	requireBridgePaused(t, ctx, k)
+	require.Equal(t, math.NewInt(1), input.BankKeeper.GetBalance(ctx, AccAddrs[0], denom).Amount)
 
 	// Restore bank metadata so the deferred invariant assertion does not fail.
 	input.BankKeeper.SetDenomMetaData(ctx, meta)
 }
 
-// TestHandleSendToCosmos_MissingBankMetadata verifies that handleSendToCosmos rejects
-// a cosmos-originated deposit when the bank module metadata has been deleted while the
-// CosmosBridgeableTokens entry still exists.
+// TestHandleSendToCosmos_MissingBankMetadata verifies that handleSendToCosmos diverts
+// a cosmos-originated deposit and pauses the bridge when the bank module metadata has been
+// deleted while the CosmosBridgeableTokens entry still exists.
 // nolint: exhaustruct
 func TestHandleSendToCosmos_MissingBankMetadata(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
@@ -495,6 +571,9 @@ func TestHandleSendToCosmos_MissingBankMetadata(t *testing.T) {
 	// Delete the bank metadata entry, leaving the allowlist entry in place.
 	deleteBankMetadata(ctx, input.BankStoreKey, denom)
 
+	// Fund the gravity module so the diverted deposit can reach the community pool.
+	require.NoError(t, input.BankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(denom, 1000))))
+
 	claim := types.MsgSendToCosmosClaim{
 		EventNonce:     1,
 		EthBlockHeight: 1,
@@ -510,17 +589,17 @@ func TestHandleSendToCosmos_MissingBankMetadata(t *testing.T) {
 		Votes:    []string{},
 		Height:   uint64(ctx.BlockHeight()),
 	}, &claim)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "SECURITY VIOLATION")
-	require.Contains(t, err.Error(), "not found")
+	require.NoError(t, err)
+	requireBridgePaused(t, ctx, k)
+	require.True(t, input.BankKeeper.GetBalance(ctx, AccAddrs[0], denom).IsZero())
 
 	// Restore bank metadata so the deferred invariant assertion does not fail.
 	input.BankKeeper.SetDenomMetaData(ctx, meta)
 }
 
-// TestHandleBatchSendToEth_MetadataDrift verifies that handleBatchSendToEth rejects a
-// BatchSendToEth claim for a cosmos-originated token when bank metadata has drifted
-// from the governance-approved CosmosBridgeableTokens entry.
+// TestHandleBatchSendToEth_MetadataDrift verifies that handleBatchSendToEth still clears the
+// executed batch but pauses the bridge when bank metadata has drifted from the
+// governance-approved CosmosBridgeableTokens entry.
 // nolint: exhaustruct
 func TestHandleBatchSendToEth_MetadataDrift(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
@@ -578,17 +657,18 @@ func TestHandleBatchSendToEth_MetadataDrift(t *testing.T) {
 		Votes:    []string{},
 		Height:   uint64(ctx.BlockHeight()),
 	}, &claim)
-	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrInvalid)
-	require.Contains(t, err.Error(), "SECURITY VIOLATION")
+	// Ethereum already paid the batch out, so the batch is still cleared and the bridge stops.
+	require.NoError(t, err)
+	requireBridgePaused(t, ctx, k)
+	require.Nil(t, k.GetOutgoingTXBatch(ctx, *erc20, 1))
 
 	// Restore bank metadata so the deferred invariant assertion does not fail.
 	input.BankKeeper.SetDenomMetaData(ctx, meta)
 }
 
-// TestHandleBatchSendToEth_MissingBankMetadata verifies that handleBatchSendToEth
-// rejects a BatchSendToEth claim when the bank module metadata has been deleted while
-// the CosmosBridgeableTokens entry still exists.
+// TestHandleBatchSendToEth_MissingBankMetadata verifies that handleBatchSendToEth still
+// clears the executed batch but pauses the bridge when the bank module metadata has been
+// deleted while the CosmosBridgeableTokens entry still exists.
 // nolint: exhaustruct
 func TestHandleBatchSendToEth_MissingBankMetadata(t *testing.T) {
 	input, ctx := SetupFiveValChain(t)
@@ -607,8 +687,7 @@ func TestHandleBatchSendToEth_MissingBankMetadata(t *testing.T) {
 	input.BankKeeper.SetDenomMetaData(ctx, meta)
 	k.SetCosmosBridgeableToken(ctx, meta)
 
-	// Store a batch so the test would reach OutgoingTxBatchExecuted if the whitelist
-	// check were accidentally skipped.
+	// Store a batch so the executed-batch bookkeeping has something to clear.
 	batch := types.InternalOutgoingTxBatch{
 		BatchNonce:         1,
 		BatchTimeout:       100,
@@ -634,10 +713,9 @@ func TestHandleBatchSendToEth_MissingBankMetadata(t *testing.T) {
 		Votes:    []string{},
 		Height:   uint64(ctx.BlockHeight()),
 	}, &claim)
-	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrInvalid)
-	require.Contains(t, err.Error(), "SECURITY VIOLATION")
-	require.Contains(t, err.Error(), "not found")
+	require.NoError(t, err)
+	requireBridgePaused(t, ctx, k)
+	require.Nil(t, k.GetOutgoingTXBatch(ctx, *erc20, 1))
 
 	// Restore bank metadata so the deferred invariant assertion does not fail.
 	input.BankKeeper.SetDenomMetaData(ctx, meta)

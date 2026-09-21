@@ -189,7 +189,9 @@ func TestModuleBalanceBatchedTxs(t *testing.T) {
 		TokenContract:  "",
 		Orchestrator:   "",
 	}
-	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, batches[1].TokenContract, msg)
+	batchOrigin, err := input.GravityKeeper.ClassifyERC20(ctx, batches[1].TokenContract)
+	require.NoError(t, err)
+	input.GravityKeeper.OutgoingTxBatchExecuted(ctx, *batchOrigin, msg)
 	// The module should be balanced with the batch now being observed + one leftover unbatched tx still in the pool
 	checkInvariant(t, ctx, input.GravityKeeper, true)
 	checkImbalancedModule(t, ctx, input.GravityKeeper, input.BankKeeper, mySender, voucherCoins[0])

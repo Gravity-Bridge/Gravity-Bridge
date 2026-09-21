@@ -131,21 +131,23 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 		invalidAddress = true
 	}
 
-	// Classify the token as cosmos-originated or eth-originated
+	// ClassifyERC20 is the only denom validation on this path: it applies ValidateStrictDenom to
+	// whatever it returns, and tokenOrigin.Denom is used unchecked from here on.
 	tokenOrigin, err := a.keeper.ClassifyERC20(ctx, *tokenAddress)
 	if err != nil {
-		return errorsmod.Wrap(err, "failed to classify ERC20 token")
-	}
-
-	// Perform more strict validation on the denom
-	if err := types.ValidateStrictDenom(tokenOrigin.Denom); err != nil {
-		return errorsmod.Wrap(err, "invalid derived denom from ERC20 classification")
+		// No classification means no denom, so nothing is minted or credited and the deposit stays
+		// unrepresented until governance recovers it.
+		a.keeper.PauseBridge(ctx, fmt.Sprintf("SendToCosmos nonce %d: cannot classify token %s: %v",
+			claim.GetEventNonce(), tokenAddress.GetAddress().Hex(), err))
+		return nil
 	}
 
 	if tokenOrigin.Origin == types.AssetOriginCosmos {
-		_, err := a.keeper.assertMetadataWhitelisted(ctx, tokenOrigin.Denom)
-		if err != nil {
-			return errorsmod.Wrap(err, "token not whitelisted for SendToCosmos")
+		if _, err := a.keeper.assertMetadataWhitelisted(ctx, tokenOrigin.Denom); err != nil {
+			// The escrowed coins exist and have to go somewhere, so they take the community pool path
+			a.keeper.PauseBridge(ctx, fmt.Sprintf("SendToCosmos nonce %d: denom %s is no longer whitelisted: %v",
+				claim.GetEventNonce(), tokenOrigin.Denom, err))
+			invalidAddress = true
 		}
 	}
 
@@ -154,10 +156,16 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 
 	moduleAddr := a.keeper.accountKeeper.GetModuleAddress(types.ModuleName)
 	if tokenOrigin.Origin == types.AssetOriginEthereum { // We need to mint eth-originated coins (aka vouchers)
-		if err := a.mintEthereumOriginatedVouchers(ctx, moduleAddr, claim, coin); err != nil {
-			// TODO: Evaluate closely, if we can't mint an ethereum voucher, what should we do?
-			return err
+		mintCtx, commitMint := ctx.CacheContext()
+		if err := a.mintEthereumOriginatedVouchers(mintCtx, moduleAddr, claim, coin); err != nil {
+			if errorsmod.IsOf(err, types.ErrIntOverflowAttestation) {
+				return err
+			}
+			a.keeper.PauseBridge(ctx, fmt.Sprintf("SendToCosmos nonce %d: minting %s failed: %v",
+				claim.GetEventNonce(), coin.String(), err))
+			return nil
 		}
+		commitMint()
 	}
 
 	if !invalidAddress { // address appears valid, attempt to send minted/locked coins to receiver
@@ -182,19 +190,13 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 	// the cosmos side they will be lost an inaccessible even though they are locked in the bridge.
 	// so we deposit the tokens into the community pool for later use via governance vote
 	if invalidAddress {
-		if err := a.keeper.SendToCommunityPool(ctx, coins); err != nil {
-			hash, er := claim.ClaimHash()
-			if er != nil {
-				return errorsmod.Wrapf(er, "Unable to log error %v, could not compute ClaimHash for claim %v: %v", err, claim, er)
-			}
-			a.keeper.Logger(ctx).Error("Failed community pool send",
-				"cause", err.Error(),
-				"claim type", claim.GetType(),
-				"id", types.GetAttestationKey(claim.GetEventNonce(), hash),
-				"nonce", fmt.Sprint(claim.GetEventNonce()),
-			)
-			return errorsmod.Wrap(err, "failed to send to Community pool")
+		poolCtx, commitPool := ctx.CacheContext()
+		if err := a.keeper.SendToCommunityPool(poolCtx, coins); err != nil {
+			a.keeper.PauseBridge(ctx, fmt.Sprintf("SendToCosmos nonce %d: community pool send of %s failed: %v",
+				claim.GetEventNonce(), coins.String(), err))
+			return nil
 		}
+		commitPool()
 
 		if err := ctx.EventManager().EmitTypedEvent(
 			&types.EventInvalidSendToCosmosReceiver{
@@ -204,7 +206,7 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 				Sender: claim.EthereumSender,
 			},
 		); err != nil {
-			return err
+			a.logEventFailure(ctx, &claim, err)
 		}
 
 	} else {
@@ -215,11 +217,22 @@ func (a AttestationHandler) handleSendToCosmos(ctx sdk.Context, claim types.MsgS
 				Token:  tokenAddress.GetAddress().Hex(),
 			},
 		); err != nil {
-			return err
+			a.logEventFailure(ctx, &claim, err)
 		}
 	}
 
 	return nil
+}
+
+// logEventFailure records a failed event emission. The state changes that precede every call site
+// are already settled on Ethereum, so returning an error and discarding them over telemetry would
+// silently undo a transfer that actually happened.
+func (a AttestationHandler) logEventFailure(ctx sdk.Context, claim types.EthereumClaim, err error) {
+	a.keeper.Logger(ctx).Error("Failed to emit attestation event",
+		"cause", err.Error(),
+		"claim type", claim.GetType(),
+		"nonce", fmt.Sprint(claim.GetEventNonce()),
+	)
 }
 
 // Upon acceptance of sufficient validator BatchSendToEth claims: burn ethereum originated vouchers, invalidate pending
@@ -231,32 +244,38 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 		return errorsmod.Wrap(err, "invalid token contract on batch")
 	}
 
+	// ClassifyERC20 is the only thing standing between this claim and a wrong denom: it applies
+	// ValidateStrictDenom to whatever it returns, and the AssetOrigin below is handed straight to
+	// OutgoingTxBatchExecuted, which burns contractOrigin.Denom without re-checking it.
 	contractOrigin, err := a.keeper.ClassifyERC20(ctx, *contract)
 	if err != nil {
-		return errorsmod.Wrap(err, "failed to classify ERC20 token")
+		// There is no denom to reconcile against, so the batch is left for governance.
+		a.keeper.PauseBridge(ctx, fmt.Sprintf("BatchSendToEth nonce %d: cannot classify token %s: %v",
+			claim.BatchNonce, contract.GetAddress().Hex(), err))
+		return nil
 	}
 
-	// Perform more strict validation on the denom
-	if err := types.ValidateStrictDenom(contractOrigin.Denom); err != nil {
-		return errorsmod.Wrap(err, "invalid derived denom for batch")
-	}
-
+	// Ethereum has already paid this batch out, so local state has to be cleared or the batch stays
+	// pending forever. A failure here means our records contradict that payout, so the bookkeeping
+	// completes and the bridge stops.
 	if contractOrigin.Origin == types.AssetOriginCosmos {
-		_, err := a.keeper.assertMetadataWhitelisted(ctx, contractOrigin.Denom)
-		if err != nil {
-			return errorsmod.Wrap(err, "token not whitelisted for BatchSendToEth")
+		if _, err := a.keeper.assertMetadataWhitelisted(ctx, contractOrigin.Denom); err != nil {
+			a.keeper.PauseBridge(ctx, fmt.Sprintf("BatchSendToEth nonce %d: denom %s is no longer whitelisted: %v",
+				claim.BatchNonce, contractOrigin.Denom, err))
 		}
 	}
 
-	a.keeper.OutgoingTxBatchExecuted(ctx, *contract, claim)
+	a.keeper.OutgoingTxBatchExecuted(ctx, *contractOrigin, claim)
 
-	err = ctx.EventManager().EmitTypedEvent(
+	if err := ctx.EventManager().EmitTypedEvent(
 		&types.EventBatchSendToEthClaim{
 			Nonce: strconv.Itoa(int(claim.BatchNonce)),
 		},
-	)
+	); err != nil {
+		a.logEventFailure(ctx, &claim, err)
+	}
 
-	return err
+	return nil
 }
 
 // Upon acceptance of sufficient ERC20 Deployed claims, register claim.TokenContract as the canonical ethereum

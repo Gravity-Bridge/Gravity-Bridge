@@ -228,6 +228,9 @@ func (k Keeper) classifyEthOriginated(ctx sdk.Context, caller string, denom stri
 // It shares its per-origin validation with ClassifyDenom via classifyCosmosOriginated and
 // classifyEthOriginated so the two entry points do not diverge.
 //
+// The attestation handlers rely on this being the only denom validation they perform, so every
+// branch added here must keep applying ValidateStrictDenom before returning an AssetOrigin.
+//
 // Returns an error if any of these checks fail:
 //   - Cosmos-originated: the denom fails ValidateStrictDenom(), the mapping is inconsistent, or the ERC20 is also remapped
 //   - Eth-originated: the derived denom must round-trip back to the same ERC20 address

@@ -40,6 +40,21 @@ func (k Keeper) RequireBridgeActive(ctx sdk.Context) error {
 	return nil
 }
 
+// PauseBridge halts the oracle after chain state is found to contradict what the bridge has
+// already done, leaving recovery to governance. Failing to pause once that is detected is worse
+// than halting the chain, so the params accessors are allowed to panic here.
+func (k Keeper) PauseBridge(ctx sdk.Context, reason string) {
+	k.Logger(ctx).Error("PAUSING BRIDGE", "cause", reason)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(errorsmod.Wrapf(err, "unable to pause bridge after: %s", reason))
+	}
+	params.BridgeActive = false
+	if err := k.SetParams(ctx, params); err != nil {
+		panic(errorsmod.Wrapf(err, "unable to pause bridge after: %s", reason))
+	}
+}
+
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) error {
 	if err := params.ValidateBasic(); err != nil {
 		return err

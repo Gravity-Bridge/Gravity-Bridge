@@ -380,6 +380,13 @@ func TestMsgSendToCosmosOverflow_MsgServer(t *testing.T) {
 	require.Equal(t, almostTooMuch.Amount, endSupply.Amount.Sub(preSupply1.Amount))
 	fmt.Println("END>>>>")
 
+	params, err := input.GravityKeeper.GetParams(ctx)
+	require.NoError(t, err)
+	require.True(t, params.BridgeActive)
+	require.Equal(t, exactlyTooMuchClaim.EventNonce, input.GravityKeeper.GetLastObservedEventNonce(ctx))
+	require.Equal(t, almostTooMuch.Amount, input.BankKeeper.GetBalance(ctx, myCosmosAddr, denom1).Amount)
+	require.True(t, input.BankKeeper.GetBalance(ctx, input.AccountKeeper.GetModuleAddress(types.ModuleName), denom1).IsZero())
+
 	// Require that no tokens were bridged previously
 	preSupply2 := input.BankKeeper.GetSupply(ctx, denom2)
 	require.Equal(t, sdkmath.NewInt(0), preSupply2.Amount)
@@ -394,6 +401,9 @@ func TestMsgSendToCosmosOverflow_MsgServer(t *testing.T) {
 	EndBlocker(ctx, input.GravityKeeper)
 	maxSendSupply := input.BankKeeper.GetSupply(ctx, denom2)
 	require.Equal(t, maxSend.Amount, maxSendSupply.Amount.Sub(preSupply2.Amount))
+	require.Equal(t, maxSend.Amount, input.BankKeeper.GetBalance(ctx, myCosmosAddr, denom2).Amount)
+	require.Equal(t, maxSendClaim.EventNonce, input.GravityKeeper.GetLastObservedEventNonce(ctx))
+	require.NoError(t, input.GravityKeeper.RequireBridgeActive(ctx))
 	fmt.Println("END>>>>")
 }
 

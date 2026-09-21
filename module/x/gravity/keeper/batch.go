@@ -109,7 +109,15 @@ func (k Keeper) getBatchTimeoutHeight(ctx sdk.Context) uint64 {
 // OutgoingTxBatchExecuted is run when the Cosmos chain detects that a batch has been executed on Ethereum
 // It frees all the transactions in the batch, then cancels all earlier batches, this function panics instead
 // of returning errors because any failure will cause a double spend.
-func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.EthAddress, claim types.MsgBatchSendToEthClaim) {
+//
+// contractOrigin must come from ClassifyERC20 or ClassifyDenom in this same context. It is trusted
+// without re-derivation: contractOrigin.ERC20 selects which batch is cleared and contractOrigin.Denom
+// names the coins that are burned. AssertValid only checks the struct is internally coherent, not that
+// it agrees with chain state, so a caller that hand-builds one can burn the wrong denom.
+func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, contractOrigin types.AssetOrigin, claim types.MsgBatchSendToEthClaim) {
+	contractOrigin.AssertValid()
+	tokenContract := *contractOrigin.ERC20
+
 	b := k.GetOutgoingTXBatch(ctx, tokenContract, claim.BatchNonce)
 	if b == nil {
 		panic(fmt.Sprintf("unknown batch nonce for outgoing tx batch %s %d", tokenContract.GetAddress().Hex(), claim.BatchNonce))
@@ -117,12 +125,7 @@ func (k Keeper) OutgoingTxBatchExecuted(ctx sdk.Context, tokenContract types.Eth
 	if b.BatchTimeout <= claim.EthBlockHeight {
 		panic(fmt.Sprintf("Batch with nonce %d submitted after it timed out (submission %d >= timeout %d)?", claim.BatchNonce, claim.EthBlockHeight, b.BatchTimeout))
 	}
-	contract := b.TokenContract
 	// Burn tokens if they're Ethereum originated.
-	contractOrigin, err := k.ClassifyERC20(ctx, contract)
-	if err != nil {
-		panic(err)
-	}
 	if contractOrigin.Origin == types.AssetOriginEthereum {
 		totalToBurn := sdkmath.NewInt(0)
 		for _, tx := range b.Transactions {
