@@ -179,12 +179,14 @@ func (k Keeper) classifyCosmosOriginated(ctx sdk.Context, caller string, denom s
 // preserved, while ClassifyERC20 passes the derived denom "gravity0x". The caller argument is used
 // only to prefix error messages. This function enforces:
 //   - x/gravity never sets bank metadata for eth-originated vouchers, so any metadata is rejected
-//   - the denom round-trips back to tokenContract under the selected namespace
+//   - the denom is exactly the canonical denom for tokenContract in the selected namespace
 //   - the denom passes ValidateStrictDenom()
 func (k Keeper) classifyEthOriginated(ctx sdk.Context, caller string, denom string, tokenContract types.EthAddress, isRemapped bool) (*types.AssetOrigin, error) {
 	namespace := "gravity"
+	canonical := types.GravityDenom(tokenContract)
 	if isRemapped {
 		namespace = "gravity2"
+		canonical = types.Gravity2Denom(tokenContract)
 	}
 
 	// This check merely ensures that Eth-originated assets do not have bank metadata because
@@ -194,18 +196,12 @@ func (k Keeper) classifyEthOriginated(ctx sdk.Context, caller string, denom stri
 			"%s: Eth-originated %s denom %s has bank metadata %s, which is not allowed", caller, namespace, denom, meta.Name)
 	}
 
-	// Round-trip: the denom must parse back to the same ERC20 address under the selected namespace.
-	var reparsed *types.EthAddress
-	var parseErr error
-	if isRemapped {
-		reparsed, parseErr = types.Gravity2DenomToERC20(denom)
-	} else {
-		reparsed, parseErr = types.GravityDenomToERC20(denom)
-	}
-	if parseErr != nil || reparsed.GetAddress() != tokenContract.GetAddress() {
+	// Bank denoms are case-sensitive byte strings but Ethereum addresses are not, so parsing the
+	// denom back to an address would accept every casing variant as an alias for the same ERC20.
+	if denom != canonical {
 		return nil, errorsmod.Wrapf(types.ErrInvalid,
-			"%s: eth-originated denom %q failed round-trip validation for ERC20 %s",
-			caller, denom, tokenContract.GetAddress().Hex())
+			"%s: eth-originated denom %q is not the canonical %s denom %q for ERC20 %s",
+			caller, denom, namespace, canonical, tokenContract.GetAddress().Hex())
 	}
 
 	if err := types.ValidateStrictDenom(denom); err != nil {

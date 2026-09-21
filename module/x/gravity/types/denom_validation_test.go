@@ -69,12 +69,17 @@ func TestValidateStrictDenom(t *testing.T) {
 		{"valid gravity denom - pass", "gravity0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", false},
 		{"gravity denom too short - fail", "gravity0xabc123", true},
 		{"gravity denom wrong address - fail", "gravity0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", true},
+		// Ethereum addresses are case-insensitive but bank denoms are not, so only the EIP-55
+		// spelling is accepted, otherwise the same ERC20 gains aliases with separate balances.
+		{"gravity denom lowercase address - fail", "gravity0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", true},
+		{"gravity denom uppercase address - fail", "gravity0x2260FAC5E5542A773AA44FBCFEDF7C193BC2C599", true},
 
 		// gravity2-prefixed bridge denom tests (gravity2 + 0x + 40 hex = 50 bytes)
 		{"valid gravity2 denom - pass", "gravity20x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", false},
 		{"gravity2 denom too short - fail", "gravity20xabc123", true},
 		{"gravity2 prefix only - fail", "gravity2", true},
 		{"gravity2 wrong address - fail", "gravity20xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", true},
+		{"gravity2 denom lowercase address - fail", "gravity20x2260fac5e5542a773aa44fbcfedf7c193bc2c599", true},
 	}
 
 	for _, tt := range tests {

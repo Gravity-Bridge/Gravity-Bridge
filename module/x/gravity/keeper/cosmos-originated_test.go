@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -341,13 +342,11 @@ func TestClassifyCosmosOriginated_CorruptState(t *testing.T) {
 	})
 }
 
-// TestClassifyEthOriginated_RoundTripMismatch forces the eth-originated round-trip guard in the
-// shared classifyEthOriginated helper. This branch is unreachable through ClassifyERC20 /
-// ClassifyDenom, which always derive or parse a denom that is consistent with the ERC20, so the
-// helper is invoked directly with deliberately mismatched inputs to prove the defensive check
-// fires rather than returning a bogus AssetOrigin.
+// TestClassifyEthOriginated_NonCanonicalDenom forces the eth-originated canonical denom guard in
+// the shared classifyEthOriginated helper. ClassifyDenom can reach this guard with a casing alias;
+// direct helper calls additionally cover mismatched contracts and namespaces.
 // nolint: exhaustruct
-func TestClassifyEthOriginated_RoundTripMismatch(t *testing.T) {
+func TestClassifyEthOriginated_NonCanonicalDenom(t *testing.T) {
 	input := CreateTestEnv(t)
 	ctx := input.Context
 	k := input.GravityKeeper
@@ -362,7 +361,7 @@ func TestClassifyEthOriginated_RoundTripMismatch(t *testing.T) {
 		origin, err := k.classifyEthOriginated(ctx, "ClassifyTest", types.GravityDenom(*erc20A), *erc20B, false)
 		require.Nil(t, origin)
 		require.ErrorIs(t, err, types.ErrInvalid)
-		require.Contains(t, err.Error(), "failed round-trip validation")
+		require.Contains(t, err.Error(), "is not the canonical")
 	})
 
 	t.Run("denom is not parseable under the selected namespace", func(t *testing.T) {
@@ -370,13 +369,32 @@ func TestClassifyEthOriginated_RoundTripMismatch(t *testing.T) {
 		origin, err := k.classifyEthOriginated(ctx, "ClassifyTest", types.Gravity2Denom(*erc20A), *erc20A, false)
 		require.Nil(t, origin)
 		require.ErrorIs(t, err, types.ErrInvalid)
-		require.Contains(t, err.Error(), "failed round-trip validation")
+		require.Contains(t, err.Error(), "is not the canonical")
 	})
 
 	t.Run("remapped namespace: denom resolves to a different ERC20 than claimed", func(t *testing.T) {
 		origin, err := k.classifyEthOriginated(ctx, "ClassifyTest", types.Gravity2Denom(*erc20A), *erc20B, true)
 		require.Nil(t, origin)
 		require.ErrorIs(t, err, types.ErrInvalid)
-		require.Contains(t, err.Error(), "failed round-trip validation")
+		require.Contains(t, err.Error(), "is not the canonical")
+	})
+
+	// A lowercase denom parses back to the right address, so the old round-trip accepted it as an
+	// alias holding a separate bank balance for the same ERC20.
+	t.Run("casing alias of the correct ERC20", func(t *testing.T) {
+		alias := strings.ToLower(types.GravityDenom(*erc20A))
+		require.NotEqual(t, types.GravityDenom(*erc20A), alias)
+		origin, err := k.classifyEthOriginated(ctx, "ClassifyTest", alias, *erc20A, false)
+		require.Nil(t, origin)
+		require.ErrorIs(t, err, types.ErrInvalid)
+		require.Contains(t, err.Error(), "is not the canonical")
+	})
+
+	t.Run("remapped namespace: casing alias of the correct ERC20", func(t *testing.T) {
+		alias := strings.ToLower(types.Gravity2Denom(*erc20A))
+		origin, err := k.classifyEthOriginated(ctx, "ClassifyTest", alias, *erc20A, true)
+		require.Nil(t, origin)
+		require.ErrorIs(t, err, types.ErrInvalid)
+		require.Contains(t, err.Error(), "is not the canonical")
 	})
 }

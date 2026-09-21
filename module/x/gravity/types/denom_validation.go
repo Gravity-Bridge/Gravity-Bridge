@@ -64,15 +64,25 @@ func ValidateStrictDenom(denom string) error {
 	} else if strings.HasPrefix(denom, Gravity2DenomPrefix) {
 		// gravity2-prefixed denoms represent remapped Ethereum-originated tokens. They must be
 		// exactly Gravity2DenomLen bytes and carry a well-formed Ethereum address.
-		if _, err := Gravity2DenomToERC20(denom); err != nil {
+		tokenContract, err := Gravity2DenomToERC20(denom)
+		if err != nil {
 			return errorsmod.Wrapf(ErrInvalidDenom, "invalid gravity2 denom: %s", err)
+		}
+		// Addresses are case-insensitive but bank denoms are not, so only the checksummed spelling
+		// may enter the system or the same ERC20 gains aliases with independent balances.
+		if canonical := Gravity2Denom(*tokenContract); denom != canonical {
+			return errorsmod.Wrapf(ErrInvalidDenom, "gravity2 denom %s is not canonical, expected %s", denom, canonical)
 		}
 		// match against gravity0x to avoid matching gravity2 prefix
 	} else if strings.HasPrefix(denom, GravityDenomPrefix+"0x") {
 		// gravity-prefixed denoms represent Ethereum-originated tokens bridged into Cosmos.
 		// They must be exactly GravityDenomLen bytes and carry a well-formed Ethereum address.
-		if _, err := GravityDenomToERC20(denom); err != nil {
+		tokenContract, err := GravityDenomToERC20(denom)
+		if err != nil {
 			return errorsmod.Wrapf(ErrInvalidDenom, "invalid gravity denom: %s", err)
+		}
+		if canonical := GravityDenom(*tokenContract); denom != canonical {
+			return errorsmod.Wrapf(ErrInvalidDenom, "gravity denom %s is not canonical, expected %s", denom, canonical)
 		}
 	} else if strings.HasPrefix(denom, GravityDenomPrefix) {
 		// No legitimate Cosmos denom starts with "gravity" other than the bridge denoms

@@ -69,6 +69,39 @@ fn validate_claim_field(value: &str, field: &str, max_len: usize) -> Result<(), 
     Ok(())
 }
 
+fn validate_cosmos_denom(denom: &str) -> Result<(), GravityError> {
+    validate_claim_field(denom, "denom", MAX_COSMOS_DENOM_LEN)?;
+    if denom.is_empty() || !denom.is_ascii() || denom.contains('\\') {
+        return Err(GravityError::InvalidEventLogError(
+            "denom is empty, non-ASCII, or contains a backslash".to_string(),
+        ));
+    }
+    let valid = if let Some(hash) = denom.strip_prefix("ibc/") {
+        hash.len() == 64
+            && hash
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'A'..=b'F').contains(&byte))
+    } else if denom.starts_with("gravity") {
+        let prefix = if denom.starts_with("gravity2") {
+            "gravity2"
+        } else {
+            "gravity"
+        };
+        denom[prefix.len()..]
+            .parse::<EthAddress>()
+            .map(|address| denom == format!("{prefix}{address}"))
+            .unwrap_or(false)
+    } else {
+        !denom.contains('/')
+    };
+    if !valid {
+        return Err(GravityError::InvalidEventLogError(
+            "denom does not satisfy the Cosmos strict denom rules".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 /// A type of event which must be sent to Gravity by Orchestrators in a claim, parsed from the
 /// ethereum logs
 pub trait EthereumEvent
@@ -762,25 +795,7 @@ impl Erc20DeployedEvent {
             ));
         }
         let denom = denom.unwrap();
-        if denom.is_empty() {
-            warn!("Deployed ERC20 has empty cosmos_denom, will not be adopted");
-            return Err(GravityError::InvalidEventLogError(
-                "denom is empty".to_string(),
-            ));
-        }
-        validate_claim_field(&denom, "denom", MAX_COSMOS_DENOM_LEN)?;
-        if !denom.is_ascii() {
-            warn!("Deployed ERC20 has non-ASCII cosmos_denom, will not be adopted");
-            return Err(GravityError::InvalidEventLogError(
-                "denom has non-ASCII characters".to_string(),
-            ));
-        }
-        if denom.contains('\\') {
-            warn!("Deployed ERC20 has a backslash in cosmos_denom, will not be adopted");
-            return Err(GravityError::InvalidEventLogError(
-                "denom contains forbidden backslash".to_string(),
-            ));
-        }
+        validate_cosmos_denom(&denom)?;
 
         // beyond this point we are parsing strings placed
         // after a variable length string and we will need to compute offsets
@@ -934,10 +949,9 @@ impl EthereumEvent for Erc20DeployedEvent {
                     }
                     let event_nonce: u64 = nonce.to_string().parse().unwrap();
                     // Use the token contract address as a structurally valid denom so the
-                    // claim passes ValidateBasic. Note it's important this be in the ETH originaged
-                    // format as it makes it obviously invalid. The attestation handler will reject it
-                    // gracefully (no governance-approved metadata for this denom) and still
-                    // mark the event as observed, advancing the oracle nonce.
+                    // claim passes ValidateBasic. The Ethereum-originated format ensures that
+                    // mapping validation rejects adoption, even if metadata were approved.
+                    // Observation still advances the oracle nonce.
                     let fallback_denom = format!("gravity{erc20}");
                     Ok(Erc20DeployedEvent {
                         cosmos_denom: fallback_denom,
@@ -1079,6 +1093,7 @@ fn _debug_print_data(input: &[u8]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clarity::abi::{encode_call, AbiToken};
     use clarity::utils::hex_str_to_bytes;
     use rand::distributions::Distribution;
     use rand::distributions::Uniform;
@@ -1087,6 +1102,85 @@ mod tests {
     use rand::Rng;
     use std::time::Duration;
     use std::time::Instant;
+    use web30::types::Data;
+
+    #[test]
+    fn test_erc20_deployed_strict_denoms() {
+        let contract: EthAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+            .parse()
+            .unwrap();
+        let canonical = format!("gravity{contract}");
+        let canonical_remapped = format!("gravity2{contract}");
+        let ibc = format!("ibc/{}", "A1".repeat(32));
+        let cases = [
+            ("uatom".to_string(), true),
+            ("x".repeat(MAX_COSMOS_DENOM_LEN), true),
+            (canonical.clone(), true),
+            (canonical_remapped.clone(), true),
+            (ibc.clone(), true),
+            (String::new(), false),
+            ("x".repeat(MAX_COSMOS_DENOM_LEN + 1), false),
+            (ATTESTATION_SEPARATOR.to_string(), false),
+            ("foo\\bar".to_string(), false),
+            ("foo/bar".to_string(), false),
+            ("gravityjunk".to_string(), false),
+            ("gravity2".to_string(), false),
+            ("gravity0x123".to_string(), false),
+            ("ibc/bad".to_string(), false),
+            (format!("ibc/{}", "G".repeat(64)), false),
+            (ibc.to_lowercase(), false),
+            (canonical.to_lowercase(), false),
+            (canonical_remapped.to_lowercase(), false),
+        ];
+        for (denom, valid) in cases {
+            assert_eq!(validate_cosmos_denom(&denom).is_ok(), valid, "{denom}");
+            let encoded = encode_call(
+                "event(string,string,string,uint8,uint256)",
+                &[
+                    if denom.is_empty() {
+                        AbiToken::Dynamic(vec![])
+                    } else {
+                        AbiToken::String(denom.clone())
+                    },
+                    AbiToken::String("Token".to_string()),
+                    AbiToken::String("TKN".to_string()),
+                    6u8.into(),
+                    7u8.into(),
+                ],
+            )
+            .unwrap();
+            let mut topic = vec![0; 12];
+            topic.extend_from_slice(contract.as_bytes());
+            let log = Log {
+                removed: Some(false),
+                log_index: None,
+                transaction_index: None,
+                transaction_hash: None,
+                block_hash: None,
+                block_number: Some(42u8.into()),
+                address: contract,
+                data: Data(encoded[4..].to_vec()),
+                topics: vec![Data(vec![0; 32]), Data(topic)],
+                type_: None,
+            };
+            let event = Erc20DeployedEvent::from_log(&log).unwrap();
+            assert_eq!(event.event_nonce, 7);
+            assert_eq!(event.block_height, 42u8.into());
+            assert_eq!(event.erc20_address, contract);
+            if valid {
+                assert_eq!(event.cosmos_denom, denom);
+                assert_eq!(event.name, "Token");
+                assert_eq!(event.symbol, "TKN");
+                assert_eq!(event.decimals, 6);
+            } else {
+                assert_eq!(event.cosmos_denom, canonical);
+                assert!(validate_cosmos_denom(&event.cosmos_denom).is_ok());
+                assert!(event.name.is_empty());
+                assert!(event.symbol.is_empty());
+                assert_eq!(event.decimals, 0);
+            }
+        }
+    }
 
     /// Five minutes fuzzing by default
     const FUZZ_TIME: Duration = Duration::from_secs(30);
