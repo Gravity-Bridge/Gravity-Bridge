@@ -45,7 +45,8 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgValsetUpdatedClaim{},
 	)
 
-	registry.RegisterImplementations((*govv1beta1.Content)(nil), &UnhaltBridgeProposal{}, &AirdropProposal{}, &SetCosmosBridgeableTokensProposal{}, &DeleteCosmosBridgeableTokensProposal{})
+	// IBCMetadataProposal is registered only so historical gov proposals remain decodable
+	registry.RegisterImplementations((*govv1beta1.Content)(nil), &UnhaltBridgeProposal{}, &AirdropProposal{}, &SetCosmosBridgeableTokensProposal{}, &DeleteCosmosBridgeableTokensProposal{}, &IBCMetadataProposal{})
 
 	registry.RegisterInterface("gravity.v1beta1.EthereumSigned", (*EthereumSigned)(nil), &Valset{}, &OutgoingTxBatch{}, &OutgoingLogicCall{})
 

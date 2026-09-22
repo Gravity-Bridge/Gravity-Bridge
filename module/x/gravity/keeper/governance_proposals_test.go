@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -10,9 +11,13 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
 	"github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types"
 	typesv2 "github.com/Gravity-Bridge/Gravity-Bridge/module/x/gravity/types/v2"
@@ -820,4 +825,68 @@ func TestAirdropProposal_BadDenom(t *testing.T) {
 	err = gk.HandleAirdropProposal(ctx, &airdropBadDenom)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrInvalidDenom)
+}
+
+// Raw x/gov store value of gravity-bridge-3 proposal 7 at height 23791067.
+const mainnetProposal7Hex = "08071296040a232f636f736d6f732e676f762e76312e4d7367457865634c6567616379436f6e74656e7412ee030abb03" +
+	"0a1f2f677261766974792e76312e4942434d6574616461746150726f706f73616c1297030a1b4e594d5420746573746e" +
+	"657420746f6b656e206d65746164617461124b50726f706f73616c20746f20696e636c75646520746865204942432072" +
+	"6570726573656e746174696f6e206f6620746865204e796d2053616e64626f7820746573746e657420746f6b656e1ae4" +
+	"010a2b546865206e617469766520746f6b656e206f6620746865204e796d2053616e64626f7820746573746e6574124d" +
+	"0a446962632f343945343531304230343132323132414431464534364430324339424135373131393239314645353536" +
+	"344635323743314432413435303333364245343737331a05756e796d74120e0a046e796d7410061a046e796d741a4469" +
+	"62632f343945343531304230343132323132414431464534364430324339424135373131393239314645353536344635" +
+	"3237433144324134353033333642453437373322046e796d742a046e796d7432046e796d7422446962632f3439453435" +
+	"313042303431323231324144314645343644303243394241353731313932393146453535363446353237433144324134" +
+	"3530333336424534373733122e67726176697479313064303779323635676d6d757674347a30773961773838306a6e73" +
+	"723730306a376a70616e6d180322270a0f323238393638343036373434373835120e3932343335363431363730363637" +
+	"1a01302201302a0b0890a49f8f0610e1f1b508320b0890eaa98f0610e1f1b5083a150a09756772617669746f6e120831" +
+	"31303030303030420c08fac39f8f0610cf95baaf014a0c08fa89aa8f0610cf95baaf01"
+
+// Historical IBCMetadataProposals must decode for gov queries but must not be executable again
+func TestHistoricalIBCMetadataProposalDecodes(t *testing.T) {
+	input := CreateTestEnv(t)
+	defer func() { input.Context.Logger().Info("Asserting invariants at test end"); input.AssertInvariants() }()
+	cdc := input.EncodingConfig.Marshaler
+
+	raw, err := hex.DecodeString(mainnetProposal7Hex)
+	require.NoError(t, err)
+
+	var proposal govv1.Proposal
+	require.NoError(t, cdc.Unmarshal(raw, &proposal))
+	require.Equal(t, uint64(7), proposal.Id)
+	require.Len(t, proposal.Messages, 1)
+
+	legacy, ok := proposal.Messages[0].GetCachedValue().(*govv1.MsgExecLegacyContent)
+	require.True(t, ok)
+	content, err := govv1.LegacyContentFromMessage(legacy)
+	require.NoError(t, err)
+	metadataProposal, ok := content.(*types.IBCMetadataProposal)
+	require.True(t, ok)
+	require.Equal(t, "NYMT testnet token metadata", metadataProposal.Title)
+	require.Equal(t, "ibc/49E4510B0412212AD1FE46D02C9BA57119291FE5564F527C1D2A450336BE4773", metadataProposal.IbcDenom)
+	require.Equal(t, metadataProposal.IbcDenom, metadataProposal.Metadata.Base)
+
+	jsonBz, err := cdc.MarshalJSON(&proposal)
+	require.NoError(t, err)
+	require.Contains(t, string(jsonBz), "/gravity.v1.IBCMetadataProposal")
+
+	// the list queries used by gbt and the REST gateway iterate over every stored proposal
+	require.NoError(t, input.GovKeeper.Proposals.Set(input.Context, proposal.Id, proposal))
+	queryServer := govkeeper.NewQueryServer(&input.GovKeeper)
+	listed, err := queryServer.Proposals(input.Context, &govv1.QueryProposalsRequest{})
+	require.NoError(t, err)
+	require.Len(t, listed.Proposals, 1)
+	votingPeriod, err := queryServer.Proposals(input.Context, &govv1.QueryProposalsRequest{ProposalStatus: govv1.StatusVotingPeriod})
+	require.NoError(t, err)
+	require.Empty(t, votingPeriod.Proposals)
+	legacyListed, err := govkeeper.NewLegacyQueryServer(&input.GovKeeper).Proposals(input.Context, &govv1beta1.QueryProposalsRequest{})
+	require.NoError(t, err)
+	require.Len(t, legacyListed.Proposals, 1)
+	require.Equal(t, "/gravity.v1.IBCMetadataProposal", legacyListed.Proposals[0].Content.TypeUrl)
+
+	// v1beta1 submissions are rejected by the type check, v1 submissions by the handler
+	require.False(t, govv1beta1.IsValidProposalType(types.ProposalTypeIBCMetadata))
+	err = NewGravityProposalHandler(input.GravityKeeper)(input.Context, content)
+	require.ErrorIs(t, err, sdkerrors.ErrUnknownRequest)
 }

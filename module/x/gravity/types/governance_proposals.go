@@ -12,6 +12,7 @@ const (
 	ProposalTypeUnhaltBridge           = "UnhaltBridge"
 	ProposalTypeAirdrop                = "Airdrop"
 	ProposalTypeCosmosBridgeableTokens = "CosmosBridgeableTokens"
+	ProposalTypeIBCMetadata            = "IBCMetadata"
 )
 
 func (p *UnhaltBridgeProposal) GetTitle() string { return p.Title }
@@ -169,4 +170,26 @@ func (p DeleteCosmosBridgeableTokensProposal) String() string {
 		b.WriteString(fmt.Sprintf("  Denom: %s Name: %s Symbol: %s\n", m.Base, m.Name, m.Symbol))
 	}
 	return b.String()
+}
+
+func (p *IBCMetadataProposal) GetTitle() string { return p.Title }
+
+func (p *IBCMetadataProposal) GetDescription() string { return p.Description }
+
+func (p *IBCMetadataProposal) ProposalRoute() string { return RouterKey }
+
+func (p *IBCMetadataProposal) ProposalType() string {
+	return ProposalTypeIBCMetadata
+}
+
+func (p *IBCMetadataProposal) ValidateBasic() error {
+	return fmt.Errorf("IBCMetadataProposal is no longer supported, use SetCosmosBridgeableTokensProposal")
+}
+
+func (p IBCMetadataProposal) String() string {
+	return fmt.Sprintf(`IBC Metadata Proposal (removed):
+  Title:          %s
+  Description:    %s
+  IBC Denom:      %s
+`, p.Title, p.Description, p.IbcDenom)
 }
