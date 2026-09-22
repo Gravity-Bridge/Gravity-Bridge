@@ -1,6 +1,6 @@
 //! This is a test for invalid string based deposits, the goal is to torture test the implementation
 //! with every possible variant of invalid data and ensure that in all cases the community pool deposit
-//! works correctly. Invalid deployments must be rejected before storage and stop oracle progression.
+//! works correctly. Sanitized deployments are no-ops; unsanitized invalid deployments stop the oracle.
 
 use crate::get_fee;
 use crate::happy_path::test_erc20_deposit_panic;
@@ -25,6 +25,7 @@ use cosmos_gravity::query::{get_attestations, get_erc20_to_denom};
 use cosmos_gravity::send::send_ethereum_claims;
 use deep_space::Contact;
 use ethereum_gravity::send_to_cosmos::SEND_TO_COSMOS_GAS_LIMIT;
+use gravity_proto::gravity::v1::claim_hash_components::Components;
 use gravity_proto::gravity::v1::query_client::QueryClient as GravityQueryClient;
 use gravity_utils::types::event_signatures::ERC20_DEPLOYED_EVENT_SIG;
 use gravity_utils::types::{Erc20DeployedEvent, EthereumEvent};
@@ -127,12 +128,22 @@ pub async fn invalid_events(
     )
     .await;
 
+    test_sanitized_erc20_deployments(
+        web30,
+        contact,
+        &keys,
+        gravity_address,
+        erc20_address,
+        &mut grpc_client,
+    )
+    .await;
+
     let starting_nonces = get_nonces(&mut grpc_client, &keys, &contact.get_prefix()).await;
     let starting_attestations = get_attestations(&mut grpc_client, Some(1000))
         .await
         .unwrap();
     let mut rejected_contracts = Vec::new();
-    for test_value in get_erc20_test_values() {
+    for test_value in get_unsanitized_erc20_test_values() {
         let event = deploy_invalid_erc20(gravity_address, web30, keys.clone(), test_value).await;
         rejected_contracts.push(event.erc20_address);
         let result = send_ethereum_claims(
@@ -186,6 +197,74 @@ pub async fn invalid_events(
     info!("Successfully completed the invalid events test")
 }
 
+async fn test_sanitized_erc20_deployments(
+    web30: &Web3,
+    contact: &Contact,
+    keys: &[ValidatorKeys],
+    gravity_address: EthAddress,
+    erc20_address: EthAddress,
+    grpc_client: &mut GravityQueryClient<Channel>,
+) {
+    info!("INVALID_EVENTS: sanitized deployment no-ops preserve oracle progression");
+    for test_value in get_erc20_test_values() {
+        let event = deploy_invalid_erc20(gravity_address, web30, keys.to_vec(), test_value).await;
+        let expected_denom = format!("gravity{}", event.erc20_address);
+        assert_eq!(event.cosmos_denom, expected_denom);
+        assert!(event.name.is_empty());
+        assert!(event.symbol.is_empty());
+        assert_eq!(event.decimals, 0);
+
+        let user = get_user_key(None);
+        test_erc20_deposit_panic(
+            web30,
+            contact,
+            grpc_client,
+            user.cosmos_address,
+            gravity_address,
+            erc20_address,
+            one_eth(),
+            None,
+            None,
+        )
+        .await;
+
+        let attestations = get_attestations(grpc_client, Some(1000)).await.unwrap();
+        let matching: Vec<_> = attestations
+            .iter()
+            .filter_map(|attestation| {
+                match attestation.claim_components.as_ref()?.components.as_ref()? {
+                    Components::Erc20Deployed(claim) if claim.event_nonce == event.event_nonce => {
+                        Some((attestation, claim))
+                    }
+                    _ => None,
+                }
+            })
+            .collect();
+        assert_eq!(
+            matching.len(),
+            1,
+            "Expected one sanitized deployment attestation"
+        );
+        let (attestation, claim) = matching[0];
+        assert!(
+            attestation.observed,
+            "Sanitized deployment was not observed"
+        );
+        assert_eq!(attestation.votes.len(), keys.len() - 1);
+        assert_eq!(claim.cosmos_denom, expected_denom);
+        assert_eq!(claim.token_contract, event.erc20_address.to_string());
+        assert_eq!(claim.eth_block_height, event.get_block_height());
+        assert!(claim.name.is_empty());
+        assert!(claim.symbol.is_empty());
+        assert_eq!(claim.decimals, 0);
+        let mapping = get_erc20_to_denom(grpc_client, event.erc20_address)
+            .await
+            .unwrap();
+        assert!(!mapping.cosmos_originated, "No-op created a Cosmos mapping");
+        assert_eq!(mapping.denom, expected_denom);
+    }
+}
+
 fn get_deposit_test_strings() -> Vec<Vec<u8>> {
     // A series of test strings designed to torture our implementation.
     let mut test_strings = Vec::new();
@@ -227,6 +306,17 @@ fn get_deposit_test_strings() -> Vec<Vec<u8>> {
     test_strings
 }
 
+fn get_unsanitized_erc20_test_values() -> Vec<Erc20Params> {
+    IntoIterator::into_iter([0, 255])
+        .map(|decimals| Erc20Params {
+            erc20_symbol: b"bad".to_vec(),
+            erc20_name: b"bad".to_vec(),
+            cosmos_denom: b"bad".to_vec(),
+            decimals,
+        })
+        .collect()
+}
+
 fn get_erc20_test_values() -> Vec<Erc20Params> {
     // A series of test strings designed to torture our implementation.
     let mut test_strings = Vec::new();
@@ -234,22 +324,6 @@ fn get_erc20_test_values() -> Vec<Erc20Params> {
     // Upper bound on the ERC20 name/symbol/denom byte length we test with.
     // Geth dev mode has a block gas limit of ~11.5M, so we need to keep the size
     const MAX_SIZE: usize = 2_000;
-
-    // start with normal utf-8 and odd decimals values
-    let bad = "bad".to_string().as_bytes().to_vec();
-    test_strings.push(Erc20Params {
-        erc20_symbol: bad.clone(),
-        erc20_name: bad.clone(),
-        cosmos_denom: bad.clone(),
-        decimals: 0,
-    });
-
-    test_strings.push(Erc20Params {
-        erc20_symbol: bad.clone(),
-        erc20_name: bad.clone(),
-        cosmos_denom: bad,
-        decimals: 255,
-    });
 
     for denom in [
         "gravityjunk".to_string(),
@@ -432,7 +506,7 @@ struct Erc20Params {
 }
 
 impl Erc20Params {
-    fn encode(self) -> Vec<u8> {
+    fn into_tokens(self) -> Vec<Token> {
         let mut tokens: Vec<Token> =
             IntoIterator::into_iter([self.cosmos_denom, self.erc20_name, self.erc20_symbol])
                 .map(|value| {
@@ -444,14 +518,74 @@ impl Erc20Params {
                 })
                 .collect();
         tokens.push(self.decimals.into());
-        encode_call("deployERC20(string,string,string,uint8)", &tokens).unwrap()
+        tokens
+    }
+
+    fn encode(self) -> Vec<u8> {
+        encode_call(
+            "deployERC20(string,string,string,uint8)",
+            &self.into_tokens(),
+        )
+        .unwrap()
     }
 }
 
 #[test]
 fn invalid_deployment_fixtures_encode() {
-    for params in get_erc20_test_values() {
+    for params in get_erc20_test_values()
+        .into_iter()
+        .chain(get_unsanitized_erc20_test_values())
+    {
         assert!(params.encode().len() >= 4 + 7 * 32);
+    }
+}
+
+#[test]
+fn deployment_fixtures_sanitize_only_invalid_content() {
+    use web30::types::{Data, Log};
+
+    let contract: EthAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+        .parse()
+        .unwrap();
+    let canonical = format!("gravity{contract}");
+    let cases = get_erc20_test_values()
+        .into_iter()
+        .map(|params| (params, true))
+        .chain(
+            get_unsanitized_erc20_test_values()
+                .into_iter()
+                .map(|params| (params, false)),
+        );
+    for (params, sanitized) in cases {
+        let mut tokens = params.into_tokens();
+        tokens.push(7u8.into());
+        let encoded = encode_call("event(string,string,string,uint8,uint256)", &tokens).unwrap();
+        let mut topic = vec![0; 12];
+        topic.extend_from_slice(contract.as_bytes());
+        let log = Log {
+            removed: Some(false),
+            log_index: None,
+            transaction_index: None,
+            transaction_hash: None,
+            block_hash: None,
+            block_number: Some(42u8.into()),
+            address: contract,
+            data: Data(encoded[4..].to_vec()),
+            topics: vec![Data(vec![0; 32]), Data(topic)],
+            type_: None,
+        };
+        let event = Erc20DeployedEvent::from_log(&log).unwrap();
+        assert_eq!(event.event_nonce, 7);
+        assert_eq!(event.get_block_height(), 42);
+        assert_eq!(event.erc20_address, contract);
+        assert_eq!(
+            event.cosmos_denom == canonical
+                && event.name.is_empty()
+                && event.symbol.is_empty()
+                && event.decimals == 0,
+            sanitized,
+            "Unexpected deployment sanitization: {event:?}"
+        );
     }
 }
 

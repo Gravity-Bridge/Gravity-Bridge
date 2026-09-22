@@ -672,8 +672,12 @@ func (k msgServer) ERC20DeployedClaim(c context.Context, msg *types.MsgERC20Depl
 			return nil, errorsmod.Wrap(err, "token not whitelisted for DeployErc20")
 		}
 	}
-	if err := k.validateERC20DeployedClaim(ctx, *msg, *contract); err != nil {
-		return nil, err
+	// in the case of a noop, no validation is needed, in the case the event has already been observed
+	// we skip validation which would prevent the validator from catching up on missed events
+	if msg.EventNonce > k.GetLastObservedEventNonce(ctx) && !isERC20DeployedNoop(*msg, *contract) {
+		if err := k.validateERC20DeployedClaim(ctx, *msg, *contract); err != nil {
+			return nil, err
+		}
 	}
 
 	any, err := codectypes.NewAnyWithValue(msg)

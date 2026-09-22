@@ -278,6 +278,12 @@ func (a AttestationHandler) handleBatchSendToEth(ctx sdk.Context, claim types.Ms
 	return nil
 }
 
+func isERC20DeployedNoop(claim types.MsgERC20DeployedClaim, tokenAddress types.EthAddress) bool {
+	return claim.TokenContract == tokenAddress.GetAddress().Hex() &&
+		claim.CosmosDenom == types.GravityDenom(tokenAddress) &&
+		claim.Name == "" && claim.Symbol == "" && claim.Decimals == 0
+}
+
 func (k Keeper) validateERC20DeployedClaim(ctx sdk.Context, claim types.MsgERC20DeployedClaim, tokenAddress types.EthAddress) error {
 	// Perform more strict validation on the cosmos denom
 	if err := types.ValidateStrictDenom(claim.CosmosDenom); err != nil {
@@ -365,6 +371,11 @@ func (a AttestationHandler) handleErc20Deployed(ctx sdk.Context, claim types.Msg
 	tokenAddress, err := types.NewEthAddress(claim.TokenContract)
 	if err != nil {
 		return errorsmod.Wrap(err, "invalid token contract on claim")
+	}
+	// if this is the NOOP claim, we can safely ignore it the intent is to do nothing
+	// but progress the oracle safely.
+	if isERC20DeployedNoop(claim, *tokenAddress) {
+		return nil
 	}
 	if err := a.keeper.validateERC20DeployedClaim(ctx, claim, *tokenAddress); err != nil {
 		return err
