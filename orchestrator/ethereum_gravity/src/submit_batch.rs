@@ -106,7 +106,7 @@ pub async fn estimate_tx_batch_cost(
             access_list: None,
             chain_id: Some(chain_id.into()),
             from: our_eth_address,
-            to: gravity_contract_address,
+            to: gravity_contract_address.into(),
             nonce: Some(our_nonce.into()),
             max_fee_per_gas: Some(gas_price.into()),
             max_priority_fee_per_gas: None,

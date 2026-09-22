@@ -111,7 +111,7 @@ pub async fn estimate_logic_call_cost(
             chain_id: Some(chain_id.into()),
             access_list: None,
             from: our_eth_address,
-            to: gravity_contract_address,
+            to: gravity_contract_address.into(),
             nonce: Some(our_nonce.into()),
             max_fee_per_gas: Some(gas_price.into()),
             max_priority_fee_per_gas: None,
