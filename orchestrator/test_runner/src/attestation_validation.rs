@@ -614,9 +614,10 @@ pub async fn attestation_hash_integrity_test(
 ///
 /// Verifies that:
 /// 1. A denom containing AttestationSeparator is rejected by ValidateStrictDenom
-/// 2. A minority forged claim is rejected without an attestation or nonce advancement
-/// 3. The approved real deployment reaches quorum without altering the escrowed token's mapping
-/// 4. The forged claim and the real deployment have different hashes
+/// 2. A fresh forged claim is rejected without an attestation or nonce advancement
+/// 3. A late forged vote is stored separately but never observed or executed
+/// 4. The approved real deployment reaches quorum without altering the escrowed token's mapping
+/// 5. The forged claim and the real deployment have different hashes
 #[allow(clippy::too_many_arguments)]
 async fn erc20_deployed_claim_hash_collision(
     web30: &Web3,
@@ -975,12 +976,20 @@ async fn erc20_deployed_claim_hash_collision(
     )
     .await
     .unwrap();
+    assert_eq!(
+        nonce_before + 1,
+        event_nonce,
+        "Reserved validator must be ready to vote on the observed deployment"
+    );
     let forged_result = send_ethereum_claims(
         contact,
         keys[0].orch_key,
         vec![],
         vec![],
-        vec![forged_event],
+        vec![Erc20DeployedEvent {
+            event_nonce: event_nonce + 1,
+            ..forged_event.clone()
+        }],
         vec![],
         vec![],
         get_fee(None),
@@ -989,7 +998,11 @@ async fn erc20_deployed_claim_hash_collision(
     let rejection = match forged_result {
         Err(error) => error.to_string(),
         Ok(transaction) => {
-            assert_ne!(transaction.code(), 0, "Forged deployment was admitted");
+            assert_ne!(
+                transaction.code(),
+                0,
+                "Fresh forged deployment was admitted"
+            );
             transaction.raw_log()
         }
     };
@@ -1007,13 +1020,60 @@ async fn erc20_deployed_claim_hash_collision(
         .await
         .unwrap(),
         nonce_before,
-        "Rejected forged deployment advanced the validator nonce"
+        "Rejected fresh forged deployment advanced the validator nonce"
     );
+
+    let late_vote = send_ethereum_claims(
+        contact,
+        keys[0].orch_key,
+        vec![],
+        vec![],
+        vec![forged_event],
+        vec![],
+        vec![],
+        get_fee(None),
+    )
+    .await
+    .expect("Late forged vote should be accepted for the already-observed nonce");
+    assert_eq!(
+        late_vote.code(),
+        0,
+        "Late forged vote failed: {}",
+        late_vote.raw_log()
+    );
+    assert_eq!(
+        get_last_event_nonce_for_validator(
+            grpc_client,
+            reserved_orchestrator,
+            contact.get_prefix()
+        )
+        .await
+        .unwrap(),
+        event_nonce,
+        "Accepted late vote did not advance the reserved validator nonce"
+    );
+    contact
+        .wait_for_next_block(TOTAL_TIMEOUT)
+        .await
+        .expect("Failed to wait for attestation tally after the late vote");
     let all_atts = get_attestations(grpc_client, Some(1000))
         .await
-        .expect("Phase 5: failed to query attestations after the rejected vote");
+        .expect("Phase 5: failed to query attestations after the late vote");
+    assert!(
+        !all_atts.iter().any(|att| {
+            att.claim_type == ClaimType::Erc20Deployed as i32
+                && decode_claim_any::<MsgErc20DeployedClaim>(att)
+                    .map(|claim| {
+                        claim.event_nonce == event_nonce + 1
+                            && claim.token_contract == BARTOKEN_ADDR
+                            && claim.cosmos_denom == forged_cosmos_denom
+                    })
+                    .unwrap_or(false)
+        }),
+        "Rejected fresh forged deployment entered the attestation store"
+    );
 
-    // The forged claim must never enter the attestation store.
+    // The late forged claim is stored separately and must remain unobserved.
     let forged_att = all_atts.iter().find(|a| {
         if a.claim_type != ClaimType::Erc20Deployed as i32 {
             return false;
@@ -1023,13 +1083,28 @@ async fn erc20_deployed_claim_hash_collision(
         };
         MsgErc20DeployedClaim::decode(any_att.value.as_slice())
             .ok()
-            .map(|c| c.token_contract == BARTOKEN_ADDR && c.cosmos_denom == forged_cosmos_denom)
+            .map(|c| {
+                c.event_nonce == event_nonce
+                    && c.token_contract == BARTOKEN_ADDR
+                    && c.cosmos_denom == forged_cosmos_denom
+            })
             .unwrap_or(false)
     });
 
+    let forged_att = forged_att.expect("Accepted late forged vote must have its own attestation");
     assert!(
-        forged_att.is_none(),
-        "Rejected forged deployment entered the attestation store"
+        !forged_att.observed,
+        "Late forged deployment must not be observed"
+    );
+    assert_eq!(
+        forged_att.votes.len(),
+        1,
+        "Late forged attestation must contain only the reserved validator's vote"
+    );
+    assert_eq!(
+        hash_from_claim_any(forged_att).expect("Failed to reconstruct late forged claim hash"),
+        forged_hash,
+        "Stored late forged claim differs from the submitted claim"
     );
 
     // ── Erc20ToDenom must never register the forged denom for bartoken ───────
@@ -1043,7 +1118,7 @@ async fn erc20_deployed_claim_hash_collision(
     assert_ne!(
         erc20_to_denom_resp.denom, forged_cosmos_denom,
         "REGRESSION: Erc20ToDenom returned the forged denom '{}' for bartoken ERC20 {} — \
-         handleErc20Deployed executed on the rejected claim and corrupted \
+         handleErc20Deployed executed on the late forged claim and corrupted \
          the denomToERC20 mapping.",
         forged_cosmos_denom, BARTOKEN_ADDR
     );
@@ -1058,6 +1133,11 @@ async fn erc20_deployed_claim_hash_collision(
         "REGRESSION: bartoken ERC20 {} is now reported as cosmos-originated in Erc20ToDenom — \
          the forged claim's setCosmosOriginatedMapping call must not have executed.",
         BARTOKEN_ADDR
+    );
+    assert_eq!(
+        get_balance_amount(contact, escrow_receiver.cosmos_address, &bartoken_denom).await,
+        escrow_amount,
+        "Late forged deployment changed the escrow receiver's voucher balance"
     );
 
     // ── Honest attestation: must exist with 3 votes, observed ─────────────────
@@ -1093,6 +1173,23 @@ async fn erc20_deployed_claim_hash_collision(
          but it was not. Votes: {:?}",
         honest_att.votes,
     );
+    assert!(
+        !honest_att.votes.contains(&forged_att.votes[0]),
+        "Reserved validator's forged vote was added to the honest attestation"
+    );
+    for att in [honest_att, forged_att] {
+        assert_eq!(
+            hash_from_claim_any(att).expect("Failed to reconstruct deployment claim hash"),
+            hash_from_components(
+                att.claim_components
+                    .as_ref()
+                    .expect("Deployment attestation missing claim components"),
+                att.claim_type,
+            )
+            .expect("Failed to reconstruct deployment component hash"),
+            "Deployment claim and stored components have different hashes"
+        );
+    }
 
     let honest_mapping = get_erc20_to_denom(grpc_client, new_erc20_addr)
         .await
@@ -1100,7 +1197,7 @@ async fn erc20_deployed_claim_hash_collision(
     assert!(honest_mapping.cosmos_originated);
     assert_eq!(honest_mapping.denom, ibc_denom);
 
-    // Compare the rejected claim's hash with the observed honest attestation.
+    // Compare the late forged claim's hash with the observed honest attestation.
     let honest_hash = hash_from_claim_any(honest_att)
         .expect("Phase 5: failed to compute honest attestation hash");
     assert_ne!(
@@ -1111,8 +1208,9 @@ async fn erc20_deployed_claim_hash_collision(
     );
 
     info!(
-        "ERC20DeployedClaim admission and hash isolation VERIFIED: forged claim not stored, \
-         honest attestation observed with {} vote(s), escrowed token mapping unchanged.",
+        "ERC20DeployedClaim admission and hash isolation VERIFIED: fresh forgery rejected, \
+         late forgery stored with one vote and unobserved, honest attestation observed \
+         with {} vote(s), escrowed token mapping and balance unchanged.",
         honest_att.votes.len(),
     );
 }
