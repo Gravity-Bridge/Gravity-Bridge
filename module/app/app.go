@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
 
@@ -1330,6 +1331,8 @@ func (app *Gravity) AutoCliOpts() autocli.AppOptions {
 		AddressCodec:          authcodec.NewBech32Codec(gravityconfig.Bech32PrefixAccAddr),
 		ValidatorAddressCodec: authcodec.NewBech32Codec(gravityconfig.Bech32PrefixValAddr),
 		ConsensusAddressCodec: authcodec.NewBech32Codec(gravityconfig.Bech32PrefixConsAddr),
+		// Without this, autocli makes SIGN_MODE_TEXTUAL (unsupported on-chain) the only/default mode.
+		TxConfigOpts: authtx.ConfigOptions{EnabledSignModes: slices.Clone(authtx.DefaultSignModes)},
 	}
 }
 
